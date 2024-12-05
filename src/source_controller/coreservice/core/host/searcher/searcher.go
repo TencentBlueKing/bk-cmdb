@@ -14,7 +14,6 @@
 package searcher
 
 import (
-	"context"
 	"strings"
 
 	"configcenter/src/apimachinery/cacheservice/cache/host"
@@ -78,7 +77,7 @@ func (s *Searcher) ListHosts(kit *rest.Kit, option metadata.ListHosts) (*metadat
 		sort := strings.TrimLeft(option.Page.Sort, "+-")
 		if len(option.Page.Sort) == 0 || sort == common.BKHostIDField || strings.Contains(sort, ",") == false &&
 			strings.HasPrefix(sort, common.BKHostIDField+":") {
-			searchResult, err := s.listAllBizHostsPage(kit.Ctx, option.Fields, option.Page, hostIDs, kit.Rid)
+			searchResult, err := s.listAllBizHostsPage(kit, option.Fields, option.Page, hostIDs)
 			if err != nil {
 				return nil, err
 			}
@@ -128,7 +127,7 @@ func (s *Searcher) listHostIDsByRelation(kit *rest.Kit, option *metadata.ListHos
 		return false, make([]interface{}, 0), nil
 	}
 
-	hostIDs, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx,
+	hostIDs, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx,
 		common.BKHostIDField, relationFilter)
 	if err != nil {
 		blog.Errorf("get host ids by relation failed, filter: %+v, err: %v, rid: %s", relationFilter, err, kit.Rid)
@@ -141,7 +140,7 @@ func (s *Searcher) listHostIDsByRelation(kit *rest.Kit, option *metadata.ListHos
 func (s *Searcher) listHostFromDB(kit *rest.Kit, finalFilter map[string]interface{}, option *metadata.ListHosts) (
 	*metadata.ListHostResult, error) {
 
-	total, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(finalFilter).Count(kit.Ctx)
+	total, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(finalFilter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count hosts failed, filter: %+v, err: %v, rid: %s", finalFilter, err, kit.Rid)
 		return nil, err
@@ -151,8 +150,8 @@ func (s *Searcher) listHostFromDB(kit *rest.Kit, finalFilter map[string]interfac
 
 	limit := uint64(option.Page.Limit)
 	start := uint64(option.Page.Start)
-	query := mongodb.Client().Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).Start(start).
-		Fields(option.Fields...)
+	query := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(finalFilter).Limit(limit).
+		Start(start).Fields(option.Fields...)
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	} else {
@@ -201,8 +200,8 @@ func (s *Searcher) ListHostsWithCache(kit *rest.Kit, fields []string, page metad
 }
 
 // listAllBizHostsPage 专有流程
-func (s *Searcher) listAllBizHostsPage(ctx context.Context, fields []string, page metadata.BasePage,
-	allBizHostIDs []interface{}, rid string) (searchResult *metadata.ListHostResult, err error) {
+func (s *Searcher) listAllBizHostsPage(kit *rest.Kit, fields []string, page metadata.BasePage,
+	allBizHostIDs []interface{}) (searchResult *metadata.ListHostResult, err error) {
 	cnt := len(allBizHostIDs)
 	start := page.Start
 	if start > cnt {
@@ -218,7 +217,7 @@ func (s *Searcher) listAllBizHostsPage(ctx context.Context, fields []string, pag
 	if end > cnt {
 		end = cnt
 	}
-	blog.V(10).Infof("list biz host start: %d, end: %d, rid: %s", start, end, rid)
+	blog.V(10).Infof("list biz host start: %d, end: %d, rid: %s", start, end, kit.Rid)
 
 	finalFilter := make(map[string]interface{}, 0)
 	// 针对获取业务下所有的主机的场景优
@@ -227,9 +226,9 @@ func (s *Searcher) listAllBizHostsPage(ctx context.Context, fields []string, pag
 	}
 
 	hosts := make([]metadata.HostMapStr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(finalFilter).Fields(fields...).
-		Sort(page.Sort).All(ctx, &hosts); err != nil {
-		blog.Errorf("ListHosts failed, db select hosts failed, filter: %+v, err: %+v, rid: %s", finalFilter, err, rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(finalFilter).Fields(fields...).
+		Sort(page.Sort).All(kit.Ctx, &hosts); err != nil {
+		blog.Errorf("list hosts failed, filter: %+v, err: %v, rid: %s", finalFilter, err, kit.Rid)
 		return nil, err
 	}
 	searchResult = &metadata.ListHostResult{

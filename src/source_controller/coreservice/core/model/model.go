@@ -98,7 +98,7 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 	condCheckModel, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 	condCheckModel.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: inputParam.Spec.ObjectID})
 	_, exists, err := m.isExists(kit, condCheckModel)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to check whether the table model (%s) is exists, err: %v, rid: %s",
 			inputParam.Spec.ObjectID, err, kit.Rid)
 		return nil, err
@@ -113,7 +113,8 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 	modelNameUniqueFilter := map[string]interface{}{
 		common.BKObjNameField: inputParam.Spec.ObjectName,
 	}
-	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
+	sameNameCount, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).
+		Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get model count failed, name: %s, err: %v, rid: %s", inputParam.Spec.ObjectName, err, kit.Rid)
 		return nil, err
@@ -126,7 +127,7 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 	// create new table model after checking base information and sharding table operation.
 	inputParam.Spec.TenantID = kit.TenantID
 	id, err := m.save(kit, &inputParam.Spec)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("request(%s): it is failed to save the model (%#v), err: %v", kit.Rid, inputParam.Spec, err)
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (m *modelManager) CreateTableModel(kit *rest.Kit, inputParam metadata.Creat
 	// 创建源模型的模型属性
 	_, err = m.modelAttribute.CreateTableModelAttributes(kit, originObjID,
 		metadata.CreateModelAttributes{Attributes: inputParam.Attributes})
-	if nil != err {
+	if err != nil {
 		blog.Errorf("it is failed to create some attributes (%#v) for the model (%s), err: %v, rid: %s",
 			inputParam.Attributes, inputParam.Spec.ObjectID, err, kit.Rid)
 		return nil, err
@@ -216,7 +217,8 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	modelNameUniqueFilter := map[string]interface{}{
 		common.BKObjNameField: inputParam.Spec.ObjectName,
 	}
-	sameNameCount, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).Count(kit.Ctx)
+	sameNameCount, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(modelNameUniqueFilter).
+		Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("whether same name model exists, name: %s, err: %v, rid: %s", inputParam.Spec.ObjectName,
 			err, kit.Rid)
@@ -247,7 +249,7 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 	if len(inputParam.Attributes) != 0 {
 		_, err = m.modelAttribute.CreateModelAttributes(kit, inputParam.Spec.ObjectID, metadata.CreateModelAttributes{
 			Attributes: inputParam.Attributes})
-		if nil != err {
+		if err != nil {
 			blog.Errorf("request(%s): it is failed to create some attributes (%#v) for the model (%s), err: %v",
 				kit.Rid, inputParam.Attributes, inputParam.Spec.ObjectID, err)
 			return nil, err
@@ -493,7 +495,7 @@ func (m *modelManager) getObjFieldTemplateRelation(kit *rest.Kit, modelID int64)
 		common.ObjectIDField: modelID,
 	}
 
-	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Find(filter).
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjFieldTemplateRelation).Find(filter).
 		Fields(common.BKTemplateID).All(kit.Ctx, &result); err != nil {
 		blog.Errorf("failed to get object and relation, filter: (%#v), err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -542,7 +544,8 @@ func (m *modelManager) deleteModelAndFieldTemplateRelation(kit *rest.Kit, modelI
 	}
 
 	// delete object field template relation
-	if err := mongodb.Client().Table(common.BKTableNameObjFieldTemplateRelation).Delete(kit.Ctx, filter); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjFieldTemplateRelation).Delete(kit.Ctx,
+		filter); err != nil {
 		blog.Errorf("delete model field template relation failed, cond: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
@@ -645,7 +648,8 @@ func (m *modelManager) SearchModelWithAttribute(kit *rest.Kit, inputParam metada
 				modelItem.ObjectID, err)
 			return dataResult, err
 		}
-		dataResult.Info = append(dataResult.Info, metadata.SearchModelInfo{Spec: modelItem, Attributes: attributeItems})
+		dataResult.Info = append(dataResult.Info, metadata.SearchModelInfo{
+			Spec: modelItem, Attributes: attributeItems})
 	}
 
 	return dataResult, nil
@@ -679,7 +683,7 @@ func dealProcessRunningTasks(kit *rest.Kit, ids []int64, objectID int64, isStop 
 	}
 
 	result := make([]metadata.APITaskSyncStatus, 0)
-	if err := mongodb.Client().Table(common.BKTableNameAPITaskSyncHistory).Find(cond).
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAPITaskSyncHistory).Find(cond).
 		Fields(common.BKStatusField, common.BKTaskIDField).
 		All(kit.Ctx, &result); err != nil {
 		blog.Errorf("search task failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
@@ -731,7 +735,7 @@ func dealProcessRunningTasks(kit *rest.Kit, ids []int64, objectID int64, isStop 
 			common.BKDBIN: []metadata.APITaskStatus{metadata.APITaskStatusWaitExecute, metadata.APITaskStatusNew},
 		},
 	}
-	err := mongodb.Client().Table(common.BKTableNameAPITask).Delete(kit.Ctx, delCond)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAPITask).Delete(kit.Ctx, delCond)
 	if err != nil {
 		blog.Errorf("delete task failed, cond: %#v, err: %v, rid: %s", delCond, err, kit.Rid)
 		return err
@@ -746,7 +750,7 @@ func delIDRuleGenerator(kit *rest.Kit, objIDs []string) error {
 	}
 	cond := mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBIN: ids}}
 
-	if err := mongodb.Client().Table(common.BKTableNameIDgenerator).Delete(kit.Ctx, cond); err != nil {
+	if err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameIDgenerator).Delete(kit.Ctx, cond); err != nil {
 		blog.Errorf("delete id generator data failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 		return err
 	}

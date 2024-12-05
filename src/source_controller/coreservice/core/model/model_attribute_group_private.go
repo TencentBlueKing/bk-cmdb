@@ -31,7 +31,7 @@ func (g *modelAttributeGroup) groupIDIsExists(kit *rest.Kit, objID, groupID stri
 	}
 
 	groups, err := g.search(kit, cond)
-	if nil != err {
+	if err != nil {
 		return oneResult, isExists, err
 	}
 
@@ -66,7 +66,8 @@ func (g *modelAttributeGroup) groupNameIsExists(kit *rest.Kit, objID, groupName 
 	return metadata.Group{}, false, nil
 }
 
-func (g *modelAttributeGroup) hasAttributes(kit *rest.Kit, objID string, groupIDS []string) (isExists bool, err error) {
+func (g *modelAttributeGroup) hasAttributes(kit *rest.Kit, objID string, groupIDS []string) (isExists bool,
+	err error) {
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
@@ -77,7 +78,7 @@ func (g *modelAttributeGroup) hasAttributes(kit *rest.Kit, objID string, groupID
 		Condition: cond.ToMapStr(),
 	})
 
-	if nil != err {
+	if err != nil {
 		return false, err
 	}
 

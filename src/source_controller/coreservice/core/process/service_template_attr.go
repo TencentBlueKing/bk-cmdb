@@ -42,7 +42,8 @@ func (p *processOperation) validateServiceTemplate(kit *rest.Kit, bizID int64,
 	}
 
 	svcTempFilter := mapstr.MapStr{common.BKAppIDField: bizID, common.BKFieldID: serviceTemplateID}
-	svcTempCnt, err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(svcTempFilter).Count(kit.Ctx)
+	svcTempCnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplate).Find(svcTempFilter).
+		Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count service template failed, cond: %+v, err: %v, rid: %s", svcTempFilter, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -93,7 +94,8 @@ func (p *processOperation) validateServiceTemplateAttrs(kit *rest.Kit, bizID int
 	util.AddModelBizIDCondition(filter, bizID)
 
 	attributes := make([]metadata.Attribute, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(filter).All(kit.Ctx, &attributes); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(filter).All(kit.Ctx,
+		&attributes); err != nil {
 		blog.Errorf("get module attribute failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -148,7 +150,8 @@ func (p *processOperation) validateServiceTemplateAttrExist(kit *rest.Kit, bizID
 		},
 	}
 
-	count, err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Find(filter).Count(kit.Ctx)
+	count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplateAttr).Find(filter).
+		Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count service template attribute failed, filter: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -170,7 +173,8 @@ func (p *processOperation) CreateServiceTemplateAttrs(kit *rest.Kit, opt *metada
 		return nil, err
 	}
 
-	ids, err := mongodb.Client().NextSequences(kit.Ctx, common.BKTableNameServiceTemplateAttr, len(opt.Attributes))
+	ids, err := mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameServiceTemplateAttr,
+		len(opt.Attributes))
 	if err != nil {
 		blog.Errorf("get service template attribute ids failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -194,7 +198,8 @@ func (p *processOperation) CreateServiceTemplateAttrs(kit *rest.Kit, opt *metada
 		}
 	}
 
-	if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Insert(kit.Ctx, svcTempAttrs); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplateAttr).Insert(kit.Ctx,
+		svcTempAttrs); err != nil {
 		blog.Errorf("create service template attributes(%+v) failed, err: %v, rid: %s", svcTempAttrs, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
@@ -228,7 +233,8 @@ func (p *processOperation) UpdateServTempAttr(kit *rest.Kit,
 	for _, attribute := range option.Attributes {
 		attrFilter[common.BKAttributeIDField] = attribute.AttributeID
 		updateData := map[string]interface{}{common.BKPropertyValueField: attribute.PropertyValue}
-		err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Update(kit.Ctx, attrFilter, updateData)
+		err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplateAttr).Update(kit.Ctx, attrFilter,
+			updateData)
 		if err != nil {
 			blog.Errorf("update service template attribute failed, filter: %s, err: %v, rid: %s", attrFilter, err,
 				kit.Rid)
@@ -255,7 +261,8 @@ func (p *processOperation) DeleteServiceTemplateAttribute(kit *rest.Kit,
 		},
 	}
 
-	if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(kit.Ctx, filter); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplateAttr).Delete(kit.Ctx,
+		filter); err != nil {
 		blog.Errorf("delete service template attribute failed, filter: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
@@ -277,8 +284,8 @@ func (p *processOperation) ListServiceTemplateAttribute(kit *rest.Kit, option *m
 	}
 
 	templateAttrs := make([]metadata.ServiceTemplateAttr, 0)
-	err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Find(filter).Fields(option.Fields...).
-		All(kit.Ctx, &templateAttrs)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplateAttr).Find(filter).
+		Fields(option.Fields...).All(kit.Ctx, &templateAttrs)
 	if err != nil {
 		blog.Errorf("find service template attribute failed, filter: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)

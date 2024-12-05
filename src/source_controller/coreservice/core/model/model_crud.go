@@ -34,7 +34,7 @@ import (
 
 func (m *modelManager) count(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("it is failed to execute database count operation by the condition, err: %v, cond: %v, rid: %s",
 			err, cond.ToMapStr(), kit.Rid)
@@ -45,7 +45,7 @@ func (m *modelManager) count(kit *rest.Kit, cond universalsql.Condition) (uint64
 }
 
 func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, err error) {
-	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjDes)
+	id, err = mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameObjDes)
 	if err != nil {
 		blog.Errorf("it is failed to make sequence id on the table, err: %v, table: %s, rid: %s",
 			err, common.BKTableNameObjDes, kit.Rid)
@@ -74,7 +74,7 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 		model.Creator = kit.User
 	}
 
-	if err = mongodb.Client().Table(common.BKTableNameObjDes).Insert(kit.Ctx, model); err != nil {
+	if err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Insert(kit.Ctx, model); err != nil {
 		return 0, err
 	}
 
@@ -84,7 +84,8 @@ func (m *modelManager) save(kit *rest.Kit, model *metadata.Object) (id uint64, e
 		common.CreateTimeField: now,
 		common.LastTimeField:   now,
 	}
-	if err = mongodb.Client().Table(common.BKTableNameIDgenerator).Insert(kit.Ctx, assetIDGenerator); err != nil {
+	if err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameIDgenerator).Insert(kit.Ctx,
+		assetIDGenerator); err != nil {
 		blog.Errorf("add id generator data failed, data: %+v, err: %v, rid: %s", assetIDGenerator, err, kit.Rid)
 		return 0, err
 	}
@@ -98,7 +99,7 @@ func (m *modelManager) GetSortNum(kit *rest.Kit, model metadata.Object, srcModel
 	modelInput := map[string]interface{}{metadata.ModelFieldObjCls: model.ObjCls}
 	modelResult := make([]metadata.Object, 0)
 	sortCond := "-obj_sort_number"
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(modelInput).Sort(sortCond).Fields(
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(modelInput).Sort(sortCond).Fields(
 		metadata.ModelFieldID, metadata.ModelFieldObjSortNumber).Limit(1).All(kit.Ctx, &modelResult); err != nil {
 		blog.Error("get object sort number failed, database operation is failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, err
@@ -162,8 +163,8 @@ func (m *modelManager) updateOtherObjSort(kit *rest.Kit, class string, sortNumCo
 		metadata.ModelFieldObjSortNumber: sortNumCond,
 	}
 	incData := mapstr.MapStr{metadata.ModelFieldObjSortNumber: step}
-	err := mongodb.Client().Table(common.BKTableNameObjDes).UpdateMultiModel(kit.Ctx, incCond, types.ModeUpdate{
-		Op: "inc", Doc: incData})
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).UpdateMultiModel(kit.Ctx, incCond,
+		types.ModeUpdate{Op: "inc", Doc: incData})
 	if err != nil {
 		blog.Errorf("increase object sort number failed, err: %v, incCond: %v, rid: %s", err, incCond, kit.Rid)
 		return err
@@ -175,7 +176,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 	data.Set(metadata.ModelFieldModifier, kit.User)
 	data.Set(metadata.ModelFieldLastTime, time.Now())
 	models := make([]metadata.Object, 0)
-	err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &models)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx, &models)
 	if err != nil {
 		blog.Errorf("find models failed, err: %v, filter: %v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -211,7 +212,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 				},
 			}
 
-			count, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(nameCond).Count(kit.Ctx)
+			count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(nameCond).Count(kit.Ctx)
 			if err != nil {
 				blog.Errorf("failed to check the validity of the model name, filter: %v, err: %v, rid: %s",
 					nameCond, err, kit.Rid)
@@ -223,7 +224,7 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 			}
 			// 一次更新多个模型的时候，唯一校验需要特别小心
 			filter := map[string]interface{}{common.BKFieldID: model.ID}
-			cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, filter, data)
+			cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, filter, data)
 			if err != nil {
 				blog.Errorf("failed to update table (%s), err: %v, cond:  %v, data:  %v, err: %v,rid: %s",
 					common.BKTableNameObjDes, filter, data, err, kit.Rid)
@@ -244,7 +245,8 @@ func (m *modelManager) update(kit *rest.Kit, data mapstr.MapStr, cond universals
 		data.Remove(metadata.ModelFieldObjSortNumber)
 	}
 
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, cond.ToMapStr(),
+		data)
 	if err != nil {
 		blog.Errorf("failed to update the table (%s), err: %v, rid: %s", common.BKTableNameObjDes, err, kit.Rid)
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
@@ -283,7 +285,7 @@ func (m *modelManager) updateSortNum(kit *rest.Kit, data mapstr.MapStr,
 
 	filter := map[string]interface{}{common.BKFieldID: srcModel.ID}
 	doc := map[string]interface{}{metadata.ModelFieldObjSortNumber: sortNum}
-	_, err = mongodb.Client().Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, filter, doc)
+	_, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).UpdateMany(kit.Ctx, filter, doc)
 	if err != nil {
 		blog.Errorf("failed to update object sort number field, err: %v, cond: %v, data: %v, rid: %s",
 			err, filter, doc, kit.Rid)
@@ -296,7 +298,7 @@ func (m *modelManager) updateSortNum(kit *rest.Kit, data mapstr.MapStr,
 func (m *modelManager) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Object, error) {
 
 	dataResult := make([]metadata.Object, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).
 		All(kit.Ctx, &dataResult); err != nil {
 		blog.Errorf("it is failed to find all models by the condition, err: %v, cond: %v, rid: %s",
 			err, cond.ToMapStr(), kit.Rid)
@@ -309,7 +311,7 @@ func (m *modelManager) search(kit *rest.Kit, cond universalsql.Condition) ([]met
 func (m *modelManager) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 
 	dataResult := make([]mapstr.MapStr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).All(kit.Ctx,
 		&dataResult); err != nil {
 		blog.Errorf("it is failed to find all models by the condition, err: %v, cond: %v, rid: %s",
 			err, cond.ToMapStr(), kit.Rid)
@@ -326,7 +328,7 @@ func (m *modelManager) delete(kit *rest.Kit, cond universalsql.Condition) (uint6
 			err, cond, kit.Rid)
 		return 0, err
 	}
-	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond.ToMapStr())
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond.ToMapStr())
 	if err != nil {
 		blog.Errorf("it is failed to execute a deletion operation on the table, err: %v, table: %s, rid: %s",
 			err, common.BKTableNameObjDes, kit.Rid)
@@ -339,8 +341,8 @@ func (m *modelManager) delete(kit *rest.Kit, cond universalsql.Condition) (uint6
 // updateSortNumWhenDelete 删除某个模型前，需要将模型分组下排在这个模型后面的前移
 func (m *modelManager) updateSortNumWhenDelete(kit *rest.Kit, delCond map[string]interface{}) error {
 	models := make([]metadata.Object, 0)
-	err := mongodb.Client().Table(common.BKTableNameObjDes).Find(delCond).Fields(common.BKClassificationIDField,
-		common.ObjSortNumberField).All(kit.Ctx, &models)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(delCond).
+		Fields(common.BKClassificationIDField, common.ObjSortNumberField).All(kit.Ctx, &models)
 	if err != nil {
 		blog.Errorf("find models failed, err: %v, filter: %v, rid: %s", err, delCond, kit.Rid)
 		return err
@@ -367,19 +369,22 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 	delCondMap := delCond.ToMapStr()
 
 	// delete model property group
-	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, delCondMap); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx,
+		delCondMap); err != nil {
 		blog.Errorf("delete model attribute group error. err: %v, cond: %s, rid: %s", err, delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
 	// delete model property attribute
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, delCondMap); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Delete(kit.Ctx,
+		delCondMap); err != nil {
 		blog.Errorf("delete model attribute error. err: %v, cond: %s, rid: %s", err, delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
 	// delete model unique
-	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Delete(kit.Ctx, delCondMap); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Delete(kit.Ctx,
+		delCondMap); err != nil {
 		blog.Errorf("delete model unique error. err: %v, cond: %s, rid: %s", err, delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
@@ -391,7 +396,7 @@ func (m *modelManager) cascadeDelete(kit *rest.Kit, objIDs []string) (uint64, er
 	}
 
 	// delete model
-	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, delCondMap)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, delCondMap)
 	if err != nil {
 		blog.Errorf("delete model unique error. err: %v, cond: %s, rid: %s", err, delCondMap, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBDeleteFailed)
@@ -407,7 +412,7 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 
 	// delete quoted instance table
 	instTable := common.GetInstTableName(obj, kit.TenantID)
-	err := mongodb.Client().DropTable(kit.Ctx, instTable)
+	err := mongodb.Shard(kit.ShardOpts()).DropTable(kit.Ctx, instTable)
 	if err != nil {
 		blog.Errorf("drop instance table failed, err: %v, table: %s, rid: %s", err, instTable, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
@@ -418,7 +423,8 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 		common.BKFieldID: input.ID,
 	}
 
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Delete(kit.Ctx, modelDelCond); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Delete(kit.Ctx,
+		modelDelCond); err != nil {
 		blog.Errorf("delete model attribute failed, err: %v, cond: %v, rid: %s", err, modelDelCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
@@ -430,7 +436,8 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 		common.BKPropertyIDField: input.PropertyID,
 	}
 
-	if err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(kit.Ctx, quoteCond); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Delete(kit.Ctx,
+		quoteCond); err != nil {
 		blog.Errorf("delete model quote relations failed, err: %v, filter: %v, rid: %v", err, quoteCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
@@ -440,13 +447,13 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	}
 
 	// delete model property group.
-	if err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, cond); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNamePropertyGroup).Delete(kit.Ctx, cond); err != nil {
 		blog.Errorf("delete model attribute group failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
 	// delete table model.
-	_, err = mongodb.Client().Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond)
+	_, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).DeleteMany(kit.Ctx, cond)
 	if err != nil {
 		blog.Errorf("delete model failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -526,13 +533,13 @@ func (m *modelManager) dropObjectShardingTables(kit *rest.Kit, objID string) err
 // createShardingTable creates a new collection with target name, and fix missing indexes base on given index list.
 func (m *modelManager) createShardingTable(kit *rest.Kit, tableName string, indexes []types.Index) error {
 	// check table existence.
-	tableExists, err := mongodb.Client().HasTable(kit.Ctx, tableName)
+	tableExists, err := mongodb.Shard(kit.ShardOpts()).HasTable(kit.Ctx, tableName)
 	if err != nil {
 		return fmt.Errorf("check sharding table existence failed, %+v", err)
 	}
 	if !tableExists {
-		err = mongodb.Client().CreateTable(kit.Ctx, tableName)
-		if err != nil && !mongodb.Client().IsDuplicatedError(err) {
+		err = mongodb.Shard(kit.ShardOpts()).CreateTable(kit.Ctx, tableName)
+		if err != nil && !mongodb.IsDuplicatedError(err) {
 			return fmt.Errorf("create sharding table failed, %+v", err)
 		}
 	}
@@ -541,7 +548,7 @@ func (m *modelManager) createShardingTable(kit *rest.Kit, tableName string, inde
 	missingIndexes := []types.Index{}
 
 	// get all created table indexes.
-	createdIndexes, err := mongodb.Client().Table(tableName).Indexes(kit.Ctx)
+	createdIndexes, err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Indexes(kit.Ctx)
 	if err != nil {
 		return fmt.Errorf("get created sharding table[%s] indexes failed, %+v", tableName, err)
 	}
@@ -557,7 +564,7 @@ func (m *modelManager) createShardingTable(kit *rest.Kit, tableName string, inde
 
 	// create missing indexes.
 	for _, index := range missingIndexes {
-		err = mongodb.Client().Table(tableName).CreateIndex(kit.Ctx, index)
+		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).CreateIndex(kit.Ctx, index)
 		if err != nil {
 			return fmt.Errorf("create sharding table[%s] index failed, index: %+v, %+v", tableName, index, err)
 		}
@@ -573,8 +580,8 @@ func (m *modelManager) dropShardingTable(kit *rest.Kit, tableName string) error 
 	}
 
 	// check remain data.
-	err := mongodb.Client().Table(tableName).Find(common.KvMap{}).One(kit.Ctx, &common.KvMap{})
-	if err != nil && !mongodb.Client().IsNotFoundError(err) {
+	err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(common.KvMap{}).One(kit.Ctx, &common.KvMap{})
+	if err != nil && !mongodb.IsNotFoundError(err) {
 		return fmt.Errorf("check data failed, can't drop the sharding table[%s], %+v", tableName, err)
 	}
 	if err == nil {
@@ -582,7 +589,7 @@ func (m *modelManager) dropShardingTable(kit *rest.Kit, tableName string) error 
 	}
 
 	// drop the empty table.
-	if err := mongodb.Client().DropTable(kit.Ctx, tableName); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).DropTable(kit.Ctx, tableName); err != nil {
 		return fmt.Errorf("drop sharding table[%s] failed, %+v", tableName, err)
 	}
 	return nil

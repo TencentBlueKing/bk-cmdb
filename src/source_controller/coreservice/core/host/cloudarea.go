@@ -51,7 +51,8 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit,
 	updateDoc := map[string]interface{}{
 		common.BKCloudIDField: input.CloudID,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Update(kit.Ctx, updateFilter, updateDoc); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Update(kit.Ctx, updateFilter,
+		updateDoc); err != nil {
 		blog.Errorf("update host cloud area failed, filter: %v, doc: %v, err: %v, rid: %s", updateFilter, updateDoc,
 			err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
@@ -66,7 +67,7 @@ func validCloudID(kit *rest.Kit, cloudID int64) errors.CCErrorCoder {
 	cloudIDFiler := map[string]interface{}{
 		common.BKCloudIDField: cloudID,
 	}
-	count, err := mongodb.Client().Table(common.BKTableNameBasePlat).Find(cloudIDFiler).Count(kit.Ctx)
+	count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBasePlat).Find(cloudIDFiler).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("find cloud area failed, option: %v, err: %v, rid: %s", cloudIDFiler, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -95,7 +96,7 @@ func validHost(kit *rest.Kit, cloudID int64, hostIDs []int64) errors.CCErrorCode
 	fields := []string{common.BKHostInnerIPField, common.BKHostInnerIPv6Field, common.BKCloudIDField,
 		common.BKHostIDField, common.BKAddressingField}
 
-	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).
 		All(kit.Ctx, &hostSimplify)
 	if err != nil {
 		blog.Errorf("find host failed, option: %v, err: %v, rid: %s", hostFilter, err, kit.Rid)
@@ -185,7 +186,7 @@ func validDuplicatedHostInDB(kit *rest.Kit, hostIDs []int64, cloudID int64, inne
 	fields := []string{common.BKHostInnerIPField, common.BKHostInnerIPv6Field, common.BKCloudIDField,
 		common.BKHostIDField, common.BKAddressingField}
 
-	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(dbHostFilter).Fields(fields...).
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(dbHostFilter).Fields(fields...).
 		All(kit.Ctx, &duplicatedHosts)
 	if err != nil {
 		blog.Errorf("find host failed, option: %v, err: %v, rid: %s", dbHostFilter, err, kit.Rid)
@@ -202,7 +203,8 @@ func validDuplicatedHostInDB(kit *rest.Kit, hostIDs []int64, cloudID int64, inne
 }
 
 // FindCloudAreaHostCount TODO
-func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.CloudAreaHostCount) ([]metadata.CloudAreaHostCountElem, error) {
+func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.CloudAreaHostCount) ([]metadata.
+	CloudAreaHostCountElem, error) {
 	if len(input.CloudIDs) == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_cloud_ids")
 	}
@@ -227,9 +229,11 @@ func (hm *hostManager) FindCloudAreaHostCount(kit *rest.Kit, input metadata.Clou
 			}()
 
 			filter := map[string]interface{}{common.BKCloudIDField: cloudID}
-			hostCnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Count(kit.Ctx)
+			hostCnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(filter).
+				Count(kit.Ctx)
 			if err != nil {
-				blog.ErrorJSON("UpdateHostCloudAreaField failed, db selected failed, table: %s, filter: %s, err: %s, rid: %s", common.BKTableNameBaseHost, filter, err.Error(), kit.Rid)
+				blog.Errorf("count host cloud area failed, table: %s, filter: %v, err: %v, rid: %s",
+					common.BKTableNameBaseHost, filter, err, kit.Rid)
 				if firstErr == nil {
 					firstErr = kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 				}

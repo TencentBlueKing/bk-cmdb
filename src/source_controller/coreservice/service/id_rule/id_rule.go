@@ -43,7 +43,8 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 
 	cond := mapstr.MapStr{common.BKObjIDField: opt.ObjID}
 	allAttr := make([]metadata.Attribute, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(ctx.Kit.Ctx, &allAttr); err != nil {
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond).All(ctx.Kit.Ctx,
+		&allAttr); err != nil {
 		blog.Errorf("find attribute failed, cond: %+v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
@@ -68,7 +69,7 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 	cond = mapstr.MapStr{common.BKObjIDField: opt.ObjID, idField: mapstr.MapStr{common.BKDBIN: opt.IDs}}
 	table := common.GetInstTableName(opt.ObjID, ctx.Kit.TenantID)
 	insts := make([]mapstr.MapStr, 0)
-	if err := mongodb.Client().Table(table).Find(cond).All(ctx.Kit.Ctx, &insts); err != nil {
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(table).Find(cond).All(ctx.Kit.Ctx, &insts); err != nil {
 		blog.Errorf("find instances failed, cond: %+v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
@@ -80,7 +81,7 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 			continue
 		}
 
-		val, err := instances.GetIDRuleVal(ctx.Kit.Ctx, inst, attr, attrTypeMap)
+		val, err := instances.GetIDRuleVal(ctx.Kit, inst, attr, attrTypeMap)
 		if err != nil {
 			blog.Errorf("get id rule val failed, inst: %+v, attr: %+v, err: %v, rid: %s", inst, attr, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, err.Error()))
@@ -102,7 +103,7 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 
 		cond = mapstr.MapStr{common.BKObjIDField: opt.ObjID, idField: idInt64}
 		data := mapstr.MapStr{opt.PropertyID: val}
-		if err = mongodb.Client().Table(table).Update(ctx.Kit.Ctx, cond, data); err != nil {
+		if err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(table).Update(ctx.Kit.Ctx, cond, data); err != nil {
 			blog.Errorf("update instance failed, cond: %+v, data: %+v, err: %v, rid: %s", cond, data, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
 			return

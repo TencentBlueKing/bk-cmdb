@@ -50,9 +50,9 @@ func (m *modelClassification) CreateOneModelClassification(kit *rest.Kit,
 	inputParam.Data.TenantID = kit.TenantID
 
 	id, err := m.save(kit, inputParam.Data)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("request(%s): failed to save the classification(%#v), error: %v", kit.Rid, inputParam.Data, err)
-		if mongodb.Client().IsDuplicatedError(err) {
+		if mongodb.IsDuplicatedError(err) {
 			dupErr := kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 			return &metadata.CreateOneDataResult{}, dupErr
 		}
@@ -86,15 +86,15 @@ func (m *modelClassification) CreateManyModelClassification(kit *rest.Kit,
 	for itemIdx, item := range inputParam.Data {
 
 		if len(item.ClassificationID) == 0 {
-			blog.Errorf("request(%s): failed to create the model classification, because of the classificationID (%#v) is not set",
-				kit.Rid, item.ClassificationID)
+			blog.Errorf("request(%s): failed to create the model classification, because of the "+
+				"classificationID (%#v) is not set", kit.Rid, item.ClassificationID)
 			addExceptionFunc(int64(itemIdx), kit.CCError.Errorf(common.CCErrCommParamsNeedSet,
 				metadata.ClassFieldClassificationID).(errors.CCErrorCoder), &item)
 			continue
 		}
 
 		_, exists, err := m.isExists(kit, item.ClassificationID)
-		if nil != err {
+		if err != nil {
 			blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error: %v",
 				kit.Rid, item.ClassificationID, err)
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
@@ -109,7 +109,7 @@ func (m *modelClassification) CreateManyModelClassification(kit *rest.Kit,
 
 		item.TenantID = kit.TenantID
 		id, err := m.save(kit, item)
-		if nil != err {
+		if err != nil {
 			blog.Errorf("request(%s): it is failed to save the classification(%#v), error: %v", kit.Rid, item,
 				err)
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
@@ -147,15 +147,15 @@ func (m *modelClassification) SetManyModelClassification(kit *rest.Kit,
 	for itemIdx, item := range inputParam.Data {
 
 		if len(item.ClassificationID) == 0 {
-			blog.Errorf("request(%s): it is failed to create the model classification, because of the classificationID (%#v) is not set",
-				kit.Rid, item.ClassificationID)
+			blog.Errorf("request(%s): it is failed to create the model classification, because of the "+
+				"classificationID (%#v) is not set", kit.Rid, item.ClassificationID)
 			addExceptionFunc(int64(itemIdx), kit.CCError.Errorf(common.CCErrCommParamsNeedSet,
 				metadata.ClassFieldClassificationID).(errors.CCErrorCoder), &item)
 			continue
 		}
 
 		origin, exists, err := m.isExists(kit, item.ClassificationID)
-		if nil != err {
+		if err != nil {
 			blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error: %v",
 				kit.Rid, item.ClassificationID, err)
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
@@ -166,9 +166,9 @@ func (m *modelClassification) SetManyModelClassification(kit *rest.Kit,
 
 			cond := mongo.NewCondition()
 			cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID})
-			if _, err := m.update(kit, mapstr.NewFromStruct(item, "field"), cond); nil != err {
-				blog.Errorf("request(%s): it is failed to update some fields(%#v) of the classification by the condition(%#v), error: %v",
-					kit.Rid, item, cond.ToMapStr(), err)
+			if _, err := m.update(kit, mapstr.NewFromStruct(item, "field"), cond); err != nil {
+				blog.Errorf("request(%s): it is failed to update some fields(%#v) of the classification by the "+
+					"condition(%#v), error: %v", kit.Rid, item, cond.ToMapStr(), err)
 				addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 				continue
 			}
@@ -184,7 +184,7 @@ func (m *modelClassification) SetManyModelClassification(kit *rest.Kit,
 		item.TenantID = kit.TenantID
 
 		id, err := m.save(kit, item)
-		if nil != err {
+		if err != nil {
 			blog.Errorf("request(%s): it is failed to save the classification(%#v), error: %v", kit.Rid, item, err)
 			addExceptionFunc(int64(itemIdx), err.(errors.CCErrorCoder), &item)
 			continue
@@ -211,13 +211,13 @@ func (m *modelClassification) SetOneModelClassification(kit *rest.Kit,
 	}
 
 	if len(inputParam.Data.ClassificationID) == 0 {
-		blog.Errorf("request(%s): it is failed to set the model classification, because of the classificationID (%#v) "+
-			"is not set", kit.Rid, inputParam.Data)
+		blog.Errorf("request(%s): it is failed to set the model classification, because of the "+
+			"classificationID (%#v) is not set", kit.Rid, inputParam.Data)
 		return dataResult, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, metadata.ClassFieldClassificationID)
 	}
 
 	origin, exists, err := m.isExists(kit, inputParam.Data.ClassificationID)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("request(%s): it is failed to check the classification ID (%s) is exists, error: %v", kit.Rid,
 			inputParam.Data.ClassificationID, err)
 		return dataResult, err
@@ -235,9 +235,8 @@ func (m *modelClassification) SetOneModelClassification(kit *rest.Kit,
 
 		cond := mongo.NewCondition()
 		cond.Element(&mongo.Eq{Key: metadata.ClassificationFieldID, Val: origin.ID})
-		if _, err := m.update(kit, mapstr.NewFromStruct(inputParam.Data, "field"), cond); nil != err {
-			blog.Errorf("request(%s): it is failed to update some fields(%#v) for a classification by the condition(%#v)"+
-				", error: %v", kit.Rid, inputParam.Data, cond.ToMapStr(), err)
+		if _, err := m.update(kit, mapstr.NewFromStruct(inputParam.Data, "field"), cond); err != nil {
+			blog.Errorf("update classification failed, err: %v, input: %v, rid: %s", err, inputParam.Data, kit.Rid)
 			addExceptionFunc(0, err.(errors.CCErrorCoder), &inputParam.Data)
 			return dataResult, nil
 		}
@@ -248,7 +247,7 @@ func (m *modelClassification) SetOneModelClassification(kit *rest.Kit,
 
 	inputParam.Data.TenantID = kit.TenantID
 	id, err := m.save(kit, inputParam.Data)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("request(%s): it is failed to save the classification(%#v), error: %v", kit.Rid, inputParam.Data,
 			err)
 		addExceptionFunc(0, err.(errors.CCErrorCoder), origin)
@@ -264,17 +263,17 @@ func (m *modelClassification) UpdateModelClassification(kit *rest.Kit,
 	inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
 	cond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
-	if nil != err {
+	if err != nil {
 		blog.Errorf("request(%s): it is failed to convert the condition(%#v) from mapstr into condition object, "+
 			"error: %v", kit.Rid, inputParam.Condition, err)
 		return &metadata.UpdatedCount{}, err
 	}
 
 	cnt, err := m.update(kit, inputParam.Data, cond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to update some fields(%#v) for some classifications by the condition(%#v)"+
-			", error: %v", kit.Rid, inputParam.Data, inputParam.Condition, err)
-		if mongodb.Client().IsDuplicatedError(err) {
+	if err != nil {
+		blog.Errorf("update classifications failed, err: %v, data: %v, cond: %v, rid: %v", err, inputParam.Data,
+			inputParam.Condition, kit.Rid)
+		if mongodb.IsDuplicatedError(err) {
 			dupErr := kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 			return &metadata.UpdatedCount{}, dupErr
 		}
@@ -288,16 +287,16 @@ func (m *modelClassification) DeleteModelClassification(kit *rest.Kit,
 	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 
 	deleteCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to convert the condition (%#v) from mapstr into condition object, error: %v",
-			kit.Rid, inputParam.Condition, err)
+	if err != nil {
+		blog.Errorf("convert the condition from mapstr failed, err: %v, cond: %v, rid: %s", err,
+			inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, kit.CCError.New(common.CCErrCommHTTPInputInvalid, err.Error())
 	}
 
 	cnt, exists, err := m.hasModel(kit, deleteCond)
-	if nil != err {
-		blog.Errorf("request(%s): it is failed to check whether the classifications which are marked by the condition "+
-			"(%#v) have some models, error: %v", kit.Rid, deleteCond.ToMapStr(), err)
+	if err != nil {
+		blog.Errorf("check whether the classifications which are marked by the condition (%#v) have models failed,"+
+			" err: %v, rid: %s", deleteCond.ToMapStr(), err, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 	if exists {
@@ -305,9 +304,8 @@ func (m *modelClassification) DeleteModelClassification(kit *rest.Kit,
 	}
 
 	cnt, err = m.delete(kit, deleteCond)
-	if nil != err {
-		blog.Errorf("request(%s): failed to delete the classification whci are marked by the condition(%#v), error: %v",
-			kit.Rid, deleteCond.ToMapStr(), err)
+	if err != nil {
+		blog.Errorf("delete the classification failed, err: %v, cond: %v, rid: %s", err, deleteCond, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
@@ -322,7 +320,7 @@ func (m *modelClassification) SearchModelClassification(kit *rest.Kit, inputPara
 		Info: []metadata.Classification{},
 	}
 	searchCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())
-	if nil != err {
+	if err != nil {
 		blog.Errorf("convert the condition from mapstr into condition object failed, cond: %v, err: %v, rid: %s",
 			inputParam.Condition, err, kit.Rid)
 		return dataResult, err

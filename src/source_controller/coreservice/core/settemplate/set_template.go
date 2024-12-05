@@ -39,7 +39,7 @@ func (p *setTemplateOperation) ValidateBusinessID(kit *rest.Kit, bizID int64) er
 	filter := map[string]interface{}{
 		common.BKAppIDField: bizID,
 	}
-	count, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).Count(kit.Ctx)
+	count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseApp).Find(filter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("db select biz failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -60,7 +60,7 @@ func (p *setTemplateOperation) ValidateServiceTemplateIDs(kit *rest.Kit, bizID i
 		},
 		common.BKAppIDField: bizID,
 	}
-	count, err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).Count(kit.Ctx)
+	count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplate).Find(filter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get service template id field failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -114,7 +114,8 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 		common.BKFieldName:  setTemplate.Name,
 		common.BKAppIDField: setTemplate.BizID,
 	}
-	sameNameCount, err := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(nameFilter).Count(kit.Ctx)
+	sameNameCount, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetTemplate).Find(nameFilter).
+		Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("filter same name records failed, filter: %+v, err: %v, rid: %s", nameFilter, err, kit.Rid)
 		return setTemplate, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -125,13 +126,14 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 	}
 
 	// generate id field
-	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameSetTemplate)
-	if nil != err {
+	id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameSetTemplate)
+	if err != nil {
 		blog.Errorf("%s generate id failed, err: %v, rid: %s", common.BKTableNameSetTemplate, err, kit.Rid)
 		return setTemplate, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
 	}
 	setTemplate.ID = int64(id)
-	if err := mongodb.Client().Table(common.BKTableNameSetTemplate).Insert(kit.Ctx, setTemplate); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetTemplate).Insert(kit.Ctx,
+		setTemplate); err != nil {
 		blog.Errorf("db insert failed, doc: %+v, err: %v, rid: %s", setTemplate, err, kit.Rid)
 		return setTemplate, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 	}
@@ -147,7 +149,7 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 				TenantID:          kit.TenantID,
 			})
 		}
-		if err := mongodb.Client().Table(common.BKTableNameSetServiceTemplateRelation).Insert(kit.Ctx,
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetServiceTemplateRelation).Insert(kit.Ctx,
 			relations); err != nil {
 			blog.Errorf("db insert failed, doc: %+v, err: %v, rid: %s", setTemplate, err, kit.Rid)
 			return setTemplate, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
@@ -170,8 +172,8 @@ func (p *setTemplateOperation) refreshSetTemplate(kit *rest.Kit, option metadata
 		relationFilter := map[string]interface{}{
 			common.BKSetTemplateIDField: setTemplateID,
 		}
-		if err := mongodb.Client().Table(common.BKTableNameSetServiceTemplateRelation).Find(relationFilter).All(kit.Ctx,
-			&relations); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetServiceTemplateRelation).
+			Find(relationFilter).All(kit.Ctx, &relations); err != nil {
 			blog.Errorf("db get relation failed, filter: %+v, err: %+v, rid: %s", relationFilter, err, kit.Rid)
 		}
 
@@ -192,8 +194,8 @@ func (p *setTemplateOperation) refreshSetTemplate(kit *rest.Kit, option metadata
 			}
 		}
 		if len(addRelations) > 0 {
-			if err := mongodb.Client().Table(common.BKTableNameSetServiceTemplateRelation).Insert(kit.Ctx,
-				addRelations); err != nil {
+			if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetServiceTemplateRelation).
+				Insert(kit.Ctx, addRelations); err != nil {
 				blog.Errorf("insert relations failed, docs: %+v, err: %v, rid: %s", addRelations, err, kit.Rid)
 				return setTemplate, kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 			}
@@ -218,8 +220,8 @@ func (p *setTemplateOperation) refreshSetTemplate(kit *rest.Kit, option metadata
 					common.BKDBIN: removeIDs,
 				},
 			}
-			if err := mongodb.Client().Table(common.BKTableNameSetServiceTemplateRelation).Delete(kit.Ctx,
-				removeFilter); err != nil {
+			if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetServiceTemplateRelation).
+				Delete(kit.Ctx, removeFilter); err != nil {
 				blog.Errorf("remove no need service template ids failed, filter: %+v, err: %v, rid: %s", removeFilter,
 					err, kit.Rid)
 				return setTemplate, kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
@@ -232,7 +234,8 @@ func (p *setTemplateOperation) refreshSetTemplate(kit *rest.Kit, option metadata
 	filter := map[string]interface{}{
 		common.BKFieldID: setTemplateID,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameSetTemplate).Update(kit.Ctx, filter, setTemplate); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetTemplate).Update(kit.Ctx, filter,
+		setTemplate); err != nil {
 		blog.Errorf("db update %s failed, err: %v, rid: %s", common.BKTableNameSetTemplate, err, kit.Rid)
 		return setTemplate, kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
@@ -253,9 +256,9 @@ func (p *setTemplateOperation) UpdateSetTemplate(kit *rest.Kit, setTemplateID in
 	filter := map[string]interface{}{
 		common.BKFieldID: setTemplateID,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(filter).One(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetTemplate).Find(filter).One(kit.Ctx,
 		&setTemplate); err != nil {
-		if mongodb.Client().IsNotFoundError(err) {
+		if mongodb.IsNotFoundError(err) {
 			blog.Errorf("set template not found, id: %d, rid: %s", setTemplateID, kit.Rid)
 			return setTemplate, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
@@ -272,7 +275,8 @@ func (p *setTemplateOperation) UpdateSetTemplate(kit *rest.Kit, setTemplateID in
 				common.BKDBNE: setTemplate.ID,
 			},
 		}
-		sameNameCount, err := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(sameNameFilter).Count(kit.Ctx)
+		sameNameCount, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetTemplate).Find(sameNameFilter).
+			Count(kit.Ctx)
 		if err != nil {
 			blog.Errorf("db get %s failed, filter: %+v, err: %v, rid: %s", common.BKTableNameSetTemplate,
 				sameNameFilter, err, kit.Rid)
@@ -301,7 +305,8 @@ func (p *setTemplateOperation) DeleteSetTemplate(kit *rest.Kit, bizID int64,
 			common.BKDBIN: option.SetTemplateIDs,
 		},
 	}
-	referenceCount, err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(setFilter).Count(kit.Ctx)
+	referenceCount, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseSet).Find(setFilter).
+		Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get template reference count failed, filter: %+v, err: %v, rid: %s", setFilter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -320,7 +325,8 @@ func (p *setTemplateOperation) DeleteSetTemplate(kit *rest.Kit, bizID int64,
 			common.BKDBIN: option.SetTemplateIDs,
 		},
 	}
-	if err := mongodb.Client().Table(common.BKTableNameSetTemplate).Delete(kit.Ctx, setTplFilter); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetTemplate).Delete(kit.Ctx,
+		setTplFilter); err != nil {
 		blog.Errorf("db remove failed, filter: %+v, err: %v, rid: %s", setTplFilter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
 	}
@@ -333,7 +339,7 @@ func (p *setTemplateOperation) DeleteSetTemplate(kit *rest.Kit, bizID int64,
 			common.BKDBIN: option.SetTemplateIDs,
 		},
 	}
-	if err := mongodb.Client().Table(common.BKTableNameSetServiceTemplateRelation).Delete(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetServiceTemplateRelation).Delete(kit.Ctx,
 		relationFilter); err != nil {
 		blog.Errorf("db remove relations failed, filter: %+v, err: %v, rid: %s", relationFilter, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
@@ -351,9 +357,9 @@ func (p *setTemplateOperation) GetSetTemplate(kit *rest.Kit, bizID int64, setTem
 		common.BKFieldID:    setTemplateID,
 		common.BKAppIDField: bizID,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(filter).One(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetTemplate).Find(filter).One(kit.Ctx,
 		&setTemplate); err != nil {
-		if mongodb.Client().IsNotFoundError(err) {
+		if mongodb.IsNotFoundError(err) {
 			blog.Errorf("db select template failed, not found, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 			return setTemplate, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
@@ -380,7 +386,7 @@ func (p *setTemplateOperation) ListSetTemplate(kit *rest.Kit, bizID int64, optio
 			common.BKDBIN: option.SetTemplateIDs,
 		}
 	}
-	query := mongodb.Client().Table(common.BKTableNameSetTemplate).Find(filter)
+	query := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetTemplate).Find(filter)
 	total, err := query.Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("db count template failed, filter: %s, err: %v, rid: %s", filter, err, kit.Rid)
@@ -418,8 +424,8 @@ func (p *setTemplateOperation) ListSetServiceTemplateRelations(kit *rest.Kit, bi
 	}
 
 	setServiceTemplateRelations := make([]metadata.SetServiceTemplateRelation, 0)
-	if err := mongodb.Client().Table(common.BKTableNameSetServiceTemplateRelation).Find(filter).All(kit.Ctx,
-		&setServiceTemplateRelations); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetServiceTemplateRelation).Find(filter).
+		All(kit.Ctx, &setServiceTemplateRelations); err != nil {
 		blog.Errorf("db select templates relations failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return setServiceTemplateRelations, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -449,7 +455,7 @@ func (p *setTemplateOperation) ListSetTplRelatedSvcTpl(kit *rest.Kit, bizID, set
 
 	// is it appropriate to visit service template table here?
 	serviceTemplates := make([]metadata.ServiceTemplate, 0)
-	if err := mongodb.Client().Table(common.BKTableNameServiceTemplate).Find(filter).All(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplate).Find(filter).All(kit.Ctx,
 		&serviceTemplates); err != nil {
 		blog.Errorf("db select service template, serviceTemplateIDs: %+v, err: %v, rid: %s", serviceTemplateIDs,
 			err, kit.Rid)

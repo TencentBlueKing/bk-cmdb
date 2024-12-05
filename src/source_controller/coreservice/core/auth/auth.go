@@ -26,20 +26,22 @@ import (
 var _ core.AuthOperation = (*authOperation)(nil)
 
 type authOperation struct {
-	dbProxy dal.DB
+	dbProxy dal.Dal
 }
 
 // New create a new instance manager instance
-func New(dbProxy dal.DB) core.AuthOperation {
+func New(dbProxy dal.Dal) core.AuthOperation {
 	return &authOperation{
 		dbProxy: dbProxy,
 	}
 }
 
 // SearchAuthResource TODO
-func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder) {
+func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64,
+	[]map[string]interface{}, errors.CCErrorCoder) {
+
 	if param.Collection == "" {
-		blog.ErrorJSON("search auth resource in empty mongo collection, param: %s, rid: %s", param, kit.Rid)
+		blog.Errorf("search auth resource in empty mongo collection, param: %v, rid: %s", param, kit.Rid)
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "collection")
 	}
 	limit := param.Limit
@@ -50,10 +52,10 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 	if limit == 0 {
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "page.limit")
 	}
-	f := a.dbProxy.Table(param.Collection).Find(param.Condition)
+	f := a.dbProxy.Shard(kit.ShardOpts()).Table(param.Collection).Find(param.Condition)
 	count, err := f.Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("count auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param, kit.Rid)
+		blog.Errorf("count auth resource failed, err: %v, input param: %v, rid: %s", err, param, kit.Rid)
 		return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if len(param.Fields) != 0 {
@@ -65,7 +67,7 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 		hosts := make([]metadata.HostMapStr, 0)
 		err = f.Start(uint64(param.Offset)).Limit(uint64(limit)).All(kit.Ctx, &hosts)
 		if err != nil {
-			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param, kit.Rid)
+			blog.Errorf("search auth resource failed, err: %v, input param: %v, rid: %s", err, param, kit.Rid)
 			return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		info = make([]map[string]interface{}, len(hosts))
@@ -76,7 +78,7 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 		info = make([]map[string]interface{}, 0)
 		err = f.Start(uint64(param.Offset)).Limit(uint64(limit)).All(kit.Ctx, &info)
 		if err != nil {
-			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param, kit.Rid)
+			blog.Errorf("search auth resource failed, err: %v, input param: %v, rid: %s", err, param, kit.Rid)
 			return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 	}

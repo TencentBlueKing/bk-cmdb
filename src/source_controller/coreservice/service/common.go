@@ -102,7 +102,8 @@ func (s *coreService) GroupRelResByIDs(cts *rest.Contexts) {
 	}
 
 	resources := make([]mapstr.MapStr, 0)
-	err := mongodb.Client().Table(tableName).Find(filter).Fields(opt.IDField, opt.RelField).All(cts.Kit.Ctx, &resources)
+	err := mongodb.Shard(cts.Kit.ShardOpts()).Table(tableName).Find(filter).Fields(opt.IDField, opt.RelField).
+		All(cts.Kit.Ctx, &resources)
 	if err != nil {
 		blog.Errorf("get all %s resource by filter(%+v) failed, err: %v, rid: %s", tableName, filter, err, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))

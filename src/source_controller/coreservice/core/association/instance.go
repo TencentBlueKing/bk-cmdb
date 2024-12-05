@@ -59,7 +59,7 @@ func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID str
 
 	results := make([]metadata.InstAsst, 0)
 	asstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
-	instHandler := mongodb.Client().Table(asstTableName).Find(param.Condition).Fields(param.Fields...)
+	instHandler := mongodb.Shard(kit.ShardOpts()).Table(asstTableName).Find(param.Condition).Fields(param.Fields...)
 	err := instHandler.Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).
 		Sort(param.Page.Sort).All(kit.Ctx, &results)
 	return results, err
@@ -68,7 +68,7 @@ func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID str
 func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, objID string, cond mapstr.MapStr) (uint64,
 	error) {
 	asstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
-	return mongodb.Client().Table(asstTableName).Find(cond).Count(kit.Ctx)
+	return mongodb.Shard(kit.ShardOpts()).Table(asstTableName).Find(cond).Count(kit.Ctx)
 }
 
 func (m *associationInstance) checkAssociationMapping(kit *rest.Kit, objAsstID string, instID int64,
@@ -139,7 +139,7 @@ func (m *associationInstance) checkAssociationMapping(kit *rest.Kit, objAsstID s
 }
 
 func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (id uint64, err error) {
-	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameInstAsst)
+	id, err = mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameInstAsst)
 	if err != nil {
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
@@ -148,7 +148,7 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 	asstInst.TenantID = kit.TenantID
 
 	objInstAsstTableName := common.GetObjectInstAsstTableName(asstInst.ObjectID, kit.TenantID)
-	err = mongodb.Client().Table(objInstAsstTableName).Insert(kit.Ctx, asstInst)
+	err = mongodb.Shard(kit.ShardOpts()).Table(objInstAsstTableName).Insert(kit.Ctx, asstInst)
 	if err != nil {
 		return id, err
 	}
@@ -159,7 +159,7 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 	}
 
 	asstObjInstAsstTableName := common.GetObjectInstAsstTableName(asstInst.AsstObjectID, kit.TenantID)
-	err = mongodb.Client().Table(asstObjInstAsstTableName).Insert(kit.Ctx, asstInst)
+	err = mongodb.Shard(kit.ShardOpts()).Table(asstObjInstAsstTableName).Insert(kit.Ctx, asstInst)
 	return id, err
 }
 
@@ -167,10 +167,10 @@ func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID str
 	cond mapstr.MapStr) (uint64, error) {
 	asstInstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
 	associations := make([]metadata.InstAsst, 0)
-	if err := mongodb.Client().Table(asstInstTableName).Find(cond).Fields(common.BKObjIDField, common.BKAsstObjIDField).
-		All(kit.Ctx, &associations); err != nil {
-		blog.ErrorJSON("delete instance association error. objID: %s, cond: %s, err: %s, rid: %s",
-			objID, cond, err.Error(), kit.Rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(asstInstTableName).Find(cond).Fields(common.BKObjIDField,
+		common.BKAsstObjIDField).All(kit.Ctx, &associations); err != nil {
+		blog.Errorf("delete instance association error. objID: %s, cond: %v, err: %v, rid: %s", objID, cond, err,
+			kit.Rid)
 		return 0, err
 	}
 
@@ -192,18 +192,18 @@ func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID str
 		objIDMap[asstObjID] = struct{}{}
 
 		asstTableName := common.GetObjectInstAsstTableName(asstObjID, kit.TenantID)
-		err := mongodb.Client().Table(asstTableName).Delete(kit.Ctx, cond)
+		err := mongodb.Shard(kit.ShardOpts()).Table(asstTableName).Delete(kit.Ctx, cond)
 		if err != nil {
-			blog.ErrorJSON("delete instance association error. objID: %s, cond: %s, err: %s, rid: %s",
-				asstObjID, cond, err.Error(), kit.Rid)
+			blog.Errorf("delete instance association error. objID: %s, cond: %v, err: %v, rid: %s",
+				asstObjID, cond, err, kit.Rid)
 			return 0, err
 		}
 	}
 
-	cnt, err := mongodb.Client().Table(asstInstTableName).DeleteMany(kit.Ctx, cond)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(asstInstTableName).DeleteMany(kit.Ctx, cond)
 	if err != nil {
-		blog.ErrorJSON("delete instance association error. objID: %s, cond: %s, err: %s, rid: %s",
-			objID, cond, err.Error(), kit.Rid)
+		blog.Errorf("delete instance association error. objID: %s, cond: %v, err: %v, rid: %s",
+			objID, cond, err, kit.Rid)
 		return 0, err
 	}
 	return cnt, nil
@@ -355,13 +355,13 @@ func (m *associationInstance) checkInstAsstCreateData(kit *rest.Kit, inputParam 
 	checkAssoCond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	assoItems, err := m.search(kit, checkAssoCond)
 	if err != nil {
-		blog.ErrorJSON("search associations with condition: %s failed, err: %s, rid: %s",
-			checkAssoCond.ToMapStr(), err.Error(), kit.Rid)
+		blog.Errorf("search associations with condition: %v failed, err: %v, rid: %s",
+			checkAssoCond.ToMapStr(), err, kit.Rid)
 		return "", err
 	}
 
 	if len(assoItems) != 1 {
-		blog.ErrorJSON("association with cond: %s not exist, rid: %s", checkAssoCond.ToMapStr(), kit.Rid)
+		blog.Errorf("association with cond: %v not exist, rid: %s", checkAssoCond.ToMapStr(), kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCERrrCoreServiceConcurrent)
 	}
 
@@ -445,8 +445,8 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, objID str
 	}
 
 	instAsstItems, err := m.searchInstanceAssociation(kit, objID, param)
-	if nil != err {
-		blog.ErrorJSON("search inst association err: %s, objID: %s, param: %s, rid: %s", err, objID, param, kit.Rid)
+	if err != nil {
+		blog.Errorf("search inst association err: %v, objID: %s, param: %s, rid: %s", err, objID, param, kit.Rid)
 		return nil, err
 	}
 
@@ -455,7 +455,7 @@ func (m *associationInstance) SearchInstanceAssociation(kit *rest.Kit, objID str
 	// the InstAsst number will be counted by default.
 	if !param.DisableCounter {
 		count, err := m.countInstanceAssociation(kit, objID, param.Condition)
-		if nil != err {
+		if err != nil {
 			blog.Errorf("search model instance associations count err: %s, rid: %s", err.Error(), kit.Rid)
 			return nil, err
 		}
@@ -496,7 +496,7 @@ func (m *associationInstance) DeleteInstanceAssociation(kit *rest.Kit, objID str
 	}
 
 	cnt, err := m.deleteInstanceAssociation(kit, objID, inputParam.Condition)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("delete inst association [%#v] err [%#v], rid: %s", inputParam.Condition, err, kit.Rid)
 		return nil, err
 	}

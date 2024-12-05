@@ -64,13 +64,13 @@ var (
 
 // Count TODO
 func (m *modelAttribute) Count(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(kit.Ctx)
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).Count(kit.Ctx)
 	return cnt, err
 }
 
 func (m *modelAttribute) saveTableAttr(kit *rest.Kit, attribute metadata.Attribute) (id uint64, err error) {
 
-	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjAttDes)
+	id, err = mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameObjAttDes)
 	if err != nil {
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
@@ -103,7 +103,7 @@ func (m *modelAttribute) saveTableAttr(kit *rest.Kit, attribute metadata.Attribu
 		blog.Errorf("save table attr failed, attribute: %v, err: %v, rid: %s", attribute, err, kit.Rid)
 		return 0, err
 	}
-	if err = mongodb.Client().Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute); err != nil {
+	if err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute); err != nil {
 		blog.Errorf("save table attr failed, attr: %v, err: %v, rid: %s", attribute, err, kit.Rid)
 		return id, err
 	}
@@ -112,7 +112,7 @@ func (m *modelAttribute) saveTableAttr(kit *rest.Kit, attribute metadata.Attribu
 }
 
 func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id uint64, err error) {
-	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjAttDes)
+	id, err = mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameObjAttDes)
 	if err != nil {
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
@@ -157,7 +157,7 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 		return 0, err
 	}
 
-	if err = mongodb.Client().Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute); err != nil {
+	if err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, attribute); err != nil {
 		return 0, err
 	}
 	if attribute.PropertyType == common.FieldTypeIDRule {
@@ -171,7 +171,7 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 			},
 		}
 		table := common.GetInstTableName(attribute.ObjectID, kit.TenantID)
-		if err = mongodb.Client().Table(table).CreateIndex(kit.Ctx, idx); err != nil {
+		if err = mongodb.Shard(kit.ShardOpts()).Table(table).CreateIndex(kit.Ctx, idx); err != nil {
 			blog.Errorf("create index failed, index: %+v, err: %v, rid: %s", idx, err, kit.Rid)
 			return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
 		}
@@ -184,8 +184,8 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 			TenantID: kit.TenantID,
 			LastTime: metadata.Now(),
 		}
-		err = mongodb.Client().Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
-		if nil != err {
+		err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
+		if err != nil {
 			blog.Errorf("create unique failed, val: %+v, err: %v, rid: %s", &unique, err, kit.Rid)
 			return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
 		}
@@ -231,10 +231,10 @@ func (m *modelAttribute) checkUnique(kit *rest.Kit, isCreate bool, objID, proper
 	}
 
 	resultAttrs := make([]metadata.Attribute, 0)
-	err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &resultAttrs)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &resultAttrs)
 	blog.V(5).Infof("checkUnique db cond:%#v, result:%#v, rid:%s", cond, resultAttrs, kit.Rid)
 	if err != nil {
-		blog.ErrorJSON("checkUnique select error. err:%s, cond:%s, rid:%s", err.Error(), cond, kit.Rid)
+		blog.Errorf("checkUnique select error, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
@@ -323,7 +323,7 @@ func (m *modelAttribute) checkTableAttributeValidity(kit *rest.Kit, attribute me
 				common.AttributePlaceHolderMaxLength)
 		}
 		match, err := regexp.MatchString(common.FieldTypeLongCharRegexp, attribute.Placeholder)
-		if nil != err || !match {
+		if err != nil || !match {
 			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPlaceHolder)
 		}
 	}
@@ -721,12 +721,13 @@ func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universa
 
 	err = m.checkUpdate(kit, data, cond, isSync)
 	if err != nil {
-		blog.ErrorJSON("checkUpdate error. data:%s, cond:%s, rid:%s", data, cond, kit.Rid)
+		blog.Error("check update error. data: %v, cond: %v, rid: %s", data, cond, kit.Rid)
 		return cnt, err
 	}
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjAttDes).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
-	if nil != err {
-		blog.Errorf("request(%s): database operation is failed, error info is %s", kit.Rid, err.Error())
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).UpdateMany(kit.Ctx,
+		cond.ToMapStr(), data)
+	if err != nil {
+		blog.Errorf("update object attribute failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return 0, err
 	}
 
@@ -735,14 +736,15 @@ func (m *modelAttribute) update(kit *rest.Kit, data mapstr.MapStr, cond universa
 
 func (m *modelAttribute) newSearch(kit *rest.Kit, cond mapstr.MapStr) (resultAttrs []metadata.Attribute, err error) {
 	resultAttrs = []metadata.Attribute{}
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &resultAttrs)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &resultAttrs)
 	return resultAttrs, err
 }
 
 func (m *modelAttribute) search(kit *rest.Kit, cond universalsql.Condition) (resultAttrs []metadata.Attribute,
 	err error) {
 	resultAttrs = []metadata.Attribute{}
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(kit.Ctx, &resultAttrs)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(kit.Ctx,
+		&resultAttrs)
 	return resultAttrs, err
 }
 
@@ -750,7 +752,7 @@ func (m *modelAttribute) searchWithSort(kit *rest.Kit, cond metadata.QueryCondit
 	err error) {
 	resultAttrs = []metadata.Attribute{}
 
-	instHandler := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.Condition)
+	instHandler := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond.Condition)
 	err = instHandler.Start(uint64(cond.Page.Start)).Limit(uint64(cond.Page.Limit)).Sort(cond.Page.Sort).All(kit.Ctx,
 		&resultAttrs)
 
@@ -761,7 +763,8 @@ func (m *modelAttribute) searchReturnMapStr(kit *rest.Kit, cond universalsql.Con
 	err error) {
 
 	resultAttrs = []mapstr.MapStr{}
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).All(kit.Ctx, &resultAttrs)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond.ToMapStr()).
+		All(kit.Ctx, &resultAttrs)
 	return resultAttrs, err
 }
 
@@ -774,8 +777,9 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 		common.BKObjIDField, common.BKAppIDField}
 
 	condMap := cond.ToMapStr()
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Find(condMap).Fields(fields...).All(kit.Ctx, &resultAttrs)
-	if nil != err {
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(condMap).Fields(fields...).
+		All(kit.Ctx, &resultAttrs)
+	if err != nil {
 		blog.Errorf("request(%s): database count operation is failed, error info is %s", kit.Rid, err.Error())
 		return 0, err
 	}
@@ -794,7 +798,8 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 		}
 
 		if !isFromModel && attr.TemplateID != 0 {
-			return 0, kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attr.ID, attr.TemplateID)
+			return 0, kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteAttr, attr.ID,
+				attr.TemplateID)
 		}
 		if attr.PropertyType == common.FieldTypeIDRule {
 			idRuleAttrMap[attr.ObjectID] = append(idRuleAttrMap[attr.ObjectID], attr.ID)
@@ -836,8 +841,8 @@ func (m *modelAttribute) delete(kit *rest.Kit, cond universalsql.Condition, isFr
 		}
 	}
 
-	deleteCnt, err := mongodb.Client().Table(common.BKTableNameObjAttDes).DeleteMany(kit.Ctx, condMap)
-	if nil != err {
+	deleteCnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).DeleteMany(kit.Ctx, condMap)
+	if err != nil {
 		blog.Errorf("request(%s): database deletion operation is failed, error info is %s", kit.Rid, err.Error())
 		return deleteCnt, err
 	}
@@ -889,7 +894,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []m
 				}
 
 				if object == common.BKInnerObjIDHost {
-					if err := m.cleanHostAttributeField(kit.Ctx, kit.TenantID, objField); err != nil {
+					if err := m.cleanHostAttributeField(kit, objField); err != nil {
 						return err
 					}
 					continue
@@ -903,7 +908,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []m
 							bizID:  0,
 							fields: fields,
 						}
-						if err := m.cleanHostAttributeField(kit.Ctx, kit.TenantID, ele); err != nil {
+						if err := m.cleanHostAttributeField(kit, ele); err != nil {
 							return err
 						}
 						continue
@@ -935,7 +940,7 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []m
 	}
 
 	// step 3: clean host apply fields
-	if err := m.cleanHostApplyField(kit.Ctx, kit.TenantID, hostApplyFields); err != nil {
+	if err := m.cleanHostApplyField(kit, hostApplyFields); err != nil {
 		return err
 	}
 
@@ -977,7 +982,7 @@ func (m *modelAttribute) getObjAndHostApplyFields(kit *rest.Kit, attrs []metadat
 
 func (m *modelAttribute) dropColumns(kit *rest.Kit, object, collName string, filter types.Filter,
 	fields []string) error {
-	instCount, err := mongodb.Client().Table(collName).Find(filter).Count(kit.Ctx)
+	instCount, err := mongodb.Shard(kit.ShardOpts()).Table(collName).Find(filter).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count instances with the attribute to delete failed, table: %s, cond: %v, fields: %v, err: %v, "+
 			"rid: %s", collName, filter, fields, err, kit.Rid)
@@ -987,8 +992,8 @@ func (m *modelAttribute) dropColumns(kit *rest.Kit, object, collName string, fil
 	instIDField := common.GetInstIDField(object)
 	for start := uint64(0); start < instCount; start += pageSize {
 		insts := make([]map[string]interface{}, 0)
-		err := mongodb.Client().Table(collName).Find(filter).Start(0).Limit(pageSize).Fields(instIDField).
-			All(kit.Ctx, &insts)
+		err := mongodb.Shard(kit.ShardOpts()).Table(collName).Find(filter).Start(0).Limit(pageSize).Fields(
+			instIDField).All(kit.Ctx, &insts)
 		if err != nil {
 			blog.Errorf("get instance ids with the attr to delete failed, table: %s, cond: %v, fields: %v, err: %v, "+
 				"rid: %s", collName, filter, fields, err, kit.Rid)
@@ -1015,7 +1020,7 @@ func (m *modelAttribute) dropColumns(kit *rest.Kit, object, collName string, fil
 			},
 		}
 
-		if err := mongodb.Client().Table(collName).DropColumns(kit.Ctx, instFilter, fields); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table(collName).DropColumns(kit.Ctx, instFilter, fields); err != nil {
 			blog.Error("delete object's attribute from instance failed, table: %s, cond: %v, fields: %v, err: %v, "+
 				"rid: %s", collName, instFilter, fields, err, kit.Rid)
 			return err
@@ -1045,12 +1050,14 @@ func (m *modelAttribute) cleanAttrTemplateRelation(kit *rest.Kit, attrs []metada
 		}
 		switch objID {
 		case common.BKInnerObjIDSet:
-			if err := mongodb.Client().Table(common.BKTableNameSetTemplateAttr).Delete(kit.Ctx, cond); err != nil {
+			if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetTemplateAttr).Delete(kit.Ctx,
+				cond); err != nil {
 				return err
 			}
 
 		case common.BKInnerObjIDModule:
-			if err := mongodb.Client().Table(common.BKTableNameServiceTemplateAttr).Delete(kit.Ctx, cond); err != nil {
+			if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplateAttr).Delete(kit.Ctx,
+				cond); err != nil {
 				return err
 			}
 		}
@@ -1061,7 +1068,7 @@ func (m *modelAttribute) cleanAttrTemplateRelation(kit *rest.Kit, attrs []metada
 
 const pageSize = 2000
 
-func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID string, info bizObjectFields) error {
+func (m *modelAttribute) cleanHostAttributeField(kit *rest.Kit, info bizObjectFields) error {
 	cond := mapstr.MapStr{}
 	// biz id = 0 means all the hosts.
 	// TODO: optimize when the filed is a public filed in all the host instances. handle with page
@@ -1072,7 +1079,8 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 		}
 	}
 
-	hostCount, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Count(ctx)
+	hostCount, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(cond).
+		Count(kit.Ctx)
 	if err != nil {
 		return err
 	}
@@ -1094,8 +1102,8 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 
 	for start := uint64(0); start < hostCount; start += pageSize {
 		hostList := make([]hostInst, 0)
-		err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Start(start).Limit(pageSize).Fields(common.BKHostIDField).All(ctx,
-			&hostList)
+		err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(cond).Start(start).
+			Limit(pageSize).Fields(common.BKHostIDField).All(kit.Ctx, &hostList)
 		if err != nil {
 			return err
 		}
@@ -1113,7 +1121,7 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 			common.BKHostIDField: mapstr.MapStr{common.BKDBIN: ids},
 			common.BKDBOR:        existConds,
 		}
-		if err := mongodb.Client().Table(common.BKTableNameBaseHost).DropColumns(ctx, hostFilter,
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).DropColumns(kit.Ctx, hostFilter,
 			info.fields); err != nil {
 			return fmt.Errorf("clean host biz attribute %v failed, err: %v", info.fields, err)
 		}
@@ -1123,8 +1131,7 @@ func (m *modelAttribute) cleanHostAttributeField(ctx context.Context, ownerID st
 
 }
 
-func (m *modelAttribute) cleanHostApplyField(ctx context.Context, ownerID string,
-	hostApplyFields map[int64][]int64) error {
+func (m *modelAttribute) cleanHostApplyField(kit *rest.Kit, hostApplyFields map[int64][]int64) error {
 	orCond := make([]map[string]interface{}, 0)
 	for bizID, attrIDs := range hostApplyFields {
 		attrCond := map[string]interface{}{
@@ -1143,8 +1150,8 @@ func (m *modelAttribute) cleanHostApplyField(ctx context.Context, ownerID string
 	}
 	cond := make(map[string]interface{})
 	cond[common.BKDBOR] = orCond
-	if err := mongodb.Client().Table(common.BKTableNameHostApplyRule).Delete(ctx, cond); err != nil {
-		blog.ErrorJSON("cleanHostApplyField failed, err: %s, cond: %s", err, cond)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameHostApplyRule).Delete(kit.Ctx, cond); err != nil {
+		blog.Errorf("delete host apply rule field failed, err: %v, cond: %s, rid: %s", err, cond, kit.Rid)
 		return err
 	}
 	return nil
@@ -1207,7 +1214,8 @@ func (m *modelAttribute) saveCheck(kit *rest.Kit, attr metadata.Attribute) error
 
 	dbAttrs := make([]metadata.Attribute, 0)
 	cond := mapstr.MapStr{common.BKObjIDField: attr.ObjectID}
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &dbAttrs); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx,
+		&dbAttrs); err != nil {
 		blog.Errorf("get %s attributes failed, err: %v, rid: %s", attr.ObjectID, err, kit.Rid)
 		return err
 	}
@@ -1311,7 +1319,7 @@ func getObjectAttrTemplateID(kit *rest.Kit, attrID int64) (int64, error) {
 	}
 	attrs := make([]metadata.Attribute, 0)
 
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Fields(common.BKTemplateID).
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond).Fields(common.BKTemplateID).
 		All(kit.Ctx, &attrs); err != nil {
 		blog.Errorf("find attrs failed, attrID: %d, err: %v, rid: %s", attrID, err, kit.Rid)
 		return 0, err
@@ -1333,8 +1341,8 @@ func getTemplateAttrByID(kit *rest.Kit, templateID int64, fields []string) (*met
 	}
 
 	templateAttr := make([]metadata.FieldTemplateAttr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(attrCond).Fields(fields...).
-		All(kit.Ctx, &templateAttr); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDesTemplate).Find(attrCond).
+		Fields(fields...).All(kit.Ctx, &templateAttr); err != nil {
 		blog.Errorf("find field template attr failed, cond: %v, err: %v, rid: %s", attrCond, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -1495,7 +1503,8 @@ func checkAttrOption(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []metadat
 	case common.FieldTypeIDRule:
 		dbAttrs := make([]metadata.Attribute, 0)
 		cond := mapstr.MapStr{common.BKObjIDField: dbAttributeArr[0].ObjectID}
-		if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx, &dbAttrs); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond).All(kit.Ctx,
+			&dbAttrs); err != nil {
 			blog.Errorf("get %s attributes failed, err: %v, rid: %s", dbAttributeArr[0].ObjectID, err, kit.Rid)
 			return err
 		}
@@ -1544,7 +1553,7 @@ func checkPropertyGroup(kit *rest.Kit, data mapstr.MapStr, dbAttributeArr []meta
 		cond[common.BKPropertyGroupIDField] = grp
 	}
 
-	cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Find(cond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNamePropertyGroup).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.ErrorJSON("property group count failed, err: %s, condition: %s, rid: %s", err, cond, kit.Rid)
 		return err
@@ -1670,9 +1679,9 @@ func (m *modelAttribute) checkAttributeInUnique(kit *rest.Kit, objIDPropertyIDAr
 	cond.Or(orCondArr...)
 	condMap := cond.ToMapStr()
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(condMap).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Find(condMap).Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("checkAttributeInUnique db select error. err:%s, cond:%s, rid:%s", err.Error(), condMap, kit.Rid)
+		blog.Errorf("find attribute unique db failed. err: %v, cond: %v, rid: %s", err, condMap, kit.Rid)
 		return false, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
@@ -1698,8 +1707,9 @@ func (m *modelAttribute) delIDRuleUnique(kit *rest.Kit, objIDPropertyIDArr map[s
 	cond.Or(orCondArr...)
 	condMap := cond.ToMapStr()
 
-	if _, err := mongodb.Client().Table(common.BKTableNameObjUnique).DeleteMany(kit.Ctx, condMap); err != nil {
-		blog.ErrorJSON("delete unique failed, cond: %+v, err: %v, rid: %s", condMap, err, kit.Rid)
+	if _, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).DeleteMany(kit.Ctx,
+		condMap); err != nil {
+		blog.Errorf("delete unique failed, cond: %+v, err: %v, rid: %s", condMap, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
 	}
 
@@ -1758,9 +1768,9 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 	opt := make(map[string]interface{})
 	opt[common.BKObjIDField] = attribute.ObjectID
 	opt[common.BKPropertyGroupField] = attribute.PropertyGroup
-	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(opt).Count(kit.Ctx)
+	count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(opt).Count(kit.Ctx)
 	if err != nil {
-		blog.Error("GetAttrLastIndex, request(%s): database operation is failed, error info is %v", kit.Rid, err)
+		blog.Errorf("count attribute failed. err: %v, cond: %s, rid: %s", err, opt, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 	if count <= 0 {
@@ -1769,9 +1779,9 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 
 	attrs := make([]metadata.Attribute, 0)
 	sortCond := "-bk_property_index"
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).All(kit.Ctx,
-		&attrs); err != nil {
-		blog.Error("GetAttrLastIndex, database operation is failed, err: %v, rid: %s", err, kit.Rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(opt).Sort(sortCond).Limit(1).
+		All(kit.Ctx, &attrs); err != nil {
+		blog.Errorf("find attribute index failed. err: %v, cond: %s, rid: %s", err, opt, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
@@ -1784,7 +1794,7 @@ func (m *modelAttribute) GetAttrLastIndex(kit *rest.Kit, attribute metadata.Attr
 func checkAddIDRule(kit *rest.Kit, objID string) error {
 	cond := mapstr.MapStr{common.BKObjIDField: objID, common.BKPropertyTypeField: common.FieldTypeIDRule}
 
-	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(cond).Count(kit.Ctx)
+	count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count attribute failed. err: %v, cond: %s, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)

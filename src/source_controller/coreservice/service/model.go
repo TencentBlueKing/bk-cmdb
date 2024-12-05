@@ -29,7 +29,7 @@ import (
 // CreateManyModelClassification TODO
 func (s *coreService) CreateManyModelClassification(ctx *rest.Contexts) {
 	inputDatas := metadata.CreateManyModelClassifiaction{}
-	if err := ctx.DecodeInto(&inputDatas); nil != err {
+	if err := ctx.DecodeInto(&inputDatas); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -39,7 +39,7 @@ func (s *coreService) CreateManyModelClassification(ctx *rest.Contexts) {
 // CreateOneModelClassification TODO
 func (s *coreService) CreateOneModelClassification(ctx *rest.Contexts) {
 	inputData := metadata.CreateOneModelClassification{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	if err := ctx.DecodeInto(&inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -49,7 +49,7 @@ func (s *coreService) CreateOneModelClassification(ctx *rest.Contexts) {
 // SetOneModelClassification TODO
 func (s *coreService) SetOneModelClassification(ctx *rest.Contexts) {
 	inputData := metadata.SetOneModelClassification{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	if err := ctx.DecodeInto(&inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -60,7 +60,7 @@ func (s *coreService) SetOneModelClassification(ctx *rest.Contexts) {
 // SetManyModelClassification TODO
 func (s *coreService) SetManyModelClassification(ctx *rest.Contexts) {
 	inputDatas := metadata.SetManyModelClassification{}
-	if err := ctx.DecodeInto(&inputDatas); nil != err {
+	if err := ctx.DecodeInto(&inputDatas); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -70,7 +70,7 @@ func (s *coreService) SetManyModelClassification(ctx *rest.Contexts) {
 // UpdateModelClassification TODO
 func (s *coreService) UpdateModelClassification(ctx *rest.Contexts) {
 	inputData := metadata.UpdateOption{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	if err := ctx.DecodeInto(&inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -80,7 +80,7 @@ func (s *coreService) UpdateModelClassification(ctx *rest.Contexts) {
 // DeleteModelClassification TODO
 func (s *coreService) DeleteModelClassification(ctx *rest.Contexts) {
 	inputData := metadata.DeleteOption{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	if err := ctx.DecodeInto(&inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -90,7 +90,7 @@ func (s *coreService) DeleteModelClassification(ctx *rest.Contexts) {
 // SearchModelClassification TODO
 func (s *coreService) SearchModelClassification(ctx *rest.Contexts) {
 	inputData := metadata.QueryCondition{}
-	if err := ctx.DecodeInto(&inputData); nil != err {
+	if err := ctx.DecodeInto(&inputData); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -253,7 +253,8 @@ func (s *coreService) ListModel(cts *rest.Contexts) {
 	}
 
 	if opt.Page.EnableCount {
-		count, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Count(cts.Kit.Ctx)
+		count, err := mongodb.Shard(cts.Kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(filter).
+			Count(cts.Kit.Ctx)
 		if err != nil {
 			blog.Errorf("count objects failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 			cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -265,8 +266,8 @@ func (s *coreService) ListModel(cts *rest.Contexts) {
 	}
 
 	objects := make([]metadata.Object, 0)
-	err = mongodb.Client().Table(common.BKTableNameObjDes).Find(filter).Start(uint64(opt.Page.Start)).
-		Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &objects)
+	err = mongodb.Shard(cts.Kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(filter).Start(uint64(opt.Page.
+		Start)).Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &objects)
 	if err != nil {
 		blog.Errorf("list objects failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -334,28 +335,31 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 
 	// stat set count.
 	filter := map[string]interface{}{}
-	setCount, err := mongodb.Client().Table(common.BKTableNameBaseSet).Find(filter).Count(ctx.Kit.Ctx)
+	setCount, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseSet).Find(filter).Count(
+		ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("GetModelStatistics failed, count set model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("count set model instances failed, err: %v, filter: %v, rid: %s", err, filter, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 	statistics = append(statistics, metadata.ObjectIDCount{ObjID: common.BKInnerObjIDSet, Count: int64(setCount)})
 
 	// stat module count.
-	moduleCount, err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).Count(ctx.Kit.Ctx)
+	moduleCount, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseModule).Find(filter).Count(
+		ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("GetModelStatistics failed, count module model instances failed, err: %+v, rid: %s", err,
-			ctx.Kit.Rid)
+		blog.Errorf("count module model instances failed, err: %v, filter: %v, rid: %s", err, filter, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	statistics = append(statistics, metadata.ObjectIDCount{ObjID: common.BKInnerObjIDModule, Count: int64(moduleCount)})
+	statistics = append(statistics, metadata.ObjectIDCount{
+		ObjID: common.BKInnerObjIDModule, Count: int64(moduleCount)})
 
 	// stat host count.
-	hostCount, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Count(ctx.Kit.Ctx)
+	hostCount, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(filter).Count(
+		ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("GetModelStatistics failed, count host model instances failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("count host model instances failed, err: %v, filter: %v, rid: %s", err, filter, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -370,9 +374,10 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 			common.BKDBNE: common.DataStatusDisabled,
 		},
 	}
-	bizCount, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(appFilter).Count(ctx.Kit.Ctx)
+	bizCount, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseApp).Find(appFilter).Count(
+		ctx.Kit.Ctx)
 	if err != nil {
-		blog.Errorf("GetModelStatistics failed, count application model instances failed, err: %+v, rid: %s", err,
+		blog.Errorf("count application model instances failed, err: %v, filter: %v, rid: %s", err, appFilter,
 			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -393,9 +398,10 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 			},
 		},
 	}
-	err = mongodb.Client().Table(common.BKTableNameObjDes).AggregateAll(ctx.Kit.Ctx, objectFilter, &allObjects)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjDes).AggregateAll(ctx.Kit.Ctx, objectFilter,
+		&allObjects)
 	if err != nil {
-		blog.Errorf("get all object models failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("get all object models failed, err: %v, filter: %v,rid: %s", err, objectFilter, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -415,7 +421,8 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 		// sharding table name.
 		tableName := common.GetObjectInstTableName(object.ObjID, ctx.Kit.TenantID)
 
-		if err := mongodb.Client().Table(tableName).AggregateAll(ctx.Kit.Ctx, objectFilter, &data); err != nil {
+		if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(tableName).AggregateAll(ctx.Kit.Ctx, objectFilter,
+			&data); err != nil {
 			blog.Errorf("get object %s instances count failed, err: %+v, rid: %s", object.ObjID, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
@@ -864,7 +871,8 @@ func (s *coreService) UpdateIDGenerator(ctx *rest.Contexts) {
 
 	cond := mapstr.MapStr{common.BKFieldDBID: opt.Type}
 	result := make(map[string]interface{})
-	err := mongodb.Client().Table(common.BKTableNameIDgenerator).Find(cond).Fields(common.BKFieldSeqID).One(ctx.Kit.Ctx,
+	err := mongodb.Shard(ctx.Kit.SysShardOpts()).Table(common.BKTableNameIDgenerator).Find(cond).Fields(
+		common.BKFieldSeqID).One(ctx.Kit.Ctx,
 		&result)
 	if err != nil {
 		blog.Errorf("find id generator failed, err: %v, filter: %+v, rid: %s", err, cond, ctx.Kit.Rid)
@@ -894,7 +902,8 @@ func (s *coreService) UpdateIDGenerator(ctx *rest.Contexts) {
 		common.BKFieldSeqID:  opt.SequenceID,
 		common.LastTimeField: time.Now(),
 	}
-	if err := mongodb.Client().Table(common.BKTableNameIDgenerator).Update(ctx.Kit.Ctx, cond, data); err != nil {
+	if err := mongodb.Shard(ctx.Kit.SysShardOpts()).Table(common.BKTableNameIDgenerator).Update(ctx.Kit.Ctx, cond,
+		data); err != nil {
 		blog.Errorf("update id generator failed, err: %v, filter: %+v, rid: %s", err, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrObjectDBOpErrno))
 		return

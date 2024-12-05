@@ -39,7 +39,8 @@ func (s *coreService) CreateSetTemplate(ctx *rest.Contexts) {
 
 	result, err := s.core.SetTemplateOperation().CreateSetTemplate(ctx.Kit, bizID, option)
 	if err != nil {
-		blog.Errorf("CreateSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+		blog.Errorf("create set template failed, bizID: %d, option: %v, err: %v, rid: %s", bizID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -63,7 +64,8 @@ func (s *coreService) UpdateSetTemplate(ctx *rest.Contexts) {
 
 	result, err := s.core.SetTemplateOperation().UpdateSetTemplate(ctx.Kit, setTemplateID, option)
 	if err != nil {
-		blog.Errorf("UpdateSetTemplate failed, setTemplateID: %d, option: %+v, err: %+v, rid: %s", setTemplateID, option, err, ctx.Kit.Rid)
+		blog.Errorf("update set template failed, setTemplateID: %d, option: %v, err: %v, rid: %s", setTemplateID,
+			option, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -86,7 +88,8 @@ func (s *coreService) DeleteSetTemplate(ctx *rest.Contexts) {
 	}
 
 	if err := s.core.SetTemplateOperation().DeleteSetTemplate(ctx.Kit, bizID, option); err != nil {
-		blog.Errorf("UpdateSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+		blog.Errorf("delete set template failed, bizID: %d, option: %v, err: %v, rid: %s", bizID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -111,7 +114,8 @@ func (s *coreService) GetSetTemplate(ctx *rest.Contexts) {
 
 	setTemplate, err := s.core.SetTemplateOperation().GetSetTemplate(ctx.Kit, bizID, setTemplateID)
 	if err != nil {
-		blog.Errorf("GetSetTemplate failed, bizID: %d, setTemplateID: %d, err: %+v, rid: %s", bizID, setTemplateID, err, ctx.Kit.Rid)
+		blog.Errorf("get set template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID, setTemplateID,
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -135,7 +139,8 @@ func (s *coreService) ListSetTemplate(ctx *rest.Contexts) {
 
 	setTemplateResult, err := s.core.SetTemplateOperation().ListSetTemplate(ctx.Kit, bizID, option)
 	if err != nil {
-		blog.Errorf("ListSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+		blog.Errorf("list set template failed, bizID: %d, option: %v, err: %v, rid: %s", bizID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -171,11 +176,12 @@ func (s *coreService) CountSetTplInstances(ctx *rest.Contexts) {
 		},
 	}
 	result := make([]metadata.CountSetTplInstItem, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseSet).AggregateAll(ctx.Kit.Ctx, pipeline, &result); err != nil {
-		if mongodb.Client().IsNotFoundError(err) == true {
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseSet).AggregateAll(ctx.Kit.Ctx, pipeline,
+		&result); err != nil {
+		if mongodb.IsNotFoundError(err) == true {
 			result = make([]metadata.CountSetTplInstItem, 0)
 		} else {
-			blog.Errorf("CountSetTplInstances failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err, ctx.Kit.Rid)
+			blog.Errorf("find set failed, bizID: %d, option: %v, err: %v, rid: %s", bizID, option, err, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.Error(common.CCErrCommDBSelectFailed))
 			return
 		}
@@ -202,7 +208,8 @@ func (s *coreService) ListSetServiceTemplateRelations(ctx *rest.Contexts) {
 
 	relations, err := s.core.SetTemplateOperation().ListSetServiceTemplateRelations(ctx.Kit, bizID, setTemplateID)
 	if err != nil {
-		blog.Errorf("ListSetServiceTemplateRelations failed, bizID: %d, setTemplateID: %+v, err: %+v, rid: %s", bizID, setTemplateID, err, ctx.Kit.Rid)
+		blog.Errorf("list service template relation failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
+			setTemplateID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -227,7 +234,8 @@ func (s *coreService) ListSetTplRelatedSvcTpl(ctx *rest.Contexts) {
 
 	serviceTemplates, err := s.core.SetTemplateOperation().ListSetTplRelatedSvcTpl(ctx.Kit, bizID, setTemplateID)
 	if err != nil {
-		blog.Errorf("ListSetTplRelatedSvcTpl failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s", bizID, setTemplateID, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("get set template related service template failed, bizID: %d, setTemplateID: %d, err: %s,"+
+			" rid: %s", bizID, setTemplateID, err.Error(), ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

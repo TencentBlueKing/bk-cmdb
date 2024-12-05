@@ -47,9 +47,10 @@ func (s *service) ListObjFieldTmplRel(cts *rest.Contexts) {
 	table := common.BKTableNameObjFieldTemplateRelation
 
 	if opt.Page.EnableCount {
-		count, err := mongodb.Client().Table(table).Find(filter).Count(cts.Kit.Ctx)
+		count, err := mongodb.Shard(cts.Kit.ShardOpts()).Table(table).Find(filter).Count(cts.Kit.Ctx)
 		if err != nil {
-			blog.Errorf("count obj field tmpl relation failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
+			blog.Errorf("count obj field tmpl relation failed, err: %v, filter: %+v, rid: %v", err, filter,
+				cts.Kit.Rid)
 			cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 			return
 		}
@@ -59,8 +60,8 @@ func (s *service) ListObjFieldTmplRel(cts *rest.Contexts) {
 	}
 
 	relations := make([]metadata.ObjFieldTemplateRelation, 0)
-	err = mongodb.Client().Table(table).Find(filter).Start(uint64(opt.Page.Start)).Limit(uint64(opt.Page.Limit)).
-		Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &relations)
+	err = mongodb.Shard(cts.Kit.ShardOpts()).Table(table).Find(filter).Start(uint64(opt.Page.Start)).Limit(uint64(
+		opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &relations)
 	if err != nil {
 		blog.Errorf("list obj field tmpl relations failed, err: %v, filter: %+v, rid: %s", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))

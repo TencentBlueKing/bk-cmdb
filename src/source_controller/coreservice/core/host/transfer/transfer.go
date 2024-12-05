@@ -55,7 +55,8 @@ type genericTransfer struct {
 
 // ValidParameter valid if transfer host parameter legal
 func (t *genericTransfer) ValidParameter(kit *rest.Kit) errors.CCErrorCoder {
-	if err := hooks.ValidHostTransferHook(kit, mongodb.Client(), t.crossBizTransfer, t.srcBizIDs, t.bizID); err != nil {
+	if err := hooks.ValidHostTransferHook(kit, mongodb.Shard(kit.ShardOpts()), t.crossBizTransfer, t.srcBizIDs,
+		t.bizID); err != nil {
 		return err
 	}
 
@@ -158,7 +159,7 @@ func (t *genericTransfer) DeleteHosts(kit *rest.Kit, hostIDs []int64) error {
 
 	// remove hosts
 	hostCond := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Delete(kit.Ctx, hostCond); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Delete(kit.Ctx, hostCond); err != nil {
 		blog.Errorf("delete host failed, err: %s, host ID: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
@@ -277,9 +278,10 @@ func (t *genericTransfer) validHosts(kit *rest.Kit, hostIDs []int64) errors.CCEr
 		hostCond[common.BKCloudHostIdentifierField] = mapstr.MapStr{common.BKDBNE: true}
 	}
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(&hostCond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(&hostCond).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("valid hosts, but count host failed, err: %s, hostIDs: %+v, rid: %s", err.Error(), hostIDs, kit.Rid)
+		blog.Errorf("valid hosts, but count host failed, err: %s, hostIDs: %+v, rid: %s", err.Error(), hostIDs,
+			kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -314,10 +316,10 @@ func (t *genericTransfer) validHostsBelongBiz(kit *rest.Kit, hostIDs []int64) er
 	relationCond := map[string]interface{}{common.BKAppIDField: map[string]interface{}{common.BKDBNIN: bizIDs},
 		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(relationCond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(relationCond).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("valid host, but get host relation failed, err: %v, biz IDs: %v, host ID: %v, rid: %s", err, bizIDs,
-			hostIDs, kit.Rid)
+		blog.Errorf("valid host, but get host relation failed, err: %v, biz IDs: %v, host ID: %v, rid: %s", err,
+			bizIDs, hostIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -342,7 +344,7 @@ func (t *genericTransfer) validHostsRelatedToKube(kit *rest.Kit, hostIDs []int64
 
 	cond := mapstr.MapStr{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
 
-	cnt, err := mongodb.Client().Table(kubetypes.BKTableNameBaseNode).Find(cond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(kubetypes.BKTableNameBaseNode).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count hosts related nodes failed, err: %v, host IDs: %+v, rid: %s", err, hostIDs, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -398,10 +400,10 @@ func (t *genericTransfer) delHostModuleRelationItem(kit *rest.Kit, bizIDs []int6
 		}
 	}
 
-	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, relationCond)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Delete(kit.Ctx, relationCond)
 	if err != nil {
-		blog.Errorf("delete host, but remove host relations failed, biz IDs: %v, host ID: %v, err: %v, rid: %s", bizIDs,
-			hostIDs, err, kit.Rid)
+		blog.Errorf("delete host, but remove host relations failed, biz IDs: %v, host ID: %v, err: %v, rid: %s",
+			bizIDs, hostIDs, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
@@ -424,8 +426,8 @@ func (t *genericTransfer) addHostModuleRelationAndHostApply(kit *rest.Kit, hostI
 	}
 
 	relationArr := make([]metadata.ModuleHost, 0)
-	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(common.BKHostIDField,
-		common.BKModuleIDField).All(kit.Ctx, &relationArr)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(cond).Fields(
+		common.BKHostIDField, common.BKModuleIDField).All(kit.Ctx, &relationArr)
 	if err != nil {
 		blog.Errorf("retrieve original data error. err: %v, cond: %s, rid: %s", err, cond,
 			kit.Rid)
@@ -459,8 +461,9 @@ func (t *genericTransfer) addHostModuleRelationAndHostApply(kit *rest.Kit, hostI
 		return nil
 	}
 
-	if err = mongodb.Client().Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, insertDataArr); err != nil {
-		blog.Errorf("add host module relation, add module host relation error: %v, rid: %s", err, kit.Rid)
+	if err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx,
+		insertDataArr); err != nil {
+		blog.Errorf("add host module relation, add module host relation err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
 	// 对于主机转移场景下此标记如果是true表示不进行主机属性自动应用，其余场景按照原逻辑进行主机级别的属性自动应用
@@ -506,11 +509,11 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		}
 	}
 	instances := make([]metadata.ServiceInstance, 0)
-	err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).All(kit.Ctx,
-		&instances)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).
+		All(kit.Ctx, &instances)
 	if err != nil {
-		blog.ErrorJSON("removeHostServiceInstance failed, get service instance IDs failed, err: %s, filter: %s, rid: %s",
-			err, serviceInstanceFilter, kit.Rid)
+		blog.Errorf("find service instance IDs failed, err: %v, filter: %v, rid: %s", err, serviceInstanceFilter,
+			kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if len(instances) == 0 {
@@ -531,10 +534,10 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		},
 	}
 	relations := make([]metadata.ProcessInstanceRelation, 0)
-	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(processRelationFilter).All(kit.Ctx,
-		&relations); nil != err {
-		blog.Errorf("removeHostServiceInstance failed, get process instance relation failed, err: %s, filter: %s, rid: %s",
-			err, processRelationFilter, kit.Rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessInstanceRelation).
+		Find(processRelationFilter).All(kit.Ctx, &relations); err != nil {
+		blog.Errorf("get process instance relation failed, err: %v, filter: %v, rid: %s", err,
+			processRelationFilter, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	processIDs := make([]int64, 0)
@@ -544,10 +547,10 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 
 	// delete all process relations and instances
 	if len(processIDs) > 0 {
-		if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx,
-			processRelationFilter); nil != err {
-			blog.Errorf("removeHostServiceInstance failed, delete process instance relation failed, err: %s, filter: %s, rid: %s",
-				err, processRelationFilter, kit.Rid)
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessInstanceRelation).Delete(kit.Ctx,
+			processRelationFilter); err != nil {
+			blog.Errorf("delete process instance relation failed, err: %v, filter: %v, rid: %s", err,
+				processRelationFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 		}
 
@@ -560,9 +563,11 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		// generate process audit log for host transfer, use a new kit to keep it out of the txn
 		auditKit := kit.NewKit()
 		processes := make([]mapstr.MapStr, 0)
-		err := mongodb.Client().Table(common.BKTableNameBaseProcess).Find(processFilter).All(auditKit.Ctx, &processes)
+		err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseProcess).Find(processFilter).
+			All(auditKit.Ctx, &processes)
 		if err != nil {
-			blog.Errorf("get process instances failed, filter: %+v, err: %v, rid: %s", processFilter, err, auditKit.Rid)
+			blog.Errorf("get process instances failed, filter: %+v, err: %v, rid: %s", processFilter, err,
+				auditKit.Rid)
 			return auditKit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 
@@ -582,9 +587,9 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 		}
 
 		// delete processes
-		if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Delete(kit.Ctx, processFilter); nil != err {
-			blog.Errorf("removeHostServiceInstance failed, delete process instances failed, err: %s, filter: %s, rid: %s",
-				err, processFilter, kit.Rid)
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseProcess).Delete(kit.Ctx,
+			processFilter); err != nil {
+			blog.Errorf("delete process instances failed, err: %v, filter: %v, rid: %s", err, processFilter, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 		}
 	}
@@ -595,10 +600,10 @@ func (t *genericTransfer) removeHostServiceInstance(kit *rest.Kit, hostIDs []int
 			common.BKDBIN: serviceInstanceIDs,
 		},
 	}
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Delete(kit.Ctx,
-		serviceInstanceIDFilter); nil != err {
-		blog.Errorf("removeHostServiceInstance failed, delete service instances failed, err: %s, filter: %s, rid: %s",
-			err, serviceInstanceIDFilter, kit.Rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Delete(kit.Ctx,
+		serviceInstanceIDFilter); err != nil {
+		blog.Errorf("delete service instances failed, err: %v, filter: %v, rid: %s", err, serviceInstanceIDFilter,
+			kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
@@ -626,8 +631,8 @@ func (t *genericTransfer) getInnerModuleIDArr(kit *rest.Kit) errors.CCErrorCoder
 	}
 	cond := moduleCond
 
-	moduleIDArr, err := mongodb.Client().Table(common.BKTableNameBaseModule).Distinct(kit.Ctx, common.BKModuleIDField,
-		cond)
+	moduleIDArr, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseModule).Distinct(kit.Ctx,
+		common.BKModuleIDField, cond)
 	if err != nil {
 		blog.Errorf("get inner module ids failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -685,11 +690,10 @@ func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, mo
 	cond := moduleConds.ToMapStr()
 
 	moduleInfoArr := make([]mapstr.MapStr, 0)
-	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(kit.Ctx,
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseModule).Find(cond).Fields(fields...).All(kit.Ctx,
 		&moduleInfoArr)
 	if err != nil {
-		blog.ErrorJSON("getModuleInfoByModuleID find data CCErrorCoder. err:%s,cond:%s, rid:%s", err.Error(), cond,
-			kit.Rid)
+		blog.Errorf("find module data failed. err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -698,10 +702,9 @@ func (t *genericTransfer) getModuleInfoByModuleID(kit *rest.Kit, appID int64, mo
 
 func (t *genericTransfer) countByCond(kit *rest.Kit, conds mapstr.MapStr, tableName string) (uint64,
 	errors.CCErrorCoder) {
-	cnt, err := mongodb.Client().Table(tableName).Find(conds).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(conds).Count(kit.Ctx)
 	if err != nil {
-		blog.ErrorJSON("countByCond find data error. err:%s, table:%s,cond:%s, rid:%s", err.Error(), tableName, conds,
-			kit.Rid)
+		blog.Errorf("count data failed. err: %v, table: %s, cond:%v, rid:%s", err, tableName, conds, kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -723,7 +726,7 @@ func (t *genericTransfer) isAppArchived(kit *rest.Kit) (bool, errors.CCErrorCode
 		common.BKDataStatusField: common.DataStatusDisabled,
 	}
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseApp).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count diabled biz failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return false, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)

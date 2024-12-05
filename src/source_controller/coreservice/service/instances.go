@@ -148,5 +148,5 @@ func (s *coreService) GetInstanceObjectMapping(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	ctx.RespEntityWithError(instancemapping.GetInstanceObjectMapping(inputData.IDs))
+	ctx.RespEntityWithError(instancemapping.GetInstanceObjectMapping(ctx.Kit, inputData.IDs))
 }

@@ -27,7 +27,7 @@ func (s *coreService) CommitTransaction(ctx *rest.Contexts) {
 		return
 	}
 
-	err := mongodb.Client().CommitTransaction(ctx.Kit.Ctx, cap)
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).CommitTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
 		return
@@ -44,7 +44,7 @@ func (s *coreService) AbortTransaction(ctx *rest.Contexts) {
 		return
 	}
 
-	retry, err := mongodb.Client().AbortTransaction(ctx.Kit.Ctx, cap)
+	retry, err := mongodb.Shard(ctx.Kit.ShardOpts()).AbortTransaction(ctx.Kit.Ctx, cap)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommCommitTransactionFailed, err.Error()))
 		return

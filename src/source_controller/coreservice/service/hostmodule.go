@@ -42,8 +42,8 @@ func (s *coreService) getModuleIDsByHostID(kit *rest.Kit, moduleCond interface{}
 	result := make([]meta.ModuleHost, 0)
 	var ret []int64
 
-	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(moduleCond).Fields(common.BKModuleIDField).
-		All(kit.Ctx, &result)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(moduleCond).
+		Fields(common.BKModuleIDField).All(kit.Ctx, &result)
 	if err != nil {
 		blog.Errorf("get module id by host id failed, error: %s, rid: %s", err.Error(), kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)

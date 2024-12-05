@@ -13,109 +13,74 @@
 package mainline
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
 // SearchMainlineInstanceTopo get topo tree of mainline model
-func (m *topoManager) SearchMainlineInstanceTopo(ctx context.Context, header http.Header, bkBizID int64,
+func (m *topoManager) SearchMainlineInstanceTopo(kit *rest.Kit, bkBizID int64,
 	withDetail bool) (*metadata.TopoInstanceNode, error) {
-	rid := util.ExtractRequestIDFromContext(ctx)
 
-	bizTopoNode, err := m.SearchMainlineModelTopo(ctx, header, false)
+	bizTopoNode, err := m.SearchMainlineModelTopo(kit, false)
 	if err != nil {
-		blog.Errorf("get mainline model topo info failed, %+v, rid: %s", err, rid)
+		blog.Errorf("get mainline model topo info failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, fmt.Errorf("get mainline model topo info failed, %+v", err)
 	}
-	blog.V(9).Infof("model mainline: %+v, rid: %s", bizTopoNode, rid)
+	blog.V(9).Infof("model mainline: %+v, rid: %s", bizTopoNode, kit.Rid)
 
-	im, err := NewInstanceMainline(m.lang.CreateDefaultCCLanguageIf(httpheader.GetLanguage(header)), mongodb.Client(),
-		bkBizID)
+	im, err := NewInstanceMainline(m.lang.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header)), mongodb.Shard(
+		kit.ShardOpts()), bkBizID)
 	if err != nil {
-		blog.Errorf("SearchMainlineInstanceTopo failed, NewInstanceMainline failed, bizID: %d, err: %+v, rid: %s",
-			bkBizID, err, rid)
+		blog.Errorf("new instance mainline failed, bizID: %d, err: %v, rid: %s", bkBizID, err, kit.Rid)
 		return nil, fmt.Errorf("new mainline instance by business:%d failed, %+v", bkBizID, err)
 	}
 
-	im.SetModelTree(ctx, bizTopoNode)
-	im.LoadModelParentMap(ctx)
+	im.SetModelTree(bizTopoNode)
+	im.LoadModelParentMap(kit)
 
-	if err := im.LoadSetInstances(ctx, header); err != nil {
-		blog.Errorf("get set instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)
+	if err := im.OrganizeTopo(kit, bkBizID, withDetail); err != nil {
+		blog.Errorf("organize topo instances failed, err: %v, bizID: %d, rid: %s", err, bkBizID, kit.Rid)
 		return nil, fmt.Errorf("get set instances by business:%d failed, %+v", bkBizID, err)
 	}
 
-	if err := im.LoadModuleInstances(ctx, header); err != nil {
-		blog.Errorf("get module instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)
-		return nil, fmt.Errorf("get module instances by business:%d failed, %+v", bkBizID, err)
-	}
-
-	if err := im.LoadMainlineInstances(ctx, header); err != nil {
-		blog.Errorf("get other mainline instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)
-		return nil, fmt.Errorf("get other mainline instances by business:%d failed, %+v", bkBizID, err)
-	}
-
-	if err := im.ConstructBizTopoInstance(ctx, header, withDetail); err != nil {
-		blog.Errorf("construct business:%d detail as topo instance failed, %+v, rid: %s", bkBizID, err, rid)
-		return nil, fmt.Errorf("construct business:%d detail as topo instance failed, %+v", bkBizID, err)
-	}
-
-	if err := im.OrganizeSetInstance(ctx, withDetail); err != nil {
-		blog.Errorf("organize set instance failed, businessID:%d, %+v, rid: %s", bkBizID, err, rid)
-		return nil, fmt.Errorf("organize set instance failed, businessID:%d, %+v", bkBizID, err)
-	}
-
-	if err := im.OrganizeModuleInstance(ctx, withDetail); err != nil {
-		blog.Errorf("organize module instance failed, businessID:%d, %+v, rid: %s", bkBizID, err, rid)
-		return nil, fmt.Errorf("organize module instance failed, businessID:%d, %+v", bkBizID, err)
-	}
-
-	if err := im.OrganizeMainlineInstance(ctx, withDetail); err != nil {
-		blog.Errorf("organize other mainline instance failed, businessID:%d, %+v, rid: %s", bkBizID, err, rid)
-
-		return nil, fmt.Errorf("organize other mainline instance failed, businessID:%d, %+v", bkBizID, err)
-	}
-
-	instanceMap := im.GetInstanceMap(ctx)
+	instanceMap := im.GetInstanceMap()
 	instanceMapStr, err := json.Marshal(instanceMap)
 	if err != nil {
-		blog.Errorf("json encode instanceMap:%+v failed, %+v, rid: %s", instanceMap, err, rid)
+		blog.Errorf("json encode instanceMap:%+v failed, err: %v, rid: %s", instanceMap, err, kit.Rid)
 		return nil, fmt.Errorf("json encode instanceMap:%+v failed, %+v", instanceMap, err)
 	}
-	blog.V(5).Infof("instanceMap before check is: %s, rid: %s", instanceMapStr, rid)
+	blog.V(5).Infof("instanceMap before check is: %s, rid: %s", instanceMapStr, kit.Rid)
 
-	if err := im.CheckAndFillingMissingModels(ctx, header, withDetail); err != nil {
-		blog.Errorf("check and filling missing models failed, business:%d %+v, rid: %s", bkBizID, err, rid)
+	if err := im.CheckAndFillingMissingModels(kit, withDetail); err != nil {
+		blog.Errorf("check and filling missing models failed, business:%d, err: %v, rid: %s", bkBizID, err, kit.Rid)
 		return nil, fmt.Errorf("check and filling missing models failed, business:%d %+v", bkBizID, err)
 	}
 
-	instanceMapStr, err = json.Marshal(im.GetInstanceMap(ctx))
+	instanceMapStr, err = json.Marshal(im.GetInstanceMap())
 	if err != nil {
-		blog.Errorf("json encode instanceMap failed, %+v, rid: %s", err, rid)
+		blog.Errorf("json encode instanceMap failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, fmt.Errorf("json encode instanceMap failed, %+v", err)
 	}
-	blog.V(5).Infof("instanceMap after check: %s, rid: %s", instanceMapStr, rid)
+	blog.V(5).Infof("instanceMap after check: %s, rid: %s", instanceMapStr, kit.Rid)
 
-	if err := im.ConstructInstanceTopoTree(ctx, header, withDetail); err != nil {
-		blog.Errorf("get other mainline instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)
+	if err := im.ConstructInstanceTopoTree(kit, withDetail); err != nil {
+		blog.Errorf("get other mainline instances by business:%d failed, err: %v, rid: %s", bkBizID, err, kit.Rid)
 		return nil, fmt.Errorf("get other mainline instances by business:%d failed, %+v", bkBizID, err)
 	}
 
-	root := im.GetRoot(ctx)
-	blog.V(9).Infof("topo instance tree root is: %+v, rid: %s", root, rid)
+	root := im.GetRoot()
+	blog.V(9).Infof("topo instance tree root is: %+v, rid: %s", root, kit.Rid)
 	treeData, err := json.Marshal(root)
 	if err != nil {
-		blog.Errorf("get other mainline instances by business:%d failed, %+v, rid: %s", bkBizID, err, rid)
+		blog.Errorf("get other mainline instances by business:%d failed, err: %v, rid: %s", bkBizID, err, kit.Rid)
 		return root, nil
 	}
-	blog.V(9).Infof("topo instance tree root data is: %s, rid: %s", treeData, rid)
+	blog.V(9).Infof("topo instance tree root data is: %s, rid: %s", treeData, kit.Rid)
 	return root, nil
 }

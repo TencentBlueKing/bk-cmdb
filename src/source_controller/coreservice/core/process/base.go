@@ -52,9 +52,9 @@ func (p *processOperation) validateBizID(kit *rest.Kit, bizID int64) (int64, err
 	filter := map[string]interface{}{
 		common.BKAppIDField: bizID,
 	}
-	count, err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).Count(kit.Ctx)
-	if nil != err {
-		blog.Errorf("mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseApp, err, kit.Rid)
+	count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseApp).Find(filter).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count biz failed, err: %v, filter: %v, rid: %s", err, filter, kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	if count < 1 {
@@ -64,7 +64,8 @@ func (p *processOperation) validateBizID(kit *rest.Kit, bizID int64) (int64, err
 	return bizID, nil
 }
 
-func (p *processOperation) validateModuleID(kit *rest.Kit, moduleID int64) (*metadata.ModuleInst, errors.CCErrorCoder) {
+func (p *processOperation) validateModuleID(kit *rest.Kit, moduleID int64) (*metadata.ModuleInst,
+	errors.CCErrorCoder) {
 	// avoid unnecessary db query
 	if moduleID == 0 {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
@@ -74,9 +75,9 @@ func (p *processOperation) validateModuleID(kit *rest.Kit, moduleID int64) (*met
 	filter := map[string]interface{}{
 		common.BKModuleIDField: moduleID,
 	}
-	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(filter).One(kit.Ctx, module)
-	if nil != err {
-		blog.Errorf("validateModuleID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseModule, err, kit.Rid)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseModule).Find(filter).One(kit.Ctx, module)
+	if err != nil {
+		blog.Errorf("find module failed, err: %v, filter: %v, rid: %s", err, filter, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -94,9 +95,10 @@ func (p *processOperation) validateHostID(kit *rest.Kit, hostID int64) (string, 
 		common.BKHostIDField: hostID,
 	}
 	host := metadata.HostMapStr{}
-	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Fields(common.BKHostInnerIPField).One(kit.Ctx, &host)
-	if nil != err {
-		blog.Errorf("validateHostID failed, mongodb failed, table: %s, err: %+v, rid: %s", common.BKTableNameBaseHost, err.Error(), kit.Rid)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(filter).Fields(
+		common.BKHostInnerIPField).One(kit.Ctx, &host)
+	if err != nil {
+		blog.Errorf("find module failed, err: %v, filter: %v, rid: %s", err, filter, kit.Rid)
 		return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 

@@ -28,7 +28,7 @@ import (
 func (s *coreService) AddUserCustom(ctx *rest.Contexts) {
 	ID := xid.New()
 	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -42,9 +42,9 @@ func (s *coreService) AddUserCustom(ctx *rest.Contexts) {
 		data = transformedData
 	}
 
-	err := mongodb.Client().Table(common.BKTableNameUserCustom).Insert(ctx.Kit.Ctx, data)
-	if nil != err {
-		blog.Errorf("Create  user custom fail, err: %v, ctx:%v, rid: %s", err, data, ctx.Kit.Rid)
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameUserCustom).Insert(ctx.Kit.Ctx, data)
+	if err != nil {
+		blog.Errorf("create user custom failed, err: %v, data: %v, rid: %s", err, data, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCreateUserCustom))
 		return
 	}
@@ -54,7 +54,7 @@ func (s *coreService) AddUserCustom(ctx *rest.Contexts) {
 // UpdateUserCustomByID TODO
 func (s *coreService) UpdateUserCustomByID(ctx *rest.Contexts) {
 	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -68,9 +68,9 @@ func (s *coreService) UpdateUserCustomByID(ctx *rest.Contexts) {
 		}
 		data = transformedData
 	}
-	err := mongodb.Client().Table(common.BKTableNameUserCustom).Update(ctx.Kit.Ctx, conditons, data)
-	if nil != err {
-		blog.Errorf("update  user custom failed, err: %v, data:%v, rid: %s", err, data, ctx.Kit.Rid)
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameUserCustom).Update(ctx.Kit.Ctx, conditons, data)
+	if err != nil {
+		blog.Errorf("update user custom failed, err: %v, data: %v, rid: %s", err, data, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
 		return
 	}
@@ -83,9 +83,9 @@ func (s *coreService) GetUserCustomByUser(ctx *rest.Contexts) {
 	conds["bk_user"] = ctx.Kit.User
 
 	result := make(map[string]interface{})
-	err := mongodb.Client().Table(common.BKTableNameUserCustom).Find(conds).One(ctx.Kit.Ctx, &result)
-	if nil != err && !mongodb.Client().IsNotFoundError(err) {
-		blog.Errorf("add  user custom failed, err: %v, ctx:%v, rid: %s", err, conds, ctx.Kit.Rid)
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameUserCustom).Find(conds).One(ctx.Kit.Ctx, &result)
+	if err != nil && !mongodb.IsNotFoundError(err) {
+		blog.Errorf("find user custom failed, err: %v, cond: %v, rid: %s", err, conds, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
 	}
@@ -107,9 +107,10 @@ func (s *coreService) GetDefaultUserCustom(ctx *rest.Contexts) {
 	conds[common.BKDefaultField] = 1
 
 	result := make(map[string]interface{})
-	err := mongodb.Client().Table(common.BKTableNameUserCustom).Find(conds).One(ctx.Kit.Ctx, &result)
-	if nil != err && !mongodb.Client().IsNotFoundError(err) {
-		blog.Errorf("get default user custom fail, err: %v, ctx:%v, rid: %s, rid: %s", err, conds, ctx.Kit.Rid, ctx.Kit.Rid)
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameUserCustom).Find(conds).One(ctx.Kit.Ctx, &result)
+	if err != nil && !mongodb.IsNotFoundError(err) {
+		blog.Errorf("get default user custom fail, err: %v, cond: %v, rid: %s, rid: %s", err, conds, ctx.Kit.Rid,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 		return
 	}
@@ -122,15 +123,15 @@ func (s *coreService) UpdateDefaultUserCustom(ctx *rest.Contexts) {
 	conditions := make(map[string]interface{})
 	conditions[common.BKDefaultField] = 1
 	data := make(map[string]interface{})
-	if err := ctx.DecodeInto(&data); nil != err {
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 	data[common.ModifierField] = ctx.Kit.User
 	data[common.LastTimeField] = util.GetCurrentTimePtr()
-	err := mongodb.Client().Table(common.BKTableNameUserCustom).Upsert(ctx.Kit.Ctx, conditions, data)
-	if nil != err {
-		blog.Errorf("update  default custom failed, err: %v, data:%v, rid: %s", err, data, ctx.Kit.Rid)
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameUserCustom).Upsert(ctx.Kit.Ctx, conditions, data)
+	if err != nil {
+		blog.Errorf("upsert default custom failed, err: %v, data: %v, rid: %s", err, data, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
 		return
 	}

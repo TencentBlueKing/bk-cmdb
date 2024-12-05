@@ -22,16 +22,17 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-func (m *modelManager) isExists(kit *rest.Kit, cond universalsql.Condition) (oneModel *metadata.Object, exists bool, err error) {
+func (m *modelManager) isExists(kit *rest.Kit, cond universalsql.Condition) (oneModel *metadata.Object, exists bool,
+	err error) {
 
 	oneModel = &metadata.Object{}
-	err = mongodb.Client().Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(kit.Ctx, oneModel)
-	if err != nil && !mongodb.Client().IsNotFoundError(err) {
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(cond.ToMapStr()).One(kit.Ctx, oneModel)
+	if err != nil && !mongodb.IsNotFoundError(err) {
 		blog.Errorf("execute database findOne operation failed, err: %v, cond: %v, rid: %s", err, cond,
 			kit.Rid)
 		return oneModel, exists, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
-	exists = !mongodb.Client().IsNotFoundError(err)
+	exists = !mongodb.IsNotFoundError(err)
 	return oneModel, exists, nil
 }
 
@@ -39,7 +40,8 @@ func (m *modelManager) isValid(kit *rest.Kit, objID string) error {
 	checkCond, _ := mongo.NewConditionFromMapStr(make(map[string]interface{}))
 	checkCond.Element(&mongo.Eq{Key: metadata.ModelFieldObjectID, Val: objID})
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjDes).Find(checkCond.ToMapStr()).
+		Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("count operation on the table (%s) by the condition (%#v) failed, err: %v, rid: %s",
 			common.BKTableNameObjDes, checkCond.ToMapStr(), err, kit.Rid)
@@ -60,7 +62,7 @@ func (m *modelManager) deleteModelAndAttributes(kit *rest.Kit, targetObjIDS []st
 	deleteAttributeCond := mongo.NewCondition()
 	deleteAttributeCond.Element(&mongo.In{Key: metadata.AttributeFieldObjectID, Val: targetObjIDS})
 	cnt, err := m.modelAttribute.delete(kit, deleteAttributeCond, true)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("delete the attribute failed, err: %v, cond: %v, rid: %s", err, deleteAttributeCond,
 			kit.Rid)
 		return cnt, err
@@ -71,7 +73,7 @@ func (m *modelManager) deleteModelAndAttributes(kit *rest.Kit, targetObjIDS []st
 	deleteModelCond.Element(&mongo.In{Key: metadata.ModelFieldObjectID, Val: targetObjIDS})
 
 	cnt, err = m.delete(kit, deleteModelCond)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("delete models failed, err: %v, cond: %v, rid: %s", err, deleteModelCond, kit.Rid)
 		return 0, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}

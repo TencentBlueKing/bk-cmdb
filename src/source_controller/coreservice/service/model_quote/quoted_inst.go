@@ -53,7 +53,7 @@ func BatchCreateQuotedInstance(cts *rest.Contexts) {
 	}
 
 	table := common.GetInstTableName(objID, cts.Kit.TenantID)
-	ids, err := mongodb.Client().NextSequences(cts.Kit.Ctx, table, len(instances))
+	ids, err := mongodb.Shard(cts.Kit.SysShardOpts()).NextSequences(cts.Kit.Ctx, table, len(instances))
 	if err != nil {
 		cts.RespAutoError(err)
 		return
@@ -67,10 +67,10 @@ func BatchCreateQuotedInstance(cts *rest.Contexts) {
 		instances[idx].Set(common.LastTimeField, now)
 	}
 
-	err = mongodb.Client().Table(table).Insert(cts.Kit.Ctx, instances)
+	err = mongodb.Shard(cts.Kit.ShardOpts()).Table(table).Insert(cts.Kit.Ctx, instances)
 	if err != nil {
 		blog.Errorf("create quoted instances failed, err: %v, data: %+v, rid: %v", err, instances, cts.Kit.Rid)
-		if mongodb.Client().IsDuplicatedError(err) {
+		if mongodb.IsDuplicatedError(err) {
 			cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err)))
 			return
 		}
@@ -108,7 +108,7 @@ func ListQuotedInstance(cts *rest.Contexts) {
 	}
 
 	if opt.Page.EnableCount {
-		count, err := mongodb.Client().Table(table).Find(filter).Count(cts.Kit.Ctx)
+		count, err := mongodb.Shard(cts.Kit.ShardOpts()).Table(table).Find(filter).Count(cts.Kit.Ctx)
 		if err != nil {
 			blog.Errorf("count quoted instances failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 			cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -120,8 +120,8 @@ func ListQuotedInstance(cts *rest.Contexts) {
 	}
 
 	instances := make([]mapstr.MapStr, 0)
-	err = mongodb.Client().Table(table).Find(filter).Start(uint64(opt.Page.Start)).Limit(uint64(opt.Page.Limit)).
-		Fields(opt.Fields...).All(cts.Kit.Ctx, &instances)
+	err = mongodb.Shard(cts.Kit.ShardOpts()).Table(table).Find(filter).Start(uint64(opt.Page.Start)).
+		Limit(uint64(opt.Page.Limit)).Fields(opt.Fields...).All(cts.Kit.Ctx, &instances)
 	if err != nil {
 		blog.Errorf("list quoted instances failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -164,10 +164,10 @@ func BatchUpdateQuotedInstance(cts *rest.Contexts) {
 	}
 
 	opt.Data.Set(common.LastTimeField, time.Now())
-	err = mongodb.Client().Table(table).Update(cts.Kit.Ctx, filter, opt.Data)
+	err = mongodb.Shard(cts.Kit.ShardOpts()).Table(table).Update(cts.Kit.Ctx, filter, opt.Data)
 	if err != nil {
 		blog.Errorf("list quoted instances failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
-		if mongodb.Client().IsDuplicatedError(err) {
+		if mongodb.IsDuplicatedError(err) {
 			cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err)))
 			return
 		}
@@ -204,7 +204,7 @@ func BatchDeleteQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	err = mongodb.Client().Table(table).Delete(cts.Kit.Ctx, filter)
+	err = mongodb.Shard(cts.Kit.ShardOpts()).Table(table).Delete(cts.Kit.Ctx, filter)
 	if err != nil {
 		blog.Errorf("delete quoted instances failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))

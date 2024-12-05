@@ -50,12 +50,12 @@ func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam meta
 	// when enableMainlineAssociationType disabled, all type except bk_mainline could be create
 
 	inputParam.Spec.TenantID = kit.TenantID
-	if err := m.isValid(kit, inputParam); nil != err {
+	if err := m.isValid(kit, inputParam); err != nil {
 		return &metadata.CreateOneDataResult{}, err
 	}
 
 	exists, err := m.isExistsAssociationID(kit, inputParam.Spec.AssociationName)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to check whether the association ID (%s) is exists, error: %v, rid: %s",
 			inputParam.Spec.AssociationName, err, kit.Rid)
 		return &metadata.CreateOneDataResult{}, err
@@ -68,7 +68,7 @@ func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam meta
 
 	exists, err = m.isExistsAssociationObjectWithAnotherObject(kit, inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID,
 		inputParam.Spec.AsstKindID)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to check if the association (%s=>%s) is exists, error: %v, rid: %s",
 			inputParam.Spec.ObjectID, inputParam.Spec.AsstObjID, err, kit.Rid)
 		return &metadata.CreateOneDataResult{}, err
@@ -83,9 +83,10 @@ func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam meta
 	if enableMainlineAssociationType == false {
 		// AsstKindID shouldn't be use bk_mainline
 		if asstKindID == common.AssociationKindMainline {
-			blog.Errorf("use inner association type: %v is forbidden, rid: %s", common.AssociationKindMainline, kit.Rid)
-			return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(common.CCErrorTopoAssociationKindMainlineUnavailable,
-				asstKindID)
+			blog.Errorf("use inner association type: %v is forbidden, rid: %s", common.AssociationKindMainline,
+				kit.Rid)
+			return &metadata.CreateOneDataResult{}, kit.CCError.Errorf(
+				common.CCErrorTopoAssociationKindMainlineUnavailable, asstKindID)
 		}
 	} else {
 		// AsstKindID could only be bk_mainline
@@ -98,7 +99,7 @@ func (m *associationModel) createModelAssociation(kit *rest.Kit, inputParam meta
 	}
 
 	id, err := m.save(kit, &inputParam.Spec)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("failed to create a new association (%s=>%s), error: %v", inputParam.Spec.ObjectID,
 			inputParam.Spec.AsstObjID, err, kit.Rid)
 		return &metadata.CreateOneDataResult{}, err

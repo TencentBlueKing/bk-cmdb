@@ -28,7 +28,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/driver/mongodb/instancemapping"
 	"configcenter/src/thirdparty/hooks"
 )
 
@@ -53,7 +52,7 @@ func New(dependent OperationDependences, language language.CCLanguageIf,
 func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapStr) (cnt uint64, exists bool,
 	err error) {
 	tableName := common.GetInstTableName(objID, kit.TenantID)
-	cnt, err = mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond).Count(kit.Ctx)
 	exists = 0 != cnt
 	return cnt, exists, err
 }
@@ -85,16 +84,16 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string,
 	}
 
 	err = m.validCreateInstanceData(kit, objID, inputParam.Data, validator)
-	if nil != err {
-		blog.Errorf("CreateModelInstance failed, validCreateInstanceData error:%v, objID:%s, data:%#v, rid:%s", err,
-			objID, inputParam.Data, rid)
+	if err != nil {
+		blog.Errorf("valid create instance data failed err: %v, objID: %s, data: %#v, rid: %s", err, objID,
+			inputParam.Data, rid)
 		return nil, err
 	}
 
 	id, err := m.save(kit, objID, inputParam.Data)
 	if err != nil {
-		blog.ErrorJSON("CreateModelInstance failed, save error:%v, objID:%s, data:%s, rid:%s",
-			err, objID, inputParam.Data, kit.Rid)
+		blog.Errorf("create instance failed, err: %v, objID: %s, data: %v, rid: %s", err, objID, inputParam.Data,
+			kit.Rid)
 		return nil, err
 	}
 
@@ -419,8 +418,9 @@ func (m *instanceManager) getUpdateIPHostProcTempInfo(kit *rest.Kit, hostIDs []i
 	procRelations := make([]metadata.ProcessInstanceRelation, 0)
 	procRelationFilter := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}}
 
-	err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(procRelationFilter).Fields(
-		common.BKHostIDField, common.BKProcessIDField, common.BKProcessTemplateIDField).All(kit.Ctx, &procRelations)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessInstanceRelation).Find(procRelationFilter).
+		Fields(common.BKHostIDField, common.BKProcessIDField, common.BKProcessTemplateIDField).
+		All(kit.Ctx, &procRelations)
 	if err != nil {
 		blog.Errorf("get process relation failed, err: %v, hostIDs: %+v, rid: %s", err, hostIDs, kit.Rid)
 		return nil, nil, err
@@ -444,7 +444,7 @@ func (m *instanceManager) getUpdateIPHostProcTempInfo(kit *rest.Kit, hostIDs []i
 		"property.bind_info.as_default_value": true,
 	}
 
-	err = mongodb.Client().Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessTemplate).Find(processTemplateFilter).Fields(
 		common.BKFieldID, "property.bind_info").All(kit.Ctx, &processTemplates)
 	if err != nil {
 		blog.Errorf("get process template failed, ids: %+v, err: %v, rid: %s", err, procTemplateIDs, kit.Rid)
@@ -458,7 +458,8 @@ func (m *instanceManager) getUpdateIPHostProcTempInfo(kit *rest.Kit, hostIDs []i
 func (m *instanceManager) updateProcessBindIP(kit *rest.Kit, data map[string]interface{}, processIDs []int64) error {
 	processFilter := map[string]interface{}{common.BKProcessIDField: map[string]interface{}{common.BKDBIN: processIDs}}
 
-	if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter, data); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseProcess).Update(kit.Ctx, processFilter,
+		data); err != nil {
 		blog.Errorf("update process failed, err: %v, processIDs: %+v, data: %+v, rid: %s", err, processIDs, data,
 			kit.Rid)
 		return err
@@ -507,8 +508,8 @@ func (m *instanceManager) searchModelInstance(kit *rest.Kit, objID string, input
 
 	tableName := common.GetInstTableName(objID, kit.TenantID)
 	instItems := make([]mapstr.MapStr, 0)
-	query := mongodb.Client().Table(tableName).Find(inputParam.Condition).Start(uint64(inputParam.Page.Start)).
-		Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort)
+	query := mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(inputParam.Condition).
+		Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort)
 
 	instItems, instErr := FindInst(kit, fields, query, objID)
 	if instErr != nil {
@@ -527,7 +528,8 @@ func (m *instanceManager) searchModelInstance(kit *rest.Kit, objID string, input
 	}
 
 	// set vip info for processes
-	instItems, instErr = hooks.SetVIPInfoForProcessHook(kit, instItems, vipFields, tableName, mongodb.Client())
+	instItems, instErr = hooks.SetVIPInfoForProcessHook(kit, instItems, vipFields, tableName,
+		mongodb.Shard(kit.ShardOpts()))
 	if instErr != nil {
 		return nil, instErr
 	}
@@ -577,19 +579,19 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string,
 	inputParam.Condition.Set(common.TenantID, kit.TenantID)
 
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
-	if nil != err {
+	if err != nil {
 		return &metadata.DeletedCount{}, err
 	}
 
 	for _, origin := range origins {
 		instID, err := util.GetInt64ByInterface(origin[instIDFieldName])
-		if nil != err {
+		if err != nil {
 			return nil, err
 		}
 		instIDs = append(instIDs, instID)
 
 		exists, err := m.dependent.IsInstAsstExist(kit, objID, uint64(instID))
-		if nil != err {
+		if err != nil {
 			return nil, err
 		}
 		if exists {
@@ -598,18 +600,19 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string,
 	}
 
 	// delete object instance data.
-	err = mongodb.Client().Table(tableName).Delete(kit.Ctx, inputParam.Condition)
-	if nil != err {
-		blog.ErrorJSON("DeleteModelInstance delete objID(%s) instance error. err:%s, coniditon:%s, rid:%s", objID,
-			err.Error(), inputParam.Condition, kit.Rid)
+	err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Delete(kit.Ctx, inputParam.Condition)
+	if err != nil {
+		blog.Errorf("delete objID(%s) instance failed. err: %v, condition: %v, rid: %s", objID, err,
+			inputParam.Condition, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
 	// delete object instance mapping.
 	if metadata.IsCommon(objID) {
-		if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
-			blog.Errorf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
-				objID, err.Error(), instIDs, kit.Rid)
+		filter := map[string]interface{}{common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs}}
+		if err := mongodb.Shard(kit.ShardOpts()).Table("cc_ObjectBaseMapping").Delete(kit.Ctx, filter); err != nil {
+			blog.Errorf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s", objID, err,
+				instIDs, kit.Rid)
 			return nil, err
 		}
 	}
@@ -630,35 +633,36 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 	instIDFieldName := common.GetInstIDField(objID)
 
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
-	if nil != err {
+	if err != nil {
 		blog.Errorf("cascade delete model instance get inst error:%v, rid: %s", err, kit.Rid)
 		return &metadata.DeletedCount{}, err
 	}
 
 	for _, origin := range origins {
 		instID, err := util.GetInt64ByInterface(origin[instIDFieldName])
-		if nil != err {
+		if err != nil {
 			return &metadata.DeletedCount{}, err
 		}
 		instIDs = append(instIDs, instID)
 
 		err = m.dependent.DeleteInstAsst(kit, objID, uint64(instID))
-		if nil != err {
+		if err != nil {
 			return &metadata.DeletedCount{}, err
 		}
 	}
 
 	// delete object instance data.
-	err = mongodb.Client().Table(tableName).Delete(kit.Ctx, inputParam.Condition)
-	if nil != err {
+	err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Delete(kit.Ctx, inputParam.Condition)
+	if err != nil {
 		return &metadata.DeletedCount{}, err
 	}
 
 	// delete object instance mapping.
 	if metadata.IsCommon(objID) {
-		if err := instancemapping.Delete(kit.Ctx, instIDs); err != nil {
-			blog.Errorf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s",
-				objID, err.Error(), instIDs, kit.Rid)
+		filter := map[string]interface{}{common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs}}
+		if err := mongodb.Shard(kit.ShardOpts()).Table("cc_ObjectBaseMapping").Delete(kit.Ctx, filter); err != nil {
+			blog.Errorf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s", objID, err,
+				instIDs, kit.Rid)
 			return nil, err
 		}
 	}

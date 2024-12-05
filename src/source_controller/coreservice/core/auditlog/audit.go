@@ -41,7 +41,7 @@ func New() core.AuditOperation {
 func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error {
 	logRows := make([]metadata.AuditLog, 0)
 
-	ids, err := mongodb.Client().NextSequences(kit.Ctx, common.BKTableNameAuditLog, len(logs))
+	ids, err := mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameAuditLog, len(logs))
 	if err != nil {
 		blog.Errorf("get next audit log id failed, err: %s", err.Error())
 		return err
@@ -76,7 +76,7 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 	if len(logRows) == 0 {
 		return nil
 	}
-	return mongodb.Client().Table(common.BKTableNameAuditLog).Insert(kit.Ctx, logRows)
+	return mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAuditLog).Insert(kit.Ctx, logRows)
 }
 
 // SearchAuditLog TODO
@@ -100,7 +100,7 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryConditi
 			}
 
 			t, err := timeparser.TimeParserInLocation(timeVal, time.Local)
-			if nil != err {
+			if err != nil {
 				blog.Errorf("parse operation time failed, error: %s, time: %s, rid: %s", err, timeVal, kit.Rid)
 				return nil, 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKOperationTimeField)
 			}
@@ -111,17 +111,17 @@ func (m *auditManager) SearchAuditLog(kit *rest.Kit, param metadata.QueryConditi
 	blog.V(5).Infof("Search table common.BKTableNameAuditLog with parameters: %+v, rid: %s", condition, kit.Rid)
 
 	rows := make([]metadata.AuditLog, 0)
-	err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(condition).Sort(param.Page.Sort).Fields(param.
-		Fields...).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(kit.Ctx, &rows)
-	if nil != err {
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAuditLog).Find(condition).Sort(param.Page.Sort).
+		Fields(param.Fields...).Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).All(kit.Ctx, &rows)
+	if err != nil {
 		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
 		if strings.Contains(err.Error(), "timeout") {
 			return nil, 0, kit.CCError.CCError(common.CCErrAuditSelectTimeout)
 		}
 		return nil, 0, err
 	}
-	cnt, err := mongodb.Client().Table(common.BKTableNameAuditLog).Find(condition).Count(kit.Ctx)
-	if nil != err {
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAuditLog).Find(condition).Count(kit.Ctx)
+	if err != nil {
 		blog.Errorf("query database error:%s, condition:%v, rid: %s", err.Error(), condition, kit.Rid)
 		return nil, 0, kit.CCError.CCError(common.CCErrAuditSelectFailed)
 	}

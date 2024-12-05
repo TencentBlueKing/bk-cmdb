@@ -40,7 +40,7 @@ func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metada
 	results []metadata.ObjectUnique, err error) {
 
 	results = []metadata.ObjectUnique{}
-	instHandler := mongodb.Client().Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
+	instHandler := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Find(inputParam.Condition)
 	err = instHandler.Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).
 		Sort(inputParam.Page.Sort).All(kit.Ctx, &results)
 
@@ -49,7 +49,7 @@ func (m *modelAttrUnique) searchModelAttrUnique(kit *rest.Kit, inputParam metada
 
 func (m *modelAttrUnique) countModelAttrUnique(kit *rest.Kit, cond mapstr.MapStr) (count uint64, err error) {
 
-	count, err = mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond).Count(kit.Ctx)
+	count, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Find(cond).Count(kit.Ctx)
 
 	return count, err
 }
@@ -80,22 +80,20 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string,
 	}
 
 	properties, err := m.getUniqueProperties(kit, objID, inputParam.Data.Keys)
-	if nil != err || len(properties) <= 0 {
-		blog.ErrorJSON("[CreateObjectUnique] getUniqueProperties for %s with %s err: %s, rid: %s", objID, inputParam,
-			err, kit.Rid)
+	if err != nil || len(properties) <= 0 {
+		blog.Errorf("get unique properties for %s with %v err: %v, rid: %s", objID, inputParam, err, kit.Rid)
 		return 0, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "keys")
 	}
 
-	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjUnique)
-	if nil != err {
-		blog.Errorf("[CreateObjectUnique] NextSequence error: %#v, rid: %s", err, kit.Rid)
+	id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameObjUnique)
+	if err != nil {
+		blog.Errorf("get nextSequence id failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
 	dbIndex, ccErr := m.toDBUniqueIndex(kit, objID, id, inputParam.Data.Keys, properties)
 	if ccErr != nil {
-		blog.Errorf("[CreateObjectUnique] toDBUniqueIndex for %s with %#v err: %#v, rid: %s",
-			objID, inputParam, ccErr, kit.Rid)
+		blog.Errorf("to DB unique index for %s with %#v failed, err: %v, rid: %s", objID, inputParam, ccErr, kit.Rid)
 		return 0, ccErr
 	}
 
@@ -107,9 +105,10 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string,
 	rawDBIndexInfo, exists := index.FindIndexByIndexFields(dbIndex.Keys, dbIndexes)
 	// 这样写是为了避免建立主线模型的时候， 唯一索引与修改表中数据的事务产生死锁的问题
 	if !exists || !rawDBIndexInfo.Unique || !strings.HasPrefix(rawDBIndexInfo.Name, common.CCLogicUniqueIdxNamePrefix) {
-		if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
-			blog.ErrorJSON("[CreateObjectUnique] create unique index for %s with %s err: %s, index: %s, rid: %s",
-				objID, inputParam, err, dbIndex, kit.Rid)
+		if err := mongodb.Shard(kit.ShardOpts()).Table(objInstTable).CreateIndex(context.Background(),
+			dbIndex); err != nil {
+			blog.Errorf("create unique index for %s with %v failed, err: %v, index: %s, rid: %s", objID,
+				inputParam, err, dbIndex, kit.Rid)
 			return 0, kit.CCError.CCErrorf(common.CCErrCoreServiceCreateDBUniqueIndexDuplicateValue,
 				mongodb.GetDuplicateValue(properties[0].PropertyID, err))
 		}
@@ -124,9 +123,9 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string,
 		TenantID:   kit.TenantID,
 		LastTime:   metadata.Now(),
 	}
-	err = mongodb.Client().Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
-	if nil != err {
-		blog.Errorf("[CreateObjectUnique] Insert error: %#v, raw: %#v, rid: %s", err, &unique, kit.Rid)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)
+	if err != nil {
+		blog.Errorf("insert object unique failed, err: %v, unique: %v, rid: %s", err, &unique, kit.Rid)
 		return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
@@ -153,7 +152,8 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	}
 
 	oldUnique := metadata.ObjectUnique{}
-	if err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(filter).One(kit.Ctx, &oldUnique); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Find(filter).One(kit.Ctx,
+		&oldUnique); err != nil {
 		blog.Errorf("find unique error, cond: %#v, err: %v, rid: %s", filter, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
@@ -178,17 +178,19 @@ func (m *modelAttrUnique) updateModelAttrUnique(kit *rest.Kit, objID string, id 
 	}
 
 	if oldUnique.Ispre {
-		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v, rid: %s", oldUnique, err, kit.Rid)
+		blog.Errorf("[UpdateObjectUnique] could not update preset constrain: %+v %v, rid: %s", oldUnique,
+			err, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoObjectUniquePresetCouldNotDelOrEdit)
 	}
 
-	if err = mongodb.Client().Table(common.BKTableNameObjUnique).Update(kit.Ctx, filter, &unique); err != nil {
-		blog.Errorf("[UpdateObjectUnique] Update error: %s, raw: %#v, rid: %s", err, &unique, kit.Rid)
+	if err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Update(kit.Ctx, filter,
+		&unique); err != nil {
+		blog.Errorf("update object unique failed, err: %v, unique: %v, rid: %s", err, &unique, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 
 	if err := m.updateDBUnique(kit, oldUnique, unique, properties); err != nil {
-		blog.Errorf("[UpdateObjectUnique] updateDBUnique error: %s, raw: %#v, rid: %s", err, &unique, kit.Rid)
+		blog.Errorf("insert db unique failed, err: %v, unique: %v, rid: %s", err, &unique, kit.Rid)
 		return err
 	}
 
@@ -203,8 +205,8 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	fCond := cond.ToMapStr()
 
 	unique := metadata.ObjectUnique{}
-	err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(fCond).One(kit.Ctx, &unique)
-	if nil != err {
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Find(fCond).One(kit.Ctx, &unique)
+	if err != nil {
 		blog.Errorf("find unique index raw: %#v, err: %v, rid: %s", err, fCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
@@ -220,18 +222,20 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 		return err
 	}
 	if !exist {
-		blog.Errorf("check unique require result. not found other require unique, cond: %v, rid: %s", fCond, kit.Rid)
+		blog.Errorf("check unique require result. not found other require unique, cond: %v, rid: %s",
+			fCond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrTopoObjectUniqueShouldHaveMoreThanOne)
 	}
 
 	// synchronous scene does not exist delete only update
 	if unique.TemplateID != 0 {
-		blog.Errorf("index is inherited from the template and cannot be deleted: unique: %+v, rid: %s", unique, kit.Rid)
+		blog.Errorf("index is inherited from the template and cannot be deleted: unique: %+v, rid: %s",
+			unique, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrorTopoFieldTemplateForbiddenDeleteIndex, id, unique.TemplateID)
 	}
 
-	err = mongodb.Client().Table(common.BKTableNameObjUnique).Delete(kit.Ctx, fCond)
-	if nil != err {
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Delete(kit.Ctx, fCond)
+	if err != nil {
 		blog.Errorf("delete object unique error, raw: %#v, err: %v, rid: %s", fCond, err, kit.Rid)
 		return kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
@@ -240,8 +244,9 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 	// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
 	objInstTable := common.GetInstTableName(objID, kit.TenantID)
 	// 删除失败，忽略即可以,后需会有任务补偿
-	if err := mongodb.Table(objInstTable).DropIndex(context.Background(), indexName); err != nil {
-		blog.Warnf("[delete db unique index error, index name: %s, err: %v, rid: %s", indexName, err, kit.Rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(objInstTable).DropIndex(context.Background(),
+		indexName); err != nil {
+		blog.Warnf("delete db unique index error, index name: %s, err: %v, rid: %s", indexName, err, kit.Rid)
 	}
 
 	return nil
@@ -263,10 +268,9 @@ func (m *modelAttrUnique) getUniqueProperties(kit *rest.Kit, objID string, keys 
 	attCond.Field(common.BKFieldID).In(propertyIDs)
 	fCond := attCond.ToMapStr()
 
-	err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(fCond).All(kit.Ctx, &properties)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(fCond).All(kit.Ctx, &properties)
 	if err != nil {
-		blog.ErrorJSON("[ObjectUnique] getUniqueProperties find properties for %s failed %s: %s, rid: %s", objID, err,
-			kit.Rid)
+		blog.Errorf("find object attribute failed, err: %v, objID: %v, rid: %s", err, objID, kit.Rid)
 		return nil, err
 	}
 
@@ -338,9 +342,9 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 		UniqueCount uint64 `bson:"unique_count"`
 	}{}
 	tableName := common.GetInstTableName(objID, kit.TenantID)
-	err := mongodb.Client().Table(tableName).AggregateOne(kit.Ctx, pipeline, &result)
-	if err != nil && !mongodb.Client().IsNotFoundError(err) {
-		blog.ErrorJSON("[ObjectUnique] recheckUniqueForExistsInsts failed %s, pipeline: %s, rid: %s", err, pipeline,
+	err := mongodb.Shard(kit.ShardOpts()).Table(tableName).AggregateOne(kit.Ctx, pipeline, &result)
+	if err != nil && !mongodb.IsNotFoundError(err) {
+		blog.Errorf("count unique failed, err: %v, tableName: %s, pipeline: %v, rid: %s", err, tableName, pipeline,
 			kit.Rid)
 		return err
 	}
@@ -354,16 +358,17 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 
 // checkUniqueRequireExist  check if either is a required unique check
 // ignoreUniqueIDS 除ignoreUniqueIDS之外是否有唯一校验项目
-func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, ignoreUniqueIDS []uint64) (bool, error) {
+func (m *modelAttrUnique) checkUniqueRequireExist(kit *rest.Kit, objID string, ignoreUniqueIDS []uint64) (bool,
+	error) {
 	cond := condition.CreateCondition()
 	if len(ignoreUniqueIDS) > 0 {
 		cond.Field(common.BKFieldID).NotIn(ignoreUniqueIDS)
 	}
 	cond.Field(common.BKObjIDField).Eq(objID)
 
-	cnt, err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
-	if nil != err {
-		blog.ErrorJSON("[checkUniqueRequireExist] find error: %s, raw: %s, rid: %s", err, cond.ToMapStr(), kit.Rid)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Find(cond.ToMapStr()).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("find object unique failed, err: %v, cond: %v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 		return false, kit.CCError.Error(common.CCErrObjectDBOpErrno)
 	}
 	if cnt > 0 {
@@ -383,7 +388,7 @@ func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, rule
 	uniqueCond.Field(common.BKObjIDField).Eq(objID)
 	cond := uniqueCond.ToMapStr()
 	existUniques := make([]metadata.ObjectUnique, 0)
-	err := mongodb.Client().Table(common.BKTableNameObjUnique).Find(cond).All(kit.Ctx, &existUniques)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Find(cond).All(kit.Ctx, &existUniques)
 	if err != nil {
 		return kit.CCError.CCError(common.CCErrObjectDBOpErrno)
 	}
@@ -420,7 +425,7 @@ func (m *modelAttrUnique) checkUniqueRuleExist(kit *rest.Kit, objID string, rule
 		if len(keysMap) > len(u.Keys) {
 			if cnt == len(u.Keys) {
 				properties, err := m.getUniqueProperties(kit, objID, u.Keys)
-				if nil != err {
+				if err != nil {
 					blog.ErrorJSON("get duplicate unique(%s) properties failed, err: %s, rid: %s", u, err, kit.Rid)
 					return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "unique.keys")
 				}
@@ -505,17 +510,19 @@ func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique metadata.Objec
 
 	if _, exists := dbIndexNameMap[dbIndex.Name]; exists {
 		// 删除原来的索引，
-		if err := mongodb.Table(objInstTable).DropIndex(context.Background(), dbIndex.Name); err != nil {
-			blog.Errorf("[UpdateObjectUnique] drop unique index name %s for %s err: %#v, rid: %s",
-				dbIndex.Name, oldUnique.ObjID, err.Error(), kit.Rid)
+		if err := mongodb.Shard(kit.ShardOpts()).Table(objInstTable).DropIndex(context.Background(),
+			dbIndex.Name); err != nil {
+			blog.Errorf("drop unique index name %s for %s failed, err: %v, rid: %s", dbIndex.Name, oldUnique.ObjID,
+				err.Error(), kit.Rid)
 			return kit.CCError.CCError(common.CCErrCoreServiceCreateDBUniqueIndex)
 		}
 	}
 
 	// 新加索引， 新加失败 不能回滚事务，原因删除索引不能回滚
-	if err := mongodb.Table(objInstTable).CreateIndex(context.Background(), dbIndex); err != nil {
-		blog.Errorf("[UpdateObjectUnique] create unique index name %s for %s err: %#v, rid: %s",
-			dbIndex.Name, oldUnique.ObjID, err.Error(), kit.Rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(objInstTable).CreateIndex(context.Background(),
+		dbIndex); err != nil {
+		blog.Errorf("create unique index name %s for %s failed, err: %v, rid: %s", dbIndex.Name, oldUnique.ObjID,
+			err.Error(), kit.Rid)
 	}
 
 	return nil
@@ -556,13 +563,14 @@ func (m *modelAttrUnique) checkDuplicateInstances(kit *rest.Kit, objInstTable st
 	}
 	var result interface{}
 	// check data has duplicate. 这里不能用事务， 会出现事务与索引操作互斥
-	if err := mongodb.Table(objInstTable).AggregateOne(context.Background(), checkInstDupFilter, &result); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(objInstTable).AggregateOne(context.Background(), checkInstDupFilter,
+		&result); err != nil {
 		// 没有找到重复的数据
-		if mongodb.Client().IsNotFoundError(err) {
+		if mongodb.IsNotFoundError(err) {
 			return nil
 		}
-		blog.ErrorJSON("find db table %s duplicate instance error. err: %s, filter: %s, rid: %s",
-			objInstTable, err.Error(), checkInstDupFilter, kit.Rid)
+		blog.Errorf("find db table %s duplicate instance error. err: %v, filter: %v, rid: %s", objInstTable, err,
+			checkInstDupFilter, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 
 	}
@@ -574,9 +582,9 @@ func (m *modelAttrUnique) checkDuplicateInstances(kit *rest.Kit, objInstTable st
 }
 func (m *modelAttrUnique) getTableIndexes(kit *rest.Kit,
 	tableName string) (map[string]types.Index, []types.Index, errors.CCErrorCoder) {
-	idxList, err := mongodb.Table(tableName).Indexes(context.Background())
+	idxList, err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Indexes(context.Background())
 	if err != nil {
-		blog.Errorf("find db table %s index list error. err: %s, rid: %s", tableName, err.Error(), kit.Rid)
+		blog.Errorf("find db table %s index list error. err: %v, rid: %s", tableName, err, kit.Rid)
 		return nil, nil, kit.CCError.CCError(common.CCErrCoreServiceSearchDBUniqueIndex)
 	}
 	idxNameMap := make(map[string]types.Index, len(idxList))

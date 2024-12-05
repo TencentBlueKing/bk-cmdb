@@ -71,7 +71,7 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID str
 	if err != nil {
 		blog.Errorf("failed to create a new model attribute group, data: %v, err: %v, rid: %s", inputParam.Data, err,
 			kit.Rid)
-		if mongodb.Client().IsDuplicatedError(err) {
+		if mongodb.IsDuplicatedError(err) {
 			dupErr := kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 			return nil, dupErr
 		}

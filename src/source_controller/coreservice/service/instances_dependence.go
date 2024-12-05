@@ -172,7 +172,7 @@ func (s *coreService) DeleteQuotedInst(kit *rest.Kit, objID string, instIDs []in
 	quoteRelCond := mapstr.MapStr{common.BKSrcModelField: objID}
 	quoteRelations := make([]metadata.ModelQuoteRelation, 0)
 
-	err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
 		Fields(common.BKDestModelField).All(kit.Ctx, &quoteRelations)
 	if err != nil {
 		blog.Errorf("get quoted relations failed, err: %v, source object: %s, rid: %s", err, objID, kit.Rid)
@@ -183,7 +183,7 @@ func (s *coreService) DeleteQuotedInst(kit *rest.Kit, objID string, instIDs []in
 		tableName := common.GetInstTableName(rel.DestModel, kit.TenantID)
 		delCond := mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}}
 
-		err = mongodb.Client().Table(tableName).Delete(kit.Ctx, delCond)
+		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Delete(kit.Ctx, delCond)
 		if err != nil {
 			blog.Errorf("delete quoted instances failed, err: %v, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
@@ -202,7 +202,7 @@ func (s *coreService) AttachQuotedInst(kit *rest.Kit, objID string, instID uint6
 	quoteRelCond := mapstr.MapStr{common.BKSrcModelField: objID}
 	quoteRelations := make([]metadata.ModelQuoteRelation, 0)
 
-	err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Find(quoteRelCond).
 		Fields(common.BKPropertyIDField, common.BKDestModelField).All(kit.Ctx, &quoteRelations)
 	if err != nil {
 		blog.Errorf("get quoted relations failed, err: %v, source object: %s, rid: %s", err, objID, kit.Rid)
@@ -224,7 +224,7 @@ func (s *coreService) AttachQuotedInst(kit *rest.Kit, objID string, instID uint6
 		cond := mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: arrVal},
 			common.BKInstIDField: mapstr.MapStr{common.BKDBEQ: 0}}
 
-		cnt, err := mongodb.Client().Table(tableName).Find(cond).Count(kit.Ctx)
+		cnt, err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond).Count(kit.Ctx)
 		if err != nil {
 			blog.Errorf("count quoted instances failed, err: %v, ids: %+v, rid: %s", err, arrVal, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -236,9 +236,10 @@ func (s *coreService) AttachQuotedInst(kit *rest.Kit, objID string, instID uint6
 
 		// attach quoted instances
 		attachData := mapstr.MapStr{common.BKInstIDField: instID}
-		err = mongodb.Client().Table(tableName).Update(kit.Ctx, cond, attachData)
+		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Update(kit.Ctx, cond, attachData)
 		if err != nil {
-			blog.Errorf("attach quoted inst failed, err: %v, ids: %+v, inst: %d, rid: %s", err, arrVal, instID, kit.Rid)
+			blog.Errorf("attach quoted inst failed, err: %v, ids: %+v, inst: %d, rid: %s", err, arrVal, instID,
+				kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 		}
 	}

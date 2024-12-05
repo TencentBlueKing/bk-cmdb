@@ -63,7 +63,7 @@ func (s *service) CreateWorkload(ctx *rest.Contexts) {
 		}
 	}
 
-	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, tableName, len(workloads))
+	ids, err := mongodb.Shard(ctx.Kit.SysShardOpts()).NextSequences(ctx.Kit.Ctx, tableName, len(workloads))
 	if err != nil {
 		blog.Errorf("get workload ids failed, table: %s, err: %v, rid: %s", tableName, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -116,10 +116,10 @@ func (s *service) CreateWorkload(ctx *rest.Contexts) {
 	}
 
 	// create workloads
-	err = mongodb.Client().Table(tableName).Insert(ctx.Kit.Ctx, createData)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(tableName).Insert(ctx.Kit.Ctx, createData)
 	if err != nil {
 		blog.Errorf("add %s workload failed,data: %v, err: %v, rid: %s", tableName, createData, err, ctx.Kit.Rid)
-		ctx.RespAutoError(errutil.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
+		ctx.RespAutoError(errutil.ConvDBInsertError(ctx.Kit, err))
 		return
 	}
 
@@ -143,15 +143,15 @@ func (s *service) GetNamespaceSpec(kit *rest.Kit, nsIDs []int64) (map[int64]type
 	field := []string{common.BKFieldID, common.BKFieldName, common.BKAppIDField, types.BKClusterIDFiled,
 		types.ClusterUIDField}
 	namespaces := make([]types.Namespace, 0)
-	err := mongodb.Client().Table(types.BKTableNameBaseNamespace).Find(filter).Fields(field...).
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameBaseNamespace).Find(filter).Fields(field...).
 		All(kit.Ctx, &namespaces)
-	if err != nil && !mongodb.Client().IsNotFoundError(err) {
-		blog.Errorf("find namespace failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+	if err != nil && !mongodb.IsNotFoundError(err) {
+		blog.Errorf("find namespace failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
 	if len(nsIDs) != len(namespaces) {
-		blog.Errorf("can not find all namespace, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+		blog.Errorf("can not find all namespace, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 	}
 
@@ -200,7 +200,7 @@ func (s *service) UpdateWorkload(ctx *rest.Contexts) {
 		return
 	}
 
-	err = mongodb.Client().Table(table).Update(ctx.Kit.Ctx, cond, updateData)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(table).Update(ctx.Kit.Ctx, cond, updateData)
 	if err != nil {
 		blog.Errorf("update workload failed, kind: %s, filter: %v, updateData: %v, err: %v, rid: %s", kind, cond,
 			updateData, err, ctx.Kit.Rid)
@@ -234,7 +234,7 @@ func (s *service) DeleteWorkload(ctx *rest.Contexts) {
 	filter := mapstr.MapStr{
 		common.BKFieldID: mapstr.MapStr{common.BKDBIN: req.IDs},
 	}
-	if err := mongodb.Client().Table(table).Delete(ctx.Kit.Ctx, filter); err != nil {
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(table).Delete(ctx.Kit.Ctx, filter); err != nil {
 		blog.Errorf("delete workload failed, filter: %v, err: %v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))
 		return
@@ -264,7 +264,7 @@ func (s *service) ListWorkload(ctx *rest.Contexts) {
 		return
 	}
 	workloads := make([]mapstr.MapStr, 0)
-	err = mongodb.Client().Table(table).Find(input.Condition).Start(uint64(input.Page.Start)).
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(table).Find(input.Condition).Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
 		Sort(input.Page.Sort).
 		Fields(input.Fields...).All(ctx.Kit.Ctx, &workloads)

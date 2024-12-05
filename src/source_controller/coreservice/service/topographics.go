@@ -38,7 +38,7 @@ func (s *coreService) SearchTopoGraphics(ctx *rest.Contexts) {
 	}
 
 	results := make([]meta.TopoGraphics, 0)
-	if selErr := mongodb.Client().Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx.Kit.Ctx,
+	if selErr := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameTopoGraphics).Find(cond).All(ctx.Kit.Ctx,
 		&results); selErr != nil {
 		blog.Errorf("select data failed, err: %v, cond: %v, rid: %s", selErr, cond, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -67,22 +67,24 @@ func (s *coreService) UpdateTopoGraphics(ctx *rest.Contexts) {
 			"bk_inst_id": inputBody.Data[index].InstID,
 		}
 
-		cnt, err := mongodb.Client().Table(common.BKTableNameTopoGraphics).Find(cond).Count(ctx.Kit.Ctx)
+		cnt, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameTopoGraphics).Find(cond).
+			Count(ctx.Kit.Ctx)
 		if err != nil {
 			blog.Errorf("search data failed, err: %v, cond: %v, rid: %s", err, cond, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
 			return
 		}
 		if cnt == 0 {
-			err = mongodb.Client().Table(common.BKTableNameTopoGraphics).Insert(ctx.Kit.Ctx, inputBody.Data[index])
+			err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameTopoGraphics).Insert(ctx.Kit.Ctx,
+				inputBody.Data[index])
 			if err != nil {
 				blog.Errorf("insert data failed, err: %v, inputBody: %v, rid: %s", err, inputBody, ctx.Kit.Rid)
 				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
 				return
 			}
 		} else {
-			if err = mongodb.Client().Table(common.BKTableNameTopoGraphics).Update(context.Background(), cond,
-				inputBody.Data[index]); err != nil {
+			if err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameTopoGraphics).Update(
+				context.Background(), cond, inputBody.Data[index]); err != nil {
 				blog.Errorf("insert data failed, err: %v, inputBody: %v, rid: %s", err, inputBody, ctx.Kit.Rid)
 				ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
 				return

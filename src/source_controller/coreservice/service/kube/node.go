@@ -42,7 +42,8 @@ func (s *service) updateNodeHasPodField(kit *rest.Kit, nodeIDs []int64, value bo
 	updateData := map[string]interface{}{
 		types.HasPodField: value,
 	}
-	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Update(kit.Ctx, filter, updateData); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameBaseNode).Update(kit.Ctx, filter,
+		updateData); err != nil {
 		blog.Errorf("update node has_pod field failed, filter: %v, err: %+v, rid: %s", filter, err, kit.Rid)
 		return err
 	}
@@ -82,7 +83,7 @@ func (s *service) SearchNodes(ctx *rest.Contexts) {
 	}
 
 	nodes := make([]types.Node, 0)
-	err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(input.Condition).
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseNode).Find(input.Condition).
 		Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
 		Sort(input.Page.Sort).
@@ -123,7 +124,7 @@ func (s *service) BatchUpdateNode(ctx *rest.Contexts) {
 		return
 	}
 
-	err = mongodb.Client().Table(types.BKTableNameBaseNode).Update(ctx.Kit.Ctx, filter, updateData)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseNode).Update(ctx.Kit.Ctx, filter, updateData)
 	if err != nil {
 		blog.Errorf("update node failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
 			err, ctx.Kit.Rid)
@@ -152,7 +153,7 @@ func (s *service) BatchDeleteNode(ctx *rest.Contexts) {
 		types.BKIDField: map[string]interface{}{common.BKDBIN: option.IDs},
 	}
 	nodes := make([]types.Node, 0)
-	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Find(query).
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseNode).Find(query).
 		Fields(common.BKHostIDField, common.BKAppIDField).All(ctx.Kit.Ctx, &nodes); err != nil {
 		blog.Errorf("query node failed, filter: %+v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -169,7 +170,8 @@ func (s *service) BatchDeleteNode(ctx *rest.Contexts) {
 			common.BKDBIN: option.IDs,
 		},
 	}
-	if err := mongodb.Client().Table(types.BKTableNameBaseNode).Delete(ctx.Kit.Ctx, filter); err != nil {
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseNode).Delete(ctx.Kit.Ctx,
+		filter); err != nil {
 		blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return

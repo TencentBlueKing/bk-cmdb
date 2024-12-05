@@ -41,7 +41,8 @@ func (s *service) SearchClusters(ctx *rest.Contexts) {
 
 	clusters := make([]types.Cluster, 0)
 
-	err := mongodb.Client().Table(types.BKTableNameBaseCluster).Find(input.Condition).Start(uint64(input.Page.Start)).
+	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseCluster).Find(input.Condition).
+		Start(uint64(input.Page.Start)).
 		Limit(uint64(input.Page.Limit)).
 		Sort(input.Page.Sort).
 		Fields(input.Fields...).All(ctx.Kit.Ctx, &clusters)
@@ -82,7 +83,8 @@ func (s *service) BatchUpdateCluster(ctx *rest.Contexts) {
 		return
 	}
 
-	err = mongodb.Client().Table(types.BKTableNameBaseCluster).Update(ctx.Kit.Ctx, filter, updateData)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseCluster).Update(ctx.Kit.Ctx, filter,
+		updateData)
 	if err != nil {
 		blog.Errorf("update cluster failed, filter: %v, updateData: %v, err: %v, rid: %s", filter, updateData,
 			err, ctx.Kit.Rid)
@@ -106,7 +108,7 @@ func (s *service) CreateCluster(ctx *rest.Contexts) {
 		return
 	}
 
-	id, err := mongodb.Client().NextSequence(ctx.Kit.Ctx, types.BKTableNameBaseCluster)
+	id, err := mongodb.Shard(ctx.Kit.SysShardOpts()).NextSequence(ctx.Kit.Ctx, types.BKTableNameBaseCluster)
 	if err != nil {
 		blog.Errorf("create cluster failed, generate id failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed))
@@ -123,10 +125,10 @@ func (s *service) CreateCluster(ctx *rest.Contexts) {
 	}
 	cluster.TenantID = ctx.Kit.TenantID
 
-	err = mongodb.Client().Table(types.BKTableNameBaseCluster).Insert(ctx.Kit.Ctx, cluster)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseCluster).Insert(ctx.Kit.Ctx, cluster)
 	if err != nil {
 		blog.Errorf("create cluster failed, db insert failed, doc: %+v, err: %+v, rid: %s", cluster, err, ctx.Kit.Rid)
-		ctx.RespAutoError(errors.ConvDBInsertError(ctx.Kit, mongodb.Client(), err))
+		ctx.RespAutoError(errors.ConvDBInsertError(ctx.Kit, err))
 		return
 	}
 
@@ -153,7 +155,8 @@ func (s *service) BatchDeleteCluster(ctx *rest.Contexts) {
 		},
 	}
 
-	if err := mongodb.Client().Table(types.BKTableNameBaseCluster).Delete(ctx.Kit.Ctx, filter); err != nil {
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseCluster).Delete(ctx.Kit.Ctx,
+		filter); err != nil {
 		blog.Errorf("delete cluster failed, filter: %+v, err: %+v, rid: %s", filter, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return

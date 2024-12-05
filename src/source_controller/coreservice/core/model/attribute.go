@@ -301,7 +301,7 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 func (m *modelAttribute) UpdateModelAttributes(kit *rest.Kit, objID string,
 	inputParam metadata.UpdateOption) (*metadata.UpdatedCount, error) {
 
-	if err := m.model.isValid(kit, objID); nil != err {
+	if err := m.model.isValid(kit, objID); err != nil {
 		blog.Errorf("UpdateModelAttributes failed, validate model(%s) failed, err: %s, rid: %s", objID, err.Error(),
 			kit.Rid)
 		return &metadata.UpdatedCount{}, err
@@ -333,7 +333,7 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 		common.BKObjIDField: objID,
 		common.BKAppIDField: input.BizID,
 	}
-	cnt, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(attrCond).Count(kit.Ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(attrCond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("check if attribute exists failed, err: %v, cond: %+v, rid: %s", err, attrCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -351,7 +351,7 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 		common.BKPropertyGroupField: input.PropertyGroup,
 		common.BKPropertyIndexField: input.PropertyIndex,
 	}
-	count, err := mongodb.Client().Table(common.BKTableNameObjAttDes).Find(indexCond).Count(kit.Ctx)
+	count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(indexCond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("check if index is used failed, err: %v, cond: %+v, rid: %s", err, indexCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -368,7 +368,7 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 		}
 
 		incData := mapstr.MapStr{common.BKPropertyIndexField: int64(1)}
-		err = mongodb.Client().Table(common.BKTableNameObjAttDes).UpdateMultiModel(kit.Ctx, incCond,
+		err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).UpdateMultiModel(kit.Ctx, incCond,
 			types.ModeUpdate{Op: "inc", Doc: incData})
 		if err != nil {
 			blog.Errorf("increase attributes index failed, err: %v, cond: %+v, rid: %s", err, incCond, kit.Rid)
@@ -381,7 +381,7 @@ func (m *modelAttribute) UpdateModelAttributeIndex(kit *rest.Kit, objID string, 
 		common.BKPropertyIndexField: input.PropertyIndex,
 		common.BKPropertyGroupField: input.PropertyGroup,
 	}
-	err = mongodb.Client().Table(common.BKTableNameObjAttDes).Update(kit.Ctx, attrCond, data)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Update(kit.Ctx, attrCond, data)
 	if err != nil {
 		blog.Errorf("update attribute index failed, err: %v, cond: %+v, rid: %s", err, attrCond, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -550,7 +550,8 @@ func (m *modelAttribute) unsetTableInstAttr(kit *rest.Kit, data mapstr.MapStr, a
 	}
 
 	quoteRel := new(metadata.ModelQuoteRelation)
-	err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(quoteCond).One(kit.Ctx, &quoteRel)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Find(quoteCond).
+		One(kit.Ctx, &quoteRel)
 	if err != nil {
 		blog.Errorf("get model quote relations failed, err: %v, filter: %+v, rid: %v", err, quoteCond, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -587,7 +588,8 @@ func (m *modelAttribute) updateTableAttr(kit *rest.Kit, data mapstr.MapStr, cond
 		return err
 	}
 
-	_, err = mongodb.Client().Table(common.BKTableNameObjAttDes).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
+	_, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).UpdateMany(kit.Ctx, cond.ToMapStr(),
+		data)
 	if err != nil {
 		blog.Errorf("database operation is failed, error: %v, rid: %s", err, kit.Rid)
 		return err

@@ -23,8 +23,8 @@ import (
 )
 
 func (m *modelClassification) count(kit *rest.Kit, cond mapstr.MapStr) (cnt uint64, err error) {
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).Find(cond).Count(kit.Ctx)
-	if nil != err {
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjClassification).Find(cond).Count(kit.Ctx)
+	if err != nil {
 		blog.Errorf("execute a database count operation failed, cond: %#v, err: %v, rid: %s", cond, err, kit.Rid)
 		return 0, err
 	}
@@ -33,7 +33,7 @@ func (m *modelClassification) count(kit *rest.Kit, cond mapstr.MapStr) (cnt uint
 
 func (m *modelClassification) save(kit *rest.Kit, classification metadata.Classification) (id uint64, err error) {
 
-	id, err = mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameObjClassification)
+	id, err = mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameObjClassification)
 	if err != nil {
 		blog.Errorf("failed to create a new sequence id on the table(%s) of the database, error: %v, rid: %s",
 			common.BKTableNameObjClassification, err, kit.Rid)
@@ -43,7 +43,7 @@ func (m *modelClassification) save(kit *rest.Kit, classification metadata.Classi
 	classification.ID = int64(id)
 	classification.TenantID = kit.TenantID
 
-	err = mongodb.Client().Table(common.BKTableNameObjClassification).Insert(kit.Ctx, classification)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjClassification).Insert(kit.Ctx, classification)
 	return id, err
 }
 
@@ -51,10 +51,10 @@ func (m *modelClassification) update(kit *rest.Kit, data mapstr.MapStr, cond uni
 	err error) {
 
 	data.Remove(metadata.ClassFieldClassificationID)
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
-	if nil != err {
-		blog.Errorf("request(%s): failed to execute a database update operation on the table(%s), condition: %#v, error: %s",
-			kit.Rid, common.BKTableNameObjClassification, cond.ToMapStr(), err)
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjClassification).UpdateMany(kit.Ctx,
+		cond.ToMapStr(), data)
+	if err != nil {
+		blog.Errorf("update object classification failed, err: %v, cond: %v, rid: %s", err, cond, kit.Rid)
 		return 0, err
 	}
 	return cnt, err
@@ -62,8 +62,9 @@ func (m *modelClassification) update(kit *rest.Kit, data mapstr.MapStr, cond uni
 
 func (m *modelClassification) delete(kit *rest.Kit, cond universalsql.Condition) (cnt uint64, err error) {
 
-	cnt, err = mongodb.Client().Table(common.BKTableNameObjClassification).DeleteMany(kit.Ctx, cond.ToMapStr())
-	if nil != err {
+	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjClassification).DeleteMany(kit.Ctx,
+		cond.ToMapStr())
+	if err != nil {
 		blog.Errorf("failed to delete on the table(%s), condition: %#v, error: %v", kit.Rid,
 			common.BKTableNameObjClassification, cond.ToMapStr(), err)
 		return 0, err
@@ -75,13 +76,15 @@ func (m *modelClassification) delete(kit *rest.Kit, cond universalsql.Condition)
 func (m *modelClassification) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Classification, error) {
 
 	results := make([]metadata.Classification, 0)
-	err := mongodb.Client().Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(kit.Ctx, &results)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(kit.Ctx,
+		&results)
 	return results, err
 }
 
 func (m *modelClassification) searchReturnMapStr(kit *rest.Kit, cond universalsql.Condition) ([]mapstr.MapStr, error) {
 
 	results := make([]mapstr.MapStr, 0)
-	err := mongodb.Client().Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(kit.Ctx, &results)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjClassification).Find(cond.ToMapStr()).All(kit.Ctx,
+		&results)
 	return results, err
 }

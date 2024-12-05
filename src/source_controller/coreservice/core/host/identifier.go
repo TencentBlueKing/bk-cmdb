@@ -20,11 +20,12 @@ import (
 )
 
 // Identifier TODO
-func (hm *hostManager) Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier, error) {
+func (hm *hostManager) Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier,
+	error) {
 	identifier := identifier.NewIdentifier()
 	host, err := identifier.Identifier(kit, input.HostIDs)
 	if err != nil {
-		blog.ErrorJSON("Identifier get host identifier error. input:%s, err:%s, rid:%s", input, err.Error(), kit.Rid)
+		blog.Errorf("get host identifier failed. input: %v, err: %v, rid: %s", input, err, kit.Rid)
 		return nil, err
 	}
 	return host, nil

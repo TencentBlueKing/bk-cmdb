@@ -24,13 +24,14 @@ import (
 
 func (g *modelAttributeGroup) count(kit *rest.Kit, cond universalsql.Condition) (count int64, err error) {
 
-	iCount, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Find(cond.ToMapStr()).Count(kit.Ctx)
+	iCount, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNamePropertyGroup).Find(cond.ToMapStr()).
+		Count(kit.Ctx)
 	return int64(iCount), err
 }
 
 func (g *modelAttributeGroup) save(kit *rest.Kit, group metadata.Group) (uint64, error) {
 
-	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNamePropertyGroup)
+	id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNamePropertyGroup)
 	if err != nil {
 		return id, kit.CCError.New(common.CCErrObjectDBOpErrno, err.Error())
 	}
@@ -38,14 +39,15 @@ func (g *modelAttributeGroup) save(kit *rest.Kit, group metadata.Group) (uint64,
 	group.ID = int64(id)
 	group.TenantID = kit.TenantID
 
-	err = mongodb.Client().Table(common.BKTableNamePropertyGroup).Insert(kit.Ctx, group)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNamePropertyGroup).Insert(kit.Ctx, group)
 	return id, err
 }
 
 func (g *modelAttributeGroup) delete(kit *rest.Kit, cond universalsql.Condition) (uint64, error) {
-	cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).DeleteMany(kit.Ctx, cond.ToMapStr())
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNamePropertyGroup).DeleteMany(kit.Ctx,
+		cond.ToMapStr())
 	if err != nil {
-		blog.ErrorJSON("delete model attribute group error. cond: %s, err: %s, rid: %s", cond, err.Error(), kit.Rid)
+		blog.Errorf("delete model attribute group error. cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
 		return 0, err
 	}
 	return cnt, nil
@@ -54,15 +56,17 @@ func (g *modelAttributeGroup) delete(kit *rest.Kit, cond universalsql.Condition)
 func (g *modelAttributeGroup) search(kit *rest.Kit, cond universalsql.Condition) ([]metadata.Group, error) {
 
 	dataResult := make([]metadata.Group, 0)
-	err := mongodb.Client().Table(common.BKTableNamePropertyGroup).Find(cond.ToMapStr()).All(kit.Ctx, &dataResult)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNamePropertyGroup).Find(cond.ToMapStr()).All(kit.Ctx,
+		&dataResult)
 	return dataResult, err
 }
 
 func (g *modelAttributeGroup) update(kit *rest.Kit, data mapstr.MapStr, cond universalsql.Condition) (uint64, error) {
 
-	cnt, err := mongodb.Client().Table(common.BKTableNamePropertyGroup).UpdateMany(kit.Ctx, cond.ToMapStr(), data)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNamePropertyGroup).UpdateMany(kit.Ctx,
+		cond.ToMapStr(), data)
 	if err != nil {
-		blog.ErrorJSON("update model attribute group error. cond: %s, err: %s, rid: %s", cond, err.Error(), kit.Rid)
+		blog.Errorf("update model attribute group error. cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
 		return 0, err
 	}
 	return cnt, nil

@@ -97,8 +97,8 @@ func (i *Identifier) findHost(kit *rest.Kit, hostIDs []int64) error {
 	condHostMap := hostCond.ToMapStr()
 	// fetch all hosts
 	i.hosts = make([]metadata.HostIdentifier, 0)
-	err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(condHostMap).Fields(identityHostFields...).
-		All(kit.Ctx, &i.hosts)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(condHostMap).
+		Fields(identityHostFields...).All(kit.Ctx, &i.hosts)
 	if err != nil {
 		blog.Errorf("findHost query host error, err: %v, condition: %+v, rid: %s", err, condHostMap, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
@@ -113,8 +113,8 @@ func (i *Identifier) findModuleHostRelation(kit *rest.Kit, hostIDs []int64) erro
 	condModuleHostMap := hostModuleCond.ToMapStr()
 	// fetch  host and module relation
 	moduleHostRelation := make([]metadata.ModuleHost, 0)
-	err := mongodb.Client().Table(common.BKTableNameModuleHostConfig).Find(condModuleHostMap).All(kit.Ctx,
-		&moduleHostRelation)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Find(condModuleHostMap).
+		All(kit.Ctx, &moduleHostRelation)
 	if err != nil {
 		blog.Errorf("mongo select failed, err: %v, condition: %+v, rid: %s", err, condModuleHostMap, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)

@@ -45,7 +45,8 @@ func (s *coreService) ListModelQuoteRelation(cts *rest.Contexts) {
 	}
 
 	if req.Page.EnableCount {
-		count, err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(filter).Count(cts.Kit.Ctx)
+		count, err := mongodb.Shard(cts.Kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Find(filter).
+			Count(cts.Kit.Ctx)
 		if err != nil {
 			blog.Errorf("count model quote relations failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 			cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -57,8 +58,8 @@ func (s *coreService) ListModelQuoteRelation(cts *rest.Contexts) {
 	}
 
 	relations := make([]metadata.ModelQuoteRelation, 0)
-	err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Find(filter).Start(uint64(req.Page.Start)).
-		Limit(uint64(req.Page.Limit)).Fields(req.Fields...).All(cts.Kit.Ctx, &relations)
+	err = mongodb.Shard(cts.Kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Find(filter).
+		Start(uint64(req.Page.Start)).Limit(uint64(req.Page.Limit)).Fields(req.Fields...).All(cts.Kit.Ctx, &relations)
 	if err != nil {
 		blog.Errorf("list model quote relations failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -85,7 +86,7 @@ func (s *coreService) CreateModelQuoteRelation(cts *rest.Contexts) {
 		relations[idx].TenantID = cts.Kit.TenantID
 	}
 
-	err := mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Insert(cts.Kit.Ctx, relations)
+	err := mongodb.Shard(cts.Kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Insert(cts.Kit.Ctx, relations)
 	if err != nil {
 		blog.Errorf("create model quote relations failed, err: %v, data: %+v, rid: %v", err, relations, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBInsertFailed))
@@ -114,7 +115,7 @@ func (s *coreService) DeleteModelQuoteRelation(cts *rest.Contexts) {
 		return
 	}
 
-	err = mongodb.Client().Table(common.BKTableNameModelQuoteRelation).Delete(cts.Kit.Ctx, filter)
+	err = mongodb.Shard(cts.Kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Delete(cts.Kit.Ctx, filter)
 	if err != nil {
 		blog.Errorf("delete model quote relations failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBDeleteFailed))

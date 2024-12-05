@@ -40,9 +40,9 @@ func New() core.SystemOperation {
 func (sm *systemManager) GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder) {
 	cond := map[string]string{"type": metadata.CCSystemUserConfigSwitch}
 	result := make(map[string]interface{}, 0)
-	err := mongodb.Client().Table(common.BKTableNameSystem).Find(cond).One(kit.Ctx, &result)
-	if err != nil && !mongodb.Client().IsNotFoundError(err) {
-		blog.ErrorJSON("GetSystemUserConfig find error. cond:%s, err:%s, rid:%s", cond, err.Error(), kit.Rid)
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).One(kit.Ctx, &result)
+	if err != nil && !mongodb.IsNotFoundError(err) {
+		blog.Errorf("find system user config failed. cond: %v, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -58,14 +58,15 @@ func (sm *systemManager) SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin
 	ret := struct {
 		Config string `json:"config"`
 	}{}
-	err := mongodb.Client().Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(kit.Ctx, &ret)
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).Fields(
+		common.ConfigAdminValueField).One(kit.Ctx, &ret)
 	if err != nil {
-		blog.Errorf("SearchConfigAdmin failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("search config admin failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	conf := new(metadata.ConfigAdmin)
 	if err := json.Unmarshal([]byte(ret.Config), conf); err != nil {
-		blog.Errorf("SearchConfigAdmin failed, Unmarshal err: %v, config:%+v,rid:%s", err, ret.Config, kit.Rid)
+		blog.Errorf("unmarshal failed, err: %v, config: %s, rid: %s", err, ret.Config, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
 	}
 
@@ -82,8 +83,8 @@ func (sm *systemManager) SearchPlatformSettingConfig(kit *rest.Kit) (*metadata.P
 
 	ret := make(map[string]interface{})
 
-	err := mongodb.Client().Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).
-		One(kit.Ctx, &ret)
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).Fields(
+		common.ConfigAdminValueField).One(kit.Ctx, &ret)
 	if err != nil {
 		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -124,7 +125,7 @@ func (sm *systemManager) UpdatePlatformSettingConfig(kit *rest.Kit,
 		common.ConfigAdminValueField: string(bytes),
 		common.LastTimeField:         time.Now(),
 	}
-	err = mongodb.Client().Table(common.BKTableNameSystem).Update(kit.Ctx, cond, data)
+	err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(kit.Ctx, cond, data)
 	if err != nil {
 		blog.Errorf("update config admin failed, update err: %v, rid: %s", err, kit.Rid)
 

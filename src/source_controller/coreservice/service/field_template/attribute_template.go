@@ -51,7 +51,8 @@ func (s *service) ListFieldTemplateAttr(cts *rest.Contexts) {
 	}
 
 	if opt.Page.EnableCount {
-		count, err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(filter).Count(cts.Kit.Ctx)
+		count, err := mongodb.Shard(cts.Kit.ShardOpts()).Table(common.BKTableNameObjAttDesTemplate).Find(filter).
+			Count(cts.Kit.Ctx)
 		if err != nil {
 			blog.Errorf("count field template attr failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 			cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -63,8 +64,9 @@ func (s *service) ListFieldTemplateAttr(cts *rest.Contexts) {
 	}
 
 	attrTemplates := make([]metadata.FieldTemplateAttr, 0)
-	err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(filter).Start(uint64(opt.Page.Start)).
-		Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).All(cts.Kit.Ctx, &attrTemplates)
+	err = mongodb.Shard(cts.Kit.ShardOpts()).Table(common.BKTableNameObjAttDesTemplate).Find(filter).
+		Start(uint64(opt.Page.Start)).Limit(uint64(opt.Page.Limit)).Sort(opt.Page.Sort).Fields(opt.Fields...).
+		All(cts.Kit.Ctx, &attrTemplates)
 	if err != nil {
 		blog.Errorf("list field template attributes failed, err: %v, filter: %+v, rid: %v", err, filter, cts.Kit.Rid)
 		cts.RespAutoError(cts.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -98,7 +100,8 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 		return
 	}
 
-	ids, err := mongodb.Client().NextSequences(ctx.Kit.Ctx, common.BKTableNameObjAttDesTemplate, len(attrs))
+	ids, err := mongodb.Shard(ctx.Kit.SysShardOpts()).NextSequences(ctx.Kit.Ctx, common.BKTableNameObjAttDesTemplate,
+		len(attrs))
 	if err != nil {
 		blog.Errorf("get sequence id on the table (%s) failed, err: %v, rid: %s", common.BKTableNameObjAttDesTemplate,
 			err, ctx.Kit.Rid)
@@ -141,9 +144,10 @@ func (s *service) CreateFieldTemplateAttrs(ctx *rest.Contexts) {
 		result[idx] = int64(ids[idx])
 	}
 
-	if err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Insert(ctx.Kit.Ctx, attrs); err != nil {
+	if err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjAttDesTemplate).Insert(ctx.Kit.Ctx,
+		attrs); err != nil {
 		blog.Errorf("save field template attribute failed, data: %v, err: %v, rid: %s", attrs, err, ctx.Kit.Rid)
-		if mongodb.Client().IsDuplicatedError(err) {
+		if mongodb.IsDuplicatedError(err) {
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err)))
 			return
 		}
@@ -199,8 +203,8 @@ func (s *service) DeleteFieldTemplateAttrs(ctx *rest.Contexts) {
 	cond[common.BKTemplateID] = templateID
 
 	attrs := make([]metadata.FieldTemplateAttr, 0)
-	err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(cond).Fields(common.BKFieldID).
-		All(ctx.Kit.Ctx, &attrs)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjAttDesTemplate).Find(cond).Fields(
+		common.BKFieldID).All(ctx.Kit.Ctx, &attrs)
 	if err != nil {
 		blog.Errorf("find field template attribute failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -218,7 +222,8 @@ func (s *service) DeleteFieldTemplateAttrs(ctx *rest.Contexts) {
 	}
 	countCond := mapstr.MapStr{common.BKObjectUniqueKeys: mapstr.MapStr{common.BKDBIN: attrIDs}}
 
-	count, err := mongodb.Client().Table(common.BKTableNameObjectUniqueTemplate).Find(countCond).Count(ctx.Kit.Ctx)
+	count, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjectUniqueTemplate).Find(countCond).
+		Count(ctx.Kit.Ctx)
 	if err != nil {
 		blog.Errorf("count field template unique failed, filter: %+v, err: %v, rid: %v", countCond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -229,7 +234,8 @@ func (s *service) DeleteFieldTemplateAttrs(ctx *rest.Contexts) {
 		return
 	}
 
-	if err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Delete(ctx.Kit.Ctx, cond); err != nil {
+	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjAttDesTemplate).Delete(ctx.Kit.Ctx,
+		cond); err != nil {
 		blog.Errorf("delete field template attributes failed, cond: %v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
@@ -275,7 +281,8 @@ func (s *service) UpdateFieldTemplateAttrs(ctx *rest.Contexts) {
 		common.BKTemplateID: templateID,
 	}
 	dbTmplAttrs := make([]metadata.FieldTemplateAttr, 0)
-	err = mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Find(cond).All(ctx.Kit.Ctx, &dbTmplAttrs)
+	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameObjAttDesTemplate).Find(cond).All(ctx.Kit.Ctx,
+		&dbTmplAttrs)
 	if err != nil {
 		blog.Errorf("list field template attributes failed, filter: %+v, err: %v, rid: %v", cond, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -330,7 +337,7 @@ func (s *service) updateFieldTemplateAttrs(kit *rest.Kit, templateID int64, attr
 			common.BKTemplateID: templateID,
 		}
 
-		err := mongodb.Client().Table(common.BKTableNameObjAttDesTemplate).Update(kit.Ctx, cond, attr)
+		err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDesTemplate).Update(kit.Ctx, cond, attr)
 		if err != nil {
 			blog.Errorf("update field template attribute failed, data: %v, err: %v, rid: %s", attr, err, kit.Rid)
 			return err

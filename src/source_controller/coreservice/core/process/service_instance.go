@@ -37,7 +37,7 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	}
 
 	// generate id field
-	id, err := mongodb.Client().NextSequence(kit.Ctx, common.BKTableNameServiceInstance)
+	id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameServiceInstance)
 	if err != nil {
 		blog.Errorf("generate id failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
@@ -49,7 +49,8 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	instance.LastTime = time.Now()
 	instance.TenantID = kit.TenantID
 
-	if err = mongodb.Client().Table(common.BKTableNameServiceInstance).Insert(kit.Ctx, &instance); err != nil {
+	if err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Insert(kit.Ctx,
+		&instance); err != nil {
 		blog.Errorf("create service instance(%+v) failed, err: %v, rid: %s", instance, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
@@ -59,7 +60,8 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	filter := map[string]interface{}{common.BKHostIDField: instance.HostID}
 	fields := []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKHostInnerIPv6Field,
 		common.BKHostOuterIPv6Field}
-	err = mongodb.Client().Table(common.BKTableNameBaseHost).Find(filter).Fields(fields...).One(kit.Ctx, &host)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(filter).Fields(fields...).
+		One(kit.Ctx, &host)
 	if err != nil {
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -211,9 +213,10 @@ func (p *processOperation) validateCreateSvcInstData(kit *rest.Kit,
 			common.BKHostIDField:            instance.HostID,
 			common.BKServiceTemplateIDField: instance.ServiceTemplateID,
 		}
-		count, err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Count(kit.Ctx)
+		count, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Find(filter).
+			Count(kit.Ctx)
 		if err != nil {
-			blog.Errorf("list service instance failed, filter: %+v, err: %+v, rid: %s", filter, err, kit.Rid)
+			blog.Errorf("list service instance failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 			return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		if count > 0 {
@@ -274,11 +277,10 @@ func (p *processOperation) GetServiceInstance(kit *rest.Kit, instanceID int64) (
 	instance := metadata.ServiceInstance{}
 
 	filter := map[string]int64{common.BKFieldID: instanceID}
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).One(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Find(filter).One(kit.Ctx,
 		&instance); err != nil {
-		blog.Errorf("GetServiceInstance failed, mongodb failed, table: %s, instance: %+v, err: %+v, rid: %s",
-			common.BKTableNameServiceInstance, instance, err, kit.Rid)
-		if mongodb.Client().IsNotFoundError(err) {
+		blog.Errorf("find service instance failed, instance: %v, err: %v, rid: %s", instance, err, kit.Rid)
+		if mongodb.IsNotFoundError(err) {
 			return nil, kit.CCError.CCError(common.CCErrCommNotFound)
 		}
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -299,10 +301,10 @@ func (p *processOperation) UpdateServiceInstances(kit *rest.Kit, bizID int64,
 			common.BKAppIDField: bizID,
 			common.BKFieldID:    data.ServiceInstanceID,
 		}
-		if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Update(kit.Ctx, filter,
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Update(kit.Ctx, filter,
 			needUpdate); err != nil {
-			blog.Errorf("UpdateServiceTemplate failed, table: %s, err: %+v, filter:%#v, needUpdate:%#v, rid: %s",
-				common.BKTableNameServiceInstance, filter, needUpdate, err, kit.Rid)
+			blog.Errorf("update service instance failed, err: %v, filter: %v, needUpdate: %v, rid: %s", err, filter,
+				needUpdate, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 		}
 	}
@@ -350,15 +352,15 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit,
 	}
 
 	if key, err := option.Selectors.Validate(); err != nil {
-		blog.Errorf("ListServiceInstance failed, selector validate failed, selectors: %+v, key: %s, err: %+v, rid: %s",
-			option.Selectors, key, err, kit.Rid)
+		blog.Errorf("selector validate failed, selectors: %v, key: %s, err: %v, rid: %s", option.Selectors, key,
+			err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	if len(option.Selectors) != 0 {
 		labelFilter, err := option.Selectors.ToMgoFilter()
 		if err != nil {
-			blog.Errorf("ListServiceInstance failed, selectors to filer failed, selectors: %+v, err: %+v, rid: %s",
-				option.Selectors, err, kit.Rid)
+			blog.Errorf("selectors to filer failed, selectors: %+v, err: %v, rid: %s", option.Selectors, err,
+				kit.Rid)
 			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "labels")
 		}
 		filter = util.MergeMaps(filter, labelFilter)
@@ -366,18 +368,19 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit,
 
 	var total uint64
 	var err error
-	if total, err = mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Count(kit.Ctx); nil != err {
-		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
+	if total, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Find(filter).Count(kit.
+		Ctx); err != nil {
+		blog.Errorf("find service instance failed, mongodb failed, table: %s, filter: %+v, err: %v, rid: %s",
 			common.BKTableNameServiceInstance, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	result := new(metadata.MultipleServiceInstance)
 
 	instances := make([]metadata.ServiceInstance, 0)
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Fields(option.Fields...).Sort(
-		option.Page.Sort).Start(uint64(option.Page.Start)).Limit(uint64(option.Page.Limit)).All(kit.Ctx,
-		&instances); nil != err {
-		blog.Errorf("ListServiceInstance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Find(filter).
+		Fields(option.Fields...).Sort(option.Page.Sort).Start(uint64(option.Page.Start)).
+		Limit(uint64(option.Page.Limit)).All(kit.Ctx, &instances); err != nil {
+		blog.Errorf("find service instance failed, table: %s, filter: %+v, err: %v, rid: %s",
 			common.BKTableNameServiceInstance, filter, err, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
@@ -412,10 +415,9 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 	relationFilter := map[string]interface{}{
 		common.BKServiceInstanceIDField: map[string]interface{}{common.BKDBIN: serviceInstanceIDs},
 	}
-	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).All(kit.Ctx,
-		&relations); err != nil {
-		blog.Errorf("list service instance failed, list processRelations failed, err: %+v, rid: %s",
-			relationFilter, err, kit.Rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).
+		All(kit.Ctx, &relations); err != nil {
+		blog.Errorf("list process relations failed, filter: %v, err: %v, rid: %s", relationFilter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -429,7 +431,7 @@ func (p *processOperation) ListServiceInstanceDetail(kit *rest.Kit, option metad
 			common.BKDBIN: processIDs,
 		},
 	}
-	if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Find(processFilter).All(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseProcess).Find(processFilter).All(kit.Ctx,
 		&processes); err != nil {
 		blog.Errorf("list process failed, filter: %+v, err: %v, rid: %s", processFilter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
@@ -517,15 +519,14 @@ func (p *processOperation) listSvcInstForDetail(kit *rest.Kit, option metadata.L
 		}
 	}
 	if key, err := option.Selectors.Validate(); err != nil {
-		blog.Errorf("list service instance failed, selector validate failed, selectors: %+v, key: %s, err: %+v, "+
-			"rid: %s", option.Selectors, key, err, kit.Rid)
+		blog.Errorf("selector validate failed, selectors: %v, key: %s, err: %v, rid: %s", option.Selectors, key,
+			err, kit.Rid)
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, key)
 	}
 	if len(option.Selectors) != 0 {
 		labelFilter, err := option.Selectors.ToMgoFilter()
 		if err != nil {
-			blog.Errorf("list service instance failed, selectors to filer failed, selectors: %+v, err: %+v, "+
-				"rid: %s", option.Selectors, err, kit.Rid)
+			blog.Errorf("selectors to filer failed, selectors: %v, err: %v, rid: %s", option.Selectors, err, kit.Rid)
 			return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "labels")
 		}
 		filter = util.MergeMaps(filter, labelFilter)
@@ -533,24 +534,24 @@ func (p *processOperation) listSvcInstForDetail(kit *rest.Kit, option metadata.L
 
 	var total uint64
 	var err error
-	if total, err = mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Count(kit.Ctx); nil != err {
-		blog.Errorf("list service instance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
-			common.BKTableNameServiceInstance, filter, err, kit.Rid)
+	if total, err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Find(filter).
+		Count(kit.Ctx); err != nil {
+		blog.Errorf("find service instance failed, filter: %v, err: %v, rid: %s", filter, err, kit.Rid)
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
 	serviceInstances := make([]metadata.ServiceInstance, 0)
 	start := uint64(option.Page.Start)
 	limit := uint64(option.Page.Limit)
-	query := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(filter).Start(start).Limit(limit)
+	query := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Find(filter).Start(start).
+		Limit(limit)
 	if len(option.Page.Sort) > 0 {
 		query = query.Sort(option.Page.Sort)
 	} else {
 		query = query.Sort(common.BKFieldID)
 	}
-	if err := query.All(kit.Ctx, &serviceInstances); nil != err {
-		blog.Errorf("list service instance failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
-			common.BKTableNameServiceInstance, filter, err, kit.Rid)
+	if err := query.All(kit.Ctx, &serviceInstances); err != nil {
+		blog.Errorf("list service instance failed, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -568,31 +569,32 @@ func (p *processOperation) DeleteServiceInstance(kit *rest.Kit, serviceInstanceI
 	for _, serviceInstanceID := range serviceInstanceIDs {
 		instance, err := p.GetServiceInstance(kit, serviceInstanceID)
 		if err != nil {
-			blog.Errorf("DeleteServiceInstance failed, GetServiceInstance failed, instanceID: %d, err: %+v, rid: %s",
-				serviceInstanceID, err, kit.Rid)
+			blog.Errorf("get service instance failed, instanceID: %d, err: %v, rid: %s", serviceInstanceID, err,
+				kit.Rid)
 			return err
 		}
 
 		// service template that referenced by process template shouldn't be removed
 		usageFilter := map[string]int64{common.BKServiceInstanceIDField: instance.ID}
-		usageCount, e := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(usageFilter).Count(kit.Ctx)
-		if nil != e {
-			blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, usageFilter: %+v, err: %+v, rid: %s",
-				common.BKTableNameProcessInstanceRelation, usageFilter, e, kit.Rid)
+		usageCount, e := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessInstanceRelation).
+			Find(usageFilter).Count(kit.Ctx)
+		if e != nil {
+			blog.Errorf("count process instance relation failed, filter: %v, err: %v, rid: %s", usageFilter, e,
+				kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 		if usageCount > 0 {
-			blog.Errorf("DeleteServiceInstance failed, forbidden delete service instance be referenced, code: %d, rid: %s",
-				common.CCErrCommRemoveRecordHasChildrenForbidden, kit.Rid)
+			blog.Errorf("forbidden delete service instance be referenced, usageCount: %d, rid: %s", usageCount,
+				kit.Rid)
 			err := kit.CCError.CCError(common.CCErrCommRemoveReferencedRecordForbidden)
 			return err
 		}
 
 		serviceInstanceFilter := map[string]int64{common.BKFieldID: instance.ID}
-		if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Delete(kit.Ctx,
-			serviceInstanceFilter); nil != err {
-			blog.Errorf("DeleteServiceInstance failed, mongodb failed, table: %s, deleteFilter: %+v, err: %+v, rid: %s",
-				common.BKTableNameServiceInstance, serviceInstanceFilter, err, kit.Rid)
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Delete(kit.Ctx,
+			serviceInstanceFilter); err != nil {
+			blog.Errorf("delete service instance failed, deleteFilter: %+v, err: %v, rid: %s", serviceInstanceFilter,
+				err, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 		}
 	}
@@ -609,11 +611,10 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 	instanceFilter := map[string]interface{}{
 		common.BKFieldID: instanceID,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(instanceFilter).One(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Find(instanceFilter).One(kit.Ctx,
 		&instance); err != nil {
-		blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
-			common.BKTableNameServiceInstance, instanceFilter, err, kit.Rid)
-		if mongodb.Client().IsNotFoundError(err) {
+		blog.Errorf("find service instance failed, filter: %v, err: %v, rid: %s", instanceFilter, err, kit.Rid)
+		if mongodb.IsNotFoundError(err) {
 			return "", kit.CCError.CCErrorf(common.CCErrCommNotFound)
 		}
 		return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -625,10 +626,10 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 	hostFilter := map[string]interface{}{
 		common.BKHostIDField: instance.HostID,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).One(kit.Ctx, &host); err != nil {
-		blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
-			common.BKTableNameBaseHost, hostFilter, err, kit.Rid)
-		if mongodb.Client().IsNotFoundError(err) {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(hostFilter).One(kit.Ctx,
+		&host); err != nil {
+		blog.Errorf("find host failed, filter: %v, err: %v, rid: %s", hostFilter, err, kit.Rid)
+		if mongodb.IsNotFoundError(err) {
 			return "", kit.CCError.CCErrorf(common.CCErrCommNotFound)
 		}
 		return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -641,12 +642,13 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 		common.BKServiceInstanceIDField: instance.ID,
 	}
 	order := "id"
-	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).Sort(order).One(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).
+		Sort(order).One(kit.Ctx,
 		&relation); err != nil {
 		// relation not found means no process in service instance, service instance's name will only contains ip in that case
-		if !mongodb.Client().IsNotFoundError(err) {
-			blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
-				common.BKTableNameProcessInstanceRelation, relationFilter, err, kit.Rid)
+		if !mongodb.IsNotFoundError(err) {
+			blog.Errorf("find process instance relation failed, filter: %v, err: %v, rid: %s", relationFilter, err,
+				kit.Rid)
 			return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 	}
@@ -657,11 +659,10 @@ func (p *processOperation) generateServiceInstanceName(kit *rest.Kit, instanceID
 		processFilter := map[string]interface{}{
 			common.BKProcIDField: relation.ProcessID,
 		}
-		if err := mongodb.Client().Table(common.BKTableNameBaseProcess).Find(processFilter).One(kit.Ctx,
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseProcess).Find(processFilter).One(kit.Ctx,
 			&process); err != nil {
-			blog.Errorf("GetServiceInstanceName failed, mongodb failed, table: %s, filter: %+v, err: %+v, rid: %s",
-				common.BKTableNameBaseProcess, processFilter, err, kit.Rid)
-			if mongodb.Client().IsNotFoundError(err) {
+			blog.Errorf("find process failed, filter: %v, err: %v, rid: %s", processFilter, err, kit.Rid)
+			if mongodb.IsNotFoundError(err) {
 				return "", kit.CCError.CCErrorf(common.CCErrCommNotFound)
 			}
 			return "", kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -742,9 +743,9 @@ func (p *processOperation) updateServiceInstanceName(kit *rest.Kit, instanceID i
 	doc := map[string]interface{}{
 		common.BKFieldName: serviceInstanceName,
 	}
-	err := mongodb.Client().Table(common.BKTableNameServiceInstance).Update(kit.Ctx, filter, doc)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Update(kit.Ctx, filter, doc)
 	if err != nil {
-		blog.Errorf("update instance name failed, err: %+v, rid: %s", err, kit.Rid)
+		blog.Errorf("update instance name failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 	return nil
@@ -768,10 +769,10 @@ func (p *processOperation) GetBusinessDefaultSetModuleInfo(kit *rest.Kit,
 		ModuleID   int64 `bson:"bk_module_id"`
 		ModuleFlag int   `bson:"default"`
 	}, 0)
-	err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(defaultModuleCond).Fields(common.BKModuleIDField,
-		common.BKDefaultField).All(kit.Ctx, &modules)
-	if nil != err {
-		blog.Errorf("get default module failed, err: %+v, filter: %+v, rid: %s", err, defaultModuleCond, kit.Rid)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseModule).Find(defaultModuleCond).Fields(
+		common.BKModuleIDField, common.BKDefaultField).All(kit.Ctx, &modules)
+	if err != nil {
+		blog.Errorf("get default module failed, err: %v, filter: %+v, rid: %s", err, defaultModuleCond, kit.Rid)
 		return defaultSetModuleInfo, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 
@@ -795,10 +796,10 @@ func (p *processOperation) GetBusinessDefaultSetModuleInfo(kit *rest.Kit,
 	sets := make([]struct {
 		SetID int64 `bson:"bk_set_id"`
 	}, 0)
-	err = mongodb.Client().Table(common.BKTableNameBaseSet).Find(defaultSetCond).Fields(common.BKSetIDField).All(kit.Ctx,
-		&sets)
-	if nil != err {
-		blog.Errorf("get default set failed, err: %+v, filter: %+v, rid: %s", err, defaultSetCond, kit.Rid)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseSet).Find(defaultSetCond).Fields(
+		common.BKSetIDField).All(kit.Ctx, &sets)
+	if err != nil {
+		blog.Errorf("get default set failed, err: %v, filter: %+v, rid: %s", err, defaultSetCond, kit.Rid)
 		return defaultSetModuleInfo, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	}
 	for _, set := range sets {
@@ -833,7 +834,8 @@ func (p *processOperation) AutoCreateServiceInstanceModuleHost(kit *rest.Kit, ho
 	}
 
 	// create service instances
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Insert(kit.Ctx, serviceInstances); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Insert(kit.Ctx,
+		serviceInstances); err != nil {
 		blog.Errorf("create service instances failed, err: %v, instance: %+v, rid: %s", err, serviceInstances, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
 	}
@@ -902,9 +904,10 @@ func (p *processOperation) prepareAutoCreateSvcInst(kit *rest.Kit, hostIDs, modu
 	}
 
 	modules := make([]metadata.ModuleInst, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).Fields(common.BKModuleIDField,
-		common.BKAppIDField, common.BKServiceTemplateIDField).All(kit.Ctx, &modules); err != nil {
-		blog.ErrorJSON("get module failed, err: %s, cond: %s, rid: %s", err, moduleFilter, kit.Rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseModule).Find(moduleFilter).Fields(
+		common.BKModuleIDField, common.BKAppIDField, common.BKServiceTemplateIDField).All(kit.Ctx,
+		&modules); err != nil {
+		blog.Errorf("get module failed, err: %v, cond: %v, rid: %s", err, moduleFilter, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -923,7 +926,7 @@ func (p *processOperation) prepareAutoCreateSvcInst(kit *rest.Kit, hostIDs, modu
 	fields := []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field,
 		common.BKHostOuterIPField}
 	hostFilter := map[string]interface{}{common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(hostFilter).Fields(fields...).
 		All(kit.Ctx, &hosts); err != nil {
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -945,8 +948,8 @@ func (p *processOperation) prepareAutoCreateSvcInst(kit *rest.Kit, hostIDs, modu
 	}
 
 	serviceInstances := make([]metadata.ServiceInstance, 0)
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).Fields(
-		common.BKModuleIDField, common.BKHostIDField).All(kit.Ctx, &serviceInstances); err != nil {
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Find(serviceInstanceFilter).
+		Fields(common.BKModuleIDField, common.BKHostIDField).All(kit.Ctx, &serviceInstances); err != nil {
 		blog.Errorf("list service instance failed, filter: %+v, err: %v, rid: %s", serviceInstanceFilter, err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
@@ -1020,7 +1023,8 @@ func (p *processOperation) generateAutoCreateSvcInstData(kit *rest.Kit, params *
 		return serviceInstances, make([]*metadata.Process, 0), make([]*metadata.ProcessInstanceRelation, 0), nil
 	}
 
-	ids, err := mongodb.Client().NextSequences(kit.Ctx, common.BKTableNameServiceInstance, len(serviceInstances))
+	ids, err := mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameServiceInstance,
+		len(serviceInstances))
 	if err != nil {
 		blog.Errorf("generate service instance ids failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
@@ -1076,10 +1080,9 @@ func (p *processOperation) RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID
 		ServiceCategoryID int64 `field:"service_category_id" bson:"service_category_id" json:"service_category_id"`
 		BizID             int64 `field:"bk_biz_id" bson:"bk_biz_id" json:"bk_biz_id"`
 	}{}
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Find(moduleFilter).One(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseModule).Find(moduleFilter).One(kit.Ctx,
 		&moduleSimple); err != nil {
-		blog.Errorf("RemoveTemplateBindingOnModule failed, get module by id failed, moduleID: %d, err: %+v, rid: %s",
-			moduleID, err, kit.Rid)
+		blog.Errorf("get module by id failed, moduleID: %d, err: %v, rid: %s", moduleID, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
@@ -1091,10 +1094,10 @@ func (p *processOperation) RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID
 	resetServiceTemplateIDOption := map[string]interface{}{
 		common.BKServiceTemplateIDField: common.ServiceTemplateIDNotSet,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseModule).Update(kit.Ctx, moduleFilter,
 		resetServiceTemplateIDOption); err != nil {
-		blog.Errorf("remove template binding on module failed, reset service_template_id on module failed, module: %d, err: %+v, rid: %s",
-			moduleID, err, kit.Rid)
+		blog.Errorf("update service_template_id on module failed, module: %d, err: %v, rid: %s", moduleID, err,
+			kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 
@@ -1102,10 +1105,10 @@ func (p *processOperation) RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID
 	serviceInstanceFilter := map[string]int64{
 		common.BKModuleIDField: moduleID,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameServiceInstance).Update(kit.Ctx, serviceInstanceFilter,
-		resetServiceTemplateIDOption); err != nil {
-		blog.Errorf("remove template binding on module failed, reset service_template_id on service instance failed, module: %d, err: %+v, rid: %s",
-			moduleID, err, kit.Rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Update(kit.Ctx,
+		serviceInstanceFilter, resetServiceTemplateIDOption); err != nil {
+		blog.Errorf("update service_template_id on service instance failed, module: %d, err: %v, rid: %s", moduleID,
+			err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
 
@@ -1120,7 +1123,7 @@ func (p *processOperation) RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID
 	}
 	serviceInstanceResult, err := p.ListServiceInstance(kit, listOption)
 	if err != nil {
-		blog.Errorf("ListServiceInstance failed, option: %+v, err: %s, rid: %s", listOption, err.Error(), kit.Rid)
+		blog.Errorf("list service instance failed, option: %v, err: %v, rid: %s", listOption, err, kit.Rid)
 		return err
 	}
 	serviceInstanceIDs := make([]int64, 0)
@@ -1137,9 +1140,9 @@ func (p *processOperation) RemoveTemplateBindingOnModule(kit *rest.Kit, moduleID
 	resetProcessTemplateIDOption := map[string]int64{
 		common.BKProcessTemplateIDField: common.ServiceTemplateIDNotSet,
 	}
-	if err := mongodb.Client().Table(common.BKTableNameProcessInstanceRelation).Update(kit.Ctx,
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessInstanceRelation).Update(kit.Ctx,
 		processInstanceRelationFilter, resetProcessTemplateIDOption); err != nil {
-		blog.Errorf("remove template binding on module failed, reset service_template_id on process instance relation failed, module: %d, err: %+v, rid: %s",
+		blog.Errorf("update service_template_id on process instance relation failed, moduleID: %d, err: %v, rid: %s",
 			moduleID, err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
