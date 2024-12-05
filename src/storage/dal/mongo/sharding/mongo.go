@@ -52,7 +52,7 @@ type ShardingMongoManager struct {
 // NewShardingMongo returns new sharding db manager for mongo
 func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryptor.Cryptor) (ShardingDB, error) {
 	// connect master mongodb
-	masterCli, err := local.NewMongoClient(true, "", config, timeout)
+	masterCli, err := local.NewMongoClient(true, "", &config, timeout)
 	if err != nil {
 		return nil, fmt.Errorf("new master mongo client failed, err: %v", err)
 	}
@@ -93,7 +93,7 @@ func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryp
 			return nil, fmt.Errorf("decrypt %s slave mongo uri failed, err: %v", slaveUUID, err)
 		}
 
-		client, err := local.NewMongoClient(false, slaveUUID, mongoConf, timeout)
+		client, err := local.NewMongoClient(false, slaveUUID, &mongoConf, timeout)
 		if err != nil {
 			return nil, fmt.Errorf("new %s slave mongo client failed, err: %v", slaveUUID, err)
 		}
@@ -276,7 +276,7 @@ type DisableDBShardingMongo struct {
 
 // NewDisableDBShardingMongo returns new disabled db sharding mongo db manager
 func NewDisableDBShardingMongo(config local.MongoConf, timeout time.Duration) (ShardingDB, error) {
-	client, err := local.NewMongoClient(true, "", config, timeout)
+	client, err := local.NewMongoClient(true, "", &config, timeout)
 	if err != nil {
 		return nil, fmt.Errorf("new mongo client failed, err: %v", err)
 	}

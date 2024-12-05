@@ -661,6 +661,9 @@ const (
 
 	// PlatformSetting is platform setting audit type
 	PlatformSetting AuditType = "platform_setting"
+
+	// Sharding is sharding db related audit type
+	Sharding AuditType = "sharding"
 )
 
 // ResourceType TODO
@@ -763,6 +766,9 @@ const (
 
 	// PlatformSettingRes is platform setting audit resource type
 	PlatformSettingRes ResourceType = "platform_setting"
+
+	// ShardingRes is sharding db related audit resource type
+	ShardingRes ResourceType = "sharding"
 )
 
 // OperateFromType TODO

@@ -54,7 +54,7 @@ var _ DB = new(Mongo)
 
 // NewMgo returns new RDB
 func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
-	client, err := NewMongoClient(true, "", config, timeout)
+	client, err := NewMongoClient(true, "", &config, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ type MongoClient struct {
 }
 
 // NewMongoClient new mongodb client
-func NewMongoClient(isMaster bool, uuid string, config MongoConf, timeout time.Duration) (*MongoClient, error) {
+func NewMongoClient(isMaster bool, uuid string, config *MongoConf, timeout time.Duration) (*MongoClient, error) {
 	connStr, err := connstring.Parse(config.URI)
 	if err != nil {
 		return nil, err

@@ -43,18 +43,18 @@ const (
 
 // Config config
 type Config struct {
-	Connect       string
-	Address       string
-	User          string
-	Password      string
-	Port          string
-	Database      string
-	Mechanism     string
-	MaxOpenConns  uint64
-	MaxIdleConns  uint64
-	RsName        string
-	SocketTimeout int
-	DisableInsert bool
+	Connect       string `json:"connect,omitempty"`
+	Address       string `json:"address"`
+	User          string `json:"user"`
+	Password      string `json:"password,omitempty"`
+	Port          string `json:"port"`
+	Database      string `json:"database"`
+	Mechanism     string `json:"mechanism"`
+	MaxOpenConns  uint64 `json:"max_open_conns"`
+	MaxIdleConns  uint64 `json:"max_idle_conns"`
+	RsName        string `json:"rs_name"`
+	SocketTimeout int    `json:"socket_timeout"`
+	DisableInsert bool   `json:"-"`
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
