@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"sort"
 	"sync"
 	"time"
 
@@ -29,6 +30,8 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/task_server/logics"
 	"configcenter/src/scene_server/task_server/taskconfig"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 var (
@@ -81,15 +84,18 @@ func (tq *TaskQueue) Stop() {
 	return
 }
 
-// Start TODO
+// Start execute task queue
 func (tq *TaskQueue) Start() {
-	go tq.compensate(context.Background())
+	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+	go tq.compensate(ctx)
 
 	for _, taskInfo := range tq.task {
 		go func(taskInfo TaskInfo) {
 			tq.Add(1)
 			defer tq.Done()
-			tq.execute(context.Background(), taskInfo)
+
+			ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+			tq.execute(ctx, taskInfo)
 		}(taskInfo)
 	}
 }
@@ -189,7 +195,10 @@ func (tq *TaskQueue) executeTaskQueueItem(ctx context.Context, taskInfo TaskInfo
 		}
 	}()
 
-	canExecute, err := tq.changeTaskToExecuting(ctx, taskQueueInfo.TaskID)
+	kit := rest.NewKitFromHeader(logics.GetDBHTTPHeader(taskQueueInfo.Header), tq.service.CCErr)
+	kit.Ctx = ctx
+
+	canExecute, err := tq.changeTaskToExecuting(kit, taskQueueInfo.TaskID)
 	if err != nil {
 		time.Sleep(time.Second)
 		return false
@@ -200,15 +209,11 @@ func (tq *TaskQueue) executeTaskQueueItem(ctx context.Context, taskInfo TaskInfo
 		return false
 	}
 
-	tq.executePush(ctx, taskInfo, &taskQueueInfo)
+	tq.executePush(kit, taskInfo, &taskQueueInfo)
 	return true
 }
 
-func (tq *TaskQueue) executePush(ctx context.Context, taskInfo TaskInfo, taskQueue *metadata.APITaskDetail) {
-	header := logics.GetDBHTTPHeader(taskQueue.Header)
-	kit := rest.NewKitFromHeader(header, tq.service.CCErr)
-	kit.Ctx = ctx
-
+func (tq *TaskQueue) executePush(kit *rest.Kit, taskInfo TaskInfo, taskQueue *metadata.APITaskDetail) {
 	blog.InfoJSON("start execute task, id: %s, rid: %s", taskQueue.TaskID, kit.Rid)
 
 	allSucc := true
@@ -237,7 +242,8 @@ func (tq *TaskQueue) executePush(ctx context.Context, taskInfo TaskInfo, taskQue
 	}
 
 	needReturn := retryWrapper(kit, dbMaxRetry, func() error {
-		if err := tq.service.Logics.UpdateTaskStatus(kit.Ctx, updateCond, updateStatus, kit.Rid); err != nil {
+		if err := tq.service.Logics.UpdateTaskStatus(kit.Ctx, mongodb.Shard(kit.ShardOpts()), updateCond, updateStatus,
+			kit.Rid); err != nil {
 			time.Sleep(time.Second * 3)
 			return err
 		}
@@ -302,7 +308,7 @@ func (tq *TaskQueue) executeSubTask(kit *rest.Kit, taskInfo TaskInfo, taskID str
 	updateData.Set(common.LastTimeField, time.Now())
 
 	needReturn = retryWrapper(kit, dbMaxRetry, func() error {
-		err := tq.service.DB.Table(common.BKTableNameAPITask).Update(kit.Ctx, updateCond, updateData)
+		err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAPITask).Update(kit.Ctx, updateCond, updateData)
 		if err != nil {
 			blog.Errorf("update sub task resp failed, err: %v, cond: %#v, data: %#v", err, updateCond, updateData)
 			time.Sleep(time.Second * 3)
@@ -380,6 +386,8 @@ func (tq *TaskQueue) isTaskLocked(ctx context.Context, taskID string) (bool, err
 	return result == 1, nil
 }
 
+const waitExecLimit = 20
+
 func (tq *TaskQueue) getWaitExecute(ctx context.Context, name string) ([]metadata.APITaskDetail, error) {
 	cond := mapstr.MapStr{
 		common.BKTaskTypeField: name,
@@ -388,17 +396,33 @@ func (tq *TaskQueue) getWaitExecute(ctx context.Context, name string) ([]metadat
 		},
 	}
 
-	rows := make([]metadata.APITaskDetail, 0)
-	err := tq.service.DB.Table(common.BKTableNameAPITask).Find(cond).Sort("create_time").Limit(20).All(ctx, &rows)
+	all := make([]metadata.APITaskDetail, 0)
+	err := mongodb.Dal().ExecForAllDB(func(db local.DB) error {
+		rows := make([]metadata.APITaskDetail, 0)
+		err := db.Table(common.BKTableNameAPITask).Find(cond).Sort("create_time").Limit(waitExecLimit).All(ctx, &rows)
+		if err != nil {
+			blog.Errorf("get oldest tasks failed, err: %v, cond: %#v", err, cond)
+			return err
+		}
+		all = append(all, rows...)
+		return nil
+	})
 	if err != nil {
-		blog.ErrorJSON("query wait execute failed, err: %v, task type: %s, cond: %#v", err, name, cond)
-		return nil, tq.service.CCErr.Error("zh-cn", common.CCErrCommDBSelectFailed)
+		return nil, err
 	}
 
-	return rows, nil
+	sort.Slice(all, func(i, j int) bool {
+		return all[i].CreateTime.Before(all[j].CreateTime)
+	})
+
+	if len(all) > waitExecLimit {
+		return all[:waitExecLimit], nil
+	}
+
+	return all, nil
 }
 
-func (tq *TaskQueue) changeTaskToExecuting(ctx context.Context, taskID string) (bool, error) {
+func (tq *TaskQueue) changeTaskToExecuting(kit *rest.Kit, taskID string) (bool, error) {
 	cond := mapstr.MapStr{
 		common.BKTaskIDField: taskID,
 		common.BKStatusField: mapstr.MapStr{
@@ -406,7 +430,7 @@ func (tq *TaskQueue) changeTaskToExecuting(ctx context.Context, taskID string) (
 		},
 	}
 
-	cnt, err := tq.service.DB.Table(common.BKTableNameAPITask).Find(cond).Count(ctx)
+	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAPITask).Find(cond).Count(kit.Ctx)
 	if err != nil {
 		blog.Errorf("query wait execute error, taskID: %s, err: %v, cond: %#v", taskID, err, cond)
 		return false, tq.service.CCErr.Error("zh-cn", common.CCErrCommDBSelectFailed)
@@ -420,13 +444,13 @@ func (tq *TaskQueue) changeTaskToExecuting(ctx context.Context, taskID string) (
 		common.BKStatusField: metadata.APITaskStatusExecute,
 		common.LastTimeField: time.Now(),
 	}
-	err = tq.service.DB.Table(common.BKTableNameAPITask).Update(ctx, cond, data)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAPITask).Update(kit.Ctx, cond, data)
 	if err != nil {
 		blog.Errorf("update task to execute failed, err: %v, task: %s, cond: %#v", err, taskID, cond)
 		return false, tq.service.CCErr.Error("zh-cn", common.CCErrCommDBUpdateFailed)
 	}
 
-	err = tq.service.DB.Table(common.BKTableNameAPITaskSyncHistory).Update(ctx, cond, data)
+	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAPITaskSyncHistory).Update(kit.Ctx, cond, data)
 	if err != nil {
 		blog.Errorf("update task sync history to execute failed, err: %v, task: %s, cond: %#v", err, taskID, cond)
 		return false, tq.service.CCErr.Error("zh-cn", common.CCErrCommDBUpdateFailed)
@@ -463,70 +487,76 @@ func (tq *TaskQueue) compensateDBExecute(ctx context.Context) {
 		},
 	}
 
-	for {
-		rid := util.GenerateRID()
-		blog.Infof("start compensate task, rid: %s", rid)
+	err := mongodb.Dal().ExecForAllDB(func(db local.DB) error {
+		for {
+			rid := util.GenerateRID()
+			blog.Infof("start compensate task, rid: %s", rid)
+			rows := make([]metadata.APITaskDetail, 0)
+			err := db.Table(common.BKTableNameAPITask).Find(cond).Sort("create_time").Limit(200).All(ctx, &rows)
+			if err != nil {
+				blog.Errorf("get task to compensate failed, err: %v, cond: %#v, rid: %s", err, cond, rid)
+				return err
+			}
 
-		rows := make([]metadata.APITaskDetail, 0)
-		err := tq.service.DB.Table(common.BKTableNameAPITask).Find(cond).Sort("create_time").Limit(200).All(ctx, &rows)
-		if err != nil {
-			blog.ErrorJSON("get task to compensate failed, cond: %#v, err: %v, rid: %s", cond, err, rid)
-			return
-		}
+			if len(rows) == 0 {
+				return nil
+			}
 
-		if len(rows) == 0 {
-			return
-		}
+			// get all interrupted tasks that are not currently running, compensate their status
+			interruptedTaskIDs := make([]metadata.APITaskDetail, 0)
+			for _, row := range rows {
+				locked, err := tq.isTaskLocked(ctx, row.TaskID)
+				if err != nil {
+					blog.Errorf("compensate duplicate tasks failed, err: %v,tasks: %#v,  rid: %s", err, rows, rid)
+					return err
+				}
 
-		// get all interrupted tasks that are not currently running, compensate their status
-		interruptedTaskIDs := make([]metadata.APITaskDetail, 0)
-		for _, row := range rows {
-			locked, err := tq.isTaskLocked(ctx, row.TaskID)
+				if locked {
+					blog.Infof("task %s is locked, skip, rid: %s", row.TaskID, rid)
+					continue
+				}
+				interruptedTaskIDs = append(interruptedTaskIDs, row)
+			}
+
+			blog.Infof("start compensate tasks(%+v) status, rid: %s", interruptedTaskIDs, rid)
+
+			unfinishedTaskIDs, err := tq.service.Logics.CompensateStatus(ctx, db, interruptedTaskIDs, rid)
 			if err != nil {
 				blog.Errorf("compensate duplicate tasks failed, tasks: %#v, err: %v, rid: %s", err, rows, rid)
-				return
+				return err
 			}
 
-			if locked {
-				blog.Infof("task %s is locked, skip, rid: %s", row.TaskID, rid)
+			if len(unfinishedTaskIDs) == 0 {
 				continue
 			}
-			interruptedTaskIDs = append(interruptedTaskIDs, row)
+
+			blog.Infof("compensate tasks(%+v) status success, remaining: %+v, rid: %s", interruptedTaskIDs,
+				unfinishedTaskIDs, rid)
+
+			// put these not finished task into wait execute queue
+			updateCond := mapstr.MapStr{
+				common.BKTaskIDField: mapstr.MapStr{
+					common.BKDBIN: unfinishedTaskIDs,
+				},
+			}
+
+			data := mapstr.MapStr{
+				common.BKStatusField: metadata.APITaskStatusWaitExecute,
+				common.LastTimeField: time.Now(),
+			}
+			err = db.Table(common.BKTableNameAPITask).Update(ctx, updateCond, data)
+			if err != nil {
+				blog.Errorf("update task to wait execute failed, err: %v, cond: %+v, rid: %s", err, cond, rid)
+				return err
+			}
+
+			blog.Infof("compensate tasks(%+v) to execute success, rid: %s", unfinishedTaskIDs, rid)
 		}
+	})
 
-		blog.Infof("start compensate tasks(%+v) status, rid: %s", interruptedTaskIDs, rid)
-
-		unfinishedTaskIDs, err := tq.service.Logics.CompensateStatus(ctx, interruptedTaskIDs, rid)
-		if err != nil {
-			blog.Errorf("compensate duplicate tasks failed, tasks: %#v, err: %v, rid: %s", err, rows, rid)
-			return
-		}
-
-		if len(unfinishedTaskIDs) == 0 {
-			continue
-		}
-
-		blog.Infof("compensate tasks(%+v) status success, remaining: %+v, rid: %s", interruptedTaskIDs,
-			unfinishedTaskIDs, rid)
-
-		// put these not finished task into wait execute queue
-		updateCond := mapstr.MapStr{
-			common.BKTaskIDField: mapstr.MapStr{
-				common.BKDBIN: unfinishedTaskIDs,
-			},
-		}
-
-		data := mapstr.MapStr{
-			common.BKStatusField: metadata.APITaskStatusWaitExecute,
-			common.LastTimeField: time.Now(),
-		}
-		err = tq.service.DB.Table(common.BKTableNameAPITask).Update(ctx, updateCond, data)
-		if err != nil {
-			blog.Errorf("update task to wait execute failed, err: %v, cond: %+v, rid: %s", err, cond, rid)
-			return
-		}
-
-		blog.Infof("compensate tasks(%+v) to execute success, rid: %s", unfinishedTaskIDs, rid)
+	if err != nil {
+		blog.Errorf("compensate task failed, err: %v", err)
+		return
 	}
 }
 

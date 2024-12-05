@@ -16,9 +16,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"time"
 
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -86,14 +84,4 @@ func (c Config) GetMongoConf() local.MongoConf {
 		SocketTimeout: c.SocketTimeout,
 		DisableInsert: c.DisableInsert,
 	}
-}
-
-// GetMongoClient TODO
-func (c Config) GetMongoClient() (db dal.RDB, err error) {
-	mongoConf := c.GetMongoConf()
-	db, err = local.NewMgo(mongoConf, time.Minute)
-	if err != nil {
-		return nil, fmt.Errorf("connect mongo server failed %s", err.Error())
-	}
-	return
 }

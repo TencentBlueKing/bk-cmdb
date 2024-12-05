@@ -198,6 +198,10 @@ func (m *MongoClient) SetDisabled(disabled bool) {
 
 // convColl convert collection name
 func (c *Mongo) convColl(collection string) (string, error) {
+	if common.IsPlatformTableWithTenant(collection) {
+		return collection, nil
+	}
+
 	if c.ignoreTenant {
 		if !common.IsPlatformTable(collection) {
 			return "", fmt.Errorf("tenant table %s has no tenant", collection)

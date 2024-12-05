@@ -162,6 +162,13 @@ var deprecatedIndexName = map[string][]string{
 		"idx_name_status_createTime",
 		"idx_status_lastTime",
 		"idx_name_flag_createTime",
+		"idx_flag_status_createTime",
+		"idx_lastTime_status",
+		"idx_lastTime",
+	},
+	common.BKTableNameAPITaskSyncHistory: {
+		"idx_instID_flag_createTime",
+		"idx_lastTime",
 	},
 	common.BKTableNameBaseProcess: {
 		"bk_biz_id_1",

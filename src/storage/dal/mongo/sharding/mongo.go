@@ -247,6 +247,26 @@ func (m *ShardingMongoManager) Ping() error {
 	return nil
 }
 
+// ExecForAllDB execute handler for all db clients
+func (m *ShardingMongoManager) ExecForAllDB(handler func(db local.DB) error) error {
+	txnManager, err := m.tm.Tenant(true, "")
+	if err != nil {
+		return fmt.Errorf("get txn manager failed, err: %v", err)
+	}
+
+	for uuid, client := range m.dbClientMap {
+		db, err := local.NewMongo(client, txnManager, m.conf, &local.MongoOptions{IgnoreTenant: true})
+		if err != nil {
+			return fmt.Errorf("generate %s db client failed, err: %v", uuid, err)
+		}
+
+		if err = handler(db); err != nil {
+			return fmt.Errorf("execute for db %s failed, err: %v", uuid, err)
+		}
+	}
+	return nil
+}
+
 // DisableDBShardingMongo is the disabled db sharding mongo db manager, right now only watch db sharding is disabled
 type DisableDBShardingMongo struct {
 	client *local.MongoClient
@@ -317,4 +337,9 @@ func (m *DisableDBShardingMongo) InitTxnManager(r redis.Client) error {
 // Ping db client
 func (m *DisableDBShardingMongo) Ping() error {
 	return m.client.Client().Ping(context.Background(), nil)
+}
+
+// ExecForAllDB execute handler for all db clients
+func (m *DisableDBShardingMongo) ExecForAllDB(handler func(db local.DB) error) error {
+	return handler(m.IgnoreTenant())
 }

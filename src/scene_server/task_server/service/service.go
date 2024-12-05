@@ -29,8 +29,8 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/task_server/app/options"
 	"configcenter/src/scene_server/task_server/logics"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
@@ -42,7 +42,6 @@ type Service struct {
 	*backbone.Engine
 	disc    discovery.DiscoveryInterface
 	CacheDB redis.Client
-	DB      dal.RDB
 	Logics  *logics.Logics
 }
 
@@ -104,15 +103,7 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
 	// mongodb status
-	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
-	if s.DB == nil {
-		mongoItem.IsHealthy = false
-		mongoItem.Message = "not connected"
-	} else if err := s.DB.Ping(); err != nil {
-		mongoItem.IsHealthy = false
-		mongoItem.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, mongoItem)
+	meta.Items = append(meta.Items, mongodb.Healthz()...)
 
 	// redis status
 	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}

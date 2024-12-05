@@ -272,18 +272,31 @@ func GetInstObjIDByTableName(collectionName, tenantID string) (string, error) {
 }
 
 var platformTableMap = map[string]struct{}{
-	BKTableNameSystem:           {},
-	BKTableNameIDgenerator:      {},
-	BKTableNameTenant:           {},
-	BKTableNameTenantTemplate:   {},
-	BKTableNamePlatformAuditLog: {},
-	BKTableNameWatchToken:       {},
-	BKTableNameLastWatchEvent:   {},
+	BKTableNameSystem:             {},
+	BKTableNameIDgenerator:        {},
+	BKTableNameTenant:             {},
+	BKTableNameTenantTemplate:     {},
+	BKTableNamePlatformAuditLog:   {},
+	BKTableNameWatchToken:         {},
+	BKTableNameLastWatchEvent:     {},
+	BKTableNameAPITask:            {},
+	BKTableNameAPITaskSyncHistory: {},
 }
 
 // IsPlatformTable returns if the target table is a platform table
 func IsPlatformTable(tableName string) bool {
 	_, exists := platformTableMap[tableName]
+	return exists
+}
+
+var platformTableWithTenantMap = map[string]struct{}{
+	BKTableNameAPITask:            {},
+	BKTableNameAPITaskSyncHistory: {},
+}
+
+// IsPlatformTableWithTenant returns if the target table is a platform table with tenant id field
+func IsPlatformTableWithTenant(tableName string) bool {
+	_, exists := platformTableWithTenantMap[tableName]
 	return exists
 }
 

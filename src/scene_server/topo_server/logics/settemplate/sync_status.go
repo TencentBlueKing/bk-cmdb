@@ -19,7 +19,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -168,9 +167,9 @@ func diffModuleServiceTplAndAttrs(serviceTplCnt, moduleCnt int64, serviceTemplat
 	return false
 }
 
-// GetLatestSyncTaskDetail TODO
-func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
-	taskCond metadata.ListAPITaskDetail) (map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
+// GetLatestSyncTaskDetail get latest sync task detail for set template sync task
+func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit, taskCond metadata.ListAPITaskDetail) (
+	map[int64]*metadata.APITaskDetail, errors.CCErrorCoder) {
 
 	if len(taskCond.InstID) == 0 {
 		blog.Errorf("set id is empty, rid: %s", kit.Rid)
@@ -199,30 +198,12 @@ func (st *setTemplate) GetLatestSyncTaskDetail(kit *rest.Kit,
 	}
 
 	for _, APITask := range listResult {
-		if len(taskCond.Fields) == 0 {
-			clearSetSyncTaskDetail(&APITask)
-		}
-
 		if APITask.InstID != 0 {
 			latestTaskResult[APITask.InstID] = &APITask
 		}
 	}
 
 	return latestTaskResult, nil
-}
-
-func clearSetSyncTaskDetail(detail *metadata.APITaskDetail) {
-	detail.Header = headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultTenantID)
-	for taskIdx := range detail.Detail {
-		subTaskDetail, ok := detail.Detail[taskIdx].Data.(map[string]interface{})
-		if !ok {
-			blog.Warnf("clearSetSyncTaskDetail expect map[string]interface{}, got unexpected type, data: %+v",
-				detail.Detail[taskIdx].Data)
-
-			detail.Detail[taskIdx].Data = nil
-		}
-		delete(subTaskDetail, "header")
-	}
 }
 
 func (st *setTemplate) getSetMapStrByOption(kit *rest.Kit, option *metadata.ListSetTemplateSyncStatusOption,

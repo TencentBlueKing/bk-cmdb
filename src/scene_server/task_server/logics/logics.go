@@ -15,19 +15,16 @@ package logics
 
 import (
 	"configcenter/src/apimachinery"
-	"configcenter/src/storage/dal"
 )
 
 // Logics TODO
 type Logics struct {
 	CoreAPI apimachinery.ClientSetInterface
-	db      dal.RDB
 }
 
 // NewLogics get logics handle
-func NewLogics(coreAPI apimachinery.ClientSetInterface, db dal.RDB) *Logics {
+func NewLogics(coreAPI apimachinery.ClientSetInterface) *Logics {
 	return &Logics{
 		CoreAPI: coreAPI,
-		db:      db,
 	}
 }

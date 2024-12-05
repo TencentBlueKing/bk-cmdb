@@ -31,6 +31,7 @@ import (
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/thirdparty/monitor"
@@ -210,6 +211,18 @@ func (st *shardingDBTable) syncDBTableIndexes(ctx context.Context) error {
 		}
 
 		blog.Infof("start sync table(%s) index, rid: %s", tableName, platDBTable.rid)
+
+		if common.IsPlatformTableWithTenant(tableName) {
+			err := st.db.ExecForAllDB(func(db local.DB) error {
+				dbTableInst := &dbTable{db: db, rid: "platform-with-tenant-" + st.rid}
+				return dbTableInst.syncIndexesToDB(ctx, tableName, indexes, deprecatedIndexNames[tableName])
+			})
+			if err != nil {
+				blog.Warnf("sync table (%s) index failed. err: %v, rid: %s", tableName, err, platDBTable.rid)
+				continue
+			}
+		}
+
 		if err := platDBTable.syncIndexesToDB(ctx, tableName, indexes, deprecatedIndexNames[tableName]); err != nil {
 			blog.Warnf("sync table (%s) index failed. err: %v, rid: %s", tableName, err, platDBTable.rid)
 			continue
