@@ -11,18 +11,22 @@ import (
 	"testing"
 	"time"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/cryptor"
 	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	kubetypes "configcenter/src/kube/types"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/test/run"
 	testutil "configcenter/src/test/util"
 
@@ -34,7 +38,7 @@ var adminClient adminserver.AdminServerClientInterface
 var tConfig TestConfig
 var reportUrl string
 var reportDir string
-var db *local.Mongo
+var db dal.Dal
 
 // TestConfig TODO
 type TestConfig struct {
@@ -45,6 +49,7 @@ type TestConfig struct {
 	DBWriteKBSize  int
 	MongoURI       string
 	MongoRsName    string
+	CryptoConf     string
 	RedisCfg       RedisConfig
 }
 
@@ -67,6 +72,7 @@ func init() {
 	flag.StringVar(&tConfig.RedisCfg.RedisPasswd, "redis-passwd", "cc", "redis password")
 	flag.StringVar(&tConfig.MongoURI, "mongo-addr", "mongodb://127.0.0.1:27017/cmdb", "mongodb URI")
 	flag.StringVar(&tConfig.MongoRsName, "mongo-rs-name", "rs0", "mongodb replica set name")
+	flag.StringVar(&tConfig.CryptoConf, "crypto-config", "", "mongodb crypto config in json format")
 	flag.StringVar(&reportUrl, "report-url", "http://127.0.0.1:8080/", "html report base url")
 	flag.StringVar(&reportDir, "report-dir", "report", "report directory")
 	flag.Parse()
@@ -87,7 +93,16 @@ func init() {
 		URI:          tConfig.MongoURI,
 		RsName:       tConfig.MongoRsName,
 	}
-	db, err = local.NewMgo(mongoConfig, time.Minute)
+
+	cryptoConf := new(cryptor.Config)
+	if tConfig.CryptoConf != "" {
+		err = json.Unmarshal([]byte(tConfig.CryptoConf), cryptoConf)
+		Expect(err).Should(BeNil())
+	}
+	crypto, err := cryptor.NewCrypto(cryptoConf)
+	Expect(err).Should(BeNil())
+
+	db, err = sharding.NewShardingMongo(mongoConfig, time.Minute, crypto)
 	Expect(err).Should(BeNil())
 	Expect(client.Start()).Should(BeNil())
 	Expect(client.Ping()).Should(BeNil())
@@ -120,35 +135,38 @@ func GetClientSet() apimachinery.ClientSetInterface {
 	return clientSet
 }
 
-// GetTestConfig TODO
-func GetTestConfig() TestConfig {
-	return tConfig
-}
+// TestTenantID is the tenant id for test
+// TODO change to test tenant, right now use default tenant for compatible
+const TestTenantID = common.BKDefaultTenantID
 
-// GetHeader TODO
+// GetHeader get header for test
 func GetHeader() http.Header {
-	return headerutil.GenDefaultHeader()
+	return headerutil.GenCommonHeader(common.CCSystemOperatorUserName, TestTenantID, "")
 }
 
 // ClearDatabase TODO
 func ClearDatabase() {
 	fmt.Println("********Clear Database*************")
-
-	mongoConfig := local.MongoConf{
-		MaxOpenConns: mongo.DefaultMaxOpenConns,
-		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,
-		URI:          tConfig.MongoURI,
-		RsName:       tConfig.MongoRsName,
-	}
-	db, err := local.NewMgo(mongoConfig, time.Minute)
-	Expect(err).Should(BeNil())
-	tables, err := db.ListTables(context.Background())
-	Expect(err).Should(BeNil())
-	for _, tableName := range tables {
-		err = db.DropTable(context.Background(), tableName)
+	for _, tableName := range common.PlatformTables() {
+		err := db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).DropTable(context.Background(), tableName)
 		Expect(err).Should(BeNil())
 	}
-	_ = db.Close()
+
+	err := tenant.ExecForAllTenants(func(tenantID string) error {
+		shardOpts := sharding.NewShardOpts().WithTenant(tenantID)
+		tables, err := db.Shard(shardOpts).ListTables(context.Background())
+		if err != nil {
+			return err
+		}
+		for _, tableName := range tables {
+			err = db.Shard(shardOpts).DropTable(context.Background(), tableName)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	Expect(err).Should(BeNil())
 
 	err = adminClient.Migrate(context.Background(), "0", "community", GetHeader())
 	Expect(err).Should(BeNil())
@@ -172,9 +190,14 @@ func GetReportDir() string {
 	return reportDir
 }
 
-// GetDB TODO
-func GetDB() *local.Mongo {
+// GetDal get dal
+func GetDal() dal.Dal {
 	return db
+}
+
+// GetDB get db client for test tenant
+func GetDB() dal.DB {
+	return db.Shard(sharding.NewShardOpts().WithTenant(TestTenantID))
 }
 
 // DeleteAllBizs delete all non-default bizs, used to clean biz data without ClearDatabase
@@ -186,7 +209,10 @@ func DeleteAllBizs() {
 
 	biz := make([]metadata.BizInst, 0)
 	bizCond := mapstr.MapStr{common.BKAppNameField: mapstr.MapStr{common.BKDBNIN: []string{"资源池", "蓝鲸"}}}
-	err := GetDB().Table(common.BKTableNameBaseApp).Find(bizCond).Fields(common.BKAppIDField).All(ctx, &biz)
+	err := tenant.ExecForAllTenants(func(tenantID string) error {
+		return db.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(common.BKTableNameBaseApp).Find(bizCond).Fields(common.BKAppIDField).
+			All(ctx, &biz)
+	})
 	Expect(err).NotTo(HaveOccurred())
 
 	if len(biz) == 0 {
@@ -210,7 +236,9 @@ func DeleteAllBizs() {
 
 	delCond := mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: bizIDs}}
 	for _, table := range tableNames {
-		err = GetDB().Table(table).Delete(ctx, delCond)
+		err = tenant.ExecForAllTenants(func(tenantID string) error {
+			return db.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(table).Delete(ctx, delCond)
+		})
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
@@ -223,7 +251,9 @@ func DeleteAllHosts() {
 		common.BKTableNameServiceInstance, common.BKTableNameProcessInstanceRelation, common.BKTableNameBaseProcess}
 
 	for _, table := range tableNames {
-		err := GetDB().Table(table).Delete(ctx, mapstr.New())
+		err := tenant.ExecForAllTenants(func(tenantID string) error {
+			return db.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(table).Delete(ctx, mapstr.New())
+		})
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
@@ -239,42 +269,60 @@ func DeleteAllObjects() {
 
 	delCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBNIN: innerObjs}}
 	objects := make([]metadata.Object, 0)
-	err := GetDB().Table(common.BKTableNameObjDes).Find(delCond).Fields(common.BKObjIDField, common.TenantID).
-		All(ctx, &objects)
-	Expect(err).NotTo(HaveOccurred())
 
-	if len(objects) == 0 {
-		return
-	}
+	err := tenant.ExecForAllTenants(func(tenantID string) error {
+		shardOpts := sharding.NewShardOpts().WithTenant(tenantID)
+		err := db.Shard(shardOpts).Table(common.BKTableNameObjDes).Find(delCond).
+			Fields(common.BKObjIDField, common.TenantID).All(ctx, &objects)
+		if err != nil {
+			return err
+		}
 
-	objIDs := make([]string, len(objects))
-	for i, obj := range objects {
-		err = db.DropTable(ctx, common.GetInstTableName(obj.ObjectID, obj.TenantID))
-		Expect(err).NotTo(HaveOccurred())
-		err = db.DropTable(ctx, common.GetObjectInstAsstTableName(obj.ObjectID, obj.TenantID))
-		Expect(err).NotTo(HaveOccurred())
-		objIDs[i] = obj.ObjectID
-	}
+		if len(objects) == 0 {
+			return nil
+		}
 
-	objCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
-	objTables := []string{common.BKTableNameObjDes, common.BKTableNameObjAttDes, common.BKTableNameObjUnique,
-		"cc_ObjectBaseMapping"}
-	for _, table := range objTables {
-		err = db.Table(table).Delete(ctx, objCond)
-		Expect(err).NotTo(HaveOccurred())
-	}
+		objIDs := make([]string, len(objects))
+		for i, obj := range objects {
+			err = db.Shard(shardOpts).DropTable(ctx, common.GetInstTableName(obj.ObjectID, obj.TenantID))
+			if err != nil {
+				return err
+			}
+			err = db.Shard(shardOpts).DropTable(ctx, common.GetObjectInstAsstTableName(obj.ObjectID, obj.TenantID))
+			if err != nil {
+				return err
+			}
+			objIDs[i] = obj.ObjectID
+		}
 
-	// compensate for mainline object association
-	mainlineCond := mapstr.MapStr{
-		common.AssociationKindIDField: common.AssociationKindMainline,
-		common.BKAsstObjIDField:       common.BKInnerObjIDApp,
-	}
-	mainlineData := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDSet}
-	err = db.Table(common.BKTableNameObjAsst).Update(ctx, mainlineCond, mainlineData)
-	Expect(err).NotTo(HaveOccurred())
+		objCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
+		objTables := []string{common.BKTableNameObjDes, common.BKTableNameObjAttDes, common.BKTableNameObjUnique,
+			"cc_ObjectBaseMapping"}
+		for _, table := range objTables {
+			err = db.Shard(shardOpts).Table(table).Delete(ctx, objCond)
+			if err != nil {
+				return err
+			}
+		}
 
-	asstObjCond := mapstr.MapStr{common.BKAsstObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
-	err = db.Table(common.BKTableNameObjAsst).Delete(ctx,
-		mapstr.MapStr{common.BKDBOR: []mapstr.MapStr{objCond, asstObjCond}})
+		// compensate for mainline object association
+		mainlineCond := mapstr.MapStr{
+			common.AssociationKindIDField: common.AssociationKindMainline,
+			common.BKAsstObjIDField:       common.BKInnerObjIDApp,
+		}
+		mainlineData := mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDSet}
+		err = db.Shard(shardOpts).Table(common.BKTableNameObjAsst).Update(ctx, mainlineCond, mainlineData)
+		if err != nil {
+			return err
+		}
+
+		asstObjCond := mapstr.MapStr{common.BKAsstObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
+		err = db.Shard(shardOpts).Table(common.BKTableNameObjAsst).Delete(ctx,
+			mapstr.MapStr{common.BKDBOR: []mapstr.MapStr{objCond, asstObjCond}})
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	Expect(err).NotTo(HaveOccurred())
 }

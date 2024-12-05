@@ -187,12 +187,14 @@
 - 命令行参数
   ```
   --bizId=2: blueking business id. e.g: 2
+  --tenant-id="": the tenant id of the business.
   --mongo-uri="": the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI
+  --crypto-config="": mongo crypto config in json format
   ```
 - 示例
 
   - ```
-    ./tool_ctl topo --bizId=2 --mongo-uri=mongodb://127.0.0.1:27017/cmdb
+    ./tool_ctl topo --bizId=2 --tenant-id=blueking --mongo-uri=mongodb://127.0.0.1:27017/cmdb --crypto-config='{"enabled":true,"algorithm":"CLASSIC","aes_gcm":{"key":"<KEY>"}}'
     ```
 
 ### 操作api请求限流策略
@@ -277,16 +279,20 @@ denyall配置为false的情况下，limit和ttl配置才能生效
 
 - 命令行参数
      ```
-          --collection=""   : collection name
-          --condition=""    : query conditions
-          --num=5           : numbers of result to show                  （默认值是5，仅限find命令）
-          --pretty[=false]  : query result are displayed in JSON format  （默认按照文本显示，仅限find命令）
-          --resfilter=""    : display the required fields                （仅限find命令）
+          --mongo-uri="": the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI
+          --crypto-config="": mongo crypto config in json format
+          --ignore-tenantd[=false]  : ignore tenant for platform db operation
+          --tenant-id=""            : tenant id
+          --collection=""           : collection name
+          --condition=""            : query conditions
+          --num=5                   : numbers of result to show                  （默认值是5，仅限find命令）
+          --pretty[=false]          : query result are displayed in JSON format  （默认按照文本显示，仅限find命令）
+          --resfilter=""            : display the required fields                （仅限find命令）
      ```
 - 示例
      ```
          对DB进行查找操作示例。其中mongo的url写法按照mongo官方的url格式进行填写。需要设定cmdb对应的数据库名称和replicaSet，如果需要设定用户名密码请按照官方示例进行设置:
-             ./tool_ctl --mongo-uri="mongodb://localhost:27017/test?replicaSet=rs0" db find --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"  --resfilter="id,type" --pretty=true
+             ./tool_ctl --mongo-uri="mongodb://localhost:27017/test?replicaSet=rs0" --crypto-config='{"enabled":true,"algorithm":"CLASSIC","aes_gcm":{"key":"<KEY>"}}' db find --tenant-id=blueking --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"  --resfilter="id,type" --pretty=true
          回显样式:
              [
              	{
@@ -298,7 +304,7 @@ denyall配置为false的情况下，limit和ttl配置才能生效
      ```
      ```
         显示指定DB中的所有collections。其中mongo的url写法按照mongo官方的url格式进行填写。需要设定cmdb对应的数据库名称和replicaSet，如果需要设定用户名密码请按照官方示例进行设置:
-             ./tool_ctl --mongo-uri="mongodb://localhost:27017/test?replicaSet=rs0" db show
+             ./tool_ctl --mongo-uri="mongodb://localhost:27017/test?replicaSet=rs0" --crypto-config='{"enabled":true,"algorithm":"CLASSIC","aes_gcm":{"key":"<KEY>"}}' db show --tenant-id=blueking
          回显样式:
              cc_test1
              cc_test2
@@ -309,7 +315,7 @@ denyall配置为false的情况下，limit和ttl配置才能生效
      ```
      ```
          对DB进行删除操作示例。其中mongo的url写法按照mongo官方的url格式进行填写。需要设定cmdb对应的数据库名称和replicaSet，如果需要设定用户名密码请按照官方示例进行设置:
-              ./tool_ctl --mongo-uri="mongodb://localhost:27017/test?replicaSet=rs0" db delete --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"
+              ./tool_ctl --mongo-uri="mongodb://localhost:27017/test?replicaSet=rs0" --crypto-config='{"enabled":true,"algorithm":"CLASSIC","aes_gcm":{"key":"<KEY>"}}' db delete --tenant-id=blueking --collection="test_collection" --condition="{\"bk_biz_id\" : 6}"
            回显样式
               delete total data num is 3
      ```

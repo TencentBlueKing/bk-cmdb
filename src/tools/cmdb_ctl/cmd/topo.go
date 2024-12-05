@@ -21,6 +21,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
@@ -31,7 +33,8 @@ func init() {
 }
 
 type topoCheckConf struct {
-	bizID int64
+	bizID    int64
+	tenantID string
 }
 
 // NewTopoCheckCommand TODO
@@ -53,16 +56,16 @@ func NewTopoCheckCommand() *cobra.Command {
 
 func (c *topoCheckConf) addFlags(cmd *cobra.Command) {
 	cmd.Flags().Int64Var(&c.bizID, "bizId", 2, "blueking business id. default value is 2")
+	cmd.Flags().StringVar(&c.tenantID, "tenant-id", "", "the tenant id of the business.")
 }
 
 type topoCheckService struct {
-	service         *config.Service
+	db              dal.DB
 	bizID           int64
+	tenantID        string
 	objectParentMap map[string]string
 	modelIDs        []string
 	instanceMap     map[string]*topoInstance
-	// 从业务信息中取出来业务所在的租户
-	tenantID string
 }
 
 type topoInstance struct {
@@ -72,14 +75,15 @@ type topoInstance struct {
 	Default          int64
 }
 
-func newTopoCheckService(mongoURI string, mongoRsName string, bizID int64) (*topoCheckService, error) {
-	service, err := config.NewMongoService(mongoURI, mongoRsName)
+func newTopoCheckService(conf *config.MongoConfig, c *topoCheckConf) (*topoCheckService, error) {
+	service, err := config.NewMongoService(conf)
 	if err != nil {
 		return nil, err
 	}
 	return &topoCheckService{
-		service:         service,
-		bizID:           bizID,
+		db:              service.DbProxy.Shard(sharding.NewShardOpts().WithTenant(c.tenantID)),
+		bizID:           c.bizID,
+		tenantID:        c.tenantID,
 		objectParentMap: make(map[string]string),
 		instanceMap:     make(map[string]*topoInstance),
 		modelIDs:        make([]string, 0),
@@ -87,7 +91,7 @@ func newTopoCheckService(mongoURI string, mongoRsName string, bizID int64) (*top
 }
 
 func runTopoCheck(c *topoCheckConf) error {
-	srv, err := newTopoCheckService(config.Conf.MongoURI, config.Conf.MongoRsName, c.bizID)
+	srv, err := newTopoCheckService(config.Conf.MongoConf, c)
 	if err != nil {
 		return err
 	}
@@ -112,8 +116,8 @@ func (s *topoCheckService) searchMainlineModel() error {
 	associations := make([]metadata.Association, 0)
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.AssociationKindIDField, Val: common.AssociationKindMainline})
-	if err := s.service.DbProxy.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(context.Background(),
-		&associations); err != nil {
+	err := s.db.Table(common.BKTableNameObjAsst).Find(cond.ToMapStr()).All(context.Background(), &associations)
+	if err != nil {
 		return fmt.Errorf("query topo model mainline association from db failed, %+v", err)
 	}
 	for _, association := range associations {
@@ -139,7 +143,7 @@ func (s *topoCheckService) searchMainlineInstance() error {
 	cond.Element(&mongo.Eq{Key: common.BKAppIDField, Val: s.bizID})
 	// search business instances
 	bizList := make([]metadata.BizInst, 0)
-	if err := s.service.DbProxy.Table(common.BKTableNameBaseApp).
+	if err := s.db.Table(common.BKTableNameBaseApp).
 		Find(cond.ToMapStr()).All(context.Background(), &bizList); err != nil {
 		return fmt.Errorf("get business instances by business id: %d failed, err: %+v", s.bizID, err)
 	}
@@ -147,7 +151,6 @@ func (s *topoCheckService) searchMainlineInstance() error {
 		_, _ = fmt.Fprintf(os.Stderr, "business id: %d has too many(num = %d) business instances\n",
 			s.bizID, len(bizList))
 	} else {
-		s.tenantID = bizList[0].TenantID
 		s.instanceMap[fmt.Sprintf("%s:%d", common.BKInnerObjIDApp, s.bizID)] = &topoInstance{
 			ObjectID:         common.BKInnerObjIDApp,
 			InstanceID:       s.bizID,
@@ -156,7 +159,7 @@ func (s *topoCheckService) searchMainlineInstance() error {
 	}
 	// search set instances
 	setInstances := make([]map[string]interface{}, 0)
-	err := s.service.DbProxy.Table(common.BKTableNameBaseSet).Find(cond.ToMapStr()).All(context.Background(),
+	err := s.db.Table(common.BKTableNameBaseSet).Find(cond.ToMapStr()).All(context.Background(),
 		&setInstances)
 	if err != nil {
 		return fmt.Errorf("get set instances by business id: %d failed, err: %+v", s.bizID, err)
@@ -189,7 +192,7 @@ func (s *topoCheckService) searchMainlineInstance() error {
 	}
 	// search module instances
 	moduleInstances := make([]map[string]interface{}, 0)
-	err = s.service.DbProxy.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).All(context.Background(),
+	err = s.db.Table(common.BKTableNameBaseModule).Find(cond.ToMapStr()).All(context.Background(),
 		&moduleInstances)
 	if err != nil {
 		return fmt.Errorf("get module instances by business id: %d failed, err: %+v", s.bizID, err)
@@ -231,8 +234,8 @@ func (s *topoCheckService) searchMainlineInstance() error {
 			common.BKAppIDField: s.bizID,
 		}
 
-		err = s.service.DbProxy.Table(common.GetInstTableName(objectID, s.tenantID)).
-			Find(cond).All(context.Background(), &mainlineInstances)
+		err = s.db.Table(common.GetInstTableName(objectID, s.tenantID)).Find(cond).
+			All(context.Background(), &mainlineInstances)
 		if err != nil {
 			return fmt.Errorf("get mainline instances by business id: %d failed, err: %+v", s.bizID, err)
 		}
@@ -296,8 +299,8 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 		mongoCondition.Element(&mongo.Eq{Key: parentIDField, Val: instance.ParentInstanceID})
 		missedInstances := make([]map[string]interface{}, 0)
 		parentTable := common.GetInstTableName(parentObjectID, s.tenantID)
-		err := s.service.DbProxy.Table(parentTable).Find(mongoCondition.ToMapStr()).All(context.Background(),
-			&missedInstances)
+		err := s.db.Table(parentTable).Find(mongoCondition.ToMapStr()).
+			All(context.Background(), &missedInstances)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "find missing parent instance for object %s and instance: %d failed, "+
 				"err: %+v, parentObjectID: %s, ParentInstanceID: %d\n",

@@ -17,12 +17,15 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/index"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core/model"
+	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
@@ -78,37 +81,42 @@ func NewMigrateCheckCommand() *cobra.Command {
 }
 
 type migrateCheckService struct {
-	service *config.Service
+	db dal.DB
 }
 
-func newMigrateCheckService(mongoURI string, mongoRsName string) (*migrateCheckService, error) {
-	service, err := config.NewMongoService(mongoURI, mongoRsName)
-	if err != nil {
-		return nil, err
-	}
+func newMigrateCheckService(shardingDB dal.Dal, tenantID string) *migrateCheckService {
 	return &migrateCheckService{
-		service: service,
-	}, nil
+		db: shardingDB.Shard(sharding.NewShardOpts().WithTenant(tenantID)),
+	}
 }
 
 func runUniqueCheck() error {
-	srv, err := newMigrateCheckService(config.Conf.MongoURI, config.Conf.MongoRsName)
+	service, err := config.NewMongoService(config.Conf.MongoConf)
 	if err != nil {
 		return err
 	}
-	return srv.checkUnique()
+
+	err = tenant.ExecForAllTenants(func(tenantID string) error {
+		srv := newMigrateCheckService(service.DbProxy, tenantID)
+		return srv.checkUnique()
+	})
+	return err
 }
 
 func runProcCheck(clearProc bool) error {
-	srv, err := newMigrateCheckService(config.Conf.MongoURI, config.Conf.MongoRsName)
+	service, err := config.NewMongoService(config.Conf.MongoConf)
 	if err != nil {
 		return err
 	}
-	if clearProc {
-		return srv.clearProc()
-	} else {
+
+	err = tenant.ExecForAllTenants(func(tenantID string) error {
+		srv := newMigrateCheckService(service.DbProxy, tenantID)
+		if clearProc {
+			return srv.clearProc()
+		}
 		return srv.checkProc()
-	}
+	})
+	return err
 }
 
 func (s *migrateCheckService) checkUnique() error {
@@ -178,7 +186,7 @@ func (s *migrateCheckService) checkUnique() error {
 func (s *migrateCheckService) getAllObjectIDs(ctx context.Context) ([]string, error) {
 	printInfo("start searching for all object ids\n")
 
-	rawObjIDs, err := s.service.DbProxy.Table(common.BKTableNameObjDes).Distinct(ctx, common.BKObjIDField, nil)
+	rawObjIDs, err := s.db.Table(common.BKTableNameObjDes).Distinct(ctx, common.BKObjIDField, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get all object ids from db failed, err: %v", err)
 	}
@@ -199,7 +207,7 @@ func (s *migrateCheckService) getObjectUniques(ctx context.Context, objID string
 	}
 
 	uniques := make([]ObjectUnique, 0)
-	if err := s.service.DbProxy.Table(common.BKTableNameObjUnique).Find(filter).All(ctx, &uniques); err != nil {
+	if err := s.db.Table(common.BKTableNameObjUnique).Find(filter).All(ctx, &uniques); err != nil {
 		return nil, fmt.Errorf("get unique rules for object(%s) failed, err: %v", objID, err)
 	}
 
@@ -214,7 +222,7 @@ func (s *migrateCheckService) getObjAttrMap(ctx context.Context, objID string) (
 	}
 
 	attributes := make([]metadata.Attribute, 0)
-	err := s.service.DbProxy.Table(common.BKTableNameObjAttDes).Find(filter).Fields(common.BKFieldID,
+	err := s.db.Table(common.BKTableNameObjAttDes).Find(filter).Fields(common.BKFieldID,
 		common.BKPropertyIDField, common.BKPropertyTypeField).All(ctx, &attributes)
 	if err != nil {
 		return nil, fmt.Errorf("get attributes for object(%s) failed, err: %v", objID, err)
@@ -326,7 +334,7 @@ func (s *migrateCheckService) checkObjectUnique(ctx context.Context, objID, tena
 
 	items := make([]duplicateItems, 0)
 	aggregateOpt := types.NewAggregateOpts().SetAllowDiskUse(true)
-	if err := s.service.DbProxy.Table(tableName).AggregateAll(ctx, pipeline, &items, aggregateOpt); err != nil {
+	if err := s.db.Table(tableName).AggregateAll(ctx, pipeline, &items, aggregateOpt); err != nil {
 		return err
 	}
 
@@ -386,7 +394,7 @@ func (s *migrateCheckService) checkProc() error {
 			}
 
 			processes := make([]metadata.Process, 0)
-			err := s.service.DbProxy.Table(common.BKTableNameBaseProcess).Find(procFilter).All(ctx, &processes)
+			err := s.db.Table(common.BKTableNameBaseProcess).Find(procFilter).All(ctx, &processes)
 			if err != nil {
 				return fmt.Errorf("get processes with no relation failed, procIDs: %+v, err: %v", procIDs, err)
 			}
@@ -428,7 +436,7 @@ func (s *migrateCheckService) clearProc() error {
 				common.BKProcessIDField: map[string]interface{}{common.BKDBIN: procIDs[start:limit]},
 			}
 
-			err := s.service.DbProxy.Table(common.BKTableNameBaseProcess).Delete(ctx, procFilter)
+			err := s.db.Table(common.BKTableNameBaseProcess).Delete(ctx, procFilter)
 			if err != nil {
 				return fmt.Errorf("delete processes with no relation failed, procIDs: %+v, err: %v", procIDs, err)
 			}
@@ -448,7 +456,7 @@ func (s *migrateCheckService) getProcWithNoRelation(ctx context.Context) ([]int6
 		processes := make([]struct {
 			ProcessID int64 `bson:"bk_process_id"`
 		}, 0)
-		err := s.service.DbProxy.Table(common.BKTableNameBaseProcess).Find(nil).Fields(common.BKProcessIDField).
+		err := s.db.Table(common.BKTableNameBaseProcess).Find(nil).Fields(common.BKProcessIDField).
 			Start(start).Limit(common.BKMaxPageSize).All(ctx, &processes)
 		if err != nil {
 			return nil, fmt.Errorf("get process ids failed, err: %v", err)
@@ -470,7 +478,7 @@ func (s *migrateCheckService) getProcWithNoRelation(ctx context.Context) ([]int6
 			common.BKProcessIDField: map[string]interface{}{common.BKDBIN: procIDs},
 		}
 		procRelations := make([]metadata.ProcessInstanceRelation, 0)
-		if err := s.service.DbProxy.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).Fields(
+		if err := s.db.Table(common.BKTableNameProcessInstanceRelation).Find(relationFilter).Fields(
 			common.BKProcessIDField).All(ctx, &procRelations); err != nil {
 			return nil, fmt.Errorf("get process relations failed, procIDs: %+v, err: %v", procIDs, err)
 		}

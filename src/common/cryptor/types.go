@@ -24,9 +24,9 @@ import (
 
 // Config defines cmdb crypto configuration
 type Config struct {
-	Enabled   bool        `mapstructure:"enabled"`
-	Algorithm Algorithm   `mapstructure:"algorithm"`
-	AesGcm    *AesGcmConf `mapstructure:"aesGcm"`
+	Enabled   bool        `mapstructure:"enabled" json:"enabled"`
+	Algorithm Algorithm   `mapstructure:"algorithm" json:"algorithm"`
+	AesGcm    *AesGcmConf `mapstructure:"aesGcm" json:"aes_gcm,omitempty"`
 }
 
 // Validate Config
