@@ -50,11 +50,6 @@ stage:
         # 网关调用后端服务的默认域名或IP，不包含Path，比如：http://api.example.com
         - host: {{ environ.BK_CMDB_HOST }}
           weight: 100
-    # Header转换；如未使用，可去除此配置
-    transform_headers:
-      # 设置Headers
-      set:
-        X-Bkcmdb-Supplier-Account: "0"
 
 # 主动授权，网关主动给应用，添加访问网关所有资源的权限；
 # 用于命令 `grant_apigw_permissions`

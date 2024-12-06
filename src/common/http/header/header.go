@@ -63,7 +63,7 @@ const (
 	LanguageHeader = "X-Bkcmdb-Language"
 
 	// TenantHeader is tenant http header key
-	TenantHeader = "X-Bkcmdb-Supplier-Account"
+	TenantHeader = "X-Bk-Tenant-Id"
 
 	// ReqFromWebHeader is the http header key that represents if request is from web server
 	ReqFromWebHeader = "X-Bkcmdb-Request-From-Web"
