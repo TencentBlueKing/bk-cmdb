@@ -17,12 +17,12 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 )
 
-func migrateEventIDToMongo(ctx context.Context, db dal.RDB, cache redis.Client, conf *upgrader.Config) error {
+func migrateEventIDToMongo(ctx context.Context, db dal.RDB, cache redis.Client, conf *history.Config) error {
 	sid, err := cache.Get(ctx, common.EventCacheEventIDKey).Result()
 	if redis.IsNilErr(err) {
 		return nil

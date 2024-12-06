@@ -18,11 +18,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func fixesProcessPortPattern(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func fixesProcessPortPattern(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
 		common.BKPropertyIDField: "port",
@@ -38,7 +38,7 @@ func fixesProcessPortPattern(ctx context.Context, db dal.RDB, conf *upgrader.Con
 	return nil
 }
 
-func fixesProcessPriorityPattern(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func fixesProcessPriorityPattern(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
 		common.BKPropertyIDField: "priority",

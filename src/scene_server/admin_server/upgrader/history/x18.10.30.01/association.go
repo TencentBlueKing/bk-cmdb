@@ -22,14 +22,14 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func createAssociationTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func createAssociationTable(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tablenames := []string{common.BKTableNameAsstDes, common.BKTableNameObjAsst, common.BKTableNameInstAsst}
 	for _, tablename := range tablenames {
 		exists, err := db.HasTable(ctx, tablename)
@@ -45,7 +45,7 @@ func createAssociationTable(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	return nil
 }
 
-func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	idxArr, err := db.Table(common.BKTableNameInstAsst).Indexes(ctx)
 	if err != nil {
@@ -82,7 +82,7 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgra
 
 }
 
-func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tablename := common.BKTableNameAsstDes
 
 	asstTypes := []metadata.AssociationKind{
@@ -143,7 +143,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	}
 
 	for _, asstType := range asstTypes {
-		_, _, err := upgrader.Upsert(ctx, db, tablename, asstType, "id", []string{"bk_asst_id"}, []string{"id"})
+		_, _, err := history.Upsert(ctx, db, tablename, asstType, "id", []string{"bk_asst_id"}, []string{"id"})
 		if err != nil {
 			return err
 		}
@@ -157,7 +157,7 @@ type Association struct {
 	ObjectAttID          string `bson:"bk_object_att_id"`
 }
 
-func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func reconcilAsstData(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	assts := []Association{}
 	err := db.Table(common.BKTableNameObjAsst).Find(nil).All(ctx, &assts)
@@ -343,7 +343,7 @@ func reconcilAsstData(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	return nil
 }
 
-func dropFlagColumn(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func dropFlagColumn(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	flag := "updateflag"
 	flagFilter := map[string]interface{}{
 		flag: map[string]interface{}{

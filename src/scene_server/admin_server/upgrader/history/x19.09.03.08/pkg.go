@@ -16,15 +16,15 @@ import (
 	"context"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19_09_03_08", upgrade)
+	history.RegistUpgrader("x19_09_03_08", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	if err := updateProcessIntProperty(ctx, db, conf); err != nil {
 		blog.Errorf("upgrade to version x19_09_03_08 failed, updateAutoTimeGapProperty failed, err: %+v", err)
 		return err

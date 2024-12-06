@@ -17,11 +17,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func updateSystemProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func updateSystemProperty(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	objs := []metadata.Object{}
 	condition := map[string]interface{}{
 		"bk_classification_id": "bk_biz_topo",
@@ -48,7 +48,7 @@ func updateSystemProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	return db.Table(tablename).Update(ctx, condition, data)
 }
 
-func fixesProcess(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func fixesProcess(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField: common.BKInnerObjIDProc,
 		common.BKPropertyIDField: map[string]interface{}{"$in": []string{"priority", "proc_num", "auto_time_gap",

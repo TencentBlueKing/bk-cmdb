@@ -18,12 +18,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 // fixSetTemplateVersionTimeEmpty fix time type field value empty for set template version attribute
-func fixSetTemplateVersionTimeEmpty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func fixSetTemplateVersionTimeEmpty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	filter := map[string]interface{}{
 		common.BKPropertyIDField: "set_template_version",
 		"bk_supplier_account":    conf.TenantID,

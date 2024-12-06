@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -31,7 +31,7 @@ type BizSimplify struct {
 }
 
 // AddRecycleModule add recycle module for business
-func AddRecycleModule(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func AddRecycleModule(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	defaultServiceCategoryID, err := getDefaultServiceCategoryID(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("getDefaultServiceCategoryID failed, err: %v", err)
@@ -69,7 +69,7 @@ func AddRecycleModule(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 	return nil
 }
 
-func getDefaultServiceCategoryID(ctx context.Context, db dal.RDB, conf *upgrader.Config) (int64, error) {
+func getDefaultServiceCategoryID(ctx context.Context, db dal.RDB, conf *history.Config) (int64, error) {
 	serviceCategory := metadata.ServiceCategory{}
 	filter := map[string]interface{}{
 		"is_built_in": true,
@@ -85,7 +85,7 @@ func getDefaultServiceCategoryID(ctx context.Context, db dal.RDB, conf *upgrader
 	return serviceCategory.ID, nil
 }
 
-func ensureRecycleModuleForBiz(ctx context.Context, db dal.RDB, conf *upgrader.Config, biz BizSimplify,
+func ensureRecycleModuleForBiz(ctx context.Context, db dal.RDB, conf *history.Config, biz BizSimplify,
 	defaultServiceCategoryID int64) error {
 	moduleFilter := map[string]interface{}{
 		common.BKDefaultField: common.DefaultRecycleModuleFlag,
@@ -139,7 +139,7 @@ func ensureRecycleModuleForBiz(ctx context.Context, db dal.RDB, conf *upgrader.C
 	return nil
 }
 
-func getResourceSetID(ctx context.Context, db dal.RDB, conf *upgrader.Config, biz BizSimplify) (int64, error) {
+func getResourceSetID(ctx context.Context, db dal.RDB, conf *history.Config, biz BizSimplify) (int64, error) {
 	setFilter := map[string]interface{}{
 		common.BKDefaultField: common.DefaultResSetFlag,
 		common.BKAppIDField:   biz.BKAppIDField,

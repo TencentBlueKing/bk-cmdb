@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -65,7 +65,7 @@ var dataWithCondition = []inputDatas{
 	},
 }
 
-func updateProcessTooltips(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func updateProcessTooltips(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 
 	for _, input := range dataWithCondition {
 		if err := db.Table(common.BKTableNameObjAttDes).Update(ctx, input.cond, input.data); nil != err {

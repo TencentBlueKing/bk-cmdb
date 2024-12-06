@@ -18,7 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
@@ -26,7 +26,7 @@ import (
 )
 
 // CreateInstNameIndex TODO
-func CreateInstNameIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func CreateInstNameIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	idx := types.Index{
 		Keys: bson.D{
 			{common.BKInstNameField, 1},

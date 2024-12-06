@@ -16,15 +16,15 @@ import (
 	"context"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.6.201911261109", upgrade)
+	history.RegistUpgrader("y3.6.201911261109", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	err = CreateTables(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade y3_6_201911261109] addChartDataTable error  %s", err.Error())

@@ -72,12 +72,12 @@ type dbTable struct {
 	db                         dal.RDB
 	preCleanRedundancyTableMap map[string]struct{}
 	rid                        string
+	tenantID                   string
 }
 
 // RunSyncDBTableIndex run sync db table index task
 func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.Dal, options options.Config) {
 	rid := util.GenerateRID()
-
 	// do not sync db table index if this admin-server is for ci,
 	// because suite test contains clear database operations that collides with this task
 	if version.CCRunMode == version.CCRunModeForCI {
@@ -97,7 +97,6 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.Dal, op
 		}
 		time.Sleep(20 * time.Second)
 	}
-
 	syncWorker := func(st *shardingDBTable, isTable bool) {
 		for {
 			rid := util.GenerateRID()
@@ -121,6 +120,7 @@ func RunSyncDBTableIndex(ctx context.Context, e *backbone.Engine, db dal.Dal, op
 						db:                         st.db.Shard(sharding.NewShardOpts().WithTenant(tenantID)),
 						preCleanRedundancyTableMap: st.preCleanRedundancyTableMap[tenantID],
 						rid:                        tenantRid,
+						tenantID:                   tenantID,
 					}
 					if err := dt.syncModelShardingTable(ctx); err != nil {
 						blog.Errorf("model table sync failed, err: %v, rid: %s", err, tenantRid)
@@ -230,7 +230,11 @@ func (st *shardingDBTable) syncDBTableIndexes(ctx context.Context) error {
 	}
 
 	err := tenant.ExecForAllTenants(func(tenantID string) error {
-		dt := &dbTable{db: st.db.Shard(sharding.NewShardOpts().WithTenant(tenantID)), rid: tenantID + "-" + st.rid}
+		dt := &dbTable{
+			db:       st.db.Shard(sharding.NewShardOpts().WithTenant(tenantID)),
+			rid:      tenantID + "-" + st.rid,
+			tenantID: tenantID,
+		}
 
 		dtIndexesMap, err := dt.findSyncIndexesLogicUnique(ctx)
 		if err != nil {
@@ -347,8 +351,8 @@ func (dt *dbTable) countQuotedWithDestModel(ctx context.Context, destModel strin
 
 func (dt *dbTable) findSyncIndexesLogicUnique(ctx context.Context) (map[string][]types.Index, error) {
 	objs := make([]metadata.Object, 0)
-	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField, common.BKIsPre,
-		common.TenantID).All(ctx, &objs); err != nil {
+	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField, common.BKIsPre).All(ctx,
+		&objs); err != nil {
 		blog.Errorf("get all common object id  error. err: %s, rid: %s", err.Error(), dt.rid)
 		return nil, err
 	}
@@ -357,8 +361,8 @@ func (dt *dbTable) findSyncIndexesLogicUnique(ctx context.Context) (map[string][
 	for _, obj := range objs {
 		blog.Infof("start object(%s) sharding table rid: %s", obj.ObjectID, dt.rid)
 
-		instTable := common.GetObjectInstTableName(obj.ObjectID, obj.TenantID)
-		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, obj.TenantID)
+		instTable := common.GetObjectInstTableName(obj.ObjectID, dt.tenantID)
+		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, dt.tenantID)
 
 		uniques, err := dt.findObjUniques(ctx, obj.ObjectID)
 		if err != nil {
@@ -448,14 +452,14 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 
 	modelDBTableNameMap := make(map[string]struct{}, 0)
 	for _, name := range allDBTables {
-		if common.IsObjectShardingTable(name) {
+		if common.IsObjectInstAsstShardingTable(name) {
 			modelDBTableNameMap[name] = struct{}{}
 		}
 	}
 
 	objs := make([]metadata.Object, 0)
-	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
-		common.BKIsPre, common.TenantID).All(ctx, &objs); err != nil {
+	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField, common.BKIsPre).All(ctx,
+		&objs); err != nil {
 		blog.Errorf("get all common object id  error. err: %s, rid: %s", err.Error(), dt.rid)
 		return err
 	}
@@ -463,8 +467,8 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 	for _, obj := range objs {
 		blog.Infof("start object(%s) sharding table rid: %s", obj.ObjectID, dt.rid)
 
-		instTable := common.GetObjectInstTableName(obj.ObjectID, obj.TenantID)
-		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, obj.TenantID)
+		instTable := common.GetObjectInstTableName(obj.ObjectID, dt.tenantID)
+		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, dt.tenantID)
 
 		uniques, err := dt.findObjUniques(ctx, obj.ObjectID)
 		if err != nil {
@@ -521,7 +525,6 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 	if err := dt.cleanRedundancyTable(ctx, modelDBTableNameMap); err != nil {
 		blog.Errorf("clean redundancy table Name map:(%#v) error. err: %s, rid: %s",
 			modelDBTableNameMap, err.Error(), dt.rid)
-
 	}
 	return nil
 }
@@ -560,8 +563,8 @@ func (dt *dbTable) createTable(ctx context.Context, obj metadata.Object, modelDB
 
 func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap map[string]struct{}) error {
 	objs := make([]metadata.Object, 0)
-	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField,
-		common.BKIsPre, common.TenantID).All(ctx, &objs); err != nil {
+	if err := dt.db.Table(common.BKTableNameObjDes).Find(nil).Fields(common.BKObjIDField, common.BKIsPre).All(ctx,
+		&objs); err != nil {
 		blog.Errorf("get all common object id  error. err: %s, rid: %s", err.Error(), dt.rid)
 		// NOTICE: 错误直接忽略不行后需功能
 		return err
@@ -569,8 +572,8 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 
 	// 再次确认数据，保证存在模型的的表不被删除
 	for _, obj := range objs {
-		instTable := common.GetObjectInstTableName(obj.ObjectID, obj.TenantID)
-		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, obj.TenantID)
+		instTable := common.GetObjectInstTableName(obj.ObjectID, dt.tenantID)
+		instAsstTable := common.GetObjectInstAsstTableName(obj.ObjectID, dt.tenantID)
 		delete(modelDBTableNameMap, instTable)
 		delete(modelDBTableNameMap, instAsstTable)
 
@@ -649,7 +652,6 @@ func (dt *dbTable) cleanRedundancyTable(ctx context.Context, modelDBTableNameMap
 }
 
 func (dt *dbTable) createIndexes(ctx context.Context, tableName string, indexes []types.Index) {
-
 	for _, index := range indexes {
 		if err := dt.db.Table(tableName).CreateIndex(ctx, index); err != nil {
 			// 不影响后需执行，
@@ -674,8 +676,8 @@ func (dt *dbTable) findObjUniques(ctx context.Context, objID string) ([]types.In
 	}
 	uniqueIdxs := make([]metadata.ObjectUnique, 0)
 	if err := dt.db.Table(common.BKTableNameObjUnique).Find(filter).All(ctx, &uniqueIdxs); err != nil {
-		newErr := fmt.Errorf("get obj(%s) logic unique index error. err: %s", objID, err.Error())
-		blog.ErrorJSON("%s, rid: %s", newErr.Error(), dt.rid)
+		newErr := fmt.Errorf("get obj(%s) logic unique index error. err: %s", objID, err)
+		blog.Errorf("%s, rid: %s", newErr, dt.rid)
 		return nil, newErr
 	}
 
@@ -690,7 +692,7 @@ func (dt *dbTable) findObjUniques(ctx context.Context, objID string) ([]types.In
 		newDBIndex, err := index.ToDBUniqueIndex(objID, idx.ID, idx.Keys, attrs)
 		if err != nil {
 			newErr := fmt.Errorf("obj(%s). %s", objID, err.Error())
-			blog.ErrorJSON("%s, rid: %s", newErr.Error(), dt.rid)
+			blog.Errorf("%s, rid: %s", newErr.Error(), dt.rid)
 			return nil, newErr
 		}
 		indexes = append(indexes, newDBIndex)

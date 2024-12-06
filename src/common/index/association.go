@@ -28,28 +28,28 @@ var (
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkObjId_bkInstID",
 			Keys: bson.D{
-				{"bk_obj_id", 1},
-				{"bk_inst_id", 1},
+				{common.BKObjIDField, 1},
+				{common.BKInstIDField, 1},
 			},
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicUniqueIdxNamePrefix + "id",
-			Keys:       bson.D{{"id", 1}},
+			Keys:       bson.D{{common.BKFieldID, 1}},
 			Unique:     true,
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkAsstObjId_bkAsstInstId",
 			Keys: bson.D{
-				{"bk_asst_obj_id", 1},
-				{"bk_asst_inst_id", 1},
+				{common.BKAsstObjIDField, 1},
+				{common.BKAsstInstIDField, 1},
 			},
 			Background: true,
 		},
 		{
 			Name:       common.CCLogicIndexNamePrefix + "bkAsstID",
-			Keys:       bson.D{{"bk_asst_id", 1}},
+			Keys:       bson.D{{common.AssociationKindIDField, 1}},
 			Background: true,
 		},
 		{

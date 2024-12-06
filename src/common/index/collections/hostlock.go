@@ -20,24 +20,14 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameHostLock, deprecatedHostLockIndexes)
 	registerIndexes(common.BKTableNameHostLock, commHostLockIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commHostLockIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedHostLockIndexes = []types.Index{
+var commHostLockIndexes = []types.Index{
 	{
-		Name: "bk_host_id_1",
-		Keys: bson.D{{
-			"bk_host_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkHostID",
+		Keys:                    bson.D{{common.BKHostIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

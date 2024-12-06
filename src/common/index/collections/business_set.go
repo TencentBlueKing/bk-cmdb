@@ -25,7 +25,7 @@ func init() {
 
 var commBizSetIndexes = []types.Index{
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "biz_set_id",
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkBizSetID",
 		Keys: bson.D{{
 			common.BKBizSetIDField, 1},
 		},
@@ -33,20 +33,14 @@ var commBizSetIndexes = []types.Index{
 		Background: true,
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "biz_set_name",
-		Keys: bson.D{{
-			common.BKBizSetNameField, 1},
-		},
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkBizSetName",
+		Keys:       bson.D{{common.BKBizSetNameField, 1}},
 		Unique:     true,
 		Background: true,
 	},
 	{
-		Name: common.CCLogicIndexNamePrefix + "biz_set_id_biz_set_name_owner_id",
-		Keys: bson.D{
-			{common.BKBizSetIDField, 1},
-			{common.BKBizSetNameField, 1},
-			{common.TenantID, 1},
-		},
+		Name:       common.CCLogicIndexNamePrefix + "bkBizSetID_bkBizSetName",
+		Keys:       bson.D{{common.BKBizSetIDField, 1}, {common.BKBizSetNameField, 1}},
 		Background: true,
 	},
 }

@@ -18,11 +18,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func addBkStartParamRegex(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func addBkStartParamRegex(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	tablename := common.BKTableNameObjAttDes
 	now := time.Now()
 
@@ -70,7 +70,7 @@ func addBkStartParamRegex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		LastTime:      &now,
 		Description:   "通过进程启动参数唯一识别进程，比如kafka和zookeeper的二进制名称为java，通过启动参数包含kafka或zookeeper来区分",
 	}
-	_, _, err = upgrader.Upsert(ctx, db, tablename, row, "id",
+	_, _, err = history.Upsert(ctx, db, tablename, row, "id",
 		[]string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v3.1.0-alpha.2] addBkStartParamRegex  %s", err)
@@ -80,7 +80,7 @@ func addBkStartParamRegex(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	return nil
 }
 
-func updateLanguageField(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func updateLanguageField(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	condition := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDApp,
 		common.BKPropertyIDField: "language",
