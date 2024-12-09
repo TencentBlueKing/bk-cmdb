@@ -324,8 +324,7 @@
       async getDemList(id) {
         this.demList = await this.getStaticDimeObj({
           params: {
-            bk_obj_id: id,
-            bk_supplier_account: this.supplierAccount
+            bk_obj_id: id
           }
         })
         this.$validator.reset()

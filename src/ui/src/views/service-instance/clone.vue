@@ -95,8 +95,7 @@
             page: { start: 0, limit: 1 },
             fields: [],
             condition: {
-              bk_module_id: this.moduleId,
-              bk_supplier_account: this.$store.getters.supplierAccount
+              bk_module_id: this.moduleId
             }
           },
           config: {

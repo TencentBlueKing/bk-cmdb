@@ -135,8 +135,7 @@
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
-              bk_obj_id: 'process',
-              bk_supplier_account: this.supplierAccount
+              bk_obj_id: 'process'
             },
             config: {
               requestId: processPropertyRequestId,

@@ -220,7 +220,6 @@
       async getProperties() {
         try {
           const params = {
-            bk_supplier_account: this.supplierAccount,
             bk_obj_id: 'host'
           }
           if (this.business > 0) {

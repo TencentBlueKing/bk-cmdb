@@ -43,8 +43,7 @@
   })
 
   const searchParams = computed(() => ({
-    bk_obj_id: selectedModelId.value,
-    bk_supplier_account: store.getters.supplierAccount
+    bk_obj_id: selectedModelId.value
   }))
   const [{ properties, pending }] = useProperty(searchParams)
 

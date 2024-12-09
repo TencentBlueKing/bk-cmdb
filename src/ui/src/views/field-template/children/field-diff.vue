@@ -12,7 +12,6 @@
 
 <script setup>
   import { ref, computed, reactive } from 'vue'
-  import { useStore } from '@/store'
   import useGroupProperty from '@/hooks/utils/group-property'
   import useGroup from '@/hooks/model/group'
   import useProperty from '@/hooks/model/property'
@@ -42,7 +41,6 @@
       default: () => ([])
     }
   })
-  const store = useStore()
 
   const isOnlyShowTemplateRelated = ref(true)
 
@@ -56,8 +54,7 @@
 
   // 查询模型的字段列表
   const propertyParams = computed(() => ({
-    bk_obj_id: props.model.bk_obj_id,
-    bk_supplier_account: store.getters.supplierAccount
+    bk_obj_id: props.model.bk_obj_id
   }))
   const [{ properties, pending }] = useProperty(propertyParams)
   const [{ groups }] = useGroup(propertyParams)

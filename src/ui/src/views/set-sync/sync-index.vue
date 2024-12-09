@@ -179,8 +179,7 @@
         return this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
           params: {
             bk_biz_id: this.bizId,
-            bk_obj_id: 'set',
-            bk_supplier_account: this.$store.getters.supplierAccount,
+            bk_obj_id: 'set'
           },
           config: {
             requestId: this.requestIds.properties,

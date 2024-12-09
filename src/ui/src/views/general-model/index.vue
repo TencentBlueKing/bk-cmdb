@@ -626,8 +626,7 @@
         return this.searchObjectAttribute({
           injectId: this.objId,
           params: {
-            bk_obj_id: this.objId,
-            bk_supplier_account: this.supplierAccount
+            bk_obj_id: this.objId
           },
           config: {
             requestId: this.request.properties,

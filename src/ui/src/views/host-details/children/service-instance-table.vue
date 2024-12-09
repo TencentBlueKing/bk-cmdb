@@ -275,8 +275,7 @@
         const action = 'objectModelProperty/searchObjectAttribute'
         const properties = await this.$store.dispatch(action, {
           params: {
-            bk_obj_id: 'process',
-            bk_supplier_account: this.$store.getters.supplierAccount
+            bk_obj_id: 'process'
           },
           config: {
             requestId: this.requestId.properties,

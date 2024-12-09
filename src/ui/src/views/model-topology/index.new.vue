@@ -1206,7 +1206,6 @@
               bk_obj_icon: data.bk_obj_icon,
               bk_obj_id: data.bk_obj_id,
               bk_obj_name: data.bk_obj_name,
-              bk_supplier_account: this.supplierAccount,
               creator: this.userName
             }
           })

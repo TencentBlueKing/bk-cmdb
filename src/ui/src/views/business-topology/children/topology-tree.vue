@@ -588,8 +588,7 @@
           properties = await this.$store.dispatch(action, {
             params: {
               bk_biz_id: this.bizId,
-              bk_obj_id: nextModelId,
-              bk_supplier_account: this.$store.getters.supplierAccount
+              bk_obj_id: nextModelId
             },
             config: {
               requestId: this.request.property
@@ -729,8 +728,7 @@
           bizId: this.bizId,
           params: {
             sets: value.map(set => ({
-              ...set,
-              bk_supplier_account: this.supplierAccount
+              ...set
             }))
           }
         })
@@ -746,8 +744,7 @@
           bizId: this.bizId,
           params: {
             ...value,
-            bk_biz_id: this.bizId,
-            bk_supplier_account: this.supplierAccount
+            bk_biz_id: this.bizId
           }
         }
 

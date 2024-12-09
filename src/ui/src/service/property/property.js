@@ -68,8 +68,7 @@ export const find = async (params, config, injectId = false) => {
 
 export const findBiz = (injectId = false, config) => {
   const params = {
-    bk_obj_id: 'biz',
-    bk_supplier_account: window.Supplier.account
+    bk_obj_id: 'biz'
   }
   return find(params, config, injectId)
 }
@@ -77,8 +76,7 @@ export const findBiz = (injectId = false, config) => {
 
 export const findBizSet = (injectId = false, config) => {
   const params = {
-    bk_obj_id: BUILTIN_MODELS.BUSINESS_SET,
-    bk_supplier_account: window.Supplier.account
+    bk_obj_id: BUILTIN_MODELS.BUSINESS_SET
   }
   return find(params, config, injectId)
 }

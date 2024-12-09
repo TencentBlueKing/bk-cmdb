@@ -303,8 +303,7 @@
           const propertyMap = await this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
             params: {
               bk_biz_id: this.bizId,
-              bk_obj_id: { $in: this.availableModels.map(model => model.bk_obj_id) },
-              bk_supplier_account: this.supplierAccount
+              bk_obj_id: { $in: this.availableModels.map(model => model.bk_obj_id) }
             },
             config: {
               requestId: this.request.property,

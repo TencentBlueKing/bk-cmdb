@@ -1053,7 +1053,6 @@
             return
           }
           const params = {
-            bk_supplier_account: this.supplierAccount,
             bk_classification_id: this.groupDialog.data.bk_classification_id,
             bk_classification_name: this.groupDialog.data.bk_classification_name
           }
@@ -1119,7 +1118,6 @@
       },
       async saveModel(data) {
         const params = {
-          bk_supplier_account: this.supplierAccount,
           bk_obj_name: data.bk_obj_name,
           bk_obj_icon: data.bk_obj_icon,
           bk_classification_id: data.bk_classification_id,

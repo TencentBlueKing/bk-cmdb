@@ -166,8 +166,7 @@
         return this.$store.dispatch('objectModelProperty/batchSearchObjectAttribute', {
           params: {
             bk_biz_id: this.bizId,
-            bk_obj_id: { $in: ['process', 'module'] },
-            bk_supplier_account: this.supplierAccount
+            bk_obj_id: { $in: ['process', 'module'] }
           },
           config: {
             requestId: this.requestIds.properties,
