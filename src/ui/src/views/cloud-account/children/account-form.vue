@@ -230,8 +230,7 @@
         try {
           this.properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
-              bk_obj_id: 'plat',
-              bk_supplier_account: this.supplierAccount
+              bk_obj_id: 'plat'
             },
             config: {
               requestId: CLOUD_AREA_PROPERTIES,

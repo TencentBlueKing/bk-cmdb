@@ -745,8 +745,7 @@
       },
       getProperties() {
         const params = {
-          bk_obj_id: this.objId,
-          bk_supplier_account: this.supplierAccount
+          bk_obj_id: this.objId
         }
         if (!this.isGlobalView) {
           params.bk_biz_id = this.bizId
@@ -949,7 +948,6 @@
             bk_group_index: latestIndex + 1,
             bk_group_name: this.groupForm.groupName,
             bk_obj_id: this.objId,
-            bk_supplier_account: this.supplierAccount,
             is_collapse: this.groupForm.isCollapse
           }
           if (!this.isGlobalView) {

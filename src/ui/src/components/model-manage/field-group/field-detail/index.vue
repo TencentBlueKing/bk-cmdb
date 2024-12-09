@@ -605,8 +605,7 @@
           const otherParams = {
             creator: this.userName,
             bk_property_group: groupId,
-            bk_obj_id: selectedGroup?.bk_obj_id || this.group.bk_obj_id,
-            bk_supplier_account: this.supplierAccount
+            bk_obj_id: selectedGroup?.bk_obj_id || this.group.bk_obj_id
           }
           const action = this.customObjId ? 'createBizObjectAttribute' : 'createObjectAttribute'
           const params = {

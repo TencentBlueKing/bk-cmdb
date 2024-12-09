@@ -139,8 +139,7 @@
         try {
           const properties = await this.searchObjectAttribute({
             params: {
-              bk_obj_id: objId,
-              bk_supplier_account: this.supplierAccount
+              bk_obj_id: objId
             },
             config: {
               requestId: `post_searchObjectAttribute_${objId}`,

@@ -301,8 +301,7 @@
           properties = await this.$store.dispatch(action, {
             params: {
               bk_biz_id: this.business,
-              bk_obj_id: modelId,
-              bk_supplier_account: this.$store.getters.supplierAccount
+              bk_obj_id: modelId
             },
             config: {
               requestId: 'getModelProperties'
@@ -436,8 +435,7 @@
             page: { start: 0, limit: 1 },
             fields: [],
             condition: {
-              bk_module_id: this.selectedNode.data.bk_inst_id,
-              bk_supplier_account: this.$store.getters.supplierAccount
+              bk_module_id: this.selectedNode.data.bk_inst_id
             }
           },
           config: {
@@ -510,7 +508,6 @@
           setId: this.selectedNode.parent.data.bk_inst_id,
           moduleId: this.selectedNode.data.bk_inst_id,
           params: {
-            bk_supplier_account: this.$store.getters.supplierAccount,
             ...value
           },
           config: {

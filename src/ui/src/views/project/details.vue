@@ -118,8 +118,7 @@
           const properties = await this.searchObjectAttribute({
             injectId: BUILTIN_MODELS.PROJECT,
             params: {
-              bk_obj_id: this.objId,
-              bk_supplier_account: this.supplierAccount
+              bk_obj_id: this.objId
             },
             config: {
               requestId: 'post_searchObjectAttribute_bk_project',

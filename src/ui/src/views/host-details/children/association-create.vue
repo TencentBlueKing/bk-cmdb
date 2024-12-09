@@ -324,8 +324,7 @@
       getAsstObjProperties() {
         return this.searchObjectAttribute({
           params: {
-            bk_obj_id: this.currentAsstObj,
-            bk_supplier_account: this.supplierAccount
+            bk_obj_id: this.currentAsstObj
           },
           config: {
             requestId: `post_searchObjectAttribute_${this.currentAsstObj}`

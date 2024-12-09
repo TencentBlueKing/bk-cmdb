@@ -632,8 +632,7 @@
             this.$store.dispatch('hostDelete/deleteHost', {
               params: {
                 data: {
-                  bk_host_id: this.table.checked.join(','),
-                  bk_supplier_account: this.supplierAccount
+                  bk_host_id: this.table.checked.join(',')
                 }
               }
             }).then(() => {

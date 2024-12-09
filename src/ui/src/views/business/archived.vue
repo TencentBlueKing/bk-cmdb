@@ -150,8 +150,7 @@
       try {
         this.properties = await this.searchObjectAttribute({
           params: {
-            bk_obj_id: 'biz',
-            bk_supplier_account: this.supplierAccount
+            bk_obj_id: 'biz'
           },
           config: {
             requestId: 'post_searchObjectAttribute_biz'

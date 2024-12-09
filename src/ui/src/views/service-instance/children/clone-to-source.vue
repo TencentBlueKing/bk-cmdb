@@ -164,8 +164,7 @@
         const action = 'objectModelProperty/searchObjectAttribute'
         return this.$store.dispatch(action, {
           params: {
-            bk_obj_id: 'process',
-            bk_supplier_account: this.$store.getters.supplierAccount
+            bk_obj_id: 'process'
           },
           config: {
             requestId: 'get_service_process_properties',

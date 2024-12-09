@@ -184,8 +184,7 @@
           properties = await this.$store.dispatch(action, {
             params: {
               bk_biz_id: this.bizId,
-              bk_obj_id: modelId,
-              bk_supplier_account: this.$store.getters.supplierAccount,
+              bk_obj_id: modelId
             },
             config: {
               requestId: 'getModelProperties',
@@ -306,8 +305,7 @@
             page: { start: 0, limit: 1 },
             fields: [],
             condition: {
-              bk_module_id: moduleId,
-              bk_supplier_account: this.$store.getters.supplierAccount,
+              bk_module_id: moduleId
             },
           },
           {
