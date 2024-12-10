@@ -15,11 +15,11 @@ package v3v0v9beta1
 import (
 	"context"
 
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func fixesSupplierAccount(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func fixesSupplierAccount(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	for _, tablename := range shouldAddSupplierAccountFieldTables {
 		condition := map[string]interface{}{
 			"bk_supplier_account": map[string]interface{}{

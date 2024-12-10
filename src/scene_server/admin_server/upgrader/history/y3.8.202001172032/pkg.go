@@ -17,15 +17,15 @@ import (
 	"fmt"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.8.202001172032", upgrade)
+	history.RegistUpgrader("y3.8.202001172032", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	blog.Infof("start execute y3.8.202001172032")
 
 	if err := createAuditLogTable(ctx, db, conf); err != nil {

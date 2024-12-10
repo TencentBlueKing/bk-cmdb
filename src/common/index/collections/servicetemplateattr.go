@@ -35,7 +35,7 @@ var commServiceTemplateAttrIndexes = []types.Index{
 				common.BKFieldID, 1,
 			},
 		},
-		Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ID",
 		Unique:     true,
 		Background: true,
 	},
@@ -51,8 +51,7 @@ var commServiceTemplateAttrIndexes = []types.Index{
 				common.BKAttributeIDField, 1,
 			},
 		},
-		Name: common.CCLogicUniqueIdxNamePrefix + common.BKAppIDField + "_" + common.BKServiceTemplateIDField + "_" +
-			common.BKAttributeIDField,
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkBizID_serviceTemplateID_bkAttributeID",
 		Background: true,
 		Unique:     true,
 	},

@@ -20,18 +20,12 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameBaseProcess, deprecatedProcessIndexes)
 	registerIndexes(common.BKTableNameBaseProcess, commProcessIndexes)
-
 }
-
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
 var commProcessIndexes = []types.Index{
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "svcInstID_bkProcName",
+		Name: common.CCLogicUniqueIdxNamePrefix + "serviceInstanceID_bkProcessName",
 		Keys: bson.D{
 			{common.BKServiceInstanceIDField, 1},
 			{common.BKProcessNameField, 1},
@@ -44,7 +38,7 @@ var commProcessIndexes = []types.Index{
 		},
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "svcInstID_bkFuncName_bkStartParamRegex",
+		Name: common.CCLogicUniqueIdxNamePrefix + "serviceInstanceID_bkFuncName_bkStartParamRegex",
 		Keys: bson.D{
 			{common.BKServiceInstanceIDField, 1},
 			{common.BKFuncName, 1},
@@ -58,30 +52,17 @@ var commProcessIndexes = []types.Index{
 			common.BKStartParamRegex:        map[string]string{common.BKDBType: "string"},
 		},
 	},
-}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedProcessIndexes = []types.Index{
 	{
-		Name: "bk_biz_id_1",
-		Keys: bson.D{{
-			"bk_biz_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkBizID",
+		Keys:                    bson.D{{common.BKAppIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_supplier_account_1",
-		Keys: bson.D{{
-			"bk_supplier_account", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "idx_unique_procID",
-		Keys: bson.D{{
-			"bk_process_id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "bkProcessID",
+		Keys:                    bson.D{{common.BKProcessIDField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

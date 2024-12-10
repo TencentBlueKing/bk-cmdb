@@ -17,14 +17,14 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func createAuditLogTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func createAuditLogTable(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	exists, err := db.HasTable(ctx, common.BKTableNameAuditLog)
 	if err != nil {
 		blog.Errorf("search audit log table error, err: %v", err)
@@ -39,7 +39,7 @@ func createAuditLogTable(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 	return nil
 }
 
-func addAuditLogTableIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addAuditLogTableIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	idxArr, err := db.Table(common.BKTableNameAuditLog).Indexes(ctx)
 	if err != nil {
 		blog.Errorf("get table %s index error, err: %v", common.BKTableNameAuditLog, err)
