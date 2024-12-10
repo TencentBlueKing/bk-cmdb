@@ -19,7 +19,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	com "configcenter/src/scene_server/admin_server/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -50,7 +50,7 @@ type Attribute struct {
 	LastTime          time.Time   `json:"last_time" bson:"last_time"`
 }
 
-func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	optionVal := []string{
 		"运营中[需告警]",
 		"运营中[无告警]",
@@ -83,7 +83,7 @@ func addHostFieldTypeList(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, hostListTypeField, "id", uniqueFields); err != nil {
+	if err := history.Insert(ctx, db, common.BKTableNameObjAttDes, hostListTypeField, "id", uniqueFields); err != nil {
 		blog.ErrorJSON("addHostFieldTypeList failed, Insert err: %s, attribute: %#v, ", err, hostListTypeField)
 		return err
 	}

@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -51,7 +51,7 @@ type Attribute struct {
 	LastTime          *time.Time  `json:"last_time" bson:"last_time"`
 }
 
-func addAIXProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addAIXProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	cond := condition.CreateCondition()
 	cond.Field("bk_supplier_account").Eq("0")

@@ -16,15 +16,15 @@ import (
 	"context"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("x08.09.18.01", upgrade)
+	history.RegistUpgrader("x08.09.18.01", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	err = fixedHostPlatAssocateRelation(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade x08.09.18.01] fixedHostPlatAssocateRelation error  %s", err.Error())

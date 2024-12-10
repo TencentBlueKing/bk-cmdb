@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
@@ -55,7 +55,7 @@ var CreateTableOptions = []struct {
 	},
 }
 
-func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableName string, indices []types.Index) error {
+func upsertTable(ctx context.Context, db dal.RDB, conf *history.Config, tableName string, indices []types.Index) error {
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
 		return fmt.Errorf("check HasTable failed, tableName: %s, err: %+v", tableName, err)
@@ -86,7 +86,7 @@ func upsertTable(ctx context.Context, db dal.RDB, conf *upgrader.Config, tableNa
 }
 
 // CreateTables TODO
-func CreateTables(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func CreateTables(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	for _, item := range CreateTableOptions {
 		err := upsertTable(ctx, db, conf, item.TableName, item.TableIndex)
 		if err != nil {

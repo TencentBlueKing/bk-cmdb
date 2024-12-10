@@ -20,11 +20,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func addInnerCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addInnerCategory(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	innerCategories := []struct {
 		Name       string `field:"name" json:"name,omitempty" bson:"name"`
 		ParentName string `field:"bk_parent_id" json:"bk_parent_id,omitempty" bson:"bk_parent_id"`

@@ -20,55 +20,34 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameObjAsst, deprecatedObjAsstIndexes)
 	registerIndexes(common.BKTableNameObjAsst, commObjAsstIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commObjAsstIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedObjAsstIndexes = []types.Index{
+var commObjAsstIndexes = []types.Index{
 	{
-		Name: "bk_obj_id_1",
-		Keys: bson.D{{
-			"bk_obj_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkObjID",
+		Keys:                    bson.D{{common.BKObjIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_asst_obj_id_1",
-		Keys: bson.D{{
-			"bk_asst_obj_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkAsstObjID",
+		Keys:                    bson.D{{common.AssociatedObjectIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_supplier_account_1",
-		Keys: bson.D{{
-			"bk_supplier_account", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
+		Keys:                    bson.D{{common.BKFieldID, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_obj_id_1_bk_asst_obj_id_1_bk_asst_id_1",
-		Keys: bson.D{
-			{"bk_obj_id", 1},
-			{"bk_asst_obj_id", 1},
-			{"bk_asst_id", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "idx_unique_id",
-		Keys: bson.D{{
-			"id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name: common.CCLogicIndexNamePrefix + "bkObjID_bkAsstObjID_bkAsstID",
+		Keys: bson.D{{common.BKObjIDField, 1}, {common.AssociatedObjectIDField, 1},
+			{common.AssociationKindIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }
