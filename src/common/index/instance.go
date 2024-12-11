@@ -28,38 +28,21 @@ var (
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkObjId",
 			Keys: bson.D{
-				{"bk_obj_id", 1},
+				{common.BKObjIDField, 1},
 			},
 			Background: true,
 		},
 		{
-			Name: common.CCLogicIndexNamePrefix + "tenantID_bkObjID",
+			Name: common.CCLogicIndexNamePrefix + "bkInstName",
 			Keys: bson.D{
-				{"tenant_id", 1},
-				{"bk_obj_id", 1},
-			},
-			Background: true,
-		},
-		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstId_tenantID",
-			Keys: bson.D{
-				{"bk_inst_id", 1},
-				{"tenant_id", 1},
-			},
-			Background: true,
-		},
-		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstName_tenantID",
-			Keys: bson.D{
-				{"bk_inst_name", 1},
-				{"tenant_id", 1},
+				{common.BKInstNameField, 1},
 			},
 			Background: true,
 		},
 		{
 			Name: common.CCLogicIndexNamePrefix + "bkInstId",
 			Keys: bson.D{
-				{"bk_inst_id", 1},
+				{common.BKInstIDField, 1},
 			},
 			Background: true,
 			// 新加 2021年03月11日
@@ -69,10 +52,9 @@ var (
 	tableInstanceDefaultIndexes = []types.Index{
 
 		{
-			Name: common.CCLogicIndexNamePrefix + "bkInstID_tenantID",
+			Name: common.CCLogicIndexNamePrefix + "bkInstID",
 			Keys: bson.D{
-				{"bk_inst_id", 1},
-				{"tenant_id", 1},
+				{common.BKInstIDField, 1},
 			},
 			Background: true,
 		},
@@ -95,14 +77,14 @@ func MainLineInstanceUniqueIndex() []types.Index {
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkParentID_bkInstName",
 			Keys: bson.D{
-				{"bk_parent_id", 1},
-				{"bk_inst_name", 1},
+				{common.BKInstParentStr, 1},
+				{common.BKInstNameField, 1},
 			},
 			Background: false,
 			Unique:     true,
 			PartialFilterExpression: map[string]interface{}{
-				"bk_inst_name": map[string]interface{}{"$type": "string"},
-				"bk_parent_id": map[string]interface{}{"$type": "number"},
+				common.BKInstNameField: map[string]interface{}{"$type": "string"},
+				common.BKInstParentStr: map[string]interface{}{"$type": "number"},
 			},
 		},
 	}
@@ -115,7 +97,7 @@ func InstanceUniqueIndex() []types.Index {
 		{
 			Name: common.CCLogicUniqueIdxNamePrefix + "bkInstName",
 			Keys: bson.D{
-				{"bk_inst_name", 1},
+				{common.BKInstNameField, 1},
 			},
 			Background: false,
 			Unique:     true,

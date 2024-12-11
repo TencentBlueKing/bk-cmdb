@@ -19,11 +19,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	mCommon "configcenter/src/scene_server/admin_server/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func updateProcessBindIPProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateProcessBindIPProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type BindOption struct {
 		Name      string `json:"name" bson:"name"`
 		Type      string `json:"type" bson:"type"`
@@ -103,7 +103,7 @@ func updateProcessBindIPProperty(ctx context.Context, db dal.RDB, conf *upgrader
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, bindIPProperty, "id", uniqueFields, []string{})
+	_, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, bindIPProperty, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateProcessBindIPProperty bind_ip failed, err: %+v", err)
 		return err
@@ -112,7 +112,7 @@ func updateProcessBindIPProperty(ctx context.Context, db dal.RDB, conf *upgrader
 	return nil
 }
 
-func updateProcessNameProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateProcessNameProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type Attribute struct {
 		ID                int64       `field:"id" json:"id" bson:"id"`
 		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -164,7 +164,7 @@ func updateProcessNameProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, ProcNameProperty, "id", uniqueFields, []string{})
+	_, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, ProcNameProperty, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateProcessNameProperty bind_ip failed, err: %+v", err)
 		return err
@@ -173,7 +173,7 @@ func updateProcessNameProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 	return nil
 }
 
-func updateAutoTimeGapProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateAutoTimeGapProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type Attribute struct {
 		ID                int64       `field:"id" json:"id" bson:"id"`
 		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -228,7 +228,7 @@ func updateAutoTimeGapProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
+	_, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateAutoTimeGapProperty bind_ip failed, err: %+v", err)
 		return err
@@ -237,7 +237,7 @@ func updateAutoTimeGapProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 	return nil
 }
 
-func updateProcNumProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateProcNumProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type Attribute struct {
 		ID                int64       `field:"id" json:"id" bson:"id"`
 		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -292,7 +292,7 @@ func updateProcNumProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
+	_, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateProcNumProperty bind_ip failed, err: %+v", err)
 		return err
@@ -301,7 +301,7 @@ func updateProcNumProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	return nil
 }
 
-func updatePriorityProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updatePriorityProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type Attribute struct {
 		ID                int64       `field:"id" json:"id" bson:"id"`
 		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -356,7 +356,7 @@ func updatePriorityProperty(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
+	_, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updatePriorityProperty bind_ip failed, err: %+v", err)
 		return err
@@ -365,7 +365,7 @@ func updatePriorityProperty(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 	return nil
 }
 
-func updateTimeoutProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateTimeoutProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type Attribute struct {
 		ID                int64       `field:"id" json:"id" bson:"id"`
 		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -420,7 +420,7 @@ func updateTimeoutProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
+	_, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateTimeoutProperty bind_ip failed, err: %+v", err)
 		return err
@@ -429,7 +429,7 @@ func updateTimeoutProperty(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	return nil
 }
 
-func updateProcessNamePropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateProcessNamePropertyIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	processNameFilter := map[string]interface{}{
 		common.BKPropertyIDField: "bk_process_name",
 	}
@@ -443,7 +443,7 @@ func updateProcessNamePropertyIndex(ctx context.Context, db dal.RDB, conf *upgra
 	return nil
 }
 
-func updateFuncNamePropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateFuncNamePropertyIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	funcNameFilter := map[string]interface{}{
 		common.BKPropertyIDField: "bk_func_name",
 	}
@@ -457,7 +457,7 @@ func updateFuncNamePropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader
 	return nil
 }
 
-func deleteProcessUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func deleteProcessUnique(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	filter := map[string]interface{}{
 		common.BKObjIDField: common.BKInnerObjIDProc,
 	}
@@ -468,7 +468,7 @@ func deleteProcessUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 	return nil
 }
 
-func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type Attribute struct {
 		ID                int64       `field:"id" json:"id" bson:"id"`
 		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -520,7 +520,7 @@ func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
+	_, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, property, "id", uniqueFields, []string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] updateFuncIDProperty bk_func_id failed, err: %+v", err)
 		return err
@@ -530,7 +530,7 @@ func updateFuncIDProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config
 }
 
 // UpdateProcPortPropertyGroupName TODO
-func UpdateProcPortPropertyGroupName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func UpdateProcPortPropertyGroupName(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	// update proc_port group name
 	row := &Group{
 		ObjectID:   common.BKInnerObjIDProc,
@@ -540,7 +540,7 @@ func UpdateProcPortPropertyGroupName(ctx context.Context, db dal.RDB, conf *upgr
 		OwnerID:    conf.TenantID,
 		IsDefault:  true,
 	}
-	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNamePropertyGroup, row, "id",
+	if _, _, err := history.Upsert(ctx, db, common.BKTableNamePropertyGroup, row, "id",
 		[]string{common.BKObjIDField, "bk_group_id"}, []string{"id"}); err != nil {
 		blog.Errorf("add data for  %s table error  %s", common.BKTableNamePropertyGroup, err)
 		return err

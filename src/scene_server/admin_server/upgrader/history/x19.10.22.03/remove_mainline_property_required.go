@@ -19,11 +19,11 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func removeMainlinePropertyRequired(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func removeMainlinePropertyRequired(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	// find mainline model
 	cond := map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline}
 	assts := make([]metadata.Association, 0)

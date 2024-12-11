@@ -20,16 +20,12 @@ import (
 )
 
 func init() {
-
 	registerIndexes("cc_ObjectBaseMapping", commInstanceObjectBaseMappingIndexes)
-
 }
-
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
 var commInstanceObjectBaseMappingIndexes = []types.Index{
 	{
-		Name: common.CCLogicIndexNamePrefix + "InstID",
+		Name: common.CCLogicIndexNamePrefix + "bkInstID",
 		Keys: bson.D{{
 			common.BKInstIDField, 1},
 		},

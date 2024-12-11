@@ -16,7 +16,7 @@ import (
 	"context"
 
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -25,7 +25,7 @@ const (
 	subscriptionNameField = "subscription_name"
 )
 
-func removeProcFreshInstance(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func removeProcFreshInstance(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableName := tableNameSubscription
 	SubscriptionName := "process instance refresh [Do not remove it]"
 	filter := map[string]interface{}{

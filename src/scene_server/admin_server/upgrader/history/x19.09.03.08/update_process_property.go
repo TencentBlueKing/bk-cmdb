@@ -18,11 +18,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func updateProcessIntProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateProcessIntProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	for _, property := range []string{"priority", "auto_time_gap", "timeout"} {
 		filter := map[string]interface{}{
 			common.BKObjIDField:      "process",

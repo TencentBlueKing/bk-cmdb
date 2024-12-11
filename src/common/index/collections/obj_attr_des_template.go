@@ -30,7 +30,7 @@ func init() {
 
 var commObjAttDesTemplateIndexes = []types.Index{
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
+		Name: common.CCLogicUniqueIdxNamePrefix + "ID",
 		Keys: bson.D{
 			{
 				common.BKFieldID, 1,

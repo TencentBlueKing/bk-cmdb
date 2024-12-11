@@ -21,12 +21,8 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameAPITask, deprecatedAPITaskIndexes)
 	registerIndexes(common.BKTableNameAPITask, commAPITaskIndexes)
 	registerIndexes(common.BKTableNameAPITaskSyncHistory, apiTaskSyncHistoryIndexes)
-
 }
 
 var commAPITaskIndexes = []types.Index{
@@ -64,13 +60,21 @@ var commAPITaskIndexes = []types.Index{
 		},
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "tenantID_instID_taskType_createTime",
+		Name: common.CCLogicIndexNamePrefix + "tenantID_instID_taskType_createTime",
 		Keys: bson.D{
 			{common.TenantID, 1},
 			{common.BKInstIDField, 1},
 			{common.BKTaskTypeField, 1},
 			{common.CreateTimeField, -1},
 		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "taskID",
+		Keys: bson.D{{
+			"task_id", 1},
+		},
+		Unique:     true,
 		Background: true,
 	},
 }
@@ -84,7 +88,7 @@ var apiTaskSyncHistoryIndexes = []types.Index{
 		ExpireAfterSeconds: 6 * 30 * 24 * 60 * 60,
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "tenantID_taskID_taskType",
+		Name: common.CCLogicIndexNamePrefix + "tenantID_taskID_taskType",
 		Keys: bson.D{
 			{common.TenantID, 1},
 			{common.BKTaskIDField, 1},
@@ -93,25 +97,13 @@ var apiTaskSyncHistoryIndexes = []types.Index{
 		Background: true,
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "tenantID_instID_taskType_createTime",
+		Name: common.CCLogicIndexNamePrefix + "tenantID_instID_taskType_createTime",
 		Keys: bson.D{
 			{common.TenantID, 1},
 			{common.BKInstIDField, 1},
 			{common.BKTaskTypeField, 1},
 			{common.CreateTimeField, -1},
 		},
-		Background: true,
-	},
-}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedAPITaskIndexes = []types.Index{
-	{
-		Name: "idx_taskID",
-		Keys: bson.D{{
-			"task_id", 1},
-		},
-		Unique:     true,
 		Background: true,
 	},
 }

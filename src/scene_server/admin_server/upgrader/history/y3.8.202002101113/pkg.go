@@ -17,16 +17,16 @@ import (
 	"fmt"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 )
 
 func init() {
-	upgrader.RegisterUpgraderWithRedis("y3.8.202002101113", upgrade)
+	history.RegisterUpgraderWithRedis("y3.8.202002101113", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, cache redis.Client, conf *upgrader.Config) error {
+func upgrade(ctx context.Context, db dal.RDB, cache redis.Client, conf *history.Config) error {
 	blog.Infof("start execute y3.8.202002101113")
 
 	if err := migrateEventIDToMongo(ctx, db, cache, conf); err != nil {

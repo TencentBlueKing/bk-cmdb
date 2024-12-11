@@ -20,49 +20,34 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameServiceTemplate, deprecatedServiceTemplateIndexes)
 	registerIndexes(common.BKTableNameServiceTemplate, commServiceTemplateIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commServiceTemplateIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedServiceTemplateIndexes = []types.Index{
+var commServiceTemplateIndexes = []types.Index{
 	{
-		Name: "id_1_bk_biz_id_1",
-		Keys: bson.D{
-			{"id", 1},
-			{"bk_biz_id", 1},
-		},
-		Background: true, // 1,
+		Name:                    common.CCLogicIndexNamePrefix + "bkBizID",
+		Keys:                    bson.D{{common.BKAppIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_bkBizID",
-		Keys: bson.D{{
-			"bk_biz_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "bkBizID_name",
+		Keys:                    bson.D{{common.BKAppIDField, 1}, {common.BKFieldName, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_unique_id",
-		Keys: bson.D{{
-			"id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "ID_bkBizID",
+		Keys:                    bson.D{{common.BKFieldID, 1}, {common.BKAppIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_idx_bk_biz_id_name",
-		Keys: bson.D{
-			{"bk_biz_id", 1},
-			{"name", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
+		Keys:                    bson.D{{common.BKFieldID, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

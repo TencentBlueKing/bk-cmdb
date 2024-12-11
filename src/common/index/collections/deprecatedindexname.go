@@ -50,7 +50,7 @@ var deprecatedIndexName = map[string][]string{
 	common.BKTableNameHostApplyRule: {
 		"bk_biz_id",
 		"id",
-		"bk_module_id",
+		common.BKModuleIDField,
 		"host_property_under_module",
 		"idx_unique_bizID_moduleID_attrID",
 	},

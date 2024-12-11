@@ -16,15 +16,15 @@ import (
 	"context"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19.04.16.03", upgrade)
+	history.RegistUpgrader("x19.04.16.03", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	err = updateAttributeCreateTime(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade x19.04.16.03] fixAssociationTypeName error  %s", err.Error())

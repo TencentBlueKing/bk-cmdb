@@ -16,13 +16,13 @@ import (
 	"context"
 
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 // setProcessAutoStartAttribute TODO
 // set process model's attribute auto_start's bk_isapi field value to true
-func setProcessAutoStartAttribute(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func setProcessAutoStartAttribute(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	cond := map[string]string{
 		"bk_obj_id":      "process",
 		"bk_property_id": "auto_start",

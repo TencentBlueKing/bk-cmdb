@@ -53,12 +53,12 @@ func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (r
 // Migrate TODO
 func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) error {
 	resp := new(metadata.Response)
-	subPath := "/migrate/%s/%s"
+	subPath := "/migrate/database"
 
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, distribution, ownerID).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)

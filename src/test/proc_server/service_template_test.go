@@ -4,15 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/selector"
 	commonutil "configcenter/src/common/util"
+	"configcenter/src/test"
 	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
@@ -224,10 +227,15 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("create module with unmatch category and template", func() {
+			serviceCategoryID, err := test.GetDefaultCategory()
+			if err != nil {
+				blog.Errorf("get default service category failed, err: %v", err)
+				return
+			}
 			input := map[string]interface{}{
 				"bk_module_name":      "123",
 				"bk_parent_id":        setId,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"service_template_id": serviceTemplateId,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, input)
@@ -262,12 +270,17 @@ var _ = Describe("service template test", func() {
 		})
 
 		It("update module with template", func() {
+			serviceCategoryID, err := test.GetDefaultCategory()
+			if err != nil {
+				blog.Errorf("get default service category failed, err: %v", err)
+				return
+			}
 			input := map[string]interface{}{
 				"bk_module_name":      "TEST",
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"service_template_id": 1000,
 			}
-			err := instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
+			err = instClient.UpdateModule(context.Background(), bizId, setId, moduleId, header, input)
 			util.RegisterResponseWithRid(err, header)
 			Expect(err).To(HaveOccurred())
 		})
@@ -810,11 +823,16 @@ var _ = Describe("service template test", func() {
 	})
 
 	Describe("update template test", func() {
+		serviceCategoryID, err := test.GetDefaultCategory()
+		if err != nil {
+			blog.Errorf("get default service category failed, err: %v", err)
+			return
+		}
 		It("update service template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
 				"id":                  serviceTemplateId,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"name":                "abcdefg",
 			}
 			rsp, err := serviceClient.UpdateServiceTemplate(context.Background(), header, input)
@@ -825,13 +843,13 @@ var _ = Describe("service template test", func() {
 			data := metadata.ServiceTemplate{}
 			json.Unmarshal(j, &data)
 			Expect(data.Name).To(Equal("abcdefg"))
-			Expect(data.ServiceCategoryID).To(Equal(int64(2)))
+			Expect(data.ServiceCategoryID).To(Equal(serviceCategoryID))
 		})
 
 		It("search service template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"page": map[string]interface{}{
 					"start": 0,
 					"limit": 50,
@@ -844,7 +862,7 @@ var _ = Describe("service template test", func() {
 			j, err := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"count\":1"))
 			Expect(j).To(ContainSubstring("\"name\":\"abcdefg\""))
-			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
+			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_category_id\":%d", serviceCategoryID)))
 			resMap["service_template"] = j
 		})
 
@@ -914,7 +932,7 @@ var _ = Describe("service template test", func() {
 		It("search service template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField:   bizId,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"page": map[string]interface{}{
 					"start": 0,
 					"limit": 50,
@@ -990,7 +1008,7 @@ var _ = Describe("service template test", func() {
 			j, _ := json.Marshal(rsp)
 			Expect(j).To(ContainSubstring("\"bk_module_name\":\"abcdefg\""))
 			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_template_id\":%d", serviceTemplateId)))
-			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
+			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_category_id\":%d", serviceCategoryID)))
 		})
 
 		It("search service instance", func() {
@@ -1132,6 +1150,9 @@ var _ = Describe("service template test", func() {
 				ModuleID: moduleId,
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
+			sort.Slice(data.Info, func(i, j int) bool {
+				return len(data.Info[i].Labels) > len(data.Info[j].Labels)
+			})
 			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
 			resMap["service_instance"] = data
@@ -1207,6 +1228,9 @@ var _ = Describe("service template test", func() {
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			util.RegisterResponseWithRid(data, header)
+			sort.Slice(data.Info, func(i, j int) bool {
+				return len(data.Info[i].Labels) > len(data.Info[j].Labels)
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resMap["service_instance"]).To(Equal(data))
 		})
@@ -1256,6 +1280,9 @@ var _ = Describe("service template test", func() {
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			util.RegisterResponseWithRid(data, header)
+			sort.Slice(data.Info, func(i, j int) bool {
+				return data.Info[i].ID < data.Info[j].ID
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(1)))
 			Expect(data.Info[0].ID).To(Equal(serviceId1))
@@ -1421,6 +1448,9 @@ var _ = Describe("service template test", func() {
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
+			sort.Slice(data.Info, func(i, j int) bool {
+				return len(data.Info[i].Labels) > len(data.Info[j].Labels)
+			})
 			Expect(data.Count).To(Equal(uint64(2)))
 			Expect(data.Info[0].ID).To(Equal(serviceId1))
 			Expect(data.Info[1].ID).To(Equal(serviceId))
@@ -1466,6 +1496,9 @@ var _ = Describe("service template test", func() {
 			}
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			util.RegisterResponseWithRid(data, header)
+			sort.Slice(data.Info, func(i, j int) bool {
+				return len(data.Info[i].Labels) > len(data.Info[j].Labels)
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data.Count).To(Equal(uint64(2)))
 			Expect(data.Info[0].ID).To(Equal(serviceId1))
@@ -1606,6 +1639,9 @@ var _ = Describe("service template test", func() {
 			data, err := serviceClient.SearchServiceInstance(context.Background(), header, input)
 			util.RegisterResponseWithRid(data, header)
 			Expect(err).NotTo(HaveOccurred())
+			sort.Slice(data.Info, func(i, j int) bool {
+				return data.Info[i].Name > data.Info[j].Name
+			})
 			Expect(data.Count).To(Equal(uint64(2)))
 			Expect(len(data.Info[0].Labels)).To(Equal(1))
 			Expect(data.Info[0].Labels["key2"]).To(Equal("value"))
@@ -1615,6 +1651,11 @@ var _ = Describe("service template test", func() {
 	})
 
 	Describe("removal test", func() {
+		serviceCategoryID, err := test.GetDefaultCategory()
+		if err != nil {
+			blog.Errorf("get default service category failed, err: %v", err)
+			return
+		}
 		It("remove process template", func() {
 			input := map[string]interface{}{
 				common.BKAppIDField: bizId,
@@ -1719,7 +1760,7 @@ var _ = Describe("service template test", func() {
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			j, _ := json.Marshal(rsp)
-			Expect(j).To(ContainSubstring("\"service_category_id\":2"))
+			Expect(j).To(ContainSubstring(fmt.Sprintf("\"service_category_id\":%d", serviceCategoryID)))
 		})
 
 		It("search service instance", func() {
@@ -1781,7 +1822,7 @@ var _ = Describe("service template test", func() {
 							"bk_biz_id": strconv.FormatInt(bizId, 10),
 						},
 					},
-					"service_category_id": 2,
+					"service_category_id": serviceCategoryID,
 				}
 				rsp, err := serviceClient.SearchServiceTemplate(context.Background(), header, input)
 				util.RegisterResponseWithRid(rsp, header)

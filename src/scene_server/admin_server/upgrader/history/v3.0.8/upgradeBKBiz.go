@@ -19,12 +19,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 // addBKApp add bk app
-func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addBKApp(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	if count, err := db.Table(common.BKTableNameBaseApp).Find(mapstr.MapStr{common.BKAppNameField: common.BKAppName}).Count(ctx); err != nil {
 		return err
 	} else if count >= 1 {
@@ -42,7 +42,7 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	appModelData[common.BKDefaultField] = common.DefaultFlagDefaultValue
 	filled := fillEmptyFields(appModelData, AppRow())
 	var preData map[string]interface{}
-	bizID, preData, err := upgrader.Upsert(ctx, db, common.BKTableNameBaseApp, appModelData, common.BKAppIDField,
+	bizID, preData, err := history.Upsert(ctx, db, common.BKTableNameBaseApp, appModelData, common.BKAppIDField,
 		[]string{common.BKAppNameField, "bk_supplier_account"}, append(filled, common.BKAppIDField))
 	if err != nil {
 		blog.Error("add addBKApp error ", err.Error())
@@ -101,7 +101,7 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	inputSetInfo[common.BKDefaultField] = common.DefaultResSetFlag
 	inputSetInfo["bk_supplier_account"] = conf.TenantID
 	filled = fillEmptyFields(inputSetInfo, SetRow())
-	setID, _, err := upgrader.Upsert(ctx, db, common.BKTableNameBaseSet, inputSetInfo, common.BKSetIDField,
+	setID, _, err := history.Upsert(ctx, db, common.BKTableNameBaseSet, inputSetInfo, common.BKSetIDField,
 		[]string{"bk_supplier_account", common.BKAppIDField, common.BKSetNameField},
 		append(filled, common.BKSetIDField))
 	if err != nil {
@@ -118,7 +118,7 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	inputResModuleInfo[common.BKDefaultField] = common.DefaultResModuleFlag
 	inputResModuleInfo["bk_supplier_account"] = conf.TenantID
 	filled = fillEmptyFields(inputResModuleInfo, ModuleRow())
-	_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameBaseModule, inputResModuleInfo, common.BKModuleIDField,
+	_, _, err = history.Upsert(ctx, db, common.BKTableNameBaseModule, inputResModuleInfo, common.BKModuleIDField,
 		[]string{"bk_supplier_account", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField},
 		append(filled, common.BKModuleIDField))
 	if err != nil {
@@ -134,7 +134,7 @@ func addBKApp(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 	inputFaultModuleInfo[common.BKDefaultField] = common.DefaultFaultModuleFlag
 	inputFaultModuleInfo["bk_supplier_account"] = conf.TenantID
 	filled = fillEmptyFields(inputFaultModuleInfo, ModuleRow())
-	_, _, err = upgrader.Upsert(ctx, db, common.BKTableNameBaseModule, inputFaultModuleInfo, common.BKModuleIDField,
+	_, _, err = history.Upsert(ctx, db, common.BKTableNameBaseModule, inputFaultModuleInfo, common.BKModuleIDField,
 		[]string{"bk_supplier_account", common.BKModuleNameField, common.BKAppIDField, common.BKSetIDField},
 		append(filled, common.BKModuleIDField))
 	if err != nil {
