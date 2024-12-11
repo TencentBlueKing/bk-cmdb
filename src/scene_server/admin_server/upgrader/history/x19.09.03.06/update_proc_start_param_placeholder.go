@@ -18,12 +18,12 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 // ChangeProcPlaceholder TODO
-func ChangeProcPlaceholder(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func ChangeProcPlaceholder(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	filter := map[string]interface{}{
 		common.BKPropertyIDField: "bk_start_param_regex",
 		common.BKObjIDField:      common.BKInnerObjIDProc,

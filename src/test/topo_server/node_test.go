@@ -63,7 +63,7 @@ var _ = Describe("kube cluster test", func() {
 					"4": map[string]interface{}{
 						"bk_host_innerip": "127.0.0.1",
 						"bk_asset_id":     "addhost_api_asset_1",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     1,
 						"bk_comment":      "127.0.0.1 comment",
 					},
 				},

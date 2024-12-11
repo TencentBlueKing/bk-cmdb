@@ -30,7 +30,7 @@ func init() {
 
 var commFieldTemplateIndexes = []types.Index{
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
+		Name: common.CCLogicUniqueIdxNamePrefix + "ID",
 		Keys: bson.D{
 			{
 				common.BKFieldID, 1,
@@ -40,7 +40,7 @@ var commFieldTemplateIndexes = []types.Index{
 		Unique:     true,
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + common.BKFieldName,
+		Name: common.CCLogicUniqueIdxNamePrefix + "name",
 		Keys: bson.D{
 			{
 				common.BKFieldName, 1,

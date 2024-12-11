@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
@@ -38,7 +39,11 @@ var bizId, bizId1, setId, setId1, moduleId, moduleId1, moduleId2, idleModuleId, 
 var hostId, hostId1, hostId2, hostId3, hostId4 int64
 
 var _ = Describe("host abnormal test", func() {
-
+	serviceCategoryID, err := test.GetDefaultCategory()
+	if err != nil {
+		blog.Errorf("get default category failed, err: %v", err)
+		return
+	}
 	Describe("test preparation", func() {
 		It("create business bk_biz_name = 'Christina'", func() {
 			test.DeleteAllBizs()
@@ -109,16 +114,20 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		It("create module", func() {
+			serviceCategoryID, err := test.GetDefaultCategory()
+			if err != nil {
+				blog.Errorf("get default category failed, err: %v", err)
+				return
+			}
 			input := map[string]interface{}{
 				"bk_module_name":      "cc_module",
 				"bk_parent_id":        setId,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"service_template_id": 0,
 			}
 			rsp, e := instClient.CreateModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(e).NotTo(HaveOccurred())
-			var err error
 			moduleId, err = commonutil.GetInt64ByInterface(rsp["bk_module_id"])
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -127,7 +136,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "cc_module1",
 				"bk_parent_id":        setId,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"service_template_id": 0,
 			}
 			rsp, e := instClient.CreateModule(context.Background(), bizId, setId, header, input)
@@ -142,7 +151,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "cc_module1",
 				"bk_parent_id":        setId1,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"service_template_id": 0,
 			}
 			rsp, e := instClient.CreateModule(context.Background(), bizId1, setId1, header, input)
@@ -227,12 +236,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using api with noexist biz_id", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": noExistID,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 				}
@@ -243,12 +257,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using api with invalid biz_id", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": "test",
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 				}
@@ -275,12 +294,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using api with invalid bk_host_innerip", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "333.0.0.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 				}
@@ -291,12 +315,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using api with invalid bk_host_innerip", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.e",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 				}
@@ -317,11 +346,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using api with no bk_host_innerip", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_cloud_id": 0,
+							"bk_cloud_id": 1,
+							"bk_host_id":  cloudID,
 						},
 					},
 				}
@@ -353,11 +388,17 @@ var _ = Describe("host abnormal test", func() {
 
 			// 如果云区域ID没有给出，默认是0
 			It("add host using api with no bk_cloud_id", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
+							"bk_cloud_id":     cloudID,
 						},
 					},
 				}
@@ -368,12 +409,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using api to biz", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 				}
@@ -384,12 +430,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using api to biz twice", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 				}
@@ -407,16 +458,21 @@ var _ = Describe("host abnormal test", func() {
 
 		Describe("add host using api test3", func() {
 			It("add host using api to biz multiple ip", func() {
+				clouldID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.13",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     clouldID,
 						},
 						"5": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.14",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     clouldID,
 						},
 					},
 				}
@@ -446,12 +502,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using excel with noexist biz_id", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": noExistID,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 					"input_type": "excel",
@@ -463,12 +524,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using excel with invalid biz_id", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": "test",
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 					"input_type": "excel",
@@ -497,12 +563,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using excel with invalid bk_host_innerip", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "333.0.0.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 					"input_type": "excel",
@@ -514,12 +585,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using excel with invalid bk_host_innerip", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.e",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 					"input_type": "excel",
@@ -542,11 +618,16 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using excel with no bk_host_innerip", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
-							"bk_cloud_id": 0,
+							"bk_cloud_id": cloudID,
 						},
 					},
 					"input_type": "excel",
@@ -578,11 +659,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using excel with no bk_cloud_id", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
+							"bk_cloud_id":     cloudID,
 						},
 					},
 					"input_type": "excel",
@@ -594,12 +681,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using excel to biz", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 					"input_type": "excel",
@@ -611,12 +703,17 @@ var _ = Describe("host abnormal test", func() {
 			})
 
 			It("add host using excel to biz twice", func() {
+				cloudID, err := test.GetCloudID()
+				if err != nil {
+					blog.Errorf("get cloud id failed, err: %v", err)
+					return
+				}
 				input := map[string]interface{}{
 					"bk_biz_id": bizId,
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     0,
+							"bk_cloud_id":     cloudID,
 						},
 					},
 				}
@@ -1487,13 +1584,18 @@ var _ = Describe("host abnormal test", func() {
 		JustBeforeEach(func() {
 			prepareData()
 		})
+		clouldID, err := test.GetCloudID()
+		if err != nil {
+			blog.Errorf("get cloud id failed, err: %v", err)
+			return
+		}
 
 		It("sync host less biz", func() {
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.16",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1524,7 +1626,7 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.17",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_biz_id": bizId,
@@ -1540,7 +1642,7 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.17",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{},
@@ -1557,7 +1659,7 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1576,7 +1678,7 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.18",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1595,7 +1697,7 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.19",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1614,7 +1716,7 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.20",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1634,11 +1736,11 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.21",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 					"1": map[string]interface{}{
 						"bk_host_innerip": "127.0.1",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1657,11 +1759,11 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.3",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 					"1": map[string]interface{}{
 						"bk_host_innerip": "127.0.1",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1680,7 +1782,7 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.5",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1725,11 +1827,11 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.8",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 					"1": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.9",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1772,7 +1874,7 @@ var _ = Describe("host abnormal test", func() {
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.1.7",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     clouldID,
 					},
 				},
 				"bk_module_id": []int64{
@@ -1790,10 +1892,15 @@ var _ = Describe("host abnormal test", func() {
 
 	Describe("clone host host", func() {
 		It("clone host less biz", func() {
+			cloudID, err := test.GetCloudID()
+			if err != nil {
+				blog.Errorf("get cloud id failed, err: %v", err)
+				return
+			}
 			input := &metadata.CloneHostPropertyParams{
 				OrgIP:   "127.0.1.1",
 				DstIP:   "127.0.1.2",
-				CloudID: 0,
+				CloudID: cloudID,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -1802,10 +1909,15 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		It("clone host less srcip", func() {
+			cloudID, err := test.GetCloudID()
+			if err != nil {
+				blog.Errorf("get cloud id failed, err: %v", err)
+				return
+			}
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
 				DstIP:   "127.0.1.2",
-				CloudID: 0,
+				CloudID: cloudID,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -1814,10 +1926,15 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		It("clone host less dstip", func() {
+			cloudID, err := test.GetCloudID()
+			if err != nil {
+				blog.Errorf("get cloud id failed, err: %v", err)
+				return
+			}
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
 				OrgIP:   "127.0.1.1",
-				CloudID: 0,
+				CloudID: cloudID,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -1826,11 +1943,16 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		It("clone host invalid biz", func() {
+			cloudID, err := test.GetCloudID()
+			if err != nil {
+				blog.Errorf("get cloud id failed, err: %v", err)
+				return
+			}
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   noExistID,
 				OrgIP:   "127.0.1.1",
 				DstIP:   "127.0.1.2",
-				CloudID: 0,
+				CloudID: cloudID,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -1839,11 +1961,16 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		It("clone host invalid srcip", func() {
+			cloudID, err := test.GetCloudID()
+			if err != nil {
+				blog.Errorf("get cloud id failed, err: %v", err)
+				return
+			}
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
 				OrgIP:   "127.0.1",
 				DstIP:   "127.0.1.2",
-				CloudID: 0,
+				CloudID: cloudID,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -1852,11 +1979,16 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		It("clone host invalid dstip", func() {
+			cloudID, err := test.GetCloudID()
+			if err != nil {
+				blog.Errorf("get cloud id failed, err: %v", err)
+				return
+			}
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
 				OrgIP:   "127.0.1.1",
 				DstIP:   "127.0.1",
-				CloudID: 0,
+				CloudID: cloudID,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -1865,11 +1997,16 @@ var _ = Describe("host abnormal test", func() {
 		})
 
 		It("clone host exist dstip", func() {
+			cloudID, err := test.GetCloudID()
+			if err != nil {
+				blog.Errorf("get cloud id failed, err: %v", err)
+				return
+			}
 			input := &metadata.CloneHostPropertyParams{
 				AppID:   bizId,
 				OrgIP:   "127.0.1.1",
 				DstIP:   "127.0.1.2",
-				CloudID: 0,
+				CloudID: cloudID,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -2030,16 +2167,21 @@ var _ = Describe("host abnormal test", func() {
 // 初始化数据，为后续的操作做准备
 func prepareData() {
 	// 在业务bizId中加入主机
+	clouldID, err := test.GetCloudID()
+	if err != nil {
+		blog.Errorf("get cloud id failed, err: %v", err)
+		return
+	}
 	input := map[string]interface{}{
 		"bk_biz_id": bizId,
 		"host_info": map[string]interface{}{
 			"4": map[string]interface{}{
 				"bk_host_innerip": "127.0.1.1",
-				"bk_cloud_id":     0,
+				"bk_cloud_id":     clouldID,
 			},
 			"5": map[string]interface{}{
 				"bk_host_innerip": "127.0.1.2",
-				"bk_cloud_id":     0,
+				"bk_cloud_id":     clouldID,
 			},
 		},
 	}
@@ -2065,18 +2207,17 @@ func prepareData() {
 	Expect(err).NotTo(HaveOccurred())
 	hostId2, err = commonutil.GetInt64ByInterface(rsp1.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
 	Expect(err).NotTo(HaveOccurred())
-
 	// 在业务bizId1中加入主机
 	input2 := map[string]interface{}{
 		"bk_biz_id": bizId1,
 		"host_info": map[string]interface{}{
 			"4": map[string]interface{}{
 				"bk_host_innerip": "127.0.1.3",
-				"bk_cloud_id":     0,
+				"bk_cloud_id":     clouldID,
 			},
 			"5": map[string]interface{}{
 				"bk_host_innerip": "127.0.1.4",
-				"bk_cloud_id":     0,
+				"bk_cloud_id":     clouldID,
 			},
 		},
 	}
@@ -2100,13 +2241,12 @@ func prepareData() {
 	Expect(err).NotTo(HaveOccurred())
 	hostId3, err = commonutil.GetInt64ByInterface(rsp3.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
 	Expect(err).NotTo(HaveOccurred())
-
 	// 在资源池中加入主机
 	input4 := map[string]interface{}{
 		"host_info": map[string]interface{}{
 			"4": map[string]interface{}{
 				"bk_host_innerip": "127.0.1.5",
-				"bk_cloud_id":     0,
+				"bk_cloud_id":     clouldID,
 			},
 		},
 	}

@@ -14,72 +14,50 @@ package collections
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/types"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNamePropertyGroup, deprecatedPropertyGroupIndexes)
 	registerIndexes(common.BKTableNamePropertyGroup, commPropertyGroupIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commPropertyGroupIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedPropertyGroupIndexes = []types.Index{
+var commPropertyGroupIndexes = []types.Index{
 	{
-		Name: "bk_obj_id_1",
-		Keys: bson.D{{
-			"bk_obj_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkObjID",
+		Keys:                    bson.D{{common.BKObjIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_supplier_account_1",
-		Keys: bson.D{{
-			"bk_supplier_account", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkGroupID",
+		Keys:                    bson.D{{common.BKPropertyGroupIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_group_id_1",
-		Keys: bson.D{{
-			"bk_group_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
+		Keys:                    bson.D{{common.BKFieldID, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_unique_id",
-		Keys: bson.D{{
-			"id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkObjID_bkBizID_bkGroupName",
+		Keys: bson.D{{common.BKObjIDField, 1}, {common.BKAppIDField, 1},
+			{common.BKPropertyGroupNameField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_unique_groupName",
-		Keys: bson.D{
-			{"bk_obj_id", 1},
-			{"bk_biz_id", 1},
-			{"bk_group_name", 1},
-		},
-		Unique:     true,
-		Background: true,
-	},
-	{
-		Name: "idx_unique_groupId",
-		Keys: bson.D{
-			{"bk_obj_id", 1},
-			{"bk_biz_id", 1},
-			{"bk_group_id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkObjID_bkBizID_bkGroupIndex",
+		Keys: bson.D{{common.BKObjIDField, 1}, {common.BKAppIDField, 1},
+			{metadata.GroupFieldGroupIndex, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

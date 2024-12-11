@@ -20,7 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -44,7 +44,7 @@ type ProcessTemplate struct {
 	SupplierAccount string    `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
-func fixProcTemplateProcName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func fixProcTemplateProcName(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	conds := map[string]interface{}{
 		"$or": []interface{}{

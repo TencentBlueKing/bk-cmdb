@@ -16,15 +16,15 @@ import (
 	"context"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.6.201909062359", upgrade)
+	history.RegistUpgrader("y3.6.201909062359", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	err = createSetTemplateTables(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade y3.6.201909062359] create tables failed, err: %s", err.Error())

@@ -17,7 +17,7 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
@@ -25,7 +25,7 @@ import (
 )
 
 // SetTemplateSyncStatusMigrate TODO
-func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func SetTemplateSyncStatusMigrate(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableNames := []string{"cc_SetTemplateSyncStatus", "cc_SetTemplateSyncHistory"}
 	for _, tableName := range tableNames {
 		existTable, err := db.HasTable(ctx, tableName)

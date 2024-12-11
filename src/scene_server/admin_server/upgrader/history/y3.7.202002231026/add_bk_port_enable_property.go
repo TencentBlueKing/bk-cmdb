@@ -19,11 +19,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	blog.Infof("start execute y3_7_202002231026")
 
@@ -64,7 +64,7 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, addPortEnable, "id", uniqueFields); err != nil {
+	if err := history.Insert(ctx, db, common.BKTableNameObjAttDes, addPortEnable, "id", uniqueFields); err != nil {
 		blog.Errorf("Insert err: %v, attribute: %#v", err, addPortEnable)
 		return err
 	}
@@ -72,7 +72,7 @@ func addProcEnablePortProperty(ctx context.Context, db dal.RDB, conf *upgrader.C
 	return nil
 }
 
-func addProcTemplatePortEnableProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addProcTemplatePortEnableProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	docPrefix := "property." + common.BKProcPortEnable
 	doc := map[string]interface{}{
 		docPrefix + ".value":            true,
@@ -97,7 +97,7 @@ func addProcTemplatePortEnableProperty(ctx context.Context, db dal.RDB, conf *up
 	return nil
 }
 
-func setProcInfoProtEnableDefaultValue(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func setProcInfoProtEnableDefaultValue(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	doc := map[string]interface{}{
 		common.BKProcPortEnable: true,

@@ -18,7 +18,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -37,7 +37,7 @@ type ServiceCategory struct {
 	IsBuiltIn bool `field:"is_built_in" json:"is_built_in" bson:"is_built_in"`
 }
 
-func addDefaultCategory(ctx context.Context, db dal.RDB, conf *upgrader.Config) (int64, error) {
+func addDefaultCategory(ctx context.Context, db dal.RDB, conf *history.Config) (int64, error) {
 
 	firstCategory := ServiceCategory{}
 	// insert first category

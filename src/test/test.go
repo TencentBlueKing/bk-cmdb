@@ -18,10 +18,12 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
 	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	commonutil "configcenter/src/common/util"
 	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
@@ -264,8 +266,7 @@ func DeleteAllObjects() {
 
 	innerObjs := []string{common.BKInnerObjIDBizSet, common.BKInnerObjIDApp, common.BKInnerObjIDSet,
 		common.BKInnerObjIDModule, common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat,
-		common.BKInnerObjIDProject, common.BKInnerObjIDSwitch, common.BKInnerObjIDRouter, common.BKInnerObjIDBlance,
-		common.BKInnerObjIDFirewall, common.BKInnerObjIDWeblogic, common.BKInnerObjIDTomcat, common.BKInnerObjIDApache}
+		common.BKInnerObjIDProject}
 
 	delCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBNIN: innerObjs}}
 	objects := make([]metadata.Object, 0)
@@ -297,7 +298,7 @@ func DeleteAllObjects() {
 
 		objCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
 		objTables := []string{common.BKTableNameObjDes, common.BKTableNameObjAttDes, common.BKTableNameObjUnique,
-			"cc_ObjectBaseMapping"}
+			"cc_ObjectBaseMapping", common.BKTableNamePropertyGroup}
 		for _, table := range objTables {
 			err = db.Shard(shardOpts).Table(table).Delete(ctx, objCond)
 			if err != nil {
@@ -319,10 +320,66 @@ func DeleteAllObjects() {
 		asstObjCond := mapstr.MapStr{common.BKAsstObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
 		err = db.Shard(shardOpts).Table(common.BKTableNameObjAsst).Delete(ctx,
 			mapstr.MapStr{common.BKDBOR: []mapstr.MapStr{objCond, asstObjCond}})
+
+		var idRuleNames []string
+		for _, obj := range objIDs {
+			idRuleNames = append(idRuleNames, "id_rule:incr_id:"+obj)
+		}
+		idGenerateCond := mapstr.MapStr{"_id": mapstr.MapStr{common.BKDBIN: idRuleNames}}
+		err = db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).Table(common.BKTableNameIDgenerator).Delete(ctx,
+			idGenerateCond)
+
 		if err != nil {
 			return err
 		}
 		return nil
 	})
 	Expect(err).NotTo(HaveOccurred())
+}
+
+// GetCloudID get default cloud id
+func GetCloudID() (int64, error) {
+	defaultPlat := map[string]interface{}{}
+	err := GetDB().Table("cc_PlatBase").Find(map[string]interface{}{}).One(context.Background(), &defaultPlat)
+	if err != nil {
+		blog.Errorf("get default plat error:%v", err)
+		return 0, err
+	}
+	return defaultPlat["bk_cloud_id"].(int64), nil
+}
+
+// GetDefaultCategory get default service category
+func GetDefaultCategory() (int64, error) {
+	parentDefault := map[string]interface{}{}
+	err := GetDB().Table("cc_ServiceCategory").Find(map[string]interface{}{"bk_parent_id": 0,
+		"name": "Default"}).One(context.Background(), &parentDefault)
+	if err != nil {
+		blog.Errorf("get default service category failed, err: %v", err)
+		return 0, err
+	}
+	subDefault := map[string]interface{}{}
+	err = GetDB().Table("cc_ServiceCategory").Find(map[string]interface{}{"bk_parent_id": parentDefault["id"].(int64),
+		"name": "Default"}).One(context.Background(), &subDefault)
+	if err != nil {
+		blog.Errorf("get default service category failed, err: %v", err)
+		return 0, err
+	}
+	return subDefault["id"].(int64), nil
+}
+
+// GetResBizID get resource pool biz id
+func GetResBizID() (int64, error) {
+	biz := map[string]interface{}{}
+	err := GetDB().Table(common.BKTableNameBaseApp).Find(map[string]interface{}{"bk_biz_name": "资源池"}).One(context.Background(),
+		&biz)
+	if err != nil {
+		blog.Errorf("get biz id failed, err: %v", err)
+		return 0, err
+	}
+	bizID, err := commonutil.GetInt64ByInterface(biz["bk_biz_id"])
+	if err != nil {
+		blog.Errorf("get biz int64 failed, err: %v", err)
+		return 0, err
+	}
+	return bizID, nil
 }

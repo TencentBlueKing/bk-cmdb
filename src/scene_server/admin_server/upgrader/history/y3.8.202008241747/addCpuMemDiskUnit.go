@@ -18,13 +18,13 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 // addCpuMemDiskUnit TODO
 // add unit to bk_property_name.
-func addCpuMemDiskUnit(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addCpuMemDiskUnit(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	var err error
 
 	// cpu

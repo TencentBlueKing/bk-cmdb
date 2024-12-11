@@ -1,13 +1,18 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
 package service
@@ -26,7 +31,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/types"
+	commontype "configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/common/watch"
 	"configcenter/src/scene_server/admin_server/upgrader"
@@ -39,19 +44,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
-	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	tenantID := common.BKDefaultTenantID
-	updateCfg := &upgrader.Config{
-		TenantID: tenantID,
-		User:     common.CCSystemOperatorUserName,
-	}
+func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) {
 
+	rHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 	if err := s.createWatchDBChainCollections(kit); err != nil {
-		blog.Errorf("create watch db chain collections failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("create watch db chain collections failed, err: %v", err)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
 		}
@@ -59,10 +58,9 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	preVersion, finishedVersions, err := upgrader.Upgrade(s.ctx, s.db.Shard(kit.SysShardOpts()), s.cache, s.iam,
-		updateCfg)
+	result, err := upgrader.Upgrade(kit, s.db, nil)
 	if err != nil {
-		blog.Errorf("db upgrade failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("db upgrade failed, err: %v", err)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
 		}
@@ -70,24 +68,7 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	currentVersion := preVersion
-	if len(finishedVersions) > 0 {
-		currentVersion = finishedVersions[len(finishedVersions)-1]
-	}
-
-	result := MigrationResponse{
-		BaseResp: metadata.BaseResp{
-			Result:      true,
-			Code:        0,
-			ErrMsg:      "",
-			Permissions: nil,
-		},
-		Data:             "migrate success",
-		PreVersion:       preVersion,
-		CurrentVersion:   currentVersion,
-		FinishedVersions: finishedVersions,
-	}
-	resp.WriteEntity(result)
+	resp.WriteEntity(metadata.NewSuccessResp(result))
 }
 
 // dbChainTTLTime the ttl time seconds of the db event chain, used to set the ttl index of mongodb
@@ -256,17 +237,12 @@ func (s *Service) createWatchToken(kit *rest.Kit, tenantID string, key event.Key
 
 func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	tenantID := common.BKDefaultTenantID
-	updateCfg := &upgrader.Config{
-		TenantID: tenantID,
-		User:     common.CCSystemOperatorUserName,
-	}
-
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 	input := new(MigrateSpecifyVersionRequest)
 	if err := json.NewDecoder(req.Request.Body).Decode(input); err != nil {
-		blog.Errorf("migrateSpecifyVersion failed, decode body err: %v, body: %+v, rid: %s", err, req.Request.Body, rid)
+		blog.Errorf("migrateSpecifyVersion failed, decode body err: %v, body: %+v, rid: %s", err, req.Request.Body,
+			kit.Rid)
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
@@ -277,11 +253,9 @@ func (s *Service) migrateSpecifyVersion(req *restful.Request, resp *restful.Resp
 		return
 	}
 
-	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-	err := upgrader.UpgradeSpecifyVersion(s.ctx, s.db.Shard(kit.SysShardOpts()), s.cache, s.iam, updateCfg,
-		input.Version)
+	err := upgrader.UpgradeSpecifyVersion(kit, s.db, input.Version)
 	if err != nil {
-		blog.Errorf("db upgrade specify failed, err: %+v, rid: %s", err, rid)
+		blog.Errorf("db upgrade specify failed, err: %+v, rid: %s", err, kit.Rid)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
 		}
@@ -343,7 +317,7 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 	switch configName {
 	case "redis", "mongodb", "common", "extra":
 		filePath := filepath.Join(s.Config.Configures.Dir, configName+".yaml")
-		key := types.CC_SERVCONF_BASEPATH + "/" + configName
+		key := commontype.CC_SERVCONF_BASEPATH + "/" + configName
 		err = s.ConfigCenter.WriteConfigure(filePath, key)
 	case "error":
 		err = s.ConfigCenter.WriteErrorRes2Center(s.Config.Errors.Res)
@@ -366,20 +340,4 @@ func (s *Service) refreshConfig(req *restful.Request, resp *restful.Response) {
 
 	blog.Infof("refresh config success, input: %#v", input)
 	resp.WriteEntity(metadata.NewSuccessResp("refresh config success"))
-}
-
-// MigrationResponse TODO
-type MigrationResponse struct {
-	metadata.BaseResp `json:",inline"`
-	Data              interface{} `json:"data"`
-	PreVersion        string      `json:"pre_version"`
-	CurrentVersion    string      `json:"current_version"`
-	FinishedVersions  []string    `json:"finished_migrations"`
-}
-
-// MigrateSpecifyVersionRequest TODO
-type MigrateSpecifyVersionRequest struct {
-	CommitID  string `json:"commit_id"`
-	TimeStamp int64  `json:"time_stamp"`
-	Version   string `json:"version"`
 }

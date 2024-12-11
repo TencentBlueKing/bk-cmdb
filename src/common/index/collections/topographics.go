@@ -20,29 +20,21 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameTopoGraphics, deprecatedTopoGraphicsIndexes)
 	registerIndexes(common.BKTableNameTopoGraphics, commTopoGraphicsIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commTopoGraphicsIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedTopoGraphicsIndexes = []types.Index{
+var commTopoGraphicsIndexes = []types.Index{
 	{
-		Name: "scope_type_1_scope_id_1_node_type_1_bk_obj_id_1_bk_inst_id_1",
+		Name: common.CCLogicUniqueIdxNamePrefix + "scopeType_scopeID_nodeType_bkObjID_bkInstID",
 		Keys: bson.D{
 			{"scope_type", 1},
 			{"scope_id", 1},
 			{"node_type", 1},
-			{"bk_obj_id", 1},
+			{common.BKObjIDField, 1},
 			{"bk_inst_id", 1},
 		},
-		Unique:     true,
-		Background: true,
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

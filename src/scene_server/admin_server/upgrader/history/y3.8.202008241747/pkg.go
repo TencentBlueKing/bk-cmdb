@@ -16,15 +16,15 @@ import (
 	"context"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.8.202008241747", upgrade)
+	history.RegistUpgrader("y3.8.202008241747", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	if err := addCpuMemDiskUnit(ctx, db, conf); err != nil {
 		blog.Errorf("upgrade to version y3.8.202008241747 failed, addCpuMemDiskUnit failed, err: %+v", err)
 		return err

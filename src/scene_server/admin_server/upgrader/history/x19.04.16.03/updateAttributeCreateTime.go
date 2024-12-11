@@ -19,11 +19,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func updateAttributeCreateTime(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateAttributeCreateTime(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	var start uint64
 
 	type Attribute struct {
