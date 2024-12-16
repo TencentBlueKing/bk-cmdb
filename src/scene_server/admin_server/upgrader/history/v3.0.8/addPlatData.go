@@ -18,11 +18,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addPlatData(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableName := common.BKTableNameBasePlat
 	blog.Infof("add data for  %s table ", tableName)
 	row := map[string]interface{}{
@@ -39,7 +39,7 @@ func addPlatData(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
 		return err
 	}
 
-	_, _, err = upgrader.Upsert(ctx, db, tableName, row, "", []string{common.BKCloudNameField, "bk_supplier_account"},
+	_, _, err = history.Upsert(ctx, db, tableName, row, "", []string{common.BKCloudNameField, "bk_supplier_account"},
 		[]string{common.BKCloudIDField})
 	if nil != err {
 		blog.Errorf("add data for  %s table error  %s", tableName, err)

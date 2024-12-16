@@ -20,75 +20,57 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameServiceInstance, deprecatedServiceInstanceIndexes)
 	registerIndexes(common.BKTableNameServiceInstance, commServiceInstanceIndexes)
-
 }
-
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
 var commServiceInstanceIndexes = []types.Index{
 	{
-		Name:       "bkcc_idx_bkBizID_ID",
-		Keys:       bson.D{{"bk_biz_id", 1}, {"id", 1}},
-		Background: true,
-	},
-}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedServiceInstanceIndexes = []types.Index{
-	{
-		Name: "idx_bkBizID",
-		Keys: bson.D{{
-			"bk_biz_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkBizID",
+		Keys:                    bson.D{{common.BKAppIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_serviceTemplateID",
-		Keys: bson.D{{
-			"service_template_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "serviceTemplateID",
+		Keys:                    bson.D{{common.BKServiceTemplateIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "moduleID",
-		Keys: bson.D{{
-			"bk_module_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkModuleID",
+		Keys:                    bson.D{{common.BKModuleIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_module_id_1_bk_biz_id_1",
-		Keys: bson.D{
-			{"bk_module_id", 1},
-			{"bk_biz_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkBizID_ID",
+		Keys:                    bson.D{{common.BKAppIDField, 1}, {common.BKFieldID, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_biz_id_1_bk_host_id_1",
-		Keys: bson.D{
-			{"bk_biz_id", 1},
-			{"bk_host_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkModuleID_bkBizID",
+		Keys:                    bson.D{{common.BKModuleIDField, 1}, {common.BKAppIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_unique_id",
-		Keys: bson.D{{
-			"id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkBizID_bkHostID",
+		Keys:                    bson.D{{common.BKAppIDField, 1}, {common.BKHostIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_idx_host_id",
-		Keys: bson.D{{
-			"bk_host_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
+		Keys:                    bson.D{{common.BKFieldID, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "bkHostID",
+		Keys:                    bson.D{{common.BKHostIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

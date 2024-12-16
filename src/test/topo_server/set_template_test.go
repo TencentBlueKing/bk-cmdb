@@ -23,9 +23,14 @@ import (
 var bizID, categoryId, serviceTemplateID, serviceTemplateID2, serviceTemplateID3 int64
 
 var _ = Describe("create empty set template test", func() {
-	bizID := int64(2)
 	ctx := context.Background()
 	It("create set template", func() {
+		bizResult := new(metadata.BizInst)
+		dbErr := test.GetDB().Table(common.BKTableNameBaseApp).Find(mapstr.MapStr{
+			common.BKAppNameField: map[string]interface{}{common.BKDBNE: common.DefaultAppName}}).Fields(
+			common.BKAppIDField).One(context.Background(), bizResult)
+		Expect(dbErr).NotTo(HaveOccurred())
+		bizID = bizResult.BizID
 		option := metadata.CreateSetTemplateOption{
 			Name:               "setTpl1",
 			ServiceTemplateIDs: nil,

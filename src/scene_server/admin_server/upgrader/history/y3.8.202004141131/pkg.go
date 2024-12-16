@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -26,10 +26,10 @@ import (
 	bk_port_enable字段重命名为bk_enable_port
 */
 func init() {
-	upgrader.RegistUpgrader("y3.7.202004141131", upgrade)
+	history.RegistUpgrader("y3.7.202004141131", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	blog.Infof("start execute y3.7.202004141131")
 
 	if err := updateEnablePortAttribute(ctx, db, conf); err != nil {

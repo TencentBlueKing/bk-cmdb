@@ -16,15 +16,15 @@ import (
 	"context"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19_08_19_01", upgrade)
+	history.RegistUpgrader("x19_08_19_01", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	err = removeProcFreshInstance(ctx, db, conf)
 	if err != nil {
 		blog.Errorf("[upgrade x19.08.19.01] removeProcFreshInstance failed, err: %s", err.Error())

@@ -18,11 +18,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addModuleProperty(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	type Attribute struct {
 		ID                int64       `field:"id" json:"id" bson:"id"`
 		OwnerID           string      `field:"bk_supplier_account" json:"bk_supplier_account" bson:"bk_supplier_account"`
@@ -77,7 +77,7 @@ func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceCategoryIDProperty, "id", uniqueFields,
+	_, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceCategoryIDProperty, "id", uniqueFields,
 		[]string{})
 	if nil != err {
 		blog.Errorf("[upgrade v19.05.16.01] addModuleProperty service_category_id failed, err: %+v", err)
@@ -110,7 +110,7 @@ func addModuleProperty(ctx context.Context, db dal.RDB, conf *upgrader.Config) e
 		LastTime:          &now,
 	}
 
-	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceTemplateIDProperty, "id", uniqueFields,
+	if _, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, serviceTemplateIDProperty, "id", uniqueFields,
 		[]string{}); err != nil {
 		blog.Errorf("[upgrade v19.05.16.01] addModuleProperty service_template_id failed, err: %+v", err)
 		return err

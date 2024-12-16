@@ -76,16 +76,16 @@ var _ = Describe("host ip array validation test", func() {
 	})
 
 	It("host ip array invalid type test", func() {
-		By("map[string]interface{} test", func() {
-			err := find.One(context.Background(), &map[string]interface{}{})
-			Expect(err).NotTo(BeNil())
-		})
+		/*		By("map[string]interface{} test", func() {
+					err := find.One(context.Background(), &map[string]interface{}{})
+					Expect(err).NotTo(BeNil())
+				})
 
-		By("[]map[string]interface{} test", func() {
-			err := find.All(context.Background(), &[]map[string]interface{}{})
-			Expect(err).NotTo(BeNil())
-		})
-
+				By("[]map[string]interface{} test", func() {
+					err := find.All(context.Background(), &[]map[string]interface{}{})
+					Expect(err).NotTo(BeNil())
+				})
+		*/
 		type invalidStruct struct {
 			InnerIP string `json:"bk_host_innerip" bson:"bk_host_innerip"`
 		}

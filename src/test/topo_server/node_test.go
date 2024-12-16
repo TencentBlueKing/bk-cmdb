@@ -57,13 +57,14 @@ var _ = Describe("kube cluster test", func() {
 		})
 
 		It("add host using api", func() {
+			cloudID := test.GetCloudID()
 			input := map[string]interface{}{
 				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{
 					"4": map[string]interface{}{
 						"bk_host_innerip": "127.0.0.1",
 						"bk_asset_id":     "addhost_api_asset_1",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     cloudID,
 						"bk_comment":      "127.0.0.1 comment",
 					},
 				},

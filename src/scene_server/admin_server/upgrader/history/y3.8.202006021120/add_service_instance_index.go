@@ -18,14 +18,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func addServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableName := common.BKTableNameServiceInstance
 	index := types.Index{
 		Keys:       bson.D{{"bk_module_id", 1}},

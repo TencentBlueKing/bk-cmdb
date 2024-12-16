@@ -30,31 +30,31 @@ func init() {
 
 var commProjectIndexes = []types.Index{
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ID",
 		Keys:       bson.D{{common.BKFieldID, 1}},
 		Background: true,
 		Unique:     true,
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + common.BKProjectIDField,
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkProjectID",
 		Keys:       bson.D{{common.BKProjectIDField, 1}},
 		Background: true,
 		Unique:     true,
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + common.BKProjectNameField,
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkProjectName",
 		Keys:       bson.D{{common.BKProjectNameField, 1}},
 		Unique:     true,
 		Background: true,
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + common.BKProjectCodeField,
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkProjectCode",
 		Keys:       bson.D{{common.BKProjectCodeField, 1}},
 		Unique:     true,
 		Background: true,
 	},
 	{
-		Name:       common.CCLogicIndexNamePrefix + common.BKProjectStatusField,
+		Name:       common.CCLogicIndexNamePrefix + "bkStatus",
 		Keys:       bson.D{{common.BKProjectStatusField, 1}},
 		Background: true,
 	},

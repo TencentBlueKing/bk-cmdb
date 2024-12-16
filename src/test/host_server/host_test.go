@@ -65,10 +65,11 @@ var _ = Describe("host test", func() {
 		})
 
 		It("create module", func() {
+			serviceCategoryID := test.GetDefaultCategory()
 			input := map[string]interface{}{
 				"bk_module_name":      "cc_module",
 				"bk_parent_id":        setId,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"service_template_id": 0,
 			}
 			rsp, e := instClient.CreateModule(context.Background(), bizId, setId, header, input)
@@ -103,13 +104,14 @@ var _ = Describe("host test", func() {
 	Describe("add host test", func() {
 		It("add host using api", func() {
 			test.DeleteAllHosts()
+			cloudID := test.GetCloudID()
 			input := map[string]interface{}{
 				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{
 					"4": map[string]interface{}{
 						"bk_host_innerip": "127.0.0.1",
 						"bk_asset_id":     "addhost_api_asset_1",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     cloudID,
 						"bk_comment":      "127.0.0.1 comment",
 					},
 				},
@@ -145,6 +147,7 @@ var _ = Describe("host test", func() {
 		})
 
 		It("add host using excel", func() {
+			cloudID := test.GetCloudID()
 			input := map[string]interface{}{
 				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{
@@ -152,6 +155,7 @@ var _ = Describe("host test", func() {
 						"bk_host_innerip": "127.0.0.2",
 						"bk_asset_id":     "addhost_excel_asset_1",
 						"bk_host_name":    "127.0.0.2",
+						"bk_cloud_id":     cloudID,
 					},
 				},
 				"input_type": "excel",
@@ -248,11 +252,12 @@ var _ = Describe("host test", func() {
 		// })
 
 		It("add host to resource", func() {
+			cloudID := test.GetCloudID()
 			input := map[string]interface{}{
 				"host_info": map[string]interface{}{
 					"4": map[string]interface{}{
 						"bk_host_innerip": "127.0.0.4",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     cloudID,
 					},
 				},
 			}
@@ -472,13 +477,15 @@ var _ = Describe("host test", func() {
 		})
 
 		It("add clone destion host", func() {
+			cloudID := test.GetCloudID()
+			bizID := test.GetResBizID()
 			input := map[string]interface{}{
-				"bk_biz_id": 1,
+				"bk_biz_id": bizID,
 				"host_info": map[string]interface{}{
 					"4": map[string]interface{}{
 						"bk_host_innerip": "127.0.0.5",
 						"bk_asset_id":     "add_clone_destion_host",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     cloudID,
 					},
 				},
 			}
@@ -488,11 +495,13 @@ var _ = Describe("host test", func() {
 			Expect(rsp.Result).To(Equal(true))
 		})
 		It("clone host", func() {
+			cloudID := test.GetCloudID()
+			bizID := test.GetResBizID()
 			input := &metadata.CloneHostPropertyParams{
-				AppID:   1,
+				AppID:   bizID,
 				OrgIP:   "127.0.0.1",
 				DstIP:   "127.0.0.5",
-				CloudID: 0,
+				CloudID: cloudID,
 			}
 			rsp, err := hostServerClient.CloneHostProperty(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -925,13 +934,14 @@ var _ = Describe("host test", func() {
 		})
 
 		It("add host", func() {
+			cloudID := test.GetCloudID()
 			input := map[string]interface{}{
 				"bk_biz_id": bizId,
 				"host_info": map[string]interface{}{
 					"0": map[string]interface{}{
 						"bk_host_innerip": "127.0.0.6",
 						"bk_asset_id":     "host_sync_asset_1",
-						"bk_cloud_id":     0,
+						"bk_cloud_id":     cloudID,
 					},
 				},
 			}
@@ -1208,9 +1218,10 @@ var _ = Describe("host test", func() {
 })
 
 var _ = Describe("list_hosts_topo test", func() {
+
 	It("list_hosts_topo", func() {
 		test.DeleteAllBizs()
-
+		cloudID := test.GetCloudID()
 		By("create biz cc_biz_test")
 		bizInput := map[string]interface{}{
 			"life_cycle":        "2",
@@ -1242,10 +1253,12 @@ var _ = Describe("list_hosts_topo test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("create module cc_module")
+
+		serviceCategoryID := test.GetDefaultCategory()
 		moduleInput := map[string]interface{}{
 			"bk_module_name":      "cc_module",
 			"bk_parent_id":        setId,
-			"service_category_id": 2,
+			"service_category_id": serviceCategoryID,
 			"service_template_id": 0,
 		}
 		moduleRsp, err := instClient.CreateModule(context.Background(), bizId, setId, header, moduleInput)
@@ -1258,7 +1271,7 @@ var _ = Describe("list_hosts_topo test", func() {
 		moduleInput1 := map[string]interface{}{
 			"bk_module_name":      "cc_module1",
 			"bk_parent_id":        setId,
-			"service_category_id": 2,
+			"service_category_id": serviceCategoryID,
 			"service_template_id": 0,
 		}
 		moduleRsp1, err := instClient.CreateModule(context.Background(), bizId, setId, header, moduleInput1)
@@ -1273,9 +1286,11 @@ var _ = Describe("list_hosts_topo test", func() {
 			"host_info": map[string]interface{}{
 				"4": map[string]interface{}{
 					"bk_host_innerip": "127.0.0.1",
+					"bk_cloud_id":     cloudID,
 				},
 				"5": map[string]interface{}{
 					"bk_host_innerip": "127.0.0.2",
+					"bk_cloud_id":     cloudID,
 				},
 			},
 		}
@@ -1340,13 +1355,16 @@ var _ = Describe("batch_update_host test", func() {
 		test.DeleteAllHosts()
 
 		By("add host using api")
+		cloudID := test.GetCloudID()
 		hostInput := map[string]interface{}{
 			"host_info": map[string]interface{}{
 				"4": map[string]interface{}{
 					"bk_host_innerip": "127.0.0.1",
+					"bk_cloud_id":     cloudID,
 				},
 				"5": map[string]interface{}{
 					"bk_host_innerip": "127.0.0.2",
+					"bk_cloud_id":     cloudID,
 				},
 			},
 		}
@@ -1416,13 +1434,16 @@ var _ = Describe("multiple ip host validation test", func() {
 		test.DeleteAllHosts()
 
 		By("add hosts with different ip using api")
+		cloudID := test.GetCloudID()
 		hostInput := map[string]interface{}{
 			"host_info": map[string]interface{}{
 				"1": map[string]interface{}{
 					"bk_host_innerip": "1.0.0.1,1.0.0.2",
+					"bk_cloud_id":     cloudID,
 				},
 				"2": map[string]interface{}{
 					"bk_host_innerip": "1.0.0.3",
+					"bk_cloud_id":     cloudID,
 				},
 			},
 		}
@@ -1448,7 +1469,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		input := &metadata.CreateModelInstance{
 			Data: map[string]interface{}{
 				"bk_host_innerip": "1.0.0.1,1.0.0.2",
-				"bk_cloud_id":     0,
+				"bk_cloud_id":     cloudID,
 			},
 		}
 		addHostResult, err := test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header,
@@ -1460,7 +1481,7 @@ var _ = Describe("multiple ip host validation test", func() {
 		input = &metadata.CreateModelInstance{
 			Data: map[string]interface{}{
 				"bk_host_innerip": "1.0.0.1",
-				"bk_cloud_id":     0,
+				"bk_cloud_id":     cloudID,
 			},
 		}
 		addHostResult, err = test.GetClientSet().CoreService().Instance().CreateInstance(context.Background(), header,
@@ -1473,17 +1494,17 @@ var _ = Describe("multiple ip host validation test", func() {
 var _ = Describe("add_host_to_resource_pool test", func() {
 	It("add_host_to_resource_pool", func() {
 		test.DeleteAllHosts()
-
+		cloudID := test.GetCloudID()
 		By("add hosts to resource pool default module")
 		hostInput := metadata.AddHostToResourcePoolHostList{
 			HostInfo: []map[string]interface{}{
 				{
 					common.BKHostInnerIPField: "1.0.0.1",
-					common.BKCloudIDField:     0,
+					common.BKCloudIDField:     cloudID,
 				},
 				{
 					common.BKHostInnerIPField: "1.0.0.2",
-					common.BKCloudIDField:     0,
+					common.BKCloudIDField:     cloudID,
 				},
 			},
 		}
@@ -1534,11 +1555,11 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 			HostInfo: []map[string]interface{}{
 				{
 					common.BKHostInnerIPField: "1.0.0.3",
-					common.BKCloudIDField:     0,
+					common.BKCloudIDField:     cloudID,
 				},
 				{
 					common.BKHostInnerIPField: "1.0.0.4",
-					common.BKCloudIDField:     0,
+					common.BKCloudIDField:     cloudID,
 				},
 			},
 			Directory: 1000,
@@ -1561,11 +1582,11 @@ var _ = Describe("add_host_to_resource_pool test", func() {
 			HostInfo: []map[string]interface{}{
 				{
 					common.BKHostInnerIPField: "1.0.0.5",
-					common.BKCloudIDField:     0,
+					common.BKCloudIDField:     cloudID,
 				},
 				{
 					"bk_host_innerip":     "",
-					common.BKCloudIDField: 0,
+					common.BKCloudIDField: cloudID,
 				},
 			},
 		}
@@ -1609,13 +1630,16 @@ var _ = Describe("bind & unbind host agent test", func() {
 
 	It("bind host agent", func() {
 		By("add hosts using api")
+		cloudID := test.GetCloudID()
 		hostInput := map[string]interface{}{
 			"host_info": map[string]interface{}{
 				"0": map[string]interface{}{
 					"bk_host_innerip": "127.0.0.10",
+					"bk_cloud_id":     cloudID,
 				},
 				"1": map[string]interface{}{
 					"bk_host_innerip": "127.0.0.11",
+					"bk_cloud_id":     cloudID,
 				},
 			},
 		}
@@ -1795,7 +1819,6 @@ var _ = Describe("bind & unbind host agent test", func() {
 var _ = Describe("cloud host test", func() {
 	ctx := context.Background()
 	var bizID, bizID1, setID, moduleID, hostID1, hostID2, cloudID int64
-
 	It("test preparation", func() {
 		By("create cloud area name = 'cloud_host_plat'", func() {
 			resp, err := hostServerClient.CreateCloudArea(context.Background(), header, map[string]interface{}{
@@ -1844,10 +1867,11 @@ var _ = Describe("cloud host test", func() {
 		})
 
 		By("create module", func() {
+			serviceCategoryID := test.GetDefaultCategory()
 			input := map[string]interface{}{
 				"bk_module_name":      "cloud_host_module",
 				"bk_parent_id":        setID,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 			}
 			rsp, err := instClient.CreateModule(ctx, bizID, setID, header, input)
 			util.RegisterResponseWithRid(rsp, header)

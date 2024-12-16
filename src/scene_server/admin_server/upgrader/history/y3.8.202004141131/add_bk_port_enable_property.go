@@ -18,11 +18,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func updateEnablePortAttribute(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateEnablePortAttribute(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	filter := map[string]interface{}{
 		common.BKPropertyIDField: "bk_port_enable",
 		common.BKObjIDField:      common.BKInnerObjIDProc,
@@ -36,7 +36,7 @@ func updateEnablePortAttribute(ctx context.Context, db dal.RDB, conf *upgrader.C
 	return nil
 }
 
-func updateProcessAndProcTemplateEnablePortAttribute(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateProcessAndProcTemplateEnablePortAttribute(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	if err := db.Table(common.BKTableNameBaseProcess).RenameColumn(ctx, nil, "bk_port_enable", common.BKProcPortEnable); err != nil {
 		blog.Errorf("update process bk_port_enable field to %s failed, err: %s, %s", common.BKProcPortEnable, err.Error())
 		return fmt.Errorf("update process bk_port_enable field to %s failed, err: %s", common.BKProcPortEnable, err.Error())

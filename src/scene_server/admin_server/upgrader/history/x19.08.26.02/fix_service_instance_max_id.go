@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -28,7 +28,7 @@ type Idgen struct {
 }
 
 // FixServiceInstanceMaxID 将 cc_idgenerator 中 cc_ProcessTemplate 和 cc_ServiceInstance 两个key的值升级到他们的最大值
-func FixServiceInstanceMaxID(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func FixServiceInstanceMaxID(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	filter := map[string]interface{}{
 		"_id": common.BKTableNameServiceInstance,
 	}

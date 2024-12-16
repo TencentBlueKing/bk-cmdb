@@ -19,11 +19,11 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func changeProcessName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func changeProcessName(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	mapping := map[string]string{
 		common.BKProcessNameField: "进程别名",

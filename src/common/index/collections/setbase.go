@@ -20,70 +20,56 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameBaseSet, deprecatedSetBaseIndexes)
 	registerIndexes(common.BKTableNameBaseSet, commSetBaseIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commSetBaseIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedSetBaseIndexes = []types.Index{
+var commSetBaseIndexes = []types.Index{
 	{
-		Name: "bk_parent_id_1",
-		Keys: bson.D{{
-			"bk_parent_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkParentID",
+		Keys:                    bson.D{{common.BKInstParentStr, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_biz_id_1",
-		Keys: bson.D{{
-			"bk_biz_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkBizID",
+		Keys:                    bson.D{{common.BKAppIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_supplier_account_1",
-		Keys: bson.D{{
-			"bk_supplier_account", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkSetName",
+		Keys:                    bson.D{{common.BKSetNameField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_set_name_1",
-		Keys: bson.D{{
-			"bk_set_name", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "bkParentID_bkSetName",
+		Keys:                    bson.D{{common.BKInstParentStr, 1}, {common.BKSetNameField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_set_id_1_bk_biz_id_1",
-		Keys: bson.D{
-			{"bk_set_id", 1},
-			{"bk_biz_id", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "idx_unique_setID",
-		Keys: bson.D{{
-			"bk_set_id", 1},
-		},
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkBizID_bkSetName_bkParentID",
+		Keys:       bson.D{{common.BKAppIDField, 1}, {common.BKSetNameField, 1}, {common.BKInstParentStr, 1}},
 		Unique:     true,
 		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKSetNameField:  map[string]string{common.BKDBType: "string"},
+			common.BKInstParentStr: map[string]string{common.BKDBType: "number"},
+			common.BKAppIDField:    map[string]string{common.BKDBType: "number"}},
 	},
 	{
-		Name: "idx_unique_parentID_setName",
-		Keys: bson.D{
-			{common.BKParentIDField, 1},
-			{common.BKSetNameField, 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkSetID_bkBizID",
+		Keys:                    bson.D{{common.BKSetIDField, 1}, {common.BKAppIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "bkSetID",
+		Keys:                    bson.D{{common.BKSetIDField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

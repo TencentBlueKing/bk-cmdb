@@ -417,7 +417,6 @@ func (c *Mongo) GetDBClient() *mongo.Client {
 func (c *Mongo) GetDBName() string {
 	return c.cli.DBName()
 }
-
 func (c *Mongo) redirectTable(tableName string) string {
 	if common.IsObjectInstShardingTable(tableName) {
 		tableName = common.BKTableNameBaseInst

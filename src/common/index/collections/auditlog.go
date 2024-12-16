@@ -20,55 +20,38 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameAuditLog, deprecatedAuditLogIndexes)
 	registerIndexes(common.BKTableNameAuditLog, commAuditLogIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commAuditLogIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedAuditLogIndexes = []types.Index{
+var commAuditLogIndexes = []types.Index{
 	{
-		Name: "index_id",
-		Keys: bson.D{{
-			"id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "ID",
+		Keys:                    bson.D{{common.BKFieldID, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "index_operationTime",
-		Keys: bson.D{{
-			"operation_time", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "operationTime",
+		Keys:                    bson.D{{"operation_time", 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "index_user",
-		Keys: bson.D{{
-			"user", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "user",
+		Keys:                    bson.D{{"user", 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "index_resourceName",
-		Keys: bson.D{{
-			"resource_name", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "resourceName",
+		Keys:                    bson.D{{"resource_name", 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "index_operationTime_auditType_resourceType_action",
-		Keys: bson.D{
-			{"audit_type", 1},
-			{"resource_type", 1},
-			{"action", 1},
-			{"operation_time", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "auditType_resourceName_action_operationTime",
+		Keys:                    bson.D{{"audit_type", 1}, {"resource_type", 1}, {"action", 1}, {"operation_time", 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

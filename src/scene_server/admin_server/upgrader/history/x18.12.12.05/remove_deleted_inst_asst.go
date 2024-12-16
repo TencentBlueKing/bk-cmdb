@@ -23,7 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
@@ -35,7 +35,7 @@ var (
 	limit = uint64(2000)
 )
 
-func removeDeletedInstAsst(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func removeDeletedInstAsst(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	instAsstQueue := make(chan []metadata.InstAsst, 1000)
 
 	assts := make([]*metadata.Association, 0)
@@ -277,7 +277,7 @@ func getInstAsst(ctx context.Context, db dal.RDB, asstName string, maxID int64) 
 
 }
 
-func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	idxArr, err := db.Table(bkTableNameInstAsst).Indexes(ctx)
 	if err != nil {

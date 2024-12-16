@@ -264,8 +264,7 @@ func DeleteAllObjects() {
 
 	innerObjs := []string{common.BKInnerObjIDBizSet, common.BKInnerObjIDApp, common.BKInnerObjIDSet,
 		common.BKInnerObjIDModule, common.BKInnerObjIDHost, common.BKInnerObjIDProc, common.BKInnerObjIDPlat,
-		common.BKInnerObjIDProject, common.BKInnerObjIDSwitch, common.BKInnerObjIDRouter, common.BKInnerObjIDBlance,
-		common.BKInnerObjIDFirewall, common.BKInnerObjIDWeblogic, common.BKInnerObjIDTomcat, common.BKInnerObjIDApache}
+		common.BKInnerObjIDProject}
 
 	delCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBNIN: innerObjs}}
 	objects := make([]metadata.Object, 0)
@@ -297,7 +296,7 @@ func DeleteAllObjects() {
 
 		objCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
 		objTables := []string{common.BKTableNameObjDes, common.BKTableNameObjAttDes, common.BKTableNameObjUnique,
-			"cc_ObjectBaseMapping"}
+			"cc_ObjectBaseMapping", common.BKTableNamePropertyGroup}
 		for _, table := range objTables {
 			err = db.Shard(shardOpts).Table(table).Delete(ctx, objCond)
 			if err != nil {
@@ -319,10 +318,53 @@ func DeleteAllObjects() {
 		asstObjCond := mapstr.MapStr{common.BKAsstObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
 		err = db.Shard(shardOpts).Table(common.BKTableNameObjAsst).Delete(ctx,
 			mapstr.MapStr{common.BKDBOR: []mapstr.MapStr{objCond, asstObjCond}})
+
+		var idRuleNames []string
+		for _, obj := range objIDs {
+			idRuleNames = append(idRuleNames, "id_rule:incr_id:"+obj)
+		}
+		idGenerateCond := mapstr.MapStr{"_id": mapstr.MapStr{common.BKDBIN: idRuleNames}}
+		err = db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).Table(common.BKTableNameIDgenerator).Delete(ctx,
+			idGenerateCond)
+
 		if err != nil {
 			return err
 		}
 		return nil
 	})
 	Expect(err).NotTo(HaveOccurred())
+}
+
+// GetCloudID get any one cloud id
+func GetCloudID() int64 {
+	defaultPlat := new(metadata.CloudArea)
+	cond := make(map[string]interface{})
+	err := GetDB().Table(common.BKTableNameBasePlat).Find(cond).Fields(common.BKCloudIDField).One(
+		context.Background(), defaultPlat)
+	Expect(err).NotTo(HaveOccurred())
+
+	return defaultPlat.CloudID
+}
+
+// GetDefaultCategory get default service category
+func GetDefaultCategory() int64 {
+	subDefaultCategory := new(metadata.ServiceCategory)
+	cond := map[string]interface{}{
+		common.BKFieldName:     common.DefaultServiceCategoryName,
+		common.BKParentIDField: mapstr.MapStr{common.BKDBNE: 0},
+	}
+	err := GetDB().Table(common.BKTableNameServiceCategory).Find(cond).One(context.Background(), subDefaultCategory)
+	Expect(err).NotTo(HaveOccurred())
+
+	return subDefaultCategory.ID
+}
+
+// GetResBizID get resource pool biz id
+func GetResBizID() int64 {
+	biz := new(metadata.BizInst)
+	err := GetDB().Table(common.BKTableNameBaseApp).Find(map[string]interface{}{
+		common.BKAppNameField: common.DefaultAppName}).One(context.Background(), biz)
+	Expect(err).NotTo(HaveOccurred())
+
+	return biz.BizID
 }

@@ -20,76 +20,67 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameDelArchive, deprecatedDelArchiveIndexes)
 	registerIndexes(common.BKTableNameDelArchive, commDelArchiveIndexes)
-
 	registerIndexes(common.BKTableNameKubeDelArchive, commKubeDelArchiveIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commDelArchiveIndexes = []types.Index{{
-	Name:               common.CCLogicIndexNamePrefix + "time",
-	Keys:               bson.D{{"time", -1}},
-	Background:         true,
-	ExpireAfterSeconds: 7 * 24 * 60 * 60,
-}}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedDelArchiveIndexes = []types.Index{
+var commDelArchiveIndexes = []types.Index{
 	{
-		Name: "oid_1",
-		Keys: bson.D{{
-			"oid", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "oid_coll",
+		Keys:                    bson.D{{"oid", 1}, {"coll", 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_oid_coll",
-		Keys: bson.D{
-			{"oid", 1},
-			{"coll", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "coll",
+		Keys:                    bson.D{{"coll", 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_coll",
-		Keys: bson.D{{
-			"coll", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "oid",
+		Keys:                    bson.D{{"oid", 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "time",
+		Keys:                    bson.D{{common.FieldTypeTime, -1}},
+		Background:              true,
+		ExpireAfterSeconds:      7 * 24 * 60 * 60,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }
 
 var commKubeDelArchiveIndexes = []types.Index{
 	{
-		Name:               common.CCLogicIndexNamePrefix + "time",
-		Keys:               bson.D{{"time", -1}},
-		Background:         true,
-		ExpireAfterSeconds: 2 * 24 * 60 * 60,
-	}, {
-		Name: common.CCLogicIndexNamePrefix + "coll_oid",
+		Name: common.CCLogicUniqueIdxNamePrefix + "coll_oid",
 		Keys: bson.D{
 			{"coll", 1},
 			{"oid", 1},
 		},
-		Unique:     true,
-		Background: true,
-	}, {
-		Name: common.CCLogicIndexNamePrefix + "coll",
-		Keys: bson.D{
-			{"coll", 1},
-		},
-		Background: true,
-	}, {
-		Name: common.CCLogicIndexNamePrefix + "oid",
-		Keys: bson.D{
-			{"oid", 1},
-		},
-		Background: true,
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "coll",
+		Keys:                    bson.D{{"coll", 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "oid",
+		Keys:                    bson.D{{"oid", 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "time",
+		Keys:                    bson.D{{common.FieldTypeTime, -1}},
+		Background:              true,
+		ExpireAfterSeconds:      2 * 24 * 60 * 60,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

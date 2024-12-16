@@ -19,11 +19,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	mCommon "configcenter/src/scene_server/admin_server/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func addModuleAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addModuleAttr(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	objID := common.BKInnerObjIDModule
 	now := time.Now()
 	row := attribute{
@@ -48,7 +48,7 @@ func addModuleAttr(ctx context.Context, db dal.RDB, conf *upgrader.Config) error
 		Description:   "",
 	}
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, row, "id", uniqueFields); err != nil {
+	if err := history.Insert(ctx, db, common.BKTableNameObjAttDes, row, "id", uniqueFields); err != nil {
 		blog.ErrorJSON("add module field bk_parent_id failed, Insert err: %s, attribute: %#v, ", err, row)
 		return err
 	}

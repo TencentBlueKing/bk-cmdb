@@ -18,11 +18,11 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func initInnerChart(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func initInnerChart(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	idArr := make([]uint64, 0)
 	idArr, err := db.NextSequences(ctx, BKTableNameChartConfig, len(InnerChartsArr))
 	if err != nil {

@@ -14,17 +14,18 @@ package x19_09_03_01
 
 import (
 	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
+
 	"context"
 
-	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19_09_03_01", upgrade)
+	history.RegistUpgrader("x19_09_03_01", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	if err := setModelAttrGroupCollapseFlag(ctx, db, conf); err != nil {
 		blog.Errorf("upgrade x19_09_03_01 failed, setModelAttrGroupCollapseFlag failed, err: %+v", err)
 		return err

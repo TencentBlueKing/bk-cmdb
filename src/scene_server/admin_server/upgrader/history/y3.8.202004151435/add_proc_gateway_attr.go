@@ -20,12 +20,12 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 // addProcNetworkProxyGroup 添加外网代理信息分组
-func addProcNetworkProxyGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addProcNetworkProxyGroup(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	group := Group{
 		ObjectID:   common.BKInnerObjIDProc,
 		GroupID:    mCommon.ProcNetworkProxyInfo,
@@ -38,7 +38,7 @@ func addProcNetworkProxyGroup(ctx context.Context, db dal.RDB, conf *upgrader.Co
 	}
 
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyGroupIDField, "bk_supplier_account"}
-	err := upgrader.Insert(ctx, db, common.BKTableNamePropertyGroup, group, "id", uniqueFields)
+	err := history.Insert(ctx, db, common.BKTableNamePropertyGroup, group, "id", uniqueFields)
 	if err != nil {
 		if db.IsNotFoundError(err) == false {
 			blog.ErrorJSON("addProcNetworkProxyGroup failed, Insert err: %s, group: %#v, ", err, group)
@@ -51,7 +51,7 @@ func addProcNetworkProxyGroup(ctx context.Context, db dal.RDB, conf *upgrader.Co
 }
 
 // addProcNetworkProxyAttrs 添加外网代理信息相关字段
-func addProcNetworkProxyAttrs(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addProcNetworkProxyAttrs(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	objID := common.BKInnerObjIDProc
 	dataRows := []*Attribute{
 		{ObjectID: objID, PropertyID: "bk_gateway_ip", PropertyName: "网关IP", IsRequired: false, IsOnly: false,
@@ -81,7 +81,7 @@ func addProcNetworkProxyAttrs(ctx context.Context, db dal.RDB, conf *upgrader.Co
 		r.LastEditor = common.CCSystemOperatorUserName
 		r.Description = ""
 
-		if err := upgrader.Insert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields); err != nil {
+		if err := history.Insert(ctx, db, common.BKTableNameObjAttDes, r, "id", uniqueFields); err != nil {
 			blog.ErrorJSON("addProcNetworkProxyAttrs failed, Upsert err: %s, attribute: %#v, ", err, r)
 			return err
 		}
