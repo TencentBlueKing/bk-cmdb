@@ -19,11 +19,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func addSetTemplateDefaultVersion(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addSetTemplateDefaultVersion(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	filter := map[string]interface{}{
 		"version": map[string]interface{}{
 			common.BKDBExists: false,
@@ -38,7 +38,7 @@ func addSetTemplateDefaultVersion(ctx context.Context, db dal.RDB, conf *upgrade
 	return nil
 }
 
-func addSetDefaultVersion(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addSetDefaultVersion(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	filter := map[string]interface{}{
 		"set_template_version": map[string]interface{}{
 			common.BKDBExists: false,
@@ -53,7 +53,7 @@ func addSetDefaultVersion(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	return nil
 }
 
-func addSetVersionField(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addSetVersionField(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	filter := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDSet,
 		common.BKPropertyIDField: "set_template_version",
@@ -100,7 +100,7 @@ func addSetVersionField(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 		LastTime:     &now,
 	}
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyIDField, "bk_supplier_account"}
-	if _, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAttDes, attribute, "id", uniqueFields,
+	if _, _, err := history.Upsert(ctx, db, common.BKTableNameObjAttDes, attribute, "id", uniqueFields,
 		[]string{}); err != nil {
 		blog.Errorf("addSetVersionField failed, add set_template_version attribute failed, err: %+v", err)
 		return fmt.Errorf("add set_template_version attribute failed, err: %+v", err)

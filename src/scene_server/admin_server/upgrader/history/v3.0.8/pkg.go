@@ -15,15 +15,15 @@ package v3v0v8
 import (
 	"context"
 
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("v3.0.8", upgrade)
+	history.RegistUpgrader("v3.0.8", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	err = createTable(ctx, db, conf)
 	if err != nil {
 		return err

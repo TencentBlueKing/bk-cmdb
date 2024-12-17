@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
@@ -46,7 +46,7 @@ func createIndex(ctx context.Context, db dal.RDB, tableName string, createIndexA
 }
 
 // CreateServiceTemplateIndex create service template table index
-func CreateServiceTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func CreateServiceTemplateIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	createIndexArr := []types.Index{
 		{
 			Keys:       bson.D{{common.BKFieldID, 1}},
@@ -63,7 +63,7 @@ func CreateServiceTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 }
 
 // CreateProcessTemplateIndex create process template table index
-func CreateProcessTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func CreateProcessTemplateIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	createIndexArr := []types.Index{
 		{
 			Keys:       bson.D{{common.BKServiceTemplateIDField, 1}},
@@ -85,7 +85,7 @@ func CreateProcessTemplateIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 }
 
 // CreateServiceInstanceIndex create service instance table index
-func CreateServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func CreateServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	createIndexArr := []types.Index{
 		{
 			Keys:       bson.D{{common.BKFieldID, 1}},
@@ -107,7 +107,7 @@ func CreateServiceInstanceIndex(ctx context.Context, db dal.RDB, conf *upgrader.
 }
 
 // CreateProcessInstanceRelationIndex create process instance relation table index
-func CreateProcessInstanceRelationIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func CreateProcessInstanceRelationIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	createIndexArr := []types.Index{
 		{
 			Keys:       bson.D{{common.BKServiceInstanceIDField, 1}},

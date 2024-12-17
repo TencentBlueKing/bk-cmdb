@@ -20,14 +20,8 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameBasePlat, deprecatedPlatBaseIndexes)
 	registerIndexes(common.BKTableNameBasePlat, commPlatBaseIndexes)
-
 }
-
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
 var commPlatBaseIndexes = []types.Index{
 	{
@@ -41,22 +35,16 @@ var commPlatBaseIndexes = []types.Index{
 			common.BKCloudNameField: map[string]string{common.BKDBType: "string"},
 		},
 	},
-}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedPlatBaseIndexes = []types.Index{
 	{
-		Name: "bk_supplier_account_1",
-		Keys: bson.D{{
-			"bk_supplier_account", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkVpcID",
+		Keys:                    bson.D{{common.BKVpcID, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "vpcID",
-		Keys: bson.D{{
-			"bk_vpc_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkCloudID",
+		Keys:                    bson.D{{common.BKCloudIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

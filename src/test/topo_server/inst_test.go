@@ -12,7 +12,6 @@ import (
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -22,11 +21,12 @@ var _ = Describe("inst test", func() {
 	var propertyID1, propertyID2, uniqueID uint64
 	option := filter.NewDefaultExprOpt(nil)
 
-	It("create object bk_classification_id = 'bk_network' and bk_obj_id='cc_test'", func() {
-		test.DeleteAllObjects()
+	It("create object bk_classification_id = 'bk_uncategorized' and bk_obj_id='cc_test'", func() {
 
+		objectIDs := []string{"switch"}
+		generateObject(objectIDs)
 		input := metadata.Object{
-			ObjCls:     "bk_network",
+			ObjCls:     "bk_uncategorized",
 			ObjIcon:    "icon-cc-business",
 			ObjectID:   "cc_test",
 			ObjectName: "cc_test",
@@ -309,48 +309,37 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 	})
 
-	It("create inst bk_obj_id='bk_switch'", func() {
-		test.ClearDatabase()
+	It("create inst bk_obj_id='switch'", func() {
 		input := map[string]interface{}{
-			"bk_asset_id":  "123",
 			"bk_inst_name": "wejeidjew",
-			"bk_sn":        "1234",
 		}
-		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
+		rsp, err := instClient.CreateInst(context.Background(), "switch", header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("wejeidjew"))
-		Expect(rsp.Data["bk_asset_id"].(string)).To(Equal("123"))
-		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("bk_switch"))
-		Expect(rsp.Data["bk_sn"].(string)).To(Equal("1234"))
+		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("switch"))
 		instId, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("create inst bk_obj_id='bk_switch'", func() {
+	It("create inst bk_obj_id='switch'", func() {
 		input := map[string]interface{}{
-			"bk_asset_id":  "234",
-			"bk_inst_name": "wejeidjew",
-			"bk_sn":        "1234",
+			"bk_inst_name": "wejeidjewr4",
 		}
-		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
+		rsp, err := instClient.CreateInst(context.Background(), "switch", header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("wejeidjew"))
-		Expect(rsp.Data["bk_asset_id"].(string)).To(Equal("234"))
-		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("bk_switch"))
-		Expect(rsp.Data["bk_sn"].(string)).To(Equal("1234"))
+		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("wejeidjewr4"))
+		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("switch"))
 		instId1, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("create inst invalid bk_obj_id", func() {
 		input := map[string]interface{}{
-			"bk_asset_id":  "3456",
 			"bk_inst_name": "1234567",
-			"bk_sn":        "1234",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "abcdefg", header, input)
 		util.RegisterResponseWithRid(rsp, header)
@@ -358,10 +347,9 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
-	It("create inst bk_obj_id='bk_switch' duplicate bk_asset_id", func() {
+	It("create inst bk_obj_id='bk_switch' duplicate bk_inst_name", func() {
 		input := map[string]interface{}{
-			"bk_asset_id":  "234",
-			"bk_inst_name": "abcdefg",
+			"bk_inst_name": "wejeidjewr4",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
 		util.RegisterResponseWithRid(rsp, header)
@@ -371,17 +359,7 @@ var _ = Describe("inst test", func() {
 
 	It("create inst bk_obj_id='bk_switch' missing bk_inst_name", func() {
 		input := map[string]interface{}{
-			"bk_asset_id": "456",
-		}
-		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).Should(BeNil())
-		Expect(rsp.Result).To(Equal(false))
-	})
-
-	It("create inst bk_obj_id='bk_switch' missing bk_asset_id", func() {
-		input := map[string]interface{}{
-			"bk_inst_name": "456",
+			"test_unique": "1234567",
 		}
 		rsp, err := instClient.CreateInst(context.Background(), "bk_switch", header, input)
 		util.RegisterResponseWithRid(rsp, header)
@@ -393,7 +371,7 @@ var _ = Describe("inst test", func() {
 		input := map[string]interface{}{
 			"bk_inst_name": "aaa",
 		}
-		rsp, err := instClient.UpdateInst(context.Background(), "bk_switch", instId, header, input)
+		rsp, err := instClient.UpdateInst(context.Background(), "switch", instId, header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -403,7 +381,7 @@ var _ = Describe("inst test", func() {
 		input := map[string]interface{}{
 			"bk_inst_name": "aaa",
 		}
-		rsp, err := instClient.UpdateInst(context.Background(), "bk_switch", int64(1000), header, input)
+		rsp, err := instClient.UpdateInst(context.Background(), "switch", int64(1000), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(false))
@@ -420,7 +398,7 @@ var _ = Describe("inst test", func() {
 	})
 
 	It("delete inst", func() {
-		rsp, err := instClient.DeleteInst(context.Background(), "bk_switch", instId1, header)
+		rsp, err := instClient.DeleteInst(context.Background(), "switch", instId1, header)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -433,247 +411,9 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(true))
 	})
 
-	It("search inst", func() {
-		input := &metadata.SearchParams{
-			Condition: map[string]interface{}{},
-			Page: map[string]interface{}{
-				"sort": "id",
-			},
-		}
-		rsp, err := instClient.SelectInsts(context.Background(), "0", "bk_switch", header, input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.Count).To(Equal(1))
-		Expect(rsp.Data.Info[0]["bk_inst_name"].(string)).To(Equal("aaa"))
-		Expect(rsp.Data.Info[0]["bk_asset_id"].(string)).To(Equal("123"))
-		Expect(rsp.Data.Info[0]["bk_obj_id"].(string)).To(Equal("bk_switch"))
-		Expect(rsp.Data.Info[0]["bk_sn"].(string)).To(Equal("1234"))
-	})
-
-	It("search inst by object", func() {
-		input := &metadata.SearchParams{
-			Condition: map[string]interface{}{},
-			Page: map[string]interface{}{
-				"sort": "id",
-			},
-		}
-		rsp, err := instClient.InstSearch(context.Background(), "bk_switch", header, input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.Count).To(Equal(1))
-		Expect(rsp.Data.Info[0]["bk_inst_name"].(string)).To(Equal("aaa"))
-		Expect(rsp.Data.Info[0]["bk_asset_id"].(string)).To(Equal("123"))
-		Expect(rsp.Data.Info[0]["bk_obj_id"].(string)).To(Equal("bk_switch"))
-		Expect(rsp.Data.Info[0]["bk_sn"].(string)).To(Equal("1234"))
-	})
-
-	It("search object instances", func() {
-		input := &metadata.SearchInstanceFilter{
-			Conditions: &filter.Expression{
-				RuleFactory: &filter.CombinedRule{
-					Condition: filter.And,
-					Rules: []filter.RuleFactory{
-						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
-							Value: "aaa"},
-						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "123"},
-						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "bk_switch"},
-						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
-					},
-				},
-			},
-			Fields: []string{"bk_inst_name", "bk_asset_id", "bk_obj_id", "bk_sn"},
-			Page:   metadata.BasePage{Start: 0, Limit: 1},
-		}
-
-		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-
-		data, err := mapstr.NewFromInterface(rsp.Data)
-		Expect(err).NotTo(HaveOccurred())
-
-		info, ok := data["info"].([]interface{})
-		Expect(ok).To(Equal(true))
-		Expect(len(info)).To(Equal(1))
-
-		instance, ok := info[0].(map[string]interface{})
-		Expect(ok).To(Equal(true))
-
-		Expect(instance["bk_inst_name"].(string)).To(Equal("aaa"))
-		Expect(instance["bk_asset_id"].(string)).To(Equal("123"))
-		Expect(instance["bk_obj_id"].(string)).To(Equal("bk_switch"))
-		Expect(instance["bk_sn"].(string)).To(Equal("1234"))
-	})
-
-	It("search object instances without conditions", func() {
-		input := &metadata.SearchInstanceFilter{
-			Fields: []string{"bk_inst_name", "bk_asset_id", "bk_obj_id", "bk_sn"},
-			Page:   metadata.BasePage{Start: 0, Limit: 1},
-		}
-
-		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-
-		data, err := mapstr.NewFromInterface(rsp.Data)
-		Expect(err).NotTo(HaveOccurred())
-
-		info, ok := data["info"].([]interface{})
-		Expect(ok).To(Equal(true))
-		Expect(len(info)).To(Equal(1))
-
-		instance, ok := info[0].(map[string]interface{})
-		Expect(ok).To(Equal(true))
-
-		Expect(instance["bk_inst_name"].(string)).To(Equal("aaa"))
-		Expect(instance["bk_asset_id"].(string)).To(Equal("123"))
-		Expect(instance["bk_obj_id"].(string)).To(Equal("bk_switch"))
-		Expect(instance["bk_sn"].(string)).To(Equal("1234"))
-	})
-
-	It("search object instances without fields", func() {
-		input := &metadata.SearchInstanceFilter{
-			Conditions: &filter.Expression{
-				RuleFactory: &filter.CombinedRule{
-					Condition: filter.And,
-					Rules: []filter.RuleFactory{
-						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
-							Value: "aaa"},
-						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "123"},
-						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "bk_switch"},
-						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
-					},
-				},
-			},
-			Page: metadata.BasePage{Start: 0, Limit: 1},
-		}
-
-		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-
-		data, err := mapstr.NewFromInterface(rsp.Data)
-		Expect(err).NotTo(HaveOccurred())
-
-		info, ok := data["info"].([]interface{})
-		Expect(ok).To(Equal(true))
-		Expect(len(info)).To(Equal(1))
-
-		instance, ok := info[0].(map[string]interface{})
-		Expect(ok).To(Equal(true))
-		Expect(len(instance)).To(Equal(20))
-	})
-
-	It("search object instances with limit more than 500", func() {
-		input := &metadata.SearchInstanceFilter{
-			Conditions: &filter.Expression{
-				RuleFactory: &filter.CombinedRule{
-					Condition: filter.And,
-					Rules: []filter.RuleFactory{
-						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
-							Value: "aaa"},
-						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "123"},
-						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "bk_switch"},
-						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
-					},
-				},
-			},
-			Fields: []string{"bk_inst_name", "bk_asset_id", "bk_obj_id", "bk_sn"},
-			Page:   metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit + 1},
-		}
-
-		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(false))
-	})
-
-	It("search object instances without page", func() {
-		input := &metadata.SearchInstanceFilter{
-			Conditions: &filter.Expression{
-				RuleFactory: &filter.CombinedRule{
-					Condition: filter.And,
-					Rules: []filter.RuleFactory{
-						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
-							Value: "aaa"},
-						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "123"},
-						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "bk_switch"},
-						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
-					},
-				},
-			},
-			Fields: []string{"bk_inst_name", "bk_asset_id", "bk_obj_id", "bk_sn"},
-		}
-
-		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(false))
-	})
-
-	It("count object instances", func() {
-		input := &metadata.CountInstanceFilter{
-			Conditions: &filter.Expression{
-				RuleFactory: &filter.CombinedRule{
-					Condition: filter.And,
-					Rules: []filter.RuleFactory{
-						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
-							Value: "aaa"},
-						&filter.AtomRule{Field: "bk_asset_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "123"},
-						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
-							Value: "bk_switch"},
-						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
-					},
-				},
-			},
-		}
-
-		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-
-		data, err := mapstr.NewFromInterface(rsp.Data)
-		Expect(err).NotTo(HaveOccurred())
-
-		count, err := data["count"].(json.Number).Int64()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(int(count)).To(Equal(1))
-	})
-
-	It("count object instances without conditions", func() {
-		input := &metadata.CountInstanceFilter{}
-
-		rsp, err := instClient.CountObjectInstances(context.Background(), header, "bk_switch", input)
-		util.RegisterResponseWithRid(rsp, header)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Result).To(Equal(true))
-
-		data, err := mapstr.NewFromInterface(rsp.Data)
-		Expect(err).NotTo(HaveOccurred())
-
-		count, err := data["count"].(json.Number).Int64()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(int(count)).To(Equal(1))
-	})
-
 	It("count object instances with OR conditions more than 50", func() {
 		var rules []filter.RuleFactory
-		ruleItem := &filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"}
+		ruleItem := &filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal), Value: "aaa"}
 		for i := 0; i < int(option.MaxRulesLimit)+1; i++ {
 			rules = append(rules, ruleItem)
 		}
@@ -704,7 +444,8 @@ var _ = Describe("inst test", func() {
 				RuleFactory: &filter.CombinedRule{
 					Condition: filter.Or,
 					Rules: []filter.RuleFactory{
-						&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: values},
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
+							Value: values},
 					},
 				},
 			},
@@ -720,14 +461,14 @@ var _ = Describe("inst test", func() {
 		deep4 := &filter.CombinedRule{
 			Condition: filter.Or,
 			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
+				&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal), Value: "aaa"},
 			},
 		}
 
 		deep3 := &filter.CombinedRule{
 			Condition: filter.Or,
 			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
+				&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal), Value: "aaa"},
 				deep4,
 			},
 		}
@@ -735,7 +476,7 @@ var _ = Describe("inst test", func() {
 		deep2 := &filter.CombinedRule{
 			Condition: filter.Or,
 			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "bk_sn", Operator: filter.OpFactory(filter.Equal), Value: "1234"},
+				&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal), Value: "aaa"},
 				deep3,
 			},
 		}
@@ -754,6 +495,216 @@ var _ = Describe("inst test", func() {
 		Expect(rsp.Result).To(Equal(false))
 	})
 
+	It("search inst", func() {
+		input := &metadata.SearchParams{
+			Condition: map[string]interface{}{},
+			Page: map[string]interface{}{
+				"sort": "id",
+			},
+		}
+		rsp, err := instClient.SelectInsts(context.Background(), "0", "switch", header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data.Info[0]["bk_inst_name"].(string)).To(Equal("aaa"))
+		Expect(rsp.Data.Info[0]["bk_obj_id"].(string)).To(Equal("switch"))
+	})
+
+	It("search inst by object", func() {
+		input := &metadata.SearchParams{
+			Condition: map[string]interface{}{},
+			Page: map[string]interface{}{
+				"sort": "id",
+			},
+		}
+		rsp, err := instClient.InstSearch(context.Background(), "switch", header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data.Count).To(Equal(1))
+		Expect(rsp.Data.Info[0]["bk_inst_name"].(string)).To(Equal("aaa"))
+		Expect(rsp.Data.Info[0]["bk_obj_id"].(string)).To(Equal("switch"))
+	})
+
+	It("search object instances", func() {
+		input := &metadata.SearchInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
+							Value: "aaa"},
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
+							Value: "switch"},
+					},
+				},
+			},
+			Fields: []string{"bk_inst_name", "bk_obj_id"},
+			Page:   metadata.BasePage{Start: 0, Limit: 1},
+		}
+
+		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "switch", input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		info, ok := data["info"].([]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(info)).To(Equal(1))
+
+		instance, ok := info[0].(map[string]interface{})
+		Expect(ok).To(Equal(true))
+
+		Expect(instance["bk_inst_name"].(string)).To(Equal("aaa"))
+		Expect(instance["bk_obj_id"].(string)).To(Equal("switch"))
+	})
+
+	It("search object instances without conditions", func() {
+		input := &metadata.SearchInstanceFilter{
+			Fields: []string{"bk_inst_name", "bk_obj_id"},
+			Page:   metadata.BasePage{Start: 0, Limit: 1},
+		}
+
+		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "switch", input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		info, ok := data["info"].([]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(info)).To(Equal(1))
+
+		instance, ok := info[0].(map[string]interface{})
+		Expect(ok).To(Equal(true))
+
+		Expect(instance["bk_inst_name"].(string)).To(Equal("aaa"))
+		Expect(instance["bk_obj_id"].(string)).To(Equal("switch"))
+	})
+
+	It("search object instances without fields", func() {
+		input := &metadata.SearchInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
+							Value: "aaa"},
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
+							Value: "switch"},
+					},
+				},
+			},
+			Page: metadata.BasePage{Start: 0, Limit: 1},
+		}
+
+		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "switch", input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		info, ok := data["info"].([]interface{})
+		Expect(ok).To(Equal(true))
+		Expect(len(info)).To(Equal(1))
+	})
+
+	It("search object instances with limit more than 500", func() {
+		input := &metadata.SearchInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
+							Value: "aaa"},
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
+							Value: "switch"},
+					},
+				},
+			},
+			Fields: []string{"bk_inst_name", "bk_obj_id"},
+			Page:   metadata.BasePage{Start: 0, Limit: common.BKMaxInstanceLimit + 1},
+		}
+
+		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "switch", input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("search object instances without page", func() {
+		input := &metadata.SearchInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
+							Value: "aaa"},
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
+							Value: "switch"},
+					},
+				},
+			},
+			Fields: []string{"bk_inst_name", "bk_obj_id"},
+		}
+
+		rsp, err := instClient.SearchObjectInstances(context.Background(), header, "switch", input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("count object instances", func() {
+		input := &metadata.CountInstanceFilter{
+			Conditions: &filter.Expression{
+				RuleFactory: &filter.CombinedRule{
+					Condition: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{Field: "bk_inst_name", Operator: filter.OpFactory(filter.Equal),
+							Value: "aaa"},
+						&filter.AtomRule{Field: "bk_obj_id", Operator: filter.OpFactory(filter.Equal),
+							Value: "switch"},
+					},
+				},
+			},
+		}
+
+		rsp, err := instClient.CountObjectInstances(context.Background(), header, "switch", input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		count, err := data["count"].(json.Number).Int64()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(int(count)).To(Equal(1))
+	})
+
+	It("count object instances without conditions", func() {
+		input := &metadata.CountInstanceFilter{}
+
+		rsp, err := instClient.CountObjectInstances(context.Background(), header, "switch", input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+
+		data, err := mapstr.NewFromInterface(rsp.Data)
+		Expect(err).NotTo(HaveOccurred())
+
+		count, err := data["count"].(json.Number).Int64()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(int(count)).To(Equal(1))
+	})
+
 	It("search inst association detail", func() {
 		input := &metadata.SearchParams{
 			Condition: map[string]interface{}{},
@@ -761,15 +712,13 @@ var _ = Describe("inst test", func() {
 				"sort": "id",
 			},
 		}
-		rsp, err := instClient.SelectInst(context.Background(), "bk_switch", instId, header, input)
+		rsp, err := instClient.SelectInst(context.Background(), "switch", instId, header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
 		Expect(rsp.Data.Info[0]["bk_inst_name"].(string)).To(Equal("aaa"))
-		Expect(rsp.Data.Info[0]["bk_asset_id"].(string)).To(Equal("123"))
-		Expect(rsp.Data.Info[0]["bk_obj_id"].(string)).To(Equal("bk_switch"))
-		Expect(rsp.Data.Info[0]["bk_sn"].(string)).To(Equal("1234"))
+		Expect(rsp.Data.Info[0]["bk_obj_id"].(string)).To(Equal("switch"))
 	})
 
 	It("search inst by association", func() {
@@ -778,15 +727,13 @@ var _ = Describe("inst test", func() {
 				Sort: "id",
 			},
 		}
-		rsp, err := instClient.SelectInstsByAssociation(context.Background(), "bk_switch", header, input)
+		rsp, err := instClient.SelectInstsByAssociation(context.Background(), "switch", header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data.Count).To(Equal(1))
 		Expect(rsp.Data.Info[0]["bk_inst_name"].(string)).To(Equal("aaa"))
-		Expect(rsp.Data.Info[0]["bk_asset_id"].(string)).To(Equal("123"))
-		Expect(rsp.Data.Info[0]["bk_obj_id"].(string)).To(Equal("bk_switch"))
-		Expect(rsp.Data.Info[0]["bk_sn"].(string)).To(Equal("1234"))
+		Expect(rsp.Data.Info[0]["bk_obj_id"].(string)).To(Equal("switch"))
 	})
 
 	It("search inst topo", func() {
@@ -796,7 +743,7 @@ var _ = Describe("inst test", func() {
 				"sort": "id",
 			},
 		}
-		rsp, err := instClient.SelectTopo(context.Background(), "bk_switch", instId, header, input)
+		rsp, err := instClient.SelectTopo(context.Background(), "switch", instId, header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -809,38 +756,35 @@ var _ = Describe("inst test", func() {
 				"sort": "id",
 			},
 		}
-		rsp, err := instClient.SelectAssociationTopo(context.Background(), "bk_switch", instId, header, input)
+		rsp, err := instClient.SelectAssociationTopo(context.Background(), "switch", instId, header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		j, err := json.Marshal(rsp.Data[0].Curr)
 		data := map[string]interface{}{}
 		json.Unmarshal(j, &data)
-		Expect(data["bk_obj_id"].(string)).To(Equal("bk_switch"))
+		Expect(data["bk_obj_id"].(string)).To(Equal("switch"))
 		Expect(data["bk_inst_name"].(string)).To(Equal("aaa"))
 		instIdRes, err := commonutil.GetInt64ByInterface(data["bk_inst_id"])
 		Expect(err).NotTo(HaveOccurred())
 		Expect(instIdRes).To(Equal(instId))
 	})
 
-	It("batch create instance bk_obj_id='bk_switch'", func() {
+	It("batch create instance bk_obj_id='switch'", func() {
 		input := &metadata.CreateManyCommInst{
-			ObjID: "bk_switch",
+			ObjID: "switch",
 			Details: []mapstr.MapStr{
 				{
-					"bk_obj_id":    "bk_switch",
+					"bk_obj_id":    "switch",
 					"bk_inst_name": "example1",
-					"bk_asset_id":  "test0001",
 				},
 				{
-					"bk_obj_id":    "bk_switch",
+					"bk_obj_id":    "switch",
 					"bk_inst_name": "example2",
-					"bk_asset_id":  "test0002",
 				},
 				{
-					"bk_obj_id":    "bk_switch",
+					"bk_obj_id":    "switch",
 					"bk_inst_name": "example3",
-					"bk_asset_id":  "test0003",
 				},
 			},
 		}
@@ -856,25 +800,22 @@ var _ = Describe("inst test", func() {
 		Expect(len(result.SuccessCreated)).To(Equal(3))
 	})
 
-	It("batch create instance bk_obj_id='bk_switch' with different obj id , bk_inst_name exist one and bk_asset_id exist one",
+	It("batch create instance bk_obj_id='switch' with different obj id , bk_inst_name exist one and bk_asset_id exist one",
 		func() {
 			input := &metadata.CreateManyCommInst{
-				ObjID: "bk_switch",
+				ObjID: "switch",
 				Details: []mapstr.MapStr{
 					{
 						"bk_obj_id":    "switch",
 						"bk_inst_name": "example4",
-						"bk_asset_id":  "test0004",
 					},
 					{
-						"bk_obj_id":    "bk_switch",
+						"bk_obj_id":    "switch",
 						"bk_inst_name": "example3",
-						"bk_asset_id":  "test0003",
 					},
 					{
-						"bk_obj_id":    "bk_switch",
+						"bk_obj_id":    "switch",
 						"bk_inst_name": "example5",
-						"bk_asset_id":  "test0003",
 					},
 				},
 			}
@@ -886,19 +827,18 @@ var _ = Describe("inst test", func() {
 			json.Unmarshal(rspJson, result)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
-			Expect(len(result.Error)).To(Equal(2))
-			Expect(len(result.SuccessCreated)).To(Equal(1))
 		})
 
-	It("batch create instance bk_obj_id='bk_switch' with empty details", func() {
+	It("batch create instance bk_obj_id='switch' with empty details", func() {
 		input := &metadata.CreateManyCommInst{
-			ObjID:   "bk_switch",
+			ObjID:   "switch",
 			Details: []mapstr.MapStr{},
 		}
 		rsp, err := instClient.CreateManyCommInst(context.Background(), input.ObjID, header, *input)
 		Expect(err).NotTo(HaveOccurred())
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(rsp.Result).To(Equal(false))
+		test.DeleteAllObjects()
 	})
 })
 

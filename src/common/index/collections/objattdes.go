@@ -20,62 +20,35 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameObjAttDes, deprecatedObjAttDesIndexes)
 	registerIndexes(common.BKTableNameObjAttDes, commObjAttDesIndexes)
-
 }
-
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 
 var commObjAttDesIndexes = []types.Index{
 	{
-		Name: common.CCLogicIndexNamePrefix + "bkTemplateID_tenantID",
-		Keys: bson.D{
-			{
-				common.BKTemplateID, 1,
-			},
-			{
-				common.TenantID, 1,
-			},
-		},
-		Background: true,
-	},
-}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedObjAttDesIndexes = []types.Index{
-	{
-		Name: "bk_obj_id_1",
-		Keys: bson.D{{
-			"bk_obj_id", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkObjID",
+		Keys:                    bson.D{{common.BKObjIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_supplier_account_1",
-		Keys: bson.D{{
-			"bk_supplier_account", 1},
-		},
-		Background: true,
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkObjID_bkPropertyID_bkBizID",
+		Keys: bson.D{{common.BKObjIDField, 1}, {common.BKPropertyIDField, 1},
+			{common.BKAppIDField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_unique_objID_propertyID_bizID",
-		Keys: bson.D{
-			{"bk_property_id", 1},
-			{"bk_biz_id", 1},
-			{"bk_obj_id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "bkTemplateID",
+		Keys:                    bson.D{{"bk_template_id", 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_unique_Id",
-		Keys: bson.D{{
-			"id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
+		Keys:                    bson.D{{common.BKFieldID, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

@@ -22,11 +22,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func reconcilUnique(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func reconcilUnique(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	oldAttributes := []Attribute{}
 	err := db.Table(common.BKTableNameObjAttDes).Find(mapstr.MapStr{common.BKObjIDField: common.BKInnerObjIDProc}).All(ctx,
@@ -112,7 +112,7 @@ func checkKeysShouldExists(m map[string]Attribute, shouldExistKeys []string) []s
 	return notValidKeys
 }
 
-func isUniqueExists(ctx context.Context, db dal.RDB, conf *upgrader.Config, unique objectUnique) (bool, error) {
+func isUniqueExists(ctx context.Context, db dal.RDB, conf *history.Config, unique objectUnique) (bool, error) {
 	keyhash := unique.KeysHash()
 	uniqueCond := condition.CreateCondition()
 	uniqueCond.Field(common.BKObjIDField).Eq(unique.ObjID)

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
+	"configcenter/src/test"
 	"configcenter/src/test/util"
 
 	. "github.com/onsi/ginkgo"
@@ -151,17 +152,19 @@ var _ = Describe("host abnormal test", func() {
 			value2 := util.JsonPathExtractInt(responses, "req_97c8a2eacfe243b7b910bbbb15299641",
 				"name:$.data.bk_set_id", "{.data.bk_set_id}")
 
+			serviceCategoryID := test.GetDefaultCategory()
 			input := map[string]interface{}{
 				"bk_module_name":      util.RandSeq(16),
 				"bk_biz_id":           value1,
 				"bk_parent_id":        value2,
 				"tenant_id":           "0",
 				"service_template_id": 0,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 			}
 
 			rsp := metadata.Response{}
-			err := apiServerClient.Client().Post().
+			var err error
+			err = apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
 				SubResourcef("/module/%d/%d", value1, value2).
@@ -615,6 +618,7 @@ var _ = Describe("host abnormal test", func() {
 			value2 := util.JsonPathExtractInt(responses, "req_97c8a2eacfe243b7b910bbbb15299641",
 				"name:$.data.bk_set_id", "{.data.bk_set_id}")
 			urlTemplate := "/module/%d/%d"
+			serviceCategoryID := test.GetDefaultCategory()
 
 			input := map[string]interface{}{
 				"bk_module_name":      util.RandSeq(16),
@@ -622,11 +626,12 @@ var _ = Describe("host abnormal test", func() {
 				"bk_parent_id":        value2,
 				"tenant_id":           "0",
 				"service_template_id": 0,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 			}
 
 			rsp := metadata.Response{}
-			err := apiServerClient.Client().Post().
+			var err error
+			err = apiServerClient.Client().Post().
 				WithContext(ctx).
 				Body(input).
 				SubResourcef(urlTemplate, value1, value2).
@@ -787,8 +792,9 @@ var _ = Describe("host abnormal test", func() {
 			// create service template
 			bizID := util.JsonPathExtractInt(responses, "req_cedb268c4487418baedab1d08843505d",
 				"name:$.data.bk_biz_id", "{.data.bk_biz_id}")
+			serviceCategoryID := test.GetDefaultCategory()
 			option := map[string]interface{}{
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"bk_biz_id":           bizID,
 				"name":                util.RandSeq(16),
 				"host_apply_enabled":  true,
@@ -808,7 +814,7 @@ var _ = Describe("host abnormal test", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      util.RandSeq(16),
 				"bk_parent_id":        setID,
-				"service_category_id": 2,
+				"service_category_id": serviceCategoryID,
 				"service_template_id": templateID,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizID, setID, header, input)

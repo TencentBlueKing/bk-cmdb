@@ -19,11 +19,11 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func sortBkPropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func sortBkPropertyIndex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	cond := make(map[string]interface{})
 	objects := make([]metadata.Object, 0)
 	if err := db.Table(common.BKTableNameObjDes).Find(cond).All(ctx, &objects); err != nil {
@@ -53,7 +53,7 @@ func sortBkPropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config)
 	return nil
 }
 
-func updateSortedPropertyIndex(ctx context.Context, db dal.RDB, conf *upgrader.Config, attrGroups []metadata.Group, attributes []metadata.Attribute) error {
+func updateSortedPropertyIndex(ctx context.Context, db dal.RDB, conf *history.Config, attrGroups []metadata.Group, attributes []metadata.Attribute) error {
 	for _, group := range attrGroups {
 		var index int64
 		for _, attr := range attributes {

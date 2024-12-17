@@ -20,135 +20,110 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameBaseHost, deprecatedHostBaseIndexes)
 	registerIndexes(common.BKTableNameBaseHost, commHostBaseIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
 var commHostBaseIndexes = []types.Index{
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIP_bkCloudID",
-		Keys: bson.D{
-			{common.BKHostInnerIPField, 1},
-			{common.BKCloudIDField, 1},
+		Name:                    common.CCLogicIndexNamePrefix + "bkHostName",
+		Keys:                    bson.D{{common.BKHostNameField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "bkHostInnerIP",
+		Keys:                    bson.D{{common.BKHostInnerIPField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "bkCloudInstID",
+		Keys:                    bson.D{{common.BKCloudInstIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "bkCloudID",
+		Keys:                    bson.D{{common.BKCloudIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "bkOsType",
+		Keys:                    bson.D{{common.BKOSTypeField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkHostOuterIP",
+		Keys:       bson.D{{common.BKHostOuterIPField, 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{common.BKHostOuterIPField: map[string]string{
+			common.BKDBType: "string"}},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkCloudInstID_bkCloudVendor",
+		Keys:       bson.D{{common.BKCloudInstIDField, 1}, {common.BKCloudVendor, 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			common.BKCloudInstIDField: map[string]string{common.BKDBType: "string"},
+			common.BKCloudVendor:      map[string]string{common.BKDBType: "string"},
 		},
+	},
+	{
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "bkHostID",
+		Keys:                    bson.D{{common.BKHostIDField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:                    common.CCLogicIndexNamePrefix + "bkAssetID",
+		Keys:                    bson.D{{common.BKAssetIDField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkAgentID",
+		Keys:       bson.D{{common.BKAgentIDField, 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{common.BKAgentIDField: map[string]string{common.BKDBType: "string",
+			common.BKDBGT: ""}},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIP_bkCloudID",
+		Keys:       bson.D{{common.BKHostInnerIPField, 1}, {common.BKCloudIDField, 1}},
 		Unique:     true,
 		Background: true,
 		PartialFilterExpression: map[string]interface{}{
 			common.BKHostInnerIPField: map[string]string{common.BKDBType: "string"},
 			common.BKCloudIDField:     map[string]string{common.BKDBType: "number"},
-			// only hosts with addressing = "static" must satisfy the uniqueness of inner ip + cloud id
-			common.BKAddressingField: common.BKAddressingStatic,
+			common.BKAddressingField:  common.BKAddressingStatic,
 		},
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIPv6_bkCloudID",
-		Keys: bson.D{
-			{common.BKHostInnerIPv6Field, 1},
-			{common.BKCloudIDField, 1},
-		},
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkHostInnerIPV6_bkCloudID",
+		Keys:       bson.D{{common.BKHostInnerIPv6Field, 1}, {common.BKCloudIDField, 1}},
 		Unique:     true,
 		Background: true,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKHostInnerIPv6Field: map[string]string{common.BKDBType: "string"},
 			common.BKCloudIDField:       map[string]string{common.BKDBType: "number"},
-			// only hosts with addressing = "static" must satisfy the uniqueness of inner ipv6 + cloud id
-			common.BKAddressingField: common.BKAddressingStatic,
+			common.BKAddressingField:    common.BKAddressingStatic,
+			common.BKHostInnerIPv6Field: map[string]string{common.BKDBType: "string"},
 		},
 	},
 	{
-		Name: common.CCLogicUniqueIdxNamePrefix + "bkAgentID",
-		Keys: bson.D{
-			{common.BKAgentIDField, 1},
-		},
+		Name:       common.CCLogicUniqueIdxNamePrefix + "bkCloudID_bkHostInnerIP",
+		Keys:       bson.D{{common.BKCloudIDField, 1}, {common.BKHostInnerIPField, 1}},
 		Unique:     true,
 		Background: true,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKAgentIDField: map[string]string{
-				common.BKDBType: "string",
-				// allows multiple hosts to not bind agentID, in this case they will have a default empty agentID of ""
-				common.BKDBGT: "",
-			},
+			common.BKCloudIDField:     map[string]string{common.BKDBType: "number"},
+			common.BKHostInnerIPField: map[string]string{common.BKDBType: "string"},
+			common.BKAddressingField:  common.BKAddressingStatic,
 		},
-	},
-}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedHostBaseIndexes = []types.Index{
-	{
-		Name: "bk_host_name_1",
-		Keys: bson.D{{
-			"bk_host_name", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "bk_host_innerip_1",
-		Keys: bson.D{{
-			"bk_host_innerip", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "bk_host_id_1_bk_supplier_account_1",
-		Keys: bson.D{
-			{"bk_host_id", 1},
-			{"bk_supplier_account", 1},
-		},
-		Background: true,
-	},
-	/* 	{
-		Name: "innerIP_platID",
-		Keys: bson.D{{
-			"bk_host_innerip", 1}
-			"bk_cloud_id":     1,
-		},
-		Background: false,
-	}, */
-	{
-		Name: "bk_supplier_account_1",
-		Keys: bson.D{{
-			"bk_supplier_account", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "bk_cloud_id_1",
-		Keys: bson.D{{
-			"bk_cloud_id", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "idx_unique_hostID",
-		Keys: bson.D{{
-			"bk_host_id", 1},
-		},
-		Unique:     true,
-		Background: true,
-	},
-	{
-		Name: "cloudInstID",
-		Keys: bson.D{{
-			"bk_cloud_inst_id", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "bk_idx_bk_asset_id",
-		Keys: bson.D{{
-			"bk_asset_id", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "bk_os_type_1",
-		Keys: bson.D{{
-			"bk_os_type", 1},
-		},
-		Background: true,
 	},
 }

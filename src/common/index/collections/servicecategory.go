@@ -20,35 +20,22 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameServiceCategory, deprecatedServiceCategoryIndexes)
 	registerIndexes(common.BKTableNameServiceCategory, commServiceCategoryIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-
-var commServiceCategoryIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedServiceCategoryIndexes = []types.Index{
+var commServiceCategoryIndexes = []types.Index{
 	{
-		Name: "idx_unique_id",
-		Keys: bson.D{{
-			"id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
+		Keys:                    bson.D{{common.BKFieldID, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "idx_unique_Name_parentID_bizID",
-		Keys: bson.D{
-			{"bk_parent_id", 1},
-			{"bk_biz_id", 1},
-			{"name", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "name_bkParentID_bkBizID",
+		Keys:                    bson.D{{common.BKFieldName, 1}, {common.BKInstParentStr, 1}, {common.BKAppIDField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

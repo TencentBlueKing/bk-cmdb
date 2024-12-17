@@ -46,14 +46,8 @@ func indexKeyEqual(toDBIndex, dbIndex types.Index) bool {
 		return false
 	}
 
-	toDBIndexMap := toDBIndex.Keys.Map()
-	dbIndexMap := dbIndex.Keys.Map()
-	for key, val := range toDBIndexMap {
-		dbVal, exists := dbIndexMap[key]
-		if !exists {
-			return false
-		}
-		if val != dbVal {
+	for i := 0; i < len(toDBIndex.Keys); i++ {
+		if toDBIndex.Keys[i].Key != dbIndex.Keys[i].Key || toDBIndex.Keys[i].Value != dbIndex.Keys[i].Value {
 			return false
 		}
 	}
@@ -67,8 +61,7 @@ func Indexes() map[string][]types.Index {
 	return tableNameIndexes
 }
 
-// DeprecatedIndexName TODO
-//  DeprecatedIndexName 未规范索引的名字。用来对需要删除的未规范索引
+// DeprecatedIndexName 未规范索引的名字。用来对需要删除的未规范索引
 func DeprecatedIndexName() map[string][]string {
 	return deprecatedIndexName
 }

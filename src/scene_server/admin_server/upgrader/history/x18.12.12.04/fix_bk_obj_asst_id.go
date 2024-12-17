@@ -21,11 +21,11 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func fixBKObjAsstID(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func fixBKObjAsstID(ctx context.Context, db dal.RDB, conf *history.Config) error {
 
 	findCond := condition.CreateCondition()
 	findCond.Field(common.AssociationKindIDField).NotEq(common.AssociationKindMainline)

@@ -18,11 +18,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addswitchAssociation(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	falseVar := false
 	switchAsst := Association{
 		OwnerID:         conf.TenantID,
@@ -35,7 +35,7 @@ func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config
 		IsPre:           &falseVar,
 	}
 
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNameObjAsst, switchAsst, "id",
+	_, _, err := history.Upsert(ctx, db, common.BKTableNameObjAsst, switchAsst, "id",
 		[]string{"bk_obj_id", "bk_asst_obj_id"}, []string{"id"})
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func addswitchAssociation(ctx context.Context, db dal.RDB, conf *upgrader.Config
 	return nil
 }
 
-func changeNetDeviceTableName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func changeNetDeviceTableName(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	err := db.DropTable(ctx, "cc_Netcollect_Device")
 	if err != nil && !strings.Contains(err.Error(), "ns not found") {
 		return err

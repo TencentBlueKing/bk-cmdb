@@ -20,47 +20,28 @@ import (
 )
 
 func init() {
-
-	// 先注册未规范化的索引，如果索引出现冲突旧，删除未规范化的索引
-	registerIndexes(common.BKTableNameBaseApp, deprecatedApplicationBaseIndexes)
 	registerIndexes(common.BKTableNameBaseApp, commApplicationBaseIndexes)
-
 }
 
-//  新加和修改后的索引,索引名字一定要用对应的前缀，CCLogicUniqueIdxNamePrefix|common.CCLogicIndexNamePrefix
-var commApplicationBaseIndexes = []types.Index{}
-
-// deprecated 未规范化前的索引，只允许删除不允许新加和修改，
-var deprecatedApplicationBaseIndexes = []types.Index{
+var commApplicationBaseIndexes = []types.Index{
 	{
-		Name: "default_1",
-		Keys: bson.D{{
-			"default", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicIndexNamePrefix + "default",
+		Keys:                    bson.D{{common.BKDefaultField, 1}},
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name: "bk_biz_id_1_bk_supplier_account_1",
-		Keys: bson.D{
-			{"bk_biz_id", 1},
-			{"bk_supplier_account", 1},
-		},
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "bkBizName",
+		Keys:                    bson.D{{common.BKAppNameField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: map[string]interface{}{common.BKAppNameField: map[string]string{common.BKDBType: "string"}},
 	},
 	{
-		Name: "default_1_bk_supplier_account_1",
-		Keys: bson.D{
-			{"default", 1},
-			{"bk_supplier_account", 1},
-		},
-		Background: true,
-	},
-	{
-		Name: "idx_unique_bizID",
-		Keys: bson.D{
-			{"bk_biz_id", 1},
-		},
-		Unique:     true,
-		Background: true,
+		Name:                    common.CCLogicUniqueIdxNamePrefix + "bkBizID",
+		Keys:                    bson.D{{common.BKAppIDField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
 	},
 }

@@ -16,14 +16,14 @@ import (
 	"context"
 
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 // IPRegex TODO
 var IPRegex = `^((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5])(,((1?\d{1,2}|2[0-4]\d|25[0-5])[.]){3}(1?\d{1,2}|2[0-4]\d|25[0-5]))*$`
 
-func updateIPRegex(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateIPRegex(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	// host
 	filter := map[string]interface{}{
 		common.BKPropertyIDField: map[string]interface{}{

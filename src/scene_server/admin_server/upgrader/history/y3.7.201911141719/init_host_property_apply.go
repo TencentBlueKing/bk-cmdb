@@ -19,7 +19,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
@@ -27,7 +27,7 @@ import (
 )
 
 // InitHostPropertyApplyDataModel init host property apply data model
-func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func InitHostPropertyApplyDataModel(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	// check attribute exist
 	moduleAttributeFilter := map[string]interface{}{
 		"bk_obj_id":      common.BKInnerObjIDModule,

@@ -15,14 +15,14 @@ package x08_09_17_01
 import (
 	"context"
 
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func createTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func createTable(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	for tablename, indexs := range tables {
 		exists, err := db.HasTable(ctx, tablename)
 		if err != nil {

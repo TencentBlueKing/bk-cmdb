@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -29,10 +29,10 @@ import (
 	如果不通过扩展数据结构支持，新的diff需求将需要大量的数据查询才能实现
 */
 func init() {
-	upgrader.RegistUpgrader("y3.7.201912171427", upgrade)
+	history.RegistUpgrader("y3.7.201912171427", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	blog.Infof("start execute y3.7.201912171427")
 
 	if err := addSetVersionField(ctx, db, conf); err != nil {

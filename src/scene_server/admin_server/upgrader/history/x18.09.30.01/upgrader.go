@@ -19,11 +19,11 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-func cleanBKCloud(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func cleanBKCloud(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 
 	clouds := []map[string]interface{}{}
 

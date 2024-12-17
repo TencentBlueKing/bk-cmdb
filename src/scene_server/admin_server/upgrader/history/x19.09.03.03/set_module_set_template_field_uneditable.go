@@ -18,7 +18,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
@@ -26,7 +26,7 @@ import (
 var ProcMgrGroupID = "proc_mgr"
 
 // AddProcAttrGroup TODO
-func AddProcAttrGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func AddProcAttrGroup(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	doc := map[string]interface{}{
 		common.BKIsCollapseField:         true,
 		common.BKPropertyGroupNameField:  "进程管理信息",
@@ -41,7 +41,7 @@ func AddProcAttrGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 		"bk_supplier_account":         conf.TenantID,
 	}
 	uniqueFields := []string{common.BKObjIDField, common.BKPropertyGroupIDField, "bk_supplier_account"}
-	_, _, err := upgrader.Upsert(ctx, db, common.BKTableNamePropertyGroup, doc, "id", uniqueFields, []string{})
+	_, _, err := history.Upsert(ctx, db, common.BKTableNamePropertyGroup, doc, "id", uniqueFields, []string{})
 	if err != nil {
 		if db.IsNotFoundError(err) == false {
 			return fmt.Errorf("upgrade x19_09_03_03, AddProcAttrGroup failed, err: %v", err)
@@ -51,7 +51,7 @@ func AddProcAttrGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) er
 }
 
 // ChangeProcFieldGroup TODO
-func ChangeProcFieldGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func ChangeProcFieldGroup(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	filter := map[string]interface{}{
 		common.BKPropertyIDField: map[string]interface{}{
 			common.BKDBIN: []string{"bk_func_id", "work_path", "user", "proc_num", "priority", "timeout",

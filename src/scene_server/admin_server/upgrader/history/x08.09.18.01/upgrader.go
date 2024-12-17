@@ -20,14 +20,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func fixedHostPlatAssocateRelation(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 
 	type instAsstStruct struct {
 		ID           int64     `bson:"id"`

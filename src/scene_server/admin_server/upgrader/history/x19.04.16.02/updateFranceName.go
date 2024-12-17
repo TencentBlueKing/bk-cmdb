@@ -19,12 +19,12 @@ import (
 	"configcenter/src/common/condition"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 )
 
-func updateFranceName(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func updateFranceName(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	cond := condition.CreateCondition()
 	cond.Field(common.BKObjIDField).Eq(common.BKInnerObjIDHost)
 	cond.Field(common.BKPropertyIDField).Eq("bk_state_name")

@@ -16,15 +16,15 @@ import (
 	"context"
 
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
 func init() {
-	upgrader.RegistUpgrader("x19_08_20_01", upgrade)
+	history.RegistUpgrader("x19_08_20_01", upgrade)
 }
 
-func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
 	blog.Infof("from now on, the cmdb version will be v3.5.x")
 	if err := upgradeDeleteHostPlatAssociation(ctx, db, conf); err != nil {
 		return err

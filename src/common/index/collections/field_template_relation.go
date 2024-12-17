@@ -43,13 +43,10 @@ var commObjFieldTemplateRelationIndexes = []types.Index{
 		Unique:     true,
 	},
 	{
-		Name: common.CCLogicIndexNamePrefix + "objectID_bkSupplierAccount",
+		Name: common.CCLogicIndexNamePrefix + "objectID",
 		Keys: bson.D{
 			{
 				common.ObjectIDField, 1,
-			},
-			{
-				common.TenantID, 1,
 			},
 		},
 		Background: true,

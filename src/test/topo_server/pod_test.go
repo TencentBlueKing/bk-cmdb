@@ -56,7 +56,7 @@ var _ = Describe("pod test", func() {
 	containerUID := "containerUID"
 	It("prepare environment, create business, cluster, namespace", func() {
 		test.DeleteAllBizs()
-
+		cloudID := test.GetCloudID()
 		// create business
 		biz := map[string]interface{}{
 			common.BKMaintainersField: "kube",
@@ -70,18 +70,17 @@ var _ = Describe("pod test", func() {
 		Expect(bizResp.Result).To(Equal(true))
 		bizID, err = commonutil.GetInt64ByInterface(bizResp.Data[common.BKAppIDField])
 		Expect(err).NotTo(HaveOccurred())
-
 		// create host
 		input := map[string]interface{}{
 			common.BKAppIDField: bizID,
 			"host_info": map[string]interface{}{
 				"0": map[string]interface{}{
 					"bk_host_innerip": "127.0.0.1",
-					"bk_cloud_id":     0,
+					"bk_cloud_id":     cloudID,
 				},
 				"1": map[string]interface{}{
 					"bk_host_innerip": "127.0.0.2",
-					"bk_cloud_id":     0,
+					"bk_cloud_id":     cloudID,
 				},
 			},
 		}
@@ -131,7 +130,6 @@ var _ = Describe("pod test", func() {
 		}
 
 		id, err := kubeClient.CreateCluster(ctx, header, createCluster)
-
 		util.RegisterResponseWithRid(id, header)
 		Expect(err).NotTo(HaveOccurred())
 		clusterID = id
@@ -429,7 +427,6 @@ var _ = Describe("pod test", func() {
 			BizID:     bizID,
 			ClusterID: clusterID,
 		}
-
 		result, err := hostServerClient.SearchKubeHost(ctx, header, req)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(result.Info)).To(Equal(2))

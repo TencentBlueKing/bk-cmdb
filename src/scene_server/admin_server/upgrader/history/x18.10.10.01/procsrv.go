@@ -16,7 +16,7 @@ import (
 	"context"
 
 	"configcenter/src/common"
-	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/types"
 
@@ -24,7 +24,7 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableName := "cc_ProcOpTask"
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
@@ -48,7 +48,7 @@ func addProcOpTaskTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) 
 	}
 	return nil
 }
-func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableName := "cc_ProcInstanceModel"
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
@@ -75,7 +75,7 @@ func addProcInstanceModelTable(ctx context.Context, db dal.RDB, conf *upgrader.C
 	}
 	return nil
 }
-func addProcInstanceDetailTable(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
+func addProcInstanceDetailTable(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableName := "cc_ProcInstanceDetail"
 	exists, err := db.HasTable(ctx, tableName)
 	if err != nil {
