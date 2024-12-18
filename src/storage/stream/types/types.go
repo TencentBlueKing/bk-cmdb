@@ -78,6 +78,9 @@ type ListOptions struct {
 	// Step defines the list step when the client try to list all the data defines in the
 	// namespace. default value is `DefaultListStep`, value range [200,2000]
 	PageSize *int
+
+	// WithRetry defines whether the list operation needs to retry when failed
+	WithRetry bool
 }
 
 // CheckSetDefault validate list options, and set default value for not set fields
@@ -444,10 +447,17 @@ func GetEventDetail(detailStr *string) *string {
 	return &detail
 }
 
-// TokenHandler TODO
+// TokenHandler is the token handler interface
 type TokenHandler interface {
-	SetLastWatchToken(ctx context.Context, token string) error
-	GetStartWatchToken(ctx context.Context) (token string, err error)
+	SetLastWatchToken(ctx context.Context, token *TokenInfo) error
+	GetStartWatchToken(ctx context.Context) (token *TokenInfo, err error)
+	ResetWatchToken(startAtTime TimeStamp) error
+}
+
+// TokenInfo is the watch token info
+type TokenInfo struct {
+	Token       string     `bson:"token"`
+	StartAtTime *TimeStamp `bson:"start_at_time"`
 }
 
 // LoopOptions TODO
@@ -495,11 +505,11 @@ func (lo *LoopOneOptions) Validate() error {
 
 	if lo.RetryOptions != nil {
 		if lo.RetryOptions.MaxRetryCount <= 0 {
-			lo.RetryOptions.MaxRetryCount = defaultRetryCount
+			lo.RetryOptions.MaxRetryCount = DefaultRetryCount
 		}
 
 		if lo.RetryOptions.RetryDuration == 0 {
-			lo.RetryOptions.RetryDuration = defaultRetryDuration
+			lo.RetryOptions.RetryDuration = DefaultRetryDuration
 		}
 
 		if lo.RetryOptions.RetryDuration < 500*time.Millisecond {
@@ -507,8 +517,8 @@ func (lo *LoopOneOptions) Validate() error {
 		}
 	} else {
 		lo.RetryOptions = &RetryOptions{
-			MaxRetryCount: defaultRetryCount,
-			RetryDuration: defaultRetryDuration,
+			MaxRetryCount: DefaultRetryCount,
+			RetryDuration: DefaultRetryDuration,
 		}
 	}
 
@@ -530,8 +540,8 @@ type LoopBatchOptions struct {
 
 const (
 	defaultBatchSize     = 200
-	defaultRetryCount    = 10
-	defaultRetryDuration = 1 * time.Second
+	DefaultRetryCount    = 10
+	DefaultRetryDuration = 1 * time.Second
 )
 
 // Validate TODO
@@ -558,11 +568,11 @@ func (lo *LoopBatchOptions) Validate() error {
 
 	if lo.RetryOptions != nil {
 		if lo.RetryOptions.MaxRetryCount <= 0 {
-			lo.RetryOptions.MaxRetryCount = defaultRetryCount
+			lo.RetryOptions.MaxRetryCount = DefaultRetryCount
 		}
 
 		if lo.RetryOptions.RetryDuration == 0 {
-			lo.RetryOptions.RetryDuration = defaultRetryDuration
+			lo.RetryOptions.RetryDuration = DefaultRetryDuration
 		}
 
 		if lo.RetryOptions.RetryDuration < 200*time.Millisecond {
@@ -570,8 +580,8 @@ func (lo *LoopBatchOptions) Validate() error {
 		}
 	} else {
 		lo.RetryOptions = &RetryOptions{
-			MaxRetryCount: defaultRetryCount,
-			RetryDuration: defaultRetryDuration,
+			MaxRetryCount: DefaultRetryCount,
+			RetryDuration: DefaultRetryDuration,
 		}
 	}
 

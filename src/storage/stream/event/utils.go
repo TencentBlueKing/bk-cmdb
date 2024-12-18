@@ -72,6 +72,8 @@ func generateOptions(opts *types.Options) (mongo.Pipeline, *options.ChangeStream
 		if *opts.MajorityCommitted {
 			major := options.UpdateLookup
 			streamOptions.FullDocument = &major
+			preImage := options.WhenAvailable
+			streamOptions.FullDocumentBeforeChange = &preImage
 		} else {
 			def := options.Default
 			streamOptions.FullDocument = &def

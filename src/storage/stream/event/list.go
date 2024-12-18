@@ -58,7 +58,7 @@ func (e *Event) List(ctx context.Context, opts *types.ListOptions) (ch chan *typ
 	eventChan := make(chan *types.Event, types.DefaultEventChanSize)
 
 	go func() {
-		e.lister(ctx, false, listOpts, eventChan)
+		e.lister(ctx, opts.WithRetry, listOpts, eventChan)
 	}()
 
 	return eventChan, nil
