@@ -94,7 +94,8 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	}
 
 	for _, bkToken := range bkTokens {
-		loginURL := checkUrl + bkToken
+		// compatible with bk-login url with / suffix
+		loginURL := strings.ReplaceAll(checkUrl, "//accounts", "/accounts") + bkToken
 		loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
 		if err != nil {
 			blog.Errorf("get user info return error: %v, rid: %s", err, rid)
