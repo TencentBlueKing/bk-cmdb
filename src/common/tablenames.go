@@ -117,6 +117,9 @@ const (
 
 	// BKTableNameTenantTemplate is the tenant template(public data that needs to be initialized for all tenants) table
 	BKTableNameTenantTemplate = "TenantTemplate"
+
+	// BKTableNameWatchDBRelation is the db and watch db relation table
+	BKTableNameWatchDBRelation = "WatchDBRelation"
 )
 
 // AllTables is all table names, not include the sharding tables which is created dynamically,
@@ -281,6 +284,7 @@ var platformTableMap = map[string]struct{}{
 	BKTableNameLastWatchEvent:     {},
 	BKTableNameAPITask:            {},
 	BKTableNameAPITaskSyncHistory: {},
+	BKTableNameWatchDBRelation:    {},
 }
 
 // IsPlatformTable returns if the target table is a platform table

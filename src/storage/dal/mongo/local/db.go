@@ -21,7 +21,6 @@ import (
 	"context"
 
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
 )
 
@@ -60,8 +59,4 @@ type DB interface {
 	CommitTransaction(context.Context, *metadata.TxnCapable) error
 	// AbortTransaction 取消事务
 	AbortTransaction(context.Context, *metadata.TxnCapable) (bool, error)
-
-	// InitTxnManager TxnID management of initial transaction
-	// TODO 后续放到TenantDB里，只用初始化一次
-	InitTxnManager(r redis.Client) error
 }

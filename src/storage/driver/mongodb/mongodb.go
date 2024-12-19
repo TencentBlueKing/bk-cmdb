@@ -141,9 +141,15 @@ func SetShardingCli(prefix string, config *mongo.Config, cryptoConf *cryptor.Con
 	return nil
 }
 
-// SetDisableDBShardingCli set mongodb client that disables db sharding with prefix
-func SetDisableDBShardingCli(prefix string, config *mongo.Config) error {
-	shardingDB, err := sharding.NewDisableDBShardingMongo(config.GetMongoConf(), time.Minute)
+// SetWatchCli set mongodb client that disables db sharding with prefix
+func SetWatchCli(prefix string, config *mongo.Config, cryptoConf *cryptor.Config) error {
+	crypto, err := cryptor.NewCrypto(cryptoConf)
+	if err != nil {
+		blog.Errorf("new %s mongo crypto failed, err: %v", prefix, err)
+		return errors.NewCCError(common.CCErrCommResourceInitFailed, "init mongo crypto failed")
+	}
+
+	shardingDB, err := sharding.NewWatchMongo(config.GetMongoConf(), time.Minute, crypto)
 	if err != nil {
 		blog.Errorf("new %s disable db sharding mongo client failed, err: %v", prefix, err)
 		return errors.NewCCError(common.CCErrCommResourceInitFailed, "init disable db sharding mongo client failed")

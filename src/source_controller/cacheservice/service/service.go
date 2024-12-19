@@ -37,7 +37,6 @@ import (
 	"configcenter/src/source_controller/cacheservice/event/identifier"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
@@ -94,16 +93,10 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 	}
 	s.authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
-	loopW, loopErr := stream.NewLoopStream(s.cfg.Mongo.GetMongoConf(), engine.ServiceManageInterface)
+	watcher, loopErr := stream.NewLoopStream(s.cfg.Mongo.GetMongoConf(), engine.ServiceManageInterface)
 	if loopErr != nil {
 		blog.Errorf("new loop stream failed, err: %v", loopErr)
 		return loopErr
-	}
-
-	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
-	if eventErr != nil {
-		blog.Errorf("new reflector failed, err: %v", eventErr)
-		return eventErr
 	}
 
 	watchDB, dbErr := local.NewMgo(s.cfg.WatchMongo.GetMongoConf(), time.Minute)
@@ -112,18 +105,12 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return dbErr
 	}
 
-	c, cacheErr := cacheop.NewCache(event, loopW, engine.ServiceManageInterface, watchDB)
+	c, cacheErr := cacheop.NewCache(watcher, engine.ServiceManageInterface, watchDB)
 	if cacheErr != nil {
 		blog.Errorf("new cache instance failed, err: %v", cacheErr)
 		return cacheErr
 	}
 	s.cacheSet = c
-
-	watcher, watchErr := stream.NewLoopStream(s.cfg.Mongo.GetMongoConf(), engine.ServiceManageInterface)
-	if watchErr != nil {
-		blog.Errorf("new loop watch stream failed, err: %v", watchErr)
-		return watchErr
-	}
 
 	ccDB, dbErr := local.NewMgo(s.cfg.Mongo.GetMongoConf(), time.Minute)
 	if dbErr != nil {
