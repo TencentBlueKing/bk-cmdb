@@ -205,7 +205,7 @@ func (m *ShardingMongoManager) Tenant(tenant string) local.DB {
 		return local.NewErrDB(fmt.Errorf("db client %s is disabled", client.UUID()))
 	}
 
-	txnManager, err := m.tm.Tenant(false, tenant)
+	txnManager, err := m.tm.DB(client.UUID())
 	if err != nil {
 		return local.NewErrDB(err)
 	}
@@ -219,7 +219,7 @@ func (m *ShardingMongoManager) Tenant(tenant string) local.DB {
 
 // IgnoreTenant returns the master db client that do not use tenant
 func (m *ShardingMongoManager) IgnoreTenant() local.DB {
-	txnManager, err := m.tm.Tenant(true, "")
+	txnManager, err := m.tm.DB(m.masterCli.UUID())
 	if err != nil {
 		return local.NewErrDB(err)
 	}
@@ -249,12 +249,12 @@ func (m *ShardingMongoManager) Ping() error {
 
 // ExecForAllDB execute handler for all db clients
 func (m *ShardingMongoManager) ExecForAllDB(handler func(db local.DB) error) error {
-	txnManager, err := m.tm.Tenant(true, "")
-	if err != nil {
-		return fmt.Errorf("get txn manager failed, err: %v", err)
-	}
-
 	for uuid, client := range m.dbClientMap {
+		txnManager, err := m.tm.DB(client.UUID())
+		if err != nil {
+			return fmt.Errorf("get txn manager failed, err: %v", err)
+		}
+
 		db, err := local.NewMongo(client, txnManager, m.conf, &local.MongoOptions{IgnoreTenant: true})
 		if err != nil {
 			return fmt.Errorf("generate %s db client failed, err: %v", uuid, err)
