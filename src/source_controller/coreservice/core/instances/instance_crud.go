@@ -52,7 +52,6 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 			params[idx][common.BKObjIDField] = objID
 		}
 		params[idx].Set(instIDFieldName, ids[idx])
-		params[idx].Set(common.TenantID, kit.TenantID)
 		params[idx].Set(common.CreateTimeField, ts)
 		params[idx].Set(common.LastTimeField, ts)
 
@@ -67,7 +66,6 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 		mapping := make(mapstr.MapStr, 0)
 		mapping[instIDFieldName] = ids[idx]
 		mapping[common.BKObjIDField] = objID
-		mapping[common.TenantID] = kit.TenantID
 
 		mappings = append(mappings, mapping)
 	}
@@ -115,7 +113,6 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		inputParam[common.BKObjIDField] = objID
 	}
 	ts := time.Now()
-	inputParam.Set(common.TenantID, kit.TenantID)
 	inputParam.Set(common.CreateTimeField, ts)
 	inputParam.Set(common.LastTimeField, ts)
 
@@ -128,7 +125,6 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		mapping := make(mapstr.MapStr, 0)
 		mapping[instIDFieldName] = ids[0]
 		mapping[common.BKObjIDField] = objID
-		mapping[common.TenantID] = kit.TenantID
 
 		// save instance object type mapping.
 		if err := mongodb.Shard(kit.ShardOpts()).Table("cc_ObjectBaseMapping").Insert(kit.Ctx, mapping); err != nil {
@@ -221,6 +217,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 
 func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapStr) (origins []mapstr.MapStr,
 	exists bool, err error) {
+
 	origins = make([]mapstr.MapStr, 0)
 	tableName := common.GetInstTableName(objID, kit.TenantID)
 	if !valid.IsInnerObject(objID) {

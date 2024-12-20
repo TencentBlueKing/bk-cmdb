@@ -68,7 +68,6 @@ Create Model Property (Permission: Model Edit Permission)
     "request_id": "e43da4ef221746868dc4c837d36f3807",
 	"data": {
 		"id": 7,
-		"bk_supplier_account": "0",
 		"bk_obj_id": "cc_test_inst",
 		"bk_property_id": "cc_test",
 		"bk_property_name": "cc_test",
@@ -100,35 +99,34 @@ Create Model Property (Permission: Model Edit Permission)
 
 #### response
 
-| Field       | Type   | Description                                                  |
-| ---------- | ------ | ------------------------------------------------------------ |
+| Field      | Type   | Description                                                                 |
+|------------|--------|-----------------------------------------------------------------------------|
 | result     | bool   | Indicates whether the request was successful. true: success; false: failure |
-| code       | int    | Error code. 0 indicates success, >0 indicates failure error  |
-| message    | string | Error message returned in case of request failure            |
-| permission | object | Permission information                                       |
-| request_id | string | Request chain ID                                             |
-| data       | object | Data returned in the request                                 |
+| code       | int    | Error code. 0 indicates success, >0 indicates failure error                 |
+| message    | string | Error message returned in case of request failure                           |
+| permission | object | Permission information                                                      |
+| request_id | string | Request chain ID                                                            |
+| data       | object | Data returned in the request                                                |
 
 #### data
 
-| Field                  | Type   | Description                                                  |
-| ---------------------- | ------ | ------------------------------------------------------------ |
-| creator                | string | Data creator                                                 |
-| description            | string | Data description                                             |
-| editable               | bool   | Indicates whether the data is editable                       |
-| isonly                 | bool   | Indicates uniqueness                                         |
-| ispre                  | bool   | true: Preset field, false: Non-built-in field                |
-| isreadonly             | bool   | true: Read-only, false: Non-read-only                        |
-| isrequired             | bool   | true: Required, false: Optional                              |
+| Field                  | Type   | Description                                                                             |
+|------------------------|--------|-----------------------------------------------------------------------------------------|
+| creator                | string | Data creator                                                                            |
+| description            | string | Data description                                                                        |
+| editable               | bool   | Indicates whether the data is editable                                                  |
+| isonly                 | bool   | Indicates uniqueness                                                                    |
+| ispre                  | bool   | true: Preset field, false: Non-built-in field                                           |
+| isreadonly             | bool   | true: Read-only, false: Non-read-only                                                   |
+| isrequired             | bool   | true: Required, false: Optional                                                         |
 | option                 | string | User-defined content, the content and format stored are determined by the calling party |
-| unit                   | string | Unit                                                         |
-| placeholder            | string | Placeholder                                                  |
-| bk_property_group      | string | Field column name                                            |
-| bk_obj_id              | string | Model ID                                                     |
-| bk_supplier_account    | string | Vendor account                                               |
-| bk_property_id         | string | Model property ID                                            |
-| bk_property_name       | string | Model property name used for display                         |
-| bk_property_type       | string | Defined attribute field used to store data types             |
-| bk_property_group_name | string | Field column name                                            |
-| ismultiple             | bool   | Whether the field supports multiple selections               |
-| default                | object | Property default value                                       |
+| unit                   | string | Unit                                                                                    |
+| placeholder            | string | Placeholder                                                                             |
+| bk_property_group      | string | Field column name                                                                       |
+| bk_obj_id              | string | Model ID                                                                                |
+| bk_property_id         | string | Model property ID                                                                       |
+| bk_property_name       | string | Model property name used for display                                                    |
+| bk_property_type       | string | Defined attribute field used to store data types                                        |
+| bk_property_group_name | string | Field column name                                                                       |
+| ismultiple             | bool   | Whether the field supports multiple selections                                          |
+| default                | object | Property default value                                                                  |

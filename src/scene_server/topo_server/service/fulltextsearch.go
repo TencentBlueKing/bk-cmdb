@@ -448,7 +448,7 @@ func (r *FullTextSearchReq) GenerateESQuery() (elastic.Query, []string, []*FullT
 }
 
 // fullTextAggregation count aggregations in multi goroutines mode.
-func (s *Service) fullTextAggregation(ctx *rest.Contexts, esQueries []*FullTextSearchESQuery) ([]Aggregation, error) {
+func (s *Service) fullTextAggregation(kit *rest.Kit, esQueries []*FullTextSearchESQuery) ([]Aggregation, error) {
 	// elastic pipeline sub aggregation search.
 	var (
 		pipelineErr error
@@ -468,17 +468,17 @@ func (s *Service) fullTextAggregation(ctx *rest.Contexts, esQueries []*FullTextS
 		wg.Add(1)
 
 		// start one search gcoroutine.
-		go func(ctx *rest.Contexts, idx int, esQuery *FullTextSearchESQuery) {
+		go func(kit *rest.Kit, idx int, esQuery *FullTextSearchESQuery) {
 			defer func() {
 				// one search gcoroutine done.
 				wg.Done()
 				<-pipeline
 			}()
 
-			count, err := s.Es.Count(ctx.Kit.Ctx, esQuery.Query, []string{esQuery.Condition.IndexName})
+			count, err := s.Es.Count(kit.Ctx, esQuery.Query, []string{esQuery.Condition.IndexName})
 			if err != nil {
 				blog.Errorf("fulltext search count failed,query cond: %s err: %+v, rid: %s", esQuery.Query, err,
-					ctx.Kit.Rid)
+					kit.Rid)
 				pipelineErr = err
 				return
 			}
@@ -493,7 +493,7 @@ func (s *Service) fullTextAggregation(ctx *rest.Contexts, esQueries []*FullTextS
 			}
 			aggregationQueryTmp[idx] = aggregation
 
-		}(ctx, idx, query)
+		}(kit, idx, query)
 	}
 
 	// wait for searches done.
@@ -530,7 +530,7 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 	for _, hit := range hits {
 		source := make(map[string]interface{})
 		if err := json.Unmarshal(hit.Source, &source); err != nil {
-			blog.Warnf("fulltext handle search result source data failed, err: %+v,  rid: %s", err, ctx.Kit.Rid)
+			blog.Warnf("fulltext handle search result source data failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			continue
 		}
 		objectID := util.GetStrByInterface(source[metadata.IndexPropertyBKObjID])
@@ -556,17 +556,17 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 		}
 	}
 
-	blog.V(5).Infof("fulltext metadata query models: %s, instances: %s, rid: %s",
-		objectIDs, instMetadataConditions, ctx.Kit.Rid)
+	blog.V(5).Infof("fulltext metadata query models: %+v, instances: %+v, rid: %s", objectIDs, instMetadataConditions,
+		ctx.Kit.Rid)
 	// set read preference.
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// query metadata object.
-	searchObjectResults := s.fullTextSearchForObject(ctx, objectIDs, objHits, request)
+	searchObjectResults := s.fullTextSearchForObject(ctx.Kit, objectIDs, objHits, request)
 	searchResults = append(searchResults, searchObjectResults...)
 
 	// query metadata instance.
-	searchInstanceResults := s.fullTextSearchForInstance(ctx, instMetadataConditions, insHits, request)
+	searchInstanceResults := s.fullTextSearchForInstance(ctx.Kit, instMetadataConditions, insHits, request)
 	searchResults = append(searchResults, searchInstanceResults...)
 	return searchResults, nil
 }
@@ -606,12 +606,12 @@ func fullTextSearchForInstanceCond(objectID string, ids []int64) *metadata.Searc
 }
 
 // fullTextSearchForInstance search instance result.
-func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataConditions map[string][]int64,
+func (s *Service) fullTextSearchForInstance(kit *rest.Kit, instMetadataConditions map[string][]int64,
 	insHits map[string]map[int64]*elastic.SearchHit, request FullTextSearchReq) []SearchResult {
 
 	searchResults := make([]SearchResult, 0)
 	if len(instMetadataConditions) == 0 {
-		blog.Errorf("inst metadata cond is invalid, cond: %+v, rid: %s", instMetadataConditions, ctx.Kit.Rid)
+		blog.Errorf("inst metadata cond is invalid, cond: %+v, rid: %s", instMetadataConditions, kit.Rid)
 		return nil
 	}
 
@@ -634,17 +634,16 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 
 			input = fullTextSearchForInstanceCond(objectID, ids)
 			// search object instances.
-			result, err := s.Logics.InstOperation().SearchObjectInstances(ctx.Kit, objectID, input)
+			result, err := s.Logics.InstOperation().SearchObjectInstances(kit, objectID, input)
 			if err != nil {
-				blog.Errorf("search obj instances fail, objID: %s, ids: %v, rid: %s", objectID, ids, ctx.Kit.Rid)
+				blog.Errorf("search obj instances fail, objID: %s, ids: %v, rid: %s", objectID, ids, kit.Rid)
 				firstErr = err
 				return
 			}
 
 			for _, instance := range result.Info {
-
 				if _, ok := instance.(*mapstr.MapStr); !ok {
-					blog.Errorf("get inst struct fail, objectID: %v, rid: %s", objectID, ctx.Kit.Rid)
+					blog.Errorf("get inst struct fail, objectID: %v, rid: %s", objectID, kit.Rid)
 					continue
 				}
 				var idStr string
@@ -664,20 +663,20 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 					idStr, err = inst.String(common.BKInstIDField)
 				}
 				if err != nil {
-					blog.Errorf("get instId fail, objectID: %v,rid: %s", objectID, ctx.Kit.Rid)
+					blog.Errorf("get instId fail, objectID: %v, rid: %s", objectID, kit.Rid)
 					continue
 				}
 
 				id, err := strconv.ParseInt(idStr, 10, 64)
 				if err != nil {
-					blog.Errorf("parse instId fail, objectID: %v, rid: %s", objectID, ctx.Kit.Rid)
+					blog.Errorf("parse instId fail, objectID: %v, rid: %s", objectID, kit.Rid)
 					continue
 				}
 
 				// instance result
 				searchRes := SearchResult{}
 				rawString := strings.Trim(request.QueryString, "*")
-				searchRes.setHit(ctx.Kit.Ctx, insHits[objectID][id], request.BizID, rawString)
+				searchRes.setHit(kit.Ctx, insHits[objectID][id], request.BizID, rawString)
 				searchRes.Kind = metadata.DataKindInstance
 				searchRes.Key = objectID
 				searchRes.Source = instance
@@ -697,7 +696,7 @@ func (s *Service) fullTextSearchForInstance(ctx *rest.Contexts, instMetadataCond
 }
 
 // fullTextSearchForObject search object result.
-func (s *Service) fullTextSearchForObject(ctx *rest.Contexts, objectIDs []string,
+func (s *Service) fullTextSearchForObject(kit *rest.Kit, objectIDs []string,
 	objHits map[string]*elastic.SearchHit, request FullTextSearchReq) []SearchResult {
 
 	modelCondition := &metadata.QueryCondition{
@@ -707,14 +706,14 @@ func (s *Service) fullTextSearchForObject(ctx *rest.Contexts, objectIDs []string
 		DisableCounter: true,
 	}
 
-	objects, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(ctx.Kit.Ctx, ctx.Kit.Header, modelCondition)
+	objects, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, modelCondition)
 	if err != nil {
-		blog.Errorf("get objects(%+v) failed, err: %v, rid: %s", objectIDs, err, ctx.Kit.Rid)
+		blog.Errorf("get objects(%+v) failed, err: %v, rid: %s", objectIDs, err, kit.Rid)
 		return nil
 	}
 
 	if objects.Count == 0 {
-		blog.Errorf("meet the modelCond object is empty, modelCond: %+v, rid: %s", modelCondition, ctx.Kit.Rid)
+		blog.Errorf("meet the modelCond object is empty, modelCond: %+v, rid: %s", modelCondition, kit.Rid)
 		return nil
 	}
 
@@ -723,7 +722,7 @@ func (s *Service) fullTextSearchForObject(ctx *rest.Contexts, objectIDs []string
 	for _, object := range objects.Info {
 		searchRes := SearchResult{}
 		rawString := strings.Trim(request.QueryString, "*")
-		searchRes.setHit(ctx.Kit.Ctx, objHits[object.ObjectID], request.BizID, rawString)
+		searchRes.setHit(kit.Ctx, objHits[object.ObjectID], request.BizID, rawString)
 		searchRes.Kind = metadata.DataKindModel
 		searchRes.Key = object.ObjectID
 		searchRes.Source = object
@@ -754,7 +753,7 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	}
 
 	if err := request.Validate(); err != nil {
-		blog.Errorf("validate fulltext search input parameters failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("validate fulltext search input parameters failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, err.Error()))
 		return
 	}
@@ -764,16 +763,16 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 
 	mainESQuery, err := esQuery.Source()
 	if err != nil {
-		blog.Errorf("fulltext parse mainESQuery fail: err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("fulltext parse mainESQuery fail: err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
 		return
 	}
-	blog.V(5).Infof("fulltext main query[%s], indexes[%s], rid: %s", mainESQuery, indexes, ctx.Kit.Rid)
+	blog.V(5).Infof("fulltext main query: %s, indexes: %v, rid: %s", mainESQuery, indexes, ctx.Kit.Rid)
 
 	// main search.
 	mainSearchResult, err := s.Es.Search(ctx.Kit.Ctx, esQuery, indexes, request.Page.Start, request.Page.Limit)
 	if err != nil {
-		blog.Errorf("fulltext main search failed,mainESQuery: %s err: %+v, rid: %s", mainESQuery, err, ctx.Kit.Rid)
+		blog.Errorf("fulltext main search failed, mainESQuery: %+v, err: %v, rid: %s", mainESQuery, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
 		return
 	}
@@ -785,9 +784,9 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	}
 
 	// aggregation search.
-	aggregations, err := s.fullTextAggregation(ctx, subCountQueries)
+	aggregations, err := s.fullTextAggregation(ctx.Kit, subCountQueries)
 	if err != nil {
-		blog.Errorf("fulltext sub-count search failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("fulltext sub-count search failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrorTopoFullTextFindErr))
 		return
 	}

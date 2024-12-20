@@ -79,7 +79,6 @@ func (s *service) creatNamespace(kit *rest.Kit, req *types.NsCreateOption) (*met
 	auditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	for idx := range req.Data {
 		req.Data[idx].ID = data.IDs[idx]
-		req.Data[idx].TenantID = kit.TenantID
 	}
 	auditLogs, err := audit.GenerateNamespaceAuditLog(auditParam, req.Data)
 	if err != nil {

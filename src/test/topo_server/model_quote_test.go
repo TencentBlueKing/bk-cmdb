@@ -83,7 +83,6 @@ var _ = Describe("model quote type test", func() {
 			option := metadata.ObjAttDes{
 				Attribute: metadata.Attribute{
 					ObjectID:      modelQuoteObj.ObjectID,
-					TenantID:      "0",
 					Creator:       "admin",
 					PropertyID:    "model_quote_prop",
 					PropertyName:  "model_quote_prop",
@@ -143,7 +142,6 @@ var _ = Describe("model quote type test", func() {
 			option := metadata.ObjAttDes{
 				Attribute: metadata.Attribute{
 					ObjectID:      "model_quote_test_obj_noexist",
-					TenantID:      "0",
 					Creator:       "admin",
 					PropertyID:    "model_quote_prop",
 					PropertyName:  "model_quote_prop",
@@ -185,7 +183,6 @@ var _ = Describe("model quote type test", func() {
 			option := metadata.ObjAttDes{
 				Attribute: metadata.Attribute{
 					ObjectID:      modelQuoteObj.ObjectID,
-					TenantID:      "0",
 					Creator:       "admin",
 					PropertyID:    "model_quote_prop",
 					PropertyName:  "model_quote_prop",

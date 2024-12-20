@@ -301,7 +301,6 @@ func (m *associationInstance) CreateOneInstanceAssociation(kit *rest.Kit,
 func (m *associationInstance) checkInstAsstCreateData(kit *rest.Kit, inputParam metadata.CreateOneInstanceAssociation) (
 	metadata.AssociationMapping, error) {
 
-	inputParam.Data.TenantID = kit.TenantID
 	exists, err := m.isExists(kit, inputParam.Data.InstID, inputParam.Data.AsstInstID, inputParam.Data.ObjectAsstID,
 		inputParam.Data.ObjectID, inputParam.Data.BizID)
 	if err != nil {
@@ -352,7 +351,6 @@ func (m *associationInstance) checkInstAsstCreateData(kit *rest.Kit, inputParam 
 
 	checkAssoCond := mongo.NewCondition()
 	checkAssoCond.Element(&mongo.Eq{Key: common.AssociationObjAsstIDField, Val: inputParam.Data.ObjectAsstID})
-	checkAssoCond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	assoItems, err := m.search(kit, checkAssoCond)
 	if err != nil {
 		blog.Errorf("search associations with condition: %v failed, err: %v, rid: %s",

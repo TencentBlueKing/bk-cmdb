@@ -567,7 +567,6 @@ func (a *attribute) checkAttributeGroupExist(kit *rest.Kit, data *metadata.Attri
 			GroupName:  common.BKBizDefault,
 			GroupID:    common.BKBizDefault,
 			ObjectID:   data.ObjectID,
-			TenantID:   data.TenantID,
 			BizID:      data.BizID,
 		}
 
@@ -627,7 +626,6 @@ func (a *attribute) createTableModelAndAttributeGroup(kit *rest.Kit, data *metad
 		Modifier:   string(metadata.FromCCSystem),
 		CreateTime: &t,
 		LastTime:   &t,
-		TenantID:   kit.TenantID,
 	}
 
 	objRsp, err := a.clientSet.CoreService().Model().CreateTableModel(kit.Ctx, kit.Header,
@@ -646,7 +644,6 @@ func (a *attribute) createTableModelAndAttributeGroup(kit *rest.Kit, data *metad
 		GroupName:  "Default",
 		GroupID:    NewGroupID(true),
 		ObjectID:   objID,
-		TenantID:   obj.TenantID,
 	}
 
 	_, err = a.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header,
@@ -695,7 +692,6 @@ func (a *attribute) CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Att
 		return nil, err
 	}
 
-	data.TenantID = kit.TenantID
 	if err := a.createModelQuoteRelation(kit, data.ObjectID, data.PropertyID); err != nil {
 		return nil, err
 	}
@@ -891,7 +887,6 @@ func (a *attribute) CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribut
 		return nil, err
 	}
 
-	data.TenantID = kit.TenantID
 	input := metadata.CreateModelAttributes{Attributes: []metadata.Attribute{*data}}
 	resp, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, data.ObjectID, &input)
 	if err != nil {
@@ -1481,7 +1476,6 @@ func removeIrrelevantValues(data mapstr.MapStr) {
 	data.Remove(common.CreateTimeField)
 	data.Remove(common.ModifierField)
 	data.Remove(common.LastTimeField)
-	data.Remove(common.TenantID)
 	data.Remove(common.BKTemplateID)
 	data.Remove(common.BKFieldID)
 	data.Remove(common.BKPropertyTypeField)
@@ -1683,7 +1677,6 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 			continue
 		}
 
-		attr.TenantID = kit.TenantID
 		attr.ObjectID = objID
 		if err := a.isValid(kit, true, &attr); err != nil {
 			blog.Errorf("attribute(%#v) is invalid, err: %v, rid: %s", attr, err, kit.Rid)
@@ -1699,7 +1692,7 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 			} else {
 				grp := metadata.CreateModelAttributeGroup{
 					Data: metadata.Group{GroupName: attr.PropertyGroupName, GroupID: NewGroupID(false), ObjectID: objID,
-						TenantID: kit.TenantID, BizID: attr.BizID,
+						BizID: attr.BizID,
 					}}
 
 				_, err := a.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, objID, grp)

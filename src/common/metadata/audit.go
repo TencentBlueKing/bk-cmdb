@@ -176,8 +176,6 @@ type AuditLog struct {
 	// AuditType is a high level abstract of the resource managed by this cmdb.
 	// Each kind of concept, resource must belongs to one of the resource type.
 	AuditType AuditType `json:"audit_type" bson:"audit_type"`
-	// the supplier account that this resource belongs to.
-	TenantID string `json:"tenant_id" bson:"tenant_id"`
 	// name of the one who triggered this operation.
 	User string `json:"user" bson:"user"`
 	// the operated resource by the user
@@ -277,7 +275,6 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	}
 	auditLog.ID = audit.ID
 	auditLog.AuditType = audit.AuditType
-	auditLog.TenantID = audit.TenantID
 	auditLog.User = audit.User
 	auditLog.ResourceType = audit.ResourceType
 	auditLog.Action = audit.Action
@@ -341,7 +338,6 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	}
 	auditLog.ID = audit.ID
 	auditLog.AuditType = audit.AuditType
-	auditLog.TenantID = audit.TenantID
 	auditLog.User = audit.User
 	auditLog.ResourceType = audit.ResourceType
 	auditLog.Action = audit.Action
@@ -400,7 +396,6 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 	audit := bsonAuditLog{}
 	audit.ID = auditLog.ID
 	audit.AuditType = auditLog.AuditType
-	audit.TenantID = auditLog.TenantID
 	audit.User = auditLog.User
 	audit.ResourceType = auditLog.ResourceType
 	audit.Action = auditLog.Action

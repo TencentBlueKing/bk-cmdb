@@ -62,7 +62,6 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string,
 	inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
 	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
-	inputParam.Data.Set(common.TenantID, kit.TenantID)
 	bizID, err := m.getBizIDFromInstance(kit, objID, inputParam.Data, common.ValidCreate, 0)
 	if err != nil {
 		blog.Errorf("CreateModelInstance failed, getBizIDFromInstance err:%v, objID:%s, data:%#v, rid:%s", err, objID,
@@ -126,7 +125,6 @@ func (m *instanceManager) CreateManyModelInstance(kit *rest.Kit,
 			blog.ErrorJSON("the model instance data can't be empty, input data: %s rid: %s", inputParam.Datas, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
 		}
-		item.Set(common.TenantID, kit.TenantID)
 
 		validator := instValidators[index]
 		if validator == nil {
@@ -208,10 +206,9 @@ func (m *instanceManager) BatchCreateModelInstance(kit *rest.Kit, objID string,
 
 	for idx := range inputParam.Data {
 		if inputParam.Data[idx] == nil {
-			blog.ErrorJSON("the model instance data can't be empty, input data: %s, rid: %s", inputParam.Data, kit.Rid)
+			blog.Errorf("the model instance data can't be empty, input data: %+v, rid: %s", inputParam.Data, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommInstDataNil, "modelInstance")
 		}
-		inputParam.Data[idx].Set(common.TenantID, kit.TenantID)
 
 		validator := instValidators[idx]
 		if validator == nil {
@@ -570,13 +567,12 @@ func (m *instanceManager) CountModelInstances(kit *rest.Kit,
 }
 
 // DeleteModelInstance TODO
-func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string,
-	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
+func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, inputParam metadata.DeleteOption) (
+	*metadata.DeletedCount, error) {
+
 	instIDs := make([]int64, 0)
 	tableName := common.GetInstTableName(objID, kit.TenantID)
 	instIDFieldName := common.GetInstIDField(objID)
-
-	inputParam.Condition.Set(common.TenantID, kit.TenantID)
 
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
 	if err != nil {

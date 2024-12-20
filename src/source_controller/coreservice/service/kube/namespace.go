@@ -84,7 +84,6 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 			CreateTime: now,
 			LastTime:   now,
 		}
-		data.TenantID = ctx.Kit.TenantID
 		namespaces[idx] = data
 
 		if cluster.BizID == data.BizID {

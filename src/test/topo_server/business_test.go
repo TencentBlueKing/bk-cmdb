@@ -6,6 +6,8 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
@@ -21,7 +23,6 @@ var _ = Describe("business test", func() {
 
 	It("create business bk_biz_name = 'eereeede'", func() {
 		test.DeleteAllBizs()
-
 		input := map[string]interface{}{
 			"life_cycle":        "2",
 			"language":          "1",
@@ -112,7 +113,12 @@ var _ = Describe("business test", func() {
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.Count).To(Equal(3))
+		switch httpheader.GetTenantID(header) {
+		case common.BKDefaultTenantID:
+			Expect(rsp.Data.Count).To(Equal(3))
+		default:
+			Expect(rsp.Data.Count).To(Equal(2))
+		}
 		Expect(len(rsp.Data.Info)).To(Equal(1))
 	})
 
@@ -132,7 +138,12 @@ var _ = Describe("business test", func() {
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.Count).To(Equal(3))
+		switch httpheader.GetTenantID(header) {
+		case common.BKDefaultTenantID:
+			Expect(rsp.Data.Count).To(Equal(3))
+		default:
+			Expect(rsp.Data.Count).To(Equal(2))
+		}
 	})
 
 	It("search business using bk_biz_tester", func() {
@@ -190,7 +201,12 @@ var _ = Describe("business test", func() {
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.Count).To(Equal(3))
+		switch httpheader.GetTenantID(header) {
+		case common.BKDefaultTenantID:
+			Expect(rsp.Data.Count).To(Equal(3))
+		default:
+			Expect(rsp.Data.Count).To(Equal(2))
+		}
 	})
 
 	It("search business using life_cycle", func() {
@@ -317,7 +333,12 @@ var _ = Describe("business test", func() {
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
-		Expect(rsp.Data.Count).To(Equal(2))
+		switch httpheader.GetTenantID(header) {
+		case common.BKDefaultTenantID:
+			Expect(rsp.Data.Count).To(Equal(2))
+		default:
+			Expect(rsp.Data.Count).To(Equal(1))
+		}
 		Expect(rsp.Data.Info).To(ContainElement(ContainElement("cdewdercfee")))
 		Expect(rsp.Data.Info).NotTo(ContainElement(ContainElement("eereeede")))
 		Expect(rsp.Data.Info).NotTo(ContainElement(ContainElement("mmrmm")))
@@ -435,8 +456,13 @@ var _ = Describe("business test", func() {
 	})
 
 	It(fmt.Sprintf("delete default business bk_biz_id = 1"), func() {
+		bizResult := new(metadata.BizInst)
+		dbErr := test.GetDB().Table(common.BKTableNameBaseApp).Find(mapstr.MapStr{
+			common.BKAppNameField: common.DefaultAppName}).Fields(common.BKAppIDField).One(context.Background(),
+			bizResult)
+		Expect(dbErr).NotTo(HaveOccurred())
 		input := metadata.DeleteBizParam{
-			BizID: []int64{1},
+			BizID: []int64{bizResult.BizID},
 		}
 
 		err := apiServerClient.DeleteBiz(context.Background(), header, input)

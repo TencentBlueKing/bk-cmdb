@@ -763,11 +763,9 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 // SearchOwnerResourcePoolBusiness search archived business by condition
 func (s *Service) SearchOwnerResourcePoolBusiness(ctx *rest.Contexts) {
 
-	tenantID := ctx.Request.PathParameter("owner_id")
 	query := metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			common.BKDefaultField: common.DefaultAppFlag,
-			common.TenantID:       tenantID,
 		},
 	}
 

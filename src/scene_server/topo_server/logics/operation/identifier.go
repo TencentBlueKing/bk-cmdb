@@ -79,7 +79,7 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, param *metadata.SearchIdent
 	hostRet, err := g.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
 		common.BKInnerObjIDHost, hostQuery)
 	if err != nil {
-		blog.Errorf("query host failed, err: %v, condition:%s, rid:%s", err, hostQuery, kit.Rid)
+		blog.Errorf("query host failed, err: %v, condition: %+v, rid:%s", err, hostQuery, kit.Rid)
 		return nil, err
 	}
 
@@ -91,7 +91,7 @@ func (g *identifier) SearchIdentifier(kit *rest.Kit, param *metadata.SearchIdent
 	for _, hostInfo := range hostRet.Info {
 		hostID, err := hostInfo.Int64(common.BKHostIDField)
 		if err != nil {
-			blog.Errorf("bk_host_id not int. error: %v, host info:%s, rid:%s", err, hostInfo, kit.Rid)
+			blog.Errorf("bk_host_id not int, error: %v, host info: %+v, rid: %s", err, hostInfo, kit.Rid)
 			return nil, kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
 				common.BKHostIDField, "int64", err.Error())
 		}

@@ -1169,18 +1169,15 @@ func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field strin
 
 // ServiceTemplateAttr service template attributes, used to generate module, should not include non-editable fields
 type ServiceTemplateAttr struct {
-	ID int64 `json:"id" bson:"id"`
-
+	ID                int64       `json:"id" bson:"id"`
 	BizID             int64       `json:"bk_biz_id" bson:"bk_biz_id"`
 	ServiceTemplateID int64       `json:"service_template_id" bson:"service_template_id"`
 	AttributeID       int64       `json:"bk_attribute_id" bson:"bk_attribute_id"`
 	PropertyValue     interface{} `json:"bk_property_value" bson:"bk_property_value"`
-
-	Creator    string    `json:"creator" bson:"creator"`
-	Modifier   string    `json:"modifier" bson:"modifier"`
-	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	LastTime   time.Time `json:"last_time" bson:"last_time"`
-	TenantID   string    `json:"tenant_id" bson:"tenant_id"`
+	Creator           string      `json:"creator" bson:"creator"`
+	Modifier          string      `json:"modifier" bson:"modifier"`
+	CreateTime        time.Time   `json:"create_time" bson:"create_time"`
+	LastTime          time.Time   `json:"last_time" bson:"last_time"`
 }
 
 // Validate ServiceTemplateAttr

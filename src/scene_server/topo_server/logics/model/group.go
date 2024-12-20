@@ -43,8 +43,6 @@ type GroupOperationInterface interface {
 	UpdateObjectAttributeGroup(kit *rest.Kit, cond []metadata.PropertyGroupObjectAtt, modelBizID int64) error
 	// ExchangeObjectGroupIndex exchange the group index of two groups
 	ExchangeObjectGroupIndex(kit *rest.Kit, ids []int64) error
-	// DeleteObjectAttributeGroup delete object attribute group
-	DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, groupID string) error
 	// SetProxy SetProxy
 	SetProxy(obj ObjectOperationInterface)
 }
@@ -282,7 +280,6 @@ func (g *group) UpdateObjectAttributeGroup(kit *rest.Kit, conds []metadata.Prope
 	for _, cond := range conds {
 		input := metadata.UpdateOption{
 			Condition: mapstr.MapStr{
-				common.TenantID:          cond.Condition.TenantID,
 				common.BKObjIDField:      cond.Condition.ObjectID,
 				common.BKPropertyIDField: cond.Condition.PropertyID,
 			},
@@ -298,30 +295,6 @@ func (g *group) UpdateObjectAttributeGroup(kit *rest.Kit, conds []metadata.Prope
 			return err
 		}
 
-	}
-
-	return nil
-}
-
-// DeleteObjectAttributeGroup delete object attribute group
-func (g *group) DeleteObjectAttributeGroup(kit *rest.Kit, objID, propertyID, groupID string) error {
-
-	input := metadata.UpdateOption{
-		Data: mapstr.MapStr{
-			common.BKPropertyIndexField: -1,
-			common.BKPropertyGroupField: common.BKDefaultField,
-		},
-		Condition: mapstr.MapStr{
-			common.BKObjIDField:         objID,
-			common.BKPropertyIDField:    propertyID,
-			common.BKPropertyGroupField: groupID,
-		},
-	}
-
-	_, err := g.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &input)
-	if err != nil {
-		blog.Errorf("delete object attribute group failed, err: %v, input: %#v, rid: %s", err, input, kit.Rid)
-		return err
 	}
 
 	return nil

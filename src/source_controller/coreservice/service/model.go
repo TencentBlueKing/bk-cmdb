@@ -318,7 +318,7 @@ func (s *coreService) SearchModelWithAttribute(ctx *rest.Contexts) {
 				switch dataResult.Info[modelIdx].Attributes[attributeIdx].PropertyType {
 				case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 					dataResult.Info[modelIdx].Attributes[attributeIdx].Option =
-						s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx],
+						s.TranslateEnumName(ctx.Kit, lang, &dataResult.Info[modelIdx].Attributes[attributeIdx],
 							dataResult.Info[modelIdx].Attributes[attributeIdx].Option)
 				}
 			}
@@ -681,7 +681,7 @@ func (s *coreService) SearchModelAttrsWithTableByCondition(ctx *rest.Contexts) {
 			result.Info[index].Placeholder = s.TranslatePlaceholder(lang, &result.Info[index])
 			switch result.Info[index].PropertyType {
 			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
-				result.Info[index].Option = s.TranslateEnumName(ctx.Kit.Ctx, lang, &result.Info[index],
+				result.Info[index].Option = s.TranslateEnumName(ctx.Kit, lang, &result.Info[index],
 					result.Info[index].Option)
 			case common.FieldTypeTable:
 				option, err := metadata.ParseSubAttribute(ctx.Kit.Ctx, result.Info[index].Option)
@@ -729,7 +729,7 @@ func (s *coreService) SearchModelAttributesByCondition(ctx *rest.Contexts) {
 			switch dataResult.Info[index].PropertyType {
 			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 				dataResult.Info[index].Option =
-					s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
+					s.TranslateEnumName(ctx.Kit, lang, &dataResult.Info[index], dataResult.Info[index].Option)
 			}
 		}
 	}
@@ -763,7 +763,7 @@ func (s *coreService) SearchModelAttributes(ctx *rest.Contexts) {
 			switch dataResult.Info[index].PropertyType {
 			case common.FieldTypeEnum, common.FieldTypeEnumMulti:
 				dataResult.Info[index].Option =
-					s.TranslateEnumName(ctx.Kit.Ctx, lang, &dataResult.Info[index], dataResult.Info[index].Option)
+					s.TranslateEnumName(ctx.Kit, lang, &dataResult.Info[index], dataResult.Info[index].Option)
 			}
 		}
 	}

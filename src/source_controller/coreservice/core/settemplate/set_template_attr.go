@@ -187,7 +187,6 @@ func (p *setTemplateOperation) CreateSetTempAttr(kit *rest.Kit, option *metadata
 			Modifier:      kit.User,
 			CreateTime:    now,
 			LastTime:      now,
-			TenantID:      kit.TenantID,
 		}
 	}
 

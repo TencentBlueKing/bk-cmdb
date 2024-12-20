@@ -4,10 +4,11 @@ Modify the business enable status based on the business ID and status value (Per
 
 ### Parameters
 
-| Name      | Type   | Required | Description                                  |
-|-----------|--------|----------|----------------------------------------------|
-| bk_biz_id | int    | Yes      | Business ID                                  |
-| flag      | string | Yes      | Enable status, either "disabled" or "enable" |
+| Name                | Type   | Required | Description                                                                                                        |
+|---------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id           | int    | Yes      | Business ID                                                                                                        |
+| flag                | string | Yes      | Enable status, either "disabled" or "enable"                                                                       |
+| bk_supplier_account | string | Yes      | This parameter is deprecated in the current version, you can provide any value to meet the interface requirements. |
 
 ### Request Example
 

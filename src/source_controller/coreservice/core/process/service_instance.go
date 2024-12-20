@@ -320,7 +320,6 @@ func (p *processOperation) ListServiceInstance(kit *rest.Kit,
 	}
 	filter := map[string]interface{}{
 		common.BKAppIDField: option.BusinessID,
-		common.TenantID:     kit.TenantID,
 	}
 
 	if option.ServiceTemplateID != 0 {

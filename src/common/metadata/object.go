@@ -60,16 +60,14 @@ type Object struct {
 	ObjIcon    string `field:"bk_obj_icon" json:"bk_obj_icon" bson:"bk_obj_icon" mapstructure:"bk_obj_icon"`
 	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id" mapstructure:"bk_obj_id"`
 	ObjectName string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name" mapstructure:"bk_obj_name"`
-
 	// IsHidden front-end don't display the object if IsHidden is true
-	IsHidden bool `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden" mapstructure:"bk_ishidden"`
-
+	IsHidden      bool   `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden" mapstructure:"bk_ishidden"`
 	IsPre         bool   `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
 	IsPaused      bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused" mapstructure:"bk_ispaused"`
 	Position      string `field:"position" json:"position" bson:"position" mapstructure:"position"`
-	TenantID      string `field:"tenant_id" json:"tenant_id" bson:"tenant_id" mapstructure:"tenant_id"`
 	Description   string `field:"description" json:"description" bson:"description" mapstructure:"description"`
 	Creator       string `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
+	TenantID      string `field:"tenant_id" json:"tenant_id" bson:"tenant_id" mapstructure:"tenant_id"`
 	Modifier      string `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
 	CreateTime    *Time  `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
 	LastTime      *Time  `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
@@ -247,7 +245,6 @@ type TopoItem struct {
 	ClassificationID string `json:"bk_classification_id"`
 	Position         string `json:"position"`
 	ObjID            string `json:"bk_obj_id"`
-	TenantID         string `json:"tenant_id"`
 	ObjName          string `json:"bk_obj_name"`
 }
 

@@ -121,7 +121,6 @@ type WorkloadBase struct {
 	NamespaceSpec `json:",inline" bson:",inline"`
 	ID            int64  `json:"id,omitempty" bson:"id"`
 	Name          string `json:"name,omitempty" bson:"name"`
-	TenantID      string `json:"tenant_id,omitempty" bson:"tenant_id"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }

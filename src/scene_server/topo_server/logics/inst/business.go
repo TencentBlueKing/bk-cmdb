@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -207,7 +206,7 @@ func (b *business) FindBiz(kit *rest.Kit, cond *metadata.QueryCondition) (count 
 
 	result, err := b.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDApp, cond)
 	if err != nil {
-		blog.Errorf("find business by query failed, condition: %s, err: %v, rid: %s", cond, err, kit.Rid)
+		blog.Errorf("find business by query failed, condition: %+v, err: %v, rid: %s", *cond, err, kit.Rid)
 		return 0, nil, err
 	}
 
@@ -500,7 +499,7 @@ func (b *business) genBriefTopologyNodeRelation(kit *rest.Kit, filter mapstr.Map
 func (b *business) GetResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 
 	cond := &metadata.QueryCondition{
-		Fields:    []string{common.BKAppIDField, common.TenantID},
+		Fields:    []string{common.BKAppIDField},
 		Condition: map[string]interface{}{common.BKDefaultField: common.DefaultAppFlag},
 	}
 
@@ -510,27 +509,18 @@ func (b *business) GetResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 		return 0, err
 	}
 
-	for idx, biz := range rsp.Info {
-		bizTenantID, err := biz.String(common.TenantID)
+	for idx := range rsp.Info {
+		if !rsp.Info[idx].Exists(common.BKAppIDField) {
+			blog.Errorf("bk_biz_id is non-exist, rid: %s", kit.Rid)
+			// this can not be happen normally.
+			return 0, kit.CCError.CCError(common.CCErrTopoAppSearchFailed)
+		}
+		bizID, err := rsp.Info[idx].Int64(common.BKAppIDField)
 		if err != nil {
-			blog.Errorf("get business tenant id failed, err: %v, rid: %s", err, kit.Rid)
+			blog.Errorf("get business id failed, err: %v, rid: %s", err, kit.Rid)
 			return 0, err
 		}
-
-		if kit.TenantID == bizTenantID {
-			if !rsp.Info[idx].Exists(common.BKAppIDField) {
-				blog.Errorf("bk_biz_id is non-exist, rid: %s", kit.Rid)
-				// this can not be happen normally.
-				return 0, kit.CCError.CCError(common.CCErrTopoAppSearchFailed)
-			}
-			bizID, err := rsp.Info[idx].Int64(common.BKAppIDField)
-			if err != nil {
-				blog.Errorf("get business id failed, err: %v, rid: %s", err, kit.Rid)
-				return 0, err
-			}
-
-			return bizID, nil
-		}
+		return bizID, nil
 	}
 
 	return 0, kit.CCError.CCError(common.CCErrTopoAppSearchFailed)
@@ -755,9 +745,7 @@ func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.Mo
 func (b *business) validateDeleteModuleName(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption) (
 	metadata.PlatformSettingConfig, error) {
 
-	header := headerutil.BuildHeader(common.CCSystemOperatorUserName, common.BKDefaultTenantID)
-
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, header)
+	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
 	if err != nil {
 		return metadata.PlatformSettingConfig{}, err
 	}

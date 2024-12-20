@@ -40,15 +40,15 @@ func (i *instanceAuditLog) GenerateAuditLogByCondGetData(parameter *generateAudi
 	condition map[string]interface{}) ([]metadata.AuditLog, error) {
 	data, err := i.getInstByCond(parameter.kit, objID, condition, nil)
 	if err != nil {
-		blog.ErrorJSON("get instances failed, err: %s, condition: %s, rid: %s", err, condition, parameter.kit.Rid)
+		blog.Errorf("get instances failed, err: %v, condition: %+v, rid: %s", err, condition, parameter.kit.Rid)
 		return nil, err
 	}
 	return i.generateAuditLog(parameter, objID, data)
 }
 
 func (i *instanceAuditLog) generateAuditLog(parameter *generateAuditCommonParameter, objID string,
-	data []mapstr.MapStr) (
-	[]metadata.AuditLog, error) {
+	data []mapstr.MapStr) ([]metadata.AuditLog, error) {
+
 	auditLogs := make([]metadata.AuditLog, len(data))
 	kit := parameter.kit
 	isMainline, err := i.isMainline(parameter.kit, objID)

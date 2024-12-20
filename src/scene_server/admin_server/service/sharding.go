@@ -301,7 +301,6 @@ func (s *Service) saveUpdateShardingDBAudit(kit *rest.Kit, preConf, curConf *sha
 	audit := metadata.AuditLog{
 		ID:              int64(id),
 		AuditType:       metadata.Sharding,
-		TenantID:        kit.TenantID,
 		User:            kit.User,
 		ResourceType:    metadata.ShardingRes,
 		Action:          metadata.AuditUpdate,

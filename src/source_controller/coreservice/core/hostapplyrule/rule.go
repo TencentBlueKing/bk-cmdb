@@ -284,9 +284,7 @@ func (p *hostApplyRule) DeleteHostApplyRule(kit *rest.Kit, bizID int64,
 		return kit.CCError.CCErrorf(common.CCErrCommHTTPBodyEmpty)
 	}
 
-	filter := map[string]interface{}{
-		common.TenantID: kit.TenantID,
-	}
+	filter := make(map[string]interface{})
 	if bizID != 0 {
 		filter[common.BKAppIDField] = bizID
 	}
@@ -366,9 +364,7 @@ func (p *hostApplyRule) ListHostApplyRule(kit *rest.Kit, bizID int64,
 	option metadata.ListHostApplyRuleOption) (metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
 	result := metadata.MultipleHostApplyRuleResult{}
 
-	filter := map[string]interface{}{
-		common.TenantID: kit.TenantID,
-	}
+	filter := make(map[string]interface{})
 	if bizID != 0 {
 		filter[common.BKAppIDField] = bizID
 	}

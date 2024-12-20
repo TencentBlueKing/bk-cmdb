@@ -72,9 +72,9 @@ func addSetVersionField(ctx context.Context, db dal.RDB, conf *history.Config) e
 	}
 
 	now := metadata.Now()
-	attribute := metadata.Attribute{
+	attribute := Attribute{
 		ID:                int64(id),
-		TenantID:          conf.TenantID,
+		OwnerID:           conf.TenantID,
 		ObjectID:          common.BKInnerObjIDSet,
 		PropertyID:        "set_template_version",
 		PropertyName:      "集群模板",

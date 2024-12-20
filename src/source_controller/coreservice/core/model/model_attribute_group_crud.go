@@ -37,7 +37,6 @@ func (g *modelAttributeGroup) save(kit *rest.Kit, group metadata.Group) (uint64,
 	}
 
 	group.ID = int64(id)
-	group.TenantID = kit.TenantID
 
 	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNamePropertyGroup).Insert(kit.Ctx, group)
 	return id, err

@@ -206,8 +206,8 @@ func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 		}
 		grpName, ok := grpMap[attr.PropertyGroup]
 		if !ok {
-			blog.Errorf("failed to get property group name, attr: %+v, propertyGroup: %v, rid: %s",
-				attr, attr.PropertyGroup, ctx.Kit.Rid)
+			blog.Errorf("failed to get property group name, attr: %+v, propertyGroup: %v, grpMap: %v, rid: %s",
+				attr, attr.PropertyGroup, grpMap, ctx.Kit.Rid)
 			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKPropertyNameField))
 			return
 		}

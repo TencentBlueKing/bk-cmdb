@@ -869,9 +869,13 @@ var _ = Describe("audit test", func() {
 	})
 
 	It("search audit detail", func() {
-		id := []int64{1}
+		cond := make(map[string]interface{})
+		auditResult := new(metadata.AuditLog)
+		err := test.GetDB().Table(common.BKTableNameAuditLog).Find(cond).Fields("id").One(context.Background(),
+			auditResult)
+		Expect(err).NotTo(HaveOccurred())
 		input := &metadata.AuditDetailQueryInput{
-			IDs: id,
+			IDs: []int64{auditResult.ID},
 		}
 		rsp, err := instClient.SearchAuditDetail(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
