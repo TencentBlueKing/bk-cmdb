@@ -43,6 +43,8 @@ func addSetBaseData(kit *rest.Kit, db dal.Dal, bizID int64) (map[string]interfac
 	setData[common.BKInstParentStr] = bizID
 	setData[common.CreateTimeField] = time.Now()
 	setData[common.LastTimeField] = time.Now()
+	setData[common.BKSetDescField] = ""
+	setData[common.BKDescriptionField] = ""
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKAppIDField, common.BKSetNameField, common.BKInstParentStr},

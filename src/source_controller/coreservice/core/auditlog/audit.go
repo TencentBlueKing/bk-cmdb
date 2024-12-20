@@ -52,15 +52,10 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 			continue
 		}
 
-		if log.OperateFrom == "" {
-			log.OperateFrom = metadata.FromUser
-		}
 		// ResourceName is assigned index, length must be less than 1024, so resourceName only save NameFieldMaxLength.
 		if len(log.ResourceName) > common.NameFieldMaxLength {
 			log.ResourceName = log.ResourceName[:common.NameFieldMaxLength]
 		}
-		log.TenantID = kit.TenantID
-		log.User = kit.User
 		if appCode := httpheader.GetAppCode(kit.Header); len(appCode) > 0 {
 			log.AppCode = appCode
 		}

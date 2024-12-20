@@ -213,19 +213,6 @@ func (s *Service) initObjectAttribute(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
-func (s *Service) initObjectGroup(web *restful.WebService) {
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.Engine.CCErr,
-		Language: s.Engine.Language,
-	})
-
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete,
-		Path:    "/objectatt/group/owner/{owner_id}/object/{bk_object_id}/propertyids/{property_id}/groupids/{group_id}",
-		Handler: s.DeleteObjectAttributeGroup})
-
-	utility.AddToRestfulWebService(web)
-}
-
 func (s *Service) initObject(web *restful.WebService) {
 	utility := rest.NewRestUtility(rest.Config{
 		ErrorIf:  s.Engine.CCErr,
@@ -314,7 +301,6 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initSet(web)
 	s.initObject(web)
 	s.initObjectAttribute(web)
-	s.initObjectGroup(web)
 	s.initIdentifier(web)
 	s.initProject(web)
 

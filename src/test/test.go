@@ -210,8 +210,14 @@ func DeleteAllBizs() {
 	biz := make([]metadata.BizInst, 0)
 	bizCond := mapstr.MapStr{common.BKAppNameField: mapstr.MapStr{common.BKDBNIN: []string{"资源池", "蓝鲸"}}}
 	err := tenant.ExecForAllTenants(func(tenantID string) error {
-		return db.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(common.BKTableNameBaseApp).Find(bizCond).Fields(common.BKAppIDField).
-			All(ctx, &biz)
+		tenantBiz := make([]metadata.BizInst, 0)
+		err := db.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(common.BKTableNameBaseApp).Find(bizCond).Fields(common.BKAppIDField).
+			All(ctx, &tenantBiz)
+		if err != nil {
+			return err
+		}
+		biz = append(biz, tenantBiz...)
+		return nil
 	})
 	Expect(err).NotTo(HaveOccurred())
 
@@ -237,7 +243,8 @@ func DeleteAllBizs() {
 	delCond := mapstr.MapStr{common.BKAppIDField: mapstr.MapStr{common.BKDBIN: bizIDs}}
 	for _, table := range tableNames {
 		err = tenant.ExecForAllTenants(func(tenantID string) error {
-			return db.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(table).Delete(ctx, delCond)
+			return db.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(table).Delete(ctx,
+				delCond)
 		})
 		Expect(err).NotTo(HaveOccurred())
 	}
@@ -272,7 +279,7 @@ func DeleteAllObjects() {
 	err := tenant.ExecForAllTenants(func(tenantID string) error {
 		shardOpts := sharding.NewShardOpts().WithTenant(tenantID)
 		err := db.Shard(shardOpts).Table(common.BKTableNameObjDes).Find(delCond).
-			Fields(common.BKObjIDField, common.TenantID).All(ctx, &objects)
+			Fields(common.BKObjIDField).All(ctx, &objects)
 		if err != nil {
 			return err
 		}
@@ -283,11 +290,11 @@ func DeleteAllObjects() {
 
 		objIDs := make([]string, len(objects))
 		for i, obj := range objects {
-			err = db.Shard(shardOpts).DropTable(ctx, common.GetInstTableName(obj.ObjectID, obj.TenantID))
+			err = db.Shard(shardOpts).DropTable(ctx, common.GetInstTableName(obj.ObjectID, tenantID))
 			if err != nil {
 				return err
 			}
-			err = db.Shard(shardOpts).DropTable(ctx, common.GetObjectInstAsstTableName(obj.ObjectID, obj.TenantID))
+			err = db.Shard(shardOpts).DropTable(ctx, common.GetObjectInstAsstTableName(obj.ObjectID, tenantID))
 			if err != nil {
 				return err
 			}

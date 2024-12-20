@@ -96,26 +96,25 @@
 
 #### data
 
-| 参数名称                | 参数类型   | 描述                                                                                                                                                                         |
-|---------------------|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| creator             | string | 数据的创建者                                                                                                                                                                     |
-| description         | string | 数据的描述信息                                                                                                                                                                    |
-| editable            | bool   | 表明数据是否可编辑                                                                                                                                                                  |
-| isonly              | bool   | 表明唯一性                                                                                                                                                                      |
-| ispre               | bool   | true:预置字段,false:非内置字段                                                                                                                                                      |
-| isreadonly          | bool   | true:只读，false:非只读                                                                                                                                                          |
-| isrequired          | bool   | true:必填，false:可选                                                                                                                                                           |
-| option              | string | 用户自定义内容，存储的内容及格式由调用方决定                                                                                                                                                     |
-| unit                | string | 单位                                                                                                                                                                         |
-| placeholder         | string | 占位符                                                                                                                                                                        |
-| bk_property_group   | string | 字段分栏的名字                                                                                                                                                                    |
-| bk_obj_id           | string | 模型ID                                                                                                                                                                       |
-| bk_supplier_account | string | 开发商账号                                                                                                                                                                      |
-| bk_property_id      | string | 模型的属性ID                                                                                                                                                                    |
-| bk_property_name    | string | 模型属性名，用于展示                                                                                                                                                                 |
-| bk_property_type    | string | 定义的属性字段用于存储数据的数据类型 （singlechar(短字符),longchar(长字符),int(整形),enum(枚举类型),date(日期),time(时间),objuser(用户),enummulti(枚举多选),enumquote(枚举引用),timezone(时区),bool(布尔),organization(组织),assetid(资产编码)) |
-| bk_asst_obj_id      | string | 如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置                                                                                                                                             |
-| bk_biz_id           | int    | 业务自定义字段的业务id                                                                                                                                                               |
-| create_time         | string | 创建时间                                                                                                                                                                       |
-| last_time           | string | 更新时间                                                                                                                                                                       |
-| id                  | int    | 查询对象的id值                                                                                                                                                                   |
+| 参数名称              | 参数类型   | 描述                                                                                                                                                                                       |
+|-------------------|--------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| creator           | string | 数据的创建者                                                                                                                                                                                   |
+| description       | string | 数据的描述信息                                                                                                                                                                                  |
+| editable          | bool   | 表明数据是否可编辑                                                                                                                                                                                |
+| isonly            | bool   | 表明唯一性                                                                                                                                                                                    |
+| ispre             | bool   | true:预置字段,false:非内置字段                                                                                                                                                                    |
+| isreadonly        | bool   | true:只读，false:非只读                                                                                                                                                                        |
+| isrequired        | bool   | true:必填，false:可选                                                                                                                                                                         |
+| option            | string | 用户自定义内容，存储的内容及格式由调用方决定                                                                                                                                                                   |
+| unit              | string | 单位                                                                                                                                                                                       |
+| placeholder       | string | 占位符                                                                                                                                                                                      |
+| bk_property_group | string | 字段分栏的名字                                                                                                                                                                                  |
+| bk_obj_id         | string | 模型ID                                                                                                                                                                                     |
+| bk_property_id    | string | 模型的属性ID                                                                                                                                                                                  |
+| bk_property_name  | string | 模型属性名，用于展示                                                                                                                                                                               |
+| bk_property_type  | string | 定义的属性字段用于存储数据的数据类型 （singlechar(短字符),longchar(长字符),int(整形),enum(枚举类型),date(日期),time(时间),objuser(用户),enummulti(枚举多选),enumquote(枚举引用),timezone(时区),bool(布尔),organization(组织),assetid(资产编码)) |
+| bk_asst_obj_id    | string | 如果有关联其它的模型，那么就必需设置此字段，否则就不需要设置                                                                                                                                                           |
+| bk_biz_id         | int    | 业务自定义字段的业务id                                                                                                                                                                             |
+| create_time       | string | 创建时间                                                                                                                                                                                     |
+| last_time         | string | 更新时间                                                                                                                                                                                     |
+| id                | int    | 查询对象的id值                                                                                                                                                                                 |

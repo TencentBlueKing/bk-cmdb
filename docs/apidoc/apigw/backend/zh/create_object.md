@@ -44,7 +44,6 @@
         "last_time": null,
         "bk_obj_id": "test",
         "create_time": null,
-        "bk_supplier_account": "0",
         "position": "",
         "bk_obj_icon": "icon-cc-business",
         "modifier": "",
@@ -76,7 +75,6 @@
 | modifier             | string             | 最后修改人员               |
 | create_time          | string             | 创建时间                 |
 | last_time            | string             | 更新时间                 |
-| bk_supplier_account  | string             | 开发商账号                |
 | bk_obj_id            | string             | 模型类型                 |
 | bk_obj_name          | string             | 模型名称                 |
 | bk_obj_icon          | string             | 对象模型的ICON信息，用于前端显示   |

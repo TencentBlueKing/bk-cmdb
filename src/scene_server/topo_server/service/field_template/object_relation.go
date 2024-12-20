@@ -378,7 +378,6 @@ func tmplAttrConvertObjAttr(user, objID string, attr metadata.FieldTemplateAttr)
 		TemplateID:   attr.ID,
 		PropertyID:   attr.PropertyID,
 		Placeholder:  attr.Placeholder.Value,
-		TenantID:     attr.TenantID,
 		IsRequired:   attr.Required.Value,
 		PropertyName: attr.PropertyName,
 		PropertyType: attr.PropertyType,
@@ -495,7 +494,6 @@ func (s *service) tmplUniqueConvertObjUnique(kit *rest.Kit, objID string,
 	// the corresponding (same propertyID) template attribute
 	unique.TemplateID = tmplUnique.ID
 	unique.ObjID = objID
-	unique.TenantID = kit.TenantID
 	return unique, nil
 }
 

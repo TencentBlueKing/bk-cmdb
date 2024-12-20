@@ -8,14 +8,14 @@ Create Model (Permission: Create Model)
 
 #### Interface Parameters
 
-| Field                | Type   | Required | Description                                                  |
-| -------------------- | ------ | -------- | ------------------------------------------------------------ |
-| creator              | string | No       | Creator of this data                                         |
+| Field                | Type   | Required | Description                                                                           |
+|----------------------|--------|----------|---------------------------------------------------------------------------------------|
+| creator              | string | No       | Creator of this data                                                                  |
 | bk_classification_id | string | Yes      | ID of the classification for the object model, can only be named with English letters |
-| bk_obj_id            | string | Yes      | ID of the object model, can only be named with English letters |
+| bk_obj_id            | string | Yes      | ID of the object model, can only be named with English letters                        |
 | bk_obj_name          | string | Yes      | Name of the object model, used for display, can be in any language readable by humans |
-| bk_obj_icon          | string | No       | ICON information of the object model, used for frontend display |
-| obj_sort_number      | int    | No       | Sorting order of the object model under the corresponding model group |
+| bk_obj_icon          | string | No       | ICON information of the object model, used for frontend display                       |
+| obj_sort_number      | int    | No       | Sorting order of the object model under the corresponding model group                 |
 
 ### Request Parameter Example
 
@@ -77,18 +77,17 @@ Create Model (Permission: Create Model)
 
 ### data
 
-| Field                 | Type               | Description                                                  |
-| -------------------- | ------------------ | ------------------------------------------------------------ |
-| id                   | int                | New ID of data record                                        |
-| bk_classification_id | int                | ID of the classification for the object model                |
-| creator              | string             | Creator                                                      |
-| modifier             | string             | Last modifier                                                |
-| create_time          | string             | Creation time                                                |
-| last_time            | string             | Update time                                                  |
-| bk_supplier_account  | string             | Developer account                                            |
-| bk_obj_id            | string             | Model type                                                   |
-| bk_obj_name          | string             | Model name                                                   |
-| bk_obj_icon          | string             | ICON information of the object model, used for frontend display |
-| position             | json object string | Coordinates for frontend display                             |
-| ispre                | bool               | Whether it is predefined, true or false                      |
+| Field                | Type               | Description                                                           |
+|----------------------|--------------------|-----------------------------------------------------------------------|
+| id                   | int                | New ID of data record                                                 |
+| bk_classification_id | int                | ID of the classification for the object model                         |
+| creator              | string             | Creator                                                               |
+| modifier             | string             | Last modifier                                                         |
+| create_time          | string             | Creation time                                                         |
+| last_time            | string             | Update time                                                           |
+| bk_obj_id            | string             | Model type                                                            |
+| bk_obj_name          | string             | Model name                                                            |
+| bk_obj_icon          | string             | ICON information of the object model, used for frontend display       |
+| position             | json object string | Coordinates for frontend display                                      |
+| ispre                | bool               | Whether it is predefined, true or false                               |
 | obj_sort_number      | int                | Sorting order of the object model under the corresponding model group |

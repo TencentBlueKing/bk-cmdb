@@ -108,26 +108,25 @@ You can use optional parameters to query object model properties based on the mo
 
 #### data
 
-| Field               | Type   | Description                                                  |
-| ------------------- | ------ | ------------------------------------------------------------ |
-| creator             | string | Creator of the data                                          |
-| description         | string | Description information of the data                          |
-| editable            | bool   | Indicates whether the data is editable                       |
-| isonly              | bool   | Indicates uniqueness of the data                             |
-| ispre               | bool   | true: pre-installed field, false: non-built-in field         |
-| isreadonly          | bool   | true: read-only, false: non-read-only                        |
-| isrequired          | bool   | true: required, false: optional                              |
-| option              | string | User-defined content, the content and format stored is determined by the caller |
-| unit                | string | Unit                                                         |
-| placeholder         | string | Placeholder                                                  |
-| bk_property_group   | string | Name of the field column                                     |
-| bk_obj_id           | string | Model ID                                                     |
-| bk_supplier_account | string | Vendor account                                               |
-| bk_property_id      | string | Model property ID                                            |
-| bk_property_name    | string | Model property name used for display                         |
-| bk_property_type    | string | Defined property field for storing data types (singlechar(short character), longchar(long character), int(integer), enum(enum type), date(date), time(time), objuser(user), enummulti(enum multiple), enumquote(enum reference), timezone(timezone), bool(boolean), organization(organization)) |
-| bk_asst_obj_id      | string | If there is a relationship with other models, this field must be set, otherwise it does not need to be set |
-| bk_biz_id           | int    | Business id of business custom field                         |
-| create_time         | string | Creation time                                                |
-| last_time           | string | Update time                                                  |
-| id                  | int    | Query object id value                                        |
+| Field             | Type   | Description                                                                                                                                                                                                                                                                                     |
+|-------------------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| creator           | string | Creator of the data                                                                                                                                                                                                                                                                             |
+| description       | string | Description information of the data                                                                                                                                                                                                                                                             |
+| editable          | bool   | Indicates whether the data is editable                                                                                                                                                                                                                                                          |
+| isonly            | bool   | Indicates uniqueness of the data                                                                                                                                                                                                                                                                |
+| ispre             | bool   | true: pre-installed field, false: non-built-in field                                                                                                                                                                                                                                            |
+| isreadonly        | bool   | true: read-only, false: non-read-only                                                                                                                                                                                                                                                           |
+| isrequired        | bool   | true: required, false: optional                                                                                                                                                                                                                                                                 |
+| option            | string | User-defined content, the content and format stored is determined by the caller                                                                                                                                                                                                                 |
+| unit              | string | Unit                                                                                                                                                                                                                                                                                            |
+| placeholder       | string | Placeholder                                                                                                                                                                                                                                                                                     |
+| bk_property_group | string | Name of the field column                                                                                                                                                                                                                                                                        |
+| bk_obj_id         | string | Model ID                                                                                                                                                                                                                                                                                        |
+| bk_property_id    | string | Model property ID                                                                                                                                                                                                                                                                               |
+| bk_property_name  | string | Model property name used for display                                                                                                                                                                                                                                                            |
+| bk_property_type  | string | Defined property field for storing data types (singlechar(short character), longchar(long character), int(integer), enum(enum type), date(date), time(time), objuser(user), enummulti(enum multiple), enumquote(enum reference), timezone(timezone), bool(boolean), organization(organization)) |
+| bk_asst_obj_id    | string | If there is a relationship with other models, this field must be set, otherwise it does not need to be set                                                                                                                                                                                      |
+| bk_biz_id         | int    | Business id of business custom field                                                                                                                                                                                                                                                            |
+| create_time       | string | Creation time                                                                                                                                                                                                                                                                                   |
+| last_time         | string | Update time                                                                                                                                                                                                                                                                                     |
+| id                | int    | Query object id value                                                                                                                                                                                                                                                                           |

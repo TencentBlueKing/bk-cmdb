@@ -71,7 +71,6 @@ func (g *modelAttributeGroup) hasAttributes(kit *rest.Kit, objID string, groupID
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldObjectID, Val: objID})
-	cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	cond.Element(&mongo.In{Key: metadata.AttributeFieldPropertyGroup, Val: groupIDS})
 
 	attrs, err := g.model.SearchModelAttributes(kit, objID, metadata.QueryCondition{

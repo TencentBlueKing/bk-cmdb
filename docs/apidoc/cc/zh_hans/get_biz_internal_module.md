@@ -8,9 +8,10 @@
 
 #### 接口参数
 
-| 字段        | 类型  | 必选 | 描述   |
-|-----------|-----|----|------|
-| bk_biz_id | int | 是  | 业务ID |
+| 字段                  | 类型     | 必选  | 描述                                                                                                                 |
+|---------------------|--------|-----|--------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id           | int    | 是   | 业务ID                                                                                                               |
+| bk_supplier_account | string | Yes | This parameter is deprecated in the current version, you can provide any value to meet the interface requirements. |
 
 ### 请求参数示例
 

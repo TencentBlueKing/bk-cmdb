@@ -82,10 +82,6 @@ func (s *coreService) CreateModelQuoteRelation(cts *rest.Contexts) {
 		return
 	}
 
-	for idx := range relations {
-		relations[idx].TenantID = cts.Kit.TenantID
-	}
-
 	err := mongodb.Shard(cts.Kit.ShardOpts()).Table(common.BKTableNameModelQuoteRelation).Insert(cts.Kit.Ctx, relations)
 	if err != nil {
 		blog.Errorf("create model quote relations failed, err: %v, data: %+v, rid: %v", err, relations, cts.Kit.Rid)

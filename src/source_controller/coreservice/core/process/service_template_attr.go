@@ -190,11 +190,8 @@ func (p *processOperation) CreateServiceTemplateAttrs(kit *rest.Kit, opt *metada
 			ServiceTemplateID: opt.ServiceTemplateID,
 			AttributeID:       attr.AttributeID,
 			PropertyValue:     attr.PropertyValue,
-			Creator:           kit.User,
-			Modifier:          kit.User,
 			CreateTime:        now,
 			LastTime:          now,
-			TenantID:          kit.TenantID,
 		}
 	}
 

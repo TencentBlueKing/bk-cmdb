@@ -54,8 +54,8 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	}
 
 	// the front-end table display fields
-	fields := []string{common.BKFieldID, common.BKUser, common.BKResourceTypeField, common.BKActionField,
-		common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField,
+	fields := []string{common.BKFieldID, common.BKResourceTypeField, common.BKActionField, common.BKOperationTimeField,
+		common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField,
 		common.BKExtendResourceNameField}
 
 	cond := mapstr.MapStr{}
@@ -133,10 +133,6 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 
 func (s *Service) parseAuditCond(kit *rest.Kit, condition metadata.AuditQueryCondition, cond mapstr.MapStr) (
 	mapstr.MapStr, error) {
-
-	if condition.User != "" {
-		cond[common.BKUser] = condition.User
-	}
 
 	if condition.ResourceName != "" {
 		if condition.FuzzyQuery {
@@ -297,7 +293,7 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 		return
 	}
 
-	cond, err := buildInstAuditCondition(ctx, query.Condition)
+	cond, err := buildInstAuditCondition(ctx.Kit, query.Condition)
 	if err != nil {
 		blog.Errorf("build audit condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -322,14 +318,10 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 	ctx.RespEntityWithCount(rsp.Count, rsp.Info)
 }
 
-func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditCondition) (mapstr.MapStr, error) {
+func buildInstAuditCondition(kit *rest.Kit, query metadata.InstAuditCondition) (mapstr.MapStr, error) {
 
 	cond := mapstr.New()
 	// BizID用于校验当前主线实例的权限，查询条件不应设置业务id，这样会导致主线实例的审计信息返回不全
-	if query.User != "" {
-		cond[common.BKUser] = query.User
-	}
-
 	if query.ResourceID != nil {
 		cond[common.BKResourceIDField] = query.ResourceID
 	}
@@ -356,16 +348,16 @@ func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditConditi
 		break
 	default:
 		blog.Errorf("unsupported resource type %s when query with object id", query.ResourceType)
-		return mapstr.MapStr{}, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
+		return mapstr.MapStr{}, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
 	if len(query.ID) != 0 {
 		cond[common.BKFieldID] = mapstr.MapStr{common.BKDBIN: query.ID}
 	}
 
-	timeCond, err := parseOperationTimeCondition(ctx.Kit, query.OperationTime)
+	timeCond, err := parseOperationTimeCondition(kit, query.OperationTime)
 	if err != nil {
-		blog.Errorf("parse operation time condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("parse operation time condition failed, err: %v, rid: %s", err, kit.Rid)
 		return mapstr.MapStr{}, err
 	}
 

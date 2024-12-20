@@ -292,7 +292,7 @@ func (s *Service) SearchBriefBizTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	setDetail, err := s.getSetDetailOfTopo(ctx, bizID, input)
+	setDetail, err := s.getSetDetailOfTopo(ctx.Kit, bizID, input)
 	if err != nil {
 		blog.Errorf("SearchBriefBizTopo failed, getSetDetailOfTopo err: %v, rid:%s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -304,14 +304,14 @@ func (s *Service) SearchBriefBizTopo(ctx *rest.Contexts) {
 		return
 	}
 
-	moduleDetail, setModuleMap, err := s.getModuleInfoOfTopo(ctx, bizID, input)
+	moduleDetail, setModuleMap, err := s.getModuleInfoOfTopo(ctx.Kit, bizID, input)
 	if err != nil {
 		blog.Errorf("SearchBriefBizTopo failed, getModuleInfoOfTopo err: %v, rid:%s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	hostDetail, moduleHostMap, err := s.getHostInfoOfTopo(ctx, bizID, input)
+	hostDetail, moduleHostMap, err := s.getHostInfoOfTopo(ctx.Kit, bizID, input)
 	if err != nil {
 		blog.Errorf("SearchBriefBizTopo failed, getHostInfoOfTopo err: %v, rid:%s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -325,7 +325,7 @@ func (s *Service) SearchBriefBizTopo(ctx *rest.Contexts) {
 }
 
 // getSetDetailOfTopo get set detail of topo
-func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *metadata.SearchBriefBizTopoOption) (
+func (s *Service) getSetDetailOfTopo(kit *rest.Kit, bizID int64, input *metadata.SearchBriefBizTopoOption) (
 	map[int64]map[string]interface{}, errors.CCErrorCoder) {
 	setDetail := make(map[int64]map[string]interface{})
 	originSetFields := make(map[string]bool)
@@ -350,12 +350,12 @@ func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *met
 
 	for hasNext {
 		param.Page.Start = start
-		setResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		setResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
 			common.BKInnerObjIDSet, param)
 		if nil != err {
 			blog.Errorf("getSetDetailOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s",
-				param, err, ctx.Kit.Rid)
-			return nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+				param, err, kit.Rid)
+			return nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if len(setResult.Info) == 0 {
@@ -380,8 +380,9 @@ func (s *Service) getSetDetailOfTopo(ctx *rest.Contexts, bizID int64, input *met
 }
 
 // getModuleInfoOfTopo get module info of topo
-func (s *Service) getModuleInfoOfTopo(ctx *rest.Contexts, bizID int64, input *metadata.SearchBriefBizTopoOption) (
+func (s *Service) getModuleInfoOfTopo(kit *rest.Kit, bizID int64, input *metadata.SearchBriefBizTopoOption) (
 	map[int64]map[string]interface{}, map[int64][]int64, errors.CCErrorCoder) {
+
 	//  get moduleDetail, setModuleMap
 	moduleDetail := make(map[int64]map[string]interface{})
 	setModuleMap := make(map[int64][]int64)
@@ -408,12 +409,12 @@ func (s *Service) getModuleInfoOfTopo(ctx *rest.Contexts, bizID int64, input *me
 
 	for hasNext {
 		param.Page.Start = start
-		moduleResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+		moduleResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
 			common.BKInnerObjIDModule, param)
 		if nil != err {
 			blog.Errorf("getModuleInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, rid:%s",
-				param, err, ctx.Kit.Rid)
-			return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+				param, err, kit.Rid)
+			return nil, nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 
 		if len(moduleResult.Info) == 0 {
@@ -444,7 +445,7 @@ func (s *Service) getModuleInfoOfTopo(ctx *rest.Contexts, bizID int64, input *me
 }
 
 // getHostInfoOfTopo get host info of topo
-func (s *Service) getHostInfoOfTopo(ctx *rest.Contexts, bizID int64, input *metadata.SearchBriefBizTopoOption) (
+func (s *Service) getHostInfoOfTopo(kit *rest.Kit, bizID int64, input *metadata.SearchBriefBizTopoOption) (
 	map[int64]map[string]interface{}, map[int64][]int64, errors.CCErrorCoder) {
 	hostDetail := make(map[int64]map[string]interface{})
 	moduleHostMap := make(map[int64][]int64)
@@ -458,11 +459,11 @@ func (s *Service) getHostInfoOfTopo(ctx *rest.Contexts, bizID int64, input *meta
 		},
 		Fields: []string{common.BKModuleIDField, common.BKHostIDField},
 	}
-	hostModuleRelations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx,
-		ctx.Kit.Header, relationOption)
+	hostModuleRelations, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx,
+		kit.Header, relationOption)
 	if err != nil {
-		blog.Errorf("getHostInfoOfTopo failed, option: %+v, err: %s, rid: %s", relationOption, err.Error(), ctx.Kit.Rid)
-		return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("getHostInfoOfTopo failed, option: %+v, err: %s, rid: %s", relationOption, err.Error(), kit.Rid)
+		return nil, nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 	for _, relation := range hostModuleRelations.Info {
 		hostIDArr = append(hostIDArr, relation.HostID)
@@ -490,12 +491,12 @@ func (s *Service) getHostInfoOfTopo(ctx *rest.Contexts, bizID int64, input *meta
 
 		for hasNext {
 			param.Page.Start = start
-			hostResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(ctx.Kit.Ctx, ctx.Kit.Header,
+			hostResult, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
 				common.BKInnerObjIDHost, param)
 			if nil != err {
 				blog.Errorf("getHostInfoOfTopo failed, coreservice http ReadInstance fail, param: %v, err: %v, "+
-					"rid:%s", param, err, ctx.Kit.Rid)
-				return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+					"rid:%s", param, err, kit.Rid)
+				return nil, nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 			}
 
 			if len(hostResult.Info) == 0 {

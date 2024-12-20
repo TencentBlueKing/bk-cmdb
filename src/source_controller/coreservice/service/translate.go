@@ -13,11 +13,11 @@
 package service
 
 import (
-	"context"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -68,9 +68,9 @@ func (s *coreService) TranslatePlaceholder(defLang language.DefaultCCLanguageIf,
 }
 
 // TranslateEnumName TODO
-func (s *coreService) TranslateEnumName(ctx context.Context, defLang language.DefaultCCLanguageIf,
+func (s *coreService) TranslateEnumName(kit *rest.Kit, defLang language.DefaultCCLanguageIf,
 	att *metadata.Attribute, val interface{}) interface{} {
-	rid := util.ExtractRequestIDFromContext(ctx)
+	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 	options, err := metadata.ParseEnumOption(val)
 	if err != nil {
 		blog.Warnf("TranslateEnumName failed: %v, rid: %s", err, rid)

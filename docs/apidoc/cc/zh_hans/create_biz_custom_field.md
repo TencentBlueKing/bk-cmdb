@@ -74,7 +74,6 @@
 	"data": {
 		"bk_biz_id": 2,
 		"id": 7,
-		"bk_supplier_account": "0",
 		"bk_obj_id": "cc_test_inst",
 		"bk_property_id": "cc_test",
 		"bk_property_name": "cc_test",
@@ -130,7 +129,6 @@
 | bk_property_group      | string | 字段分栏的名字                                                                                                                                                                    |
 | bk_property_group_name | string | 字段分栏的名字                                                                                                                                                                    |
 | bk_obj_id              | string | 模型ID                                                                                                                                                                       |
-| bk_supplier_account    | string | 开发商账号                                                                                                                                                                      |
 | bk_property_id         | string | 模型的属性ID                                                                                                                                                                    |
 | bk_property_name       | string | 模型属性名，用于展示                                                                                                                                                                 |
 | bk_property_type       | string | 定义的属性字段用于存储数据的数据类型 （singlechar(短字符),longchar(长字符),int(整形),enum(枚举类型),date(日期),time(时间),objuser(用户),enummulti(枚举多选),enumquote(枚举引用),timezone(时区),bool(布尔),organization(组织)) |

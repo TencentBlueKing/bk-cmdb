@@ -11,6 +11,7 @@ import (
 	apiutil "configcenter/src/apimachinery/util"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/ssl"
 
@@ -76,7 +77,7 @@ func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
 }
 
 // Search search elastic with target conditions.
-func (es *EsSrv) Search(ctx context.Context, query elastic.Query, indexes []string,
+func (es *EsSrv) Search(kit *rest.Kit, query elastic.Query, indexes []string,
 	from, size int) (*elastic.SearchResult, error) {
 
 	// search highlight
@@ -98,7 +99,7 @@ func (es *EsSrv) Search(ctx context.Context, query elastic.Query, indexes []stri
 		SearchSource(searchSource).
 		Query(query).Highlight(highlight). // specify the query and highlight
 		Pretty(true).
-		Do(ctx)
+		Do(kit.Ctx)
 
 	if err != nil {
 		return nil, err
