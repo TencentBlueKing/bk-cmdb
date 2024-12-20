@@ -47,9 +47,6 @@ func (s *Service) BatchCreateSet(ctx *rest.Contexts) {
 	batchCreateResult := make([]metadata.OneSetCreateResult, 0)
 	var firstErr error
 	for idx, set := range batchBody.Sets {
-		if _, ok := set[common.TenantID]; !ok {
-			set[common.TenantID] = ctx.Kit.TenantID
-		}
 		set[common.BKAppIDField] = bizID
 
 		result := make(mapstr.MapStr)

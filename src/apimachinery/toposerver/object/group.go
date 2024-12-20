@@ -109,22 +109,6 @@ func (t *object) UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header
 	return
 }
 
-// DeletePropertyGroupObjectAtt TODO
-func (t *object) DeletePropertyGroupObjectAtt(ctx context.Context, ownerID string, objID string, propertyID string,
-	groupID string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/objectatt/group/owner/%s/object/%s/propertyids/%s/groupids/%s"
-
-	err = t.client.Delete().
-		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, ownerID, objID, propertyID, groupID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 // SelectPropertyGroupByObjectID TODO
 func (t *object) SelectPropertyGroupByObjectID(ctx context.Context, objID string, h http.Header,
 	data map[string]interface{}) (resp *metadata.Response, err error) {

@@ -49,7 +49,6 @@
             "bk_obj_id": "XX",
             "bk_obj_name": "XXX",
             "position": "{\"test_obj\":{\"x\":-253,\"y\":137}}",
-            "bk_supplier_account": "0",
             "obj_sort_number": 1
         }
     ]
@@ -76,7 +75,6 @@
 | bk_classification_id | string             | 对象模型的分类ID，只能用英文字母序列命名                                                                  |
 | bk_obj_id            | string             | 对象模型的ID，只能用英文字母序列命名                                                                    |
 | bk_obj_name          | string             | 对象模型的名字，用于展示                                                                           |
-| bk_supplier_account  | string             | 开发商账号                                                                                  |
 | bk_ispaused          | bool               | 是否停用, true or false                                                                    |
 | ispre                | bool               | 是否预定义, true or false                                                                   |
 | bk_obj_icon          | string             | 对象模型的ICON信息，用于前端显示，取值可参考[(modleIcon.json)](/static/esb/api_docs/res/cc/modleIcon.json) |

@@ -49,7 +49,6 @@ Query models based on optional conditions (Permission: Model View Permission)
             "bk_obj_id": "XX",
             "bk_obj_name": "XXX",
             "position": "{\"test_obj\":{\"x\":-253,\"y\":137}}",
-            "bk_supplier_account": "0",
             "obj_sort_number": 1
         }
     ]
@@ -76,7 +75,6 @@ Query models based on optional conditions (Permission: Model View Permission)
 | bk_classification_id | string             | Classification ID of the object model, can only be named with alphabetical sequence                                                                                         |
 | bk_obj_id            | string             | ID of the object model, can only be named with alphabetical sequence                                                                                                        |
 | bk_obj_name          | string             | Name of the object model, used for display                                                                                                                                  |
-| bk_supplier_account  | string             | Vendor account                                                                                                                                                              |
 | bk_ispaused          | bool               | Whether it is paused, true or false                                                                                                                                         |
 | ispre                | bool               | Whether it is predefined, true or false                                                                                                                                     |
 | bk_obj_icon          | string             | ICON information of the object model, used for front-end display, values can refer to [(modleIcon.json)](https://chat.openai.com/static/esb/api_docs/res/cc/modleIcon.json) |

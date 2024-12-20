@@ -120,7 +120,6 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string,
 		ObjID:      objID,
 		Keys:       inputParam.Data.Keys,
 		Ispre:      false,
-		TenantID:   kit.TenantID,
 		LastTime:   metadata.Now(),
 	}
 	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)

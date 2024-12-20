@@ -132,7 +132,6 @@ func (c *commonInst) CreateInst(kit *rest.Kit, objID string, data mapstr.MapStr)
 	if metadata.IsCommon(objID) {
 		data.Set(common.BKObjIDField, objID)
 	}
-	data.Set(common.TenantID, kit.TenantID)
 
 	instCond := &metadata.CreateModelInstance{Data: data}
 	rsp, err := c.clientSet.CoreService().Instance().CreateInstance(kit.Ctx, kit.Header, objID, instCond)

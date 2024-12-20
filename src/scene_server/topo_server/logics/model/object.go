@@ -146,7 +146,6 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 		GroupName:  "Default",
 		GroupID:    NewGroupID(true),
 		ObjectID:   obj.ObjectID,
-		TenantID:   obj.TenantID,
 	}
 
 	_, err = o.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header,
@@ -167,10 +166,9 @@ func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr
 	}
 
 	uni := metadata.ObjectUnique{
-		ObjID:    obj.ObjectID,
-		TenantID: kit.TenantID,
-		Keys:     keys,
-		Ispre:    false,
+		ObjID: obj.ObjectID,
+		Keys:  keys,
+		Ispre: false,
 	}
 	// NOTICE: 唯一索引与index.MainLineInstanceUniqueIndex,index.InstanceUniqueIndex定义强依赖
 	// 原因：建立模型之前要将表和表中的索引提前建立，mongodb 4.2.6(4.4之前)事务中不能建表，事务操作表中数据操作和建表，建立索引为互斥操作。
@@ -407,7 +405,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	queryObj := &metadata.QueryCondition{
 		Condition: cond,
 		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKClassificationIDField,
-			common.TenantID, "position"},
+			"position"},
 		DisableCounter: true,
 	}
 	objs, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, queryObj)
@@ -489,8 +487,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 	asstObjs, err := o.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{
 			Condition: cond,
-			Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKClassificationIDField,
-				common.TenantID, "position"},
+			Fields:    []string{common.BKObjIDField, common.BKObjNameField, common.BKClassificationIDField, "position"},
 		},
 	)
 
@@ -516,9 +513,7 @@ func (o *object) FindObjectTopo(kit *rest.Kit, cond mapstr.MapStr) ([]metadata.O
 		tmp.From.ObjID = objMap[assoc.ObjectID].ObjectID
 		tmp.From.ClassificationID = objMap[assoc.ObjectID].ObjCls
 		tmp.From.Position = objMap[assoc.ObjectID].Position
-		tmp.From.TenantID = objMap[assoc.ObjectID].TenantID
 		tmp.From.ObjName = objMap[assoc.ObjectID].ObjectName
-		tmp.To.TenantID = asstObjMap[assoc.AsstObjID].TenantID
 		tmp.To.ObjID = asstObjMap[assoc.AsstObjID].ObjectID
 		tmp.To.ClassificationID = asstObjMap[assoc.AsstObjID].ObjCls
 		tmp.To.Position = asstObjMap[assoc.AsstObjID].Position
@@ -645,7 +640,6 @@ func (o *object) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*met
 			fmt.Sprintf("'%s' the built-in object id, please use a new one", obj.ObjectID))
 	}
 
-	obj.TenantID = kit.TenantID
 	return obj, nil
 }
 
@@ -732,7 +726,6 @@ func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadat
 		PropertyType:      common.FieldTypeSingleChar,
 		PropertyID:        common.GetInstNameField(obj.ObjectID),
 		PropertyName:      common.DefaultInstName,
-		TenantID:          kit.TenantID,
 	})
 	resultIdxMap[len(attrs)-1] = struct{}{}
 
@@ -740,7 +733,6 @@ func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadat
 		attr.PropertyGroup = groupData.GroupID
 		attr.PropertyGroupName = groupData.GroupName
 		attr.ObjectID = obj.ObjectID
-		attr.TenantID = kit.TenantID
 		attrs = append(attrs, attr)
 	}
 
@@ -759,7 +751,6 @@ func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadat
 			PropertyType:      common.FieldTypeInt,
 			PropertyID:        common.BKInstParentStr,
 			PropertyName:      common.BKInstParentStr,
-			TenantID:          kit.TenantID,
 		})
 		resultIdxMap[len(attrs)-1] = struct{}{}
 	}
@@ -981,10 +972,9 @@ func (o *object) createObjectAttr(kit *rest.Kit, objID string, attr []metadata.A
 		}
 
 		cond := metadata.CreateModelAttrUnique{Data: metadata.ObjectUnique{
-			ObjID:    objID,
-			TenantID: kit.TenantID,
-			Keys:     keys,
-			Ispre:    false,
+			ObjID: objID,
+			Keys:  keys,
+			Ispre: false,
 		}}
 		_, err = o.clientSet.CoreService().Model().CreateModelAttrUnique(kit.Ctx, kit.Header, objID, cond)
 		if err != nil {
@@ -1032,7 +1022,6 @@ func (o *object) createObjectAttrGroup(kit *rest.Kit, objID, groupID, groupName 
 		GroupName:  groupName,
 		GroupIndex: groupIndex,
 		ObjectID:   objID,
-		TenantID:   kit.TenantID,
 	}
 	groupParams := metadata.CreateModelAttributeGroup{Data: group}
 	rsp, err := o.clientSet.CoreService().Model().CreateAttributeGroup(kit.Ctx, kit.Header, objID, groupParams)
@@ -1295,7 +1284,6 @@ func (o *object) searchObjAttrByCondition(kit *rest.Kit, cond metadata.QueryCond
 			delete(attrInfo, "bk_issystem")
 			delete(attrInfo, "bk_isapi")
 			delete(attrInfo, common.LastTimeField)
-			delete(attrInfo, common.TenantID)
 			delete(attrInfo, common.BKAppIDField)
 			delete(attrInfo, common.CreatorField)
 			result[objID] = append(result[objID], attrInfo)
@@ -1339,7 +1327,6 @@ func (o *object) searchObjAsstByCondition(kit *rest.Kit, cond metadata.QueryCond
 
 		asstInfo := item.ToMapStr()
 		delete(asstInfo, common.BKFieldID)
-		delete(asstInfo, common.TenantID)
 		delete(asstInfo, "on_delete")
 		asstInfo["bk_asst_obj_name"] = asstObjRsp[item.AsstObjID].ObjectName
 		asstInfo["bk_asst_obj_icon"] = asstObjRsp[item.AsstObjID].ObjIcon
@@ -1363,7 +1350,6 @@ func (o *object) searchObjAsstByCondition(kit *rest.Kit, cond metadata.QueryCond
 	for _, item := range asstKind.Info {
 		itemMap := item.ToMapStr()
 		delete(itemMap, common.BKFieldID)
-		delete(itemMap, common.TenantID)
 		asstKindMapstr = append(asstKindMapstr, itemMap)
 	}
 

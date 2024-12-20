@@ -220,7 +220,6 @@ func (m *module) CreateManyModule(kit *rest.Kit, data *metadata.CreateManyModule
 		module.Set(common.BKAppIDField, data.BizID)
 		module.Set(common.BKSetIDField, data.SetID)
 		module.Set(common.BKParentIDField, data.SetID)
-		module.Set(common.TenantID, kit.TenantID)
 
 		if !module.Exists(common.BKDefaultField) {
 			module.Set(common.BKDefaultField, common.DefaultFlagDefaultValue)

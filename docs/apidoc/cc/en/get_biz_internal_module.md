@@ -8,9 +8,10 @@ Get business idle hosts, faulty hosts, and modules to be recycled based on the b
 
 #### Interface Parameters
 
-| Field     | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| bk_biz_id | int  | Yes      | Business ID |
+| Field               | Type   | Required | Description                                                                                                        |
+|---------------------|--------|----------|--------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id           | int    | Yes      | Business ID                                                                                                        |
+| bk_supplier_account | string | Yes      | This parameter is deprecated in the current version, you can provide any value to meet the interface requirements. |
 
 ### Request Parameter Example
 

@@ -101,7 +101,7 @@ func (g *graphics) SelectObjectTopoGraphics(kit *rest.Kit, scopeType, scopeID st
 	}
 
 	for _, obj := range objs.Info {
-		node := g.genTopoNode(obj, kit.TenantID, graphNodes)
+		node := g.genTopoNode(obj, graphNodes)
 		for _, asst := range objAssts[obj.ObjectID] {
 			tmp := metadata.GraphAsst{
 				NodeType:              "obj",
@@ -148,8 +148,7 @@ func (g *graphics) findAssociationTypeByAsstKindID(kit *rest.Kit, asstKindIDs []
 	return associationKindMap, nil
 }
 
-func (g graphics) genTopoNode(obj metadata.Object, tenantID string,
-	graphNodes map[string]*metadata.TopoGraphics) metadata.TopoGraphics {
+func (g graphics) genTopoNode(obj metadata.Object, graphNodes map[string]*metadata.TopoGraphics) metadata.TopoGraphics {
 	node := metadata.TopoGraphics{
 		ScopeType: "global",
 		ScopeID:   "0",
@@ -158,7 +157,6 @@ func (g graphics) genTopoNode(obj metadata.Object, tenantID string,
 		IsPre:     obj.IsPre,
 		NodeName:  obj.ObjectName,
 		Icon:      obj.ObjIcon,
-		TenantID:  tenantID,
 	}
 
 	oldNode := graphNodes[node.NodeType+node.ObjID+strconv.Itoa(node.InstID)]

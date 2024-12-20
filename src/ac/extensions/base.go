@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -113,7 +112,7 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 	}
 	// get resource pool business id now.
 	query := &metadata.QueryCondition{
-		Fields: []string{common.BKAppIDField, common.TenantID},
+		Fields: []string{common.BKAppIDField},
 		Condition: map[string]interface{}{
 			"default": 1,
 		},
@@ -123,26 +122,22 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 		blog.Errorf("get biz by query failed, err: %v, rid: %s", err, rid)
 		return 0, err
 	}
-
-	tenantID := httpheader.GetTenantID(header)
-	for idx, biz := range result.Info {
-		if tenantID == biz[common.TenantID].(string) {
-			if !result.Info[idx].Exists(common.BKAppIDField) {
-				// this can not be happen normally.
-				return 0, fmt.Errorf("can not find resource pool business id")
-			}
-			bizID, err := result.Info[idx].Int64(common.BKAppIDField)
-			if err != nil {
-				return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
-			}
-			// update resource pool business id immediately
-			atomic.StoreInt64(&resourcePoolBusinessID, bizID)
-
-			return bizID, nil
-		}
+	if len(result.Info) != 1 {
+		return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
 	}
-	return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
 
+	if !result.Info[0].Exists(common.BKAppIDField) {
+		// this can not be happen normally.
+		return 0, fmt.Errorf("can not find resource pool business id")
+	}
+	bizID, err := result.Info[0].Int64(common.BKAppIDField)
+	if err != nil {
+		return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
+	}
+	// update resource pool business id immediately
+	atomic.StoreInt64(&resourcePoolBusinessID, bizID)
+
+	return bizID, nil
 }
 
 func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header,

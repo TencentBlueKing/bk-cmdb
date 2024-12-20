@@ -145,7 +145,6 @@ func (s *service) ListFieldTemplateTasksStatus(ctx *rest.Contexts) {
 		Condition: map[string]interface{}{
 			common.BKTaskTypeField: common.SyncFieldTemplateTaskFlag,
 			common.BKTaskIDField:   map[string]interface{}{common.BKDBIN: taskIDs},
-			common.TenantID:        ctx.Kit.TenantID,
 		},
 		Fields:         []string{common.BKStatusField, common.BKTaskIDField},
 		DisableCounter: true,

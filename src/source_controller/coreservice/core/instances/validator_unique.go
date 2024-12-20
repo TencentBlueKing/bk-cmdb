@@ -115,6 +115,7 @@ func (valid *validator) hasUniqueFields(updateData mapstr.MapStr, uniqueOpts []v
 // validUpdateUniqFieldInMulti validate if it update unique field in multiple records
 func (valid *validator) validUpdateUniqFieldInMulti(kit *rest.Kit, updateData mapstr.MapStr,
 	instanceManager *instanceManager) error {
+
 	uniqueOpts, err := valid.getValidUniqueOptions(kit, updateData, instanceManager)
 	if err != nil {
 		blog.Errorf("validUpdateUniqFieldInMulti failed, getValidUniqueOptions error %v, updateData: %#v, rid: %s", err,

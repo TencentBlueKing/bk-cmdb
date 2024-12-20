@@ -68,7 +68,6 @@ Create Business Custom Model Property (Permission: Business Custom Field Edit Pe
 	"data": {
 		"bk_biz_id": 2,
 		"id": 7,
-		"bk_supplier_account": "0",
 		"bk_obj_id": "cc_test_inst",
 		"bk_property_id": "cc_test",
 		"bk_property_name": "cc_test",
@@ -121,7 +120,6 @@ Create Business Custom Model Property (Permission: Business Custom Field Edit Pe
 | bk_property_group      | string | Field column name                                                                       |
 | bk_property_group_name | string | Field column name                                                                       |
 | bk_obj_id              | string | Model ID                                                                                |
-| bk_supplier_account    | string | Vendor account                                                                          |
 | bk_property_id         | string | Model property ID                                                                       |
 | bk_property_name       | string | Model property name used for display                                                    |
 | bk_property_type       | string | Defined attribute field used to store data types                                        |
