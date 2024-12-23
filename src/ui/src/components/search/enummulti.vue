@@ -19,6 +19,7 @@
       :multiple="true"
       display-tag
       selected-style="checkbox"
+      :show-select-all="showSelectAll"
       @clear="() => $emit('clear')"
       @toggle="handleToggle">
       <bk-option v-for="option in options"
@@ -32,6 +33,8 @@
 
 <script>
   import activeMixin from './mixins/active'
+  import { getSelectAll } from '@/utils/tools'
+
   export default {
     name: 'cmdb-search-enummulti',
     mixins: [activeMixin],
@@ -43,9 +46,16 @@
       options: {
         type: Array,
         default: () => ([])
+      },
+      property: {
+        type: Object,
+        default: () => ({})
       }
     },
     computed: {
+      showSelectAll() {
+        return getSelectAll(this.property)
+      },
       localValue: {
         get() {
           return this.value || []

@@ -37,11 +37,19 @@ import (
 
 // parseEventFunc function type for parsing db event into chain node and detail
 type parseEventFunc func(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64,
-	rid string) (*watch.ChainNode, []byte, bool, error)
+	rid string) (*watch.ChainNode, *eventDetail, bool, error)
+
+// eventDetail is the parsed event detail
+type eventDetail struct {
+	// eventInfo is the mongodb event info, it contains the update fields & deleted fields etc.
+	eventInfo []byte
+	// resDetail is the resource detail of the event, the latest data is stored in general resource detail cache
+	resDetail []byte
+}
 
 // parseEvent parse event into db chain nodes to store in db and details to store in redis
 func parseEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64, rid string) (
-	*watch.ChainNode, []byte, bool, error) {
+	*watch.ChainNode, *eventDetail, bool, error) {
 
 	switch e.OperationType {
 	case types.Insert, types.Update, types.Replace:
@@ -89,7 +97,7 @@ func parseEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCo
 
 // parseInstAsstEvent parse instance association event into db chain nodes to store in db and details to store in redis
 func parseInstAsstEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap map[oidCollKey][]byte, id uint64,
-	rid string) (*watch.ChainNode, []byte, bool, error) {
+	rid string) (*watch.ChainNode, *eventDetail, bool, error) {
 
 	switch e.OperationType {
 	case types.Insert:
@@ -165,8 +173,7 @@ func parseInstAsstEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap m
 	chainNode.SubResource = []string{gjson.GetBytes(e.DocBytes, common.BKObjIDField).String(),
 		gjson.GetBytes(e.DocBytes, common.BKAsstObjIDField).String()}
 
-	detail := types.EventDetail{
-		Detail:        types.JsonString(e.DocBytes),
+	detail := types.EventInfo{
 		UpdatedFields: e.ChangeDesc.UpdatedFields,
 		RemovedFields: e.ChangeDesc.RemovedFields,
 	}
@@ -177,12 +184,12 @@ func parseInstAsstEvent(db dal.DB, key event.Key, e *types.Event, oidDetailMap m
 		return nil, nil, false, err
 	}
 
-	return chainNode, detailBytes, false, nil
+	return chainNode, &eventDetail{eventInfo: detailBytes, resDetail: e.DocBytes}, false, nil
 }
 
 // parseEventToNodeAndDetail parse validated event into db chain nodes to store in db and details to store in redis
-func parseEventToNodeAndDetail(key event.Key, e *types.Event, id uint64, rid string) (*watch.ChainNode, []byte, bool,
-	error) {
+func parseEventToNodeAndDetail(key event.Key, e *types.Event, id uint64, rid string) (*watch.ChainNode, *eventDetail,
+	bool, error) {
 
 	name := key.Name(e.DocBytes)
 	instID := key.InstanceID(e.DocBytes)
@@ -217,8 +224,7 @@ func parseEventToNodeAndDetail(key event.Key, e *types.Event, id uint64, rid str
 		chainNode.InstanceID = instID
 	}
 
-	detail := types.EventDetail{
-		Detail:        types.JsonString(e.DocBytes),
+	detail := types.EventInfo{
 		UpdatedFields: e.ChangeDesc.UpdatedFields,
 		RemovedFields: e.ChangeDesc.RemovedFields,
 	}
@@ -229,5 +235,5 @@ func parseEventToNodeAndDetail(key event.Key, e *types.Event, id uint64, rid str
 		return nil, nil, false, err
 	}
 
-	return chainNode, detailBytes, false, nil
+	return chainNode, &eventDetail{eventInfo: detailBytes, resDetail: e.DocBytes}, false, nil
 }

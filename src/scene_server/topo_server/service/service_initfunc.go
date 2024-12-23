@@ -18,6 +18,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/topo_server/service/capability"
 	fieldtmpl "configcenter/src/scene_server/topo_server/service/field_template"
+	"configcenter/src/scene_server/topo_server/service/id_rule"
 	"configcenter/src/scene_server/topo_server/service/kube"
 
 	"github.com/emicklei/go-restful/v3"
@@ -141,6 +142,7 @@ func (s *Service) initModule(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/module/{app_id}/{set_id}", Handler: s.CreateModule})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/module", Handler: s.BatchCreateModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/module/{app_id}/{set_id}/{module_id}",
 		Handler: s.DeleteModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/module/{app_id}/{set_id}/{module_id}",
@@ -336,6 +338,8 @@ func (s *Service) initService(web *restful.WebService) {
 	s.initModelQuote(web)
 
 	fieldtmpl.InitFieldTemplate(utility, c)
+
+	idrule.InitIDRule(utility, c)
 
 	utility.AddToRestfulWebService(web)
 }

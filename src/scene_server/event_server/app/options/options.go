@@ -20,7 +20,6 @@ import (
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/apigw/apigwutil"
 	"configcenter/src/thirdparty/gse/client"
 
 	"github.com/spf13/pflag"
@@ -67,7 +66,4 @@ type Config struct {
 
 	// ApiConf gse apiServer connection config
 	ApiConf *client.GseConnConfig
-
-	// ApiGWConfig api gateway config
-	ApiGWConfig *apigwutil.ApiGWConfig
 }

@@ -57,6 +57,7 @@
             </bk-button>
           </template>
         </cmdb-auth>
+        <cmdb-refresh class="refresh-button" @refresh="handleRefresh" ref="refresh"></cmdb-refresh>
       </div>
       <div class="options-button fr">
         <icon-button :class="['option-filter', 'ml5', { active: hasCondition }]" icon="icon-cc-funnel"
@@ -83,6 +84,7 @@
         <component class="filter-value r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
+          :property="filterProperty"
           :class="filterType"
           :fuzzy="filter.fuzzyQuery"
           v-bind="filterComponentProps"
@@ -202,8 +204,10 @@
       :show-mask="false"
       :is-show.sync="advancedFilterShow"
       :width="400"
-      :title="$t('高级筛选')">
+      :title="$t('高级筛选')"
+      :before-close="handleFilterBeforeClose">
       <general-model-filter-form slot="content"
+        ref="filterForm"
         v-if="advancedFilterShow"
         :obj-id="objId"
         :filter-selected="filterSelected"
@@ -214,6 +218,7 @@
       </general-model-filter-form>
     </bk-sideslider>
     <router-subview></router-subview>
+    <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
   </div>
 </template>
 
@@ -233,6 +238,8 @@
   import instanceService from '@/service/instance/instance'
   import { resetConditionValue } from '@/components/filters/general-model-filter.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import cmdbModelFastLink from '@/components/model-fast-link'
+  import cmdbRefresh from '@/components/refresh'
 
   const defaultFastSearch = () => ({
     field: 'bk_inst_name',
@@ -247,7 +254,9 @@
       cmdbImport,
       cmdbPropertySelector,
       generalModelFilterForm,
-      generalModelFilterTag
+      generalModelFilterTag,
+      cmdbModelFastLink,
+      cmdbRefresh
     },
     data() {
       return {
@@ -377,6 +386,10 @@
       }
     },
     watch: {
+      '$route.params.objId'() {
+        const { refresh } = this.$refs
+        refresh?.init()
+      },
       '$route.query'() {
         if (this.$route.name !== MENU_RESOURCE_INSTANCE) {
           return
@@ -749,6 +762,7 @@
           this.table.stuff.type = (typeof filter !== 'undefined' && String(filter).length > 0) || filterAdv ? 'search' : 'default'
           this.table.list = info
           this.table.pagination.count = count
+          this.$refs?.refresh.setCanRefresh(true)
         } catch (err) {
           if (err.permission) {
             this.table.stuff = {
@@ -913,6 +927,21 @@
         }
         return true
       },
+      handleFilterBeforeClose() {
+        const $form = this.$refs.filterForm
+        const confirmFn = () => {
+          this.advancedFilterShow = false
+        }
+
+        if ($form.hasShow) {
+          return
+        }
+        if ($form.hasChange) {
+          $form.setChanged(true)
+          return $form.beforeClose(confirmFn)
+        }
+        return true
+      },
       async handleImport() {
         const useImport = await import('@/components/import-file')
         const [, { show: showImport, setState: setImportState }] = useImport.default()
@@ -1002,7 +1031,11 @@
           })
         }
         this.columnsConfig.show = false
-      }
+      },
+      handleRefresh() {
+        RouterQuery.refresh()
+        this.$refs?.refresh.setCanRefresh(true)
+      },
     }
   }
 </script>
@@ -1061,7 +1094,7 @@
           border-left: none;
         }
     }
-    .models-button{
+    .models-button, .refresh-button{
         display: inline-block;
         position: relative;
         &:hover{

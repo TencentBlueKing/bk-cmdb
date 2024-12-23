@@ -16,6 +16,18 @@ export default {
       return {
         height: this.$store.state.appHeight
       }
+    },
+    $helpDocUrlPrefix() {
+      const data = {
+        lang: '',
+        version: ''
+      }
+      const buildVersion = window.Site.buildVersion.match(/(([0-9]|([1-9]([0-9]*)))\.)([0-9]|([1-9]([0-9]*)))+/)?.[0]
+      if (buildVersion) {
+        data.lang = this.$i18n.locale === 'zh_CN' ? '/ZH' : '/EN'
+        data.version = `/${buildVersion}`
+      }
+      return `${window.Site.helpDocUrl}/markdown${data.lang}/CMDB${data.version}`
     }
   }
 }

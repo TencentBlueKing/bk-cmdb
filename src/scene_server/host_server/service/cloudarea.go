@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -114,7 +115,7 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	user := util.GetUser(ctx.Request.Request.Header)
+	user := httpheader.GetUser(ctx.Request.Request.Header)
 	for i := range input.Data {
 		input.Data[i][common.BKCreator] = user
 		input.Data[i][common.BKLastEditor] = user
@@ -219,7 +220,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 		return
 	}
 
-	user := util.GetUser(ctx.Request.Request.Header)
+	user := httpheader.GetUser(ctx.Request.Request.Header)
 	input[common.BKCreator] = user
 	input[common.BKLastEditor] = user
 

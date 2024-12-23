@@ -13,7 +13,12 @@
 <template>
   <div class="property-selector" v-bkloading="{ isLoading: pending }">
     <div class="filter">
-      <bk-input v-model.trim="keyword" :placeholder="$t('请输入字段名称')"></bk-input>
+      <bk-input
+        v-model.trim="keyword"
+        clearable
+        :right-icon="'bk-icon icon-search'"
+        :placeholder="$t('请输入字段名称或唯一标识进行搜索')">
+      </bk-input>
     </div>
     <div class="group-list"
       v-for="{ group, properties } in groupedPropertyies"
@@ -58,7 +63,7 @@
   export default {
     name: 'export-property',
     setup() {
-      const [exportState] = useState()
+      const [exportState, { setState }] = useState()
       // 加载属性与属性分组
       const [{ properties, pending }] = useProperty({
         bk_obj_id: exportState.bk_obj_id.value,
@@ -74,7 +79,7 @@
       const [matchedProperties] = useFilter({
         list: properties,
         keyword,
-        target: 'bk_property_name'
+        targets: ['bk_property_name', 'bk_property_id']
       })
       const groupedPropertyies = useGroupProperty(groups, matchedProperties)
 
@@ -91,6 +96,9 @@
         exportState.defaultSelectedFields.value.forEach((field) => {
           const property = value.find(property => property.bk_property_id === field)
           property && selection.value.indexOf(property) === -1 && selection.value.push(property)
+        })
+        setState({
+          originFields: [...selection.value]
         })
       })
       const isPreset = property => presetProperties.value.includes(property)
@@ -147,7 +155,7 @@
   .property-selector {
     padding: 20px 0 0 0;
     .filter {
-      width: 340px;
+      width: 100%;
     }
   }
   .group-list {

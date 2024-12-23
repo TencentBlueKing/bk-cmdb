@@ -20,15 +20,17 @@ import (
 	"os"
 	"runtime"
 
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/ginservice"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw"
 	noticeCli "configcenter/src/thirdparty/apigw/notice"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
@@ -36,6 +38,7 @@ import (
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/logics"
 	"configcenter/src/web_server/middleware"
+	apigwsvc "configcenter/src/web_server/service/apigw"
 	"configcenter/src/web_server/service/excel"
 	"configcenter/src/web_server/service/notice"
 
@@ -51,7 +54,8 @@ type Service struct {
 	*logics.Logics
 	Config    *options.Config
 	Session   redis.RedisStore
-	NoticeCli noticeCli.NoticeClientInterface
+	NoticeCli noticeCli.ClientI
+	ApiCli    apiserver.ApiServerClientInterface
 }
 
 // WebService TODO
@@ -86,6 +90,42 @@ func (s *Service) WebService() *gin.Engine {
 
 	middleware.Engine = s.Engine
 
+	s.initService(ws)
+
+	// table instance, only for ui, should be removed later
+	s.initModelQuote(ws)
+
+	// field template, only for ui
+	s.initFieldTemplate(ws)
+
+	// resource count, only for ui
+	s.initResourceCount(ws)
+
+	c := &capability.Capability{
+		Ws:        ws,
+		Engine:    s.Engine,
+		Config:    s.Config,
+		ApiCli:    s.ApiCli,
+		NoticeCli: s.NoticeCli,
+	}
+	// init excel func
+	excel.Init(c)
+
+	// init api gateway http handlers for saas
+	apigwsvc.Init(c)
+
+	// init notice func
+	notice.Init(c)
+
+	// if no route, redirect to 404 page
+	ws.NoRoute(func(c *gin.Context) {
+		c.Redirect(302, "/#/404")
+	})
+
+	return ws
+}
+
+func (s *Service) initService(ws *gin.Engine) {
 	ws.Static("/static", s.Config.Site.HtmlRoot)
 	ws.LoadHTMLFiles(s.Config.Site.HtmlRoot+"/index.html", s.Config.Site.HtmlRoot+"/login.html",
 		s.Config.Site.HtmlRoot+"/"+webCommon.InaccessibleHtml)
@@ -110,7 +150,6 @@ func (s *Service) WebService() *gin.Engine {
 	// get current login user info
 	ws.GET("/userinfo", s.UserInfo)
 	ws.PUT("/user/current/supplier/:id", s.UpdateSupplier)
-	ws.POST("/biz/search/web", s.SearchBusiness)
 
 	ws.GET("/", s.Index)
 
@@ -128,31 +167,6 @@ func (s *Service) WebService() *gin.Engine {
 	// common api
 	ws.GET("/healthz", s.Healthz)
 	ws.GET("/version", ginservice.Version)
-
-	// table instance, only for ui, should be removed later
-	s.initModelQuote(ws)
-
-	// field template, only for ui
-	s.initFieldTemplate(ws)
-
-	c := &capability.Capability{
-		Ws:        ws,
-		Engine:    s.Engine,
-		Config:    s.Config,
-		NoticeCli: s.NoticeCli,
-	}
-	// init excel func
-	excel.Init(c)
-
-	// init notice func
-	notice.Init(c)
-
-	// if no route, redirect to 404 page
-	ws.NoRoute(func(c *gin.Context) {
-		c.Redirect(302, "/#/404")
-	})
-
-	return ws
 }
 
 func setGinMode() {
@@ -168,21 +182,23 @@ func setGinMode() {
 func (s *Service) Healthz(c *gin.Context) {
 	meta := metric.HealthMeta{IsHealthy: true}
 
-	// zk health status
-	zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
-	if err := s.Engine.Ping(); err != nil {
-		zkItem.IsHealthy = false
-		zkItem.Message = err.Error()
-	}
+	if s.Config.DeploymentMethod == common.OpenSourceDeployment {
+		// zk health status
+		zkItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityServicediscover}
+		if err := s.Engine.Ping(); err != nil {
+			zkItem.IsHealthy = false
+			zkItem.Message = err.Error()
+		}
 
-	meta.Items = append(meta.Items, zkItem)
+		meta.Items = append(meta.Items, zkItem)
 
-	apiServer := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_APISERVER}
-	if _, err := s.Engine.CoreAPI.Healthz().HealthCheck(types.CC_MODULE_APISERVER); err != nil {
-		apiServer.IsHealthy = false
-		apiServer.Message = err.Error()
+		apiServer := metric.HealthItem{IsHealthy: true, Name: types.CC_MODULE_APISERVER}
+		if _, err := s.ApiCli.HealthCheck(); err != nil {
+			apiServer.IsHealthy = false
+			apiServer.Message = err.Error()
+		}
+		meta.Items = append(meta.Items, apiServer)
 	}
-	meta.Items = append(meta.Items, apiServer)
 
 	for _, item := range meta.Items {
 		if item.IsHealthy == false {
@@ -215,19 +231,16 @@ func (s *Service) InitNotice() error {
 		return nil
 	}
 
-	config, err := apigwutil.ParseApiGWConfig("apiGW")
-	if err != nil {
-		blog.Errorf("get api gateway config error, err: %v", err)
-		return err
+	if apigwcli.Client() == nil {
+		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry(), []apigw.ClientType{apigw.Cmdb, apigw.Notice})
+		if err != nil {
+			blog.Errorf("init apigw clientset failed, err: %v", err)
+			return err
+		}
 	}
 
-	s.NoticeCli, err = noticeCli.NewNoticeApiGWClient(config, s.Engine.Metric().Registry())
-	if err != nil {
-		blog.Errorf("new gse api gateway client failed, err: %v", err)
-		return err
-	}
-
-	if _, err = s.NoticeCli.RegApp(context.Background(), http.Header{}); err != nil {
+	s.NoticeCli = apigwcli.Client().Notice()
+	if _, err := s.NoticeCli.RegApp(context.Background(), http.Header{}); err != nil {
 		blog.Errorf("register to the notification center failed, err: %v", err)
 		return err
 	}

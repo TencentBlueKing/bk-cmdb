@@ -14,6 +14,7 @@ import Vue from 'vue'
 import api from '@/api'
 import Utils from '@/components/filters/utils'
 import store from '@/store'
+import { propertyFilter } from '@/service/property/property.js'
 
 function getStorageHeader(type, key, properties) {
   if (!key) {
@@ -177,7 +178,7 @@ const FilterStore = new Vue({
         }
       }, {
         requestId: this.request.property
-      })
+      }).then(propertyFilter)
 
       const hostIdProperty = Utils.defineProperty({
         id: 'bk_host_id',

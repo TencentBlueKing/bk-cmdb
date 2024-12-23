@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
@@ -70,7 +71,7 @@ func (assoc *association) ImportInstAssociation(kit *rest.Kit, languageIf langua
 	importData map[int]metadata.ExcelAssociation, asstObjUniIDMap map[string]int64, objUniID int64) (
 	metadata.ResponeImportAssociationData, error) {
 
-	lang := languageIf.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+	lang := languageIf.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
 	ia := NewImportAssociation(assoc, kit, lang, objID, importData, asstObjUniIDMap, objUniID)
 	err := ia.ParsePrimaryKey()
 	if err != nil {

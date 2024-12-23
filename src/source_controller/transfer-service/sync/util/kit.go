@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"configcenter/src/common"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 )
@@ -38,9 +39,10 @@ func NewKit() *Kit {
 	rid := util.GenerateRID()
 
 	header := make(http.Header)
-	header.Add(common.BKHTTPCCRequestID, rid)
-	header.Add(common.BKHTTPHeaderUser, common.CCSystemOperatorUserName)
-	header.Add(common.BKHTTPOwnerID, common.BKDefaultOwnerID)
+
+	httpheader.SetRid(header, rid)
+	httpheader.SetUser(header, common.CCSystemOperatorUserName)
+	httpheader.SetSupplierAccount(header, common.BKDefaultOwnerID)
 	header.Add("Content-Type", "application/json")
 
 	ctx := util.NewContextFromHTTPHeader(header)

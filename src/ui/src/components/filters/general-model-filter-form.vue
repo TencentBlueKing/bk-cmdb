@@ -11,12 +11,41 @@
 -->
 
 <template>
-  <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList">
+  <cmdb-sticky-layout class="filter-layout" slot="content" ref="propertyList" v-scroll="{
+    targetClass: 'last-item',
+    orientation: 'bottom',
+    distance: 63
+  }">
     <bk-form class="filter-form" form-type="vertical">
+      <div class="filter-operate">
+        <condition-picker
+          ref="conditionPicker"
+          class="filter-add"
+          :text="$t('添加条件')"
+          :selected="selected"
+          :property-map="propertyMap"
+          :handler="updateSelected"
+          :type="2">
+        </condition-picker>
+        <bk-popconfirm
+          :content="$t('确定清空筛选条件')"
+          width="280"
+          trigger="click"
+          :confirm-text="$t('确定')"
+          :cancel-text="$t('取消')"
+          @confirm="handleClearCondition">
+          <bk-button :text="true" class="mr10" theme="primary"
+            :disabled="!selected.length">
+            {{$t('清空条件')}}
+          </bk-button>
+        </bk-popconfirm>
+      </div>
       <bk-form-item class="filter-item"
-        v-for="property in selected"
+        v-for="(property, index) in selected"
         :key="property.id"
-        :class="`filter-item-${property.bk_property_type}`">
+        :class="[`filter-item-${property.bk_property_type}`, {
+          'last-item': index === selected.length - 1 && scrollToBottom
+        }]">
         <label class="item-label">
           {{property.bk_property_name}}
         </label>
@@ -24,12 +53,16 @@
           <operator-selector class="item-operator"
             v-if="!withoutOperator.includes(property.bk_property_type)"
             :property="property"
+            :custom-type-map="customOperatorTypeMap"
+            :symbol-map="operatorSymbolMap"
+            :desc-map="operatorDescMap"
             v-model="condition[property.id].operator"
             @change="handleOperatorChange(property, ...arguments)">
           </operator-selector>
           <component class="item-value r0"
             :is="getComponentType(property)"
             :placeholder="getPlaceholder(property)"
+            :property="property"
             :ref="`component-${property.id}`"
             v-bind="getBindProps(property)"
             v-model.trim="condition[property.id].value"
@@ -52,10 +85,6 @@
         </div>
         <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
       </bk-form-item>
-      <bk-form-item>
-        <condition-picker class="filter-add" :text="$t('添加其他条件')" :selected="selected" :property-map="propertyMap"
-          :handler="updateSelected" :type="2"></condition-picker>
-      </bk-form-item>
     </bk-form>
     <div class="filter-options"
       slot="footer"
@@ -76,6 +105,11 @@
   import { setSearchQueryByCondition, resetConditionValue } from './general-model-filter.js'
   import Utils from './utils'
   import ConditionPicker from '@/components/condition-picker'
+  import { getConditionSelect, updatePropertySelect } from '@/utils/util'
+  import isEqual from 'lodash/isEqual'
+  import useSideslider from '@/hooks/use-sideslider'
+  import { QUERY_OPERATOR, QUERY_OPERATOR_OTHER_SYMBOL, QUERY_OPERATOR_OTHER_DESC } from '@/utils/query-builder-operator'
+  import { POSITIVE_INTEGER } from '@/dictionary/property-constants'
 
   export default {
     components: {
@@ -104,10 +138,23 @@
       }
     },
     data() {
+      const { IN, NIN, LIKE, CONTAINS_CS, EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
       return {
+        scrollToBottom: false,
         withoutOperator: ['date', 'time', 'bool'],
         condition: {},
-        selected: []
+        originCondition: {},
+        selected: [],
+        customOperatorTypeMap: {
+          float: [EQ, NE, GTE, LTE, RANGE, IN],
+          int: [EQ, NE, GTE, LTE, RANGE, IN],
+          longchar: [IN, NIN, LIKE, CONTAINS_CS],
+          singlechar: [IN, NIN, LIKE, CONTAINS_CS],
+          array: [IN, NIN, LIKE, CONTAINS_CS],
+          object: [IN, NIN, LIKE, CONTAINS_CS]
+        },
+        operatorSymbolMap: QUERY_OPERATOR_OTHER_SYMBOL,
+        operatorDescMap: QUERY_OPERATOR_OTHER_DESC
       }
     },
     computed: {
@@ -118,27 +165,53 @@
         // eslint-disable-next-line max-len
         modelPropertyMap[this.objId] = modelPropertyMap[this.objId].filter(property => !ignoreProperties.includes(property.bk_property_id))
         return modelPropertyMap
+      },
+      hasChange() {
+        return !isEqual(this.condition, this.originCondition)
+      },
+      hasShow() {
+        const { isShow } = this.$refs.conditionPicker
+        return isShow
       }
     },
     watch: {
       filterSelected: {
         immediate: true,
         handler() {
-          const newCondition = this.$tools.clone(this.filterCondition)
-          Object.keys(newCondition).forEach((id) => {
-            if (has(this.condition, id)) {
-              newCondition[id] = this.condition[id]
-            }
-          })
-          this.condition = newCondition
+          this.condition = this.setCondition(this.condition)
           this.selected = [...this.filterSelected]
         }
       },
-      selected() {
+      selected(val, oldVal) {
         this.updateCondition()
+        const { addSelect, deleteSelect } = getConditionSelect(val, oldVal)
+        this.scrollToBottom = this.hasAddSelected(val, oldVal, addSelect)
+        updatePropertySelect(oldVal, this.handleRemove, addSelect, deleteSelect)
       }
     },
+    created() {
+      this.originCondition = this.setCondition(this.originCondition)
+      const { beforeClose, setChanged } = useSideslider()
+      this.beforeClose = beforeClose
+      this.setChanged = setChanged
+    },
     methods: {
+      setCondition(nowCondition) {
+        const newCondition = this.$tools.clone(this.filterCondition)
+        Object.keys(nowCondition).forEach((id) => {
+          if (has(nowCondition, id)) {
+            newCondition[id] = nowCondition[id]
+          }
+        })
+        return newCondition
+      },
+      hasAddSelected(val, oldVal, addSelect) {
+        return val[0] && oldVal[0] && addSelect.length > 0
+      },
+      handleClearCondition() {
+        this.handleReset()
+        this.selected = []
+      },
       handleClick(e) {
         const parent = this.$refs[e][0].$el
         this.target = parent.getElementsByClassName('bk-select-tag-container')[0]
@@ -163,6 +236,7 @@
       },
       calcPosition(type = 'change') {
         if (type === 'click') this.$refs.propertyList.$el.classList.remove('over-height')
+        if (!this.target) return
 
         this.$nextTick(() => {
           const limit = document.querySelector('.sticky-footer').getClientRects()[0].top
@@ -185,29 +259,37 @@
       },
       getComponentType(property) {
         const {
-          bk_obj_id: modelId,
-          bk_property_id: propertyId,
-          bk_property_type: propertyType
+          bk_property_type: propertyType,
+          id
         } = property
+        const {
+          operator
+        } = this.condition[id]
         const normal = `cmdb-search-${propertyType}`
 
-        // 业务名在包含与非包含操作符时使用输入联想组件
-        if (modelId === 'biz' && propertyId === 'bk_biz_name' && this.condition[property.id].operator !== '$regex') {
-          return `cmdb-search-${modelId}`
+        // 数字类型int 和 float支持in操作符
+        if (Utils.numberUseIn(property, operator)) {
+          return 'cmdb-search-singlechar'
         }
 
-        const isSetName = modelId === 'set' && propertyId === 'bk_set_name'
-        const isModuleName = modelId === 'module' && propertyId === 'bk_module_name'
-        if (isSetName || isModuleName) {
-          return `cmdb-search-${modelId}`
-        }
         return normal
       },
       getPlaceholder(property) {
         return Utils.getPlaceholder(property)
       },
       getBindProps(property) {
-        return Utils.getBindProps(property)
+        const props = Utils.getBindProps(property)
+        if (POSITIVE_INTEGER.includes(property?.bk_property_id)) {
+          if (!props.options) props.options = {}
+          props.options.min = 1
+        }
+        // 数字类型int 和 float支持in操作符
+        if (Utils.numberUseIn(property, this.condition[property?.id]?.operator)) {
+          props.onlyNumber = true
+          props.fuzzy = false
+        }
+
+        return props
       },
       handleOperatorChange(property, operator) {
         const { value } = this.condition[property.id]
@@ -295,10 +377,10 @@
       min-height: 32px;
     }
     .item-operator {
-      flex: 110px 0 0;
+      flex: 128px 0 0;
       margin-right: 8px;
       & ~ .item-value {
-        max-width: calc(100% - 118px);
+        max-width: calc(100% - 136px);
       }
     }
     .item-value {
@@ -322,6 +404,14 @@
       }
     }
   }
+  .filter-operate {
+    @include space-between;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    background: white;
+    line-height: 30px;
+  }
 
   .filter-add {
     padding-left: 10px;
@@ -329,16 +419,11 @@
   .filter-options {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 10px 24px;
     &.is-sticky {
       border-top: 1px solid $borderColor;
       background-color: #fff;
-    }
-    .option-collect,
-    .option-collect-wrapper {
-      & ~ .option-reset {
-        margin-left: auto;
-      }
     }
   }
 </style>

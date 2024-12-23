@@ -22,7 +22,9 @@
           <span
             v-cursor="{
               active: !isFullTextSearch,
-              onclick: showFullTip
+              onclick: showFullTip,
+              showPermissionDialog: false,
+              auth: { type: $OPERATION.R_FULLTEXT_SEARCH }
             }"
             :class="['tab-item', { 'active': activeName === 'fullText', 'disabled': !isFullTextSearch }]"
             @click="handleChangeTab('fullText')">
@@ -126,7 +128,7 @@
         this.showFuncDep = true
       },
       handleToMore() {
-        window.open(`${this.$Site.helpDocUrl}/markdown/ZH/CMDB/3.10/UserGuide/Feature/Fulltext.md`)
+        window.open(`${this.$helpDocUrlPrefix}/UserGuide/Feature/Fulltext.md`)
       },
       handleChangeTab(name) {
         if (name === 'fullText' && !this.isFullTextSearch) return

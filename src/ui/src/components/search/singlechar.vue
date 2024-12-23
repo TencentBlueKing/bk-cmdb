@@ -16,6 +16,7 @@
       allow-create
       allow-auto-match
       :collapse-tags="true"
+      :create-tag-validator="tagValidator"
       v-model="localValue"
       v-bind="$attrs"
       :list="[]"
@@ -37,12 +38,13 @@
 
 <script>
   import activeMixin from './mixins/active'
+  import { isNumeric } from '@/utils/util'
   export default {
     name: 'cmdb-search-singlechar',
     mixins: [activeMixin],
     props: {
       value: {
-        type: [Array, String],
+        type: [Array, String, Number],
         default: () => ([])
       },
       /**
@@ -51,6 +53,11 @@
       fuzzy: {
         type: Boolean,
         default: undefined
+      },
+      // 只可输入数字
+      onlyNumber: {
+        type: Boolean,
+        default: false
       }
     },
     computed: {
@@ -60,13 +67,23 @@
         }
         return Array.isArray(this.value)
       },
+      tagValidator() {
+        if (this.onlyNumber) {
+          return isNumeric
+        }
+        return null
+      },
       localValue: {
         get() {
           return this.value
         },
         set(value) {
-          this.$emit('input', value)
-          this.$emit('change', value)
+          let newValue = this.$tools.clone(value)
+          if (this.onlyNumber) {
+            newValue = value.map(val => +val)
+          }
+          this.$emit('input', newValue)
+          this.$emit('change', newValue)
         }
       }
     },
@@ -96,6 +113,9 @@
       },
       handlePaste(event) {
         const text = event.clipboardData.getData('text')
+        if (this.onlyNumber && !isNumeric(text)) {
+          return
+        }
         const values = text.split(/,|;|\n/).map(value => value.trim())
           .filter(value => value.length)
         const value = [...new Set([...this.localValue, ...values])]

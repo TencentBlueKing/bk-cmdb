@@ -19,8 +19,8 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/middleware/user/plugins"
@@ -37,7 +37,7 @@ type publicUser struct {
 
 // LoginUser  user login
 func (m *publicUser) LoginUser(c *gin.Context) bool {
-	rid := util.GetHTTPCCRequestID(c.Request.Header)
+	rid := httpheader.GetRid(c.Request.Header)
 
 	isMultiOwner := false
 	loginSuccess := false

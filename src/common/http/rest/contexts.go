@@ -24,6 +24,8 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -89,7 +91,7 @@ func (c *Contexts) RespString(data *string) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 	jsonBuffer := bytes.Buffer{}
 	jsonBuffer.WriteString("{\"result\": true, \"bk_error_code\": 0, \"bk_error_msg\": \"success\", \"data\": ")
 	if data == nil {
@@ -108,7 +110,7 @@ func (c *Contexts) RespStringArray(jsonArray []string) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 
 	if len(jsonArray) == 0 {
 		jsonBuffer := bytes.Buffer{}
@@ -144,7 +146,7 @@ func (c *Contexts) RespCountInfoString(count int64, infoArray []string) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 
 	// format data field
 	last := len(infoArray) - 1
@@ -180,13 +182,13 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 	resp := metadata.Response{
 		Data: data,
 	}
 	if err != nil {
-		blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, err: %v", c.Kit.Header.Get(common.BKHTTPRequestAppCode),
-			c.Kit.User, c.Kit.Rid, err)
+		blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, err: %v", httpheader.GetAppCode(c.Kit.Header), c.Kit.User,
+			c.Kit.Rid, err)
 
 		if err == ac.NoAuthorizeError {
 			body, err := json.Marshal(data)
@@ -233,7 +235,7 @@ func (c *Contexts) RespEntityWithCount(count int64, info interface{}) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 	resp := metadata.Response{
 		BaseResp: metadata.SuccessBaseResp,
 		Data: CountInfo{
@@ -264,8 +266,8 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, %s, err: %v", c.Kit.Header.Get(common.BKHTTPRequestAppCode),
-		c.Kit.User, c.Kit.Rid, fmt.Sprintf(format, args), err)
+	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, %s, err: %v", httpheader.GetAppCode(c.Kit.Header), c.Kit.User,
+		c.Kit.Rid, fmt.Sprintf(format, args), err)
 
 	var code int
 	var errMsg string
@@ -291,7 +293,7 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 	}
 
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 	body := metadata.Response{
 		BaseResp: metadata.BaseResp{
 			Result: false,
@@ -308,8 +310,8 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 func (c *Contexts) RespAutoError(err error) {
 	c.collectErrorMetric()
 
-	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, err: %v", c.Kit.Header.Get(common.BKHTTPRequestAppCode),
-		c.Kit.User, c.Kit.Rid, err)
+	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, err: %v", httpheader.GetAppCode(c.Kit.Header), c.Kit.User,
+		c.Kit.Rid, err)
 	var code int
 	var errMsg string
 	if err != nil {
@@ -327,7 +329,7 @@ func (c *Contexts) RespAutoError(err error) {
 	}
 
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 	body := metadata.Response{
 		BaseResp: metadata.BaseResp{
 			Result: false,
@@ -351,11 +353,11 @@ func (c *Contexts) RespErrorCodeF(errCode int, logMsg string, errorf ...interfac
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, %s", c.Kit.Header.Get(common.BKHTTPRequestAppCode), c.Kit.User,
-		c.Kit.Rid, logMsg)
+	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, %s", httpheader.GetAppCode(c.Kit.Header), c.Kit.User, c.Kit.Rid,
+		logMsg)
 
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 	body := metadata.Response{
 		BaseResp: metadata.BaseResp{
 			Result: false,
@@ -374,11 +376,11 @@ func (c *Contexts) RespErrorCodeOnly(errCode int, format string, args ...interfa
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	blog.ErrorfDepthf(1, "code: %s, user: %s, %s, rid: %s", c.Kit.Header.Get(common.BKHTTPRequestAppCode), c.Kit.User,
+	blog.ErrorfDepthf(1, "code: %s, user: %s, %s, rid: %s", httpheader.GetAppCode(c.Kit.Header), c.Kit.User,
 		fmt.Sprintf(format, args), c.Kit.Rid)
 
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 	body := metadata.Response{
 		BaseResp: metadata.BaseResp{
 			Result: false,
@@ -396,7 +398,7 @@ func (c *Contexts) RespBkEntity(data interface{}) {
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 
 	body := &metadata.BKResponse{
 		BkBaseResp: metadata.BkBaseResp{
@@ -415,13 +417,13 @@ func (c *Contexts) RespBkEntity(data interface{}) {
 func (c *Contexts) RespBkError(errCode int, errMsg string) {
 	c.collectErrorMetric()
 
-	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, errCode: %d, errMsg: %s",
-		c.Kit.Header.Get(common.BKHTTPRequestAppCode), c.Kit.User, c.Kit.Rid, errCode, errMsg)
+	blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, errCode: %d, errMsg: %s", httpheader.GetAppCode(c.Kit.Header),
+		c.Kit.User, c.Kit.Rid, errCode, errMsg)
 
 	if c.respStatusCode != 0 {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 
 	body := &metadata.BkBaseResp{
 		Code:    errCode,
@@ -454,7 +456,7 @@ func (c *Contexts) RespNoAuth(resp *metadata.BaseResp) {
 		c.resp.WriteHeader(c.respStatusCode)
 	}
 	c.resp.Header().Set("Content-Type", "application/json")
-	c.resp.Header().Add(common.BKHTTPCCRequestID, c.Kit.Rid)
+	httpheader.AddRid(c.resp.Header(), c.Kit.Rid)
 
 	if err := c.resp.WriteAsJson(resp); err != nil {
 		blog.ErrorfDepthf(1, fmt.Sprintf("rid: %s, response http request failed, err: %v", c.Kit.Rid, err))
@@ -464,7 +466,7 @@ func (c *Contexts) RespNoAuth(resp *metadata.BaseResp) {
 
 // NewContexts 产生一个新的contexts， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
 func (c *Contexts) NewContexts() *Contexts {
-	newHeader := util.CCHeader(c.Kit.Header)
+	newHeader := headerutil.CCHeader(c.Kit.Header)
 	c.Kit.Header = newHeader
 	return &Contexts{
 		Kit:            c.Kit,
@@ -476,7 +478,7 @@ func (c *Contexts) NewContexts() *Contexts {
 
 // NewHeader 产生一个新的header， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
 func (c *Contexts) NewHeader() http.Header {
-	return util.CCHeader(c.Kit.Header)
+	return headerutil.CCHeader(c.Kit.Header)
 }
 
 // SetReadPreference TODO
@@ -486,7 +488,7 @@ func (c *Contexts) SetReadPreference(mode common.ReadPreferenceMode) {
 
 // NewKit 产生一个新的kit， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
 func (kit *Kit) NewKit() *Kit {
-	newHeader := util.CCHeader(kit.Header)
+	newHeader := headerutil.CCHeader(kit.Header)
 	newKit := *kit
 	newKit.Header = newHeader
 	return &newKit
@@ -494,17 +496,17 @@ func (kit *Kit) NewKit() *Kit {
 
 // NewHeader 产生一个新的header， 一般用于在创建新的协程的时候，这个时候会对header 做处理，删除不必要的http header。
 func (kit *Kit) NewHeader() http.Header {
-	return util.CCHeader(kit.Header)
+	return headerutil.CCHeader(kit.Header)
 }
 
 // NewKitFromHeader generate a new kit from http header.
 func NewKitFromHeader(header http.Header, errorIf errors.CCErrorIf) *Kit {
 	return &Kit{
-		Rid:             util.GetHTTPCCRequestID(header),
+		Rid:             httpheader.GetRid(header),
 		Header:          header,
 		Ctx:             util.NewContextFromHTTPHeader(header),
-		CCError:         errorIf.CreateDefaultCCErrorIf(util.GetLanguage(header)),
-		User:            util.GetUser(header),
-		SupplierAccount: util.GetOwnerID(header),
+		CCError:         errorIf.CreateDefaultCCErrorIf(httpheader.GetLanguage(header)),
+		User:            httpheader.GetUser(header),
+		SupplierAccount: httpheader.GetSupplierAccount(header),
 	}
 }

@@ -19,6 +19,7 @@ import (
 
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -27,7 +28,8 @@ import (
  * service template
  */
 
-func (am *AuthManager) collectServiceTemplateByIDs(ctx context.Context, header http.Header, templateIDs ...int64) ([]metadata.ServiceTemplate, error) {
+func (am *AuthManager) collectServiceTemplateByIDs(ctx context.Context, header http.Header,
+	templateIDs ...int64) ([]metadata.ServiceTemplate, error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -37,7 +39,8 @@ func (am *AuthManager) collectServiceTemplateByIDs(ctx context.Context, header h
 	}
 	result, err := am.clientSet.CoreService().Process().ListServiceTemplates(ctx, header, option)
 	if err != nil {
-		blog.V(3).Infof("list service templates by id failed, templateIDs: %+v, err: %+v, rid: %s", templateIDs, err, rid)
+		blog.V(3).Infof("list service templates by id failed, templateIDs: %+v, err: %+v, rid: %s", templateIDs, err,
+			rid)
 		return nil, fmt.Errorf("list service templates by id failed, err: %+v", err)
 	}
 
@@ -58,7 +61,8 @@ func (am *AuthManager) extractBusinessIDFromServiceTemplate(templates ...metadat
 }
 
 // MakeResourcesByServiceTemplate TODO
-func (am *AuthManager) MakeResourcesByServiceTemplate(header http.Header, action meta.Action, businessID int64, templates ...metadata.ServiceTemplate) []meta.ResourceAttribute {
+func (am *AuthManager) MakeResourcesByServiceTemplate(header http.Header, action meta.Action, businessID int64,
+	templates ...metadata.ServiceTemplate) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, template := range templates {
 		resource := meta.ResourceAttribute{
@@ -68,7 +72,7 @@ func (am *AuthManager) MakeResourcesByServiceTemplate(header http.Header, action
 				Name:       template.Name,
 				InstanceID: template.ID,
 			},
-			SupplierAccount: util.GetOwnerID(header),
+			SupplierAccount: httpheader.GetSupplierAccount(header),
 			BusinessID:      businessID,
 		}
 
@@ -78,7 +82,8 @@ func (am *AuthManager) MakeResourcesByServiceTemplate(header http.Header, action
 }
 
 // AuthorizeByServiceTemplateID TODO
-func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header http.Header, action meta.Action, ids ...int64) error {
+func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header http.Header, action meta.Action,
+	ids ...int64) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -95,7 +100,8 @@ func (am *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header 
 }
 
 // AuthorizeByServiceTemplates TODO
-func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header http.Header, action meta.Action, templates ...metadata.ServiceTemplate) error {
+func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header http.Header, action meta.Action,
+	templates ...metadata.ServiceTemplate) error {
 	if !am.Enabled() {
 		return nil
 	}
@@ -106,7 +112,8 @@ func (am *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header h
 	// extract business id
 	bizID, err := am.extractBusinessIDFromServiceTemplate(templates...)
 	if err != nil {
-		return fmt.Errorf("authorize service templates failed, extract business id from service templates failed, err: %+v", err)
+		return fmt.Errorf("authorize service templates failed, extract business id from service templates failed, err: %+v",
+			err)
 	}
 
 	// make auth resources

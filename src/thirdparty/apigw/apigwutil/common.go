@@ -35,7 +35,6 @@ type ApiGWBaseResponse struct {
 
 // ApiGWConfig api gateway config
 type ApiGWConfig struct {
-	Address   []string
 	AppCode   string
 	AppSecret string
 	Username  string

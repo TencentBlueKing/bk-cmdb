@@ -46,7 +46,7 @@ const makeSVG = memoize((element) => {
       resolve({ selected, unselected, hover })
     }
     image.onerror = () => resolve({ selected: 'none', unselected: 'none', hover: 'none' })
-    image.src = `${window.location.origin}/static/svg/${data.icon.substr(5)}.svg`
+    image.src = `${window.Site.publicPath}static/svg/${data.icon.substr(5)}.svg`
   })
 }, element => element.data().icon)
 export default class Graphics {

@@ -53,7 +53,7 @@ const unserializeConfig = (remoteData, lang) => {
   const newState = {
     backend: {
       maxBizTopoLevel: remoteData.backend.max_biz_topo_level,
-      snapshotBizName: remoteData.backend.snapshot_biz_name
+      snapshotBizId: remoteData.backend.snapshot_biz_id
     },
     site: {
       name: remoteData?.site?.name,
@@ -93,7 +93,7 @@ const serializeState = (newConfig, lang) => {
   const data = {
     backend: {
       max_biz_topo_level: newConfig.backend.maxBizTopoLevel,
-      snapshot_biz_name: newConfig.backend.snapshotBizName,
+      snapshot_biz_id: newConfig.backend.snapshotBizId,
     },
     validation_rules: serializeValidationRules(newConfig.validationRules, lang),
     set: newConfig.set,

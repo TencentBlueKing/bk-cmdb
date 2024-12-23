@@ -61,29 +61,21 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
 	}, {
-		Name:           "findServiceInstanceWebPattern",
-		Description:    "list 服务实例",
-		Pattern:        "/api/v3/findmany/proc/web/service_instance",
-		HTTPMethod:     http.MethodPost,
-		BizIDGetter:    DefaultBizIDGetter,
-		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.FindMany,
-	}, {
 		// search service instance by biz set regex, authorize by biz set access permission, **only for ui**
-		Name:           "findServiceInstanceWebByBizSetRegexp",
-		Description:    "UI查询业务集下的服务实例",
-		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/web/biz_set/[0-9]+/service_instance/?$`),
+		Name:           "findServiceInstanceByBizSetRegexp",
+		Description:    "查询业务集下的服务实例",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/biz_set/[0-9]+/service_instance/?$`),
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.BizSet,
 		ResourceAction: meta.AccessBizSet,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			if len(request.Elements) != 8 {
+			if len(request.Elements) != 7 {
 				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
 			}
 
-			bizSetID, err := strconv.ParseInt(request.Elements[6], 10, 64)
+			bizSetID, err := strconv.ParseInt(request.Elements[5], 10, 64)
 			if err != nil {
-				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[6], err)
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[5], err)
 			}
 			return []int64{bizSetID}, nil
 		},
@@ -105,29 +97,21 @@ var ServiceInstanceAuthConfigs = []AuthConfig{
 		ResourceType:   meta.ProcessServiceInstance,
 		ResourceAction: meta.FindMany,
 	}, {
-		Name:           "findServiceInstanceByHostWebPattern",
-		Description:    "根据主机服务实例-frontend",
-		Pattern:        "/api/v3/findmany/proc/web/service_instance/with_host",
-		HTTPMethod:     http.MethodPost,
-		BizIDGetter:    DefaultBizIDGetter,
-		ResourceType:   meta.ProcessServiceInstance,
-		ResourceAction: meta.FindMany,
-	}, {
 		// search service instance by biz set regex, authorize by biz set access permission, **only for ui**
-		Name:           "uiFindServiceInstanceByHostAndBizSetRegexp",
-		Description:    "根据主机查询业务集下的服务实例-frontend",
-		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/web/biz_set/[0-9]+/service_instance/with_host/?$`),
+		Name:           "findServiceInstanceByHostAndBizSetRegexp",
+		Description:    "根据主机查询业务集下的服务实例",
+		Regex:          regexp.MustCompile(`^/api/v3/findmany/proc/biz_set/[0-9]+/service_instance/with_host/?$`),
 		HTTPMethod:     http.MethodPost,
 		ResourceType:   meta.BizSet,
 		ResourceAction: meta.AccessBizSet,
 		InstanceIDGetter: func(request *RequestContext, re *regexp.Regexp) (int64s []int64, e error) {
-			if len(request.Elements) != 9 {
+			if len(request.Elements) != 8 {
 				return nil, fmt.Errorf("get invalid url elements length %d", len(request.Elements))
 			}
 
-			bizSetID, err := strconv.ParseInt(request.Elements[6], 10, 64)
+			bizSetID, err := strconv.ParseInt(request.Elements[5], 10, 64)
 			if err != nil {
-				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[6], err)
+				return nil, fmt.Errorf("get invalid business set id %s, err: %v", request.Elements[5], err)
 			}
 			return []int64{bizSetID}, nil
 		},
@@ -315,7 +299,8 @@ func (ps *parseStream) ServiceInstance() *parseStream {
 
 		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[8], 10, 64)
 		if err != nil {
-			ps.err = fmt.Errorf("search serviceInstance by setTemplate, but got invalid business id %s", ps.RequestCtx.Elements[8])
+			ps.err = fmt.Errorf("search serviceInstance by setTemplate, but got invalid business id %s",
+				ps.RequestCtx.Elements[8])
 			return ps
 		}
 		ps.Attribute.Resources = []meta.ResourceAttribute{

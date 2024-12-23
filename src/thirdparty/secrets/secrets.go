@@ -21,7 +21,6 @@ import (
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
-	"configcenter/src/common"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -59,9 +58,9 @@ func NewSecretsClient(tls *util.TLSClientConfig, config SecretsConfig, reg prome
 	header := http.Header{}
 	header.Set("Content-Type", "application/json")
 	header.Set("Accept", "application/json")
-	header.Set(common.BKHTTPSecretsToken, config.SecretsToken)
-	header.Set(common.BKHTTPSecretsProject, config.SecretsProject)
-	header.Set(common.BKHTTPSecretsEnv, config.SecretsEnv)
+	header.Set(BKHTTPSecretsToken, config.SecretsToken)
+	header.Set(BKHTTPSecretsProject, config.SecretsProject)
+	header.Set(BKHTTPSecretsEnv, config.SecretsEnv)
 
 	return &secretsClient{
 		client:      rest.NewRESTClient(c, "/"),
@@ -70,6 +69,15 @@ func NewSecretsClient(tls *util.TLSClientConfig, config SecretsConfig, reg prome
 	}, nil
 
 }
+
+const (
+	// BKHTTPSecretsToken blueking secrets token http header
+	BKHTTPSecretsToken = "BK-Secrets-Token"
+	// BKHTTPSecretsProject blueking secrets project http header
+	BKHTTPSecretsProject = "BK-Secrets-Project"
+	// BKHTTPSecretsEnv blueking secrets environment http header
+	BKHTTPSecretsEnv = "BK-Secrets-Env"
+)
 
 // secretsClient implement the interface SecretsClient
 type secretsClient struct {

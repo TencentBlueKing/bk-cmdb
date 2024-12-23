@@ -14,10 +14,12 @@
 package logics
 
 import (
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common/backbone"
 )
 
 // Logics TODO
 type Logics struct {
 	*backbone.Engine
+	ApiCli apiserver.ApiServerClientInterface
 }

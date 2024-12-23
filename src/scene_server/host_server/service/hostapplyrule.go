@@ -84,7 +84,8 @@ func (s *Service) UpdateHostApplyRule(ctx *rest.Contexts) {
 	ruleIDStr := ctx.Request.PathParameter(common.HostApplyRuleIDField)
 	ruleID, err := strconv.ParseInt(ruleIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("UpdateHostApplyRule failed, parse biz id failed, ruleIDStr: %s, err: %v,rid:%s", ruleIDStr, err, rid)
+		blog.Errorf("UpdateHostApplyRule failed, parse biz id failed, ruleIDStr: %s, err: %v,rid:%s", ruleIDStr, err,
+			rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.HostApplyRuleIDField))
 		return
 	}
@@ -138,8 +139,9 @@ func (s *Service) DeleteHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option); err != nil {
-			blog.ErrorJSON("DeleteHostApplyRule failed, core service DeleteHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
+		if err := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+			option); err != nil {
+			blog.Errorf("delete host apply rule failed, biz: %d, opt: %+v, err: %v, rid: %s", bizID, option, err, rid)
 			return err
 		}
 		return nil
@@ -174,7 +176,8 @@ func (s *Service) GetHostApplyRule(ctx *rest.Contexts) {
 
 	rule, err := s.CoreAPI.CoreService().HostApplyRule().GetHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, ruleID)
 	if err != nil {
-		blog.ErrorJSON("GetHostApplyRule failed, core service GetHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, err.Error(), rid)
+		blog.ErrorJSON("GetHostApplyRule failed, core service GetHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s",
+			bizID, err.Error(), rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -211,9 +214,11 @@ func (s *Service) ListHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
-	ruleResult, err := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option)
+	ruleResult, err := s.CoreAPI.CoreService().HostApplyRule().ListHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
+		option)
 	if err != nil {
-		blog.ErrorJSON("ListHostApplyRule failed, core service ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s", bizID, option, err.Error(), rid)
+		blog.ErrorJSON("ListHostApplyRule failed, core service ListHostApplyRule failed, bizID: %s, option: %s, err: %s, rid: %s",
+			bizID, option, err.Error(), rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -227,7 +232,8 @@ func (s *Service) BatchCreateOrUpdateHostApplyRule(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("BatchCreateOrUpdateHostApplyRule failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
+		blog.Errorf("BatchCreateOrUpdateHostApplyRule failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s",
+			bizIDStr, err, rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
 	}
@@ -241,9 +247,11 @@ func (s *Service) BatchCreateOrUpdateHostApplyRule(ctx *rest.Contexts) {
 	var batchResult metadata.BatchCreateOrUpdateHostApplyRuleResult
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		batchResult, err = s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header, bizID, option)
+		batchResult, err = s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
+			bizID, option)
 		if err != nil {
-			blog.ErrorJSON("BatchCreateOrUpdateHostApplyRule failed, coreservice BatchUpdateHostApplyRule failed, option: %s, result: %s, err: %s, rid:%s", option, batchResult, err, rid)
+			blog.ErrorJSON("BatchCreateOrUpdateHostApplyRule failed, coreservice BatchUpdateHostApplyRule failed, option: %s, result: %s, err: %s, rid:%s",
+				option, batchResult, err, rid)
 			return ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 		}
 		return nil
@@ -856,7 +864,8 @@ func (s *Service) ListHostRelatedApplyRule(ctx *rest.Contexts) {
 	bizIDStr := ctx.Request.PathParameter(common.BKAppIDField)
 	bizID, err := strconv.ParseInt(bizIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("ListHostRelatedApplyRule failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err, rid)
+		blog.Errorf("ListHostRelatedApplyRule failed, parse biz id failed, bizIDStr: %s, err: %v,rid:%s", bizIDStr, err,
+			rid)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
 	}
@@ -1455,4 +1464,47 @@ func (s *Service) GetModuleFinalRules(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(rules)
+}
+
+// CheckAttrHostApplyEnabled check if host apply is enabled for object attribute
+func (s *Service) CheckAttrHostApplyEnabled(ctx *rest.Contexts) {
+	opt := new(metadata.CheckHostApplyEnabledOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if len(opt.IDs) == 0 {
+		ctx.RespEntity(metadata.CheckHostApplyEnabledRes{HostApplyEnabledIDs: make([]int64, 0)})
+		return
+	}
+
+	attrCond := &metadata.QueryCondition{
+		Condition: mapstr.MapStr{
+			common.BKFieldID: map[string]interface{}{
+				common.BKDBIN: opt.IDs,
+			},
+			metadata.AttributeFieldIsEditable: true,
+		},
+		Page: metadata.BasePage{
+			Limit:       common.BKNoLimit,
+			EnableCount: false,
+		},
+	}
+
+	attrRes, err := s.Engine.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+		common.BKInnerObjIDHost, attrCond)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	enabledIDs := make([]int64, 0)
+	for _, attribute := range attrRes.Info {
+		if metadata.CheckAllowHostApplyOnField(&attribute) {
+			enabledIDs = append(enabledIDs, attribute.ID)
+		}
+	}
+
+	ctx.RespEntity(metadata.CheckHostApplyEnabledRes{HostApplyEnabledIDs: enabledIDs})
 }

@@ -69,11 +69,10 @@ func (s *Service) CreateInstanceWithTable(objID string) gin.HandlerFunc {
 
 		var res interface{}
 
-		// start transaction ** NOTICE: web-server should not call core-service, this is only a temporary use **
-		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+		txnErr := s.ApiCli.Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			// get table attributes
 			attrOpt := mapstr.MapStr{common.BKObjIDField: objID}
-			attributes, err := s.CoreAPI.ApiServer().ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, attrOpt)
+			attributes, err := s.ApiCli.ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, attrOpt)
 			if err != nil {
 				blog.Errorf("get object(%s) attributes failed, err: %v, rid: %s", objID, err, kit.Rid)
 				return err
@@ -102,7 +101,7 @@ func (s *Service) CreateInstanceWithTable(objID string) gin.HandlerFunc {
 						PropertyID: attr.PropertyID,
 						Data:       attrVal,
 					}
-					ids, err := s.CoreAPI.ApiServer().ModelQuote().BatchCreateQuotedInstance(kit.Ctx, kit.Header, tableOpt)
+					ids, err := s.ApiCli.ModelQuote().BatchCreateQuotedInstance(kit.Ctx, kit.Header, tableOpt)
 					if err != nil {
 						return err
 					}
@@ -114,7 +113,7 @@ func (s *Service) CreateInstanceWithTable(objID string) gin.HandlerFunc {
 
 			// proxy request to api server
 			resp := new(metadata.Response)
-			err = s.CoreAPI.ApiServer().Client().Post().
+			err = s.ApiCli.Client().Post().
 				WithContext(kit.Ctx).
 				Body(data).
 				SubResourcef(strings.TrimPrefix(c.Request.URL.Path, "/table")).
@@ -160,11 +159,10 @@ func (s *Service) updateInstanceWithTable(objID string, id int64, data mapstr.Ma
 	return func(c *gin.Context) {
 		kit := rest.NewKitFromHeader(c.Request.Header, s.CCErr)
 
-		// start transaction ** NOTICE: web-server should not call core-service, this is only a temporary use **
-		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+		txnErr := s.ApiCli.Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			// get table attributes
 			attrOpt := mapstr.MapStr{common.BKObjIDField: objID}
-			attributes, err := s.CoreAPI.ApiServer().ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, attrOpt)
+			attributes, err := s.ApiCli.ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, attrOpt)
 			if err != nil {
 				blog.Errorf("get object(%s) attributes failed, err: %v, rid: %s", objID, err, kit.Rid)
 				return err
@@ -200,7 +198,7 @@ func (s *Service) updateInstanceWithTable(objID string, id int64, data mapstr.Ma
 
 			// proxy request to api server
 			resp := new(metadata.Response)
-			err = s.CoreAPI.ApiServer().Client().Put().
+			err = s.ApiCli.Client().Put().
 				WithContext(kit.Ctx).
 				Body(data).
 				SubResourcef(strings.TrimPrefix(c.Request.URL.Path, "/table")).
@@ -263,7 +261,7 @@ func (s *Service) updateTableAttr(kit *rest.Kit, objID, attrID string, instID in
 			IDs:        []uint64{uint64(id)},
 			Data:       val,
 		}
-		err = s.CoreAPI.ApiServer().ModelQuote().BatchUpdateQuotedInstance(kit.Ctx, kit.Header, updateOpt)
+		err = s.ApiCli.ModelQuote().BatchUpdateQuotedInstance(kit.Ctx, kit.Header, updateOpt)
 		if err != nil {
 			blog.Errorf("update quoted instance failed, err: %v, opt: %+v, rid: %s", err, updateOpt, kit.Rid)
 			return err
@@ -284,7 +282,7 @@ func (s *Service) updateTableAttr(kit *rest.Kit, objID, attrID string, instID in
 			PropertyID: attrID,
 			IDs:        deleteIDs,
 		}
-		err = s.CoreAPI.ApiServer().ModelQuote().BatchDeleteQuotedInstance(kit.Ctx, kit.Header, deleteOpt)
+		err = s.ApiCli.ModelQuote().BatchDeleteQuotedInstance(kit.Ctx, kit.Header, deleteOpt)
 		if err != nil {
 			blog.Errorf("delete quoted instance failed, err: %v, opt: %+v, rid: %s", err, deleteOpt, kit.Rid)
 			return err
@@ -298,7 +296,7 @@ func (s *Service) updateTableAttr(kit *rest.Kit, objID, attrID string, instID in
 			PropertyID: attrID,
 			Data:       createData,
 		}
-		_, err = s.CoreAPI.ApiServer().ModelQuote().BatchCreateQuotedInstance(kit.Ctx, kit.Header, createOpt)
+		_, err = s.ApiCli.ModelQuote().BatchCreateQuotedInstance(kit.Ctx, kit.Header, createOpt)
 		if err != nil {
 			blog.Errorf("create quoted instance failed, err: %v, opt: %+v, rid: %s", err, createOpt, kit.Rid)
 			return err
@@ -321,7 +319,7 @@ func (s *Service) getQuotedInstIDMap(kit *rest.Kit, objID string, attrID string,
 			Fields: []string{common.BKFieldID},
 		},
 	}
-	listRes, err := s.CoreAPI.ApiServer().ModelQuote().ListQuotedInstance(kit.Ctx, kit.Header, listOpt)
+	listRes, err := s.ApiCli.ModelQuote().ListQuotedInstance(kit.Ctx, kit.Header, listOpt)
 	if err != nil {
 		blog.Errorf("list quoted instance failed, err: %v, opt: %+v, rid: %s", err, listOpt, kit.Rid)
 		return nil, err

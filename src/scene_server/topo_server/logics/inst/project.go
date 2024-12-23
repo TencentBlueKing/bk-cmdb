@@ -19,16 +19,20 @@ package inst
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 
 	"configcenter/src/ac/extensions"
+	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
+	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 
 	"github.com/google/uuid"
 )
@@ -101,6 +105,28 @@ func (p *project) CreateProject(kit *rest.Kit, data []mapstr.MapStr) ([]int64, e
 	if err != nil {
 		blog.Errorf("save audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	if auth.EnableAuthorize() {
+		iamInstances := make([]metadata.IamInstance, len(data))
+		for index := range data {
+			iamInstances[index] = metadata.IamInstance{
+				ID:   strconv.FormatInt(resp.IDs[index], 10),
+				Name: util.GetStrByInterface(data[index][common.BKProjectNameField]),
+			}
+		}
+		iamInstancesWithCreator := metadata.IamInstancesWithCreator{
+			IamInstances: metadata.IamInstances{
+				Type:      string(iam.Project),
+				Instances: iamInstances,
+			},
+			Creator: kit.User,
+		}
+		_, err = p.authManager.Authorizer.BatchRegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstancesWithCreator)
+		if err != nil {
+			blog.Errorf("register created project to iam failed, err: %s, rid: %s", err, kit.Rid)
+			return nil, err
+		}
 	}
 
 	return resp.IDs, nil

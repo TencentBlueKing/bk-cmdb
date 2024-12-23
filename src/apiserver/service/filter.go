@@ -24,10 +24,10 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metrics"
 	"configcenter/src/common/resource/jwt"
-	"configcenter/src/common/util"
 
 	"github.com/emicklei/go-restful/v3"
 	"github.com/prometheus/client_golang/prometheus"
@@ -63,7 +63,7 @@ const (
 
 // URLFilterChan url filter chan
 func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-	rid := util.GetHTTPCCRequestID(req.Request.Header)
+	rid := httpheader.GetRid(req.Request.Header)
 
 	var kind RequestType
 	var err error
@@ -160,11 +160,51 @@ func (s *service) HostFilterChan(req *restful.Request, resp *restful.Response, c
 	s.urlFilterChan(req, resp, chain, s.discovery.HostServer(), rootPath, "/host/v3")
 }
 
+// TopoFilterChan topo server api filter chan
+func (s *service) TopoFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	s.urlFilterChan(req, resp, chain, s.discovery.TopoServer(), rootPath, "/topo/v3")
+}
+
+// CacheFilterChan cache service api filter chan
+func (s *service) CacheFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	s.urlFilterChan(req, resp, chain, s.discovery.CacheService(), rootPath+"/cache", "/cache/v3")
+}
+
+// TxnFilterChan transaction api filter chan
+func (s *service) TxnFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	// right now, only allow calling from web-server
+	if !httpheader.IsReqFromWeb(req.Request.Header) {
+		resp.WriteAsJson(&metadata.BaseResp{
+			Result: false,
+			Code:   common.CCErrCommAuthNotHavePermission,
+			ErrMsg: "not allowed to call transaction api",
+		})
+		return
+	}
+
+	s.urlFilterChan(req, resp, chain, s.discovery.CoreService(), rootPath, "/api/v3")
+}
+
+// WebCoreFilterChan core-service api filter chan for web-server
+func (s *service) WebCoreFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	// right now, only allow calling from web-server
+	if !httpheader.IsReqFromWeb(req.Request.Header) {
+		resp.WriteAsJson(&metadata.BaseResp{
+			Result: false,
+			Code:   common.CCErrCommAuthNotHavePermission,
+			ErrMsg: "not allowed to call this api",
+		})
+		return
+	}
+
+	s.urlFilterChan(req, resp, chain, s.discovery.CoreService(), rootPath, "/api/v3")
+}
+
 // urlFilterChan url filter chan, modify the request to dispatch it to specific sever
 func (s *service) urlFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain,
 	discovery discovery.Interface, prevRoot, root string) {
 
-	rid := util.GetHTTPCCRequestID(req.Request.Header)
+	rid := httpheader.GetRid(req.Request.Header)
 
 	var err error
 
@@ -226,9 +266,9 @@ func (s *service) authFilter(errFunc func() errors.CCErrorIf) restful.FilterFunc
 func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() errors.CCErrorIf) (*metadata.BaseResp,
 	bool) {
 
-	rid := util.GetHTTPCCRequestID(req.Request.Header)
+	rid := httpheader.GetRid(req.Request.Header)
 	path := req.Request.URL.Path
-	language := util.GetLanguage(req.Request.Header)
+	language := httpheader.GetLanguage(req.Request.Header)
 	attribute, err := parser.ParseAttribute(req, s.engine)
 	if err != nil {
 		blog.Errorf("authFilter failed, caller: %s, parse auth attribute for %s %s failed, err: %v, rid: %s",
@@ -268,7 +308,7 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() err
 		s.noPermissionRequestTotal.With(
 			prometheus.Labels{
 				metrics.LabelHandler: path,
-				metrics.LabelAppCode: req.Request.Header.Get(common.BKHTTPRequestAppCode),
+				metrics.LabelAppCode: httpheader.GetAppCode(req.Request.Header),
 			},
 		).Inc()
 
@@ -327,7 +367,7 @@ return cnt
 // LimiterFilter limit on a api request according to limiter rules
 func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		rid := util.GetHTTPCCRequestID(req.Request.Header)
+		rid := httpheader.GetRid(req.Request.Header)
 		if s.limiter.LenOfRules() == 0 {
 			fchain.ProcessFilter(req, resp)
 			return

@@ -20,6 +20,7 @@ import (
 	"configcenter/src/ac/extensions"
 	bkc "configcenter/src/common"
 	"configcenter/src/common/backbone"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/storage/dal/redis"
 )
 
@@ -38,9 +39,7 @@ var msgHandlerCnt = int64(0)
 // NewDiscover new discover
 func NewDiscover(ctx context.Context, redisCli redis.Client, backbone *backbone.Engine,
 	authManager *extensions.AuthManager) *Discover {
-	header := http.Header{}
-	header.Add(bkc.BKHTTPOwnerID, bkc.BKDefaultOwnerID)
-	header.Add(bkc.BKHTTPHeaderUser, bkc.CCSystemCollectorUserName)
+	header := headerutil.BuildHeader(bkc.CCSystemCollectorUserName, bkc.BKDefaultOwnerID)
 
 	discover := &Discover{
 		redisCli:    redisCli,

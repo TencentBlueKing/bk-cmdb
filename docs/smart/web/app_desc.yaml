@@ -1,0 +1,41 @@
+specVersion: 3
+appVersion: "3.14.4"
+app:
+  region: "default"
+  bkAppCode: "bk_cmdb_saas"
+  bkAppName: "蓝鲸配置平台"
+  bkAppNameEn: "CMDB"
+  market:
+    category: 配置管理
+    introduction: "蓝鲸配置平台是一款面向应用的CMDB，在ITIL体系里，CMDB是构建其它流程的基石，而在蓝鲸智云体系里，配置平台就扮演着基石的角色，为应用提供了各种运维场景的配置数据服务。"
+    introductionEn: "BlueKing Configuration System is an application-oriented CMDB. In the ITIL, the CMDB is the cornerstone for building other processes. In BlueKing, the Configuration System plays a crucial role and provides applications with data configuration services for different operation scenarios."
+    description: "蓝鲸配置平台是一款面向应用的CMDB，在ITIL体系里，CMDB是构建其它流程的基石，而在蓝鲸智云体系里，配置平台就扮演着基石的角色，为应用提供了各种运维场景的配置数据服务。"
+    descriptionEn: "BlueKing Configuration System is an application-oriented CMDB. In the ITIL, the CMDB is the cornerstone for building other processes. In BlueKing, the Configuration System plays a crucial role and provides applications with data configuration services for different operation scenarios."
+    displayOptions:
+      width: 800
+      height: 600
+modules:
+  - name: "web"
+    isDefault: true
+    language: "Go"
+    spec:
+      processes:
+        - procCommand: /app/bin/start-web.sh
+          name: web
+          replicas: 1
+          resQuotaPlan: default
+          targetPort: 80
+          services:
+            - name: web
+              exposedType:
+                name: bk/http
+              targetPort: 80
+              port: 80
+      configuration:
+        env:
+        - name: "GO_INSTALL_PACKAGE_SPEC"
+          value: "./src/web_server"
+        - name: "CGO_CFLAGS"
+          value: "-I/app/Tongsuo-8.3.2/include -Wno-deprecated-declarations"
+        - name: "CGO_LDFLAGS"
+          value: "-L/opt/tongsuo/lib -lssl -lcrypto"

@@ -76,15 +76,15 @@ func (s GlobalModule) Validate() error {
 
 // AdminBackendCfg TODO
 type AdminBackendCfg struct {
-	MaxBizTopoLevel int64  `json:"max_biz_topo_level"`
-	SnapshotBizName string `json:"snapshot_biz_name"`
+	MaxBizTopoLevel int64 `json:"max_biz_topo_level"`
+	SnapshotBizID   int64 `json:"snapshot_biz_id"`
 }
 
 // Validate validate the fields of BackendCfg.
 func (b AdminBackendCfg) Validate() error {
 
-	if strings.TrimSpace(b.SnapshotBizName) == "" {
-		return fmt.Errorf("snapshot biz name can't be empty")
+	if b.SnapshotBizID <= 0 {
+		return fmt.Errorf("snapshot biz id can't be empty")
 	}
 
 	if b.MaxBizTopoLevel < minBizTopoLevel || b.MaxBizTopoLevel > maxBizTopoLevel {
@@ -657,4 +657,68 @@ type InstanceTagValueItem struct {
 // BusinessTopoInstNamesItem TODO
 type BusinessTopoInstNamesItem struct {
 	BaseCfgItem `json:",inline"`
+}
+
+// OldAdminBackendCfg old admin backend config
+type OldAdminBackendCfg struct {
+	MaxBizTopoLevel int64  `json:"max_biz_topo_level"`
+	SnapshotBizName string `json:"snapshot_biz_name"`
+}
+
+// Validate validate the fields of BackendCfg.
+func (o OldAdminBackendCfg) Validate() error {
+
+	if strings.TrimSpace(o.SnapshotBizName) == "" {
+		return fmt.Errorf("snapshot biz name can't be empty")
+	}
+
+	if o.MaxBizTopoLevel < minBizTopoLevel || o.MaxBizTopoLevel > maxBizTopoLevel {
+		return fmt.Errorf("max biz topo level value must in range [%d-%d]", minBizTopoLevel, maxBizTopoLevel)
+	}
+	return nil
+}
+
+// OldPlatformSettingConfig old platform setting config
+type OldPlatformSettingConfig struct {
+	Backend             OldAdminBackendCfg `json:"backend"`
+	ValidationRules     ValidationRulesCfg `json:"validation_rules"`
+	BuiltInSetName      ObjectString       `json:"set"`
+	BuiltInModuleConfig GlobalModule       `json:"idle_pool"`
+}
+
+// Validate validate the fields of OldPlatformSettingConfig is illegal .
+func (c *OldPlatformSettingConfig) Validate() error {
+	vr := reflect.ValueOf(*c)
+	vrt := reflect.TypeOf(*c)
+	for i := 0; i < vr.NumField(); i++ {
+		field := vr.Field(i)
+		funcName := []string{"Validate"}
+		for _, fn := range funcName {
+			vf := field.MethodByName(fn)
+			errVal := vf.Call(make([]reflect.Value, 0))
+			if errVal[0].Interface() != nil {
+				return fmt.Errorf("%s %s failed, error: %s", vrt.Field(i).Name, fn,
+					errVal[0].Interface().(error).Error())
+			}
+		}
+	}
+
+	return nil
+}
+
+// EncodeWithBase64 encode the value of ValidationRules to base64.
+func (c *OldPlatformSettingConfig) EncodeWithBase64() error {
+	vr := reflect.ValueOf(&c.ValidationRules).Elem()
+	vrt := reflect.TypeOf(c.ValidationRules)
+	for i := 0; i < vr.NumField(); i++ {
+		field := vr.Field(i)
+		bc := field.FieldByName("BaseCfgItem")
+		value := bc.Interface().(BaseCfgItem).Value
+		if strings.TrimSpace(value) == "" {
+			return fmt.Errorf("%s can't be empty", vrt.Field(i).Name)
+		}
+		base64Val := base64.StdEncoding.EncodeToString([]byte(value))
+		bc.FieldByName("Value").SetString(base64Val)
+	}
+	return nil
 }

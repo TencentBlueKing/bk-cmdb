@@ -21,8 +21,9 @@ import (
 	idgen "configcenter/pkg/id-gen"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/emicklei/go-restful/v3"
@@ -31,8 +32,8 @@ import (
 // SearchConfigAdmin search the config
 func (s *Service) SearchConfigAdmin(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 
 	cond := map[string]interface{}{
 		"_id": common.ConfigAdminID,
@@ -63,8 +64,8 @@ func (s *Service) SearchConfigAdmin(req *restful.Request, resp *restful.Response
 // UpdateConfigAdmin udpate the config
 func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 
 	config := new(metadata.ConfigAdmin)
 	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
@@ -109,8 +110,8 @@ func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response
 // UpdatePlatformSettingConfig update platform_setting.
 func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 
 	config := new(metadata.PlatformSettingConfig)
 	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
@@ -146,7 +147,7 @@ func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restfu
 		return
 	}
 
-	err = s.updatePlatformSetting(config)
+	err = s.updatePlatformSetting(config, rid)
 	if err != nil {
 		blog.Errorf("update config admin failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
@@ -230,14 +231,14 @@ func (s *Service) savePlatformSettingUpdateAudit(preConf, curConf *metadata.Plat
 	audit := metadata.AuditLog{
 		ID:              int64(id),
 		AuditType:       metadata.PlatformSetting,
-		SupplierAccount: util.GetOwnerID(header),
-		User:            util.GetUser(header),
+		SupplierAccount: httpheader.GetSupplierAccount(header),
+		User:            httpheader.GetUser(header),
 		ResourceType:    metadata.PlatformSettingRes,
 		Action:          metadata.AuditUpdate,
 		OperateFrom:     metadata.FromUser,
 		OperationDetail: &metadata.GenericOpDetail{Data: preConf, UpdateFields: curConf},
 		OperationTime:   metadata.Now(),
-		AppCode:         header.Get(common.BKHTTPRequestAppCode),
+		AppCode:         httpheader.GetAppCode(header),
 		RequestID:       rid,
 	}
 
@@ -250,8 +251,23 @@ func (s *Service) savePlatformSettingUpdateAudit(preConf, curConf *metadata.Plat
 }
 
 // updatePlatformSetting update current configuration to database.
-func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig) error {
+func (s *Service) updatePlatformSetting(config *metadata.PlatformSettingConfig, rid string) error {
 	config.IDGenerator.CurrentID = nil
+
+	// 校验业务是否存在
+	bizCountCond := map[string]interface{}{
+		common.BKAppIDField: config.Backend.SnapshotBizID,
+	}
+	count, err := s.db.Table(common.BKTableNameBaseApp).Find(bizCountCond).Count(s.ctx)
+	if err != nil {
+		blog.Errorf("update config to db failed, count biz error, err: %v, condition: %v, rid: %s", err,
+			bizCountCond, rid)
+		return err
+	}
+	if count == 0 {
+		blog.Errorf("update config to db failed, can not find biz, condition: %v, rid: %s", bizCountCond, rid)
+		return errors.New(common.CCErrCommParamsIsInvalid, "snapshot_biz_id")
+	}
 
 	bytes, err := json.Marshal(config)
 	if err != nil {
@@ -358,8 +374,8 @@ func (s *Service) searchInitConfig(rid string) (*metadata.PlatformSettingConfig,
 // SearchPlatformSettingConfig search the platform config.typeId:current db's config ,typeId:initial initial config.
 func (s *Service) SearchPlatformSettingConfig(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
-	rid := util.GetHTTPCCRequestID(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(rHeader))
+	rid := httpheader.GetRid(rHeader)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 	typeId := req.PathParameter("type")
 
 	conf := new(metadata.PlatformSettingConfig)

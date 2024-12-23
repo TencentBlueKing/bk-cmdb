@@ -629,7 +629,8 @@
             module: this.createModule
           }
           const data = await (handlerMap[nextModelId] || this.createCommonInstance)(formData)
-          const nodeData = {
+
+          const newNodeData = data => ({
             default: 0,
             child: [],
             bk_obj_name: nextModel.bk_obj_name,
@@ -639,7 +640,16 @@
             service_template_id: value.service_template_id,
             status: 'finished',
             ...data
+          })
+
+          let nodeData = []
+          // 批量创建的节点
+          if (Array.isArray(data)) {
+            nodeData = data.map(item => newNodeData(item))
+          } else if (data) {
+            nodeData = newNodeData(data)
           }
+
           this.$refs.tree.addNode(nodeData, parentNode.id, parentNode.data.bk_obj_id === 'biz' ? 1 : 0)
           this.$success(this.$t('新建成功'))
           this.createInfo.show = false
@@ -727,19 +737,47 @@
         return data || []
       },
       async createModule(value) {
-        const data = await this.$store.dispatch('objectModule/createModule', {
+        const isBatch = Array.isArray(value.bk_module_name)
+        const action = isBatch ? 'objectModule/batchCreateModule' : 'objectModule/createModule'
+
+        const setId = this.createInfo.parentNode.data.bk_inst_id
+        let payload = {
+          setId,
           bizId: this.bizId,
-          setId: this.createInfo.parentNode.data.bk_inst_id,
           params: {
             ...value,
             bk_biz_id: this.bizId,
             bk_supplier_account: this.supplierAccount
           }
-        })
-        return {
-          bk_inst_id: data.bk_module_id,
-          bk_inst_name: data.bk_module_name
         }
+
+        if (isBatch) {
+          payload = {
+            params: {
+              bk_set_id: setId,
+              bk_biz_id: this.bizId,
+              modules: value.bk_module_name.map(name => ({
+                bk_module_name: name,
+                service_category_id: value.service_category_id,
+                service_template_id: value.service_template_id
+              }))
+            }
+          }
+        }
+
+        const result = await this.$store.dispatch(action, payload)
+
+        if (!isBatch) {
+          return {
+            bk_inst_id: result.bk_module_id,
+            bk_inst_name: result.bk_module_name
+          }
+        }
+
+        return result?.ids?.map((id, index) => ({
+          bk_inst_id: id,
+          bk_inst_name: value.bk_module_name[index]
+        }))
       },
       async createCommonInstance(value) {
         const data = await this.$store.dispatch('objectCommonInst/createInst', {

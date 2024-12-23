@@ -33,6 +33,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	commonUtil "configcenter/src/common/util"
@@ -170,6 +171,12 @@ func (r *Request) WithTimeout(d time.Duration) *Request {
 	return r
 }
 
+// WithBaseURL set request base url
+func (r *Request) WithBaseURL(baseURL string) *Request {
+	r.baseURL = baseURL
+	return r
+}
+
 // SubResourcef TODO
 func (r *Request) SubResourcef(subPath string, args ...interface{}) *Request {
 	r.subPathArgs = args
@@ -186,6 +193,12 @@ func (r *Request) subResource(subPath string) *Request {
 func (r *Request) Body(body interface{}) *Request {
 	if nil == body {
 		r.body = []byte("")
+		return r
+	}
+
+	bodyBytes, ok := body.([]byte)
+	if ok {
+		r.body = bodyBytes
 		return r
 	}
 
@@ -270,8 +283,8 @@ func (r *Request) checkToleranceLatency(start *time.Time, url, subPath, rid stri
 
 	// request time larger than the maxToleranceLatencyTime time, then log the request
 	blog.InfofDepthf(3, "[apimachinery] request exceeded max latency time. cost: %d ms, code: %s, user: %s, %s, "+
-		"url: %s, body: %s, rid: %s", time.Since(*start)/time.Millisecond, r.headers.Get(common.BKHTTPRequestAppCode),
-		r.headers.Get(common.BKHTTPHeaderUser), r.verb, url, commonUtil.FormatHttpBody(subPath, r.body), rid)
+		"url: %s, body: %s, rid: %s", time.Since(*start)/time.Millisecond, httpheader.GetAppCode(r.headers),
+		httpheader.GetUser(r.headers), r.verb, url, commonUtil.FormatHttpBody(subPath, r.body), rid)
 }
 
 // Do TODO
@@ -280,7 +293,7 @@ func (r *Request) Do() *Result {
 
 	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
 	if rid == "" {
-		rid = commonUtil.GetHTTPCCRequestID(r.headers)
+		rid = httpheader.GetRid(r.headers)
 	}
 
 	if r.err != nil {
@@ -430,6 +443,55 @@ type Result struct {
 	StatusCode int
 	Status     string
 	Header     http.Header
+}
+
+// IntoCmdbResp decode result into cmdb inner response
+func (r *Result) IntoCmdbResp(obj interface{}) error {
+	if r.Err != nil {
+		return r.Err
+	}
+
+	if len(r.Body) != 0 {
+		// parse api gateway response format to cmdb inner response format
+		if gjson.GetBytes(r.Body, common.BkAPIErrorCode).Exists() {
+			buf := bytes.NewBuffer([]byte{'{'})
+
+			gjson.ParseBytes(r.Body).ForEach(func(key, value gjson.Result) bool {
+				keyStr := key.String()
+				switch keyStr {
+				case common.BkAPIErrorCode:
+					keyStr = common.HTTPBKAPIErrorCode
+				case common.BkAPIErrorMessage:
+					keyStr = common.HTTPBKAPIErrorMessage
+				}
+
+				buf.WriteByte('"')
+				buf.WriteString(keyStr)
+				buf.WriteString(`":`)
+				buf.WriteString(value.Raw)
+				buf.WriteByte(',')
+				return true
+			})
+
+			buf.WriteByte('}')
+			r.Body = buf.Bytes()
+		}
+
+		err := json.Unmarshal(r.Body, obj)
+		if err != nil {
+			if r.StatusCode >= 300 {
+				return fmt.Errorf("http request err: %s", string(r.Body))
+			}
+			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", r.Body, err.Error())
+			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
+		}
+		return nil
+	}
+
+	if r.StatusCode >= 300 {
+		return fmt.Errorf("http request failed: %s", r.Status)
+	}
+	return nil
 }
 
 // Into TODO

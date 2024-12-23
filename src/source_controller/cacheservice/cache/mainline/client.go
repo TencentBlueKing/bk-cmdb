@@ -127,7 +127,7 @@ type Client struct {
 
 // GetBusiness get a business's all info with business id
 func (c *Client) GetBusiness(ctx context.Context, bizID int64) (string, error) {
-	rid := ctx.Value(common.BKHTTPCCRequestID)
+	rid := ctx.Value(common.ContextRequestIDField)
 
 	key := bizKey.detailKey(bizID)
 	biz, err := c.rds.Get(ctx, key).Result()

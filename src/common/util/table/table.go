@@ -19,6 +19,7 @@
 package table
 
 import (
+	fullsynccond "configcenter/pkg/cache/full-sync-cond"
 	"configcenter/src/common"
 	kubetypes "configcenter/src/kube/types"
 )
@@ -35,6 +36,7 @@ var delArchiveCollMap = map[string]string{
 	common.BKTableNameBaseBizSet:              common.BKTableNameDelArchive,
 	common.BKTableNameBasePlat:                common.BKTableNameDelArchive,
 	common.BKTableNameBaseProject:             common.BKTableNameDelArchive,
+	fullsynccond.BKTableNameFullSyncCond:      common.BKTableNameDelArchive,
 
 	common.BKTableNameBaseInst:         common.BKTableNameDelArchive,
 	common.BKTableNameMainlineInstance: common.BKTableNameDelArchive,

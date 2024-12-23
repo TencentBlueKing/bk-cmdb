@@ -13,7 +13,7 @@
 <template>
   <div class="dynamic-group-layout">
     <cmdb-tips class="mb10" tips-key="showCustomQuery"
-      :more-link="`${$Site.helpDocUrl}/markdown/CMDB/UserGuide/Feature/CustomQuery.md`">
+      :more-link="`${$helpDocUrlPrefix}/UserGuide/Feature/CustomQuery.md`">
       {{$t('动态分组提示')}}
     </cmdb-tips>
     <div class="dynamic-group-options">
