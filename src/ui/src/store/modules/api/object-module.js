@@ -37,6 +37,10 @@ const actions = {
     return $http.post(`module/${bizId}/${setId}`, params, config)
   },
 
+  batchCreateModule({ commit, state, dispatch }, { params, config }) {
+    return $http.post('createmany/module', params, config)
+  },
+
   /**
      * 删除模块
      * @param {Function} commit store commit mutation hander

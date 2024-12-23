@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"net/http"
 
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
@@ -31,7 +31,6 @@ import (
 func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgentStateRequest) (*ListAgentStateResp,
 	error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(ListAgentStateResp)
 	subPath := "/api/v2/cluster/list_agent_state"
 
@@ -39,7 +38,7 @@ func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgent
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -58,7 +57,6 @@ func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgent
 func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushFileRequest) (*AsyncPushFileResp,
 	error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(AsyncPushFileResp)
 	subPath := "/api/v2/task/async_push_file"
 
@@ -66,7 +64,7 @@ func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushF
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -85,7 +83,6 @@ func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushF
 func (p *gse) GetTransferFileResult(ctx context.Context, h http.Header, data *GetTransferFileResultRequest) (
 	*GetTransferFileResultResp, error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(GetTransferFileResultResp)
 	subPath := "/api/v2/task/async/get_transfer_file_result"
 
@@ -93,7 +90,7 @@ func (p *gse) GetTransferFileResult(ctx context.Context, h http.Header, data *Ge
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -112,7 +109,6 @@ func (p *gse) GetTransferFileResult(ctx context.Context, h http.Header, data *Ge
 func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigAddStreamToParams) (
 	*metadata.GseConfigAddStreamToResult, error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(AddStreamToResp)
 	subPath := "/api/v2/data/add_streamto/"
 
@@ -120,7 +116,7 @@ func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metada
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -139,7 +135,6 @@ func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metada
 func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header,
 	data *metadata.GseConfigUpdateStreamToParams) error {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(apigwutil.ApiGWBaseResponse)
 	subPath := "/api/v2/data/update_streamto/"
 
@@ -147,7 +142,7 @@ func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -166,7 +161,6 @@ func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header,
 func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *metadata.GseConfigQueryStreamToParams) (
 	[]metadata.GseConfigAddStreamToParams, error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(QueryStreamToResp)
 	subPath := "/api/v2/data/query_streamto/"
 
@@ -174,7 +168,7 @@ func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *meta
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -198,7 +192,6 @@ func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *meta
 func (p *gse) ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.GseConfigAddRouteParams) (
 	*metadata.GseConfigAddRouteResult, error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(AddRouteResp)
 	subPath := "/api/v2/data/add_route/"
 
@@ -206,7 +199,7 @@ func (p *gse) ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -225,14 +218,13 @@ func (p *gse) ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.
 func (p *gse) ConfigUpdateRoute(ctx context.Context, h http.Header, data *metadata.GseConfigUpdateRouteParams) error {
 
 	resp := new(apigwutil.ApiGWBaseResponse)
-	h.Set(apigw.AuthKey, p.service.Auth)
 	subPath := "/api/v2/data/update_route/"
 
 	err := p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -251,7 +243,6 @@ func (p *gse) ConfigUpdateRoute(ctx context.Context, h http.Header, data *metada
 func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadata.GseConfigQueryRouteParams) (
 	[]metadata.GseConfigChannel, bool, error) {
 
-	h.Set(apigw.AuthKey, p.service.Auth)
 	resp := new(QueryRouteResp)
 	subPath := "/api/v2/data/query_route/"
 
@@ -259,7 +250,7 @@ func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadat
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
 		Do().
 		Into(resp)
 

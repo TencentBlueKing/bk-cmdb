@@ -235,12 +235,6 @@ func (node *TopoInstanceNode) Name() string {
 	return name
 }
 
-// TraversalFindModule TODO
-func (node *TopoInstanceNode) TraversalFindModule(targetID int64) []*TopoInstanceNode {
-	// ex: module1 ==> reverse([bizID, mainline1, ..., mainline2, set1, module1])
-	return node.TraversalFindNode(common.BKInnerObjIDModule, targetID)
-}
-
 // TraversalFindNode TODO
 // common.BKInnerObjIDObject used for matching custom level node
 func (node *TopoInstanceNode) TraversalFindNode(objectType string, targetID int64) []*TopoInstanceNode {

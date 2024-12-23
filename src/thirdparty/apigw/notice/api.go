@@ -22,20 +22,20 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/thirdparty/apigw"
+	httpheader "configcenter/src/common/http/header"
 )
 
 // GetCurAnn get current announcements
 func (n *notice) GetCurAnn(ctx context.Context, h http.Header, params map[string]string) ([]CurAnnData, error) {
-	h.Set(apigw.AuthKey, n.service.Auth)
 	resp := new(GetCurAnnResp)
 	subPath := "/apigw/v1/announcement/get_current_announcements"
+	params["platform"] = n.service.Config.AppCode
 
 	err := n.service.Client.Get().
 		WithContext(ctx).
 		WithParams(params).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, n.service.Auth)).
 		Do().
 		Into(resp)
 
@@ -52,14 +52,13 @@ func (n *notice) GetCurAnn(ctx context.Context, h http.Header, params map[string
 
 // RegApp register application
 func (n *notice) RegApp(ctx context.Context, h http.Header) (*RegAppData, error) {
-	h.Set(apigw.AuthKey, n.service.Auth)
 	resp := new(RegAppResp)
 	subPath := "/apigw/v1/register"
 
 	err := n.service.Client.Post().
 		WithContext(ctx).
 		SubResourcef(subPath).
-		WithHeaders(h).
+		WithHeaders(httpheader.SetBkAuth(h, n.service.Auth)).
 		Do().
 		Into(resp)
 

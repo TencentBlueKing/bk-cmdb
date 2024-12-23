@@ -165,15 +165,11 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 		Handler: ps.SearchHostWithNoServiceInstance})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance",
 		Handler: ps.SearchServiceInstancesInModule})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance",
-		Handler: ps.SearchServiceInstancesInModuleWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
 		Path:    "/findmany/proc/service/set_template/list_service_instance/biz/{bk_biz_id}",
 		Handler: ps.SearchServiceInstancesBySetTemplate})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/with_host",
 		Handler: ps.ListServiceInstancesWithHost})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/web/service_instance/with_host",
-		Handler: ps.ListServiceInstancesWithHostWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/proc/service_instance/details",
 		Handler: ps.ListServiceInstancesDetails})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/proc/service_instance/biz/{bk_biz_id}",
@@ -251,8 +247,8 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
-		Path:    "/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance",
-		Handler: ps.SearchServiceInstancesInModuleWeb,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/service_instance",
+		Handler: ps.SearchServiceInstancesInModule,
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
@@ -281,8 +277,8 @@ func (ps *ProcServer) newProcessService(web *restful.WebService) {
 	})
 	utility.AddHandler(rest.Action{
 		Verb:    http.MethodPost,
-		Path:    "/findmany/proc/web/biz_set/{bk_biz_set_id}/service_instance/with_host",
-		Handler: ps.ListServiceInstancesWithHostWeb,
+		Path:    "/findmany/proc/biz_set/{bk_biz_set_id}/service_instance/with_host",
+		Handler: ps.ListServiceInstancesWithHost,
 	})
 
 	utility.AddToRestfulWebService(web)

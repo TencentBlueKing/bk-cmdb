@@ -21,15 +21,14 @@
       :key="index"
       :id="option.id"
       :name="option.name">
-      {{option.name}}
-      <span class="operator-description">({{option.title}})</span>
+      <span v-bk-tooltips="option.title">{{option.name}}</span>
     </bk-option>
   </bk-select>
 </template>
 
 <script>
   import Utils from './utils'
-  import { QUERY_OPERATOR, QUERY_OPERATOR_DESC } from '@/utils/query-builder-operator'
+  import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
 
   export default {
     props: {
@@ -44,7 +43,15 @@
       customTypeMap: {
         type: Object,
         default: () => ({})
-      }
+      },
+      symbolMap: {
+        type: Object,
+        default: () => ({})
+      },
+      descMap: {
+        type: Object,
+        default: () => ({})
+      },
     },
     computed: {
       listeners() {
@@ -100,8 +107,8 @@
 
         return typeMap[propertyType].map(operator => ({
           id: operator,
-          name: Utils.getOperatorSymbol(operator),
-          title: QUERY_OPERATOR_DESC[operator]
+          name: Utils.getOperatorSymbol(operator, this.symbolMap),
+          title: this.descMap[operator]
         }))
       },
       localValue: {
@@ -116,16 +123,3 @@
     }
   }
 </script>
-
-<style lang="scss" scoped>
-    .operator-option {
-        &:hover {
-            .operator-description {
-                display: initial;
-            }
-        }
-        .operator-description {
-            display: none;
-        }
-    }
-</style>

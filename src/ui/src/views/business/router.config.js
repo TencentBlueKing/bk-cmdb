@@ -17,8 +17,8 @@ import {
   MENU_RESOURCE_BUSINESS_HISTORY,
   MENU_RESOURCE_MANAGEMENT
 } from '@/dictionary/menu-symbol'
-
 import { OPERATION } from '@/dictionary/iam-auth'
+
 export default [{
   name: MENU_RESOURCE_BUSINESS,
   path: 'business',

@@ -24,13 +24,13 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
-	"github.com/tidwall/gjson"
 
 	"github.com/emicklei/go-restful/v3"
+	"github.com/tidwall/gjson"
 )
 
 // Get TODO
@@ -58,7 +58,7 @@ const maxToleranceLatencyTime = 10 * time.Second
 // Do TODO
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
 
-	rid := util.GetHTTPCCRequestID(req.Request.Header)
+	rid := httpheader.GetRid(req.Request.Header)
 	start := time.Now()
 	url := req.Request.URL.Scheme + "://" + req.Request.URL.Host + req.Request.RequestURI
 	proxyReq, err := http.NewRequestWithContext(req.Request.Context(), req.Request.Method, url, req.Request.Body)
@@ -91,7 +91,7 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		}
 
 		blog.Errorf("*failed to do request[%s url: %s], user: %s, app code: %s, err: %v, rid: %s", req.Request.Method,
-			url, req.Request.Header.Get(common.BKHTTPHeaderUser), req.Request.Header.Get(common.BKHTTPRequestAppCode),
+			url, httpheader.GetUser(req.Request.Header), httpheader.GetAppCode(req.Request.Header),
 			err, rid)
 
 		// send alarm when http request timeout, to monitor api server request
@@ -100,8 +100,8 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 				RequestID: rid,
 				Type:      meta.HttpFatalError,
 				Detail: fmt.Sprintf("request timeout, user: %s, app code: %s, err: %v, %s, %s, rid: %s, cost: %d ms",
-					req.Request.Header.Get(common.BKHTTPHeaderUser),
-					req.Request.Header.Get(common.BKHTTPRequestAppCode), err, req.Request.Method, url, rid,
+					httpheader.GetUser(req.Request.Header),
+					httpheader.GetAppCode(req.Request.Header), err, req.Request.Method, url, rid,
 					time.Since(start)/time.Millisecond),
 				Dimension: map[string]string{"error_type": "request timeout"},
 				Module:    common.GetIdentification(),
@@ -136,8 +136,8 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 
 	blog.V(4).Infof("cost: %dms, action: %s, status code: %d, user: %s, app code: %s, url: %s, rid: %s",
 		time.Since(start).Nanoseconds()/int64(time.Millisecond), req.Request.Method, response.StatusCode,
-		req.Request.Header.Get(common.BKHTTPHeaderUser), req.Request.Header.Get(common.BKHTTPRequestAppCode), url,
-		req.Request.Header.Get(common.BKHTTPCCRequestID),
+		httpheader.GetUser(req.Request.Header), httpheader.GetAppCode(req.Request.Header), url,
+		httpheader.GetRid(req.Request.Header),
 	)
 	return
 }
@@ -145,7 +145,8 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 func parseResponse(req *restful.Request, resp *restful.Response, body io.ReadCloser, rid string) {
 	// compatible for esb and old ui response
 	// TODO remove this logics and change cc response format when esb is not supported
-	if req.Request.Header.Get(common.BkHTTPHeaderJWT) == "" {
+	header := req.Request.Header
+	if httpheader.GetBkJWT(header) == "" || httpheader.IsReqFromWeb(header) {
 		if _, err := io.Copy(resp, body); err != nil {
 			body.Close()
 			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)

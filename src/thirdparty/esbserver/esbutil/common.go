@@ -15,7 +15,7 @@ package esbutil
 import (
 	"net/http"
 
-	"configcenter/src/common/util"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
@@ -43,6 +43,6 @@ func SetEsbAuthHeader(esbConfig EsbConfig, header http.Header) http.Header {
 // GetEsbRequestParams get esb request parameters
 func GetEsbRequestParams(esbConfig EsbConfig, header http.Header) *EsbCommParams {
 	return &EsbCommParams{
-		SupplierID: util.GetOwnerID(header),
+		SupplierID: httpheader.GetSupplierAccount(header),
 	}
 }

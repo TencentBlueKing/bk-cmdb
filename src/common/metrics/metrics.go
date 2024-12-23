@@ -22,8 +22,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/types"
 
 	"github.com/emicklei/go-restful/v3"
@@ -185,21 +185,22 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		s.requestDuration.With(s.label(LabelHandler, uri, LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode))).
+		appCode := httpheader.GetAppCode(r.Header)
+		s.requestDuration.With(s.label(LabelHandler, uri, LabelAppCode, appCode)).
 			Observe(float64(time.Since(before) / time.Millisecond))
 
 		requestTotalLabels := []string{
 			LabelHandler, uri,
 			LabelHTTPStatus, strconv.Itoa(resp.StatusCode()),
 			LabelOrigin, getOrigin(r.Header),
-			LabelAppCode, r.Header.Get(common.BKHTTPRequestAppCode),
+			LabelAppCode, appCode,
 		}
 
 		s.requestTotal.With(s.label(requestTotalLabels...)).Inc()
 
 		// add user metrics for api-server
 		if s.conf.ProcessName == types.CC_MODULE_APISERVER {
-			s.userTotal.With(s.label(LabelUser, r.Header.Get(common.BKHTTPHeaderUser), LabelOrigin,
+			s.userTotal.With(s.label(LabelUser, httpheader.GetUser(r.Header), LabelOrigin,
 				getOrigin(r.Header))).Inc()
 		}
 	})
@@ -224,13 +225,18 @@ func (s *Service) label(labelKVs ...string) prometheus.Labels {
 }
 
 func getOrigin(header http.Header) string {
-	if header.Get(common.BKHTTPRequestFromWeb) == "true" {
+	if httpheader.IsReqFromWeb(header) {
 		return "webserver"
 	}
 
-	if header.Get(common.BKHTTPOtherRequestID) != "" {
-		return "ESB"
+	if httpheader.GetBkJWT(header) != "" {
+		return "api-gateway"
 	}
+
+	if header.Get(httpheader.BKHTTPHeaderUser) != "" {
+		return "esb"
+	}
+
 	if userString := header.Get("User-Agent"); userString != "" {
 		ua := user_agent.New(userString)
 		browser, _ := ua.Browser()

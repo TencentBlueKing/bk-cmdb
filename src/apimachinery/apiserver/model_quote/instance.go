@@ -38,7 +38,7 @@ func (q quote) BatchCreateQuotedInstance(ctx context.Context, h http.Header,
 		SubResourcef("/createmany/quoted/instance").
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, errors.CCHttpError
@@ -63,7 +63,7 @@ func (q quote) ListQuotedInstance(ctx context.Context, h http.Header, opt *metad
 		SubResourcef("/findmany/quoted/instance").
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, errors.CCHttpError
@@ -88,7 +88,7 @@ func (q quote) BatchUpdateQuotedInstance(ctx context.Context, h http.Header,
 		SubResourcef("/updatemany/quoted/instance").
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return errors.CCHttpError
@@ -113,7 +113,7 @@ func (q quote) BatchDeleteQuotedInstance(ctx context.Context, h http.Header,
 		SubResourcef("/deletemany/quoted/instance").
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return errors.CCHttpError
@@ -138,7 +138,7 @@ func (q quote) GetObjectAttrWithTable(ctx context.Context, h http.Header, params
 		SubResourcef("/find/objectattr/web").
 		WithHeaders(h).
 		Do().
-		Into(resp)
+		IntoCmdbResp(resp)
 
 	if err != nil {
 		return nil, errors.CCHttpError

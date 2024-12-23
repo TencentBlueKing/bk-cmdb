@@ -95,11 +95,11 @@ type InstanceInterface interface {
 
 	// SearchObjectInstances searches object instances.
 	SearchObjectInstances(ctx context.Context, header http.Header,
-		objID string, input *metadata.CommonSearchFilter) (*metadata.Response, error)
+		objID string, input *metadata.SearchInstanceFilter) (*metadata.Response, error)
 
 	// CountObjectInstances counts object instances num.
 	CountObjectInstances(ctx context.Context, header http.Header,
-		objID string, input *metadata.CommonCountFilter) (*metadata.Response, error)
+		objID string, input *metadata.CountInstanceFilter) (*metadata.Response, error)
 
 	// CreateBizSet create biz set
 	CreateBizSet(ctx context.Context, h http.Header, opt metadata.CreateBizSetRequest) (int64, errors.CCErrorCoder)

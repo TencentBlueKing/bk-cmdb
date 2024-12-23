@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/kube/types"
@@ -163,8 +164,8 @@ func (c *kubeAuditLog) generateAuditLog(param *generateAuditCommonParameter, typ
 		BusinessID:      bizID,
 		ResourceID:      id,
 		ResourceName:    *name,
-		AppCode:         param.kit.Header.Get(common.BKHTTPRequestAppCode),
-		RequestID:       param.kit.Header.Get(common.BKHTTPCCRequestID),
+		AppCode:         httpheader.GetAppCode(param.kit.Header),
+		RequestID:       httpheader.GetRid(param.kit.Header),
 	}, nil
 }
 

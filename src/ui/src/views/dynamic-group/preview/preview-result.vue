@@ -21,15 +21,14 @@
           )
         </span>
       </div>
-      <bk-button
-        theme="default"
-        icon="refresh"
+      <cmdb-refresh
+        v-if="hasCondition"
         class="mr10 refresh"
         size="small"
-        v-if="hasCondition"
-        @click="handleRefresh">
-        {{$t('刷新')}}
-      </bk-button>
+        :show-time="false"
+        @refresh="handleRefresh"
+        ref="refresh">
+      </cmdb-refresh>
     </div>
     <bk-table v-if="hasCondition" class="result-list"
       ref="tableRef"
@@ -119,6 +118,7 @@
   import FilterUtils from '@/components/filters/utils'
   import { $bkPopover, $error, $success } from '@/magicbox/index.js'
   import { rollReqUseCount } from '@/service/utils.js'
+  import cmdbRefresh from '@/components/refresh'
 
   const { proxy } = getCurrentInstance()
   const props = defineProps({

@@ -13,6 +13,7 @@
 /* eslint-disable no-unused-vars */
 import $http from '@/api'
 import CombineRequest from '@/api/combine-request'
+import propertyService from '@/service/property/property.js'
 import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
 
 const state = {
@@ -112,8 +113,14 @@ const actions = {
   deleteTemplateRules({ commit, state, dispatch }, { bizId, params }) {
     return $http.delete(`deletemany/proc/service_template/host_apply_rule/biz/${bizId}`, params)
   },
-  getProperties(context, { params, config }) {
-    return $http.post('find/objectattr/host', params, config)
+  async getProperties(context, { params, config }) {
+    const properties = await propertyService.find({ ...params, bk_obj_id: 'host' }, config)
+    const ids = properties?.map(prop => prop.id) ?? []
+    const { host_apply_enabled_ids: enabledIds = [] } = await $http.post('check/objectattr/host_apply_enabled', { ids })
+    return properties?.map(prop => ({
+      ...prop,
+      host_apply_enabled: enabledIds.some(id => id === prop.id)
+    }))
   },
   getHostRelatedRules(context, { bizId, params, config }) {
     return $http.post(`findmany/host_apply_rule/bk_biz_id/${bizId}/host_related_rules`, params, config)

@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/ac"
 	acMeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -350,7 +351,7 @@ func init() {
 	}
 
 	strOpMap := make(map[string]struct{})
-	for _, op := range append(commonOps, common.BKDBLIKE) {
+	for _, op := range append(commonOps, common.BKDBLIKE, string(filter.Contains), string(filter.ContainsSensitive)) {
 		strOpMap[op] = struct{}{}
 	}
 

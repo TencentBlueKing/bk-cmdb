@@ -385,10 +385,10 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 		return common.BKAppIDField
 	case iam.BizSet:
 		return common.BKBizSetIDField
-	// case iam.Set:
-	//	return common.BKSetIDField
-	// case iam.Module:
-	//	return common.BKModuleIDField
+	case iam.Set:
+		return common.BKSetIDField
+	case iam.Module:
+		return common.BKModuleIDField
 	default:
 		if iam.IsIAMSysInstance(resourceType) {
 			return common.BKInstIDField
@@ -425,10 +425,10 @@ func GetResourceNameField(resourceType iam.TypeID) string {
 		return common.BKFieldName
 	case iam.Project:
 		return common.BKProjectNameField
-	// case iam.Set:
-	//	return common.BKSetNameField
-	// case iam.Module:
-	//	return common.BKModuleNameField
+	case iam.Set:
+		return common.BKSetNameField
+	case iam.Module:
+		return common.BKModuleNameField
 	default:
 		if iam.IsIAMSysInstance(resourceType) {
 			return common.BKInstNameField

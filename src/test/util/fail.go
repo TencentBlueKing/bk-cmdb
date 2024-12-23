@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/util"
 
 	"github.com/onsi/ginkgo"
@@ -36,8 +36,8 @@ func RegisterResponse(rsp interface{}) {
 // RegisterResponseWithRid register api response and rid from header to output them for debugging, set new rid to header
 func RegisterResponseWithRid(rsp interface{}, header http.Header) {
 	response = rsp
-	rid = util.GetHTTPCCRequestID(header)
-	header.Set(common.BKHTTPCCRequestID, util.GenerateRID())
+	rid = httpheader.GetRid(header)
+	httpheader.SetRid(header, util.GenerateRID())
 }
 
 // Fail ginkgo test fail hook

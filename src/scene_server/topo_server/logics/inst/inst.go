@@ -25,13 +25,13 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	gparams "configcenter/src/common/paraparse"
 	"configcenter/src/common/util"
-	"configcenter/src/framework/core/log"
 )
 
 // InstOperationInterface inst operation methods
@@ -41,6 +41,8 @@ type InstOperationInterface interface {
 	// CreateManyInstance batch create instance by object and create message
 	CreateManyInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.CreateManyCommInstResultDetail,
 		error)
+	//BatchCreateInstance batch create instance, if one of instances fails to create, an error is returned.
+	BatchCreateInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.BatchCreateInstRespData, error)
 	// CreateInstBatch batch create instance by excel
 	CreateInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (*metadata.ImportInstRes, error)
 	// DeleteInst delete instance by objectid and condition
@@ -55,10 +57,10 @@ type InstOperationInterface interface {
 	// UpdateInst update instance by condition
 	UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID string) error
 	// SearchObjectInstances searches object instances.
-	SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (
+	SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.SearchInstanceFilter) (
 		*metadata.CommonSearchResult, error)
 	// CountObjectInstances counts object instances num.
-	CountObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonCountFilter) (*metadata.CommonCountResult,
+	CountObjectInstances(kit *rest.Kit, objID string, input *metadata.CountInstanceFilter) (*metadata.CommonCountResult,
 		error)
 	// FindInstChildTopo find instance's child topo
 	FindInstChildTopo(kit *rest.Kit, objID string, instID int64) (int, []*metadata.CommonInstTopo, error)
@@ -243,6 +245,44 @@ func (c *commonInst) CreateManyInstance(kit *rest.Kit, objID string, data []maps
 	return resp, nil
 }
 
+// BatchCreateInstance batch create instance, if one of instances fails to create, an error is returned.
+func (c *commonInst) BatchCreateInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (
+	*metadata.BatchCreateInstRespData, error) {
+
+	params := &metadata.BatchCreateModelInstOption{Data: data}
+	res, err := c.clientSet.CoreService().Instance().BatchCreateInstance(kit.Ctx, kit.Header, objID, params)
+	if err != nil {
+		blog.Errorf("failed to save the object(%s) instances, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
+
+	if len(res.IDs) == 0 {
+		return res, nil
+	}
+
+	// generate audit log of instance.
+	for i, id := range res.IDs {
+		data[i][common.BKModuleIDField] = id
+	}
+	audit := auditlog.NewInstanceAudit(c.clientSet.CoreService())
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
+	auditLog, rawErr := audit.GenerateAuditLog(generateAuditParameter, objID, data)
+	if rawErr != nil {
+		blog.Errorf("create many instances, generate audit log failed, err: %v, rid: %s",
+			rawErr, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrAuditGenerateLogFailed, rawErr.Error())
+	}
+
+	// save audit log.
+	rawErr = audit.SaveAuditLog(kit, auditLog...)
+	if rawErr != nil {
+		blog.Errorf("creat many instances, save audit log failed, err: %v, rid: %s", rawErr, kit.Rid)
+		return nil, kit.CCError.Error(common.CCErrAuditSaveLogFailed)
+	}
+
+	return res, nil
+}
+
 // createInstBatch batch create instance by excel
 func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *metadata.InstBatchInfo) (
 	*metadata.ImportInstRes, error) {
@@ -253,7 +293,7 @@ func (c *commonInst) createInstBatch(kit *rest.Kit, objID string, batchInfo *met
 		return nil, err
 	}
 
-	ccLang := c.language.CreateDefaultCCLanguageIf(util.GetLanguage(kit.Header))
+	ccLang := c.language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header))
 	result := new(metadata.ImportInstRes)
 
 	for idx, inst := range batchInfo.BatchInfo {
@@ -388,7 +428,7 @@ func (c *commonInst) createInstByExcel(kit *rest.Kit, objID string, tableData *m
 	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, objID, []mapstr.MapStr{inst})
 	if err != nil {
-		log.Errorf("save audit failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("save audit failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -910,11 +950,11 @@ func (c *commonInst) UpdateInst(kit *rest.Kit, cond, data mapstr.MapStr, objID s
 }
 
 // SearchObjectInstances searches object instances.
-func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.CommonSearchFilter) (
+func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string, input *metadata.SearchInstanceFilter) (
 	*metadata.CommonSearchResult, error) {
 
 	// search conditions.
-	cond, err := input.GetConditions()
+	cond, err := input.GetCond()
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}
@@ -944,10 +984,10 @@ func (c *commonInst) SearchObjectInstances(kit *rest.Kit, objID string, input *m
 
 // CountObjectInstances counts object instances num.
 func (c *commonInst) CountObjectInstances(kit *rest.Kit, objID string,
-	input *metadata.CommonCountFilter) (*metadata.CommonCountResult, error) {
+	input *metadata.CountInstanceFilter) (*metadata.CommonCountResult, error) {
 
 	// count conditions.
-	cond, err := input.GetConditions()
+	cond, err := input.GetCond()
 	if err != nil {
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsInvalid, err)
 	}

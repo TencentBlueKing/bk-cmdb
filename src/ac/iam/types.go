@@ -223,6 +223,14 @@ const (
 	// KubeWorkloadEvent kube workload resource for resource watch
 	KubeWorkloadEvent TypeID = "kube_workload_event"
 
+	// GeneralCache defines general resource cache auth type
+	GeneralCache TypeID = "general_cache"
+
+	// Set is set auth type
+	Set TypeID = "set"
+	// Module is module auth type
+	Module TypeID = "module"
+
 	// SkipType TODO
 	// for resource type, which is not need to be authorized
 	SkipType TypeID = "skip_type"
@@ -534,11 +542,26 @@ const (
 	// DeleteFieldGroupingTemplate delete field grouping template action id
 	DeleteFieldGroupingTemplate = "delete_field_grouping_template"
 
+	// EditIDRuleIncrID edit id rule self-increasing id action id
+	EditIDRuleIncrID ActionID = "edit_id_rule_incr_id"
+
 	// GlobalSettings TODO
 	GlobalSettings ActionID = "global_settings"
 
 	// UseFulltextSearch use fulltext search
 	UseFulltextSearch ActionID = "use_fulltext_search"
+
+	// CreateFullSyncCond create full sync cond action id
+	CreateFullSyncCond = "create_full_sync_cond"
+	// ViewFullSyncCond view full sync cond action id
+	ViewFullSyncCond = "view_full_sync_cond"
+	// EditFullSyncCond edit full sync cond action id
+	EditFullSyncCond = "edit_full_sync_cond"
+	// DeleteFullSyncCond delete full sync cond action id
+	DeleteFullSyncCond = "delete_full_sync_cond"
+
+	// ViewGeneralCache view general resource cache
+	ViewGeneralCache = "view_general_cache"
 
 	// Unsupported TODO
 	// Unknown is an action that can not be recognized
@@ -723,6 +746,10 @@ const (
 	SysResourcePoolDirectorySelection InstanceSelectionID = "sys_resource_pool_directory"
 	// SysHostRscPoolDirectorySelection TODO
 	SysHostRscPoolDirectorySelection InstanceSelectionID = "sys_host_rsc_pool_directory"
+	// GeneralCacheSelection general resource cache instance selection id
+	GeneralCacheSelection InstanceSelectionID = "general_cache"
+	// BizTopoSelection is biz topo instance selection id
+	BizTopoSelection InstanceSelectionID = "biz_topo"
 )
 
 // InstanceSelection TODO

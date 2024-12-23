@@ -41,6 +41,8 @@
   import store from '@/store'
   import Tippy from 'bk-magic-vue/lib/utils/tippy'
   import Utils from './utils'
+  import { QUERY_OPERATOR_HOST_SYMBOL } from '@/utils/query-builder-operator'
+
   export default {
     props: {
       property: {
@@ -78,7 +80,7 @@
         return this.operator === '$range'
       },
       operatorSymbol() {
-        return Utils.getOperatorSymbol(this.operator)
+        return Utils.getOperatorSymbol(this.operator, QUERY_OPERATOR_HOST_SYMBOL)
       },
       displayText() {
         if (this.operator === '$range') {

@@ -13,15 +13,8 @@
 package util
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"testing"
-
-	"configcenter/src/common"
-
-	"github.com/emicklei/go-restful/v3"
-	"github.com/stretchr/testify/require"
 )
 
 func TestInArray(t *testing.T) {
@@ -155,20 +148,6 @@ func TestStrArrDiff(t *testing.T) {
 	}
 }
 
-func TestGetActionLanguage(t *testing.T) {
-	req := httptest.NewRequest("POST", "http://127.0.0.1/call", nil)
-
-	language := GetLanguage(restful.NewRequest(req).Request.Header)
-
-	req.Header.Set(common.BKHTTPLanguage, "cn")
-	language = GetLanguage(restful.NewRequest(req).Request.Header)
-	require.Equal(t, "cn", language)
-
-	req.Header.Set(common.BKHTTPLanguage, "cnn")
-	language = GetLanguage(restful.NewRequest(req).Request.Header)
-	require.NotEqual(t, "cn", language)
-}
-
 func TestInStrArr(t *testing.T) {
 	type args struct {
 		arr []string
@@ -187,34 +166,5 @@ func TestInStrArr(t *testing.T) {
 				t.Errorf("InStrArr() = %v, want %v", got, tt.want)
 			}
 		})
-	}
-}
-
-func TestHeader(t *testing.T) {
-	header := http.Header{}
-	header.Set(common.BKHTTPLanguage, "zh")
-	header.Set(common.BKHTTPHeaderUser, "user")
-	header.Set(common.BKHTTPOwnerID, "owner")
-	header.Set(common.BKHTTPCCRequestID, "rid")
-
-	req := &http.Request{Header: header}
-	r := restful.NewRequest(req)
-	if GetLanguage(header) != "zh" {
-		t.Fail()
-	}
-	if GetLanguage(r.Request.Header) != "zh" {
-		t.Fail()
-	}
-
-	if GetUser(header) != "user" {
-		t.Fail()
-	}
-
-	if GetOwnerID(header) != "owner" {
-		t.Fail()
-	}
-
-	if GetHTTPCCRequestID(header) != "rid" {
-		t.Fail()
 	}
 }

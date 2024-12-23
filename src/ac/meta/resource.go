@@ -67,6 +67,7 @@ const (
 	Project                  ResourceType = "project"
 	FulltextSearch           ResourceType = "fulltextSearch"
 	FieldTemplate            ResourceType = "fieldTemplate"
+	IDRuleIncrID             ResourceType = "idRuleIncrID"
 )
 
 // kube related auth resource in CMDB
@@ -114,6 +115,14 @@ const (
 
 	// KubePodWorkload pod workload auth resource type in CMDB
 	KubePodWorkload ResourceType = "kube_pods"
+)
+
+// cache related auth resource in CMDB
+const (
+	// FullSyncCond is full sync cond auth resource type in CMDB
+	FullSyncCond ResourceType = "fullSyncCond"
+	// GeneralCache is general resource cache auth resource type in CMDB
+	GeneralCache ResourceType = "generalCache"
 )
 
 const (

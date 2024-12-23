@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
@@ -430,4 +431,51 @@ func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iam.TypeID, hostLi
 	}
 
 	return relationMap, nil
+}
+
+// FetchSetModuleNameInfo fetch set & module resource name info for no permission apply url use
+func (lgc *Logics) FetchSetModuleNameInfo(kit *rest.Kit, resType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+	[]map[string]interface{}, error) {
+
+	var objID string
+	switch resType {
+	case iam.Set:
+		objID = common.BKInnerObjIDSet
+	case iam.Module:
+		objID = common.BKInnerObjIDModule
+	default:
+		blog.Errorf("resource type %s is invalid, rid: %s", resType, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")
+	}
+
+	if len(filter.Attrs) == 0 && !util.Contains(filter.Attrs, types.NameField) {
+		return make([]map[string]interface{}, 0), nil
+	}
+
+	filterIDs, err := util.SliceStrToInt64(filter.IDs)
+	if err != nil {
+		blog.Errorf("parse ids(%+v) to []int failed, err: %v, rid: %s", filter.IDs, err, kit.Rid)
+		return nil, err
+	}
+	idField := common.GetInstIDField(objID)
+	cond := mapstr.MapStr{
+		idField: mapstr.MapStr{common.BKDBIN: filterIDs},
+	}
+
+	nameField := common.GetInstNameField(objID)
+	param := metadata.PullResourceParam{Condition: cond, Fields: []string{idField, nameField}, Limit: common.BKNoLimit,
+		Offset: 0}
+	instances, err := lgc.searchAuthResource(kit, param, resType)
+	if err != nil {
+		blog.Errorf("search auth resource failed, err: %v, param: %+v, rid: %s", err, param, kit.Rid)
+		return nil, err
+	}
+
+	for _, instance := range instances.Info {
+		instance[types.IDField] = util.GetStrByInterface(instance[idField])
+		if instance[nameField] != nil {
+			instance[types.NameField] = util.GetStrByInterface(instance[nameField])
+		}
+	}
+	return instances.Info, nil
 }

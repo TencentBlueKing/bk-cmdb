@@ -20,8 +20,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 )
 
 // INVALIDID invalid id used as return value
@@ -31,7 +31,7 @@ const INVALIDID uint64 = 0
 // by checking if bk_obj_id and bk_obj_name function parameter are valid net device object or not
 // one of bk_obj_id and bk_obj_name can be empty and will return both bk_obj_id if no error
 func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName string) (string, string, error) {
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pheader))
 
 	if "" == objName && "" == objID {
 		blog.Errorf("[NetCollect] check net device object, empty bk_obj_id and bk_obj_name")
@@ -70,7 +70,7 @@ func (lgc *Logics) checkNetObject(pheader http.Header, objID string, objName str
 // one of bk_property_id and bk_property_name can be empty and will return bk_property_id value if no error
 func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, propertyID, propertyName string) (string,
 	error) {
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pheader))
 
 	if "" == netDeviceObjID {
 		blog.Errorf("[NetCollect] check net device object, empty bk_obj_id")
@@ -112,15 +112,16 @@ func (lgc *Logics) checkNetObjectProperty(pheader http.Header, netDeviceObjID, p
 // by checking if bk_device_id and bk_device_name function parameter are valid net device or not
 // one of bk_device_id and bk_device_name can be empty and will return bk_device_id and bk_obj_id value if no error
 // bk_obj_id is used to check property
-func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID uint64, deviceName string) (uint64, string, error) {
-	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(util.GetLanguage(pheader))
+func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID uint64, deviceName string) (uint64, string,
+	error) {
+	defErr := lgc.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(pheader))
 
 	if "" == deviceName && 0 == deviceID {
 		blog.Errorf("[NetCollect] check net device exist fail, empty device_id and device_name")
 		return 0, "", defErr.Errorf(common.CCErrCommParamsNeedSet, common.BKDeviceIDField)
 	}
 
-	deviceCond := map[string]interface{}{common.BKOwnerIDField: util.GetOwnerID(pheader)}
+	deviceCond := map[string]interface{}{common.BKOwnerIDField: httpheader.GetSupplierAccount(pheader)}
 
 	if "" != deviceName {
 		deviceCond[common.BKDeviceNameField] = deviceName
@@ -130,7 +131,8 @@ func (lgc *Logics) checkNetDeviceExist(pheader http.Header, deviceID uint64, dev
 	}
 
 	deviceData := meta.NetcollectDevice{}
-	if err := lgc.db.Table(common.BKTableNameNetcollectDevice).Find(deviceCond).Fields(common.BKDeviceIDField, common.BKObjIDField).
+	if err := lgc.db.Table(common.BKTableNameNetcollectDevice).Find(deviceCond).Fields(common.BKDeviceIDField,
+		common.BKObjIDField).
 		One(lgc.ctx, &deviceData); nil != err {
 
 		blog.Errorf("[NetCollect] check net device exist fail, error: %v, condition [%#v]", err, deviceCond)

@@ -64,6 +64,27 @@ func (s *cacheService) initCache(web *restful.WebService) {
 	// Note: only for inner api!!!
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/inner/watch/cache/event", Handler: s.InnerWatchEvent})
 
+	// conditional full sync scene resource cache related api
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/full/sync/cond",
+		Handler: s.CreateFullSyncCond})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/full/sync/cond", Handler: s.UpdateFullSyncCond})
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/full/sync/cond",
+		Handler: s.DeleteFullSyncCond})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/full/sync/cond",
+		Handler: s.ListFullSyncCond})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/resource/by_full_sync_cond",
+		Handler: s.ListCacheByFullSyncCond})
+
+	// general resource cache api
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/resource/by_ids",
+		Handler: s.ListGeneralCacheByIDs})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/resource/by_unique_keys",
+		Handler: s.ListGeneralCacheByUniqueKey})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/refresh/general/resource/id_list",
+		Handler: s.RefreshGeneralResIDList})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/refresh/general/resource/detail/by_ids",
+		Handler: s.RefreshGeneralResDetailByIDs})
+
 	utility.AddToRestfulWebService(web)
 }
 

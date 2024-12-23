@@ -57,10 +57,6 @@
 
 ```json
 {
-  "bk_app_code": "esb_test",
-  "bk_app_secret": "xxx",
-  "bk_username": "xxx",
-  "bk_token": "xxx",
   "bk_biz_id": 2,
   "filter": {
     "condition": "OR",
@@ -94,10 +90,6 @@
 
 ```json
 {
-  "bk_app_code": "esb_test",
-  "bk_app_secret": "xxx",
-  "bk_username": "xxx",
-  "bk_token": "xxx",
   "bk_biz_id": 2,
   "filter": {
     "condition": "OR",
@@ -134,8 +126,8 @@
 ```json
 {
   "result": true,
-  "bk_error_code": 0,
-  "bk_error_msg": "success",
+  "code": 0,
+  "message": "success",
   "permission": null,
   "data": {
     "count": 0,
@@ -192,7 +184,6 @@
 | message    | string | 请求失败返回的错误信息                |
 | permission | object | 权限信息                       |
 | data       | object | 请求返回的数据                    |
-| request_id | string | 请求链id                      |
 
 #### data
 

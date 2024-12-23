@@ -372,14 +372,14 @@ func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg *me
 }
 
 // getAllConfigs get preCfg, curCfg.
-func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadata.PlatformSettingConfig,
+func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadata.OldPlatformSettingConfig,
 	preCfg *metadata.ConfigAdmin, dbCfg string, err error) {
 	var pre string
 
 	for index, config := range configChangeHistory {
 		if config.dir == dir {
 			cur := config.config
-			curCfg = new(metadata.PlatformSettingConfig)
+			curCfg = new(metadata.OldPlatformSettingConfig)
 			if err := json.Unmarshal([]byte(cur), curCfg); err != nil {
 				blog.Errorf("get all config failed, unmarshal err: %v, config: %v", err, cur)
 				return nil, nil, "", err
@@ -455,7 +455,7 @@ func getFinalConfig(preCfg, curCfg, dbCfg *metadata.ConfigAdmin) *metadata.Confi
 // 1、将preCfg和db存在的配置dbCfg进行对比，对于不一致的（说明有用户调过配置管理接口做过更改）,curCfg里对应的配置不做覆盖，仍为db里的数据
 // 2、如果preCfg和dbCfg如果一样的话，那么如果本次curCfg不一样，则需要升级覆盖.
 func getFinalPlatformConfig(preCfg, dbCfg *metadata.ConfigAdmin,
-	curCfg *metadata.PlatformSettingConfig) *metadata.PlatformSettingConfig {
+	curCfg *metadata.OldPlatformSettingConfig) *metadata.OldPlatformSettingConfig {
 
 	if preCfg.Backend.SnapshotBizName != dbCfg.Backend.SnapshotBizName {
 		curCfg.Backend.SnapshotBizName = dbCfg.Backend.SnapshotBizName
@@ -508,7 +508,7 @@ func updateConfig(ctx context.Context, db dal.RDB, config *metadata.ConfigAdmin)
 }
 
 // updatePlatformConfig update configuration to database.
-func updatePlatformConfig(ctx context.Context, db dal.RDB, config *metadata.PlatformSettingConfig) error {
+func updatePlatformConfig(ctx context.Context, db dal.RDB, config *metadata.OldPlatformSettingConfig) error {
 	bytes, err := json.Marshal(config)
 	if err != nil {
 		return err

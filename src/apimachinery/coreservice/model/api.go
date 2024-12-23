@@ -980,3 +980,27 @@ func (m *model) CreateTableModelTables(ctx context.Context, h http.Header,
 
 	return nil
 }
+
+// UpdateIDGenerator update id generator
+func (m *model) UpdateIDGenerator(ctx context.Context, h http.Header, input *metadata.UpdateIDGenOption) (err error) {
+
+	resp := new(metadata.Response)
+	subPath := "/update/idgenerator"
+
+	err = m.client.Put().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -41,7 +41,7 @@ export default [
     meta: new Meta({
       owner: MENU_BUSINESS,
       menu: {
-        i18n: '新建模板',
+        i18n: '新建集群模板',
         relative: MENU_BUSINESS_SET_TEMPLATE
       }
     })

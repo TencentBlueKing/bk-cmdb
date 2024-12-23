@@ -95,14 +95,22 @@ export function getOperatorSideEffect(property, operator, value) {
   let effectValue = value
   if (operator === '$range') {
     effectValue = []
-  } else if (operator === '$regex') {
+  } else if ([QUERY_OPERATOR.LIKE, QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.CONTAINS_CS].includes(operator)) {
     effectValue = Array.isArray(value) ? (value[0] || '') : value
+  } else if (numberUseIn(property, operator)) {
+    effectValue = Array.isArray(value) ? value : []
   } else {
     const defaultValue = this.getDefaultData(property).value
     const isTypeChanged = (Array.isArray(defaultValue)) !== (Array.isArray(value))
     effectValue = isTypeChanged ? defaultValue : value
   }
   return effectValue
+}
+
+// 数字类型兼容$in操作符
+export function numberUseIn(property, operator) {
+  return [PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT].includes(property?.bk_property_type)
+  && operator === QUERY_OPERATOR.IN
 }
 
 export function convertValue(value, operator, property) {
@@ -202,7 +210,7 @@ export function transformCondition(condition, properties, header) {
     } else {
       submitCondition.push({
         field: property.bk_property_id,
-        operator,
+        operator: operator === QUERY_OPERATOR.CONTAINS ? operator.replace('$', '') : operator,
         value: operator === '$regex' ? value.replace(escapeCharRE, '\\$1') : value
       })
     }
@@ -427,8 +435,9 @@ export function transformIP(raw) {
   return transformedIP
 }
 
-export function getOperatorSymbol(operator) {
-  return QUERY_OPERATOR_SYMBOL[operator]
+export function getOperatorSymbol(operator, symbolMap) {
+  const data = symbolMap || QUERY_OPERATOR_SYMBOL
+  return data[operator]
 }
 
 export function getDefaultIP() {
@@ -546,5 +555,6 @@ export default {
   hasNormalTopoField,
   hasNodeField,
   getSelectedHostIds,
-  definePropertyGroup
+  definePropertyGroup,
+  numberUseIn
 }

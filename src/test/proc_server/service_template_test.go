@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"configcenter/src/common"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/selector"
@@ -1004,6 +1005,7 @@ var _ = Describe("service template test", func() {
 			serviceId = data.Info[0].ID
 		})
 
+		var processID1 int64
 		It("search process instance", func() {
 			input := &metadata.ListProcessInstancesOption{
 				BizID:             bizId,
@@ -1017,6 +1019,8 @@ var _ = Describe("service template test", func() {
 			Expect(data[0].Property["bk_func_name"]).To(Equal("p1"))
 			Expect(data[0].Property["bk_start_param_regex"]).To(Equal("123456"))
 			Expect(data[0].Relation.HostID).To(Equal(hostId1))
+			processID1, err = commonutil.GetInt64ByInterface(data[0].Property[common.BKProcessIDField])
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("udpate process instance", func() {
@@ -1046,6 +1050,7 @@ var _ = Describe("service template test", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
+		var processID2 int64
 		It("search process instance", func() {
 			input := &metadata.ListProcessInstancesOption{
 				BizID:             bizId,
@@ -1058,6 +1063,30 @@ var _ = Describe("service template test", func() {
 			Expect(data[0].Property["bk_process_name"]).To(Equal("123"))
 			Expect(data[0].Property["bk_func_name"]).To(Equal("p1"))
 			Expect(data[0].Property["bk_start_param_regex"]).To(Equal("123456"))
+			processID2, err = commonutil.GetInt64ByInterface(data[0].Property[common.BKProcessIDField])
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("group processes by service instance", func() {
+			opt := &metadata.GroupRelResByIDsOption{
+				IDs:      []int64{serviceId, serviceId1},
+				IDField:  common.BKServiceInstanceIDField,
+				RelField: common.BKProcessIDField,
+			}
+			httpheader.SetReqFromWeb(header)
+			idMap, ccErr := apiServerClient.GroupRelResByIDs(context.Background(), header,
+				metadata.ProcInstRelGroupByRes, opt)
+			util.RegisterResponseWithRid(idMap, header)
+			Expect(ccErr).NotTo(HaveOccurred())
+			Expect(len(idMap)).To(Equal(2))
+			Expect(len(idMap[serviceId])).To(Equal(1))
+			Expect(len(idMap[serviceId1])).To(Equal(1))
+			procID1, err := commonutil.GetInt64ByInterface(idMap[serviceId][0])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(procID1).To(Equal(processID1))
+			procID2, err := commonutil.GetInt64ByInterface(idMap[serviceId1][0])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(procID2).To(Equal(processID2))
 		})
 	})
 

@@ -166,7 +166,7 @@ export function filterPassedAuth(auth, authResults) {
 
 cursor.setOptions({
   globalCallback: (options) => {
-    const { authResults, ignorePassedAuth, callbackUrl, relatedPermission } = options
+    const { authResults, ignorePassedAuth, callbackUrl, relatedPermission, showPermissionDialog = true } = options
 
     // 根据配置去除有权限的auth，在此处去除比在permission中去除会更简单
     let newAuth = options.auth
@@ -176,7 +176,7 @@ cursor.setOptions({
     const permission = translateAuth(newAuth)
 
     const { permissionModal } = window
-    permissionModal && permissionModal.show(permission, authResults, callbackUrl, relatedPermission)
+    showPermissionDialog && permissionModal?.show(permission, authResults, callbackUrl, relatedPermission)
   },
   x: 16,
   y: 8

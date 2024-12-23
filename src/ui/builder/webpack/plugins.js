@@ -18,6 +18,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
 const ProgressBarPlugin = require('progress-bar-webpack-plugin')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+const ReplaceStaticUrlPlugin = require('../utils/replace-static-url-plugin')
 const GrabAPIPlugin = require('../utils/grab-api-plugin')
 const chalk = require('chalk')
 
@@ -92,7 +93,9 @@ const getProdPlugins = config => ([
   new MiniCssExtractPlugin({
     filename: isProd ? 'css/[name][contenthash:7].css' : '[name].css',
     ignoreOrder: true
-  })
+  }),
+
+  new ReplaceStaticUrlPlugin(config.build)
 ].concat((process.env.ANALYZER || config.build.bundleAnalyzerReport) ? [
   new BundleAnalyzerPlugin()
 ] : []))

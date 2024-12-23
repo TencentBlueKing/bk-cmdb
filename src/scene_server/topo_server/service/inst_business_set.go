@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"configcenter/pkg/filter"
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -497,17 +498,17 @@ func (s *Service) SearchReducedBusinessSetList(ctx *rest.Contexts) {
 		bizSetList = authBizSetList
 	}
 
-	query := &metadata.CommonSearchFilter{
+	query := &metadata.SearchInstanceFilter{
 		ObjectID: common.BKInnerObjIDBizSet,
 		Fields:   []string{common.BKBizSetIDField, common.BKBizSetNameField},
 		Page:     page,
 	}
 
 	if len(bizSetList) > 0 {
-		query.Conditions = &querybuilder.QueryFilter{
-			Rule: &querybuilder.AtomRule{
+		query.Conditions = &filter.Expression{
+			RuleFactory: &filter.AtomRule{
 				Field:    common.BKBizSetIDField,
-				Operator: querybuilder.OperatorIn,
+				Operator: filter.OpFactory(filter.In),
 				Value:    bizSetList,
 			},
 		}

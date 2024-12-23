@@ -25,9 +25,9 @@ import (
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/language"
 	"configcenter/src/common/rdapi"
-	"configcenter/src/common/util"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/source_controller/cacheservice/app/options"
 	"configcenter/src/source_controller/cacheservice/cache"
@@ -178,7 +178,7 @@ func (s *cacheService) WebService() *restful.Container {
 
 // Language TODO
 func (s *cacheService) Language(header http.Header) language.DefaultCCLanguageIf {
-	lang := util.GetLanguage(header)
+	lang := httpheader.GetLanguage(header)
 	l, exist := s.langFactory[common.LanguageType(lang)]
 	if !exist {
 		return s.langFactory[common.Chinese]

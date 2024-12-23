@@ -20,6 +20,11 @@
           </bk-button>
         </template>
       </cmdb-auth>
+      <cmdb-button-group
+        class="mr10"
+        :buttons="buttons"
+        :expand="false">
+      </cmdb-button-group>
       <div class="options-button fr">
         <icon-button
           icon="icon-cc-setting"
@@ -37,6 +42,7 @@
         <component class="filter-value fl r0"
           :is="`cmdb-search-${filterType}`"
           :placeholder="filterPlaceholder"
+          :property="filterProperty"
           :class="filterType"
           :fuzzy="true"
           v-bind="filterComponentProps"
@@ -204,6 +210,7 @@
         @on-reset="handleResetColumnsConfig">
       </cmdb-columns-config>
     </bk-sideslider>
+    <cmdb-model-fast-link :obj-id="objId"></cmdb-model-fast-link>
   </div>
 </template>
 
@@ -220,13 +227,17 @@
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import projectService from '@/service/project/index.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import cmdbModelFastLink from '@/components/model-fast-link'
+  import cmdbButtonGroup from '@/components/ui/other/button-group'
 
   export default {
     components: {
       cmdbColumnsConfig,
       cmdbPropertySelector,
       BatchSelectionColumn,
-      InstanceStatusColumn
+      InstanceStatusColumn,
+      cmdbModelFastLink,
+      cmdbButtonGroup
     },
     data() {
       return {
@@ -291,6 +302,9 @@
       ...mapState('userCustom', ['globalUsercustom']),
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectModelClassify', ['getModelById']),
+      objId() {
+        return BUILTIN_MODELS.PROJECT
+      },
       filterProperty() {
         const property = this.properties.find(property => property.bk_property_id === this.filter.field)
         return property || null
@@ -311,7 +325,7 @@
         return Utils.getBindProps(this.filterProperty)
       },
       model() {
-        return this.getModelById(BUILTIN_MODELS.PROJECT) || {}
+        return this.getModelById(this.objId) || {}
       },
       saveAuth() {
         const { type } = this.attribute
@@ -331,7 +345,21 @@
           type: this.$OPERATION.U_PROJECT,
           relation: [parseInt(item.id, 10)]
         }))
-      }
+      },
+      buttons() {
+        const buttonConfig = [{
+          id: 'export',
+          text: this.$t('导出选中'),
+          handler: this.exportField,
+          disabled: !this.selectedRows.length
+        }, {
+          id: 'batchExport',
+          text: this.$t('导出全部'),
+          handler: () => this.exportField('all'),
+          disabled: !this.table.pagination.count
+        }]
+        return buttonConfig
+      },
     },
     watch: {
       'filter.field'() {
@@ -349,9 +377,9 @@
     async created() {
       try {
         this.properties = await this.searchObjectAttribute({
-          injectId: BUILTIN_MODELS.PROJECT,
+          injectId: this.objId,
           params: {
-            bk_obj_id: BUILTIN_MODELS.PROJECT,
+            bk_obj_id: this.objId,
             bk_supplier_account: this.supplierAccount
           },
           config: {
@@ -393,6 +421,58 @@
       ...mapActions('objectModelFieldGroup', ['searchGroup']),
       ...mapActions('objectModelProperty', ['searchObjectAttribute']),
 
+      async exportField(type = 'select') {
+        const useExport = await import('@/components/export-file')
+        const title = type === 'select' ? '导出选中' : '导出全部'
+        const count = type === 'select' ? this.selectedRows.length : this.table.pagination.count
+
+        useExport.default({
+          title: this.$t(title),
+          bk_obj_id: BUILTIN_MODELS.PROJECT,
+          defaultSelectedFields: this.table.header.map(item => item.id),
+          count,
+          steps: [{ title: this.$t('选择字段'), icon: 1 }],
+          confirmBtnText: this.$t('导出'),
+          submit: (state, task) => {
+            const { fields } = state
+            const params = {
+              export_custom_fields: fields.value.map(property => property.bk_property_id),
+            }
+            if (type === 'select') {
+              const selected = this.selectedRows.map(e => e.id)
+              params.ids = selected
+              params.export_condition = {
+                page: {
+                  start: 0,
+                  limit: selected.length,
+                  sort: this.table.sort
+                }
+              }
+            }
+            if (type === 'all') {
+              const {
+                conditions,
+                time_condition: timeCondition
+              } = this.getCondition()
+              params.export_condition = {
+                filter: conditions,
+                time_condition: timeCondition,
+                page: {
+                  ...task.current.value.page,
+                  sort: this.table.sort
+                }
+              }
+            }
+
+            return this.$http.download({
+              url: `${window.API_HOST}project/export`,
+              method: 'post',
+              name: task.current.value.name,
+              data: params
+            })
+          }
+        }).show()
+      },
       async getTableData() {
         try {
           const [{ count }, { info }] = await Promise.all([
@@ -413,7 +493,7 @@
           }
         }
       },
-      getProjectList(type, config = { cancelPrevious: true }) {
+      getCondition() {
         // 这里先直接复用转换通用模型实例查询条件的方法
         const condition = {
           [this.filterProperty.id]: {
@@ -423,8 +503,15 @@
         }
         const {
           conditions,
-          time_condition: timeCondition
+          time_condition
         } = Utils.transformGeneralModelCondition(condition, this.properties)
+        return { conditions, time_condition }
+      },
+      getProjectList(type, config = { cancelPrevious: true }) {
+        const {
+          conditions,
+          time_condition: timeCondition
+        } = this.getCondition()
 
         const params = this.getSearchParams(type)
         if (conditions) {
@@ -563,7 +650,7 @@
       },
       getPropertyGroups() {
         return this.searchGroup({
-          objId: BUILTIN_MODELS.PROJECT,
+          objId: this.objId,
           params: {},
           config: {
             fromCache: true,

@@ -33,6 +33,7 @@
         :is="`cmdb-search-${selectedProperty['bk_property_type']}`"
         :options="selectedProperty.option || []"
         :placeholder="$t('请输入关键字')"
+        :property="selectedProperty"
         v-model.trim="localSelected.value">
       </component>
     </div>

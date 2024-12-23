@@ -18,9 +18,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	meta "configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -41,7 +41,8 @@ func (s *coreService) CreateDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 	if rowCount != 0 {
-		blog.Errorf("create dynamic group failed, dynamic group[%s] already exist, rid: %s", newDynamicGroup.Name, ctx.Kit.Rid)
+		blog.Errorf("create dynamic group failed, dynamic group[%s] already exist, rid: %s", newDynamicGroup.Name,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, "name"))
 		return
 	}
@@ -55,7 +56,7 @@ func (s *coreService) CreateDynamicGroup(ctx *rest.Contexts) {
 	}
 
 	newDynamicGroup.ID = newDynamicGroupID
-	newDynamicGroup.ModifyUser = util.GetUser(ctx.Kit.Header)
+	newDynamicGroup.ModifyUser = httpheader.GetUser(ctx.Kit.Header)
 	newDynamicGroup.CreateTime = time.Now().UTC()
 	newDynamicGroup.UpdateTime = newDynamicGroup.CreateTime
 
@@ -91,7 +92,7 @@ func (s *coreService) UpdateDynamicGroup(ctx *rest.Contexts) {
 		return
 	}
 
-	data["modify_user"] = util.GetUser(ctx.Kit.Header)
+	data["modify_user"] = httpheader.GetUser(ctx.Kit.Header)
 	data[common.LastTimeField] = time.Now().UTC()
 
 	filter := common.KvMap{common.BKAppIDField: bizIDUint64, common.BKFieldID: targetID}
