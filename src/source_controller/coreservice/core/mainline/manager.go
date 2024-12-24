@@ -332,7 +332,7 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(kit *rest.Kit, withDeta
 		// no bk_biz_id field and therefore find parentInstance failed. in this case current algorithm
 		// degenerate in to o(n) query cost.
 
-		topoInstance, needSkip, err := im.getMissingModelInstance(kit, kit.TenantID, *topoInstance, withDetail)
+		topoInstance, needSkip, err := im.getMissingModelInstance(kit, *topoInstance, withDetail)
 		if err != nil {
 			blog.Errorf("check and filling missing models failed, topoInstance: %v, err: %v, rid: %s", topoInstance,
 				err, kit.Rid)
@@ -349,13 +349,13 @@ func (im *InstanceMainline) CheckAndFillingMissingModels(kit *rest.Kit, withDeta
 }
 
 // getMissingModelInstance get missing model instance
-func (im *InstanceMainline) getMissingModelInstance(kit *rest.Kit, tenantID string,
-	topoInstance metadata.TopoInstance, withDetail bool) (metadata.TopoInstance, bool, error) {
+func (im *InstanceMainline) getMissingModelInstance(kit *rest.Kit, topoInstance metadata.TopoInstance,
+	withDetail bool) (metadata.TopoInstance, bool, error) {
 
 	filter := map[string]interface{}{common.BKInstIDField: topoInstance.ParentInstanceID}
 
 	missedInstances := make([]mapstr.MapStr, 0)
-	err := mongodb.Shard(kit.ShardOpts()).Table(common.GetObjectInstTableName(topoInstance.ObjectID, tenantID)).
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.GetObjectInstTableName(topoInstance.ObjectID, kit.TenantID)).
 		Find(filter).All(kit.Ctx, &missedInstances)
 	if err != nil {
 		blog.Errorf("get common instances failed, err: %v, rid: %s", topoInstance.ParentInstanceID, err, kit.Rid)
@@ -440,7 +440,7 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(kit *rest.Kit, withDetail 
 		parentObjectID := im.objectParentMap[topoInstance.ObjectID]
 		parentKey := fmt.Sprintf("%s:%d", parentObjectID, topoInstance.ParentInstanceID)
 		if _, exist := topoInstanceNodeMap[parentKey]; !exist {
-			parentInstance, needSkip, err := im.getParentInstance(kit, kit.TenantID, parentObjectID, parentKey,
+			parentInstance, needSkip, err := im.getParentInstance(kit, parentObjectID, parentKey,
 				*topoInstance)
 			if err != nil {
 				blog.Errorf("get parent instance failed, err: %v, topoInstance: %v, rid: %s", err, topoInstance,
@@ -484,7 +484,7 @@ func (im *InstanceMainline) ConstructInstanceTopoTree(kit *rest.Kit, withDetail 
 }
 
 // getParentInstance get parent instance
-func (im *InstanceMainline) getParentInstance(kit *rest.Kit, tenantID string, parentObjectID string,
+func (im *InstanceMainline) getParentInstance(kit *rest.Kit, parentObjectID string,
 	parentKey string, topoInstance metadata.TopoInstance) (*metadata.TopoInstance, bool, error) {
 
 	parentInstance, exist := im.instanceMap[parentKey]
@@ -503,7 +503,7 @@ func (im *InstanceMainline) getParentInstance(kit *rest.Kit, tenantID string, pa
 
 			inst := mapstr.MapStr{}
 			err := mongodb.Shard(kit.ShardOpts()).
-				Table(common.GetObjectInstTableName(parentObjectID, tenantID)).
+				Table(common.GetObjectInstTableName(parentObjectID, kit.TenantID)).
 				Find(cond).
 				One(context.Background(), &inst)
 

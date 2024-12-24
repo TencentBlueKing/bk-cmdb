@@ -34,7 +34,6 @@ func (ps *parseStream) topology() *parseStream {
 	ps.business().
 		mainline().
 		object().
-		objectAttributeGroup().
 		objectModule().
 		objectSet().
 		audit().
@@ -753,44 +752,6 @@ func (ps *parseStream) object() *parseStream {
 			{
 				Basic: meta.Basic{
 					Action: meta.SkipAction,
-				},
-			},
-		}
-		return ps
-	}
-
-	return ps
-}
-
-var (
-	removeAttributeAwayFromGroupRegexp = regexp.MustCompile(`^/api/v3/objectatt/group/owner/[^\s/]+/object/[^\s/]+/propertyids/[^\s/]+/groupids/[^\s/]+/?$`)
-)
-
-func (ps *parseStream) objectAttributeGroup() *parseStream {
-	if ps.shouldReturn() {
-		return ps
-	}
-
-	// remove a object's attribute away from a group.
-	if ps.hitRegexp(removeAttributeAwayFromGroupRegexp, http.MethodDelete) {
-		if len(ps.RequestCtx.Elements) != 12 {
-			ps.err = errors.New("remove a object attribute away from a group, but got invalid uri")
-			return ps
-		}
-
-		bizID, err := ps.RequestCtx.getBizIDFromBody()
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				BusinessID: bizID,
-				Basic: meta.Basic{
-					Type:   meta.ModelAttributeGroup,
-					Action: meta.Delete,
-					Name:   ps.RequestCtx.Elements[11],
 				},
 			},
 		}

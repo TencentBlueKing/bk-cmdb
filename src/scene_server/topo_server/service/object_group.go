@@ -174,25 +174,6 @@ func (s *Service) UpdateObjectAttributeGroupProperty(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
-// DeleteObjectAttributeGroup delete the object attribute belongs to group information
-func (s *Service) DeleteObjectAttributeGroup(ctx *rest.Contexts) {
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		err := s.Logics.GroupOperation().DeleteObjectAttributeGroup(ctx.Kit,
-			ctx.Request.PathParameter("bk_object_id"), ctx.Request.PathParameter("property_id"),
-			ctx.Request.PathParameter("group_id"))
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	ctx.RespEntity(nil)
-}
-
 // SearchGroupByObject search the groups by the object
 func (s *Service) SearchGroupByObject(ctx *rest.Contexts) {
 	modelType := new(ModelType)

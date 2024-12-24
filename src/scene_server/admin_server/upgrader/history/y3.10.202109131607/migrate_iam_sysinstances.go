@@ -434,7 +434,6 @@ func convertTenantObject(objs []Object) []metadata.Object {
 			IsPre:         obj.IsPre,
 			IsPaused:      obj.IsPaused,
 			Position:      obj.Position,
-			TenantID:      obj.OwnerID,
 			Description:   obj.Description,
 			Creator:       obj.Creator,
 			Modifier:      obj.Modifier,

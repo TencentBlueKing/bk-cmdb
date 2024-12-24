@@ -338,8 +338,9 @@ func (manager *TransferManager) setDefaultPrivateField(kit *rest.Kit, attributes
 }
 
 // GetHostModuleRelation get host module relation
-func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit,
-	input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
+func (manager *TransferManager) GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (
+	*metadata.HostConfigData, error) {
+
 	if input.Empty() {
 		blog.Errorf("input empty, input: %#v, rid: %s", input, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "GetHostModuleRelation input")

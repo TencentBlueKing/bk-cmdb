@@ -60,7 +60,6 @@ var _ = Describe("object test", func() {
 					ObjCls:     "bk_biz_topo",
 					ObjectID:   "test_object",
 					ObjectName: "test_object",
-					TenantID:   "0",
 					ObjIcon:    "icon-cc-business",
 				},
 				AssociationID: "biz",
@@ -74,7 +73,6 @@ var _ = Describe("object test", func() {
 				"bk_obj_icon":          "icon-cc-business",
 				"bk_obj_id":            "test_object",
 				"bk_obj_name":          "test_object",
-				"tenant_id":            "0",
 			}
 			for k, v := range data {
 				Expect(rsp.Data.(map[string]interface{})).To(HaveKeyWithValue(k, v))
@@ -87,7 +85,6 @@ var _ = Describe("object test", func() {
 					ObjCls:     "bk_biz_topo",
 					ObjectID:   "test_object",
 					ObjectName: "test_object",
-					TenantID:   "0",
 					ObjIcon:    "icon-cc-business",
 				},
 				AssociationID: "biz",
@@ -104,7 +101,6 @@ var _ = Describe("object test", func() {
 					ObjCls:     "bk_biz_topo",
 					ObjectID:   "test_object",
 					ObjectName: "test_object",
-					TenantID:   "0",
 					ObjIcon:    "icon-cc-business",
 				},
 				AssociationID: "xxx",
@@ -121,7 +117,6 @@ var _ = Describe("object test", func() {
 					ObjCls:     "bk_biz_topo",
 					ObjectID:   "test_object",
 					ObjectName: "test_object",
-					TenantID:   "0",
 					ObjIcon:    "icon-cc-business",
 				},
 				AssociationID: "",
@@ -138,7 +133,6 @@ var _ = Describe("object test", func() {
 					ObjCls:     "bk_biz_topo",
 					ObjectID:   "test_object",
 					ObjectName: "test_object",
-					TenantID:   "0",
 					ObjIcon:    "icon-cc-business",
 				},
 			}
@@ -153,7 +147,6 @@ var _ = Describe("object test", func() {
 				Object: metadata.Object{
 					ObjCls:     "bk_biz_topo",
 					ObjectName: "test_object",
-					TenantID:   "0",
 					ObjIcon:    "icon-cc-business",
 				},
 				AssociationID: "biz",
@@ -169,7 +162,6 @@ var _ = Describe("object test", func() {
 				Object: metadata.Object{
 					ObjCls:   "bk_biz_topo",
 					ObjectID: "test_object",
-					TenantID: "0",
 					ObjIcon:  "icon-cc-business",
 				},
 				AssociationID: "biz",
@@ -186,7 +178,6 @@ var _ = Describe("object test", func() {
 					ObjCls:     "bk_biz_topo",
 					ObjectID:   "test_object",
 					ObjectName: "test_object",
-					TenantID:   "0",
 				},
 				AssociationID: "biz",
 			}
@@ -201,7 +192,6 @@ var _ = Describe("object test", func() {
 				Object: metadata.Object{
 					ObjectID:   "test_object",
 					ObjectName: "test_object",
-					TenantID:   "0",
 					ObjIcon:    "icon-cc-business",
 				},
 				AssociationID: "biz",
@@ -232,7 +222,6 @@ var _ = Describe("object test", func() {
 					ObjCls:     "bk_biz_topo",
 					ObjectID:   "cc_test_object",
 					ObjectName: "cc_test_object",
-					TenantID:   "0",
 					ObjIcon:    "icon-cc-business",
 				},
 				AssociationID: "biz",
@@ -246,7 +235,6 @@ var _ = Describe("object test", func() {
 				"bk_obj_icon":          "icon-cc-business",
 				"bk_obj_id":            "cc_test_object",
 				"bk_obj_name":          "cc_test_object",
-				"tenant_id":            "0",
 			}
 			for k, v := range data {
 				Expect(rsp.Data.(map[string]interface{})).To(HaveKeyWithValue(k, v))
@@ -331,7 +319,6 @@ var _ = Describe("object test", func() {
 				ClassificationID:   "cc_class",
 				ClassificationName: "新测试分类",
 				ClassificationIcon: "icon-cc-middleware",
-				TenantID:           "0",
 			}
 			rsp, err := objectClient.CreateClassification(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -352,7 +339,6 @@ var _ = Describe("object test", func() {
 				ClassificationID:   "cc_est_object",
 				ClassificationName: "cc_est_object",
 				ClassificationIcon: "icon-cc-default-class",
-				TenantID:           "0",
 			}
 			rsp, err := objectClient.CreateClassification(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -373,7 +359,6 @@ var _ = Describe("object test", func() {
 				ClassificationID:   "cc_class",
 				ClassificationName: "测试分类",
 				ClassificationIcon: "icon-cc-middleware",
-				TenantID:           "0",
 			}
 			rsp, err := objectClient.CreateClassification(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -386,7 +371,6 @@ var _ = Describe("object test", func() {
 				ClassificationID:   "cc_class1",
 				ClassificationName: "cc_est_object",
 				ClassificationIcon: "icon-cc-middleware",
-				TenantID:           "0",
 			}
 			rsp, err := objectClient.CreateClassification(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -450,7 +434,6 @@ var _ = Describe("object test", func() {
 				ObjIcon:    "icon-cc-business",
 				ObjectID:   "cc_obj",
 				ObjectName: "cc模型",
-				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
@@ -464,7 +447,6 @@ var _ = Describe("object test", func() {
 			Expect(data.ObjIcon).To(Equal(input.ObjIcon))
 			Expect(data.ObjectID).To(Equal(input.ObjectID))
 			Expect(data.ObjectName).To(Equal(input.ObjectName))
-			Expect(data.TenantID).To(Equal(input.TenantID))
 			Expect(data.Creator).To(Equal(input.Creator))
 		})
 
@@ -484,7 +466,6 @@ var _ = Describe("object test", func() {
 				ObjIcon:    "icon-cc-business",
 				ObjectID:   "cc_obj",
 				ObjectName: "cc",
-				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
@@ -499,7 +480,6 @@ var _ = Describe("object test", func() {
 				ObjIcon:    "icon-cc-business",
 				ObjectID:   "cc",
 				ObjectName: "cc模型",
-				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
@@ -514,7 +494,6 @@ var _ = Describe("object test", func() {
 				ObjIcon:    "icon-cc-business",
 				ObjectID:   "cc123",
 				ObjectName: "cc123",
-				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
@@ -529,7 +508,6 @@ var _ = Describe("object test", func() {
 				ObjIcon:    "icon-cc-business",
 				ObjectID:   "test_obj",
 				ObjectName: "test_obj",
-				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
@@ -543,7 +521,6 @@ var _ = Describe("object test", func() {
 			Expect(data.ObjIcon).To(Equal(input.ObjIcon))
 			Expect(data.ObjectID).To(Equal(input.ObjectID))
 			Expect(data.ObjectName).To(Equal(input.ObjectName))
-			Expect(data.TenantID).To(Equal(input.TenantID))
 			Expect(data.Creator).To(Equal(input.Creator))
 			objId = strconv.FormatInt(data.ID, 10)
 		})
@@ -591,7 +568,6 @@ var _ = Describe("object test", func() {
 		It("search objects", func() {
 			input := map[string]interface{}{
 				"bk_obj_id": "test_obj",
-				"tenant_id": "0",
 			}
 			rsp, err := objectClient.SelectObjectWithParams(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
@@ -672,7 +648,6 @@ var _ = Describe("object test", func() {
 					GroupName:  "1234",
 					GroupIndex: 10,
 					ObjectID:   "cc_obj",
-					TenantID:   "0",
 				}
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				util.RegisterResponseWithRid(rsp, header)
@@ -685,7 +660,6 @@ var _ = Describe("object test", func() {
 				Expect(data.GroupName).To(Equal(input.GroupName))
 				Expect(data.GroupIndex).To(Equal(input.GroupIndex))
 				Expect(data.ObjectID).To(Equal(input.ObjectID))
-				Expect(data.TenantID).To(Equal(input.TenantID))
 				groupId = data.ID
 			})
 
@@ -695,7 +669,6 @@ var _ = Describe("object test", func() {
 					GroupName:  "123",
 					GroupIndex: 1,
 					ObjectID:   "cc_obj",
-					TenantID:   "0",
 				}
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				util.RegisterResponseWithRid(rsp, header)
@@ -708,7 +681,6 @@ var _ = Describe("object test", func() {
 				Expect(data.GroupName).To(Equal(input.GroupName))
 				Expect(data.GroupIndex).To(Equal(input.GroupIndex))
 				Expect(data.ObjectID).To(Equal(input.ObjectID))
-				Expect(data.TenantID).To(Equal(input.TenantID))
 				group = data
 			})
 
@@ -718,7 +690,6 @@ var _ = Describe("object test", func() {
 					GroupName:  "12345",
 					GroupIndex: 2,
 					ObjectID:   "cc_obj",
-					TenantID:   "0",
 				}
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				util.RegisterResponseWithRid(rsp, header)
@@ -732,7 +703,6 @@ var _ = Describe("object test", func() {
 					GroupName:  "123",
 					GroupIndex: 3,
 					ObjectID:   "cc_obj",
-					TenantID:   "0",
 				}
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				util.RegisterResponseWithRid(rsp, header)
@@ -746,7 +716,6 @@ var _ = Describe("object test", func() {
 					GroupName:  "123456",
 					GroupIndex: 4,
 					ObjectID:   "123456",
-					TenantID:   "0",
 				}
 				rsp, err := objectClient.CreatePropertyGroup(context.Background(), header, input)
 				util.RegisterResponseWithRid(rsp, header)
@@ -811,7 +780,6 @@ var _ = Describe("object test", func() {
 						Expect(grp.GroupName).To(Equal(group.GroupName))
 						Expect(grp.GroupIndex).To(Equal(group.GroupIndex))
 						Expect(grp.ObjectID).To(Equal(group.ObjectID))
-						Expect(grp.TenantID).To(Equal(group.TenantID))
 					}
 				}
 				Expect(exist).To(Equal(true))
@@ -826,7 +794,6 @@ var _ = Describe("object test", func() {
 				func() {
 					input := &metadata.ObjAttDes{
 						Attribute: metadata.Attribute{
-							TenantID:      "0",
 							ObjectID:      "cc_obj",
 							PropertyID:    "test_sglchar",
 							PropertyName:  "test_sglchar",
@@ -848,14 +815,12 @@ var _ = Describe("object test", func() {
 					Expect(data.PropertyGroup).To(Equal(input.PropertyGroup))
 					Expect(data.IsEditable).To(Equal(input.IsEditable))
 					Expect(data.PropertyType).To(Equal(input.PropertyType))
-					Expect(data.TenantID).To(Equal(input.TenantID))
 					attrId = strconv.FormatInt(data.ID, 10)
 				})
 
 			It("create object attribute with same bk_property_id", func() {
 				input := &metadata.ObjAttDes{
 					Attribute: metadata.Attribute{
-						TenantID:      "0",
 						ObjectID:      "cc_obj",
 						PropertyID:    "test_sglchar",
 						PropertyName:  "sglchar",
@@ -873,7 +838,6 @@ var _ = Describe("object test", func() {
 			It("create object attribute with same bk_property_name", func() {
 				input := &metadata.ObjAttDes{
 					Attribute: metadata.Attribute{
-						TenantID:      "0",
 						ObjectID:      "cc_obj",
 						PropertyID:    "sglchar",
 						PropertyName:  "test_sglchar",
@@ -891,7 +855,6 @@ var _ = Describe("object test", func() {
 			It("create object attribute invalid ObjectID", func() {
 				input := &metadata.ObjAttDes{
 					Attribute: metadata.Attribute{
-						TenantID:      "0",
 						ObjectID:      "123456",
 						PropertyID:    "sglchar",
 						PropertyName:  "123456",
@@ -913,7 +876,6 @@ var _ = Describe("object test", func() {
 				}
 				input := &metadata.ObjAttDes{
 					Attribute: metadata.Attribute{
-						TenantID:      "0",
 						ObjectID:      "cc_obj",
 						PropertyID:    longPropertyID,
 						PropertyName:  "1234567",
@@ -931,7 +893,6 @@ var _ = Describe("object test", func() {
 			It("create object attribute invalid PropertyType", func() {
 				input := &metadata.ObjAttDes{
 					Attribute: metadata.Attribute{
-						TenantID:      "0",
 						ObjectID:      "cc_obj",
 						PropertyID:    "cc2",
 						PropertyName:  "123456789",
@@ -950,7 +911,6 @@ var _ = Describe("object test", func() {
 				func() {
 					input := &metadata.ObjAttDes{
 						Attribute: metadata.Attribute{
-							TenantID:      "0",
 							ObjectID:      "cc_obj",
 							PropertyID:    "test_singlechar",
 							PropertyName:  "test_singlechar",
@@ -972,7 +932,6 @@ var _ = Describe("object test", func() {
 					Expect(data.PropertyGroup).To(Equal("default"))
 					Expect(data.IsEditable).To(Equal(input.IsEditable))
 					Expect(data.PropertyType).To(Equal(input.PropertyType))
-					Expect(data.TenantID).To(Equal(input.TenantID))
 					attrId1 = strconv.FormatInt(data.ID, 10)
 				})
 
@@ -980,7 +939,6 @@ var _ = Describe("object test", func() {
 				func() {
 					input := &metadata.ObjAttDes{
 						Attribute: metadata.Attribute{
-							TenantID:      "0",
 							ObjectID:      "cc_obj",
 							PropertyID:    "test_biz",
 							PropertyName:  "test_biz",
@@ -1003,7 +961,6 @@ var _ = Describe("object test", func() {
 					Expect(data.PropertyGroup).To(Equal("bizdefault"))
 					Expect(data.IsEditable).To(Equal(input.IsEditable))
 					Expect(data.PropertyType).To(Equal(input.PropertyType))
-					Expect(data.TenantID).To(Equal(input.TenantID))
 				})
 
 			It("update object attribute id="+attrId1, func() {
@@ -1059,7 +1016,6 @@ var _ = Describe("object test", func() {
 				}
 				arr[0].Condition.ObjectID = "cc_obj"
 				arr[0].Condition.PropertyID = "test_singlechar"
-				arr[0].Condition.TenantID = "0"
 				arr[0].Data.PropertyGroupID = "1"
 				input := map[string]interface{}{
 					"data": arr,
@@ -1076,7 +1032,6 @@ var _ = Describe("object test", func() {
 				}
 				arr[0].Condition.ObjectID = "cc_obj"
 				arr[0].Condition.PropertyID = "test_singlechar"
-				arr[0].Condition.TenantID = "0"
 				arr[0].Data.PropertyGroupID = "10000"
 				input := map[string]interface{}{
 					"data": arr,
@@ -1119,30 +1074,6 @@ var _ = Describe("object test", func() {
 				Expect(j).To(ContainSubstring("\"bk_group_name\":\"456\""))
 				Expect(j).To(ContainSubstring("\"bk_group_id\":\"1\""))
 			})
-
-			It("delete object attribute property group", func() {
-				rsp, err := objectClient.DeletePropertyGroupObjectAtt(context.Background(), "0", "cc_obj",
-					"test_singlechar", "1", header)
-				util.RegisterResponseWithRid(rsp, header)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
-			})
-
-			It("search object attribute", func() {
-				input := mapstr.MapStr{
-					"bk_obj_id":      "cc_obj",
-					"bk_property_id": "test_singlechar",
-				}
-				rsp, err := apiServerClient.GetObjectAttr(context.Background(), header, input)
-				util.RegisterResponseWithRid(rsp, header)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.Result).To(Equal(true))
-				j, err := json.Marshal(rsp.Data)
-				data := []map[string]interface{}{}
-				json.Unmarshal(j, &data)
-				Expect(j).NotTo(ContainSubstring("\"bk_property_group_name\":\"456\""))
-				Expect(j).NotTo(ContainSubstring("\"bk_property_group\":\"1\""))
-			})
 		})
 	})
 
@@ -1153,7 +1084,6 @@ var _ = Describe("object test", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":       "cc_set",
 				"bk_parent_id":      childInstIdInt,
-				"tenant_id":         "0",
 				"bk_biz_id":         bizIdInt,
 				"bk_service_status": "1",
 				"bk_set_env":        "2",
@@ -1176,7 +1106,6 @@ var _ = Describe("object test", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":       "test",
 				"bk_parent_id":      childInstIdInt,
-				"tenant_id":         "0",
 				"bk_biz_id":         bizIdInt,
 				"bk_service_status": "1",
 				"bk_set_env":        "2",
@@ -1198,7 +1127,6 @@ var _ = Describe("object test", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":       "test",
 				"bk_parent_id":      childInstIdInt,
-				"tenant_id":         "0",
 				"bk_biz_id":         bizIdInt,
 				"bk_service_status": "1",
 				"bk_set_env":        "2",
@@ -1212,7 +1140,6 @@ var _ = Describe("object test", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":       "test1",
 				"bk_parent_id":      childInstIdInt,
-				"tenant_id":         "0",
 				"bk_biz_id":         1000,
 				"bk_service_status": "1",
 				"bk_set_env":        "2",
@@ -1226,7 +1153,6 @@ var _ = Describe("object test", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":       "test2",
 				"bk_parent_id":      1000,
-				"tenant_id":         "0",
 				"bk_biz_id":         bizIdInt,
 				"bk_service_status": "1",
 				"bk_set_env":        "2",
@@ -1239,7 +1165,6 @@ var _ = Describe("object test", func() {
 		It("create set less bk_parent_id", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":       "test3",
-				"tenant_id":         "0",
 				"bk_biz_id":         bizIdInt,
 				"bk_service_status": "1",
 				"bk_set_env":        "2",
@@ -1253,7 +1178,6 @@ var _ = Describe("object test", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":       "test4",
 				"bk_parent_id":      childInstIdInt,
-				"tenant_id":         "0",
 				"bk_biz_id":         2,
 				"bk_service_status": "1",
 				"bk_set_env":        "2",
@@ -1379,13 +1303,14 @@ var _ = Describe("object test", func() {
 	})
 
 	Describe("module test", func() {
-		var moduleId, moduleId1 int64
+		var moduleId, moduleId1, categoryID int64
 
 		It(fmt.Sprintf("create module bk_biz_id=%s and bk_set_id=%s", bizId, setId), func() {
+			categoryID = test.GetDefaultCategory()
 			input := map[string]interface{}{
 				"bk_module_name":      "cc_module",
 				"bk_parent_id":        setIDInt,
-				"service_category_id": 2,
+				"service_category_id": categoryID,
 				"service_template_id": 0,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizIdInt, setIDInt, header, input)
@@ -1403,7 +1328,7 @@ var _ = Describe("object test", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module",
 				"bk_parent_id":        setIDInt,
-				"service_category_id": 2,
+				"service_category_id": categoryID,
 				"service_template_id": 0,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizIdInt, setIDInt, header, input)
@@ -1421,7 +1346,7 @@ var _ = Describe("object test", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module",
 				"bk_parent_id":        setIDInt,
-				"service_category_id": 2,
+				"service_category_id": categoryID,
 				"service_template_id": 0,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizIdInt, setIDInt, header, input)
@@ -1433,7 +1358,7 @@ var _ = Describe("object test", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module1",
 				"bk_parent_id":        setIDInt,
-				"service_category_id": 2,
+				"service_category_id": categoryID,
 				"service_template_id": 0,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), 1000, setIDInt, header, input)
@@ -1445,7 +1370,7 @@ var _ = Describe("object test", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module2",
 				"bk_parent_id":        setIDInt,
-				"service_category_id": 2,
+				"service_category_id": categoryID,
 				"service_template_id": 0,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizIdInt, 1000, header, input)
@@ -1457,7 +1382,7 @@ var _ = Describe("object test", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module3",
 				"bk_parent_id":        setIDInt,
-				"service_category_id": 2,
+				"service_category_id": categoryID,
 				"service_template_id": 0,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), 2, setIDInt, header, input)
@@ -1469,7 +1394,7 @@ var _ = Describe("object test", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module4",
 				"bk_parent_id":        1000,
-				"service_category_id": 2,
+				"service_category_id": categoryID,
 				"service_template_id": 0,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizIdInt, setIDInt, header, input)
@@ -1480,7 +1405,7 @@ var _ = Describe("object test", func() {
 		It("create module less bk_parent_id", func() {
 			input := map[string]interface{}{
 				"bk_module_name":      "test_module4",
-				"service_category_id": 2,
+				"service_category_id": categoryID,
 				"service_template_id": 0,
 			}
 			rsp, err := instClient.CreateModule(context.Background(), bizIdInt, setIDInt, header, input)

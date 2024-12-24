@@ -100,7 +100,7 @@ func (s *coreService) GetHostModuleRelation(ctx *rest.Contexts) {
 	}
 	relationArr, err := s.core.HostOperation().GetHostModuleRelation(ctx.Kit, inputData)
 	if err != nil {
-		blog.ErrorJSON("GetHostModuleRelation  error. err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
+		blog.Errorf("get host module relation error, err: %v, rid: %s", err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -134,8 +134,7 @@ func (s *coreService) HostIdentifier(ctx *rest.Contexts) {
 	hostIdentifierArr, err := s.core.HostOperation().Identifier(ctx.Kit, inputData)
 
 	if err != nil {
-		blog.InfoJSON("Identifier host identifier handle error. err: %s, input: %s, rid:%s", err.Error(), inputData,
-			ctx.Kit.Rid)
+		blog.Infof("Identifier host identifier handle error, err: %v, input: %+v, rid:%s", err, inputData, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -187,7 +186,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		var err error
 		condition, err = dat.TimeCondition.MergeTimeCondition(condition)
 		if err != nil {
-			blog.ErrorJSON("merge time condition failed, error: %s, input: %s, rid: %s", err, dat, ctx.Kit.Rid)
+			blog.Errorf("merge time condition failed, error: %v, input: %+v, rid: %s", err, dat, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
@@ -199,7 +198,7 @@ func (s *coreService) GetHosts(ctx *rest.Contexts) {
 		Start(uint64(dat.Start)).Limit(uint64(dat.Limit))
 	info, err := instances.FindInst(ctx.Kit, fieldArr, query, common.BKInnerObjIDHost)
 	if err != nil {
-		blog.ErrorJSON("failed to query the host, cond: %v, err: %s, rid: %s", condition, err, ctx.Kit.Rid)
+		blog.Errorf("failed to query the host, cond: %v, err: %v, rid: %s", condition, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}

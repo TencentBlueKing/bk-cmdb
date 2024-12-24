@@ -42,7 +42,6 @@ type TopoGraphics struct {
 	Position  Position               `json:"position" bson:"position"`
 	Ext       map[string]interface{} `json:"ext,omitempty" bson:"ext,omitempty"`
 	Icon      string                 `json:"bk_obj_icon,omitempty" bson:"bk_obj_icon,omitempty"`
-	TenantID  string                 `json:"tenant_id,omitempty" bson:"tenant_id,omitempty"` // tenant_id
 	Assts     []GraphAsst            `json:"assts,omitempty"`
 }
 
@@ -53,7 +52,6 @@ type UpdateTopoGraphicsInput struct {
 
 // FillBlank TODO
 func (t *TopoGraphics) FillBlank() *TopoGraphics {
-	t.SetTenantID("0")
 	t.SetExt(map[string]interface{}{})
 	t.SetPosition(Position{})
 	return t
@@ -90,9 +88,6 @@ func (t *TopoGraphics) SetScopeType(val string) { t.ScopeType = val }
 
 // SetScopeID TODO
 func (t *TopoGraphics) SetScopeID(val string) { t.ScopeID = val }
-
-// SetTenantID TODO
-func (t *TopoGraphics) SetTenantID(val string) { t.TenantID = val }
 
 // SearchTopoGraphicsResult TODO
 type SearchTopoGraphicsResult struct {

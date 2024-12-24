@@ -300,7 +300,6 @@ func (p *setTemplateOperation) DeleteSetTemplate(kit *rest.Kit, bizID int64,
 	// check reference
 	setFilter := map[string]interface{}{
 		common.BKAppIDField: bizID,
-		common.TenantID:     kit.TenantID,
 		common.BKSetTemplateIDField: map[string]interface{}{
 			common.BKDBIN: option.SetTemplateIDs,
 		},
@@ -320,7 +319,6 @@ func (p *setTemplateOperation) DeleteSetTemplate(kit *rest.Kit, bizID int64,
 	// delete set template
 	setTplFilter := map[string]interface{}{
 		common.BKAppIDField: bizID,
-		common.TenantID:     kit.TenantID,
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBIN: option.SetTemplateIDs,
 		},
@@ -334,7 +332,6 @@ func (p *setTemplateOperation) DeleteSetTemplate(kit *rest.Kit, bizID int64,
 	// delete relations
 	relationFilter := map[string]interface{}{
 		common.BKAppIDField: bizID,
-		common.TenantID:     kit.TenantID,
 		common.BKSetTemplateIDField: map[string]interface{}{
 			common.BKDBIN: option.SetTemplateIDs,
 		},

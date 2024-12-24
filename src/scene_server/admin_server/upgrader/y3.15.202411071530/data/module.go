@@ -58,6 +58,7 @@ func addModuleData(kit *rest.Kit, db dal.Dal, bizID int64, moduleNames []string,
 		moduleData[common.BKBakOperatorField] = ""
 		moduleData[common.BKServiceTemplateIDField] = common.ServiceTemplateIDNotSet
 		moduleData[common.BKAppIDField] = bizID
+		moduleData[common.BKParentIDField] = setID
 		moduleData[common.BKSetIDField] = setID
 		moduleData[common.CreateTimeField] = time.Now()
 		moduleData[common.LastTimeField] = time.Now()

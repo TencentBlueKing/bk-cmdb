@@ -42,7 +42,6 @@ func (g *modelAttributeGroup) CreateModelAttributeGroup(kit *rest.Kit, objID str
 	// 	return dataResult, err
 	// }
 	inputParam.Data.ObjectID = objID
-	inputParam.Data.TenantID = kit.TenantID
 
 	_, isExists, err := g.groupIDIsExists(kit, objID, inputParam.Data.GroupID, inputParam.Data.BizID)
 	if err != nil {
@@ -96,7 +95,6 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(kit *rest.Kit, objID string
 		return dataResult, err
 	}
 	inputParam.Data.ObjectID = objID
-	inputParam.Data.TenantID = kit.TenantID
 
 	_, isExists, err := g.groupNameIsExists(kit, objID, inputParam.Data.GroupName, inputParam.Data.BizID)
 	if err != nil {
@@ -135,7 +133,6 @@ func (g *modelAttributeGroup) SetModelAttributeGroup(kit *rest.Kit, objID string
 
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldGroupID, Val: inputParam.Data.GroupID})
-	cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	cond.Element(&mongo.Eq{Key: metadata.GroupFieldID, Val: existsGroup.ID})
 
 	cnt, err := g.update(kit, mapstr.NewFromStruct(inputParam.Data, "field"), cond)
@@ -172,7 +169,6 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroup(kit *rest.Kit, objID str
 
 	inputParam.Data.Remove(metadata.GroupFieldGroupID)
 	inputParam.Data.Remove(metadata.GroupFieldObjectID)
-	inputParam.Data.Remove(common.TenantID)
 	inputParam.Data.Remove(metadata.GroupFieldIsPre)
 
 	if name, exists := inputParam.Data.Get("bk_group_name"); exists {
@@ -224,7 +220,6 @@ func (g *modelAttributeGroup) UpdateModelAttributeGroupByCondition(kit *rest.Kit
 
 	inputParam.Data.Remove(metadata.GroupFieldGroupID)
 	inputParam.Data.Remove(metadata.GroupFieldObjectID)
-	inputParam.Data.Remove(common.TenantID)
 	inputParam.Data.Remove(metadata.GroupFieldIsPre)
 
 	bizID := int64(0)

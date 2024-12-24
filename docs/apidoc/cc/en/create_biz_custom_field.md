@@ -114,27 +114,26 @@ Create Business Custom Model Property (Permission: Business Custom Field Edit Pe
 
 #### data
 
-| Field                  | Type   | Description                                                  |
-| ---------------------- | ------ | ------------------------------------------------------------ |
-| bk_biz_id              | int    | Business ID of the business custom field                     |
-| creator                | string | Data creator                                                 |
-| description            | string | Data description                                             |
-| editable               | bool   | Indicates whether the data is editable                       |
-| isonly                 | bool   | Indicates uniqueness                                         |
-| ispre                  | bool   | true: Preset field, false: Non-built-in field                |
-| isreadonly             | bool   | true: Read-only, false: Non-read-only                        |
-| isrequired             | bool   | true: Required, false: Optional                              |
+| Field                  | Type   | Description                                                                             |
+|------------------------|--------|-----------------------------------------------------------------------------------------|
+| bk_biz_id              | int    | Business ID of the business custom field                                                |
+| creator                | string | Data creator                                                                            |
+| description            | string | Data description                                                                        |
+| editable               | bool   | Indicates whether the data is editable                                                  |
+| isonly                 | bool   | Indicates uniqueness                                                                    |
+| ispre                  | bool   | true: Preset field, false: Non-built-in field                                           |
+| isreadonly             | bool   | true: Read-only, false: Non-read-only                                                   |
+| isrequired             | bool   | true: Required, false: Optional                                                         |
 | option                 | string | User-defined content, the content and format stored are determined by the calling party |
-| unit                   | string | Unit                                                         |
-| placeholder            | string | Placeholder                                                  |
-| bk_property_group      | string | Field column name                                            |
-| bk_property_group_name | string | Field column name                                            |
-| bk_obj_id              | string | Model ID                                                     |
-| bk_supplier_account    | string | Vendor account                                               |
-| bk_property_id         | string | Model property ID                                            |
-| bk_property_name       | string | Model property name used for display                         |
-| bk_property_type       | string | Defined attribute field used to store data types             |
-| bk_asst_obj_id         | string | If there is a relation to other models, then this field must be set |
-| create_time            | string | Creation time                                                |
-| last_time              | string | Update time                                                  |
-| id                     | int    | Primary key ID                                               |
+| unit                   | string | Unit                                                                                    |
+| placeholder            | string | Placeholder                                                                             |
+| bk_property_group      | string | Field column name                                                                       |
+| bk_property_group_name | string | Field column name                                                                       |
+| bk_obj_id              | string | Model ID                                                                                |
+| bk_property_id         | string | Model property ID                                                                       |
+| bk_property_name       | string | Model property name used for display                                                    |
+| bk_property_type       | string | Defined attribute field used to store data types                                        |
+| bk_asst_obj_id         | string | If there is a relation to other models, then this field must be set                     |
+| create_time            | string | Creation time                                                                           |
+| last_time              | string | Update time                                                                             |
+| id                     | int    | Primary key ID                                                                          |

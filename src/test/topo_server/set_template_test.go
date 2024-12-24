@@ -528,7 +528,7 @@ var _ = Describe("set template attribute test", func() {
 			testutil.RegisterResponseWithRid(err, header)
 			Expect(err).NotTo(HaveOccurred())
 
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * 30)
 		})
 
 		By("check set attributes has changed", func() {

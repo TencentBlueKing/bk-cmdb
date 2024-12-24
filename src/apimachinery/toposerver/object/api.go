@@ -57,8 +57,6 @@ type ObjectInterface interface {
 	DeletePropertyGroup(ctx context.Context, groupID string, h http.Header) (resp *metadata.Response, err error)
 	UpdatePropertyGroupObjectAtt(ctx context.Context, h http.Header, data map[string]interface{}) (
 		esp *metadata.Response, err error)
-	DeletePropertyGroupObjectAtt(ctx context.Context, ownerID string, objID string, propertyID string,
-		groupID string, h http.Header) (resp *metadata.Response, err error)
 	SelectPropertyGroupByObjectID(ctx context.Context, objID string, h http.Header, data map[string]interface{}) (
 		resp *metadata.Response, err error)
 	CreateObjectBatch(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response,

@@ -107,7 +107,6 @@ type Namespace struct {
 	Name           string             `json:"name,omitempty" bson:"name"`
 	Labels         *map[string]string `json:"labels,omitempty" bson:"labels"`
 	ResourceQuotas *[]ResourceQuota   `json:"resource_quotas,omitempty" bson:"resource_quotas"`
-	TenantID       string             `json:"tenant_id,omitempty" bson:"tenant_id"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }

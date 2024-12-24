@@ -82,7 +82,6 @@ func (m *modelAttribute) saveTableAttr(kit *rest.Kit, attribute metadata.Attribu
 
 	attribute.PropertyIndex = index
 	attribute.ID = int64(id)
-	attribute.TenantID = kit.TenantID
 
 	if attribute.CreateTime == nil {
 		attribute.CreateTime = &metadata.Time{}
@@ -123,7 +122,6 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 
 	attribute.PropertyIndex = index
 	attribute.ID = int64(id)
-	attribute.TenantID = kit.TenantID
 
 	if attribute.CreateTime == nil {
 		attribute.CreateTime = &metadata.Time{}
@@ -181,7 +179,6 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 			ObjID:    attribute.ObjectID,
 			Keys:     []metadata.UniqueKey{{Kind: metadata.UniqueKeyKindProperty, ID: uint64(attribute.ID)}},
 			Ispre:    false,
-			TenantID: kit.TenantID,
 			LastTime: metadata.Now(),
 		}
 		err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjUnique).Insert(kit.Ctx, &unique)

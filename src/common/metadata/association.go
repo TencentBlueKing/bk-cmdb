@@ -457,8 +457,7 @@ const (
 
 // Association defines the association between two objects.
 type Association struct {
-	ID       int64  `field:"id" json:"id" bson:"id"`
-	TenantID string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
+	ID int64 `field:"id" json:"id" bson:"id"`
 
 	// the unique id belongs to  this association, should be generated with rules as follows:
 	// "$ObjectID"_"$AsstID"_"$AsstObjID"
@@ -487,10 +486,6 @@ type Association struct {
 func (a *Association) CanUpdate() (field string, can bool) {
 	if a.ID != 0 {
 		return "id", false
-	}
-
-	if len(a.TenantID) != 0 {
-		return "tenant_id", false
 	}
 
 	if len(a.AssociationName) != 0 {
@@ -535,8 +530,7 @@ func (cli *Association) ToMapStr() mapstr.MapStr {
 
 // MainlineAssociation defines the mainline association between two objects.
 type MainlineAssociation struct {
-	Association `json:",inline"`
-
+	Association      `json:",inline"`
 	ClassificationID string `json:"bk_classification_id,omitempty" bson:"-"`
 	ObjectIcon       string `json:"bk_obj_icon,omitempty" bson:"-"`
 	ObjectName       string `json:"bk_obj_name,omitempty" bson:"-"`

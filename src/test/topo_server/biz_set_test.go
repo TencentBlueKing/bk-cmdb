@@ -17,6 +17,7 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
@@ -494,11 +495,17 @@ var _ = Describe("business set test", func() {
 			biz, err := instClient.FindBizInBizSet(ctx, header, findBizOpt)
 			util.RegisterResponseWithRid(biz, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(biz.Info)).To(Equal(4))
-			Expect(commonutil.GetStrByInterface(biz.Info[0][common.BKAppNameField])).To(Equal("蓝鲸"))
-			Expect(commonutil.GetStrByInterface(biz.Info[1][common.BKAppNameField])).To(Equal("biz_for_biz_set"))
-			Expect(commonutil.GetStrByInterface(biz.Info[2][common.BKAppNameField])).To(Equal("biz_for_biz_set1"))
-			Expect(commonutil.GetStrByInterface(biz.Info[3][common.BKAppNameField])).To(Equal("biz_not_for_biz_set"))
+			switch httpheader.GetTenantID(header) {
+			case common.BKDefaultTenantID:
+				Expect(len(biz.Info)).To(Equal(4))
+				Expect(commonutil.GetStrByInterface(biz.Info[0][common.BKAppNameField])).To(Equal("蓝鲸"))
+				biz.Info = biz.Info[1:]
+			default:
+				Expect(len(biz.Info)).To(Equal(3))
+			}
+			Expect(commonutil.GetStrByInterface(biz.Info[0][common.BKAppNameField])).To(Equal("biz_for_biz_set"))
+			Expect(commonutil.GetStrByInterface(biz.Info[1][common.BKAppNameField])).To(Equal("biz_for_biz_set1"))
+			Expect(commonutil.GetStrByInterface(biz.Info[2][common.BKAppNameField])).To(Equal("biz_not_for_biz_set"))
 		}()
 
 		By("count businesses in biz set that matches all biz")
@@ -511,7 +518,12 @@ var _ = Describe("business set test", func() {
 			biz, err := instClient.FindBizInBizSet(ctx, header, findBizOpt)
 			util.RegisterResponseWithRid(biz, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(biz.Count).To(Equal(4))
+			switch httpheader.GetTenantID(header) {
+			case common.BKDefaultTenantID:
+				Expect(biz.Count).To(Equal(4))
+			default:
+				Expect(biz.Count).To(Equal(3))
+			}
 			Expect(len(biz.Info)).To(Equal(0))
 		}()
 

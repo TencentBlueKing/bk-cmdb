@@ -154,7 +154,6 @@ func (c *kubeAuditLog) generateAuditLog(param *generateAuditCommonParameter, typ
 
 	return metadata.AuditLog{
 		AuditType:       metadata.KubeType,
-		TenantID:        param.kit.TenantID,
 		User:            param.kit.User,
 		ResourceType:    typ,
 		Action:          param.action,

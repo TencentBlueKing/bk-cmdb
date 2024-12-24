@@ -52,13 +52,11 @@ View Permission)
            "bk_property_index": 0,
            "bk_property_name": "进程名称",
            "bk_property_type": "singlechar",
-           "bk_supplier_account": "0",
            "unit": ""
        },
        {
             "bk_biz_id": 2,
             "id": 7,
-            "bk_supplier_account": "0",
             "bk_obj_id": "process",
             "bk_property_id": "biz_custom_field",
             "bk_property_name": "业务自定义字段",
@@ -111,7 +109,6 @@ View Permission)
 | placeholder         | string | Placeholder                                                                                                                                                                                                                                                                                     |
 | bk_property_group   | string | Name of the field column                                                                                                                                                                                                                                                                        |
 | bk_obj_id           | string | Model ID                                                                                                                                                                                                                                                                                        |
-| bk_supplier_account | string | Vendor account                                                                                                                                                                                                                                                                                  |
 | bk_property_id      | string | Model property ID                                                                                                                                                                                                                                                                               |
 | bk_property_name    | string | Model property name used for display                                                                                                                                                                                                                                                            |
 | bk_property_type    | string | Defined property field for storing data types (singlechar(short character), longchar(long character), int(integer), enum(enum type), date(date), time(time), objuser(user), enummulti(enum multiple), enumquote(enum reference), timezone(timezone), bool(boolean), organization(organization)) |

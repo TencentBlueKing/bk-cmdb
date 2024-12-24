@@ -46,8 +46,6 @@ type ModelQuoteRelation struct {
 	PropertyID string `json:"bk_property_id" bson:"bk_property_id"`
 	// Type the specific type of model such as the table
 	Type common.ModelQuoteType `json:"type" bson:"type"`
-	// TenantID supplier account
-	TenantID string `json:"tenant_id" bson:"tenant_id"`
 }
 
 // ListModelQuoteRelRes list model quote relationship table result.
