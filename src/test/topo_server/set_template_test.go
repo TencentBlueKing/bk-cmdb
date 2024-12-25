@@ -124,7 +124,6 @@ var _ = Describe("create normal set template test", func() {
 						"bk_biz_id": strconv.FormatInt(bizID, 10),
 					},
 				},
-				"tenant_id":       "0",
 				"set_template_id": setTemplateID,
 			}
 			rsp, err := topoServerClient.Instance().CreateSet(ctx, bizID, header, data)

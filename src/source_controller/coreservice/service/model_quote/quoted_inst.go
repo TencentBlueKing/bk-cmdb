@@ -62,7 +62,6 @@ func BatchCreateQuotedInstance(cts *rest.Contexts) {
 
 	for idx := range instances {
 		instances[idx].Set(common.BKFieldID, ids[idx])
-		instances[idx].Set(common.TenantID, cts.Kit.TenantID)
 		instances[idx].Set(common.CreateTimeField, now)
 		instances[idx].Set(common.LastTimeField, now)
 	}

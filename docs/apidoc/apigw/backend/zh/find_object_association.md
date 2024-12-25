@@ -42,7 +42,6 @@ condition params
     "data": [
         {
            "id": 27,
-           "bk_supplier_account": "0",
            "bk_obj_asst_id": "test1_belong_biz",
            "bk_obj_asst_name": "1",
            "bk_obj_id": "test1",
@@ -79,5 +78,4 @@ condition params
 | bk_asst_obj_id      | string | 目标模型id                                                                                                                |
 | mapping             | string | 源模型与目标模型关联关系实例的映身关系，可以是以下中的一种[1:1, 1:n, n:n]                                                                          |
 | on_delete           | string | 删除关联关系时的动作, 取值为以下其中的一种 [none, delete_src, delete_dest], "none" 什么也不做, "delete_src" 删除源模型的实例, "delete_dest" 删除目标模型的实例. |
-| bk_supplier_account | string | 开发商账号                                                                                                                 |
 | ispre               | bool   | true:预置字段,false:非内置字段                                                                                                 |

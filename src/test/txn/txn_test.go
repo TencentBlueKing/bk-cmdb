@@ -99,7 +99,6 @@ var _ = Describe("Transaction Test", func() {
 			attributeTxn := metadata.CreateModelAttributes{
 				Attributes: []metadata.Attribute{
 					{
-						TenantID:      "0",
 						ObjectID:      objectID,
 						PropertyID:    "start",
 						PropertyName:  "发起事务",
@@ -108,7 +107,6 @@ var _ = Describe("Transaction Test", func() {
 						Creator:       "cc_system",
 					},
 					{
-						TenantID:      "0",
 						ObjectID:      objectID,
 						PropertyID:    "commit",
 						PropertyName:  "提交事务",
@@ -117,7 +115,6 @@ var _ = Describe("Transaction Test", func() {
 						Creator:       "cc_system",
 					},
 					{
-						TenantID:      "0",
 						ObjectID:      objectID,
 						PropertyID:    "abort",
 						PropertyName:  "回滚事务",

@@ -39,7 +39,7 @@ Create a new association relationship between model instances. (Permission: Mode
         "id": 1038
     },
     "permission": null,
-    "request_id": "e43da4ef221746868dc4c837d36f3807",
+    "request_id": "e43da4ef221746868dc4c837d36f3807"
 }
 ```
 

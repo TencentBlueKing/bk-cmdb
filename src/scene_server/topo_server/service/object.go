@@ -390,13 +390,13 @@ func (s *Service) createObjectTable(ctx *rest.Contexts, object map[string]interf
 	return nil
 }
 
-func (s *Service) createTableObjectTable(ctx *rest.Contexts, objectID, propertyID string) error {
+func (s *Service) createTableObjectTable(kit *rest.Kit, objectID, propertyID string) error {
 
 	input := &metadata.CreateModelTable{
 		IsMainLine: false,
 		ObjectIDs:  []string{metadata.GenerateModelQuoteObjID(objectID, propertyID)},
 	}
-	return s.Engine.CoreAPI.CoreService().Model().CreateTableModelTables(ctx.Kit.Ctx, ctx.Kit.Header, input)
+	return s.Engine.CoreAPI.CoreService().Model().CreateTableModelTables(kit.Ctx, kit.Header, input)
 
 }
 
@@ -404,14 +404,14 @@ func (s *Service) createTableObjectTable(ctx *rest.Contexts, objectID, propertyI
 // (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 // please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 // Collection minimum is Timestamp(1616747878, 5)
-func (s *Service) createObjectTableByObjectID(ctx *rest.Contexts, objectID string, isMainline bool) error {
+func (s *Service) createObjectTableByObjectID(kit *rest.Kit, objectID string, isMainline bool) error {
 	input := &metadata.CreateModelTable{
 		IsMainLine: isMainline,
 	}
 
 	if objectID != "" {
 		input.ObjectIDs = []string{objectID}
-		return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(ctx.Kit.Ctx, ctx.Kit.Header, input)
+		return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(kit.Ctx, kit.Header, input)
 
 	}
 	return nil

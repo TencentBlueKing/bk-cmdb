@@ -53,7 +53,6 @@ Create Model (Permission: Create Model)
         "last_time": null,
         "bk_obj_id": "test",
         "create_time": null,
-        "bk_supplier_account": "0",
         "position": "",
         "bk_obj_icon": "icon-cc-business",
         "modifier": "",

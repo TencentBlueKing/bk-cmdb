@@ -260,7 +260,6 @@ func (m *modelAttribute) SetModelAttributes(kit *rest.Kit, objID string, inputPa
 		}
 		if exists {
 			cond := mongo.NewCondition()
-			cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 			cond.Element(&mongo.Eq{Key: metadata.AttributeFieldID, Val: existsAttr.ID})
 
 			_, err := m.update(kit, mapstr.NewFromStruct(attr, "field"), cond, false)

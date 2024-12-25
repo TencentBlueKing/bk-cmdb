@@ -63,7 +63,6 @@ func (m *associationModel) isExistsAssociationID(kit *rest.Kit, associationID st
 
 	existsCheckCond := mongo.NewCondition()
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAsstID, Val: associationID})
-	existsCheckCond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 
 	cnt, err := m.count(kit, existsCheckCond)
 	if err != nil {
@@ -78,7 +77,6 @@ func (m *associationModel) isExistsAssociationObjectWithAnotherObject(kit *rest.
 	targetObjectID, anotherObjectID string, associationKind string) (bool, error) {
 
 	existsCheckCond := mongo.NewCondition()
-	existsCheckCond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldObjectID, Val: targetObjectID})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationObjectID, Val: anotherObjectID})
 	existsCheckCond.Element(&mongo.Eq{Key: metadata.AssociationFieldAssociationKind, Val: associationKind})

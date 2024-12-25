@@ -30,7 +30,6 @@ var _ = Describe("inst test", func() {
 			ObjIcon:    "icon-cc-business",
 			ObjectID:   "cc_test",
 			ObjectName: "cc_test",
-			TenantID:   "0",
 			Creator:    "admin",
 		}
 		rsp, err := objectClient.CreateObject(context.Background(), header, input)

@@ -30,7 +30,7 @@ Create a new association relationship between model instances. (Permission: Mode
     "data": {
         "id": 1038
     },
-    "permission": null,
+    "permission": null
 }
 ```
 

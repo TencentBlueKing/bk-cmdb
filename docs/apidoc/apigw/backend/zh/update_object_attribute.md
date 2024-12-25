@@ -38,7 +38,7 @@
     "bk_property_name":"aaa",
     "bk_property_type":"int",
     "bk_asst_obj_id":"0",
-    "default":3
+    "default":"{\"min\":\"1\",\"max\":\"4\"}"
 }
 ```
 

@@ -55,7 +55,6 @@ type Classification struct {
 	ClassificationName string `field:"bk_classification_name" json:"bk_classification_name" bson:"bk_classification_name" mapstructure:"bk_classification_name"`
 	ClassificationType string `field:"bk_classification_type" json:"bk_classification_type" bson:"bk_classification_type" mapstructure:"bk_classification_type"`
 	ClassificationIcon string `field:"bk_classification_icon" json:"bk_classification_icon" bson:"bk_classification_icon" mapstructure:"bk_classification_icon"`
-	TenantID           string `field:"tenant_id" json:"tenant_id" bson:"tenant_id" mapstructure:"tenant_id" `
 }
 
 // Parse load the data from mapstr classification into classification instance

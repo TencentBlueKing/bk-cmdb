@@ -70,7 +70,7 @@ func (s *Service) UpdateObjectGroup(ctx *rest.Contexts) {
 		}
 		result, err := s.Logics.GroupOperation().FindObjectGroup(ctx.Kit, searchCondition, cond.ModelBizID)
 		if err != nil {
-			blog.Errorf("search attribute group by condition failed, err: %+v, rid: %s", err, ctx.Kit.Rid)
+			blog.Errorf("search attribute group by condition failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 			return err
 		}
 		attributeGroups := make([]metadata.Group, 0)

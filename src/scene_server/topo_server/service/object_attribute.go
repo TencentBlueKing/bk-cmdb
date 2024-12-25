@@ -123,7 +123,7 @@ func (s *Service) createTableAttribute(ctx *rest.Contexts, attr *metadata.Attrib
 		isBizCustomField = true
 	}
 
-	if err := s.createTableObjectTable(ctx, attr.ObjectID, attr.PropertyID); err != nil {
+	if err := s.createTableObjectTable(ctx.Kit, attr.ObjectID, attr.PropertyID); err != nil {
 		blog.Errorf("create table object table failed, attr: %+v, err: %v, rid: %s", *attr, err, ctx.Kit.Rid)
 		return nil, err
 	}

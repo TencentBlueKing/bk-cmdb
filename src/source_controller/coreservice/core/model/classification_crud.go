@@ -41,7 +41,6 @@ func (m *modelClassification) save(kit *rest.Kit, classification metadata.Classi
 	}
 
 	classification.ID = int64(id)
-	classification.TenantID = kit.TenantID
 
 	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjClassification).Insert(kit.Ctx, classification)
 	return id, err

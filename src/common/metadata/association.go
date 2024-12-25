@@ -397,8 +397,6 @@ type AssociationKind struct {
 	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id" bson:"bk_asst_id"`
 	// a memorable name for this association kind, could be a chinese name, a english name etc.
 	AssociationKindName string `field:"bk_asst_name" json:"bk_asst_name" bson:"bk_asst_name"`
-	// the owner that this association type belongs to.
-	TenantID string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 	// the describe for the relationship from source object to the target(destination) object, which will be displayed
 	// when the topology is constructed between objects.
 	SourceToDestinationNote string `field:"src_des" json:"src_des" bson:"src_des"`
@@ -548,13 +546,10 @@ type InstAsst struct {
 	AsstInstID int64 `field:"bk_asst_inst_id" json:"bk_asst_inst_id,omitempty"  bson:"bk_asst_inst_id"`
 	// association target ObjectID
 	AsstObjectID string `field:"bk_asst_obj_id" json:"bk_asst_obj_id,omitempty" bson:"bk_asst_obj_id"`
-	// bk_supplier_account
-	TenantID string `field:"tenant_id" json:"tenant_id,omitempty" bson:"tenant_id"`
 	// association id between two object
 	ObjectAsstID string `field:"bk_obj_asst_id" json:"bk_obj_asst_id,omitempty" bson:"bk_obj_asst_id"`
 	// association kind id
 	AssociationKindID string `field:"bk_asst_id" json:"bk_asst_id,omitempty" bson:"bk_asst_id"`
-
 	// BizID the business ID
 	BizID int64 `field:"bk_biz_id" json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
 }

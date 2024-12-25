@@ -121,7 +121,6 @@ func (m *associationModel) UpdateModelAssociation(kit *rest.Kit,
 	// ATTENTION: only to update the fields except bk_obj_asst_id, bk_obj_id, bk_asst_obj_id
 	inputParam.Data.Remove(metadata.AssociationFieldObjectID)
 	inputParam.Data.Remove(metadata.AssociationFieldAssociationObjectID)
-	inputParam.Data.Remove(common.TenantID)
 	inputParam.Data.Remove(metadata.AssociationFieldAsstID)
 
 	updateCond, err := mongo.NewConditionFromMapStr(inputParam.Condition.ToMapInterface())

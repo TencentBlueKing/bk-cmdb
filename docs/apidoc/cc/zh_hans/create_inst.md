@@ -52,7 +52,6 @@
         "bk_inst_id": 1177099,
         "bk_inst_name": "example18",
         "bk_obj_id": "test3",
-        "bk_supplier_account": "0",
         "create_time": "2022-01-05T17:28:27.069+08:00",
         "last_time": "2022-01-05T17:28:27.069+08:00",
         "test4": ""
@@ -84,7 +83,6 @@
 | bk_biz_id           | int    | 业务id  |
 | bk_inst_name        | string | 实例名   |
 | bk_obj_id           | string | 模型id  |
-| bk_supplier_account | string | 开发商账号 |
 | create_time         | string | 创建时间  |
 | last_time           | string | 更新时间  |
 

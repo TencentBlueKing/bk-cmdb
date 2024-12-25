@@ -41,7 +41,6 @@ Query the topology of a common model through the classification ID of the object
                "bk_obj_id": "host",
                "bk_obj_name": "主机",
                "position": "{\"bk_host_manage\":{\"x\":-357,\"y\":-344},\"lhmtest\":{\"x\":163,\"y\":75}}",
-               "bk_supplier_account": "0"
            },
            "label": "switch_to_host",
            "label_name": "",
@@ -51,7 +50,6 @@ Query the topology of a common model through the classification ID of the object
                "bk_obj_id": "bk_switch",
                "bk_obj_name": "交换机",
                "position": "{\"bk_network\":{\"x\":-172,\"y\":-160}}",
-               "bk_supplier_account": "0"
            }
         }
    ]
@@ -84,9 +82,8 @@ Query the topology of a common model through the classification ID of the object
 #### from、to
 
 | Field                | Type               | Description                            |
-| -------------------- | ------------------ | -------------------------------------- |
+|----------------------|--------------------|----------------------------------------|
 | bk_classification_id | string             | Classification ID                      |
 | bk_obj_id            | string             | Model ID                               |
 | bk_obj_name          | string             | Model name                             |
-| bk_supplier_account  | string             | Vendor account                         |
 | position             | json object string | Coordinates used for front-end display |

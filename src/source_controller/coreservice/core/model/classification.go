@@ -47,8 +47,6 @@ func (m *modelClassification) CreateOneModelClassification(kit *rest.Kit,
 			"bk_classification_id can not start with bk or BK")
 	}
 
-	inputParam.Data.TenantID = kit.TenantID
-
 	id, err := m.save(kit, inputParam.Data)
 	if err != nil {
 		blog.Errorf("request(%s): failed to save the classification(%#v), error: %v", kit.Rid, inputParam.Data, err)
@@ -107,7 +105,6 @@ func (m *modelClassification) CreateManyModelClassification(kit *rest.Kit,
 			continue
 		}
 
-		item.TenantID = kit.TenantID
 		id, err := m.save(kit, item)
 		if err != nil {
 			blog.Errorf("request(%s): it is failed to save the classification(%#v), error: %v", kit.Rid, item,
@@ -181,8 +178,6 @@ func (m *modelClassification) SetManyModelClassification(kit *rest.Kit,
 			continue
 		}
 
-		item.TenantID = kit.TenantID
-
 		id, err := m.save(kit, item)
 		if err != nil {
 			blog.Errorf("request(%s): it is failed to save the classification(%#v), error: %v", kit.Rid, item, err)
@@ -245,7 +240,6 @@ func (m *modelClassification) SetOneModelClassification(kit *rest.Kit,
 		return dataResult, err
 	}
 
-	inputParam.Data.TenantID = kit.TenantID
 	id, err := m.save(kit, inputParam.Data)
 	if err != nil {
 		blog.Errorf("request(%s): it is failed to save the classification(%#v), error: %v", kit.Rid, inputParam.Data,

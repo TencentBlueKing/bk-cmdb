@@ -43,7 +43,6 @@ func (s *coreService) HasAssociation(kit *rest.Kit, objIDS []string) (exists boo
 
 	// construct the model association query condition
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	cond.Or(&mongo.In{Key: metadata.AssociationFieldObjectID, Val: objIDS})
 	cond.Or(&mongo.In{Key: metadata.AssociationFieldAsstID, Val: objIDS})
 
