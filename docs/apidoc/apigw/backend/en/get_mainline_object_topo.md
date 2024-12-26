@@ -23,7 +23,6 @@ Get the business topology of the mainline model.
         {
             "bk_obj_id": "biz",
             "bk_obj_name": "Business",
-            "bk_supplier_account": "0",
             "bk_next_obj": "set",
             "bk_next_name": "Set",
             "bk_pre_obj_id": "",
@@ -32,7 +31,6 @@ Get the business topology of the mainline model.
         {
             "bk_obj_id": "set",
             "bk_obj_name": "Set",
-            "bk_supplier_account": "0",
             "bk_next_obj": "module",
             "bk_next_name": "Module",
             "bk_pre_obj_id": "biz",
@@ -41,7 +39,6 @@ Get the business topology of the mainline model.
         {
             "bk_obj_id": "module",
             "bk_obj_name": "Module",
-            "bk_supplier_account": "0",
             "bk_next_obj": "host",
             "bk_next_name": "Host",
             "bk_pre_obj_id": "set",
@@ -50,7 +47,6 @@ Get the business topology of the mainline model.
         {
             "bk_obj_id": "host",
             "bk_obj_name": "Host",
-            "bk_supplier_account": "0",
             "bk_next_obj": "",
             "bk_next_name": "",
             "bk_pre_obj_id": "module",
@@ -76,7 +72,6 @@ Get the business topology of the mainline model.
 |---------------------|--------|-------------------------------------------------------|
 | bk_obj_id           | string | Unique ID of the model                                |
 | bk_obj_name         | string | Model name                                            |
-| bk_supplier_account | string | Developer account name                                |
 | bk_next_obj         | string | Unique ID of the next model for the current model     |
 | bk_next_name        | string | Name of the next model for the current model          |
 | bk_pre_obj_id       | string | Unique ID of the previous model for the current model |

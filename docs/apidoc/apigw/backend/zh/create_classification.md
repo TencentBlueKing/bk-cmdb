@@ -31,11 +31,10 @@
         "bk_classification_id": "cs_test",
         "bk_classification_name": "test_name",
         "bk_classification_type": "",
-        "bk_classification_icon": "icon-cc-business",
-        "bk_supplier_account": ""
+        "bk_classification_icon": "icon-cc-business"
     },
     "message": "success",
-    "permission": null,
+    "permission": null
     }
 ```
 
@@ -58,4 +57,3 @@
 | bk_classification_name | string | 分类名                                  |
 | bk_classification_icon | string | 模型分类的图标                              |
 | bk_classification_type | string | 用于对分类进行分类（如：inner代码为内置分类，空字符串为自定义分类） |
-| bk_supplier_account    | string | 开发商账号                                |

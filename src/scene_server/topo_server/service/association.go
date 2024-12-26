@@ -41,7 +41,7 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 	// Collection minimum is Timestamp(1616747878, 5)
-	if err := s.createObjectTableByObjectID(ctx, data.ObjectID, true); err != nil {
+	if err := s.createObjectTableByObjectID(ctx.Kit, data.ObjectID, true); err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
@@ -1029,7 +1029,7 @@ func (s *Service) getInstDetail(ctx *rest.Contexts, request metadata.InstAndAsso
 	var dstRes []mapstr.MapStr
 	if request.Condition.SrcDetail {
 		for obj, insts := range srcObjInst {
-			srcRsp, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.SrcFields, insts)
+			srcRsp, err := s.searchInstForAssocDetail(ctx.Kit, obj, request.Condition.SrcFields, insts)
 			if err != nil {
 				blog.Errorf("search src inst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return nil, nil, err
@@ -1041,7 +1041,7 @@ func (s *Service) getInstDetail(ctx *rest.Contexts, request metadata.InstAndAsso
 
 	if request.Condition.DstDetail {
 		for obj, insts := range dstObjInst {
-			dstRsp, err := s.searchInstForAssocDetail(ctx, obj, request.Condition.DstFields, insts)
+			dstRsp, err := s.searchInstForAssocDetail(ctx.Kit, obj, request.Condition.DstFields, insts)
 			if err != nil {
 				blog.Errorf("search dst inst failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return nil, nil, err
@@ -1054,12 +1054,12 @@ func (s *Service) getInstDetail(ctx *rest.Contexts, request metadata.InstAndAsso
 	return srcRes, dstRes, nil
 }
 
-func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fields []string, insts []int64) (
+func (s *Service) searchInstForAssocDetail(kit *rest.Kit, objID string, fields []string, insts []int64) (
 	[]mapstr.MapStr, error) {
 
-	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(ctx.Kit, objID)
+	isMainline, err := s.Logics.AssociationOperation().IsMainlineObject(kit, objID)
 	if err != nil {
-		blog.Errorf("check object is mainline failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		blog.Errorf("check object is mainline failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -1074,10 +1074,10 @@ func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fie
 		authInst = make([]int64, 0)
 		if objID == common.BKInnerObjIDHost {
 			input := &metadata.HostModuleRelationRequest{HostIDArr: insts}
-			relation, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(ctx.Kit.Ctx, ctx.Kit.Header,
+			relation, err := s.Engine.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header,
 				input)
 			if err != nil {
-				blog.Errorf("search host business relation failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+				blog.Errorf("search host business relation failed, err: %v, rid: %s", err, kit.Rid)
 				return nil, err
 			}
 			for _, item := range relation.Info {
@@ -1089,16 +1089,16 @@ func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fie
 				Fields:         []string{common.BKAppIDField},
 				DisableCounter: true,
 			}
-			rsp, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, cond)
+			rsp, err := s.Logics.InstOperation().FindInst(kit, objID, cond)
 			if err != nil {
-				blog.Errorf("search object[%s] instance failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+				blog.Errorf("search object[%s] instance failed, err: %v, rid: %s", objID, err, kit.Rid)
 				return nil, err
 			}
 
 			for _, item := range rsp.Info {
 				bizID, err := item.Int64(common.BKAppIDField)
 				if err != nil {
-					blog.Errorf("get object[%s] instance parentID failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+					blog.Errorf("get object[%s] instance parentID failed, err: %v, rid: %s", objID, err, kit.Rid)
 					return nil, err
 				}
 				authInst = append(authInst, bizID)
@@ -1106,10 +1106,10 @@ func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fie
 		}
 	}
 
-	err = s.AuthManager.AuthorizeByInstanceID(ctx.Kit.Ctx, ctx.Kit.Header, action, authObject, authInst...)
+	err = s.AuthManager.AuthorizeByInstanceID(kit.Ctx, kit.Header, action, authObject, authInst...)
 	if err != nil {
 		blog.Errorf("authorize object[%s] failed, action: %s, insts: %v, err: %v, rid: %s", objID, action, insts, err,
-			ctx.Kit.Rid)
+			kit.Rid)
 		return nil, err
 	}
 
@@ -1118,9 +1118,9 @@ func (s *Service) searchInstForAssocDetail(ctx *rest.Contexts, objID string, fie
 		Fields:         fields,
 		DisableCounter: true,
 	}
-	rsp, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, query)
+	rsp, err := s.Logics.InstOperation().FindInst(kit, objID, query)
 	if err != nil {
-		blog.Errorf("search object[%s] insts failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+		blog.Errorf("search object[%s] insts failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return nil, err
 	}
 	return rsp.Info, nil

@@ -40,7 +40,6 @@ Add model classification (Permission: Model Group New Permission)
         "bk_classification_name": "test_name",
         "bk_classification_type": "",
         "bk_classification_icon": "icon-cc-business",
-        "bk_supplier_account": ""
     },
     "message": "success",
     "permission": null,
@@ -70,4 +69,3 @@ Add model classification (Permission: Model Group New Permission)
 | bk_classification_name | string | Classification name                                          |
 | bk_classification_icon | string | Model classification icon                                    |
 | bk_classification_type | string | Used to classify classifications (e.g., inner code for built-in classifications, an empty string for custom classifications) |
-| bk_supplier_account    | string | Developer account                                            |

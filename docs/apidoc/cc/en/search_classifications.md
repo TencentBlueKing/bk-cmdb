@@ -38,7 +38,6 @@ Query model classification
             "bk_classification_id": "bk_host_manage",
             "bk_classification_name": "主机管理",
             "bk_classification_type": "inner",
-            "bk_supplier_account": "0",
             "id": 1
          }
      ]
@@ -60,11 +59,10 @@ Query model classification
 
 #### data
 
-| Field                  | Type   | Description                                                  |
-| ---------------------- | ------ | ------------------------------------------------------------ |
-| bk_classification_id   | string | Classification ID, used for internal use in the system in English description |
-| bk_classification_name | string | Classification name                                          |
-| bk_classification_type | string | Used to classify the classification (such as: inner code for built-in classification, empty string for custom classification) |
+| Field                  | Type   | Description                                                                                                                           |
+|------------------------|--------|---------------------------------------------------------------------------------------------------------------------------------------|
+| bk_classification_id   | string | Classification ID, used for internal use in the system in English description                                                         |
+| bk_classification_name | string | Classification name                                                                                                                   |
+| bk_classification_type | string | Used to classify the classification (such as: inner code for built-in classification, empty string for custom classification)         |
 | bk_classification_icon | string | Icon of the model classification, the value can refer to [(classIcon.json)](https://chat.openai.com/c/resource_define/classIcon.json) |
-| id                     | int    | Data record ID                                               |
-| bk_supplier_account    | string | Developer account                                            |
+| id                     | int    | Data record ID                                                                                                                        |

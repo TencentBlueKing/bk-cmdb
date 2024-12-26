@@ -63,7 +63,6 @@ var _ = Describe("model quote type test", func() {
 				ObjectID:   "model_quote_test_obj",
 				ObjectName: "模型引用类型测试模型",
 				ObjIcon:    "icon-cc-default",
-				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(ctx, header, option)
@@ -73,7 +72,6 @@ var _ = Describe("model quote type test", func() {
 			Expect(rsp.Data.ObjCls).To(Equal(option.ObjCls))
 			Expect(rsp.Data.ObjectID).To(Equal(option.ObjectID))
 			Expect(rsp.Data.ObjectName).To(Equal(option.ObjectName))
-			Expect(rsp.Data.TenantID).To(Equal(option.TenantID))
 			Expect(rsp.Data.Creator).To(Equal(option.Creator))
 			modelQuoteObj = rsp.Data
 		}()

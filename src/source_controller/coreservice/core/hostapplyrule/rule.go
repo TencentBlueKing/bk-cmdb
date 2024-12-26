@@ -432,7 +432,6 @@ func (p *hostApplyRule) SearchRuleRelatedModules(kit *rest.Kit, bizID int64,
 
 	moduleFilter := map[string]interface{}{
 		common.BKAppIDField: bizID,
-		common.TenantID:     kit.TenantID,
 		common.BKModuleIDField: map[string]interface{}{
 			common.BKDBIN: moduleIDs,
 		},
@@ -474,7 +473,6 @@ func getRuleAndAttribute(kit *rest.Kit, bizID int64, filter *querybuilder.QueryF
 
 	ruleFilter := map[string]interface{}{
 		common.BKAppIDField: bizID,
-		common.TenantID:     kit.TenantID,
 		common.BKAttributeIDField: map[string]interface{}{
 			common.BKDBIN: attributeIDs,
 		},

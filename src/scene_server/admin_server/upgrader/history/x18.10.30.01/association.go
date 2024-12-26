@@ -85,11 +85,11 @@ func createInstanceAssociationIndex(ctx context.Context, db dal.RDB, conf *histo
 func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tablename := common.BKTableNameAsstDes
 
-	asstTypes := []metadata.AssociationKind{
+	asstTypes := []AssociationKind{
 		{
 			AssociationKindID:       "belong",
 			AssociationKindName:     "",
-			TenantID:                conf.TenantID,
+			OwnerID:                 conf.TenantID,
 			SourceToDestinationNote: "属于",
 			DestinationToSourceNote: "包含",
 			Direction:               metadata.DestinationToSource,
@@ -98,7 +98,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *history.Con
 		{
 			AssociationKindID:       "group",
 			AssociationKindName:     "",
-			TenantID:                conf.TenantID,
+			OwnerID:                 conf.TenantID,
 			SourceToDestinationNote: "组成",
 			DestinationToSourceNote: "组成于",
 			Direction:               metadata.DestinationToSource,
@@ -107,7 +107,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *history.Con
 		{
 			AssociationKindID:       "bk_mainline",
 			AssociationKindName:     "",
-			TenantID:                conf.TenantID,
+			OwnerID:                 conf.TenantID,
 			SourceToDestinationNote: "组成",
 			DestinationToSourceNote: "组成于",
 			Direction:               metadata.DestinationToSource,
@@ -116,7 +116,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *history.Con
 		{
 			AssociationKindID:       "run",
 			AssociationKindName:     "",
-			TenantID:                conf.TenantID,
+			OwnerID:                 conf.TenantID,
 			SourceToDestinationNote: "运行于",
 			DestinationToSourceNote: "运行",
 			Direction:               metadata.DestinationToSource,
@@ -125,7 +125,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *history.Con
 		{
 			AssociationKindID:       "connect",
 			AssociationKindName:     "",
-			TenantID:                conf.TenantID,
+			OwnerID:                 conf.TenantID,
 			SourceToDestinationNote: "上联",
 			DestinationToSourceNote: "下联",
 			Direction:               metadata.DestinationToSource,
@@ -134,7 +134,7 @@ func addPresetAssociationType(ctx context.Context, db dal.RDB, conf *history.Con
 		{
 			AssociationKindID:       "default",
 			AssociationKindName:     "默认关联",
-			TenantID:                conf.TenantID,
+			OwnerID:                 conf.TenantID,
 			SourceToDestinationNote: "关联",
 			DestinationToSourceNote: "被关联",
 			Direction:               metadata.DestinationToSource,

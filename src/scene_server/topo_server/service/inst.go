@@ -64,7 +64,7 @@ func (s *Service) CreateInst(ctx *rest.Contexts) {
 		var err error
 		setInst, err = s.Logics.InstOperation().CreateInst(ctx.Kit, objID, data)
 		if err != nil {
-			blog.Errorf("failed to create a new %s, %s, rid: %s", objID, err.Error(), ctx.Kit.Rid)
+			blog.Errorf("failed to create a new %s, %s, rid: %s", objID, err, ctx.Kit.Rid)
 			return err
 		}
 		return nil

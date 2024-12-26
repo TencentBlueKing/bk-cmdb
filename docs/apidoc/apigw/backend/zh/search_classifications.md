@@ -25,7 +25,6 @@
             "bk_classification_id": "bk_host_manage",
             "bk_classification_name": "主机管理",
             "bk_classification_type": "inner",
-            "bk_supplier_account": "0",
             "id": 1
          }
      ]
@@ -51,4 +50,3 @@
 | bk_classification_type | string | 用于对分类进行分类（如：inner代码为内置分类，空字符串为自定义分类）                                  |
 | bk_classification_icon | string | 模型分类的图标,取值可参考，取值可参考[(classIcon.json)](resource_define/classIcon.json) |
 | id                     | int    | 数据记录ID                                                                |
-| bk_supplier_account    | string | 开发商账户                                                                 |

@@ -145,7 +145,6 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 	}
 
 	asstInst.ID = int64(id)
-	asstInst.TenantID = kit.TenantID
 
 	objInstAsstTableName := common.GetObjectInstAsstTableName(asstInst.ObjectID, kit.TenantID)
 	err = mongodb.Shard(kit.ShardOpts()).Table(objInstAsstTableName).Insert(kit.Ctx, asstInst)
@@ -375,7 +374,6 @@ func (m *associationInstance) CreateManyInstanceAssociation(kit *rest.Kit,
 	for idx, item := range inputParam.Datas {
 		itemIdx := int64(idx)
 
-		item.TenantID = kit.TenantID
 		// check is exist
 		exists, err := m.isExists(kit, item.InstID, item.AsstInstID, item.ObjectAsstID, item.ObjectID, item.BizID)
 		if err != nil {

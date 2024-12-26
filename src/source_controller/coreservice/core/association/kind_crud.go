@@ -81,7 +81,6 @@ func (m *associationKind) save(kit *rest.Kit, associationKind metadata.Associati
 	}
 
 	associationKind.ID = int64(id)
-	associationKind.TenantID = kit.TenantID
 
 	err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameAsstDes).Insert(kit.Ctx, associationKind)
 	return id, err

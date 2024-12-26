@@ -40,7 +40,7 @@
     "code": 1101029,
     "data": null,
     "message": "There is a model under the category, not allowed to delete",
-    "permission": null,
+    "permission": null
 }
 ```
 

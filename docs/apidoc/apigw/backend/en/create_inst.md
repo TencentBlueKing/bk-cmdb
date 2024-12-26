@@ -45,13 +45,12 @@ batch_create_quoted_inst interface), with a maximum of 50.
         "bk_inst_id": 1177099,
         "bk_inst_name": "example18",
         "bk_obj_id": "test3",
-        "bk_supplier_account": "0",
         "create_time": "2022-01-05T17:28:27.069+08:00",
         "last_time": "2022-01-05T17:28:27.069+08:00",
         "test4": ""
     },
     "message": "success",
-    "permission": null,
+    "permission": null
 }
 ```
 
@@ -73,6 +72,5 @@ batch_create_quoted_inst interface), with a maximum of 50.
 | bk_biz_id           | int    | Business ID                                    |
 | bk_inst_name        | string | Instance name                                  |
 | bk_obj_id           | string | Model ID                                       |
-| bk_supplier_account | string | Supplier account                               |
 | create_time         | string | Creation time                                  |
 | last_time           | string | Update time                                    |

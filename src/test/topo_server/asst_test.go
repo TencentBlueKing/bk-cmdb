@@ -29,7 +29,6 @@ func generateObject(objectIDs []string) {
 				ObjIcon:    "icon-cc-business",
 				ObjectID:   objID,
 				ObjectName: objID,
-				TenantID:   "0",
 				Creator:    "admin",
 			}
 			rsp, err := objectClient.CreateObject(context.Background(), header, input)
@@ -40,7 +39,6 @@ func generateObject(objectIDs []string) {
 			Expect(rsp.Data.ObjIcon).To(Equal(input.ObjIcon))
 			Expect(rsp.Data.ObjectID).To(Equal(input.ObjectID))
 			Expect(rsp.Data.ObjectName).To(Equal(input.ObjectName))
-			Expect(rsp.Data.TenantID).To(Equal(input.TenantID))
 			Expect(rsp.Data.Creator).To(Equal(input.Creator))
 		}
 	}
@@ -521,7 +519,7 @@ var _ = Describe("inst test", func() {
 
 		association, ok := info[0].(map[string]interface{})
 		Expect(ok).To(Equal(true))
-		Expect(len(association)).To(Equal(8))
+		Expect(len(association)).To(Equal(7))
 	})
 
 	It("search instance associations without page", func() {

@@ -30,7 +30,7 @@
     "data": {
         "id": 1038
     },
-    "permission": null,
+    "permission": null
 }
 
 ```

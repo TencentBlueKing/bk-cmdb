@@ -52,7 +52,6 @@ Condition Parameters
     "data": [
         {
            "id": 27,
-           "bk_supplier_account": "0",
            "bk_obj_asst_id": "test1_belong_biz",
            "bk_obj_asst_name": "1",
            "bk_obj_id": "test1",
@@ -91,5 +90,4 @@ Condition Parameters
 | bk_asst_obj_id      | string | Target model ID                                              |
 | mapping             | string | Mapping relationship between the source model and the target model, one of [1:1, 1:n, n:n] |
 | on_delete           | string | Action when deleting the association relationship, one of [none, delete_src, delete_dest]. "none" does nothing, "delete_src" deletes instances of the source model, "delete_dest" deletes instances of the target model. |
-| bk_supplier_account | string | Developer account                                            |
 | ispre               | bool   | true: pre-installed field, false: non-built-in field         |
