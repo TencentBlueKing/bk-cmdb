@@ -86,7 +86,6 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 		Modifier:   kit.User,
 		CreateTime: now,
 		LastTime:   now,
-		TenantID:   kit.TenantID,
 	}
 	if key, err := setTemplate.Validate(kit.CCError); err != nil {
 		blog.Errorf("parameter invalid, key: %s, err: %v, rid: %s", key, err, kit.Rid)
@@ -146,7 +145,6 @@ func (p *setTemplateOperation) CreateSetTemplate(kit *rest.Kit, bizID int64, opt
 				BizID:             setTemplate.BizID,
 				SetTemplateID:     setTemplate.ID,
 				ServiceTemplateID: serviceTemplateID,
-				TenantID:          kit.TenantID,
 			})
 		}
 		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameSetServiceTemplateRelation).Insert(kit.Ctx,
@@ -189,7 +187,6 @@ func (p *setTemplateOperation) refreshSetTemplate(kit *rest.Kit, option metadata
 					BizID:             setTemplate.BizID,
 					SetTemplateID:     setTemplate.ID,
 					ServiceTemplateID: serviceTemplateID,
-					TenantID:          kit.TenantID,
 				})
 			}
 		}

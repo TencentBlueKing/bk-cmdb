@@ -31,7 +31,6 @@ type SetTemplate struct {
 	Modifier   string    `field:"modifier" json:"modifier" bson:"modifier"`
 	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
 	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	TenantID   string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 }
 
 // Validate TODO
@@ -45,26 +44,22 @@ func (st SetTemplate) Validate(errProxy errors.DefaultCCErrorIf) (key string, er
 
 // SetServiceTemplateRelation 拓扑模板与服务模板多对多关系, 记录拓扑模板的构成
 type SetServiceTemplateRelation struct {
-	BizID             int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
-	SetTemplateID     int64  `field:"set_template_id" json:"set_template_id" bson:"set_template_id"`
-	ServiceTemplateID int64  `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
-	TenantID          string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
+	BizID             int64 `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	SetTemplateID     int64 `field:"set_template_id" json:"set_template_id" bson:"set_template_id"`
+	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id"`
 }
 
 // SetTemplateAttr set template attributes, used to generate set, should not include non-editable fields
 type SetTemplateAttr struct {
-	ID int64 `json:"id" bson:"id"`
-
+	ID            int64       `json:"id" bson:"id"`
 	BizID         int64       `json:"bk_biz_id" bson:"bk_biz_id"`
 	SetTemplateID int64       `json:"set_template_id" bson:"set_template_id"`
 	AttributeID   int64       `json:"bk_attribute_id" bson:"bk_attribute_id"`
 	PropertyValue interface{} `json:"bk_property_value" bson:"bk_property_value"`
-
-	Creator    string    `json:"creator" bson:"creator"`
-	Modifier   string    `json:"modifier" bson:"modifier"`
-	CreateTime time.Time `json:"create_time" bson:"create_time"`
-	LastTime   time.Time `json:"last_time" bson:"last_time"`
-	TenantID   string    `json:"tenant_id" bson:"tenant_id"`
+	Creator       string      `json:"creator" bson:"creator"`
+	Modifier      string      `json:"modifier" bson:"modifier"`
+	CreateTime    time.Time   `json:"create_time" bson:"create_time"`
+	LastTime      time.Time   `json:"last_time" bson:"last_time"`
 }
 
 // Validate SetTemplateAttr

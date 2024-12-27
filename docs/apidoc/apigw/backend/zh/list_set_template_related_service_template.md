@@ -36,7 +36,6 @@
             "modifier": "admin",
             "create_time": "2020-05-15T14:14:57.691Z",
             "last_time": "2020-05-15T14:14:57.691Z",
-            "bk_supplier_account": "0",
             "host_apply_enabled": false
         },
         {
@@ -48,7 +47,6 @@
             "modifier": "admin",
             "create_time": "2020-05-15T14:19:09.813Z",
             "last_time": "2020-05-15T14:19:09.813Z",
-            "bk_supplier_account": "0",
             "host_apply_enabled": false
         }
     ]
@@ -77,5 +75,4 @@ data 字段说明：
 | modifier            | string | 最后修改人员       |
 | create_time         | string | 创建时间         |
 | last_time           | string | 更新时间         |
-| bk_supplier_account | string | 开发商账号        |
 | host_apply_enabled  | bool   | 是否启用主机属性自动应用 |

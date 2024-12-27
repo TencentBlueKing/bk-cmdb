@@ -49,7 +49,7 @@ Batch create quoted model instance (Version: v3.10.30+, permission: Model instan
       1,
       2
     ]
-  },
+  }
 }
 ```
 

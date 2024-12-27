@@ -1,18 +1,15 @@
 package settemplate
 
 import (
-	"net/http"
 	"reflect"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/topo_server/logics/inst"
 )
 
@@ -25,23 +22,8 @@ type BackendWorker struct {
 }
 
 // DoModuleSyncTask do syncing module under set template by service template task
-func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetInst,
+func (bw BackendWorker) DoModuleSyncTask(kit *rest.Kit, set metadata.SetInst,
 	moduleDiff metadata.SetModuleDiff) error {
-
-	ctx := util.NewContextFromHTTPHeader(header)
-	rid := httpheader.GetRid(header)
-	user := httpheader.GetUser(header)
-	tenantID := httpheader.GetTenantID(header)
-	defaultCCError := util.GetDefaultCCError(header)
-
-	kit := &rest.Kit{
-		Rid:      rid,
-		Header:   header,
-		Ctx:      ctx,
-		CCError:  defaultCCError,
-		User:     user,
-		TenantID: tenantID,
-	}
 
 	bizID := set.BizID
 	setID := set.SetID
@@ -49,7 +31,7 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	// 进行集群属性的同步
 	if err := bw.syncSetAttributes(kit, bizID, set.SetTemplateID, setID); err != nil {
 		blog.Errorf("set attribute sync task failed, set template id: %d, setID: %d, err: %v, rid: %s",
-			set.SetTemplateID, setID, err, rid)
+			set.SetTemplateID, setID, err, kit.Rid)
 		return err
 	}
 
@@ -58,14 +40,16 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 	case metadata.ModuleDiffRemove:
 		err := bw.ModuleOperation.DeleteModule(kit, set.BizID, []int64{setID}, []int64{moduleID})
 		if err != nil {
-			blog.Errorf("delete module %d failed, err: %v, biz: %d, set: %d, rid: %s", moduleID, err, bizID, setID, rid)
+			blog.Errorf("delete module %d failed, err: %v, biz: %d, set: %d, rid: %s", moduleID, err, bizID, setID,
+				kit.Rid)
 			return err
 		}
 	case metadata.ModuleDiffAdd:
-		serviceTemplate, ccErr := bw.ClientSet.CoreService().Process().GetServiceTemplate(ctx, header,
+		serviceTemplate, ccErr := bw.ClientSet.CoreService().Process().GetServiceTemplate(kit.Ctx, kit.Header,
 			moduleDiff.ServiceTemplateID)
 		if ccErr != nil {
-			blog.Errorf("get service temp failed, err: %v, id: %d, rid: %s", ccErr, moduleDiff.ServiceTemplateID, rid)
+			blog.Errorf("get service temp failed, err: %v, id: %d, rid: %s", ccErr, moduleDiff.ServiceTemplateID,
+				kit.Rid)
 			return ccErr
 		}
 		data := map[string]interface{}{
@@ -78,7 +62,8 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 
 		_, err := bw.ModuleOperation.CreateModule(kit, bizID, setID, data)
 		if err != nil {
-			blog.Errorf("create module(%#v) failed, err: %v, biz: %d, set: %d, rid: %s", data, err, bizID, setID, rid)
+			blog.Errorf("create module(%#v) failed, err: %v, biz: %d, set: %d, rid: %s", data, err, bizID, setID,
+				kit.Rid)
 			return err
 		}
 	case metadata.ModuleDiffChanged:
@@ -93,13 +78,13 @@ func (bw BackendWorker) DoModuleSyncTask(header http.Header, set metadata.SetIns
 
 		err := bw.InstOperation.UpdateInst(kit, cond, data, common.BKInnerObjIDModule)
 		if err != nil {
-			blog.Errorf("update module failed, cond: %#v, data: %#v, err: %v, rid: %s", cond, data, err, rid)
+			blog.Errorf("update module failed, cond: %#v, data: %#v, err: %v, rid: %s", cond, data, err, kit.Rid)
 			return err
 		}
 	case metadata.ModuleDiffUnchanged:
 		return nil
 	default:
-		blog.Errorf("module sync task diff type(%s) is invalid, rid: %s", moduleDiff.DiffType, rid)
+		blog.Errorf("module sync task diff type(%s) is invalid, rid: %s", moduleDiff.DiffType, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "diff_type")
 	}
 	return nil

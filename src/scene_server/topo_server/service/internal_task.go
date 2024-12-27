@@ -34,7 +34,7 @@ func (s *Service) SyncModuleTaskHandler(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		if err := backendWorker.DoModuleSyncTask(ctx.Kit.Header, task.Set, task.ModuleDiff); err != nil {
+		if err := backendWorker.DoModuleSyncTask(ctx.Kit, task.Set, task.ModuleDiff); err != nil {
 			blog.ErrorJSON("do module sync task failed, task: %s, err: %s, rid: %s", task, err, ctx.Kit.Rid)
 			return err
 		}

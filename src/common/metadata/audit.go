@@ -208,7 +208,6 @@ type AuditLog struct {
 type bsonAuditLog struct {
 	ID                 int64           `json:"id" bson:"id"`
 	AuditType          AuditType       `json:"audit_type" bson:"audit_type"`
-	TenantID           string          `json:"tenant_id" bson:"tenant_id"`
 	User               string          `json:"user" bson:"user"`
 	ResourceType       ResourceType    `json:"resource_type" bson:"resource_type"`
 	Action             ActionType      `json:"action" bson:"action"`
@@ -226,7 +225,6 @@ type bsonAuditLog struct {
 type jsonAuditLog struct {
 	ID                 int64           `json:"id" bson:"id"`
 	AuditType          AuditType       `json:"audit_type" bson:"audit_type"`
-	TenantID           string          `json:"tenant_id" bson:"tenant_id"`
 	User               string          `json:"user" bson:"user"`
 	ResourceType       ResourceType    `json:"resource_type" bson:"resource_type"`
 	Action             ActionType      `json:"action" bson:"action"`

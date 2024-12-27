@@ -499,7 +499,6 @@ func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
 	}
 
 	template.ID = int64(id)
-	template.TenantID = ctx.Kit.TenantID
 	template.Creator = ctx.Kit.User
 	template.Modifier = ctx.Kit.User
 	now := time.Now()
@@ -630,7 +629,6 @@ func (s *service) UpdateFieldTemplate(ctx *rest.Contexts) {
 		return
 	}
 
-	opt.TenantID = dbTmpl.TenantID
 	opt.Creator = dbTmpl.Creator
 	opt.CreateTime = dbTmpl.CreateTime
 	opt.Modifier = ctx.Kit.User
