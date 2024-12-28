@@ -123,7 +123,6 @@ func (s *service) CreateCluster(ctx *rest.Contexts) {
 		CreateTime: now,
 		LastTime:   now,
 	}
-	cluster.TenantID = ctx.Kit.TenantID
 
 	err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBaseCluster).Insert(ctx.Kit.Ctx, cluster)
 	if err != nil {
@@ -149,7 +148,6 @@ func (s *service) BatchDeleteCluster(ctx *rest.Contexts) {
 	}
 
 	filter := map[string]interface{}{
-		common.TenantID: ctx.Kit.TenantID,
 		types.BKIDField: map[string]interface{}{
 			common.BKDBIN: option.IDs,
 		},

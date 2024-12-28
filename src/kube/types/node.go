@@ -65,8 +65,6 @@ type Node struct {
 	ID int64 `json:"id,omitempty" bson:"id"`
 	// BizID the business ID to which the cluster belongs
 	BizID int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
-	// TenantID the supplier account that this resource belongs to.
-	TenantID string `json:"tenant_id,omitempty" bson:"tenant_id"`
 	// HostID the node ID to which the host belongs
 	HostID int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
 	// ClusterID the node ID to which the cluster belongs

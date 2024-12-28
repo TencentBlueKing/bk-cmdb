@@ -138,7 +138,7 @@ to: [QueryBuilder README](https://github.com/Tencent/bk-cmdb/blob/master/src/com
         "bk_project_code": "test"
       }
     ]
-  },
+  }
 }
 ```
 
@@ -154,7 +154,7 @@ to: [QueryBuilder README](https://github.com/Tencent/bk-cmdb/blob/master/src/com
     "count": 1,
     "info": [
     ]
-  },
+  }
 }
 ```
 

@@ -35,7 +35,6 @@ type SetInst struct {
 	Creator    string `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
 	CreateTime Time   `field:"create_time" json:"create_time,omitempty" bson:"create_time" mapstructure:"create_time"`
 	LastTime   Time   `field:"last_time" json:"last_time,omitempty" bson:"last_time" mapstructure:"last_time"`
-	TenantID   string `field:"tenant_id" json:"tenant_id,omitempty" bson:"tenant_id" mapstructure:"tenant_id"`
 }
 
 // ModuleInst contains partial fields of a real module
@@ -44,7 +43,6 @@ type ModuleInst struct {
 	SetID             int64  `bson:"bk_set_id" json:"bk_set_id" field:"bk_set_id" mapstructure:"bk_set_id"`
 	ModuleID          int64  `bson:"bk_module_id" json:"bk_module_id" field:"bk_module_id" mapstructure:"bk_module_id"`
 	ModuleName        string `bson:"bk_module_name" json:"bk_module_name" field:"bk_module_name" mapstructure:"bk_module_name"`
-	TenantID          string `bson:"tenant_id" json:"tenant_id" field:"tenant_id" mapstructure:"tenant_id"`
 	ServiceCategoryID int64  `bson:"service_category_id" json:"service_category_id" field:"service_category_id" mapstructure:"service_category_id"`
 	ServiceTemplateID int64  `bson:"service_template_id" json:"service_template_id" field:"service_template_id" mapstructure:"service_template_id"`
 	ParentID          int64  `bson:"bk_parent_id" json:"bk_parent_id" field:"bk_parent_id" mapstructure:"bk_parent_id"`
@@ -58,9 +56,8 @@ type ModuleInst struct {
 
 // BizInst TODO
 type BizInst struct {
-	BizID    int64  `bson:"bk_biz_id" mapstructure:"bk_biz_id"`
-	BizName  string `bson:"bk_biz_name" mapstructure:"bk_biz_name"`
-	TenantID string `bson:"tenant_id" mapstructure:"tenant_id"`
+	BizID   int64  `bson:"bk_biz_id" mapstructure:"bk_biz_id"`
+	BizName string `bson:"bk_biz_name" mapstructure:"bk_biz_name"`
 }
 
 // BizBasicInfo TODO
@@ -77,7 +74,6 @@ type BizSetInst struct {
 	BizSetMaintainer string      `json:"bk_biz_maintainer" bson:"bk_biz_maintainer"`
 	CreateTime       Time        `json:"create_time" bson:"create_time"`
 	LastTime         Time        `json:"last_time" bson:"last_time"`
-	TenantID         string      `json:"tenant_id" bson:"tenant_id"`
 	Scope            BizSetScope `json:"bk_scope" bson:"bk_scope"`
 	Default          int64       `json:"default" bson:"default"`
 }
@@ -105,7 +101,6 @@ type HostIdentifier struct {
 	CloudID         int64                       `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	InnerIP         StringArrayToString         `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	OSType          string                      `json:"bk_os_type" bson:"bk_os_type"`
-	TenantID        string                      `json:"tenant_id" bson:"tenant_id"`
 	HostIdentModule map[string]*HostIdentModule `json:"associations" bson:"associations"`
 	Process         []HostIdentProcess          `json:"process" bson:"process"`
 	AgentID         string                      `json:"bk_agent_id" bson:"bk_agent_id"`

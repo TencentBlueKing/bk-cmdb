@@ -35,7 +35,7 @@ Delete container cluster (v3.12.1+, Permission: Container cluster deletion permi
   "code": 0,
   "message": "",
   "permission": null,
-  "data": null,
+  "data": null
 }
 ```
 

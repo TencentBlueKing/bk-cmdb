@@ -38,7 +38,7 @@ Batch delete pods (Version: v3.12.1+, Permission: Container pod deletion permiss
   "result": true,
   "code": 0,
   "message": "",
-  "permission": null,
+  "permission": null
 }
 ```
 
