@@ -139,7 +139,6 @@ permission)
 | bk_set_env           | string | Environment type: 1/2/3 (1: test, 2: experience, 3: formal) |
 | create_time          | string | Creation time                                               |
 | last_time            | string | Update time                                                 |
-| bk_supplier_account  | string | Developer account                                           |
 | description          | string | Data description                                            |
 | set_template_version | array  | Set template's current version                              |
 | set_template_id      | int    | Set template ID                                             |

@@ -106,7 +106,6 @@
 | bk_set_id           | int    | 集群ID  |
 | bk_module_id        | int    | 模块ID  |
 | bk_host_id          | int    | 主机ID  |
-| bk_supplier_account | string | 开发商账号 |
 
 #### data.page 字段说明:
 

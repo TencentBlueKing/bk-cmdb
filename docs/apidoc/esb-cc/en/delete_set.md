@@ -10,7 +10,6 @@ Delete Cluster (Permission: Business Topology Deletion Permission)
 
 | Field               | Type   | Required | Description       |
 | ------------------- | ------ | -------- | ----------------- |
-| bk_supplier_account | string | No       | Developer account |
 | bk_biz_id           | int    | Yes      | Business ID       |
 | bk_set_id           | int    | Yes      | Cluster ID        |
 
@@ -22,7 +21,6 @@ Delete Cluster (Permission: Business Topology Deletion Permission)
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_biz_id": 1,
     "bk_set_id": 10
 }

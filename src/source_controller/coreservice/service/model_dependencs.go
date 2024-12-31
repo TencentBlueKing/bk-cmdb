@@ -13,7 +13,6 @@
 package service
 
 import (
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -69,7 +68,6 @@ func (s *coreService) CascadeDeleteAssociation(kit *rest.Kit, objIDS []string) e
 
 	// construct the deletion command
 	cond := mongo.NewCondition()
-	cond.Element(&mongo.Eq{Key: common.TenantID, Val: kit.TenantID})
 	cond.Or(&mongo.In{Key: metadata.AssociationFieldObjectID, Val: objIDS})
 	cond.Or(&mongo.In{Key: metadata.AssociationFieldAssociationObjectID, Val: objIDS})
 

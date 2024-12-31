@@ -47,7 +47,6 @@ func (p *processOperation) CreateServiceInstance(kit *rest.Kit, instance *metada
 	instance.Modifier = kit.User
 	instance.CreateTime = time.Now()
 	instance.LastTime = time.Now()
-	instance.TenantID = kit.TenantID
 
 	if err = mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceInstance).Insert(kit.Ctx,
 		&instance); err != nil {
@@ -138,7 +137,6 @@ func (p *processOperation) createSvcInstProcesses(kit *rest.Kit, instance *metad
 			ServiceInstanceID: instance.ID,
 			ProcessTemplateID: templateIDs[idx],
 			HostID:            instance.HostID,
-			TenantID:          kit.TenantID,
 		}
 		relations[idx] = relation
 	}
@@ -1013,7 +1011,6 @@ func (p *processOperation) generateAutoCreateSvcInstData(kit *rest.Kit, params *
 				Modifier:          kit.User,
 				CreateTime:        now,
 				LastTime:          now,
-				TenantID:          kit.TenantID,
 			})
 		}
 	}
@@ -1058,7 +1055,6 @@ func (p *processOperation) generateAutoCreateSvcInstData(kit *rest.Kit, params *
 				ServiceInstanceID: instance.ID,
 				ProcessTemplateID: procTemp.ID,
 				HostID:            instance.HostID,
-				TenantID:          kit.TenantID,
 			})
 		}
 

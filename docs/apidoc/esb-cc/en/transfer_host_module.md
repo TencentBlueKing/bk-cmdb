@@ -10,7 +10,6 @@ Host Transfer to Module within Business (Permission: Service Instance Edit Permi
 
 | Field               | Type   | Required | Description                                                  |
 | ------------------- | ------ | -------- | ------------------------------------------------------------ |
-| bk_supplier_account | string | No       | Developer account                                            |
 | bk_biz_id           | int    | Yes      | Business ID                                                  |
 | bk_host_id          | array  | Yes      | Host ID                                                      |
 | bk_module_id        | array  | Yes      | Module ID                                                    |
@@ -24,7 +23,6 @@ Host Transfer to Module within Business (Permission: Service Instance Edit Permi
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_biz_id": 1,
     "bk_host_id": [
         9,

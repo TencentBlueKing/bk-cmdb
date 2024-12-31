@@ -70,7 +70,6 @@ var _ = Describe("host abnormal test", func() {
 				"bk_group_index": rand.Int(),
 				"bk_group_name":  util.RandSeq(16),
 				"bk_obj_id":      "host",
-				"tenant_id":      "0",
 				"is_collapse":    false,
 			}
 
@@ -102,7 +101,6 @@ var _ = Describe("host abnormal test", func() {
 				"bk_property_group": "value1",
 				"bk_property_index": 0,
 				"bk_obj_id":         "host",
-				"tenant_id":         "0",
 			}
 
 			rsp := metadata.Response{}
@@ -130,7 +128,6 @@ var _ = Describe("host abnormal test", func() {
 				"bk_capacity":       nil,
 				"bk_biz_id":         value1,
 				"bk_parent_id":      value1,
-				"tenant_id":         "0",
 			}
 
 			rsp := metadata.Response{}
@@ -157,7 +154,6 @@ var _ = Describe("host abnormal test", func() {
 				"bk_module_name":      util.RandSeq(16),
 				"bk_biz_id":           value1,
 				"bk_parent_id":        value2,
-				"tenant_id":           "0",
 				"service_template_id": 0,
 				"service_category_id": serviceCategoryID,
 			}
@@ -491,7 +487,6 @@ var _ = Describe("host abnormal test", func() {
 				"bk_property_group": value1,
 				"bk_property_index": 0,
 				"bk_obj_id":         "host",
-				"tenant_id":         "0",
 			}
 
 			rsp := metadata.Response{}
@@ -624,7 +619,6 @@ var _ = Describe("host abnormal test", func() {
 				"bk_module_name":      util.RandSeq(16),
 				"bk_biz_id":           value1,
 				"bk_parent_id":        value2,
-				"tenant_id":           "0",
 				"service_template_id": 0,
 				"service_category_id": serviceCategoryID,
 			}

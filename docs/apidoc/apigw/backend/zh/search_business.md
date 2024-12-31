@@ -6,7 +6,7 @@
 
 | 参数名称                | 参数类型   | 必选 | 描述                                                                 |
 |---------------------|--------|----|--------------------------------------------------------------------|
-| bk_supplier_account | string | 否  | 开发商账号                                                              |
+| bk_supplier_account | string | 否  | 参数在当前版本已废弃，可传任意值                                                              |
 | fields              | array  | 否  | 指定查询的字段，参数为业务的任意属性，如果不填写字段信息，系统会返回业务的所有字段                          |
 | condition           | dict   | 否  | 查询条件，参数为业务的任意属性，如果不写代表搜索全部数据，(历史遗留字段，请勿继续使用，请用biz_property_filter) |
 | biz_property_filter | object | 否  | 业务属性组合查询条件                                                         |
@@ -155,7 +155,6 @@ Note: 业务分为两类，未归档的业务和已归档的业务。
 | bk_biz_tester       | string | 测试人员                 |
 | time_zone           | string | 时区                   |
 | language            | string | 语言, "1"代表中文, "2"代表英文 |
-| bk_supplier_account | string | 开发商账号                |
 | create_time         | string | 创建时间                 |
 | last_time           | string | 更新时间                 |
 | default             | int    | 表示业务类型               |

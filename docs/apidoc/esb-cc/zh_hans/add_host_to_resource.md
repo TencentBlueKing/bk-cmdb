@@ -10,7 +10,6 @@
 
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
-| bk_supplier_account |  string     | 否     | 开发商账号 |
 | host_info      |  dict    | 是     | 主机信息 |
 | bk_biz_id      |  int     | 否     | 业务ID   |
 
@@ -65,7 +64,6 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "0",
     "bk_biz_id": 3,
     "host_info": {
         "0": {

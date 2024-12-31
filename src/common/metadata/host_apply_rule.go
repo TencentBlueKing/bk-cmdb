@@ -47,7 +47,6 @@ type HostApplyRule struct {
 	Modifier   string    `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
 	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
 	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
-	TenantID   string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id" mapstructure:"tenant_id"`
 }
 
 // Validate TODO

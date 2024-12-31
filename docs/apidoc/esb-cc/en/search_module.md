@@ -10,7 +10,7 @@ Query Module
 
 | Field               | Type   | Required | Description                                                  |
 | ------------------- | ------ | -------- | ------------------------------------------------------------ |
-| bk_supplier_account | string | No       | Developer account                                            |
+| bk_supplier_account | string | No       | Parameter is deprecated in the current version and can be passed to any value                                            |
 | bk_biz_id           | int    | Yes      | Business ID                                                  |
 | bk_set_id           | int    | No       | Cluster ID                                                   |
 | fields              | array  | Yes      | Query fields, fields come from the attributes defined in the module |
@@ -109,7 +109,6 @@ Query Module
 | bk_module_id        | int     | Module ID to which the host belongs                        |
 | bk_module_type      | string  | Module type                                                |
 | bk_parent_id        | int     | Parent node ID                                             |
-| bk_supplier_account | string  | Developer account                                          |
 | create_time         | string  | Creation time                                              |
 | last_time           | string  | Update time                                                |
 | host_apply_enabled  | bool    | Whether to enable automatic application of host properties |

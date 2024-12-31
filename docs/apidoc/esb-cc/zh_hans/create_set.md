@@ -10,7 +10,6 @@
 
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
-| bk_supplier_account | string     | 否     | 开发商账号 |
 | bk_biz_id      | int     | 是     | 业务ID |
 | data           | dict    | 是     | 集群数据 |
 
@@ -42,7 +41,6 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_biz_id": 1,
     "data": {
         "bk_parent_id": 3,
@@ -82,7 +80,6 @@
         "bk_set_env": "1",
         "bk_set_id": 10,
         "bk_set_name": "set_a1",
-        "bk_supplier_account": "0",
         "bk_updated_at": "2023-11-14T17:30:43.048+08:00",
         "create_time": "2023-11-14T17:30:43.048+08:00",
         "default": 0,
@@ -118,7 +115,6 @@
 |bk_set_name|string|集群名称|
 | create_time         | string | 创建时间     |
 | last_time           | string | 更新时间     |
-| bk_supplier_account | string | 开发商账号   |
 | default             |  int     | 0-普通集群，1-内置模块集合，默认为0 |
 | description           | string     | 数据的描述信息     |
 | set_template_version|  array |集群模板的当前版本 |

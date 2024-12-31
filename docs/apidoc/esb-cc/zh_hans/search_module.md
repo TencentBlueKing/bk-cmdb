@@ -10,7 +10,7 @@
 
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
-| bk_supplier_account | string     | 否     | 开发商账号 |
+| bk_supplier_account | string     | 否     | 参数在当前版本已废弃，可传任意值 |
 | bk_biz_id      |  int     | 是     | 业务id |
 | bk_set_id      |  int     | 否     | 集群ID |
 | fields         |  array   | 是     | 查询字段，字段来自于模块定义的属性字段 |
@@ -107,7 +107,6 @@
 | bk_module_id      | int    | 主机所属的模块ID                 |
 |bk_module_type|string|模块类型|
 |bk_parent_id|int|父节点的ID|
-| bk_supplier_account | string | 开发商账号 |
 | create_time         | string | 创建时间     |
 | last_time           | string | 更新时间     |
 | host_apply_enabled|bool|是否启用主机属性自动应用|

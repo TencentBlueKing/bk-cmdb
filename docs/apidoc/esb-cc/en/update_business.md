@@ -10,7 +10,7 @@ Update Business Information (Permission: Business Edit Permission)
 
 | Field               | Type   | Required | Description       |
 | ------------------- | ------ | -------- | ----------------- |
-| bk_supplier_account | string | No       | Developer account |
+| bk_supplier_account | string | No       | Parameter is deprecated in the current version and can be passed to any value |
 | bk_biz_id           | int    | Yes      | Business ID       |
 | data                | dict   | Yes      | Business data     |
 

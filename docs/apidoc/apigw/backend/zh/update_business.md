@@ -6,7 +6,7 @@
 
 | 参数名称                | 参数类型   | 必选 | 描述                            |
 |---------------------|--------|----|-------------------------------|
-| bk_supplier_account | string | 是  | 开发商账号                         |
+| bk_supplier_account | string | 是  | 参数在当前版本已废弃，可传任意值                         |
 | bk_biz_id           | int    | 是  | 业务id                          |
 | bk_biz_name         | string | 否  | 业务名                           |
 | bk_biz_developer    | string | 否  | 开发人员                          |

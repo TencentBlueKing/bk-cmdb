@@ -99,7 +99,6 @@ func (p *processOperation) CreateServiceTemplate(kit *rest.Kit, template metadat
 	template.Modifier = kit.User
 	template.CreateTime = time.Now()
 	template.LastTime = time.Now()
-	template.TenantID = kit.TenantID
 
 	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceTemplate).Insert(kit.Ctx,
 		&template); err != nil {

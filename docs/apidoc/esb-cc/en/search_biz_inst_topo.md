@@ -10,7 +10,6 @@ Query Business Instance Topology
 
 | Field               | Type   | Required | Description                                                  |
 | ------------------- | ------ | -------- | ------------------------------------------------------------ |
-| bk_supplier_account | string | No       | Developer account                                            |
 | bk_biz_id           | int    | Yes      | Business ID                                                  |
 | level               | int    | No       | Topology level index, index value starts from 0, default is 2. When set to -1, the complete business instance topology will be read. |
 
@@ -22,7 +21,6 @@ Query Business Instance Topology
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_biz_id": 1,
 }
 ```

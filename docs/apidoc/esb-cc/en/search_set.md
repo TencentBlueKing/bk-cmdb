@@ -10,7 +10,7 @@ Query Cluster
 
 | Field    | Type   | Required | Description                                                  |
 | -------- | ------ |----------| ------------------------------------------------------------ |
-| bk_supplier_account | string | No       | Developer account                                            |
+| bk_supplier_account | string | No       | Parameter is deprecated in the current version and can be passed to any value                                            |
 | bk_biz_id | int    | Yes      | Business ID                                                  |
 | fields   | array  | Yes      | Query fields, all fields are attributes defined in the set, including preset fields and user-defined fields |
 | condition | dict   | No       | Query condition, all fields are attributes defined in the set, including preset fields and user-defined fields |
@@ -160,7 +160,6 @@ Assembly rules can refer to: [QueryBuilder README](https://github.com/Tencent/bk
 | bk_set_env           | string | Environment type: 1/2/3(1: test, 2: experience, 3: formal) |
 | create_time          | string | Creation time                                              |
 | last_time            | string | Update time                                                |
-| bk_supplier_account  | string | Developer account                                          |
 | description          | string | Description of the data                                    |
 | set_template_version | array  | Current version of cluster template                        |
 | set_template_id      | int    | Cluster template ID                                        |

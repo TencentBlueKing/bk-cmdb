@@ -10,7 +10,7 @@ search inst by object
 
 | Field      |  Type      | Required   |  Description      |
 |-----------|------------|--------|------------|
-| bk_supplier_account |  string  | No     | supplier account code |
+| bk_supplier_account |  string  | No     | Parameter is deprecated in the current version and can be passed to any value |
 | bk_obj_id           |  string  | Yes     | the object id |
 | fields              |  array   | No     | need to show |
 | condition           |  dict    | No     | search condition |
@@ -71,7 +71,6 @@ The condition parameter is all the fields defined by the model corresponding to 
             {
                 "bk_inst_id": 0,
                 "bk_inst_name": "Default Area",
-                "bk_supplier_account": "123456789"
             }
         ]
     }
@@ -105,4 +104,3 @@ The condition parameter is all the fields defined by the model corresponding to 
 |-----------|-----------|-----------|
 | bk_inst_id         | int       | inst area ID |
 | bk_inst_name       | string    | the inst name |
-| bk_supplier_account | string    | supplier account code |

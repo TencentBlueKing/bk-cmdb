@@ -6,7 +6,7 @@
 
 | 参数名称                | 参数类型   | 必选 | 描述                                        |
 |---------------------|--------|----|-------------------------------------------|
-| bk_supplier_account | string | 否  | 开发商账号                                     |
+| bk_supplier_account | string | 否  | 参数在当前版本已废弃，可传任意值                                     |
 | bk_biz_id           | int    | 是  | 业务id                                      |
 | fields              | array  | 是  | 查询字段，所有字段均为set定义的字段，这些字段包括预置字段，也包括用户自定义字段 |
 | condition           | dict   | 是  | 查询条件，所有字段均为Set定义的字段，这些字段包括预置字段，也包括用户自定义字段 |
@@ -146,7 +146,6 @@
 | bk_set_env           | string | 环境类型：1/2/3(1:测试,2:体验,3:正式) |
 | create_time          | string | 创建时间                       |
 | last_time            | string | 更新时间                       |
-| bk_supplier_account  | string | 开发商账号                      |
 | description          | string | 数据的描述信息                    |
 | set_template_version | array  | 集群模板的当前版本                  |
 | set_template_id      | int    | 集群模板ID                     |

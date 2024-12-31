@@ -6,7 +6,7 @@
 
 | 参数名称                | 参数类型   | 必选 | 描述                            |
 |---------------------|--------|----|-------------------------------|
-| bk_supplier_account | string | 是  | 开发商账号                         |
+| bk_supplier_account | string | 是  | 参数在当前版本已废弃，可传任意值                         |
 | bk_biz_name         | string | 是  | 业务名                           |
 | bk_biz_maintainer   | string | 是  | 运维人员                          |
 | bk_biz_productor    | string | 否  | 产品人员                          |
@@ -60,7 +60,6 @@
     "bk_biz_tester": "admin",
     "bk_created_at": "2023-11-14T16:51:02.168+08:00",
     "bk_created_by": "admin",
-    "bk_supplier_account": "0",
     "bk_updated_at": "2023-11-14T16:51:02.168+08:00",
     "create_time": "2023-11-14T16:51:02.168+08:00",
     "default": 0,
@@ -95,7 +94,6 @@
 | bk_biz_tester       | string | 测试人员                 |
 | time_zone           | string | 时区                   |
 | language            | string | 语言, "1"代表中文, "2"代表英文 |
-| bk_supplier_account | string | 开发商账号                |
 | create_time         | string | 创建时间                 |
 | last_time           | string | 更新时间                 |
 | default             | int    | 表示业务类型               |

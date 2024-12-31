@@ -55,7 +55,6 @@
           "modifier": "admin",
           "create_time": "2021-12-31T03:11:54.992Z",
           "last_time": "2021-12-31T03:11:54.992Z",
-          "bk_supplier_account": "0"
       }
     ]
   }
@@ -93,4 +92,3 @@
 | modifier            | string | 本条数据的最后修改人员 |
 | create_time         | string | 创建时间        |
 | last_time           | string | 更新时间        |
-| bk_supplier_account | string | 开发商账号       |

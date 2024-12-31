@@ -492,7 +492,6 @@ func (manager *TransferManager) TransferResourceDirectory(kit *rest.Kit,
 			ModuleID: module.ModuleID,
 			HostID:   hostID,
 			AppID:    module.BizID,
-			TenantID: kit.TenantID,
 		})
 	}
 	insertErr := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Insert(kit.Ctx, data)

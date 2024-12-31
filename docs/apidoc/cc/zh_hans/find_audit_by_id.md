@@ -38,7 +38,6 @@
         {
             "id": 95,
             "audit_type": "host",
-            "bk_supplier_account": "0",
             "user": "admin",
             "resource_type": "host",
             "action": "update",
@@ -75,7 +74,6 @@
                         "bk_sn": "",
                         "bk_state": null,
                         "bk_state_name": null,
-                        "bk_supplier_account": "0",
                         "create_time": "2020-10-21T18:49:14.342+08:00",
                         "docker_client_version": "",
                         "docker_server_version": "",
@@ -100,7 +98,6 @@
         {
             "id": 118,
             "audit_type": "host",
-            "bk_supplier_account": "0",
             "user": "admin",
             "resource_type": "host",
             "action": "delete",
@@ -137,7 +134,6 @@
                         "bk_sn": "",
                         "bk_state": null,
                         "bk_state_name": null,
-                        "bk_supplier_account": "0",
                         "create_time": "2020-10-21T18:49:14.342+08:00",
                         "docker_client_version": "",
                         "docker_server_version": "",
@@ -180,7 +176,6 @@
 |---------------------|--------|--------|
 | id                  | int    | 审计ID   |
 | audit_type          | string | 操作审计类型 |
-| bk_supplier_account | string | 开发商账号  |
 | user                | string | 操作人    |
 | resource_type       | string | 资源类型   |
 | action              | string | 操作类型   |

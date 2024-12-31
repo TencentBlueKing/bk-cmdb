@@ -10,7 +10,6 @@ Add hosts to the resource pool (Permission: Host Pool Host Creation Permission)
 
 | Field               | Type   | Required | Description       |
 | ------------------- | ------ | -------- | ----------------- |
-| bk_supplier_account | string | No       | Developer account |
 | host_info           | dict   | Yes      | Host information  |
 | bk_biz_id           | int    | No       | Business ID       |
 
@@ -66,7 +65,6 @@ Add hosts to the resource pool (Permission: Host Pool Host Creation Permission)
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "0",
     "bk_biz_id": 3,
     "host_info": {
         "0": {

@@ -175,7 +175,6 @@ data.relation.modules 字段说明:
 | bk_biz_id           | int     | 业务id         |
 | bk_module_type      | string  | 模块类型         |
 | bk_parent_id        | int     | 父节点的ID       |
-| bk_supplier_account | string  | 开发商账号        |
 | last_time           | string  | 更新时间         |
 | host_apply_enabled  | bool    | 是否启用主机属性自动应用 |
 | operator            | string  | 主要维护人        |

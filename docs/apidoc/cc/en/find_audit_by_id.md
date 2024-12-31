@@ -37,7 +37,6 @@ Get detailed information based on the audit ID (Permission: Operation audit quer
         {
             "id": 95,
             "audit_type": "host",
-            "bk_supplier_account": "0",
             "user": "admin",
             "resource_type": "host",
             "action": "update",
@@ -74,7 +73,6 @@ Get detailed information based on the audit ID (Permission: Operation audit quer
                         "bk_sn": "",
                         "bk_state": null,
                         "bk_state_name": null,
-                        "bk_supplier_account": "0",
                         "create_time": "2020-10-21T18:49:14.342+08:00",
                         "docker_client_version": "",
                         "docker_server_version": "",
@@ -99,7 +97,6 @@ Get detailed information based on the audit ID (Permission: Operation audit quer
         {
             "id": 118,
             "audit_type": "host",
-            "bk_supplier_account": "0",
             "user": "admin",
             "resource_type": "host",
             "action": "delete",
@@ -136,7 +133,6 @@ Get detailed information based on the audit ID (Permission: Operation audit quer
                         "bk_sn": "",
                         "bk_state": null,
                         "bk_state_name": null,
-                        "bk_supplier_account": "0",
                         "create_time": "2020-10-21T18:49:14.342+08:00",
                         "docker_client_version": "",
                         "docker_server_version": "",
@@ -179,7 +175,6 @@ Get detailed information based on the audit ID (Permission: Operation audit quer
 | ------------------- | ------ | -------------------- |
 | id                  | int    | Audit ID             |
 | audit_type          | string | Operation audit type |
-| bk_supplier_account | string | Developer account    |
 | user                | string | Operator             |
 | resource_type       | string | Resource type        |
 | action              | string | Operation type       |

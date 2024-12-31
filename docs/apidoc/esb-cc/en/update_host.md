@@ -10,7 +10,6 @@ Update Host Properties (Permission: For hosts already assigned to a business, bu
 
 | Field               | Type   | Required | Description                  |
 | ------------------- | ------ | -------- | ---------------------------- |
-| bk_supplier_account | string | No       | Developer account            |
 | bk_host_id          | string | Yes      | Host ID, separated by commas |
 | data                | dict   | No       | Host data                    |
 
@@ -52,7 +51,6 @@ Update Host Properties (Permission: For hosts already assigned to a business, bu
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_host_id": "1,2,3",
     "data": {
         "bk_host_name": "test",
