@@ -157,7 +157,7 @@ Create Containers, Pods, and Containers (v3.12.1+, Permission: Container pods cr
       1,
       2
     ]
-  },
+  }
 }
 ```
 

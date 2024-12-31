@@ -198,7 +198,6 @@ func (s *service) FieldTemplateBindObject(ctx *rest.Contexts) {
 		rows = append(rows, metadata.ObjFieldTemplateRelation{
 			ObjectID:   id,
 			TemplateID: opt.ID,
-			TenantID:   kit.TenantID,
 		})
 	}
 

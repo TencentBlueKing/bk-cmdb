@@ -56,7 +56,7 @@ Create Container Cluster (v3.12.1+, Permission: Create Permission for Container 
   "permission": null,
   "data": {
     "id": 1
-  },
+  }
 }
 ```
 

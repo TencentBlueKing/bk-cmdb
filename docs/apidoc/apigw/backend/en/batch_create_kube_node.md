@@ -101,7 +101,7 @@ Create Container Nodes (v3.12.1+, Permission: Container nodes creation permissio
       1,
       2
     ]
-  },
+  }
 }
 ```
 

@@ -52,9 +52,7 @@ func (t template) ListFieldTemplateAttr(ctx context.Context, h http.Header, opt 
 
 // CreateFieldTemplateAttrs create field template attributes
 func (t template) CreateFieldTemplateAttrs(ctx context.Context, h http.Header, templateID int64,
-	opt []metadata.FieldTemplateAttr) (
-
-	*metadata.RspIDs, errors.CCErrorCoder) {
+	opt []metadata.FieldTemplateAttr) (*metadata.RspIDs, errors.CCErrorCoder) {
 
 	resp := new(metadata.CreateBatchResult)
 

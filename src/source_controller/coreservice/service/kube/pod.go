@@ -117,8 +117,8 @@ func (s *service) BatchCreatePod(ctx *rest.Contexts) {
 	}
 
 	// generate container ids field
-	containerIDs, err := mongodb.Shard(ctx.Kit.SysShardOpts()).NextSequences(ctx.Kit.Ctx, types.BKTableNameBaseContainer,
-		containerLen)
+	containerIDs, err := mongodb.Shard(ctx.Kit.SysShardOpts()).NextSequences(ctx.Kit.Ctx,
+		types.BKTableNameBaseContainer, containerLen)
 	if err != nil {
 		blog.Errorf("generate %d container ids failed, err: %v, rid: %s", containerLen, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
@@ -206,7 +206,6 @@ func (s *service) combinationContainerInfo(kit *rest.Kit, containerID int64, pod
 		BizID:           pod.BizID,
 		ClusterID:       pod.ClusterID,
 		NamespaceID:     pod.NamespaceID,
-		TenantID:        kit.TenantID,
 		Name:            info.Name,
 		ContainerID:     info.ContainerID,
 		Image:           info.Image,
@@ -319,7 +318,7 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 	}
 
 	// 更新node的has_pod字段
-	nodeIDs, err := s.getNodeIDsWithoutPod(ctx, nodeIDArr)
+	nodeIDs, err := s.getNodeIDsWithoutPod(ctx.Kit, nodeIDArr)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -335,7 +334,7 @@ func (s *service) DeletePods(ctx *rest.Contexts) {
 }
 
 // getNodeIDsWithoutPod 获取没有运行任何Pod的Node的id
-func (s *service) getNodeIDsWithoutPod(ctx *rest.Contexts, nodeIDArr []interface{}) ([]int64, error) {
+func (s *service) getNodeIDsWithoutPod(kit *rest.Kit, nodeIDArr []interface{}) ([]int64, error) {
 
 	nodeIDs := make([]int64, len(nodeIDArr))
 	var wg sync.WaitGroup
@@ -355,10 +354,10 @@ func (s *service) getNodeIDsWithoutPod(ctx *rest.Contexts, nodeIDArr []interface
 			countPodCond := mapstr.MapStr{
 				types.BKNodeIDField: nodeID,
 			}
-			podCount, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(types.BKTableNameBasePod).Find(countPodCond).
-				Count(ctx.Kit.Ctx)
+			podCount, err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameBasePod).Find(countPodCond).
+				Count(kit.Ctx)
 			if err != nil {
-				blog.Errorf("count pods failed, err: %v, cond: %v, rid: %s", err, countPodCond, ctx.Kit.Rid)
+				blog.Errorf("count pods failed, err: %v, cond: %v, rid: %s", err, countPodCond, kit.Rid)
 				if firstErr == nil {
 					firstErr = err
 				}
@@ -368,7 +367,7 @@ func (s *service) getNodeIDsWithoutPod(ctx *rest.Contexts, nodeIDArr []interface
 			if podCount == 0 {
 				nodeIDInt, err := util.GetInt64ByInterface(nodeID)
 				if err != nil {
-					blog.Errorf("parse nodeID failed, err: %v, nodeID: %v, rid: %s", err, nodeID, ctx.Kit.Rid)
+					blog.Errorf("parse nodeID failed, err: %v, nodeID: %v, rid: %s", err, nodeID, kit.Rid)
 					if firstErr == nil {
 						firstErr = err
 					}

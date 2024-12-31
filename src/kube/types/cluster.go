@@ -76,8 +76,6 @@ type Cluster struct {
 	ID int64 `json:"id" bson:"id"`
 	// BizID the business ID to which the cluster belongs
 	BizID int64 `json:"bk_biz_id" bson:"bk_biz_id"`
-	// TenantID the supplier account that this resource belongs to.
-	TenantID string `json:"tenant_id" bson:"tenant_id"`
 	// Name cluster name.
 	Name *string `json:"name,omitempty" bson:"name"`
 	// SchedulingEngine scheduling engines, such as k8s, tke, etc.
