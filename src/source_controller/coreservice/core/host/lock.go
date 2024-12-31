@@ -66,7 +66,6 @@ func (hm *hostManager) LockHost(kit *rest.Kit, input *metadata.HostLockRequest) 
 				User:       user,
 				ID:         id,
 				CreateTime: ts,
-				TenantID:   httpheader.GetTenantID(kit.Header),
 			})
 		}
 	}

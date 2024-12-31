@@ -46,7 +46,6 @@ func (s *coreService) AddHostFavourite(ctx *rest.Contexts) {
 		"name":                  paras.Name,
 		common.HostFavoriteType: paras.Type,
 		common.BKAppIDField:     paras.BizID,
-		common.TenantID:         ctx.Kit.TenantID,
 	}
 	rowCount, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameHostFavorite).Find(query).
 		Count(ctx.Kit.Ctx)
@@ -71,7 +70,6 @@ func (s *coreService) AddHostFavourite(ctx *rest.Contexts) {
 		User:        user,
 		Type:        paras.Type,
 		QueryParams: paras.QueryParams,
-		TenantID:    ctx.Kit.TenantID,
 		CreateTime:  time.Now().UTC(),
 		UpdateTime:  time.Now().UTC(),
 		BizID:       paras.BizID,
@@ -99,9 +97,8 @@ func (s *coreService) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 
 	// check exist
 	query := map[string]interface{}{
-		"user":          user,
-		"id":            id,
-		common.TenantID: ctx.Kit.TenantID,
+		"user": user,
+		"id":   id,
 	}
 	dbData := make([]meta.FavouriteMeta, 0)
 	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameHostFavorite).Find(query).All(ctx.Kit.Ctx,
@@ -124,7 +121,6 @@ func (s *coreService) UpdateHostFavouriteByID(ctx *rest.Contexts) {
 			"name":              fav.Name,
 			common.BKUser:       user,
 			common.BKFieldID:    common.KvMap{common.BKDBNE: id},
-			common.TenantID:     ctx.Kit.TenantID,
 			common.BKAppIDField: fav.BizID,
 		}
 		rowCount, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameHostFavorite).Find(dupFilter).
@@ -172,9 +168,8 @@ func (s *coreService) DeleteHostFavouriteByID(ctx *rest.Contexts) {
 	user := ctx.Request.PathParameter("user")
 
 	query := map[string]interface{}{
-		"user":          user,
-		"id":            id,
-		common.TenantID: ctx.Kit.TenantID,
+		"user": user,
+		"id":   id,
 	}
 	rowCount, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameHostFavorite).Find(query).
 		Count(ctx.Kit.Ctx)
@@ -215,7 +210,6 @@ func (s *coreService) ListHostFavourites(ctx *rest.Contexts) {
 		condition = dat.Condition.(map[string]interface{})
 	}
 	condition["user"] = ctx.Request.PathParameter("user")
-	condition[common.TenantID] = ctx.Kit.TenantID
 
 	// read fields and page
 	fieldArr := []string{"id", "info", "query_params", "name", "is_default", common.CreateTimeField, "count",
@@ -266,9 +260,8 @@ func (s *coreService) GetHostFavouriteByID(ctx *rest.Contexts) {
 	}
 
 	query := common.KvMap{
-		"user":          user,
-		"id":            ID,
-		common.TenantID: ctx.Kit.TenantID,
+		"user": user,
+		"id":   ID,
 	}
 	result := new(meta.FavouriteMeta)
 	err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameHostFavorite).Find(query).One(ctx.Kit.Ctx,

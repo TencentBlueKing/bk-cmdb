@@ -10,7 +10,6 @@
 
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
-| bk_supplier_account | string     | 否     | 开发商账号 |
 | bk_biz_id      | int     | 是     | 业务id |
 | bk_set_id      | int     | 是     | 集群id |
 | bk_module_id   | int     | 是     | 模块id |
@@ -23,7 +22,6 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_biz_id": 1,
     "bk_set_id": 1,
     "bk_module_id": 1

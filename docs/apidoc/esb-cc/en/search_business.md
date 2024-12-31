@@ -10,7 +10,7 @@ Query Business (Permission: Business Query Permission)
 
 | Field               | Type   | Required | Description                                                  |
 | ------------------- | ------ | -------- | ------------------------------------------------------------ |
-| bk_supplier_account | string | No       | Developer account                                            |
+| bk_supplier_account | string | No       | Parameter is deprecated in the current version and can be passed to any value                                            |
 | fields              | array  | No       | Specify the fields to query. If not filled in, the system will return all fields of the business |
 | condition           | dict   | No       | Query conditions, parameters for any property of the business. If not written, it means to search all data. (Legacy field, please do not continue to use, please use biz_property_filter) |
 | biz_property_filter | object | No       | Business attribute combination query conditions              |
@@ -162,7 +162,6 @@ Note: Businesses are divided into two types, non-archived businesses and archive
 | bk_biz_tester       | string | Tester                                     |
 | time_zone           | string | Time zone                                  |
 | language            | string | Language, "1" for Chinese, "2" for English |
-| bk_supplier_account | string | Developer account                          |
 | create_time         | string | Creation time                              |
 | last_time           | string | Update time                                |
 | default             | int    | Business type                              |

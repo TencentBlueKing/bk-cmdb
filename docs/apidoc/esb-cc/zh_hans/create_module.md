@@ -10,7 +10,6 @@
 
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
-| bk_supplier_account | string     | 否     | 开发商账号 |
 | bk_biz_id      | int     | 是     | 业务ID |
 | bk_set_id      | int     | 是     | 集群id |
 | data           | dict    | 是     | 业务数据 |
@@ -38,7 +37,6 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_biz_id": 3,
     "bk_set_id": 4,
     "data": {
@@ -75,7 +73,6 @@
         "bk_module_type": "2",
         "bk_parent_id": 4,
         "bk_set_id": 4,
-        "bk_supplier_account": "0",
         "bk_updated_at": "2023-11-14T17:11:21.225+08:00",
         "create_time": "2023-11-14T17:11:21.225+08:00",
         "default": 0,
@@ -111,7 +108,6 @@
 |bk_module_type|string|模块类型|
 |bk_parent_id|int|父节点的ID|
 | bk_set_id | int | 集群id |
-| bk_supplier_account | string | 开发商账号 |
 | create_time         | string | 创建时间     |
 | last_time           | string | 更新时间     |
 |default | int | 表示模块类型 |

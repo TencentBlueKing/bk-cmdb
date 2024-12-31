@@ -22,7 +22,6 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	meta "configcenter/src/common/metadata"
@@ -474,23 +473,7 @@ func (s *Service) ListResourcePoolHosts(ctx *rest.Contexts) {
 		return
 	}
 
-	// only use biz with same supplier account if query returns multiple biz
 	bizData := appResult.Info[0]
-	bizCount := 0
-	for _, biz := range appResult.Info {
-		tenantID, _ := biz.String(common.TenantID)
-		if tenantID == httpheader.GetTenantID(header) {
-			bizCount++
-			bizData = biz
-		}
-	}
-	if bizCount > 1 {
-		blog.Errorf("ListResourcePoolHosts failed, get multiple default app, result: %+v, rid: %s", appResult, rid)
-		ccErr := defErr.Error(common.CCErrCommGetMultipleObject)
-		ctx.RespAutoError(ccErr)
-		return
-	}
-
 	// get biz ID
 	bizID, err := util.GetInt64ByInterface(bizData[common.BKAppIDField])
 	if err != nil {

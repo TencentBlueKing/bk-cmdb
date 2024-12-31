@@ -86,7 +86,6 @@ var identityHostFields = []string{
 	common.BKCloudIDField,
 	common.BKHostInnerIPField,
 	common.BKOSTypeField,
-	common.TenantID,
 	common.BKAddressingField,
 	common.BKAgentIDField,
 }

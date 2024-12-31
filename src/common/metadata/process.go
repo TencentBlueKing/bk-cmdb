@@ -1154,7 +1154,6 @@ type ServiceTemplate struct {
 	Modifier         string    `field:"modifier" json:"modifier" bson:"modifier"`
 	CreateTime       time.Time `field:"create_time" json:"create_time" bson:"create_time"`
 	LastTime         time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	TenantID         string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 	HostApplyEnabled bool      `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
@@ -2116,7 +2115,6 @@ type ServiceInstance struct {
 	Modifier   string    `field:"modifier" json:"modifier" bson:"modifier"`
 	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
 	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	TenantID   string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 }
 
 // Validate TODO
@@ -2157,8 +2155,7 @@ type ProcessInstanceRelation struct {
 	ProcessTemplateID int64 `field:"process_template_id" json:"process_template_id" bson:"process_template_id"`
 
 	// redundant field for accelerating processes by HostID
-	HostID   int64  `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
-	TenantID string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
+	HostID int64 `field:"bk_host_id" json:"bk_host_id" bson:"bk_host_id"`
 }
 
 // Validate TODO

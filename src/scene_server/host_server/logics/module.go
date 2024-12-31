@@ -13,7 +13,6 @@
 package logics
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -34,7 +33,7 @@ import (
 // GetResourcePoolModuleID get module id,module name.
 func (lgc *Logics) GetResourcePoolModuleID(kit *rest.Kit, condition mapstr.MapStr) (int64, string, errors.CCError) {
 	query := &metadata.QueryCondition{
-		Fields:    []string{common.BKModuleIDField, common.TenantID, common.BKModuleNameField},
+		Fields:    []string{common.BKModuleIDField, common.BKModuleNameField},
 		Condition: condition,
 	}
 	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDModule,
@@ -323,8 +322,7 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 	[]metadata.ExceptionResult, error) {
 
 	cond := hutil.NewOperation().WithAppID(conf.ApplicationID).Data()
-	fields := fmt.Sprintf("%s,%s", common.TenantID, common.BKAppNameField)
-	appInfo, err := lgc.GetAppDetails(kit, fields, cond)
+	appInfo, err := lgc.GetAppDetails(kit, common.BKAppNameField, cond)
 	if err != nil {
 		blog.Errorf("assign host to app failed, err: %v, input: %+v, rid:%s", err, conf, kit.Rid)
 		return nil, err

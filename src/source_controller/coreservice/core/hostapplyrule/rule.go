@@ -169,7 +169,6 @@ func (p *hostApplyRule) CreateHostApplyRule(kit *rest.Kit, bizID int64,
 		Modifier:          kit.User,
 		CreateTime:        now,
 		LastTime:          now,
-		TenantID:          kit.TenantID,
 	}
 	if key, err := rule.Validate(); err != nil {
 		blog.Errorf("host apply rule parameter invalid, key: %s, err: %v, rid: %s", key, err, kit.Rid)
@@ -318,7 +317,6 @@ func (p *hostApplyRule) GetHostApplyRule(kit *rest.Kit, bizID int64, ruleID int6
 
 	rule := metadata.HostApplyRule{}
 	filter := map[string]interface{}{
-		common.TenantID:     kit.TenantID,
 		common.BKAppIDField: bizID,
 		common.BKFieldID:    ruleID,
 	}
@@ -340,7 +338,6 @@ func (p *hostApplyRule) GetHostApplyRuleByAttributeID(kit *rest.Kit,
 
 	rule := metadata.HostApplyRule{}
 	filter := map[string]interface{}{
-		common.TenantID:           kit.TenantID,
 		common.BKAppIDField:       bizID,
 		common.BKModuleIDField:    moduleID,
 		common.BKAttributeIDField: attributeID,
@@ -618,7 +615,6 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64,
 		}
 		ruleFilter := map[string]interface{}{
 			common.BKAppIDField:             bizID,
-			common.TenantID:                 kit.TenantID,
 			common.BKAttributeIDField:       item.AttributeID,
 			common.BKModuleIDField:          item.ModuleID,
 			common.BKServiceTemplateIDField: item.ServiceTemplateID,
@@ -696,7 +692,6 @@ func (p *hostApplyRule) BatchUpdateHostApplyRule(kit *rest.Kit, bizID int64,
 			Modifier:          kit.User,
 			CreateTime:        now,
 			LastTime:          now,
-			TenantID:          kit.TenantID,
 		}
 		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameHostApplyRule).Insert(kit.Ctx,
 			rule); err != nil {
@@ -744,7 +739,6 @@ func (p *hostApplyRule) SearchRuleRelatedServiceTemplates(kit *rest.Kit,
 
 	srvTemplateFilter := map[string]interface{}{
 		common.BKAppIDField: option.ApplicationID,
-		common.TenantID:     kit.TenantID,
 		common.BKFieldID: map[string]interface{}{
 			common.BKDBIN: srvTemplateIDs,
 		},

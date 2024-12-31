@@ -28,7 +28,6 @@ func (p *processOperation) CreateProcessInstanceRelation(kit *rest.Kit,
 	if err := p.validateRelation(kit, relation); err != nil {
 		return nil, err
 	}
-	relation.TenantID = kit.TenantID
 	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessInstanceRelation).Insert(kit.Ctx,
 		relation); err != nil {
 		blog.Errorf("insert process instance relation failed, table: %s, relation: %+v, err: %v, rid: %s",
@@ -46,7 +45,6 @@ func (p *processOperation) CreateProcessInstanceRelations(kit *rest.Kit,
 		if err := p.validateRelation(kit, relation); err != nil {
 			return nil, err
 		}
-		relation.TenantID = kit.TenantID
 	}
 
 	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessInstanceRelation).Insert(kit.Ctx,

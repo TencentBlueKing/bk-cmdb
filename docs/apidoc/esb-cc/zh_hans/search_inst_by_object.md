@@ -10,7 +10,7 @@
 
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
-| bk_supplier_account |  string  | 否     | 开发商账号 |
+| bk_supplier_account |  string  | 否     | 参数在当前版本已废弃，可传任意值 |
 | bk_obj_id           |  string  | 是     | 自定义模型ID |
 | fields              |  array   | 否     | 指定查询的字段 |
 | condition           |  dict    | 否     | 查询条件 |
@@ -108,7 +108,6 @@ condition 参数为查询的目标实例对应的模型定义的所有字段
 |-----------|-----------|---------|
 | bk_inst_id         | int       | 实例ID |
 | bk_inst_name       | string    | 实例名 |
-| bk_supplier_account | string    | 开发商账号 |
 | bk_obj_id           |  string  | 自定义模型ID |
 | bk_created_at      | string |  创建时间        |
 | bk_updated_at      | string |  更新时间        |

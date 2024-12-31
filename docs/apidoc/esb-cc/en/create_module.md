@@ -10,7 +10,6 @@ Create a module (Permission: Business Topology Creation Permission)
 
 | Field               | Type   | Required | Description       |
 | ------------------- | ------ | -------- | ----------------- |
-| bk_supplier_account | string | No       | Developer account |
 | bk_biz_id           | int    | Yes      | Business ID       |
 | bk_set_id           | int    | Yes      | Cluster id        |
 | data                | dict   | Yes      | Business data     |
@@ -39,7 +38,6 @@ Create a module (Permission: Business Topology Creation Permission)
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_biz_id": 3,
     "bk_set_id": 4,
     "data": {
@@ -75,7 +73,6 @@ Create a module (Permission: Business Topology Creation Permission)
         "bk_module_type": "2",
         "bk_parent_id": 4,
         "bk_set_id": 4,
-        "bk_supplier_account": "0",
         "bk_updated_at": "2023-11-14T17:11:21.225+08:00",
         "create_time": "2023-11-14T17:11:21.225+08:00",
         "default": 0,
@@ -114,7 +111,6 @@ Create a module (Permission: Business Topology Creation Permission)
 | bk_module_type      | string  | Module type                                                |
 | bk_parent_id        | int     | Parent node ID                                             |
 | bk_set_id           | int     | Cluster id                                                 |
-| bk_supplier_account | string  | Developer account                                          |
 | create_time         | string  | Creation time                                              |
 | last_time           | string  | Update time                                                |
 | default             | int     | Module type                                                |

@@ -6,7 +6,7 @@ Update Business Information (Permission: Business Edit Permission)
 
 | Name                | Type   | Required | Description                                             |
 |---------------------|--------|----------|---------------------------------------------------------|
-| bk_supplier_account | string | Yes      | Developer account                                       |
+| bk_supplier_account | string | Yes      | Parameter is deprecated in the current version and can be passed to any value                                       |
 | bk_biz_id           | int    | Yes      | Business ID                                             |
 | bk_biz_name         | string | No       | Business name                                           |
 | bk_biz_developer    | string | No       | Developer                                               |

@@ -175,7 +175,6 @@ Explanation of data.relation.modules field:
 | bk_biz_id           | int     | Business ID                                                |
 | bk_module_type      | string  | Module type                                                |
 | bk_parent_id        | int     | Parent node ID                                             |
-| bk_supplier_account | string  | Developer account                                          |
 | last_time           | string  | Update time                                                |
 | host_apply_enabled  | bool    | Whether to enable automatic application of host properties |
 | operator            | string  | Main maintainer                                            |

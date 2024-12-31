@@ -10,7 +10,6 @@
 
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
-| bk_supplier_account | string     | 否     | 开发商账号 |
 | bk_host_id     |  string  | 是     | 主机id，多个以逗号分隔 |
 
 ### 请求参数示例
@@ -21,7 +20,6 @@
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_host_id": "1,2,3"
 }
 ```

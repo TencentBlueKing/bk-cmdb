@@ -48,14 +48,12 @@
                 "bk_host_id": 2,
                 "bk_module_id": 2,
                 "bk_set_id": 2,
-                "bk_supplier_account": "0"
             },
             {
                 "bk_biz_id": 1,
                 "bk_host_id": 1,
                 "bk_module_id": 1,
                 "bk_set_id": 1,
-                "bk_supplier_account": "0"
             }
         ],
         "page": {
@@ -94,7 +92,6 @@
 | bk_set_id           | int    | 集群ID  |
 | bk_module_id        | int    | 模块ID  |
 | bk_host_id          | int    | 主机ID  |
-| bk_supplier_account | string | 开发商账号 |
 
 #### data.page 字段说明:
 

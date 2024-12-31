@@ -55,7 +55,6 @@ Retrieve the list of service instances bound to a host based on the host ID.
           "modifier": "admin",
           "create_time": "2021-12-31T03:11:54.992Z",
           "last_time": "2021-12-31T03:11:54.992Z",
-          "bk_supplier_account": "0"
       }
     ]
   }
@@ -92,6 +91,5 @@ Retrieve the list of service instances bound to a host based on the host ID.
 | modifier            | string | Last modifier of this data |
 | create_time         | string | Creation time              |
 | last_time           | string | Update time                |
-| bk_supplier_account | string | Supplier account           |
 | service_template_id | int    | Service template ID        |
 | labels              | map    | Label information          |

@@ -6,7 +6,7 @@ Create a new business (Permission: Business Creation Permission)
 
 | Name                | Type   | Required | Description                                             |
 |---------------------|--------|----------|---------------------------------------------------------|
-| bk_supplier_account | string | Yes      | Developer account                                       |
+| bk_supplier_account | string | Yes      | Parameter is deprecated in the current version and can be passed to any value                                       |
 | bk_biz_name         | string | Yes      | Business name                                           |
 | bk_biz_maintainer   | string | Yes      | Operation and maintenance personnel                     |
 | bk_biz_productor    | string | No       | Product personnel                                       |
@@ -96,7 +96,6 @@ be filled in depend on the user's own defined attribute fields.**
 | bk_biz_tester       | string | Test personnel                             |
 | time_zone           | string | Time zone                                  |
 | language            | string | Language, "1" for Chinese, "2" for English |
-| bk_supplier_account | string | Developer account                          |
 | create_time         | string | Creation time                              |
 | last_time           | string | Update time                                |
 | default             | int    | Business type                              |

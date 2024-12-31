@@ -10,7 +10,6 @@ Delete Host (Permission: Host Pool Host Deletion Permission)
 
 | Field               | Type   | Required | Description                              |
 | ------------------- | ------ | -------- | ---------------------------------------- |
-| bk_supplier_account | string | No       | Developer account                        |
 | bk_host_id          | string | Yes      | Host ID, separated by commas if multiple |
 
 ### Request Parameters Example
@@ -21,7 +20,6 @@ Delete Host (Permission: Host Pool Host Deletion Permission)
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_host_id": "1,2,3"
 }
 ```

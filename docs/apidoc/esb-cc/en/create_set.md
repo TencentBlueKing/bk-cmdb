@@ -10,7 +10,6 @@ Create a cluster (Permission: Business Topology Creation Permission)
 
 | Field               | Type   | Required | Description       |
 | ------------------- | ------ | -------- | ----------------- |
-| bk_supplier_account | string | No       | Developer account |
 | bk_biz_id           | int    | Yes      | Business ID       |
 | data                | dict   | Yes      | Cluster data      |
 
@@ -42,7 +41,6 @@ Create a cluster (Permission: Business Topology Creation Permission)
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_biz_id": 1,
     "data": {
         "bk_parent_id": 3,
@@ -81,7 +79,6 @@ Create a cluster (Permission: Business Topology Creation Permission)
         "bk_set_env": "1",
         "bk_set_id": 10,
         "bk_set_name": "set_a1",
-        "bk_supplier_account": "0",
         "bk_updated_at": "2023-11-14T17:30:43.048+08:00",
         "create_time": "2023-11-14T17:30:43.048+08:00",
         "default": 0,
@@ -120,7 +117,6 @@ Create a cluster (Permission: Business Topology Creation Permission)
 | bk_set_name          | string | Cluster name                                                 |
 | create_time          | string | Creation time                                                |
 | last_time            | string | Update time                                                  |
-| bk_supplier_account  | string | Developer account                                            |
 | default              | int    | 0-ordinary cluster, 1-built-in module collection, default is 0 |
 | description          | string | Data description information                                 |
 | set_template_version | array  | Current version of the cluster template                      |

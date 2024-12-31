@@ -10,7 +10,7 @@
 
 | 字段      |  类型      | 必选   |  描述      |
 |-----------|------------|--------|------------|
-| bk_supplier_account | string     | 否     | 开发商账号 |
+| bk_supplier_account | string     | 否     | 参数在当前版本已废弃，可传任意值 |
 | bk_biz_id      | int     | 是     | 业务id |
 | data           | dict    | 是     | 业务数据 |
 

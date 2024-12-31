@@ -67,7 +67,6 @@ func (lgc *Logics) GetDefaultAppID(kit *rest.Kit) (int64, errors.CCError) {
 func (lgc *Logics) GetAppDetails(kit *rest.Kit, fields string, condition map[string]interface{}) (types.MapStr,
 	errors.CCError) {
 
-	fields = fields + "," + common.TenantID
 	input := &metadata.QueryCondition{
 		Condition: condition,
 		Fields:    strings.Split(fields, ","),

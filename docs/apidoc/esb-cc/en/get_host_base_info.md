@@ -10,7 +10,6 @@ Get Host Basic Information Details (Permission: Host Pool Host View Permission)
 
 | Field               | Type   | Required | Description                                               |
 | ------------------- | ------ | -------- | --------------------------------------------------------- |
-| bk_supplier_account | string | No       | Developer account                                         |
 | bk_host_id          | int    | Yes      | Host identity ID, i.e., the value of the bk_host_id field |
 
 ### Request Parameters Example
@@ -21,7 +20,6 @@ Get Host Basic Information Details (Permission: Host Pool Host View Permission)
     "bk_app_secret": "xxx",
     "bk_username": "xxx",
     "bk_token": "xxx",
-    "bk_supplier_account": "123456789",
     "bk_host_id": 10000
 }
 ```

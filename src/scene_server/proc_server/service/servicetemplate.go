@@ -41,7 +41,6 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		BizID:             option.BizID,
 		Name:              option.Name,
 		ServiceCategoryID: option.ServiceCategoryID,
-		TenantID:          ctx.Kit.TenantID,
 		HostApplyEnabled:  option.HostApplyEnabled,
 	}
 

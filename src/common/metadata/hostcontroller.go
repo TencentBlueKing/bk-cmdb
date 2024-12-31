@@ -136,11 +136,10 @@ type AssignHostToAppParams struct {
 
 // ModuleHost TODO
 type ModuleHost struct {
-	AppID    int64  `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
-	HostID   int64  `json:"bk_host_id,omitempty" bson:"bk_host_id"`
-	ModuleID int64  `json:"bk_module_id,omitempty" bson:"bk_module_id"`
-	SetID    int64  `json:"bk_set_id,omitempty" bson:"bk_set_id"`
-	TenantID string `json:"tenant_id,omitempty" bson:"tenant_id"`
+	AppID    int64 `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+	HostID   int64 `json:"bk_host_id,omitempty" bson:"bk_host_id"`
+	ModuleID int64 `json:"bk_module_id,omitempty" bson:"bk_module_id"`
+	SetID    int64 `json:"bk_set_id,omitempty" bson:"bk_set_id"`
 }
 
 // HostConfig TODO
@@ -206,7 +205,6 @@ type FavouriteMeta struct {
 	Name        string        `json:"name,omitempty" bson:"name,omitempty"`
 	Count       int           `json:"count,omitempty" bson:"count,omitempty"`
 	User        string        `json:"user,omitempty" bson:"user,omitempty"`
-	TenantID    string        `json:"tenant_id,omitempty" bson:"tenant_id,omitempty"`
 	Type        FavouriteType `json:"type,omitempty" bson:"type,omitempty"`
 	QueryParams string        `json:"query_params,omitempty" bson:"query_params,omitempty"`
 	CreateTime  time.Time     `json:"create_time,omitempty" bson:"create_time,omitempty"`

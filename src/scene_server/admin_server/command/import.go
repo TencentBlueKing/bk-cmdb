@@ -398,7 +398,6 @@ func (ibt *importerBizTopo) initBKServiceCategory(ctx context.Context, bizID int
 			Modifier:          defaultinitUserName,
 			CreateTime:        time.Now().UTC(),
 			LastTime:          time.Now().UTC(),
-			TenantID:          ibt.opt.OwnerID,
 		})
 
 		bindProcessLen := len(srvTemp.BindProcess)

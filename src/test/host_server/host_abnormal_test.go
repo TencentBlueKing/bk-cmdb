@@ -78,7 +78,6 @@ var _ = Describe("host abnormal test", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":       "test",
 				"bk_parent_id":      bizId,
-				"tenant_id":         "0",
 				"bk_biz_id":         bizId,
 				"bk_service_status": "1",
 				"bk_set_env":        "3",
@@ -95,7 +94,6 @@ var _ = Describe("host abnormal test", func() {
 			input := mapstr.MapStr{
 				"bk_set_name":       "test",
 				"bk_parent_id":      bizId1,
-				"tenant_id":         "0",
 				"bk_biz_id":         bizId1,
 				"bk_service_status": "1",
 				"bk_set_env":        "3",

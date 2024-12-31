@@ -10,7 +10,7 @@ Create a new business (Permission: Business Creation Permission)
 
 | Field               | Type   | Required | Description       |
 | ------------------- | ------ | -------- | ----------------- |
-| bk_supplier_account | string | No       | Developer account |
+| bk_supplier_account | string | No       | Parameter is deprecated in the current version and can be passed to any value |
 | data                | dict   | Yes      | Business data     |
 
 #### data
@@ -78,7 +78,6 @@ Create a new business (Permission: Business Creation Permission)
         "bk_biz_tester": "admin",
         "bk_created_at": "2023-11-14T16:51:02.168+08:00",
         "bk_created_by": "admin",
-        "bk_supplier_account": "0",
         "bk_updated_at": "2023-11-14T16:51:02.168+08:00",
         "create_time": "2023-11-14T16:51:02.168+08:00",
         "default": 0,
@@ -116,7 +115,6 @@ Create a new business (Permission: Business Creation Permission)
 | bk_biz_tester       | string | Test personnel                             |
 | time_zone           | string | Time zone                                  |
 | language            | string | Language, "1" for Chinese, "2" for English |
-| bk_supplier_account | string | Developer account                          |
 | create_time         | string | Creation time                              |
 | last_time           | string | Update time                                |
 | default             | int    | Business type                              |

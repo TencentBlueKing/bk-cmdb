@@ -56,14 +56,12 @@ Get the relationship between hosts and topology (Permission: Business access per
                 "bk_host_id": 2,
                 "bk_module_id": 2,
                 "bk_set_id": 2,
-                "bk_supplier_account": "0"
             },
             {
                 "bk_biz_id": 1,
                 "bk_host_id": 1,
                 "bk_module_id": 1,
                 "bk_set_id": 1,
-                "bk_supplier_account": "0"
             }
         ],
         "page": {
@@ -106,7 +104,6 @@ Get the relationship between hosts and topology (Permission: Business access per
 | bk_set_id           | int    | Cluster ID       |
 | bk_module_id        | int    | Module ID        |
 | bk_host_id          | int    | Host ID          |
-| bk_supplier_account | string | Supplier account |
 
 #### data.page Field Explanation:
 
