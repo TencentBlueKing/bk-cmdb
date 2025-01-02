@@ -113,8 +113,7 @@ func (p *processOperation) createSvcInstProcesses(kit *rest.Kit, instance *metad
 	relations := make([]*metadata.ProcessInstanceRelation, len(listProcTplResult.Info))
 	templateIDs := make([]int64, len(listProcTplResult.Info))
 	for idx, processTemplate := range listProcTplResult.Info {
-		processData, err := processTemplate.NewProcess(kit.CCError, instance.BizID, instance.ID,
-			kit.TenantID, host)
+		processData, err := processTemplate.NewProcess(kit.CCError, instance.BizID, instance.ID, host)
 		if err != nil {
 			blog.ErrorJSON("generate process instance by template %s failed, err: %s, rid: %s", processTemplate, err,
 				kit.Rid)
@@ -1038,8 +1037,7 @@ func (p *processOperation) generateAutoCreateSvcInstData(kit *rest.Kit, params *
 
 		var firstProc *metadata.Process
 		for idx, procTemp := range processTemplates {
-			processData, err := procTemp.NewProcess(kit.CCError, instance.BizID, int64(ids[i]),
-				kit.TenantID, host)
+			processData, err := procTemp.NewProcess(kit.CCError, instance.BizID, int64(ids[i]), host)
 			if err != nil {
 				blog.ErrorJSON("generate process by template %s failed, err: %s, rid: %s", procTemp, err, kit.Rid)
 				return nil, nil, nil, errors.New(common.CCErrCommParamsInvalid, err.Error())

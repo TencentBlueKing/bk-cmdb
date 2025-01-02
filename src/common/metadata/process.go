@@ -1043,7 +1043,6 @@ type Process struct {
 	User              *string        `field:"user" json:"user" bson:"user" structs:"user" mapstructure:"user"`
 	TimeoutSeconds    *int64         `field:"timeout" json:"timeout" bson:"timeout" structs:"timeout" mapstructure:"timeout"`
 	Description       *string        `field:"description" json:"description" bson:"description" structs:"description" mapstructure:"description"`
-	TenantID          string         `field:"tenant_id" json:"tenant_id" bson:"tenant_id" structs:"tenant_id" mapstructure:"tenant_id"`
 	StartParamRegex   *string        `field:"bk_start_param_regex" json:"bk_start_param_regex" bson:"bk_start_param_regex" structs:"bk_start_param_regex" mapstructure:"bk_start_param_regex"`
 	ServiceInstanceID int64          `field:"service_instance_id" json:"service_instance_id" bson:"service_instance_id" mapstructure:"service_instance_id"`
 	BindInfo          []ProcBindInfo `field:"bind_info" json:"bind_info" bson:"bind_info" structs:"bind_info" mapstructure:"bind_info"`
@@ -1074,7 +1073,6 @@ func (p *Process) Map() map[string]interface{} {
 		common.BKUser:                   p.User,
 		common.BKProcTimeOut:            p.TimeoutSeconds,
 		common.BKDescriptionField:       p.Description,
-		common.TenantID:                 p.TenantID,
 		common.BKStartParamRegex:        p.StartParamRegex,
 		common.BKProcBindInfo:           bindInfoArr,
 		common.CreateTimeField:          p.CreateTime,
@@ -1092,9 +1090,8 @@ type ServiceCategory struct {
 	ID   int64  `field:"id" json:"id" bson:"id"`
 	Name string `field:"name" json:"name" bson:"name"`
 
-	RootID   int64  `field:"bk_root_id" json:"bk_root_id" bson:"bk_root_id"`
-	ParentID int64  `field:"bk_parent_id" json:"bk_parent_id" bson:"bk_parent_id"`
-	TenantID string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
+	RootID   int64 `field:"bk_root_id" json:"bk_root_id" bson:"bk_root_id"`
+	ParentID int64 `field:"bk_parent_id" json:"bk_parent_id" bson:"bk_parent_id"`
 
 	// IsBuiltIn indicates internal system service category, which shouldn't be modified.
 	IsBuiltIn bool `field:"is_built_in" json:"is_built_in" bson:"is_built_in"`
@@ -1226,7 +1223,6 @@ type ProcessTemplate struct {
 	Modifier   string    `field:"modifier" json:"modifier" bson:"modifier"`
 	CreateTime time.Time `field:"create_time" json:"create_time" bson:"create_time"`
 	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time"`
-	TenantID   string    `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 }
 
 // Validate TODO
@@ -1250,7 +1246,7 @@ func IsAsDefaultValue(asDefaultValue *bool) bool {
 }
 
 // NewProcess generate a new process from process template
-func (pt *ProcessTemplate) NewProcess(cErr cErr.DefaultCCErrorIf, bizID, svcInstID int64, tenantID string,
+func (pt *ProcessTemplate) NewProcess(cErr cErr.DefaultCCErrorIf, bizID, svcInstID int64,
 	host map[string]interface{}) (*Process, error) {
 
 	now := time.Now()
@@ -1258,7 +1254,6 @@ func (pt *ProcessTemplate) NewProcess(cErr cErr.DefaultCCErrorIf, bizID, svcInst
 		LastTime:   now,
 		CreateTime: now,
 		BusinessID: bizID,
-		TenantID:   tenantID,
 	}
 
 	property := pt.Property

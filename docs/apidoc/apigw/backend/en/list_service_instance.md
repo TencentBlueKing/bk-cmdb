@@ -66,7 +66,6 @@ query.
         "modifier": "admin",
         "create_time": "2019-06-20T22:46:00.69+08:00",
         "last_time": "2019-06-20T22:46:00.69+08:00",
-        "bk_supplier_account": "0"
       }
     ]
   }
@@ -103,4 +102,3 @@ query.
 | modifier            | string | Last modifier of this data |
 | create_time         | string | Creation time              |
 | last_time           | string | Update time                |
-| bk_supplier_account | string | Supplier account           |

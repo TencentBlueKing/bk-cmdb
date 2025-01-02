@@ -63,8 +63,7 @@
           "creator": "admin",
           "modifier": "admin",
           "create_time": "2021-12-31T03:11:54.992Z",
-          "last_time": "2021-12-31T03:11:54.992Z",
-          "bk_supplier_account": "0"
+          "last_time": "2021-12-31T03:11:54.992Z"
       }
     ]
   }

@@ -75,7 +75,6 @@ use `bk_host_id` anymore.
         "modifier": "admin",
         "create_time": "2019-07-22T09:54:50.906+08:00",
         "last_time": "2019-07-22T09:54:50.906+08:00",
-        "bk_supplier_account": "0",
         "service_category_id": 22,
         "process_instances": [
           {
@@ -99,7 +98,6 @@ use `bk_host_id` anymore.
               "user": "",
               "timeout": 0,
               "description": "",
-              "bk_supplier_account": "0",
               "bk_start_param_regex": "",
               "bind_info": [
                 {
@@ -116,8 +114,7 @@ use `bk_host_id` anymore.
               "bk_process_id": 43,
               "service_instance_id": 49,
               "process_template_id": 48,
-              "bk_host_id": 11,
-              "bk_supplier_account": "0"
+              "bk_host_id": 11
             }
           }
         ]
@@ -158,7 +155,6 @@ use `bk_host_id` anymore.
 | modifier                   | string | Last modifier of this data                                                             |
 | create_time                | string | Creation time                                                                          |
 | last_time                  | string | Update time                                                                            |
-| bk_supplier_account        | string | Supplier account                                                                       |
 | service_category_id        | int    | Service category ID                                                                    |
 | process_instances          | array  | Process instance information                                                           |
 | bk_biz_id                  | int    | Business ID                                                                            |
@@ -177,7 +173,6 @@ use `bk_host_id` anymore.
 | bk_process_id        | int    | Process ID                     |
 | bk_process_name      | string | Process alias                  |
 | bk_start_param_regex | string | Process startup parameters     |
-| bk_supplier_account  | string | Supplier account               |
 | create_time          | string | Creation time                  |
 | description          | string | Description                    |
 | face_stop_cmd        | string | Force stop command             |
@@ -213,4 +208,3 @@ use `bk_host_id` anymore.
 | service_instance_id | int    | Service instance ID |
 | process_template_id | int    | Process template ID |
 | bk_host_id          | int    | Host ID             |
-| bk_supplier_account | string | Supplier account    |

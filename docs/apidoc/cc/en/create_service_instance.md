@@ -35,7 +35,6 @@ Batch create service instances. If the module is bound to a service template, th
 | bk_func_name        | string | No       | Process name                   |
 | bk_process_id       | int    | No       | Process ID                     |
 | bk_process_name     | string | No       | Process alias                  |
-| bk_supplier_account | string | No       | Vendor account                 |
 | face_stop_cmd       | string | No       | Force stop command             |
 | pid_file            | string | No       | PID file path                  |
 | priority            | int    | No       | Startup priority               |
@@ -54,7 +53,6 @@ Batch create service instances. If the module is bound to a service template, th
 | Field               | Type   | Required | Explanation         |
 | ------------------- | ------ | -------- | ------------------- |
 | bind_info           | object | Yes      | Binding information |
-| bk_supplier_account | string | Yes      | Vendor account      |
 
 #### Explanation of the bind_info Field
 
@@ -84,7 +82,6 @@ Batch create service instances. If the module is bound to a service template, th
         {
           "process_template_id": 1,
           "process_info": {
-            "bk_supplier_account": "0",
             "bind_info": [
               {
                   "enable": false,

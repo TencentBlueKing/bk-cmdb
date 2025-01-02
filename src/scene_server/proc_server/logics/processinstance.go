@@ -147,7 +147,6 @@ func (lgc *Logic) GetProcessInstanceWithID(kit *rest.Kit, procID int64) (*metada
 
 // UpdateProcessInstance TODO
 func (lgc *Logic) UpdateProcessInstance(kit *rest.Kit, procID int64, info mapstr.MapStr) errors.CCErrorCoder {
-	delete(info, common.TenantID)
 	option := metadata.UpdateOption{
 		Data: info,
 		Condition: map[string]interface{}{

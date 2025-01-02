@@ -226,7 +226,6 @@
 | bk_process_id        | int    | 进程id    |
 | bk_process_name      | string | 进程别名    |
 | bk_start_param_regex | string | 进程启动参数  |
-| bk_supplier_account  | string | 开发商账号   |
 | create_time          | string | 创建时间    |
 | description          | string | 描述      |
 | face_stop_cmd        | string | 强制停止命令  |

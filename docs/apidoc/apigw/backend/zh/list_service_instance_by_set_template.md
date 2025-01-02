@@ -52,8 +52,7 @@
                 "creator": "admin",
                 "modifier": "admin",
                 "create_time": "2020-10-09T02:46:25.002Z",
-                "last_time": "2020-10-09T02:46:25.002Z",
-                "bk_supplier_account": "0"
+                "last_time": "2020-10-09T02:46:25.002Z"
             },
             {
                 "bk_biz_id": 3,
@@ -66,8 +65,7 @@
                 "creator": "admin",
                 "modifier": "admin",
                 "create_time": "2020-10-09T03:04:19.859Z",
-                "last_time": "2020-10-09T03:04:19.859Z",
-                "bk_supplier_account": "0"
+                "last_time": "2020-10-09T03:04:19.859Z"
             }
         ]
     }
@@ -106,4 +104,3 @@
 | modifier            | string | 本条数据的最后修改人员 |
 | create_time         | string | 创建时间        |
 | last_time           | string | 更新时间        |
-| bk_supplier_account | string | 开发商账号       |

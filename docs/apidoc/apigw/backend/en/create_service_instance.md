@@ -33,7 +33,6 @@ corresponding to each process (Permission: Service Instance Creation Permission)
 | bk_func_name        | string | No       | Process name                   |
 | bk_process_id       | int    | No       | Process ID                     |
 | bk_process_name     | string | No       | Process alias                  |
-| bk_supplier_account | string | No       | Vendor account                 |
 | face_stop_cmd       | string | No       | Force stop command             |
 | pid_file            | string | No       | PID file path                  |
 | priority            | int    | No       | Startup priority               |
@@ -52,7 +51,6 @@ corresponding to each process (Permission: Service Instance Creation Permission)
 | Name                | Type   | Required | Description         |
 |---------------------|--------|----------|---------------------|
 | bind_info           | object | Yes      | Binding information |
-| bk_supplier_account | string | Yes      | Vendor account      |
 
 #### Explanation of the bind_info Field
 
