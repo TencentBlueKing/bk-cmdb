@@ -99,7 +99,6 @@ func (p *processOperation) CreateServiceCategory(kit *rest.Kit, category metadat
 	}
 
 	category.IsBuiltIn = false
-	category.TenantID = kit.TenantID
 
 	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameServiceCategory).Insert(kit.Ctx,
 		&category); err != nil {

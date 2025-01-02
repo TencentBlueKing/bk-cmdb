@@ -73,8 +73,7 @@ Query service instance list based on business ID, with the option to include mod
         "creator": "admin",
         "modifier": "admin",
         "create_time": "2019-06-20T22:46:00.69+08:00",
-        "last_time": "2019-06-20T22:46:00.69+08:00",
-        "bk_supplier_account": "0"
+        "last_time": "2019-06-20T22:46:00.69+08:00"
       }
     ]
   }
@@ -114,4 +113,3 @@ Query service instance list based on business ID, with the option to include mod
 | modifier            | string | Last modifier of this data |
 | create_time         | string | Creation time              |
 | last_time           | string | Update time                |
-| bk_supplier_account | string | Supplier account           |

@@ -53,7 +53,7 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	var serviceInstanceIDs []int64
 	txnErr := ps.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		serviceInstanceIDs, err = ps.createServiceInstances(ctx, input)
+		serviceInstanceIDs, err = ps.createServiceInstances(ctx.Kit, input)
 		if err != nil {
 			return err
 		}
@@ -67,18 +67,17 @@ func (ps *ProcServer) CreateServiceInstances(ctx *rest.Contexts) {
 	ctx.RespEntity(serviceInstanceIDs)
 }
 
-func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.CreateServiceInstanceInput) ([]int64,
+func (ps *ProcServer) createServiceInstances(kit *rest.Kit, input metadata.CreateServiceInstanceInput) ([]int64,
 	ccErr.CCErrorCoder) {
 
 	if len(input.Instances) == 0 {
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "instances")
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "instances")
 	}
 
-	rid := ctx.Kit.Rid
 	bizID := input.BizID
 	moduleID := input.ModuleID
 
-	module, err := ps.validateCreateServiceInstancesInput(ctx.Kit, input)
+	module, err := ps.validateCreateServiceInstancesInput(kit, input)
 	if err != nil {
 		return nil, err
 	}
@@ -96,10 +95,10 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		serviceInstances[idx] = instance
 	}
 
-	serviceInstances, err = ps.CoreAPI.CoreService().Process().CreateServiceInstances(ctx.Kit.Ctx, ctx.Kit.Header,
+	serviceInstances, err = ps.CoreAPI.CoreService().Process().CreateServiceInstances(kit.Ctx, kit.Header,
 		serviceInstances)
 	if err != nil {
-		blog.Errorf("create service instances(%+v) failed, err: %v, rid: %s", serviceInstances, err, rid)
+		blog.Errorf("create service instances(%+v) failed, err: %v, rid: %s", serviceInstances, err, kit.Rid)
 		return nil, err
 	}
 
@@ -110,20 +109,20 @@ func (ps *ProcServer) createServiceInstances(ctx *rest.Contexts, input metadata.
 		addedServiceInstances = append(addedServiceInstances, *serviceInstance)
 	}
 
-	if err := ps.upsertProcesses(ctx, serviceInstanceIDs, bizID, module.ServiceTemplateID,
+	if err := ps.upsertProcesses(kit, serviceInstanceIDs, bizID, module.ServiceTemplateID,
 		input.Instances); err != nil {
 		return nil, err
 	}
 
 	// generate and save audit log after service instance is created
 	audit := auditlog.NewSvcInstAudit(ps.CoreAPI.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditCreate)
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditCreate)
 	audit.WithServiceInstance(addedServiceInstances)
 	if err := audit.WithProcBySvcInstIDs(generateAuditParameter, bizID, serviceInstanceIDs, nil); err != nil {
 		return nil, err
 	}
 	auditLogs := audit.GenerateAuditLog(generateAuditParameter)
-	if err := audit.SaveAuditLog(ctx.Kit, auditLogs...); err != nil {
+	if err := audit.SaveAuditLog(kit, auditLogs...); err != nil {
 		return nil, err
 	}
 
@@ -190,7 +189,7 @@ func (ps *ProcServer) validateCreateServiceInstancesInput(kit *rest.Kit, input m
 	return module, nil
 }
 
-func (ps *ProcServer) upsertProcesses(ctx *rest.Contexts, serviceInstanceIDs []int64, bizID int64,
+func (ps *ProcServer) upsertProcesses(kit *rest.Kit, serviceInstanceIDs []int64, bizID int64,
 	serviceTemplateID int64, instances []metadata.CreateServiceInstanceDetail) ccErr.CCErrorCoder {
 
 	instanceIDsUpdate := make([]int64, 0)
@@ -208,17 +207,17 @@ func (ps *ProcServer) upsertProcesses(ctx *rest.Contexts, serviceInstanceIDs []i
 				ServiceInstanceID: svcInstID,
 				Processes:         inst.Processes,
 			}
-			if _, err := ps.createProcessInstances(ctx, createProcInput); err != nil {
-				blog.ErrorJSON("create process failed, input: %s, err: %s, rid: %s", createProcInput, err, ctx.Kit.Rid)
+			if _, err := ps.createProcessInstances(kit, createProcInput); err != nil {
+				blog.ErrorJSON("create process failed, input: %s, err: %s, rid: %s", createProcInput, err, kit.Rid)
 				return err
 			}
 
 			// if no service instance name is set and have processes under it, update it
 			if inst.ServiceInstanceName == "" {
-				err := ps.updateServiceInstanceName(ctx, svcInstID, inst.HostID, inst.Processes[0].ProcessData)
+				err := ps.updateServiceInstanceName(kit, svcInstID, inst.HostID, inst.Processes[0].ProcessData)
 				if err != nil {
 					blog.ErrorJSON("update service instance name failed, id: %s, hostID: %s, process: %s, err: %s, "+
-						"rid: %s", svcInstID, inst.HostID, inst.Processes[0].ProcessData, err, ctx.Kit.Rid)
+						"rid: %s", svcInstID, inst.HostID, inst.Processes[0].ProcessData, err, kit.Rid)
 					return err
 				}
 			}
@@ -238,9 +237,9 @@ func (ps *ProcServer) upsertProcesses(ctx *rest.Contexts, serviceInstanceIDs []i
 		ServiceInstanceIDs: instanceIDsUpdate,
 		Page:               metadata.BasePage{Limit: common.BKNoLimit},
 	}
-	relRes, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, relOpt)
+	relRes, err := ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header, relOpt)
 	if err != nil {
-		blog.ErrorJSON("list process relation failed, option: %s, err: %s, rid: %s", relOpt, err, ctx.Kit.Rid)
+		blog.ErrorJSON("list process relation failed, option: %s, err: %s, rid: %s", relOpt, err, kit.Rid)
 		return err
 	}
 
@@ -270,8 +269,8 @@ func (ps *ProcServer) upsertProcesses(ctx *rest.Contexts, serviceInstanceIDs []i
 			BizID: bizID,
 			Raw:   processesUpdate,
 		}
-		if _, err = ps.updateProcessInstances(ctx, input); err != nil {
-			blog.ErrorJSON("update process instances failed, input: %s, err: %s, rid: %s", input, err, ctx.Kit.Rid)
+		if _, err = ps.updateProcessInstances(kit, input); err != nil {
+			blog.ErrorJSON("update process instances failed, input: %s, err: %s, rid: %s", input, err, kit.Rid)
 			return err
 		}
 	}
@@ -279,19 +278,19 @@ func (ps *ProcServer) upsertProcesses(ctx *rest.Contexts, serviceInstanceIDs []i
 	return nil
 }
 
-func (ps *ProcServer) updateServiceInstanceName(ctx *rest.Contexts, serviceInstanceID, hostID int64,
+func (ps *ProcServer) updateServiceInstanceName(kit *rest.Kit, serviceInstanceID, hostID int64,
 	processData map[string]interface{}) ccErr.CCErrorCoder {
 	firstProcess := new(metadata.Process)
 	if err := mapstr.DecodeFromMapStr(firstProcess, processData); err != nil {
 		blog.ErrorJSON("updateServiceInstanceName failed, Decode2Struct failed, process: %s, err: %s, rid: %s",
-			processData, err.Error(), ctx.Kit.Rid)
-		return ctx.Kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
+			processData, err.Error(), kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommJSONUnmarshalFailed)
 	}
 
-	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, []int64{hostID})
+	hostMap, err := ps.Logic.GetHostIPMapByID(kit, []int64{hostID})
 	if err != nil {
 		blog.Errorf("updateServiceInstanceName failed, getHostIPMapByID failed, hostID: %d, err: %v, rid: %s", hostID,
-			err, ctx.Kit.Rid)
+			err, kit.Rid)
 		return err
 	}
 	host := hostMap[hostID]
@@ -302,7 +301,7 @@ func (ps *ProcServer) updateServiceInstanceName(ctx *rest.Contexts, serviceInsta
 		Process:           firstProcess,
 	}
 
-	return ps.CoreAPI.CoreService().Process().ConstructServiceInstanceName(ctx.Kit.Ctx, ctx.Kit.Header,
+	return ps.CoreAPI.CoreService().Process().ConstructServiceInstanceName(kit.Ctx, kit.Header,
 		srvInstNameParams)
 }
 
@@ -753,7 +752,7 @@ func (ps *ProcServer) DiffServiceInstanceDetail(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := ps.serviceInstanceDetailDiff(ctx, option)
+	result, err := ps.serviceInstanceDetailDiff(ctx.Kit, option)
 	if err != nil {
 		blog.ErrorJSON("get service instance detail failed, err: %s, option: %s, rid: %s", err, option, rid)
 		ctx.RespAutoError(err)
@@ -787,7 +786,7 @@ func (ps *ProcServer) ListDiffServiceInstances(ctx *rest.Contexts) {
 		return
 	}
 
-	result, err := ps.ListDiffServiceInstanceNum(ctx, option)
+	result, err := ps.ListDiffServiceInstanceNum(ctx.Kit, option)
 	if err != nil {
 		blog.Errorf("list service instances failed,option: %+v, err: %s, rid: %s", option, err, rid)
 		ctx.RespAutoError(err)
@@ -962,7 +961,7 @@ func (ps *ProcServer) getProcIDDetailAndRelations(ctx *rest.Contexts, bizId int6
 		procIDs = append(procIDs, r.ProcessID)
 	}
 
-	procID2Detail, _, err := ps.getProcAndAttributeMap(ctx, procIDs)
+	procID2Detail, _, err := ps.getProcAndAttributeMap(ctx.Kit, procIDs)
 	if err != nil {
 		blog.Errorf("get proc detail fail err: %v, rid: %s", err, ctx.Kit.Rid)
 		return nil, nil, err
@@ -1104,7 +1103,7 @@ type hostAndServiceInstsOpt struct {
 // hostWithSrvInstMap: 由于模块下的host并不一定全部实例化 serviceInstance中的hostId map.
 
 // getHostAndServiceInsts 获取后续计算实例列表的的基本信息
-func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAndServiceInstsOpt,
+func (ps *ProcServer) getHostAndServiceInsts(kit *rest.Kit, option *hostAndServiceInstsOpt,
 	module *metadata.ModuleInst, serviceInstances []metadata.ServiceInstance) (
 	map[int64][]metadata.ProcessInstanceRelation, *metadata.MultipleProcessInstanceRelation,
 	map[int64]map[string]interface{}, []int64, *metadata.MultipleProcessTemplate, map[int64]*metadata.ProcessTemplate,
@@ -1122,9 +1121,9 @@ func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAnd
 		cond.ProcessTemplateIDs = []int64{option.ProcTemplateId}
 	}
 
-	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(ctx.Kit.Ctx, ctx.Kit.Header, cond)
+	processTemplates, err := ps.CoreAPI.CoreService().Process().ListProcessTemplates(kit.Ctx, kit.Header, cond)
 	if err != nil {
-		blog.Errorf("list process templates failed, option: %s, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
+		blog.Errorf("list process templates failed, option: %s, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, nil, nil, []int64{}, nil, nil, nil, err
 	}
 
@@ -1138,15 +1137,15 @@ func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAnd
 		ModuleIDArr:      []int64{option.ModuleID},
 	}
 
-	hostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(ctx.Kit.Ctx, ctx.Kit.Header, hostIDOpt)
+	hostIDs, err := ps.CoreAPI.CoreService().Host().GetDistinctHostIDByTopology(kit.Ctx, kit.Header, hostIDOpt)
 	if err != nil {
-		blog.Errorf("get host ids failed, err: %v, option: %v, rid: %s", err, hostIDOpt, ctx.Kit.Rid)
+		blog.Errorf("get host ids failed, err: %v, option: %v, rid: %s", err, hostIDOpt, kit.Rid)
 		return nil, nil, nil, []int64{}, nil, nil, nil, err
 	}
 
-	hostMap, err := ps.Logic.GetHostIPMapByID(ctx.Kit, hostIDs)
+	hostMap, err := ps.Logic.GetHostIPMapByID(kit, hostIDs)
 	if err != nil {
-		blog.Errorf("get host info by id failed, option: %v, err: %v, rid: %s", hostIDOpt, err, ctx.Kit.Rid)
+		blog.Errorf("get host info by id failed, option: %v, err: %v, rid: %s", hostIDOpt, err, kit.Rid)
 		return nil, nil, nil, []int64{}, nil, nil, nil, err
 	}
 
@@ -1169,9 +1168,9 @@ func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAnd
 			ProcessTemplateID:  option.ProcTemplateId,
 		}
 
-		relations, err = ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(ctx.Kit.Ctx, ctx.Kit.Header, &o)
+		relations, err = ps.CoreAPI.CoreService().Process().ListProcessInstanceRelation(kit.Ctx, kit.Header, &o)
 		if err != nil {
-			blog.Errorf("get process relation failed, option: %s, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+			blog.Errorf("get process relation failed, option: %s, err: %v, rid: %s", option, err, kit.Rid)
 			return nil, nil, nil, []int64{}, nil, nil, nil, err
 		}
 
@@ -1184,13 +1183,13 @@ func (ps *ProcServer) getHostAndServiceInsts(ctx *rest.Contexts, option *hostAnd
 }
 
 // getProcAndAttributeMap 通过进程id获取进程的详细信息，注意此时的进程信息是同步之前信息
-func (ps *ProcServer) getProcAndAttributeMap(ctx *rest.Contexts, procIDs []int64) (
+func (ps *ProcServer) getProcAndAttributeMap(kit *rest.Kit, procIDs []int64) (
 	map[int64]*metadata.Process, map[string]metadata.Attribute, ccErr.CCErrorCoder) {
 
 	// find all the process instance detail by ids
-	processDetails, err := ps.Logic.ListProcessInstanceWithIDs(ctx.Kit, procIDs)
+	processDetails, err := ps.Logic.ListProcessInstanceWithIDs(kit, procIDs)
 	if err != nil {
-		blog.Errorf("list process instance with ids fail, err:%v, procIDs: %s, rid: %s", err, procIDs, ctx.Kit.Rid)
+		blog.Errorf("list process instance with ids fail, err:%v, procIDs: %s, rid: %s", err, procIDs, kit.Rid)
 		return nil, nil, err
 	}
 
@@ -1205,11 +1204,11 @@ func (ps *ProcServer) getProcAndAttributeMap(ctx *rest.Contexts, procIDs []int64
 			common.BKObjIDField: common.BKInnerObjIDProc,
 		},
 	}
-	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(ctx.Kit.Ctx, ctx.Kit.Header,
+	attrResult, e := ps.CoreAPI.CoreService().Model().ReadModelAttr(kit.Ctx, kit.Header,
 		common.BKInnerObjIDProc, cond)
 	if e != nil {
-		blog.Errorf("read model attr failed, option: %s, err: %v, rid: %s", cond, e, ctx.Kit.Rid)
-		return nil, nil, ctx.Kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
+		blog.Errorf("read model attr failed, option: %s, err: %v, rid: %s", cond, e, kit.Rid)
+		return nil, nil, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
 
 	attributeMap := make(map[string]metadata.Attribute)
@@ -1221,7 +1220,7 @@ func (ps *ProcServer) getProcAndAttributeMap(ctx *rest.Contexts, procIDs []int64
 }
 
 // getServiceInstanceById 通过serviceId 获取指定field的服务实例列表
-func (ps *ProcServer) getServiceInstanceById(ctx *rest.Contexts, module *metadata.ModuleInst, serviceId []int64,
+func (ps *ProcServer) getServiceInstanceById(kit *rest.Kit, module *metadata.ModuleInst, serviceId []int64,
 	field []string) (*metadata.MultipleServiceInstance, ccErr.CCErrorCoder) {
 
 	option := &metadata.ListServiceInstanceOption{
@@ -1232,16 +1231,16 @@ func (ps *ProcServer) getServiceInstanceById(ctx *rest.Contexts, module *metadat
 		ServiceInstanceIDs: serviceId,
 	}
 
-	serviceInstance, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	serviceInstance, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(kit.Ctx, kit.Header, option)
 	if err != nil {
-		blog.Errorf(" list service instances failed, option: %s, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+		blog.Errorf(" list service instances failed, option: %s, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, err
 	}
 
 	return serviceInstance, nil
 }
 
-func (ps *ProcServer) listServiceInstanceWithOption(ctx *rest.Contexts, module *metadata.ModuleInst, field []string,
+func (ps *ProcServer) listServiceInstanceWithOption(kit *rest.Kit, module *metadata.ModuleInst, field []string,
 	count int) (*metadata.MultipleServiceInstance, ccErr.CCErrorCoder) {
 
 	option := &metadata.ListServiceInstanceOption{
@@ -1256,22 +1255,22 @@ func (ps *ProcServer) listServiceInstanceWithOption(ctx *rest.Contexts, module *
 		},
 	}
 
-	serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(ctx.Kit.Ctx, ctx.Kit.Header, option)
+	serviceInstances, err := ps.CoreAPI.CoreService().Process().ListServiceInstance(kit.Ctx, kit.Header, option)
 	if err != nil {
-		blog.Errorf(" list service instances failed, option: %s, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+		blog.Errorf(" list service instances failed, option: %s, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, err
 	}
 	return serviceInstances, nil
 }
 
-func (ps *ProcServer) getProcDetailsAndAttr(ctx *rest.Contexts, procInstRelations []metadata.ProcessInstanceRelation) (
+func (ps *ProcServer) getProcDetailsAndAttr(kit *rest.Kit, procInstRelations []metadata.ProcessInstanceRelation) (
 	map[int64]*metadata.Process, map[string]metadata.Attribute, ccErr.CCErrorCoder) {
 
 	procIDs := make([]int64, 0)
 	for _, r := range procInstRelations {
 		procIDs = append(procIDs, r.ProcessID)
 	}
-	procID2Detail, attrMap, err := ps.getProcAndAttributeMap(ctx, procIDs)
+	procID2Detail, attrMap, err := ps.getProcAndAttributeMap(kit, procIDs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1288,7 +1287,7 @@ func (ps *ProcServer) getProcDetailsAndAttr(ctx *rest.Contexts, procInstRelation
 // 5、只要获取到的服务实例数量达到500个，那么只需要取前500符合条件的服务实例即可。前端会显示500+，当涉及到的服务实例数量少于500的场景需要
 // 将所有服务实例返回。
 
-func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *metadata.ListDiffServiceInstancesOption,
+func (ps *ProcServer) getListDiffServiceInstanceNum(kit *rest.Kit, opt *metadata.ListDiffServiceInstancesOption,
 	module *metadata.ModuleInst, field []string) (*metadata.ListServiceInstancesResult, ccErr.CCErrorCoder) {
 
 	var count int
@@ -1297,19 +1296,19 @@ func (ps *ProcServer) getListDiffServiceInstanceNum(ctx *rest.Contexts, opt *met
 	for {
 		d := new(metadata.ListServiceInstancesResult)
 
-		sInsts, err := ps.listServiceInstanceWithOption(ctx, module, field, count)
+		sInsts, err := ps.listServiceInstanceWithOption(kit, module, field, count)
 		if err != nil {
 			return nil, err
 		}
 
 		op := &hostAndServiceInstsOpt{BizID: opt.BizID, ModuleID: opt.ModuleID, ProcTemplateId: opt.ProcessTemplateId}
 
-		sInstMap, relations, hMap, hostIDs, pTs, pTMap, hostInst, e := ps.getHostAndServiceInsts(ctx, op, module,
+		sInstMap, relations, hMap, hostIDs, pTs, pTMap, hostInst, e := ps.getHostAndServiceInsts(kit, op, module,
 			sInsts.Info)
 		if e != nil {
 			return nil, err
 		}
-		procID2Detail, attrMap, err := ps.getProcDetailsAndAttr(ctx, relations.Info)
+		procID2Detail, attrMap, err := ps.getProcDetailsAndAttr(kit, relations.Info)
 		if err != nil {
 			return nil, err
 		}
@@ -1445,26 +1444,22 @@ func (ps *ProcServer) getServiceInstances(ctx *rest.Contexts, option *metadata.S
 }
 
 // serviceInstanceDetailDiff 针对单个的serviceID获取相信的变化信息
-func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata.ServiceInstanceDetailReq) (
+func (ps *ProcServer) serviceInstanceDetailDiff(kit *rest.Kit, op *metadata.ServiceInstanceDetailReq) (
 	*metadata.ServiceInstanceDetailResult, ccErr.CCErrorCoder) {
 
-	rid := ctx.Kit.Rid
-
-	module, err := ps.getModuleInfo(ctx, op.ModuleID)
+	module, err := ps.getModuleInfo(kit, op.ModuleID)
 	if err != nil {
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
-	opt := &hostAndServiceInstsOpt{BizID: op.BizID, ProcTemplateId: op.ProcessTemplateId, ModuleID: op.ModuleID}
-
 	fields := []string{common.BKFieldID, common.BKHostIDField}
-
-	inst, err := ps.getServiceInstanceById(ctx, module, []int64{op.ServiceInstanceId}, fields)
+	inst, err := ps.getServiceInstanceById(kit, module, []int64{op.ServiceInstanceId}, fields)
 	if err != nil {
 		return nil, ccErr.New(common.CCErrCommDBSelectFailed, err.Error())
 	}
 
-	_, relations, hostMap, _, _, pTemplateMap, _, err := ps.getHostAndServiceInsts(ctx, opt, module, inst.Info)
+	opt := &hostAndServiceInstsOpt{BizID: op.BizID, ProcTemplateId: op.ProcessTemplateId, ModuleID: op.ModuleID}
+	_, relations, hostMap, _, _, pTemplateMap, _, err := ps.getHostAndServiceInsts(kit, opt, module, inst.Info)
 	if err != nil {
 		return nil, err
 	}
@@ -1474,7 +1469,7 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata
 		procIDs = append(procIDs, r.ProcessID)
 	}
 
-	procID2Detail, attributeMap, err := ps.getProcAndAttributeMap(ctx, procIDs)
+	procID2Detail, attributeMap, err := ps.getProcAndAttributeMap(kit, procIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1482,7 +1477,6 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata
 	// record the used process template for checking whether a new process template has been added to service template.
 	processTemplateReferenced := make(map[int64]struct{})
 	diffDetails := new(metadata.ServiceInstanceDetailResult)
-
 	for _, relation := range relations.Info {
 		processTemplateReferenced[relation.ProcessTemplateID] = struct{}{}
 
@@ -1490,7 +1484,6 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata
 		if !ok {
 			process = new(metadata.Process)
 		}
-
 		processName := ""
 		if process.ProcessName != nil {
 			processName = *process.ProcessName
@@ -1512,10 +1505,10 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata
 		changedAttributes, isChanged, err := ps.Logic.DiffWithProcessTemplate(property.Property, process,
 			hostMap[id], attributeMap, true)
 		if err != nil {
-			blog.Errorf("diff process template failed, process id: %d, err: %v, rid: %s", relation.ProcessID, err, rid)
+			blog.Errorf("diff process template failed, process id: %d, err: %v, rid: %s", relation.ProcessID, err,
+				kit.Rid)
 			return nil, ccErr.New(common.CCErrCommParamsInvalid, err.Error())
 		}
-
 		if !isChanged {
 			continue
 		}
@@ -1524,7 +1517,6 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata
 		diffDetails.Type = metadata.ServiceChanged
 		return diffDetails, nil
 	}
-
 	if _, exist := processTemplateReferenced[op.ProcessTemplateId]; !exist {
 		diffDetails.Type = metadata.ServiceAdded
 	}
@@ -1532,35 +1524,34 @@ func (ps *ProcServer) serviceInstanceDetailDiff(ctx *rest.Contexts, op *metadata
 	return diffDetails, nil
 }
 
-func (ps *ProcServer) getModuleInfo(ctx *rest.Contexts, moduleId int64) (*metadata.ModuleInst, ccErr.CCErrorCoder) {
+func (ps *ProcServer) getModuleInfo(kit *rest.Kit, moduleId int64) (*metadata.ModuleInst, ccErr.CCErrorCoder) {
 
-	module, err := ps.getModule(ctx.Kit, moduleId)
+	module, err := ps.getModule(kit, moduleId)
 	if err != nil {
-
-		blog.Errorf(" get module failed, option: %d, err: %v, rid: %s", moduleId, err, ctx.Kit.Rid)
+		blog.Errorf(" get module failed, option: %d, err: %v, rid: %s", moduleId, err, kit.Rid)
 		return nil, err
 	}
 
 	if module.ServiceTemplateID == 0 {
-		blog.Errorf("module %d has no service template, option: %s, rid: %s", moduleId, ctx.Kit.Rid)
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		blog.Errorf("module %d has no service template, option: %s, rid: %s", moduleId, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 	return module, nil
 }
 
 // ListDiffServiceInstanceNum 列出指定进程模板涉及到服务实例数量、名称及ID
-func (ps *ProcServer) ListDiffServiceInstanceNum(ctx *rest.Contexts, option *metadata.ListDiffServiceInstancesOption) (
+func (ps *ProcServer) ListDiffServiceInstanceNum(kit *rest.Kit, option *metadata.ListDiffServiceInstancesOption) (
 	*metadata.ListServiceInstancesResult, ccErr.CCErrorCoder) {
 
-	module, err := ps.getModuleInfo(ctx, option.ModuleID)
+	module, err := ps.getModuleInfo(kit, option.ModuleID)
 	if err != nil {
-		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 	}
 
 	field := []string{common.BKFieldID, common.BKHostIDField, common.BKFieldName}
-	result, err := ps.getListDiffServiceInstanceNum(ctx, option, module, field)
+	result, err := ps.getListDiffServiceInstanceNum(kit, option, module, field)
 	if err != nil {
-		blog.Errorf("list service instance num fail option: %v, err: %v, rid: %s", option, err, ctx.Kit.Rid)
+		blog.Errorf("list service instance num fail option: %v, err: %v, rid: %s", option, err, kit.Rid)
 		return nil, err
 	}
 	return result, err
@@ -2578,7 +2569,7 @@ func getProcessDataAndRelation(kit *rest.Kit, svcID, bizID, processTemplateID in
 	ccErr.CCErrorCoder) {
 	// we can not find this process template in all this service instance,
 	// which means that a new process template need to be added to this service instance
-	newProcess, err := processTemplate.NewProcess(kit.CCError, bizID, svcID, kit.TenantID,
+	newProcess, err := processTemplate.NewProcess(kit.CCError, bizID, svcID,
 		srvInst.hostMap[srvInst.serviceInstance2HostMap[svcID]])
 	if err != nil {
 		blog.Errorf("generate process instance by template %+v failed, err: %v, rid: %s", processTemplate,

@@ -38,7 +38,7 @@ Note: 参数`bk_host_list`和`bk_host_id`只能有一个生效，`bk_host_id`不
   "bk_biz_id": 1,
   "page": {
     "start": 0,
-    "limit": 10,
+    "limit": 10
   },
   "bk_module_id": 8,
   "bk_host_list": [11,12],
@@ -74,7 +74,6 @@ Note: 参数`bk_host_list`和`bk_host_id`只能有一个生效，`bk_host_id`不
         "modifier": "admin",
         "create_time": "2019-07-22T09:54:50.906+08:00",
         "last_time": "2019-07-22T09:54:50.906+08:00",
-        "bk_supplier_account": "0",
         "service_category_id": 22,
         "process_instances": [
           {
@@ -98,7 +97,6 @@ Note: 参数`bk_host_list`和`bk_host_id`只能有一个生效，`bk_host_id`不
               "user": "",
               "timeout": 0,
               "description": "",
-              "bk_supplier_account": "0",
               "bk_start_param_regex": "",
               "bind_info": [
                 {
@@ -115,8 +113,7 @@ Note: 参数`bk_host_list`和`bk_host_id`只能有一个生效，`bk_host_id`不
               "bk_process_id": 43,
               "service_instance_id": 49,
               "process_template_id": 48,
-              "bk_host_id": 11,
-              "bk_supplier_account": "0"
+              "bk_host_id": 11
             }
           }
         ]
@@ -158,7 +155,6 @@ Note: 参数`bk_host_list`和`bk_host_id`只能有一个生效，`bk_host_id`不
 | modifier                   | string  | 修改人                     |
 | create_time                | string  | 创建时间                    |
 | last_time                  | string  | 修复时间                    |
-| bk_supplier_account        | string  | 供应商ID                   |
 | service_category_id        | integer | 服务分类ID                  |
 | process_instances          | array   | 进程实例信息                  |
 | bk_biz_id                  | int     | 业务ID                    |
@@ -177,7 +173,6 @@ Note: 参数`bk_host_list`和`bk_host_id`只能有一个生效，`bk_host_id`不
 | bk_process_id        | int    | 进程id    |
 | bk_process_name      | string | 进程别名    |
 | bk_start_param_regex | string | 进程启动参数  |
-| bk_supplier_account  | string | 开发商账号   |
 | create_time          | string | 创建时间    |
 | description          | string | 描述      |
 | face_stop_cmd        | string | 强制停止命令  |

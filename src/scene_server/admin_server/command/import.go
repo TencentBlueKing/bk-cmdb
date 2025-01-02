@@ -231,7 +231,6 @@ func (ibt *importerBizTopo) filterBKTopoProc(ctx context.Context, bizID int64) e
 			Modifier:          defaultinitUserName,
 			CreateTime:        time.Now().UTC(),
 			LastTime:          time.Now().UTC(),
-			TenantID:          ibt.opt.OwnerID,
 			Property:          nil,
 		}
 		var err error

@@ -85,7 +85,6 @@ func (p *processOperation) CreateProcessTemplate(kit *rest.Kit,
 	template.Modifier = kit.User
 	template.CreateTime = time.Now()
 	template.LastTime = time.Now()
-	template.TenantID = kit.TenantID
 
 	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameProcessTemplate).Insert(kit.Ctx,
 		&template); err != nil {

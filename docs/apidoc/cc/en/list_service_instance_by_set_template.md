@@ -62,7 +62,6 @@ Retrieve the list of service instances based on the cluster template ID.
                 "modifier": "admin",
                 "create_time": "2020-10-09T02:46:25.002Z",
                 "last_time": "2020-10-09T02:46:25.002Z",
-                "bk_supplier_account": "0"
             },
             {
                 "bk_biz_id": 3,
@@ -75,8 +74,7 @@ Retrieve the list of service instances based on the cluster template ID.
                 "creator": "admin",
                 "modifier": "admin",
                 "create_time": "2020-10-09T03:04:19.859Z",
-                "last_time": "2020-10-09T03:04:19.859Z",
-                "bk_supplier_account": "0"
+                "last_time": "2020-10-09T03:04:19.859Z"
             }
         ]
     }
@@ -116,6 +114,5 @@ Retrieve the list of service instances based on the cluster template ID.
 | modifier            | string | Last modifier of this data |
 | create_time         | string | Creation time              |
 | last_time           | string | Update time                |
-| bk_supplier_account | string | Supplier account           |
 | service_template_id | int    | Service template ID        |
 | labels              | map    | Label information          |

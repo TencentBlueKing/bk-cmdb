@@ -219,7 +219,6 @@ bk_set_ids, the query result will be empty.
 | bk_process_id        | int    | Process ID                     |
 | bk_process_name      | string | Process alias                  |
 | bk_start_param_regex | string | Process startup parameters     |
-| bk_supplier_account  | string | Developer account              |
 | create_time          | string | Creation time                  |
 | description          | string | Description                    |
 | face_stop_cmd        | string | Forced stop command            |

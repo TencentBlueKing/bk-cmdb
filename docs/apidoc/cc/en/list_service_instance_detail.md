@@ -82,7 +82,6 @@ Note: Only one of the parameters `bk_host_list` and `bk_host_id` can be effectiv
         "modifier": "admin",
         "create_time": "2019-07-22T09:54:50.906+08:00",
         "last_time": "2019-07-22T09:54:50.906+08:00",
-        "bk_supplier_account": "0",
         "service_category_id": 22,
         "process_instances": [
           {
@@ -106,7 +105,6 @@ Note: Only one of the parameters `bk_host_list` and `bk_host_id` can be effectiv
               "user": "",
               "timeout": 0,
               "description": "",
-              "bk_supplier_account": "0",
               "bk_start_param_regex": "",
               "bind_info": [
                 {
@@ -123,8 +121,7 @@ Note: Only one of the parameters `bk_host_list` and `bk_host_id` can be effectiv
               "bk_process_id": 43,
               "service_instance_id": 49,
               "process_template_id": 48,
-              "bk_host_id": 11,
-              "bk_supplier_account": "0"
+              "bk_host_id": 11
             }
           }
         ]
@@ -168,7 +165,6 @@ Note: Only one of the parameters `bk_host_list` and `bk_host_id` can be effectiv
 | modifier                   | string | Last modifier of this data                                   |
 | create_time                | string | Creation time                                                |
 | last_time                  | string | Update time                                                  |
-| bk_supplier_account        | string | Supplier account                                             |
 | service_category_id        | int    | Service category ID                                          |
 | process_instances          | array  | Process instance information                                 |
 | bk_biz_id                  | int    | Business ID                                                  |
@@ -187,7 +183,6 @@ Note: Only one of the parameters `bk_host_list` and `bk_host_id` can be effectiv
 | bk_process_id        | int    | Process ID                     |
 | bk_process_name      | string | Process alias                  |
 | bk_start_param_regex | string | Process startup parameters     |
-| bk_supplier_account  | string | Supplier account               |
 | create_time          | string | Creation time                  |
 | description          | string | Description                    |
 | face_stop_cmd        | string | Force stop command             |
@@ -223,4 +218,3 @@ Note: Only one of the parameters `bk_host_list` and `bk_host_id` can be effectiv
 | service_instance_id | int    | Service instance ID |
 | process_template_id | int    | Process template ID |
 | bk_host_id          | int    | Host ID             |
-| bk_supplier_account | string | Supplier account    |
