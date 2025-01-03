@@ -33,7 +33,6 @@
         "name": "Apache",
         "bk_root_id": 14,
         "bk_parent_id": 14,
-        "bk_supplier_account": "0",
         "is_built_in": true
       },
       {
@@ -42,7 +41,6 @@
         "name": "Ceph",
         "bk_root_id": 18,
         "bk_parent_id": 18,
-        "bk_supplier_account": "0",
         "is_built_in": true
       },
       {
@@ -50,7 +48,6 @@
         "id": 1,
         "name": "Default",
         "bk_root_id": 1,
-        "bk_supplier_account": "0",
         "is_built_in": true
       }
     ]
@@ -84,4 +81,3 @@
 | bk_root_id          | int    | 根服务分类ID |
 | bk_parent_id        | int    | 父服务分类ID |
 | is_built_in         | bool   | 是否内置    |
-| bk_supplier_account | string | 开发商帐户名称 |

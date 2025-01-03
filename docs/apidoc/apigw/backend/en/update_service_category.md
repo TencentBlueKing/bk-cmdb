@@ -34,7 +34,6 @@ Update service category (Currently, only the name field can be updated. Permissi
         "name": "api",
         "bk_root_id": 21,
         "bk_parent_id": 21,
-        "bk_supplier_account": "0",
         "is_built_in": false
     }
 }
@@ -59,5 +58,4 @@ Update service category (Currently, only the name field can be updated. Permissi
 | name                | string | Service category name            |
 | bk_root_id          | int    | Root service category ID         |
 | bk_parent_id        | int    | Parent service category ID       |
-| bk_supplier_account | string | Operator account                 |
 | is_built_in         | bool   | Whether it is a built-in service |

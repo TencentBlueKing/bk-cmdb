@@ -33,7 +33,6 @@ Get service template by service template ID.
         "modifier": "admin",
         "create_time": "2020-05-26T09:46:15.259Z",
         "last_time": "2020-05-26T09:46:15.259Z",
-        "bk_supplier_account": "0",
         "host_apply_enabled": false
     }
 }
@@ -61,5 +60,4 @@ Get service template by service template ID.
 | modifier            | string  | Last modifier of the service template                      |
 | create_time         | string  | Creation time                                              |
 | last_time           | string  | Last update time                                           |
-| bk_supplier_account | string  | Supplier account                                           |
 | host_apply_enabled  | bool    | Whether to enable automatic application of host properties |

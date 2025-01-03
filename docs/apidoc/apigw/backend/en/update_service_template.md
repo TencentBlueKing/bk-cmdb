@@ -39,7 +39,6 @@ Update service template information (Permission: Service Template Editing Permis
     "modifier": "admin",
     "create_time": "2019-06-05T11:22:22.951+08:00",
     "last_time": "2019-06-05T11:22:22.951+08:00",
-    "bk_supplier_account": "0",
     "host_apply_enabled": false
   }
 }
@@ -67,5 +66,4 @@ Update service template information (Permission: Service Template Editing Permis
 | modifier            | string | Last modifier                                         |
 | create_time         | string | Creation time                                         |
 | last_time           | string | Last update time                                      |
-| bk_supplier_account | string | Supplier account                                      |
 | host_apply_enabled  | bool   | Whether to enable host property automatic application |

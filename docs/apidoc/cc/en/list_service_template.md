@@ -67,7 +67,6 @@ Retrieve a list of service templates based on the business ID, with an option to
                 "modifier": "admin",
                 "create_time": "2019-09-18T20:31:29.607+08:00",
                 "last_time": "2019-09-18T20:31:29.607+08:00",
-                "bk_supplier_account": "0",
                 "host_apply_enabled": false
             }
         ]
@@ -107,5 +106,4 @@ Retrieve a list of service templates based on the business ID, with an option to
 | modifier            | string  | Last modifier of this data                                 |
 | create_time         | string  | Creation time                                              |
 | last_time           | string  | Update time                                                |
-| bk_supplier_account | string  | Supplier account                                           |
 | host_apply_enabled  | bool    | Whether to enable automatic application of host properties |

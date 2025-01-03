@@ -24,7 +24,6 @@ Create Process Instance Based on Service Instance ID and Process Instance Attrib
 | bk_func_name        | string | No       | Process name                      |
 | bk_process_id       | int    | No       | Process ID                        |
 | bk_process_name     | string | No       | Process alias                     |
-| bk_supplier_account | string | No       | Developer account                 |
 | face_stop_cmd       | string | No       | Forced stop command               |
 | pid_file            | string | No       | PID file path                     |
 | priority            | int    | No       | Startup priority                  |
@@ -61,7 +60,6 @@ Create Process Instance Based on Service Instance ID and Process Instance Attrib
   "processes": [
     {
       "process_info": {
-        "bk_supplier_account": "0",
         "description": "",
         "start_cmd": "",
         "restart_cmd": "",

@@ -34,7 +34,6 @@
     "name": "test101",
     "bk_root_id": 5,
     "bk_parent_id": 5,
-    "bk_supplier_account": "0",
     "is_built_in": false
   }
 }
@@ -60,4 +59,3 @@
 | is_built_in         | bool    | 是否是内置节点(内置节点不允许编辑) |
 | bk_biz_id           | int     | 业务ID               |
 | name                | string  | 服务分类名称             |
-| bk_supplier_account | string  | 开发商账号              |
