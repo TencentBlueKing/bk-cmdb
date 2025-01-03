@@ -34,7 +34,6 @@ Create Service Category (Permission: Service Category Creation Permission)
     "name": "test101",
     "bk_root_id": 5,
     "bk_parent_id": 5,
-    "bk_supplier_account": "0",
     "is_built_in": false
   }
 }
@@ -60,4 +59,3 @@ Create Service Category (Permission: Service Category Creation Permission)
 | is_built_in         | bool    | Whether it is a built-in node (built-in nodes cannot be edited) |
 | bk_biz_id           | int     | Business ID                                                     |
 | name                | string  | Service category name                                           |
-| bk_supplier_account | string  | Vendor account                                                  |

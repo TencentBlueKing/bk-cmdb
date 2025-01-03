@@ -64,7 +64,6 @@
             "bk_process_name": "delete-aa",
             "bk_start_check_secs": null,
             "bk_start_param_regex": "",
-            "bk_supplier_account": "0",
             "bk_updated_at": "2023-11-15T17:19:18.1+08:00",
             "bk_updated_by": "admin",
             "create_time": "2023-11-15T10:37:39.384+08:00",
@@ -108,7 +107,6 @@
 | bk_process_id        | int    | 进程id    |
 | bk_process_name      | string | 进程别名    |
 | bk_start_param_regex | string | 进程启动参数  |
-| bk_supplier_account  | string | 开发商账号   |
 | create_time          | string | 创建时间    |
 | description          | string | 描述      |
 | face_stop_cmd        | string | 强制停止命令  |

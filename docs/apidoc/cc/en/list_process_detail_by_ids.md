@@ -64,7 +64,6 @@ Query details of processes corresponding to process IDs under a certain business
             "bk_process_name": "delete-aa",
             "bk_start_check_secs": null,
             "bk_start_param_regex": "",
-            "bk_supplier_account": "0",
             "bk_updated_at": "2023-11-15T17:19:18.1+08:00",
             "bk_updated_by": "admin",
             "create_time": "2023-11-15T10:37:39.384+08:00",
@@ -108,7 +107,6 @@ Query details of processes corresponding to process IDs under a certain business
 | bk_process_id        | int    | Process ID                     |
 | bk_process_name      | string | Process alias                  |
 | bk_start_param_regex | string | Process start parameters       |
-| bk_supplier_account  | string | Supplier account               |
 | create_time          | string | Creation time                  |
 | description          | string | Description                    |
 | face_stop_cmd        | string | Forced stop command            |

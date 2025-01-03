@@ -42,7 +42,6 @@ Query the list of service categories, based on the business ID, including common
         "name": "Apache",
         "bk_root_id": 14,
         "bk_parent_id": 14,
-        "bk_supplier_account": "0",
         "is_built_in": true
       },
       {
@@ -51,7 +50,6 @@ Query the list of service categories, based on the business ID, including common
         "name": "Ceph",
         "bk_root_id": 18,
         "bk_parent_id": 18,
-        "bk_supplier_account": "0",
         "is_built_in": true
       },
       {
@@ -59,7 +57,6 @@ Query the list of service categories, based on the business ID, including common
         "id": 1,
         "name": "Default",
         "bk_root_id": 1,
-        "bk_supplier_account": "0",
         "is_built_in": true
       }
     ]
@@ -96,4 +93,3 @@ Query the list of service categories, based on the business ID, including common
 | bk_root_id          | int    | Root service category ID   |
 | bk_parent_id        | int    | Parent service category ID |
 | is_built_in         | bool   | Whether it is built-in     |
-| bk_supplier_account | string | Supplier account name      |

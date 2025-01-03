@@ -37,7 +37,6 @@
         "bk_process_id": 46,
         "bk_process_name": "job_java",
         "bk_start_param_regex": "",
-        "bk_supplier_account": "0",
         "create_time": "2019-06-05T14:59:12.065+08:00",
         "description": "",
         "face_stop_cmd": "",
@@ -68,7 +67,6 @@
         "service_instance_id": 54,
         "process_template_id": 1,
         "bk_host_id": 1,
-        "bk_supplier_account": ""
       }
     }
   ]
@@ -102,7 +100,6 @@
 | bk_process_id        | int    | 进程id    |
 | bk_process_name      | string | 进程别名    |
 | bk_start_param_regex | string | 进程启动参数  |
-| bk_supplier_account  | string | 开发商账号   |
 | create_time          | string | 创建时间    |
 | description          | string | 描述      |
 | face_stop_cmd        | string | 强制停止命令  |
@@ -142,4 +139,3 @@
 | service_instance_id | int    | 服务实例id |
 | process_template_id | int    | 进程模版id |
 | bk_host_id          | int    | 主机id   |
-| bk_supplier_account | string | 开发商账号  |

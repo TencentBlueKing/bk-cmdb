@@ -67,7 +67,6 @@
                 "modifier": "admin",
                 "create_time": "2019-09-18T20:31:29.607+08:00",
                 "last_time": "2019-09-18T20:31:29.607+08:00",
-                "bk_supplier_account": "0",
                 "host_apply_enabled": false
             }
         ]
@@ -107,5 +106,4 @@
 | modifier            | string  | 修改人          |
 | create_time         | string  | 创建时间         |
 | last_time           | string  | 修复时间         |
-| bk_supplier_account | string  | 供应商ID        |
 | host_apply_enabled  | bool    | 是否启用主机属性自动应用 |

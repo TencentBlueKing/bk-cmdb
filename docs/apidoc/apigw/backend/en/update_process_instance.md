@@ -21,7 +21,6 @@ Batch Update Process Information (Permission: Service Instance Editing Permissio
 | bk_func_name        | string | No       | Process name                   |
 | bk_process_id       | int    | No       | Process ID                     |
 | bk_process_name     | string | No       | Process alias                  |
-| bk_supplier_account | string | No       | Supplier account               |
 | face_stop_cmd       | string | No       | Forced stop command            |
 | pid_file            | string | No       | PID file path                  |
 | priority            | int    | No       | Startup priority               |

@@ -47,7 +47,6 @@
     "host_apply_enabled": false,
     "create_time": "2019-09-18T23:09:44.251970453+08:00",
     "last_time": "2019-09-18T23:09:44.251970568+08:00",
-    "bk_supplier_account": "0"
   }
 }
 ```
@@ -77,5 +76,4 @@
 | modifier            | string | 本条数据的最后修改人员  |
 | create_time         | string | 创建时间         |
 | last_time           | string | 更新时间         |
-| bk_supplier_account | string | 开发商账号        |
 | host_apply_enabled  | bool   | 是否启用主机属性自动应用 |

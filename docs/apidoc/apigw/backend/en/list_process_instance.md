@@ -37,7 +37,6 @@ Query process instance list based on service instance ID
         "bk_process_id": 46,
         "bk_process_name": "job_java",
         "bk_start_param_regex": "",
-        "bk_supplier_account": "0",
         "create_time": "2019-06-05T14:59:12.065+08:00",
         "description": "",
         "face_stop_cmd": "",
@@ -68,7 +67,6 @@ Query process instance list based on service instance ID
         "service_instance_id": 54,
         "process_template_id": 1,
         "bk_host_id": 1,
-        "bk_supplier_account": ""
       }
     }
   ]
@@ -102,7 +100,6 @@ Query process instance list based on service instance ID
 | bk_process_id        | int    | Process ID                     |
 | bk_process_name      | string | Process alias                  |
 | bk_start_param_regex | string | Process start parameters       |
-| bk_supplier_account  | string | Supplier account               |
 | create_time          | string | Creation time                  |
 | description          | string | Description                    |
 | face_stop_cmd        | string | Forced stop command            |
@@ -142,4 +139,3 @@ Query process instance list based on service instance ID
 | service_instance_id | int    | Service instance ID |
 | process_template_id | int    | Process template ID |
 | bk_host_id          | int    | Host ID             |
-| bk_supplier_account | string | Supplier account    |

@@ -23,8 +23,7 @@
 | bk_func_id          | string | 否  | 功能ID    |
 | bk_func_name        | string | 否  | 进程名称    |
 | bk_process_id       | int    | 否  | 进程id    |
-| bk_process_name     | string | 否  | 进程别名    |_``_
-| bk_supplier_account | string | 否  | 开发商账号   |
+| bk_process_name     | string | 否  | 进程别名    |
 | face_stop_cmd       | string | 否  | 强制停止命令  |
 | pid_file            | string | 否  | PID文件路径 |
 | priority            | int    | 否  | 启动优先级   |
@@ -61,7 +60,6 @@
   "processes": [
     {
       "process_info": {
-        "bk_supplier_account": "0",
         "description": "",
         "start_cmd": "",
         "restart_cmd": "",

@@ -43,7 +43,6 @@
         "name": "api",
         "bk_root_id": 21,
         "bk_parent_id": 21,
-        "bk_supplier_account": "0",
         "is_built_in": false
     }
 }
@@ -71,5 +70,4 @@
 | name                | string | 服务分类名称  |
 | bk_root_id          | int    | 根服务分类id |
 | bk_parent_id        | int    | 父服务分类id |
-| bk_supplier_account | string | 运营商账号   |
 | is_built_in         | bool   | 是否是内置服务 |

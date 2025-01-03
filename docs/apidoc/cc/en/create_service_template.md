@@ -46,7 +46,6 @@ Creates a service template with the specified name and service class based on th
     "modifier": "admin",
     "create_time": "2019-09-18T23:09:44.251970453+08:00",
     "last_time": "2019-09-18T23:09:44.251970568+08:00",
-    "bk_supplier_account": "0"
   }
 }
 ```
@@ -76,4 +75,3 @@ Creates a service template with the specified name and service class based on th
 | modifier            | string | The last person to modify this piece of data |
 | create_time         | string | Creation time                                |
 | last_time           | string | Last modification time                       |
-| bk_supplier_account | string | Developer account number                     |
