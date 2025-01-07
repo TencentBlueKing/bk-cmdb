@@ -225,7 +225,7 @@ func (a *apiServer) GetHostData(ctx context.Context, h http.Header,
 }
 
 // GetObjectGroup TODO
-func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, ownerID, objID string,
+func (a *apiServer) GetObjectGroup(ctx context.Context, h http.Header, objID string,
 	params mapstr.MapStr) (resp *metadata.ObjectAttrGroupResult, err error) {
 
 	resp = new(metadata.ObjectAttrGroupResult)
@@ -325,7 +325,7 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 }
 
 // AddInstByImport add instances by import excel
-func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
+func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (
 	*metadata.ImportInstResp, error) {
 
 	resp := new(metadata.ImportInstResp)

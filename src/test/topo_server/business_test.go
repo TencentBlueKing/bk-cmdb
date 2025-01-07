@@ -109,7 +109,7 @@ var _ = Describe("business test", func() {
 			Fields:    []string{},
 			Condition: map[string]interface{}{},
 		}
-		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		rsp, err := apiServerClient.SearchBiz(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -134,7 +134,7 @@ var _ = Describe("business test", func() {
 				"bk_biz_maintainer": "admin",
 			},
 		}
-		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		rsp, err := apiServerClient.SearchBiz(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -158,7 +158,7 @@ var _ = Describe("business test", func() {
 				"bk_biz_tester": "admin",
 			},
 		}
-		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		rsp, err := apiServerClient.SearchBiz(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -178,7 +178,7 @@ var _ = Describe("business test", func() {
 				"time_zone": "Africa/Accra",
 			},
 		}
-		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		rsp, err := apiServerClient.SearchBiz(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -197,7 +197,7 @@ var _ = Describe("business test", func() {
 				"language": "1",
 			},
 		}
-		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		rsp, err := apiServerClient.SearchBiz(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -221,7 +221,7 @@ var _ = Describe("business test", func() {
 				"life_cycle": "1",
 			},
 		}
-		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		rsp, err := apiServerClient.SearchBiz(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -329,7 +329,7 @@ var _ = Describe("business test", func() {
 			Fields:    []string{},
 			Condition: map[string]interface{}{},
 		}
-		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		rsp, err := apiServerClient.SearchBiz(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -356,7 +356,7 @@ var _ = Describe("business test", func() {
 				"bk_biz_name": "cdewdercfee",
 			},
 		}
-		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		rsp, err := apiServerClient.SearchBiz(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
@@ -382,7 +382,7 @@ var _ = Describe("business test", func() {
 				"bk_biz_id": bizIdInt,
 			},
 		}
-		rsp, err := apiServerClient.SearchBiz(context.Background(), "0", header, input)
+		rsp, err := apiServerClient.SearchBiz(context.Background(), header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))

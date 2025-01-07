@@ -53,8 +53,8 @@ type ApiServerClientInterface interface {
 	GetHostData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error)
 	ListHostWithoutApp(ctx context.Context, h http.Header,
 		option metadata.ListHostsWithNoBizParameter) (resp *metadata.ListHostWithoutAppResponse, err error)
-	GetObjectGroup(ctx context.Context, h http.Header, ownerID, objID string,
-		params mapstr.MapStr) (resp *metadata.ObjectAttrGroupResult, err error)
+	GetObjectGroup(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (
+		resp *metadata.ObjectAttrGroupResult, err error)
 	AddHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
 	AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ImportInstResp, err error)
 	UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ImportInstResp, err error)
@@ -62,7 +62,7 @@ type ApiServerClientInterface interface {
 		err error)
 	AddInst(ctx context.Context, h http.Header, ownerID, objID string,
 		params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
-	AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
+	AddInstByImport(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (
 		*metadata.ImportInstResp, error)
 	AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error)
 	SearchAssociationInst(ctx context.Context, h http.Header,
@@ -79,7 +79,7 @@ type ApiServerClientInterface interface {
 	UpdateBizPropertyBatch(ctx context.Context, h http.Header, param metadata.UpdateBizPropertyBatchParameter) (
 		resp *metadata.Response, err error)
 	DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) error
-	SearchBiz(ctx context.Context, ownerID string, h http.Header, param *metadata.QueryBusinessRequest) (
+	SearchBiz(ctx context.Context, h http.Header, param *metadata.QueryBusinessRequest) (
 		resp *metadata.SearchInstResult, err error)
 
 	ReadModuleAssociation(ctx context.Context, h http.Header, cond *metadata.QueryCondition) (*metadata.AsstResult,
