@@ -54,7 +54,7 @@ var _ = Describe("Business Test", func() {
 
 		Measure("emit the request", func(b Benchmarker) {
 			runtime := b.Time("runtime", func() {
-				_, err := clientSet.ApiServer().SearchBiz(context.Background(), "0", header, cond)
+				_, err := clientSet.ApiServer().SearchBiz(context.Background(), header, cond)
 				Expect(err).Should(BeNil())
 			})
 			Expect(runtime.Seconds()).Should(BeNumerically("<", 0.07))
@@ -64,7 +64,7 @@ var _ = Describe("Business Test", func() {
 			m := run.FireLoadTest(func() error {
 				// h := CopyHeader(header)
 
-				rsp, err := clientSet.ApiServer().SearchBiz(context.Background(), "0", header, cond)
+				rsp, err := clientSet.ApiServer().SearchBiz(context.Background(), header, cond)
 				if err != nil {
 					return err
 				}

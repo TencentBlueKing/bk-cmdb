@@ -120,7 +120,7 @@ func (d *Client) getObjGroup(kit *rest.Kit, objID string, bizID int64) ([]metada
 			metadata.PageSort: common.BKPropertyGroupIndexField},
 	}
 
-	result, err := d.ApiClient.GetObjectGroup(kit.Ctx, kit.Header, kit.TenantID, objID, cond)
+	result, err := d.ApiClient.GetObjectGroup(kit.Ctx, kit.Header, objID, cond)
 	if err != nil {
 		blog.Errorf("get %s fields group failed, err:%+v, rid: %s", objID, err, kit.Rid)
 		return nil, fmt.Errorf("get attribute group failed, err: %+v", err)

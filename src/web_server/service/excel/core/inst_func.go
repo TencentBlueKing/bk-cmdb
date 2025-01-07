@@ -60,8 +60,7 @@ func (d *Client) GetBiz(kit *rest.Kit, cond interface{}) ([]mapstr.MapStr, error
 		return nil, errors.New("get biz but condition parse failed")
 	}
 
-	tenantID := httpheader.GetTenantID(kit.Header)
-	result, err := d.ApiClient.SearchBiz(kit.Ctx, tenantID, kit.Header, bizCond)
+	result, err := d.ApiClient.SearchBiz(kit.Ctx, kit.Header, bizCond)
 	if err != nil {
 		blog.Errorf("get biz data detail error: %v , search condition: %v, rid: %s", err, cond, kit.Rid)
 		return nil, err
@@ -98,8 +97,7 @@ func (d *Client) HandleImportedInst(kit *rest.Kit, param *ImportedParam) ([]int6
 	case UpdateHost:
 		result, err = d.ApiClient.UpdateHost(kit.Ctx, kit.Header, param.Req)
 	case AddInst:
-		result, err = d.ApiClient.AddInstByImport(kit.Ctx, kit.Header, kit.TenantID,
-			param.ObjID, param.Req)
+		result, err = d.ApiClient.AddInstByImport(kit.Ctx, kit.Header, param.ObjID, param.Req)
 	default:
 		err = fmt.Errorf("handle type is invalid, type: %s", param.HandleType)
 	}

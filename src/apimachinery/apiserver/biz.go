@@ -78,14 +78,15 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 }
 
 // SearchBiz TODO
-func (a *apiServer) SearchBiz(ctx context.Context, ownerID string, h http.Header,
-	param *metadata.QueryBusinessRequest) (resp *metadata.SearchInstResult, err error) {
+func (a *apiServer) SearchBiz(ctx context.Context, h http.Header, param *metadata.QueryBusinessRequest) (
+	resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/biz/search/%s"
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(param).
-		SubResourcef(subPath, ownerID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, "0").
 		WithHeaders(h).
 		Do().
 		IntoCmdbResp(resp)
