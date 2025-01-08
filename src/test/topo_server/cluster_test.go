@@ -47,7 +47,7 @@ var _ = Describe("kube cluster test", func() {
 				"bk_biz_name":       "cc_biz",
 				"time_zone":         "Africa/Accra",
 			}
-			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+			rsp, err := apiServerClient.CreateBiz(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))

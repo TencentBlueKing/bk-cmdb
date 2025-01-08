@@ -44,7 +44,7 @@ var _ = Describe("object test", func() {
 				"bk_biz_name":       "abc",
 				"time_zone":         "Africa/Accra",
 			}
-			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+			rsp, err := apiServerClient.CreateBiz(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -302,7 +302,7 @@ var _ = Describe("object test", func() {
 		})
 
 		It("search instance topo", func() {
-			rsp, err := instClient.GetInternalModule(context.Background(), "0", bizId, header)
+			rsp, err := instClient.GetInternalModule(context.Background(), bizId, header)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -1237,7 +1237,7 @@ var _ = Describe("object test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchSet(context.Background(), "0", bizId, header, input)
+			rsp, err := instClient.SearchSet(context.Background(), bizId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -1464,7 +1464,7 @@ var _ = Describe("object test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", bizIdInt, setIDInt, header, input)
+			rsp, err := instClient.SearchModule(context.Background(), bizIdInt, setIDInt, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Count).To(Equal(1))

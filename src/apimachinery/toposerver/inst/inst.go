@@ -86,7 +86,7 @@ func (t *instanceClient) UpdateInst(ctx context.Context, objID string, instID in
 }
 
 // SelectInsts TODO
-func (t *instanceClient) SelectInsts(ctx context.Context, ownerID string, objID string, h http.Header,
+func (t *instanceClient) SelectInsts(ctx context.Context, objID string, h http.Header,
 	s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/inst/search/%s/%s"
@@ -94,7 +94,8 @@ func (t *instanceClient) SelectInsts(ctx context.Context, ownerID string, objID 
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResourcef(subPath, ownerID, objID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, "0", objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

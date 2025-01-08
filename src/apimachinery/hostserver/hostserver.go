@@ -28,7 +28,7 @@ import (
 // HostServerClientInterface TODO
 type HostServerClientInterface interface {
 	DeleteHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
-	GetHostInstanceProperties(ctx context.Context, ownerID string, hostID string,
+	GetHostInstanceProperties(ctx context.Context, hostID string,
 		h http.Header) (resp *metadata.HostInstancePropertiesResult, err error)
 	AddHost(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	AddHostToResourcePool(ctx context.Context, h http.Header,
@@ -76,7 +76,7 @@ type HostServerClientInterface interface {
 	SearchHostWithBiz(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (
 		resp *metadata.SearchHostResult, err error)
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (resp *metadata.
-		SearchHostResult, err error)
+	SearchHostResult, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) errors.CCErrorCoder
 

@@ -361,11 +361,10 @@ func (option UpdateClusterTypeOpt) Validate() ccErr.RawErrorInfo {
 
 // NsSharedClusterRel shared cluster and biz relationship by namespace dimension.
 type NsSharedClusterRel struct {
-	NamespaceID int64  `json:"bk_namespace_id" bson:"bk_namespace_id"`
-	ClusterID   int64  `json:"bk_cluster_id" bson:"bk_cluster_id"`
-	BizID       int64  `json:"bk_biz_id" bson:"bk_biz_id"`
-	AsstBizID   int64  `json:"bk_asst_biz_id" bson:"bk_asst_biz_id"`
-	TenantID    string `json:"tenant_id" bson:"tenant_id"`
+	NamespaceID int64 `json:"bk_namespace_id" bson:"bk_namespace_id"`
+	ClusterID   int64 `json:"bk_cluster_id" bson:"bk_cluster_id"`
+	BizID       int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	AsstBizID   int64 `json:"bk_asst_biz_id" bson:"bk_asst_biz_id"`
 }
 
 // NsSharedClusterRelData namespace and shared cluster relation data.

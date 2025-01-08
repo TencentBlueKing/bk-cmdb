@@ -213,7 +213,6 @@ func queryClassification(t *testing.T, client *httpclient.HttpClient, classifica
 	require.Equal(t, clsResult.Data.Count, int64(len(clsResult.Data.Info)))
 	for _, item := range clsResult.Data.Info {
 		require.NotEqual(t, int64(0), item.ID)
-		require.NotEmpty(t, item.TenantID)
 		require.NotEmpty(t, item.ClassificationID)
 	}
 

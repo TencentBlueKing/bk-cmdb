@@ -32,7 +32,7 @@ var _ = Describe("host test", func() {
 				"bk_biz_name":       "cc_biz",
 				"time_zone":         "Africa/Accra",
 			}
-			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+			rsp, err := apiServerClient.CreateBiz(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -299,7 +299,7 @@ var _ = Describe("host test", func() {
 		})
 
 		It("get host base info", func() {
-			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(), "0",
+			rsp, err := hostServerClient.GetHostInstanceProperties(context.Background(),
 				strconv.FormatInt(hostId, 10), header)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
@@ -543,7 +543,7 @@ var _ = Describe("host test", func() {
 		})
 
 		It("get instance topo", func() {
-			rsp, err := instClient.GetInternalModule(context.Background(), "0", strconv.FormatInt(bizId, 10), header)
+			rsp, err := instClient.GetInternalModule(context.Background(), strconv.FormatInt(bizId, 10), header)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -1228,7 +1228,7 @@ var _ = Describe("list_hosts_topo test", func() {
 			"bk_biz_name":       "cc_biz_test",
 			"time_zone":         "Africa/Accra",
 		}
-		bizRsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, bizInput)
+		bizRsp, err := apiServerClient.CreateBiz(context.Background(), header, bizInput)
 		util.RegisterResponse(bizRsp)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(bizRsp.Result).To(Equal(true))
@@ -1839,7 +1839,7 @@ var _ = Describe("cloud host test", func() {
 				"bk_biz_name":       "cloud_host_biz",
 				"time_zone":         "Africa/Accra",
 			}
-			rsp, err := apiServerClient.CreateBiz(ctx, "0", header, input)
+			rsp, err := apiServerClient.CreateBiz(ctx, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))
@@ -1886,7 +1886,7 @@ var _ = Describe("cloud host test", func() {
 				"bk_biz_name":       "trans_cloud_host_biz",
 				"time_zone":         "Africa/Accra",
 			}
-			rsp, err := apiServerClient.CreateBiz(ctx, "0", header, input)
+			rsp, err := apiServerClient.CreateBiz(ctx, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))

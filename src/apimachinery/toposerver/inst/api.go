@@ -26,25 +26,25 @@ import (
 
 // InstanceInterface instance operation interface
 type InstanceInterface interface {
-	CreateApp(ctx context.Context, ownerID string, h http.Header,
-		dat map[string]interface{}) (resp *metadata.CreateInstResult, err error)
-	DeleteApp(ctx context.Context, ownerID string, appID string, h http.Header) (resp *metadata.Response, err error)
-	UpdateApp(ctx context.Context, ownerID string, appID string, h http.Header,
-		data map[string]interface{}) (resp *metadata.Response, err error)
-	UpdateAppDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, appID string,
-		h http.Header) (resp *metadata.Response, err error)
-	SearchApp(ctx context.Context, ownerID string, h http.Header,
-		s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
+	CreateApp(ctx context.Context, h http.Header, dat map[string]interface{}) (
+		resp *metadata.CreateInstResult, err error)
+	DeleteApp(ctx context.Context, appID string, h http.Header) (resp *metadata.Response, err error)
+	UpdateApp(ctx context.Context, appID string, h http.Header, data map[string]interface{}) (
+		resp *metadata.Response, err error)
+	UpdateAppDataStatus(ctx context.Context, flag common.DataStatusFlag, appID string, h http.Header) (
+		resp *metadata.Response, err error)
+	SearchApp(ctx context.Context, h http.Header, s *params.SearchParams) (
+		resp *metadata.SearchInstResult, err error)
 	GetAppBasicInfo(ctx context.Context, h http.Header, bizID int64) (resp *metadata.AppBasicInfoResult, err error)
-	GetDefaultApp(ctx context.Context, ownerID string, h http.Header) (resp *metadata.SearchInstResult, err error)
-	CreateDefaultApp(ctx context.Context, ownerID string, h http.Header,
+	GetDefaultApp(ctx context.Context, h http.Header) (resp *metadata.SearchInstResult, err error)
+	CreateDefaultApp(ctx context.Context, h http.Header,
 		data map[string]interface{}) (resp *metadata.CreateInstResult, err error)
 	SearchAuditDict(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	SearchAuditList(ctx context.Context, h http.Header, input *metadata.AuditQueryInput) (*metadata.Response, error)
 	SearchAuditDetail(ctx context.Context, h http.Header, input *metadata.AuditDetailQueryInput) (*metadata.Response,
 		error)
-	GetInternalModule(ctx context.Context, ownerID, appID string,
-		h http.Header) (resp *metadata.SearchInnterAppTopoResult, err error)
+	GetInternalModule(ctx context.Context, appID string, h http.Header) (
+		resp *metadata.SearchInnterAppTopoResult, err error)
 	SearchBriefBizTopo(ctx context.Context, h http.Header, bizID int64,
 		input map[string]interface{}) (resp *metadata.SearchBriefBizTopoResult, err error)
 	CreateInst(ctx context.Context, objID string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult,
@@ -54,8 +54,8 @@ type InstanceInterface interface {
 	DeleteInst(ctx context.Context, objID string, instID int64, h http.Header) (resp *metadata.Response, err error)
 	UpdateInst(ctx context.Context, objID string, instID int64, h http.Header,
 		dat map[string]interface{}) (resp *metadata.Response, err error)
-	SelectInsts(ctx context.Context, ownerID string, objID string, h http.Header,
-		s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
+	SelectInsts(ctx context.Context, objID string, h http.Header, s *metadata.SearchParams) (
+		resp *metadata.SearchInstResult, err error)
 	SelectInstsAndAsstDetail(ctx context.Context, objID string, h http.Header,
 		s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
 	InstSearch(ctx context.Context, objID string, h http.Header,
@@ -73,7 +73,7 @@ type InstanceInterface interface {
 	DeleteModule(ctx context.Context, appID, setID, moduleID int64, h http.Header) errors.CCErrorCoder
 	UpdateModule(ctx context.Context, appID, setID, moduleID int64, h http.Header,
 		dat map[string]interface{}) errors.CCErrorCoder
-	SearchModule(ctx context.Context, ownerID string, appID, setID int64, h http.Header, s *params.SearchParams) (
+	SearchModule(ctx context.Context, appID, setID int64, h http.Header, s *params.SearchParams) (
 		*metadata.InstResult, errors.CCErrorCoder)
 	SearchModuleByCondition(ctx context.Context, appID string, h http.Header,
 		s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
@@ -84,7 +84,7 @@ type InstanceInterface interface {
 	CreateSet(ctx context.Context, appID int64, h http.Header, dat mapstr.MapStr) (mapstr.MapStr, errors.CCErrorCoder)
 	DeleteSet(ctx context.Context, appID, setID int64, h http.Header) errors.CCErrorCoder
 	UpdateSet(ctx context.Context, appID, setID int64, h http.Header, dat map[string]interface{}) errors.CCErrorCoder
-	SearchSet(ctx context.Context, ownerID string, appID string, h http.Header,
+	SearchSet(ctx context.Context, appID string, h http.Header,
 		s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
 	SearchSetBatch(ctx context.Context, appID string, h http.Header,
 		s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error)

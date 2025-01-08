@@ -96,7 +96,7 @@ func (t *instanceClient) UpdateSet(ctx context.Context, appID, setID int64, h ht
 }
 
 // SearchSet TODO
-func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID string, h http.Header,
+func (t *instanceClient) SearchSet(ctx context.Context, appID string, h http.Header,
 	s *params.SearchParams) (resp *metadata.SearchInstResult, err error) {
 	resp = new(metadata.SearchInstResult)
 	subPath := "/set/search/%s/%s"
@@ -104,7 +104,8 @@ func (t *instanceClient) SearchSet(ctx context.Context, ownerID string, appID st
 	err = t.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResourcef(subPath, ownerID, appID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, "0", appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

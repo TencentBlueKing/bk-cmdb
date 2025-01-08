@@ -66,7 +66,7 @@ func (t *object) SelectModel(ctx context.Context, h http.Header) (resp *metadata
 }
 
 // SelectModelByClsID TODO
-func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID string, objID string,
+func (t *object) SelectModelByClsID(ctx context.Context, clsID string, objID string,
 	h http.Header) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/topo/model/%s/%s/%s"
@@ -74,7 +74,8 @@ func (t *object) SelectModelByClsID(ctx context.Context, ownerID string, clsID s
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, ownerID, clsID, objID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, "0", clsID, objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

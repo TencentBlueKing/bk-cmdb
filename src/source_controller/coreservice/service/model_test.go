@@ -145,7 +145,6 @@ func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID st
 		t.Logf("create time:%s", item.Spec.CreateTime.String())
 
 		for _, attr := range item.Attributes {
-			require.NotEmpty(t, attr.TenantID)
 			require.NotEmpty(t, attr.PropertyID)
 			require.NotEqual(t, int64(0), attr.ID)
 			require.NotNil(t, attr.CreateTime)

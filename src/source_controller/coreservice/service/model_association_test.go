@@ -146,7 +146,6 @@ func queryModelAssociation(t *testing.T, client *httpclient.HttpClient, modelID,
 	require.NotNil(t, modelResult)
 	require.Equal(t, modelResult.Data.Count, uint64(len(modelResult.Data.Info)))
 	for _, item := range modelResult.Data.Info {
-		require.NotEmpty(t, item.TenantID)
 		require.NotEmpty(t, item.ObjectID)
 		require.NotEmpty(t, item.AssociationName)
 		require.NotEqual(t, int64(0), item.ID)

@@ -97,7 +97,7 @@ var _ = Describe("Business Test", func() {
 					"bk_biz_name":       "testBiz" + bizSuffix,
 					"time_zone":         "Africa/Accra",
 				}
-				_, err := clientSet.ApiServer().CreateBiz(context.Background(), "0", header, input)
+				_, err := clientSet.ApiServer().CreateBiz(context.Background(), header, input)
 				Expect(err).Should(BeNil())
 			})
 			Expect(runtime.Seconds()).Should(BeNumerically("<", 0.9))
@@ -119,7 +119,7 @@ var _ = Describe("Business Test", func() {
 					"bk_biz_name":       "testBiz" + bizSuffix,
 					"time_zone":         "Africa/Accra",
 				}
-				rsp, err := clientSet.ApiServer().CreateBiz(context.Background(), "0", header, input)
+				rsp, err := clientSet.ApiServer().CreateBiz(context.Background(), header, input)
 				if err != nil {
 					return err
 				}

@@ -23,7 +23,6 @@ type CloudArea struct {
 	CloudName   string    `json:"bk_cloud_name" bson:"bk_cloud_name"`
 	Status      string    `json:"bk_status" bson:"bk_status"`
 	CloudVendor string    `json:"bk_cloud_vendor" bson:"bk_cloud_vendor"`
-	TenantID    string    `json:"tenant_id" bson:"tenant_id"`
 	VpcID       string    `json:"bk_vpc_id" bson:"bk_vpc_id"`
 	VpcName     string    `json:"bk_vpc_name" bson:"bk_vpc_name"`
 	Region      string    `json:"bk_region" bson:"bk_region"`

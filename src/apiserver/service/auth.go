@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+
 	"github.com/emicklei/go-restful/v3"
 )
 
@@ -142,7 +143,6 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 
 	userInfo := meta.UserInfo{
 		UserName: httpheader.GetUser(pheader),
-		TenantID: httpheader.GetTenantID(pheader),
 	}
 
 	authInput := meta.ListAuthorizedResourcesParam{
@@ -183,8 +183,7 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 		}
 	}
 
-	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), userInfo.TenantID,
-		req.Request.Header, &input)
+	result, err := s.engine.CoreAPI.TopoServer().Instance().SearchApp(req.Request.Context(), req.Request.Header, &input)
 	if err != nil {
 		blog.Errorf("get authorized business list, auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",
 			authorizedResources.IsAny, appIDList, err, rid)

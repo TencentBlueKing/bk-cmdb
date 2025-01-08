@@ -205,7 +205,7 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			rsp, err := instClient.SearchModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			j, _ := json.Marshal(rsp)
@@ -258,7 +258,7 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			rsp, err := instClient.SearchModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			j, _ := json.Marshal(rsp)
@@ -284,7 +284,7 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			rsp, err := instClient.SearchModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			j, _ := json.Marshal(rsp)
@@ -991,7 +991,7 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			rsp, err := instClient.SearchModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			j, _ := json.Marshal(rsp)
@@ -1742,7 +1742,7 @@ var _ = Describe("service template test", func() {
 					"sort": "id",
 				},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			rsp, err := instClient.SearchModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			j, _ := json.Marshal(rsp)
@@ -1784,7 +1784,7 @@ var _ = Describe("service template test", func() {
 						"sort": "id",
 					},
 				}
-				rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+				rsp, err := instClient.SearchModule(context.Background(), bizId, setId, header, input)
 				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				j, _ := json.Marshal(rsp)
@@ -2027,7 +2027,7 @@ var _ = Describe("service template attribute test", func() {
 				Condition: map[string]interface{}{common.BKServiceTemplateIDField: svcTempID},
 				Page:      map[string]interface{}{"sort": common.BKModuleIDField},
 			}
-			rsp, e := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+			rsp, e := instClient.SearchModule(context.Background(), bizId, setId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(e).NotTo(HaveOccurred())
 			Expect(rsp.Count).Should(Equal(1))
@@ -2249,7 +2249,7 @@ var _ = Describe("service template attribute test", func() {
 				Condition: map[string]interface{}{common.BKServiceTemplateIDField: svcTempID},
 				Page:      map[string]interface{}{"sort": common.BKModuleIDField},
 			}
-			rsp, e := instClient.SearchModule(ctx, "0", bizId, setId, header, input)
+			rsp, e := instClient.SearchModule(ctx, bizId, setId, header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(e).NotTo(HaveOccurred())
 			Expect(rsp.Count).Should(Equal(1))

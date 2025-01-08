@@ -419,7 +419,7 @@ var _ = Describe("set template attribute test", func() {
 				Condition: mapstr.MapStr{common.BKSetIDField: setID},
 				Page:      mapstr.MapStr{"sort": common.BKModuleNameField},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", bizID, setID, header, input)
+			rsp, err := instClient.SearchModule(context.Background(), bizID, setID, header, input)
 			testutil.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Count).To(Equal(2))
@@ -553,7 +553,7 @@ var _ = Describe("set template attribute test", func() {
 				Condition: mapstr.MapStr{common.BKSetIDField: setID},
 				Page:      mapstr.MapStr{"sort": common.BKModuleNameField},
 			}
-			rsp, err := instClient.SearchModule(context.Background(), "0", bizID, setID, header, input)
+			rsp, err := instClient.SearchModule(context.Background(), bizID, setID, header, input)
 			testutil.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Count).To(Equal(2))
@@ -1065,7 +1065,7 @@ func prepareSetTemplateData() {
 			"time_zone":         "Asia/Shanghai",
 			"language":          "1",
 		}
-		rsp, err := topoServerClient.Instance().CreateApp(ctx, common.BKDefaultTenantID, header, data)
+		rsp, err := topoServerClient.Instance().CreateApp(ctx, header, data)
 		testutil.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.BaseResp.Result).To(Equal(true))

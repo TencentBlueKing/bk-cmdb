@@ -2190,14 +2190,6 @@ type ProcessInstanceNG struct {
 	Relation ProcessInstanceRelation `json:"relation"`
 }
 
-// Proc2Module TODO
-type Proc2Module struct {
-	BizID      int64  `json:"bk_biz_id"`
-	ModuleName string `json:"bk_module_name"`
-	ProcessID  int64  `json:"bk_process_id"`
-	TenantID   string `json:"tenant_id"`
-}
-
 // LabelAggregationOption TODO
 type LabelAggregationOption struct {
 	BizID    int64  `json:"bk_biz_id"`

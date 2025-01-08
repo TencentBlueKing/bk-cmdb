@@ -60,8 +60,8 @@ type ApiServerClientInterface interface {
 	UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ImportInstResp, err error)
 	GetHostModuleRelation(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.HostModuleResp,
 		err error)
-	AddInst(ctx context.Context, h http.Header, ownerID, objID string,
-		params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
+	AddInst(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (
+		resp *metadata.ResponseDataMapStr, err error)
 	AddInstByImport(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (
 		*metadata.ImportInstResp, error)
 	AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error)
@@ -70,11 +70,11 @@ type ApiServerClientInterface interface {
 	ImportAssociation(ctx context.Context, h http.Header, objID string,
 		input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error)
 
-	CreateBiz(ctx context.Context, ownerID string, h http.Header, dat map[string]interface{}) (
+	CreateBiz(ctx context.Context, h http.Header, dat map[string]interface{}) (
 		resp *metadata.CreateInstResult, err error)
-	UpdateBiz(ctx context.Context, ownerID string, bizID string, h http.Header, data map[string]interface{}) (
+	UpdateBiz(ctx context.Context, bizID string, h http.Header, data map[string]interface{}) (
 		resp *metadata.Response, err error)
-	UpdateBizDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, bizID int64,
+	UpdateBizDataStatus(ctx context.Context, flag common.DataStatusFlag, bizID int64,
 		h http.Header) errors.CCErrorCoder
 	UpdateBizPropertyBatch(ctx context.Context, h http.Header, param metadata.UpdateBizPropertyBatchParameter) (
 		resp *metadata.Response, err error)
