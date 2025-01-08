@@ -16,6 +16,8 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/errors"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -122,11 +124,12 @@ func (asst *Association) CreateObject(ctx context.Context, h http.Header,
 
 // UpdateObject TODO
 func (asst *Association) UpdateObject(ctx context.Context, h http.Header, asstID int,
-	request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error) {
-	resp = new(metadata.UpdateAssociationObjectResult)
+	request mapstr.MapStr) (string, error) {
+
+	resp := new(metadata.UpdateAssociationObjectResult)
 	subPath := "/update/objectassociation/%d"
 
-	err = asst.client.Put().
+	err := asst.client.Put().
 		WithContext(ctx).
 		Body(request).
 		SubResourcef(subPath, asstID).
@@ -134,7 +137,14 @@ func (asst *Association) UpdateObject(ctx context.Context, h http.Header, asstID
 		Do().
 		Into(resp)
 
-	return
+	if err != nil {
+		return "", errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return "", resp.CCError()
+	}
+
+	return resp.Data, nil
 }
 
 // DeleteObject TODO

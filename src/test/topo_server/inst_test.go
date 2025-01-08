@@ -18,7 +18,7 @@ import (
 )
 
 var _ = Describe("inst test", func() {
-	var instId, instId1 int64
+	var instId, instId1, instId2 int64
 	var propertyID1, propertyID2, uniqueID uint64
 	option := filter.NewDefaultExprOpt(nil)
 
@@ -409,6 +409,105 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).Should(BeNil())
 		Expect(rsp.Result).To(Equal(true))
+	})
+
+	It("create inst bk_obj_id='bk_switch' bk_inst_name='test_inst_create' ", func() {
+		input := map[string]interface{}{
+			"bk_inst_name": "test_inst_create",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "switch", header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data["bk_inst_name"].(string)).To(Equal("test_inst_create"))
+		Expect(rsp.Data["bk_obj_id"].(string)).To(Equal("switch"))
+		instId2, err = commonutil.GetInt64ByInterface(rsp.Data["bk_inst_id"])
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("check create inst bk_obj_id='switch' bk_inst_name='test_inst_create' ", func() {
+		input := &metadata.SearchParams{
+			Condition: map[string]interface{}{
+				"bk_inst_name": "test_inst_create",
+				"bk_obj_id":    "switch",
+			},
+		}
+		rsp, err := instClient.InstSearch(context.Background(), "switch", header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Data.Count).To(Equal(1))
+		Expect(rsp.Data.Info[0]["bk_inst_name"].(string)).To(Equal("test_inst_create"))
+		Expect(rsp.Data.Info[0]["bk_obj_id"].(string)).To(Equal("switch"))
+	})
+
+	It("create same bk_inst_name: inst bk_obj_id='bk_switch' bk_inst_name='test_inst_create' ", func() {
+		input := map[string]interface{}{
+			"bk_inst_name": "test_inst_create",
+			"bk_obj_id":    "switch",
+		}
+		rsp, err := instClient.CreateInst(context.Background(), "switch", header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.CCError()).To(HaveOccurred())
+	})
+
+	It("batch update insts with object bk_obj_id='bk_switch' bk_inst_name='test_inst_create_1'", func() {
+		updateInput := map[string]interface{}{
+			"update": []map[string]interface{}{
+				{
+					"inst_id": instId2,
+					"datas": map[string]interface{}{
+						"bk_inst_name": "test_inst_create_1",
+					},
+				},
+			},
+		}
+		err := instClient.UpdateInsts(context.Background(), "switch", updateInput, header)
+		Expect(err).Should(BeNil())
+	})
+
+	It("search inst bk_inst_name='test_inst_create_1' ", func() {
+		input := &metadata.SearchParams{
+			Condition: map[string]interface{}{
+				"bk_inst_name": "test_inst_create_1",
+			},
+			Page: map[string]interface{}{
+				"sort": "id",
+			},
+		}
+		rsp, err := instClient.SelectInsts(context.Background(), "switch", header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data.Count).To(Equal(1))
+		Expect(rsp.Data.Info[0]["bk_inst_name"]).To(Equal("test_inst_create_1"))
+		Expect(rsp.Data.Info[0]["bk_obj_id"]).To(Equal("switch"))
+	})
+
+	It("batch delete insts with object", func() {
+		deleteInput := map[string]interface{}{
+			"delete": map[string]interface{}{
+				"inst_ids": []int64{instId2},
+			},
+		}
+		err := instClient.DeleteInsts(context.Background(), "switch", deleteInput, header)
+		Expect(err).Should(BeNil())
+	})
+
+	It("check delete insts with object", func() {
+		input := &metadata.SearchParams{
+			Condition: map[string]interface{}{
+				"bk_inst_name": "test_inst_create_1",
+			},
+			Page: map[string]interface{}{
+				"sort": "id",
+			},
+		}
+		rsp, err := instClient.SelectInsts(context.Background(), "switch", header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data.Count).To(Equal(0))
 	})
 
 	It("count object instances with OR conditions more than 50", func() {

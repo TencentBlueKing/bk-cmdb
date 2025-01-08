@@ -17,6 +17,7 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -34,8 +35,7 @@ type AssociationInterface interface {
 		request *metadata.SearchAssociationObjectRequest) (resp *metadata.SearchAssociationObjectResult, err error)
 	CreateObject(ctx context.Context, h http.Header,
 		request *metadata.Association) (resp *metadata.CreateAssociationObjectResult, err error)
-	UpdateObject(ctx context.Context, h http.Header, asstID int,
-		request *metadata.UpdateAssociationObjectRequest) (resp *metadata.UpdateAssociationObjectResult, err error)
+	UpdateObject(ctx context.Context, h http.Header, asstID int, request mapstr.MapStr) (string, error)
 	DeleteObject(ctx context.Context, h http.Header, asstID int) (resp *metadata.DeleteAssociationObjectResult,
 		err error)
 	SearchInst(ctx context.Context, h http.Header,

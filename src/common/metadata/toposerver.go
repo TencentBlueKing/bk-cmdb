@@ -217,6 +217,12 @@ type BriefBizRelations struct {
 	DestInstID interface{} `json:"dest_id"`
 }
 
+// BriefBizRelationsResp brief biz relations response
+type BriefBizRelationsResp struct {
+	BriefBizRelations []*BriefBizRelations `json:"data"`
+	BaseResp          `json:",inline"`
+}
+
 // GetBriefBizRelationOptions TODO
 type GetBriefBizRelationOptions struct {
 	// the source object, which should be one of the mainline object, except host model.

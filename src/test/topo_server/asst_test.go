@@ -46,7 +46,7 @@ func generateObject(objectIDs []string) {
 
 var _ = Describe("inst test", func() {
 	var switchInstId1, switchInstId2, switchInstId3, switchInstId4, switchInstId5, routerInstId1, routerInstId2,
-		routerInstId3, instAsst1, instAsst2, instAsst3, instAsst4, instAsst5 int64
+		routerInstId3, instAsst1, instAsst2, instAsst3, instAsst4, instAsst5, asstKindID, asstID int64
 
 	It("create inst bk_obj_id='switch'", func() {
 		objectIDs := []string{"switch", "router"}
@@ -206,6 +206,85 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
+		asstID = rsp.Data.ID
+	})
+
+	It("create association ='association_test'", func() {
+		input := &metadata.Association{
+			AsstKindID:           "connect",
+			AsstObjID:            "router",
+			AssociationName:      "association_test",
+			AssociationAliasName: "",
+			ObjectID:             "switch",
+			Mapping:              "1:n",
+		}
+		rsp, err := asstClient.CreateObject(context.Background(), header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		asstID = rsp.Data.ID
+	})
+
+	It("update association 'association_test'", func() {
+		input := mapstr.MapStr{
+			"bk_obj_asst_name": "association_update",
+		}
+		_, err := asstClient.UpdateObject(context.Background(), header, int(asstID), input)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("check update association 'association_update' result", func() {
+		input := &metadata.SearchAssociationObjectRequest{
+			Condition: map[string]interface{}{
+				"bk_obj_asst_name": "association_update",
+			},
+		}
+		resp, err := asstClient.SearchObject(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(resp.Data)).To(Equal(1))
+		Expect(resp.Data[0].AssociationAliasName).To(Equal("association_update"))
+		Expect(resp.Data[0].ObjectID).To(Equal("switch"))
+		Expect(string(resp.Data[0].Mapping)).To(Equal("1:n"))
+		Expect(resp.Data[0].AsstObjID).To(Equal("router"))
+	})
+
+	It("create association with wrong bk_obj_id", func() {
+		input := &metadata.Association{
+			AsstKindID:           "connect",
+			AsstObjID:            "ttteeesss",
+			AssociationName:      "association_test",
+			AssociationAliasName: "test",
+			ObjectID:             "switch",
+			Mapping:              "1:n",
+		}
+		rsp, err := asstClient.CreateObject(context.Background(), header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.CCError()).To(HaveOccurred())
+	})
+
+	It("update association with wrong association id", func() {
+		input := mapstr.MapStr{
+			"bk_obj_asst_name": "association_update",
+		}
+		_, err := asstClient.UpdateObject(context.Background(), header, 1234, input)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("delete association 'association_update' ", func() {
+		_, err := asstClient.DeleteObject(context.Background(), header, int(asstID))
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("check delete association 'association_update' result", func() {
+		input := &metadata.SearchAssociationObjectRequest{
+			Condition: map[string]interface{}{
+				"bk_obj_asst_name": "association_update",
+			},
+		}
+		resp, err := asstClient.SearchObject(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(resp.Data)).To(Equal(0))
 	})
 
 	It("create inst association ='router1_default_switch1'", func() {
@@ -219,6 +298,24 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))
 		instAsst1 = rsp.Data.ID
+	})
+
+	It("search inst association ='router1_default_switch1'", func() {
+		input := &metadata.SearchAssociationInstRequest{
+			ObjID: "router",
+			Condition: map[string]interface{}{
+				"bk_inst_id":      routerInstId1,
+				"bk_asst_inst_id": switchInstId1,
+			},
+		}
+		rsp, err := asstClient.SearchInst(context.Background(), header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(rsp.Data)).To(Equal(1))
+		Expect(rsp.Data[0].ObjectAsstID).To(Equal("router_default_switch"))
+		Expect(rsp.Data[0].ObjectID).To(Equal("router"))
+		Expect(rsp.Data[0].AsstObjectID).To(Equal("switch"))
+		Expect(rsp.Data[0].AssociationKindID).To(Equal("default"))
 	})
 
 	It("create inst association ='router1_default_switch2'", func() {
@@ -367,6 +464,7 @@ var _ = Describe("inst test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
 	})
+
 	// check "SearchAssociationRelatedInst" "fields can not be empty." function.
 	It("search inst association related", func() {
 		input := &metadata.SearchAssociationRelatedInstRequest{
@@ -384,6 +482,90 @@ var _ = Describe("inst test", func() {
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(false))
+	})
+
+	It("create association type 'test1' ", func() {
+		asstKind := &metadata.AssociationKind{
+			AssociationKindID:       "test_association_kind",
+			AssociationKindName:     "test1",
+			DestinationToSourceNote: "test",
+			Direction:               "test",
+			SourceToDestinationNote: "test",
+		}
+		resp, err := asstClient.CreateType(context.Background(), header, asstKind)
+		Expect(err).NotTo(HaveOccurred())
+		asstKindID = resp.Data.ID
+	})
+
+	It("create association type without bk_asst_id", func() {
+		asstKind := &metadata.AssociationKind{
+			AssociationKindName:     "test13",
+			DestinationToSourceNote: "test13",
+			Direction:               "test13",
+			SourceToDestinationNote: "test13",
+		}
+		resp, err := asstClient.CreateType(context.Background(), header, asstKind)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.CCError()).To(HaveOccurred())
+	})
+
+	It("create association type with same bk_asst_id ", func() {
+		asstKind := &metadata.AssociationKind{
+			AssociationKindID:       "test_association_kind",
+			AssociationKindName:     "test1",
+			DestinationToSourceNote: "test",
+			Direction:               "test",
+			SourceToDestinationNote: "test",
+		}
+		resp, err := asstClient.CreateType(context.Background(), header, asstKind)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.CCError()).To(HaveOccurred())
+	})
+
+	It("update association type 'test_1' ", func() {
+		updateReq := &metadata.UpdateAssociationTypeRequest{
+			AsstName:  "test_1",
+			SrcDes:    "test_1",
+			Direction: "test",
+			DestDes:   "test_test",
+		}
+		updateResp, err := asstClient.UpdateType(context.Background(), header, int(asstKindID), updateReq)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(updateResp.Result).To(Equal(true))
+	})
+
+	It("check update association type 'test_1' result", func() {
+		asstKind := &metadata.SearchAssociationTypeRequest{
+			Condition: map[string]interface{}{
+				"id": asstKindID,
+			},
+		}
+		resp, err := asstClient.SearchType(context.Background(), header, asstKind)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.CCError()).NotTo(HaveOccurred())
+		Expect(resp.Data.Count).To(Equal(1))
+		Expect(resp.Data.Info[0].AssociationKindName).To(Equal("test_1"))
+		Expect(resp.Data.Info[0].AssociationKindID).To(Equal("test_association_kind"))
+		Expect(resp.Data.Info[0].SourceToDestinationNote).To(Equal("test_1"))
+		Expect(resp.Data.Info[0].DestinationToSourceNote).To(Equal("test_test"))
+		Expect(string(resp.Data.Info[0].Direction)).To(Equal("test"))
+	})
+
+	It("delete association type 'test_1' ", func() {
+		_, err := asstClient.DeleteType(context.Background(), header, int(asstKindID))
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("check delete association type 'test_1' result", func() {
+		asstKind := &metadata.SearchAssociationTypeRequest{
+			Condition: map[string]interface{}{
+				"id": asstKindID,
+			},
+		}
+		resp, err := asstClient.SearchType(context.Background(), header, asstKind)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.CCError()).NotTo(HaveOccurred())
+		Expect(resp.Data.Count).To(Equal(0))
 	})
 
 	It("search instance associations and instances detail", func() {

@@ -16,6 +16,7 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -159,6 +160,58 @@ func (t *instanceClient) SearchBusinessSet(ctx context.Context, h http.Header, o
 		Into(resp)
 
 	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// SearchModuleInBizSet search modules in one biz set
+func (t *instanceClient) SearchModuleInBizSet(ctx context.Context, bizSetID int64, bizID int64, setID int64,
+	h http.Header) (*metadata.InstResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.QueryInstResult)
+	subPath := "/findmany/module/biz_set/%d/biz/%d/set/%d"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath, bizSetID, bizID, setID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// SearchBizSetTopoPath search biz set topo path
+func (t *instanceClient) SearchBizSetTopoPath(ctx context.Context, bizSetID int64, bizID int64, h http.Header,
+	data mapstr.MapStr) (*metadata.TopoPathResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.TopoPathResp)
+	subPath := "/find/topopath/biz_set/%d/biz/%d"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizSetID, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		blog.Errorf("search topo path failed, err: %v", err)
 		return nil, errors.CCHttpError
 	}
 

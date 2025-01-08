@@ -127,3 +127,53 @@ func (t *instanceClient) SearchSetBatch(ctx context.Context, appID string, h htt
 		Into(resp)
 	return
 }
+
+// CreateSetBatch batch create set
+func (t *instanceClient) CreateSetBatch(ctx context.Context, appID int64, h http.Header, data mapstr.MapStr) (
+	[]metadata.OneSetCreateResult, error) {
+
+	resp := new(metadata.BatchCreateSetResp)
+	subPath := "/set/%d/batch"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, appID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// ModuleHasHosts Check if the module to be instantiated by the service template to be deleted in the cluster has hosts
+func (t *instanceClient) ModuleHasHosts(ctx context.Context, setTemplateId, bizId int64, h http.Header,
+	data *metadata.SetWithHostFlagOption) ([]metadata.SetWithHostFlagResult, error) {
+
+	resp := new(metadata.SetWithHostFlagResultResp)
+	subPath := "/findmany/topo/set_template/%d/bk_biz_id/%d/host_with_instances"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, setTemplateId, bizId).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}

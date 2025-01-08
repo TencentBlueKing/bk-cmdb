@@ -545,3 +545,75 @@ func (st *Kube) FindPodPath(ctx context.Context, header http.Header, option *typ
 
 	return &result.Data, nil
 }
+
+// DeletePods delete pods
+func (st *Kube) DeletePods(ctx context.Context, header http.Header,
+	params *types.DeletePodsOption) errors.CCErrorCoder {
+
+	result := new(metadata.BaseResp)
+
+	err := st.client.Delete().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef("/deletemany/kube/pod").
+		WithHeaders(header).
+		Do().
+		Into(result)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return ccErr
+	}
+
+	return nil
+}
+
+// ListContainerByTopo list container by topo
+func (st *Kube) ListContainerByTopo(ctx context.Context, header http.Header, params *types.GetContainerByTopoOption) (
+	*types.ContainerInfo, errors.CCErrorCoder) {
+
+	result := new(types.ContainerWithTopoResp)
+
+	err := st.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef("/findmany/kube/container/by_topo").
+		WithHeaders(header).
+		Do().
+		Into(result)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+	return &result.Data, nil
+}
+
+// UpdateClusterType update cluster type
+func (st *Kube) UpdateClusterType(ctx context.Context, header http.Header, params *types.UpdateClusterTypeOpt) error {
+
+	result := new(metadata.BaseResp)
+
+	err := st.client.Put().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef("/update/kube/cluster/type").
+		WithHeaders(header).
+		Do().
+		Into(result)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return ccErr
+	}
+	return nil
+}

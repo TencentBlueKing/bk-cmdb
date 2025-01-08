@@ -744,6 +744,12 @@ type TopoPathResult struct {
 	Nodes []NodeTopoPath `json:"nodes" mapstructure:"nodes"`
 }
 
+// TopoPathResp response for find topo path
+type TopoPathResp struct {
+	Data     TopoPathResult `json:"data"`
+	BaseResp `json:",inline"`
+}
+
 // NodeTopoPath TODO
 type NodeTopoPath struct {
 	BizID int64                       `json:"bk_biz_id" mapstructure:"bk_biz_id"`

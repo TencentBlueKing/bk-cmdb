@@ -19,6 +19,7 @@ import (
 	"configcenter/src/common"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/json"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
 	"configcenter/src/common/querybuilder"
@@ -33,7 +34,7 @@ import (
 var _ = Describe("business set test", func() {
 	ctx := context.Background()
 
-	var sampleBizSetID, bizID3 int64
+	var sampleBizSetID, bizID3, moduleID int64
 	It("prepare environment, create a biz set and biz in it with topo for searching biz and topo in biz set", func() {
 		test.DeleteAllBizs()
 
@@ -110,6 +111,8 @@ var _ = Describe("business set test", func() {
 		}
 		moduleResp, err := instClient.CreateModule(ctx, bizID1, setID, header, module)
 		util.RegisterResponseWithRid(moduleResp, header)
+		Expect(err).NotTo(HaveOccurred())
+		moduleID, err = commonutil.GetInt64ByInterface(moduleResp[common.BKModuleIDField])
 		Expect(err).NotTo(HaveOccurred())
 
 		createBizSetOpt := metadata.CreateBizSetRequest{
@@ -736,6 +739,56 @@ var _ = Describe("business set test", func() {
 			biz, err := instClient.FindBizSetTopo(ctx, header, findBizOpt)
 			util.RegisterResponseWithRid(biz, header)
 			Expect(err).To(HaveOccurred())
+		}()
+
+		By("find modules in biz set")
+		func() {
+			resp, err := instClient.SearchModuleInBizSet(ctx, sampleBizSetID, bizID, setID, header)
+			util.RegisterResponseWithRid(resp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Count).To(Equal(1))
+			bizid, ccErr := commonutil.GetInt64ByInterface(resp.Info[0]["bk_biz_id"])
+			Expect(ccErr).NotTo(HaveOccurred())
+			Expect(bizid).To(Equal(bizID))
+			setid, ccErr := commonutil.GetInt64ByInterface(resp.Info[0]["bk_set_id"])
+			Expect(setid).To(Equal(setID))
+			Expect(resp.Info[0]["bk_module_name"]).To(Equal("module_for_biz_set"))
+			moduleid, ccErr := commonutil.GetInt64ByInterface(resp.Info[0]["bk_module_id"])
+			Expect(ccErr).NotTo(HaveOccurred())
+			Expect(moduleid).To(Equal(moduleID))
+		}()
+
+		By("find inst topo path in biz set")
+		func() {
+			data := mapstr.MapStr{
+				"topo_nodes": []mapstr.MapStr{
+					{
+						"bk_obj_id":  "set",
+						"bk_inst_id": setID,
+					},
+				},
+			}
+			resp, err := instClient.SearchBizSetTopoPath(ctx, sampleBizSetID, bizID, header, data)
+			util.RegisterResponseWithRid(resp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(resp.Nodes)).To(Equal(1))
+			Expect(resp.Nodes[0].BizID).To(Equal(bizID))
+			Expect(resp.Nodes[0].Node.ObjectID).To(Equal("set"))
+			Expect(resp.Nodes[0].Node.InstanceID).To(Equal(setID))
+
+			Expect(len(resp.Nodes[0].Path)).To(Equal(3))
+			Expect(resp.Nodes[0].Path[0].InstanceID).To(Equal(setID))
+			Expect(resp.Nodes[0].Path[0].ObjectID).To(Equal("set"))
+			Expect(resp.Nodes[0].Path[0].InstanceName).To(Equal("set_for_biz_set"))
+
+			Expect(resp.Nodes[0].Path[1].InstanceID).To(Equal(mainlineInstID))
+			Expect(resp.Nodes[0].Path[1].ObjectID).To(Equal("mainline_obj_for_biz_set"))
+			Expect(resp.Nodes[0].Path[1].InstanceName).To(Equal("mainline_inst_for_biz_set"))
+
+			Expect(resp.Nodes[0].Path[2].InstanceID).To(Equal(bizID))
+			Expect(resp.Nodes[0].Path[2].ObjectID).To(Equal("biz"))
+			Expect(resp.Nodes[0].Path[2].InstanceName).To(Equal("biz_for_biz_set"))
+
 		}()
 	})
 })

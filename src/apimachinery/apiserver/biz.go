@@ -132,3 +132,50 @@ func (a *apiServer) DeleteBiz(ctx context.Context, h http.Header, param metadata
 	}
 	return nil
 }
+
+// UpdateBusinessStatus update business status
+func (a *apiServer) UpdateBusinessStatus(ctx context.Context, flag string, bizID int64,
+	h http.Header, data *metadata.UpdateBusinessStatusOption) error {
+
+	resp := new(metadata.Response)
+	subPath := "/biz/status/%s/%s/%d"
+	err := a.client.Put().
+		WithContext(ctx).
+		Body(data).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, flag, "0", bizID).
+		WithHeaders(h).
+		Do().
+		IntoCmdbResp(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
+}
+
+// TransferHostToResPool transfer host to res pool
+func (a *apiServer) TransferHostToResPool(ctx context.Context, bizID int64, h http.Header,
+	data *metadata.TransferHostWithAutoClearServiceInstanceOption) error {
+
+	resp := new(metadata.Response)
+	subPath := "/host/transfer_with_auto_clear_service_instance/bk_biz_id/%d"
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		IntoCmdbResp(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
+}

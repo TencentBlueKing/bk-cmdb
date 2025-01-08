@@ -578,6 +578,27 @@ var _ = Describe("service template test", func() {
 			serviceId = serviceIds[0]
 		})
 
+		It("search service instance with host", func() {
+			By(fmt.Sprintf("search service instance by hostId: %d, moduleId: %d", hostId1, moduleId))
+			input := &metadata.ListServiceInstancesWithHostInput{
+				BizID:  bizId,
+				HostID: hostId1,
+				Page: metadata.BasePage{
+					Start: 0,
+					Limit: 10,
+				},
+			}
+			rsp, err := serviceClient.ListServiceInstancesWithHost(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(int(rsp.Count)).To(Equal(1))
+			Expect(rsp.Info[0].ModuleID).To(Equal(moduleId))
+			Expect(rsp.Info[0].HostID).To(Equal(hostId1))
+			Expect(rsp.Info[0].BizID).To(Equal(bizId))
+			Expect(rsp.Info[0].ServiceTemplateID).To(Equal(serviceTemplateId))
+			Expect(rsp.Info[0].Name).To(ContainSubstring("p1"))
+		})
+
 		It("search service instance", func() {
 			input := &metadata.GetServiceInstanceInModuleInput{
 				BizID:    bizId,
@@ -595,6 +616,43 @@ var _ = Describe("service template test", func() {
 			}
 			Expect(exists).To(Equal(true))
 			resMap["service_instance"] = data
+		})
+
+		It("update service instance labels", func() {
+			input := &selector.SvcInstLabelUpdateOption{
+				BizID: bizId,
+				LabelUpdateOption: selector.LabelUpdateOption{
+					InstanceIDs: []int64{serviceId},
+					Labels: selector.Labels{
+						"test_label": "label_label",
+					},
+				},
+			}
+			err := serviceClient.UpdateSvrInstanceLabels(context.Background(), header, input)
+			util.RegisterResponseWithRid(input, header)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("list service instance details", func() {
+			input := &metadata.ListServiceInstanceDetailOption{
+				BusinessID:         bizId,
+				ModuleID:           moduleId,
+				HostList:           []int64{hostId1},
+				ServiceInstanceIDs: []int64{serviceId},
+				Page: metadata.BasePage{
+					Start: 0,
+					Limit: 10,
+				},
+			}
+			rsp, err := serviceClient.ListServiceInstancesDetails(context.Background(), header, input)
+			util.RegisterResponseWithRid(input, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(int(rsp.Count)).To(Equal(1))
+			Expect(rsp.Info[0].Labels).To(ContainElement("label_label"))
+			Expect(rsp.Info[0].BizID).To(Equal(bizId))
+			Expect(rsp.Info[0].HostID).To(Equal(hostId1))
+			Expect(rsp.Info[0].ModuleID).To(Equal(moduleId))
+			Expect(rsp.Info[0].ServiceInstance.ID).To(Equal(serviceId))
 		})
 
 		It("clone service instance to source host", func() {
@@ -618,6 +676,41 @@ var _ = Describe("service template test", func() {
 			rsp, err := serviceClient.CreateServiceInstance(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("update service instance labels to nil", func() {
+			input := &selector.SvcInstLabelUpdateOption{
+				BizID: bizId,
+				LabelUpdateOption: selector.LabelUpdateOption{
+					InstanceIDs: []int64{serviceId},
+					Labels:      nil,
+				},
+			}
+			err := serviceClient.UpdateSvrInstanceLabels(context.Background(), header, input)
+			util.RegisterResponseWithRid(input, header)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("check service instance labels to nil", func() {
+			input := &metadata.ListServiceInstanceDetailOption{
+				BusinessID:         bizId,
+				ModuleID:           moduleId,
+				HostList:           []int64{hostId1},
+				ServiceInstanceIDs: []int64{serviceId},
+				Page: metadata.BasePage{
+					Start: 0,
+					Limit: 10,
+				},
+			}
+			rsp, err := serviceClient.ListServiceInstancesDetails(context.Background(), header, input)
+			util.RegisterResponseWithRid(input, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(int(rsp.Count)).To(Equal(1))
+			Expect(len(rsp.Info[0].Labels)).To(Equal(0))
+			Expect(rsp.Info[0].HostID).To(Equal(hostId1))
+			Expect(rsp.Info[0].BizID).To(Equal(bizId))
+			Expect(rsp.Info[0].ServiceInstance.ID).To(Equal(serviceId))
+			Expect(rsp.Info[0].ModuleID).To(Equal(moduleId))
 		})
 
 		It("search service instance", func() {

@@ -763,3 +763,55 @@ func (a *apiServer) SearchProject(ctx context.Context, h http.Header, params *me
 
 	return &resp.Data, nil
 }
+
+// CreateBizCustomField Create biz custom field
+func (a *apiServer) CreateBizCustomField(ctx context.Context, bizID int64, h http.Header,
+	params *metadata.Attribute) (*metadata.ObjAttDes, error) {
+
+	resp := new(metadata.CreateObjAttDesResp)
+	subPath := "/create/objectattr/biz/%d"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &resp.Data, nil
+}
+
+// UpdateBizCustomField update biz custom field
+func (a *apiServer) UpdateBizCustomField(ctx context.Context, bizID, id int64, h http.Header,
+	params mapstr.MapStr) error {
+
+	resp := new(metadata.CreateObjAttDesResp)
+	subPath := "/update/objectattr/biz/%d/id/%d"
+
+	err := a.client.Put().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath, bizID, id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return ccErr
+	}
+
+	return nil
+}

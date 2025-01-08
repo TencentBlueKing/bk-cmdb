@@ -7,6 +7,7 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/selector"
 )
 
 // ServiceClientInterface TODO
@@ -22,6 +23,10 @@ type ServiceClientInterface interface {
 
 	CreateServiceInstance(ctx context.Context, h http.Header, data *metadata.CreateServiceInstanceInput) ([]int64,
 		errors.CCErrorCoder)
+	ListServiceInstancesWithHost(ctx context.Context, h http.Header, data *metadata.ListServiceInstancesWithHostInput) (
+		*metadata.MultipleServiceInstance, error)
+	ListServiceInstancesDetails(ctx context.Context, h http.Header, data *metadata.ListServiceInstanceDetailOption) (
+		*metadata.MultipleServiceInstanceDetail, error)
 	UpdateServiceInstances(ctx context.Context, h http.Header, bizID int64,
 		data map[string]interface{}) (resp *metadata.Response, err error)
 	DeleteServiceInstance(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response,
@@ -36,6 +41,7 @@ type ServiceClientInterface interface {
 		data map[string]interface{}) (resp *metadata.Response, err error)
 	ServiceInstanceFindLabels(ctx context.Context, h http.Header, data map[string]interface{}) (resp *metadata.Response,
 		err error)
+	UpdateSvrInstanceLabels(ctx context.Context, h http.Header, data *selector.SvcInstLabelUpdateOption) error
 
 	CreateServiceTemplate(ctx context.Context, h http.Header,
 		data map[string]interface{}) (resp *metadata.ResponseDataMapStr, err error)

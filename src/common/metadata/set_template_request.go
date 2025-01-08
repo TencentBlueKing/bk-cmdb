@@ -265,6 +265,12 @@ type SetWithHostFlagResult struct {
 	HasHost bool  `json:"has_host"`
 }
 
+// SetWithHostFlagResultResp response for SetWithHostFlagResult
+type SetWithHostFlagResultResp struct {
+	BaseResp `json:",inline"`
+	Data     []SetWithHostFlagResult `json:"data"`
+}
+
 // SyncSetTplToInstOption TODO
 type SyncSetTplToInstOption struct {
 	SetIDs []int64 `field:"bk_set_ids" json:"bk_set_ids" bson:"bk_set_ids" mapstructure:"bk_set_ids"`

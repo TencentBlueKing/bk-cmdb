@@ -265,3 +265,78 @@ func (t *instanceClient) CountObjectInstances(ctx context.Context, header http.H
 
 	return resp, err
 }
+
+// SearchInstAssociation search instance association with other object
+func (t *instanceClient) SearchInstAssociation(ctx context.Context, header http.Header,
+	input *metadata.SearchParams) (*metadata.InstResult, error) {
+
+	resp := new(metadata.SearchInstResult)
+	subPath := "/findmany/inst/association/association_object/inst_base_info"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+
+	return &resp.Data, err
+}
+
+// DeleteInsts batch delete instances
+func (t *instanceClient) DeleteInsts(ctx context.Context, objID string, input map[string]interface{},
+	h http.Header) error {
+
+	resp := new(metadata.Response)
+	subPath := "/deletemany/instance/object/%s"
+
+	err := t.client.Delete().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+
+	return nil
+}
+
+// UpdateInsts batch update instances
+func (t *instanceClient) UpdateInsts(ctx context.Context, objID string, input map[string]interface{},
+	h http.Header) error {
+
+	resp := new(metadata.Response)
+	subPath := "/updatemany/instance/object/%s"
+
+	err := t.client.Put().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath, objID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+
+	return nil
+}

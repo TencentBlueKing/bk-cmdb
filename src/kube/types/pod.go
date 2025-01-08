@@ -643,6 +643,18 @@ type ContainerWithTopo struct {
 	Topo      Topo          `json:"topo"`
 }
 
+// ContainerInfo container info
+type ContainerInfo struct {
+	Info  []ContainerWithTopo `json:"info"`
+	Count int64               `json:"count"`
+}
+
+// ContainerWithTopoResp container with topo response
+type ContainerWithTopoResp struct {
+	Data              ContainerInfo `json:"data"`
+	metadata.BaseResp `json:",inline"`
+}
+
 // Topo container topo message
 type Topo struct {
 	BizID        int64        `json:"bk_biz_id"`
