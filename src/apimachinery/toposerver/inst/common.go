@@ -96,7 +96,7 @@ func (t *instanceClient) SearchAuditDetail(ctx context.Context, h http.Header,
 }
 
 // GetInternalModule TODO
-func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID string,
+func (t *instanceClient) GetInternalModule(ctx context.Context, appID string,
 	h http.Header) (resp *metadata.SearchInnterAppTopoResult, err error) {
 	resp = new(metadata.SearchInnterAppTopoResult)
 	subPath := "/topo/internal/%s/%s"
@@ -104,7 +104,8 @@ func (t *instanceClient) GetInternalModule(ctx context.Context, ownerID, appID s
 	err = t.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, ownerID, appID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, "0", appID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

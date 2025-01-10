@@ -274,7 +274,7 @@ var _ = Describe("no service template test", func() {
 						"sort": "id",
 					},
 				}
-				rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+				rsp, err := instClient.SearchModule(context.Background(), bizId, setId, header, input)
 				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				j, _ := json.Marshal(rsp)
@@ -301,7 +301,7 @@ var _ = Describe("no service template test", func() {
 						"sort": "id",
 					},
 				}
-				rsp, err := instClient.SearchModule(context.Background(), "0", bizId, setId, header, input)
+				rsp, err := instClient.SearchModule(context.Background(), bizId, setId, header, input)
 				util.RegisterResponseWithRid(rsp, header)
 				Expect(err).NotTo(HaveOccurred())
 				j, _ := json.Marshal(rsp)

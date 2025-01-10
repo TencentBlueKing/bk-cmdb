@@ -98,7 +98,7 @@ func (t *instanceClient) UpdateModule(ctx context.Context, appID, setID, moduleI
 }
 
 // SearchModule TODO
-func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID, setID int64, h http.Header,
+func (t *instanceClient) SearchModule(ctx context.Context, appID, setID int64, h http.Header,
 	s *params.SearchParams) (*metadata.InstResult, errors.CCErrorCoder) {
 
 	resp := new(metadata.SearchInstResult)
@@ -107,7 +107,8 @@ func (t *instanceClient) SearchModule(ctx context.Context, ownerID string, appID
 	err := t.client.Post().
 		WithContext(ctx).
 		Body(s).
-		SubResourcef(subPath, ownerID, appID, setID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, "0", appID, setID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

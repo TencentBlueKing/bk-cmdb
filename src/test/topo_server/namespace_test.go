@@ -50,7 +50,7 @@ var _ = Describe("namespace test", func() {
 			"time_zone":               "Africa/Accra",
 			"language":                "1",
 		}
-		bizResp, err := apiServerClient.CreateBiz(ctx, "0", header, biz)
+		bizResp, err := apiServerClient.CreateBiz(ctx, header, biz)
 		util.RegisterResponseWithRid(bizResp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(bizResp.Result).To(Equal(true))

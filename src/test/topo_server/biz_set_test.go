@@ -43,7 +43,7 @@ var _ = Describe("business set test", func() {
 			"time_zone":               "Africa/Accra",
 			"language":                "1",
 		}
-		bizResp, err := apiServerClient.CreateBiz(ctx, "0", header, biz)
+		bizResp, err := apiServerClient.CreateBiz(ctx, header, biz)
 		util.RegisterResponseWithRid(bizResp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(bizResp.Result).To(Equal(true))
@@ -51,7 +51,7 @@ var _ = Describe("business set test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		biz[common.BKAppNameField] = "biz_for_biz_set1"
-		bizResp, err = apiServerClient.CreateBiz(ctx, "0", header, biz)
+		bizResp, err = apiServerClient.CreateBiz(ctx, header, biz)
 		util.RegisterResponseWithRid(bizResp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(bizResp.Result).To(Equal(true))
@@ -59,7 +59,7 @@ var _ = Describe("business set test", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		biz[common.BKAppNameField] = "biz_not_for_biz_set"
-		bizResp, err = apiServerClient.CreateBiz(ctx, "0", header, biz)
+		bizResp, err = apiServerClient.CreateBiz(ctx, header, biz)
 		util.RegisterResponseWithRid(bizResp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(bizResp.Result).To(Equal(true))
@@ -622,7 +622,7 @@ var _ = Describe("business set test", func() {
 			input := &params.SearchParams{
 				Condition: map[string]interface{}{common.BKDefaultField: common.DefaultResSetFlag},
 			}
-			defaultSetResp, err := instClient.SearchSet(ctx, "0", strconv.FormatInt(bizID, 10), header, input)
+			defaultSetResp, err := instClient.SearchSet(ctx, strconv.FormatInt(bizID, 10), header, input)
 			util.RegisterResponseWithRid(defaultSetResp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(defaultSetResp.Result).To(Equal(true))

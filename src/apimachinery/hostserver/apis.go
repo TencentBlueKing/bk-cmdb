@@ -38,7 +38,7 @@ func (hs *hostServer) DeleteHostBatch(ctx context.Context, h http.Header, dat in
 }
 
 // GetHostInstanceProperties TODO
-func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, ownerID string, hostID string,
+func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, hostID string,
 	h http.Header) (resp *metadata.HostInstancePropertiesResult, err error) {
 	subPath := "/hosts/%s/%s"
 
@@ -46,7 +46,8 @@ func (hs *hostServer) GetHostInstanceProperties(ctx context.Context, ownerID str
 	err = hs.client.Get().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, ownerID, hostID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, "0", hostID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

@@ -22,15 +22,16 @@ import (
 )
 
 // CreateBiz TODO
-func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header,
-	params map[string]interface{}) (resp *metadata.CreateInstResult, err error) {
+func (a *apiServer) CreateBiz(ctx context.Context, h http.Header, params map[string]interface{}) (
+	resp *metadata.CreateInstResult, err error) {
 	resp = new(metadata.CreateInstResult)
 	subPath := "/biz/%s"
 
 	err = a.client.Post().
 		WithContext(ctx).
 		Body(params).
-		SubResourcef(subPath, ownerID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, "0").
 		WithHeaders(h).
 		Do().
 		IntoCmdbResp(resp)
@@ -38,14 +39,15 @@ func (a *apiServer) CreateBiz(ctx context.Context, ownerID string, h http.Header
 }
 
 // UpdateBiz TODO
-func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string, h http.Header,
+func (a *apiServer) UpdateBiz(ctx context.Context, bizID string, h http.Header,
 	data map[string]interface{}) (resp *metadata.Response, err error) {
 	resp = new(metadata.Response)
 	subPath := "/biz/%s/%s"
 	err = a.client.Put().
 		WithContext(ctx).
 		Body(data).
-		SubResourcef(subPath, ownerID, bizID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, "0", bizID).
 		WithHeaders(h).
 		Do().
 		IntoCmdbResp(resp)
@@ -53,7 +55,7 @@ func (a *apiServer) UpdateBiz(ctx context.Context, ownerID string, bizID string,
 }
 
 // UpdateBizDataStatus update biz data status
-func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, flag common.DataStatusFlag, bizID int64,
+func (a *apiServer) UpdateBizDataStatus(ctx context.Context, flag common.DataStatusFlag, bizID int64,
 	h http.Header) errors.CCErrorCoder {
 
 	resp := new(metadata.Response)
@@ -62,7 +64,8 @@ func (a *apiServer) UpdateBizDataStatus(ctx context.Context, ownerID string, fla
 	err := a.client.Put().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef(subPath, flag, ownerID, bizID).
+		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
+		SubResourcef(subPath, flag, "0", bizID).
 		WithHeaders(h).
 		Do().
 		IntoCmdbResp(resp)

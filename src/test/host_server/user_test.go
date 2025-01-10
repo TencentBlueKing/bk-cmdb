@@ -24,7 +24,7 @@ var _ = Describe("user operation test", func() {
 				"bk_biz_maintainer": "admin",
 				"time_zone":         "Africa/Accra",
 			}
-			rsp, err := apiServerClient.CreateBiz(context.Background(), "0", header, input)
+			rsp, err := apiServerClient.CreateBiz(context.Background(), header, input)
 			util.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.Result).To(Equal(true))

@@ -12,6 +12,7 @@ import (
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -501,7 +502,7 @@ var _ = Describe("inst test", func() {
 				"sort": "id",
 			},
 		}
-		rsp, err := instClient.SelectInsts(context.Background(), "0", "switch", header, input)
+		rsp, err := instClient.SelectInsts(context.Background(), "switch", header, input)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(rsp.Result).To(Equal(true))

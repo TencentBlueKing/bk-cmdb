@@ -71,7 +71,6 @@ type HistoryMeta struct {
 	User       string    `json:"user,omitempty" bson:"user,omitempty"`
 	Content    string    `json:"content,omitempty" bson:"content,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty" bson:"create_time,omitempty"`
-	TenantID   string    `json:"tenant_id" bson:"tenant_id"`
 }
 
 // HistoryResult TODO
@@ -166,7 +165,6 @@ type ModuleHostConfigParams struct {
 	ApplicationID int64   `json:"bk_biz_id"`
 	HostID        int64   `json:"bk_host_id"`
 	ModuleID      []int64 `json:"bk_module_id"`
-	TenantID      string  `json:"tenant_id" bson:"tenant_id"`
 }
 
 // GetUserCustomResult TODO

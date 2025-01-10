@@ -111,7 +111,6 @@ func queryModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, model
 	require.NotNil(t, modelResult)
 	require.Equal(t, modelResult.Data.Count, int64(len(modelResult.Data.Info)))
 	for _, item := range modelResult.Data.Info {
-		require.NotEmpty(t, item.TenantID)
 		require.NotEmpty(t, item.ObjectID)
 		require.NotEmpty(t, item.GroupID)
 		require.NotEqual(t, int64(0), item.ID)

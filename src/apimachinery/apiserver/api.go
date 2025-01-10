@@ -309,7 +309,7 @@ func (a *apiServer) GetHostModuleRelation(ctx context.Context, h http.Header,
 }
 
 // AddInst TODO
-func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID string,
+func (a *apiServer) AddInst(ctx context.Context, h http.Header, objID string,
 	params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error) {
 
 	resp = new(metadata.ResponseDataMapStr)

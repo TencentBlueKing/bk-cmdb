@@ -102,7 +102,6 @@ func (s *service) CreateNamespace(ctx *rest.Contexts) {
 			ClusterID:   cluster.ID,
 			BizID:       data.BizID,
 			AsstBizID:   cluster.BizID,
-			TenantID:    ctx.Kit.TenantID,
 		})
 	}
 

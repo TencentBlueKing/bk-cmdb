@@ -129,7 +129,6 @@ type HostToAppModule struct {
 	SetName     string   `json:"bk_set_name"`
 	AppName     string   `json:"bk_biz_name"`
 	OsType      string   `json:"bk_os_type"`
-	TenantID    string   `json:"tenant_id"`
 	PlatID      int64    `json:"bk_cloud_id"`
 	IsIncrement bool     `json:"is_increment"`
 }

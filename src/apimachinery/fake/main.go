@@ -40,5 +40,5 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	clientset.TopoServer().Instance().CreateApp(context.Background(), "id", http.Header{}, nil)
+	clientset.TopoServer().Instance().CreateApp(context.Background(), http.Header{}, nil)
 }

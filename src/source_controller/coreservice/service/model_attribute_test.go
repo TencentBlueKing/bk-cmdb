@@ -144,7 +144,6 @@ func queryModelAttributes(t *testing.T, client *httpclient.HttpClient, modelID, 
 
 	for _, item := range modelResult.Data.Info {
 		require.NotEqual(t, int64(0), item.ID)
-		require.NotEmpty(t, item.TenantID)
 		require.NotEmpty(t, item.PropertyID)
 		require.NotEmpty(t, item.ObjectID)
 		require.NotNil(t, item.LastTime)
