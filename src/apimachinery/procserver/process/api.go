@@ -50,6 +50,14 @@ type ProcessClientInterface interface {
 		data metadata.ListProcessInstancesDetailsOption) (resp *metadata.MapArrayResponse, err error)
 	UpdateProcessInstancesByIDs(ctx context.Context, h http.Header,
 		data map[string]interface{}) (resp *metadata.Response, err error)
+	SearchBizSetSrvInstInModule(ctx context.Context, bizSetID int64, h http.Header,
+		data *metadata.GetServiceInstanceInModuleInput) (*metadata.MultipleServiceInstance, error)
+	ListBizSetProcessInstances(ctx context.Context, bizSetID int64, h http.Header,
+		data *metadata.ListProcessInstancesOption) ([]metadata.ProcessInstance, error)
+	GetBizSetProcessTemplate(ctx context.Context, bizSetID, proTemplateID int64, h http.Header,
+		data *metadata.GetBizSetProcTemplateOption) (*metadata.ProcessTemplate, error)
+	ListBizSetSrvInstWithHost(ctx context.Context, bizSetID int64, h http.Header,
+		data *metadata.ListServiceInstancesWithHostInput) (*metadata.MultipleServiceInstance, error)
 }
 
 // NewProcessClientInterface TODO

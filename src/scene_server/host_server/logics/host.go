@@ -400,7 +400,8 @@ func (lgc *Logics) TransferHostAcrossBusiness(kit *rest.Kit, srcBizID, dstAppID 
 
 	if len(notExistHostIDs) > 0 {
 		notExistHostIP := lgc.convertHostIDToHostIP(kit, notExistHostIDs)
-		blog.Errorf("has host not belong to idle module , host ids: %+v, rid: %s", notExistHostIDs, kit.Rid)
+		blog.Errorf("has host not belong to idle module , host ids: %+v, moduleIDArr: %v, rid: %s", notExistHostIDs,
+			moduleIDArr, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrHostModuleConfigNotMatch, util.PrettyIPStr(notExistHostIP))
 	}
 
