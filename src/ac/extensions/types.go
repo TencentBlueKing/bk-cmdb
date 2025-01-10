@@ -124,14 +124,12 @@ func ParseBizIDFromMetadata(metaValue map[string]interface{}) (int64, error) {
 type BusinessSimplify struct {
 	BKAppIDField   int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
 	BKAppNameField string `field:"bk_biz_name" json:"bk_biz_name" bson:"bk_biz_name"`
-	TenantID       string `field:"tenant_id" json:"tenant_id" bson:"tenant_id"`
 	IsDefault      int64  `field:"default" json:"default" bson:"default"`
-
-	Maintainer string `field:"bk_biz_maintainer" json:"bk_biz_maintainer" bson:"bk_biz_maintainer"`
-	Producer   string `field:"bk_biz_productor" json:"bk_biz_productor" bson:"bk_biz_productor"`
-	Tester     string `field:"bk_biz_tester" json:"bk_biz_tester" bson:"bk_biz_tester"`
-	Developer  string `field:"bk_biz_developer" json:"bk_biz_developer" bson:"bk_biz_developer"`
-	Operator   string `field:"operator" json:"operator" bson:"operator"`
+	Maintainer     string `field:"bk_biz_maintainer" json:"bk_biz_maintainer" bson:"bk_biz_maintainer"`
+	Producer       string `field:"bk_biz_productor" json:"bk_biz_productor" bson:"bk_biz_productor"`
+	Tester         string `field:"bk_biz_tester" json:"bk_biz_tester" bson:"bk_biz_tester"`
+	Developer      string `field:"bk_biz_developer" json:"bk_biz_developer" bson:"bk_biz_developer"`
+	Operator       string `field:"operator" json:"operator" bson:"operator"`
 }
 
 // Parse load the data from mapstr attribute into ObjectUnique instance

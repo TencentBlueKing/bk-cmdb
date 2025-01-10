@@ -25,9 +25,10 @@ import (
 
 func upgradeCloudArea(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	opt := mapstr.MapStr{}
-	cloudMapping := make([]metadata.CloudMapping, 0)
+	cloudMapping := make([]CloudMapping, 0)
 	if err := db.Table(common.BKTableNameBasePlat).Find(opt).All(ctx, &cloudMapping); err != nil {
-		return fmt.Errorf("upgrade y3.9.202002131522, upgradeCloudArea failed because get cloud area data failed, err: %v", err)
+		return fmt.Errorf("upgrade y3.9.202002131522, upgradeCloudArea failed because get cloud area data failed, err: %v",
+			err)
 	}
 
 	for _, cloud := range cloudMapping {
@@ -51,4 +52,13 @@ func upgradeCloudArea(ctx context.Context, db dal.RDB, conf *history.Config) err
 	}
 
 	return nil
+}
+
+// CloudMapping cloud mapping
+type CloudMapping struct {
+	CreateTime Time   `json:"create_time" bson:"create_time"`
+	LastTime   Time   `json:"last_time" bson:"lsat_time"`
+	CloudName  string `json:"bk_cloud_name" bson:"bk_cloud_name"`
+	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
 }

@@ -117,7 +117,7 @@ func (a *audit) getDefaultAppID(kit *rest.Kit) (int64, error) {
 	cond := mapstr.MapStr{
 		common.BKDefaultField: common.DefaultAppFlag,
 	}
-	fields := []string{common.BKAppIDField, common.TenantID}
+	fields := []string{common.BKAppIDField}
 
 	results, err := a.getInstByCond(kit, common.BKInnerObjIDApp, cond, fields)
 	if err != nil {
