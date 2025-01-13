@@ -6,7 +6,7 @@ if [ ${DISABLE_CRYPTO} = true ];then
   exit 0
 fi
 
-if [ -d $TONGSUO_PATH ]; then
+if [ -d "$TONGSUO_PATH" ]; then
   echo "tongsuo already exists"
   exit 0
 fi
