@@ -51,7 +51,7 @@ func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (r
 }
 
 // Migrate TODO
-func (a *adminServer) Migrate(ctx context.Context, ownerID string, distribution string, h http.Header) error {
+func (a *adminServer) Migrate(ctx context.Context, h http.Header) error {
 	resp := new(metadata.Response)
 	subPath := "/migrate/database"
 

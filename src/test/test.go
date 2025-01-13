@@ -168,7 +168,7 @@ func ClearDatabase() {
 	})
 	Expect(err).Should(BeNil())
 
-	err = adminClient.Migrate(context.Background(), "0", "community", GetHeader())
+	err = adminClient.Migrate(context.Background(), GetHeader())
 	Expect(err).Should(BeNil())
 	err = adminClient.RunSyncDBIndex(context.Background(), GetHeader())
 	Expect(err).Should(BeNil())

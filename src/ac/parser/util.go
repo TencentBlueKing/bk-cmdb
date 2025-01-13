@@ -325,11 +325,10 @@ func (ps *parseStream) getResourcePoolBusinessID() (int64, error) {
 	}
 
 	opt := &metadata.QueryCondition{
-		Fields: []string{common.BKAppIDField, common.TenantID},
+		Fields: []string{common.BKAppIDField},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: mapstr.MapStr{
-			common.TenantID: tenantID,
-			"default":       1,
+			"default": 1,
 		},
 	}
 
@@ -340,20 +339,13 @@ func (ps *parseStream) getResourcePoolBusinessID() (int64, error) {
 	}
 
 	for _, biz := range result.Info {
-		bizTenantID, err := biz.String(common.TenantID)
+		id, err := util.GetInt64ByInterface(biz[common.BKAppIDField])
 		if err != nil {
-			return 0, err
+			return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError, "invalid resource biz id")
 		}
 
-		if bizTenantID == tenantID {
-			id, err := util.GetInt64ByInterface(biz[common.BKAppIDField])
-			if err != nil {
-				return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError, "invalid resource biz id")
-			}
-
-			resourcePoolBizIDMap.Store(tenantID, id)
-			return id, nil
-		}
+		resourcePoolBizIDMap.Store(tenantID, id)
+		return id, nil
 	}
 
 	return 0, errors.New(common.CCErrCommParamsIsInvalid, "biz with the tenant account does not exist")
@@ -379,12 +371,11 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 	}
 
 	opt := &metadata.QueryCondition{
-		Fields: []string{common.BKModuleIDField, common.TenantID},
+		Fields: []string{common.BKModuleIDField},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: mapstr.MapStr{
 			common.BKDefaultField: common.DefaultResModuleFlag,
 			common.BKAppIDField:   bizID,
-			common.TenantID:       tenantID,
 		},
 	}
 
@@ -395,21 +386,12 @@ func (ps *parseStream) getResourcePoolDefaultDirID() (dirID int64, err error) {
 	}
 
 	for _, directory := range result.Info {
-		dirTenantID, err := directory.String(common.TenantID)
+		id, err := util.GetInt64ByInterface(directory[common.BKModuleIDField])
 		if err != nil {
-			return 0, err
+			return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError, "invalid resource pool default directory id")
 		}
-
-		if dirTenantID == tenantID {
-			id, err := util.GetInt64ByInterface(directory[common.BKModuleIDField])
-			if err != nil {
-				return 0, errors.New(common.CCErrorUnknownOrUnrecognizedError,
-					"invalid resource pool default directory id")
-			}
-
-			resourcePoolDefaultDirIDMap.Store(tenantID, id)
-			return id, nil
-		}
+		resourcePoolDefaultDirIDMap.Store(tenantID, id)
+		return id, nil
 	}
 	return 0, errors.New(common.CCErrCommParamsIsInvalid,
 		"directory with the tenant account does not exist")

@@ -119,7 +119,7 @@ func (m *TenantManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermi
 	params[common.BKLanguageField] = "1" // 中文
 	params[common.BKLifeCycleField] = common.DefaultAppLifeCycleNormal
 
-	result, httpDoErr := m.ApiCli.AddDefaultApp(context.Background(), m.header, m.TenantID, params)
+	result, httpDoErr := m.ApiCli.AddDefaultApp(context.Background(), m.header, params)
 	if httpDoErr != nil {
 		blog.ErrorJSON("addDefaultApp searchDefaultApp http do error. err:%s, rid:%s", httpDoErr.Error(), rid)
 		return ccErr.CCError(common.CCErrCommHTTPDoRequestFailed), nil
@@ -135,7 +135,7 @@ func (m *TenantManager) addDefaultApp() (errors.CCErrorCoder, *metadata.IamPermi
 func (m *TenantManager) defaultAppIsExist() (bool, errors.CCErrorCoder, *metadata.IamPermission) {
 	ccErr := m.Engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(m.header))
 	rid := httpheader.GetRid(m.header)
-	result, httpDoErr := m.ApiCli.SearchDefaultApp(context.Background(), m.header, m.TenantID)
+	result, httpDoErr := m.ApiCli.SearchDefaultApp(context.Background(), m.header)
 	if httpDoErr != nil {
 		blog.ErrorJSON("defaultAppIsExist searchDefaultApp http do error. err:%s, rid:%s", httpDoErr.Error(), rid)
 		return false, ccErr.CCError(common.CCErrCommHTTPDoRequestFailed), nil
