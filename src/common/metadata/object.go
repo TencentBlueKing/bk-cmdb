@@ -347,29 +347,24 @@ func (o *YamlObject) Validate() errors.RawErrorInfo {
 			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKObjIDField + " no found"},
 		}
 	}
-
 	if common.IsInnerModel(o.ObjectID) {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKObjIDField + " is inner model"},
 		}
 	}
-
 	if len(o.ObjectName) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKObjNameField + " no found"},
 		}
 	}
-
 	if len(o.ObjIcon) == 0 {
 		o.ObjIcon = "icon-cc-default"
 	}
-
 	if len(o.ClsID) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKClassificationIDField + " no found"},
 		}
 	}
-
 	if len(o.ClsName) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKClassificationNameField + " no found"},
@@ -381,56 +376,46 @@ func (o *YamlObject) Validate() errors.RawErrorInfo {
 			return err
 		}
 	}
-
 	for index, item := range o.ObjectAttr {
-
 		if len(item.ObjectID) == 0 {
 			o.ObjectAttr[index].ObjectID = o.ObjectID
 		}
-
 		if len(item.PropertyID) == 0 {
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyIDField + " no found"},
 			}
 		}
-
 		if len(item.PropertyName) == 0 {
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyNameField + " no found"},
 			}
 		}
-
 		if len(item.PropertyGroup) == 0 {
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyGroupField + " no found"},
 			}
 		}
-
 		if len(item.PropertyGroupName) == 0 {
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrWebVerifyYamlFail,
 				Args:    []interface{}{common.BKPropertyGroupNameField + " no found"},
 			}
 		}
-
 		if len(item.PropertyType) == 0 {
 			return errors.RawErrorInfo{
 				ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{common.BKPropertyTypeField + " no found"},
 			}
 		}
-
 		propertyID := strings.ToLower(item.PropertyID)
 		if strings.HasPrefix(propertyID, "bk_") || strings.HasPrefix(propertyID, "_bk") {
 			o.ObjectAttr[index].IsPre = true
 		}
 	}
-
 	if len(o.ObjectAttrUnique) == 0 {
 		return errors.RawErrorInfo{
 			ErrCode: common.CCErrWebVerifyYamlFail, Args: []interface{}{"object unique no found"},
 		}
 	}
-
 	return errors.RawErrorInfo{}
 }
 

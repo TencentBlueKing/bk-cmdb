@@ -760,6 +760,11 @@ type ModuleDetailOfP struct {
 	ModuleName string `json:"bk_module_name"`
 }
 
+// GetBizSetProcTemplateOption get biz set proc template option
+type GetBizSetProcTemplateOption struct {
+	BizID int64 `json:"bk_biz_id"`
+}
+
 // HostDetailOfP TODO
 type HostDetailOfP struct {
 	HostID     int64  `json:"bk_host_id"`
@@ -1204,6 +1209,12 @@ type ServiceTemplateWithModuleInfo struct {
 	ServiceTemplate ServiceTemplate `json:"service_template"`
 	HostCount       int             `json:"host_count"`
 	Modules         []ModuleInst    `json:"modules"`
+}
+
+// ProcessTemplateRsp list process template response
+type ProcessTemplateRsp struct {
+	Data     ProcessTemplate `json:"data"`
+	BaseResp `json:",inline"`
 }
 
 // ProcessTemplate TODO

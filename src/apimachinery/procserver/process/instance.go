@@ -166,3 +166,103 @@ func (p *process) UpdateProcessInstancesByIDs(ctx context.Context, h http.Header
 		Into(resp)
 	return
 }
+
+// SearchBizSetSrvInstInModule search biz set service instance in module
+func (p *process) SearchBizSetSrvInstInModule(ctx context.Context, bizSetID int64, h http.Header,
+	data *metadata.GetServiceInstanceInModuleInput) (*metadata.MultipleServiceInstance, error) {
+
+	resp := new(metadata.MultipleServiceInstanceResult)
+	subPath := "/findmany/proc/biz_set/%d/service_instance"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizSetID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+	return &resp.Data, nil
+}
+
+// ListBizSetProcessInstances list process instances
+func (p *process) ListBizSetProcessInstances(ctx context.Context, bizSetID int64, h http.Header,
+	data *metadata.ListProcessInstancesOption) ([]metadata.ProcessInstance, error) {
+
+	resp := new(metadata.ListProcessInstancesRsp)
+	subPath := "/findmany/proc/biz_set/%d/process_instance"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizSetID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+	return resp.Data, nil
+}
+
+// GetBizSetProcessTemplate get process template
+func (p *process) GetBizSetProcessTemplate(ctx context.Context, bizSetID, proTemplateID int64, h http.Header,
+	data *metadata.GetBizSetProcTemplateOption) (*metadata.ProcessTemplate, error) {
+
+	resp := new(metadata.ProcessTemplateRsp)
+	subPath := "/find/proc/biz_set/%d/proc_template/id/%d"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizSetID, proTemplateID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+	return &resp.Data, nil
+}
+
+// ListBizSetSrvInstWithHost list service instances with host
+func (p *process) ListBizSetSrvInstWithHost(ctx context.Context, bizSetID int64, h http.Header,
+	data *metadata.ListServiceInstancesWithHostInput) (*metadata.MultipleServiceInstance, error) {
+
+	resp := new(metadata.MultipleServiceInstanceResult)
+	subPath := "/findmany/proc/biz_set/%d/service_instance/with_host"
+
+	err := p.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizSetID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+	return &resp.Data, nil
+}
