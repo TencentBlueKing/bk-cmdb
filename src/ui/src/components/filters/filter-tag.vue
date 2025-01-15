@@ -53,10 +53,12 @@
         return !!list.length
       },
       selected() {
-        return FilterStore.selected.filter((property) => {
+        const val = FilterStore.selected.filter((property) => {
           const { value } = this.condition[property.id]
           return value !== null && value !== undefined && !!value.toString().length
         })
+        if (!(val.length || this.showIPTag)) FilterStore.setActiveCollection(null)
+        return val
       },
       showClear() {
         const count = this.selected.length + (this.showIPTag ? 1 : 0)
@@ -66,6 +68,7 @@
     methods: {
       handleResetAll() {
         FilterStore.resetAll()
+        FilterStore.setActiveCollection(null)
       }
     }
   }
