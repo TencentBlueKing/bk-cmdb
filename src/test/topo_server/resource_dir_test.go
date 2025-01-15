@@ -144,8 +144,22 @@ var _ = Describe("resource pool directory test", func() {
 var moduleID1, moduleID2 int64
 
 func prepareData() {
-	// 删除资源池目录表
-	err := test.GetDB().Table(common.BKTableNameBaseModule).Delete(context.Background(), map[string]interface{}{})
+	// delete resource directory, except resource module
+	resId := test.GetResBizID()
+	idCond := map[string]interface{}{
+		common.BKAppIDField: map[string]interface{}{
+			common.BKDBNE: resId,
+		},
+	}
+	nameCond := map[string]interface{}{
+		common.BKModuleNameField: map[string]interface{}{
+			common.BKDBNE: common.DefaultResModuleName,
+		},
+	}
+	deleteCond := map[string]interface{}{
+		common.BKDBOR: []map[string]interface{}{idCond, nameCond},
+	}
+	err := test.GetDB().Table(common.BKTableNameBaseModule).Delete(context.Background(), deleteCond)
 	Expect(err).NotTo(HaveOccurred())
 
 	// 准备测试数据

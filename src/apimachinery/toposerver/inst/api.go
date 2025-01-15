@@ -47,15 +47,22 @@ type InstanceInterface interface {
 		resp *metadata.SearchInnterAppTopoResult, err error)
 	SearchBriefBizTopo(ctx context.Context, h http.Header, bizID int64,
 		input map[string]interface{}) (resp *metadata.SearchBriefBizTopoResult, err error)
+	SearchNodeRelation(ctx context.Context, h http.Header,
+		input *metadata.GetBriefBizRelationOptions) ([]*metadata.BriefBizRelations, error)
 	CreateInst(ctx context.Context, objID string, h http.Header, dat interface{}) (resp *metadata.CreateInstResult,
 		err error)
 	CreateManyCommInst(ctx context.Context, objID string, header http.Header,
 		data metadata.CreateManyCommInst) (resp *metadata.CreateManyCommInstResult, err error)
-	DeleteInst(ctx context.Context, objID string, instID int64, h http.Header) (resp *metadata.Response, err error)
+	DeleteInst(ctx context.Context, objID string, instID int64, h http.Header) (
+		resp *metadata.Response, err error)
+	DeleteInsts(ctx context.Context, objID string, input map[string]interface{}, h http.Header) error
+	UpdateInsts(ctx context.Context, objID string, input map[string]interface{}, h http.Header) error
 	UpdateInst(ctx context.Context, objID string, instID int64, h http.Header,
 		dat map[string]interface{}) (resp *metadata.Response, err error)
 	SelectInsts(ctx context.Context, objID string, h http.Header, s *metadata.SearchParams) (
 		resp *metadata.SearchInstResult, err error)
+	SearchInstAssociation(ctx context.Context, header http.Header, input *metadata.SearchParams) (
+		*metadata.InstResult, error)
 	SelectInstsAndAsstDetail(ctx context.Context, objID string, h http.Header,
 		s *metadata.SearchParams) (resp *metadata.SearchInstResult, err error)
 	InstSearch(ctx context.Context, objID string, h http.Header,
@@ -70,6 +77,10 @@ type InstanceInterface interface {
 		p *metadata.SearchParams) (resp *metadata.SearchAssociationTopoResult, err error)
 	CreateModule(ctx context.Context, appID, setID int64, h http.Header, dat map[string]interface{}) (mapstr.MapStr,
 		errors.CCErrorCoder)
+	BatchCreateModule(ctx context.Context, h http.Header, data map[string]interface{}) (mapstr.MapStr,
+		errors.CCErrorCoder)
+	ListModulesByServiceTemplateID(ctx context.Context, bizID int64, svrTemplateID int64,
+		h http.Header, data map[string]interface{}) (*metadata.InstDataInfo, errors.CCErrorCoder)
 	DeleteModule(ctx context.Context, appID, setID, moduleID int64, h http.Header) errors.CCErrorCoder
 	UpdateModule(ctx context.Context, appID, setID, moduleID int64, h http.Header,
 		dat map[string]interface{}) errors.CCErrorCoder
@@ -82,16 +93,24 @@ type InstanceInterface interface {
 	SearchModuleWithRelation(ctx context.Context, appID string, h http.Header,
 		dat map[string]interface{}) (resp *metadata.ResponseInstData, err error)
 	CreateSet(ctx context.Context, appID int64, h http.Header, dat mapstr.MapStr) (mapstr.MapStr, errors.CCErrorCoder)
+	CreateSetBatch(ctx context.Context, appID int64, h http.Header, data mapstr.MapStr) ([]metadata.OneSetCreateResult,
+		error)
 	DeleteSet(ctx context.Context, appID, setID int64, h http.Header) errors.CCErrorCoder
 	UpdateSet(ctx context.Context, appID, setID int64, h http.Header, dat map[string]interface{}) errors.CCErrorCoder
-	SearchSet(ctx context.Context, appID string, h http.Header,
-		s *params.SearchParams) (resp *metadata.SearchInstResult, err error)
+	ModuleHasHosts(ctx context.Context, setTemplateId, bizId int64, h http.Header,
+		data *metadata.SetWithHostFlagOption) ([]metadata.SetWithHostFlagResult, error)
+	SearchSet(ctx context.Context, appID string, h http.Header, s *params.SearchParams) (
+		resp *metadata.SearchInstResult, err error)
 	SearchSetBatch(ctx context.Context, appID string, h http.Header,
 		s *metadata.SearchInstBatchOption) (resp *metadata.MapArrayResponse, err error)
 	SearchInstsNames(ctx context.Context, h http.Header,
 		s *metadata.SearchInstsNamesOption) (resp *metadata.ArrayResponse, err error)
 	GetTopoNodeHostAndServiceInstCount(ctx context.Context, h http.Header, objID int64,
 		s *metadata.HostAndSerInstCountOption) (resp *metadata.GetHostAndSerInstCountResult, err error)
+	SearchModuleInBizSet(ctx context.Context, bizSetID int64, bizID int64, setID int64,
+		h http.Header) (*metadata.InstResult, errors.CCErrorCoder)
+	SearchBizSetTopoPath(ctx context.Context, bizSetID int64, bizID int64, h http.Header, data mapstr.MapStr) (
+		*metadata.TopoPathResult, errors.CCErrorCoder)
 
 	// SearchObjectInstances searches object instances.
 	SearchObjectInstances(ctx context.Context, header http.Header,

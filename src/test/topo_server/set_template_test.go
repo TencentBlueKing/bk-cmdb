@@ -20,10 +20,12 @@ import (
 	. "github.com/onsi/gomega/gstruct"
 )
 
-var bizID, categoryId, serviceTemplateID, serviceTemplateID2, serviceTemplateID3 int64
+var bizID, categoryId, serviceTemplateID, serviceTemplateID2, serviceTemplateID3, hostId1, hostId2, moduleId, resBizId int64
 
-var _ = Describe("create empty set template test", func() {
+var _ = Describe("create normal set template test", func() {
 	ctx := context.Background()
+
+	BeforeEach(prepareSetTemplateData)
 	It("create set template", func() {
 		bizResult := new(metadata.BizInst)
 		dbErr := test.GetDB().Table(common.BKTableNameBaseApp).Find(mapstr.MapStr{
@@ -40,12 +42,6 @@ var _ = Describe("create empty set template test", func() {
 		Expect(err.GetCode()).Should(Equal(common.CCErrCommParamsNeedSet))
 		Expect(rsp).To(BeNil())
 	})
-})
-
-var _ = Describe("create normal set template test", func() {
-	ctx := context.Background()
-
-	BeforeEach(prepareSetTemplateData)
 
 	It("normal set template test", func() {
 		var setTemplateID int64
@@ -425,6 +421,73 @@ var _ = Describe("set template attribute test", func() {
 			Expect(rsp.Count).To(Equal(2))
 			Expect(util.GetStrByInterface(rsp.Info[0][common.BKModuleNameField])).To(Equal("svcTpl1"))
 			Expect(util.GetStrByInterface(rsp.Info[1][common.BKModuleNameField])).To(Equal("svcTpl2"))
+			var cvrtErr error
+			moduleId, cvrtErr = util.GetInt64ByInterface(rsp.Info[1][common.BKModuleIDField])
+			Expect(cvrtErr).NotTo(HaveOccurred())
+		})
+
+		By("add host to resource pool", func() {
+
+			input := map[string]interface{}{
+				"bk_biz_id": bizID,
+				"host_info": map[string]interface{}{
+					"1": map[string]interface{}{
+						"bk_host_innerip": "127.0.0.1",
+						"bk_asset_id":     "addhost_api_asset_1",
+						"bk_cloud_id":     0,
+					},
+					"2": map[string]interface{}{
+						"bk_host_innerip": "127.0.0.2",
+						"bk_asset_id":     "addhost_api_asset_2",
+						"bk_cloud_id":     0,
+					},
+				},
+			}
+			rsp, err := hostServerClient.AddHost(context.Background(), header, input)
+			testutil.RegisterResponseWithRid(err, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+
+			searchInput := &metadata.HostCommonSearch{
+				AppID: bizID,
+			}
+			resp, err := hostServerClient.SearchHostWithBiz(context.Background(), header, searchInput)
+			testutil.RegisterResponseWithRid(err, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Result).To(Equal(true))
+			Expect(resp.Data.Count).To(Equal(2))
+			hostId1, err = util.GetInt64ByInterface(resp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+			hostId2, err = util.GetInt64ByInterface(resp.Data.Info[1]["host"].(map[string]interface{})["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		By("transfer host to module", func() {
+			transInput := map[string]interface{}{
+				"bk_biz_id": bizID,
+				"bk_host_id": []int64{
+					hostId1,
+					hostId2,
+				},
+				"bk_module_id": []int64{
+					moduleId,
+				},
+				"is_increment": true,
+			}
+			rsp, rawErr := hostServerClient.TransferHostModule(context.Background(), header, transInput)
+			testutil.RegisterResponseWithRid(rsp, header)
+			Expect(rawErr).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+		})
+
+		By("check module has hosts", func() {
+			input := &metadata.SetWithHostFlagOption{
+				SetIDs: []int64{setID},
+			}
+			rsp, err := instClient.ModuleHasHosts(context.Background(), setTemplateID, bizID, header, input)
+			testutil.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp[0].HasHost).NotTo(Equal(true))
 		})
 
 		By("update set without set template attributes", func() {
@@ -623,19 +686,19 @@ var _ = Describe("set template attribute test", func() {
 			Expect(rsp.Attributes[0].AttributeID).To(Equal(setTempAttrIDs[1]))
 		})
 
-		By("delete set", func() {
+		By("delete set with host", func() {
 			err := topoServerClient.Instance().DeleteSet(ctx, bizID, setID, header)
 			testutil.RegisterResponseWithRid(err, header)
-			Expect(err).To(BeNil())
+			Expect(err).NotTo(BeNil())
 		})
 
-		By("delete set template", func() {
+		By("delete set template cited", func() {
 			option := metadata.DeleteSetTemplateOption{
 				SetTemplateIDs: []int64{setTemplateID},
 			}
 			err := topoServerClient.SetTemplate().DeleteSetTemplate(ctx, header, bizID, option)
 			testutil.RegisterResponseWithRid(err, header)
-			Expect(err).To(BeNil())
+			Expect(err).NotTo(BeNil())
 		})
 
 		By("check if set template is deleted", func() {
@@ -645,7 +708,7 @@ var _ = Describe("set template attribute test", func() {
 			rsp, err := topoServerClient.SetTemplate().ListSetTemplate(ctx, header, bizID, option)
 			testutil.RegisterResponseWithRid(rsp, header)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.Count).To(BeZero())
+			Expect(rsp.Count).NotTo(BeZero())
 		})
 
 		By("check if set template attributes are deleted", func() {
@@ -655,7 +718,7 @@ var _ = Describe("set template attribute test", func() {
 			}
 			rsp, err := topoServerClient.SetTemplate().ListSetTemplateAttr(ctx, header, option)
 			testutil.RegisterResponseWithRid(rsp, header)
-			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 

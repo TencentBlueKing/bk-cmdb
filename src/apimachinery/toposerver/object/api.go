@@ -50,6 +50,8 @@ type ObjectInterface interface {
 	UpdateObjectTopoGraphics(ctx context.Context, scopeType string, scopeID string, h http.Header,
 		data map[string]interface{}) (resp *metadata.Response, err error)
 	CreatePropertyGroup(ctx context.Context, h http.Header, dat metadata.Group) (resp *metadata.Response, err error)
+	UpdateObjectAttributeIndex(ctx context.Context, objID string, id int64, h http.Header,
+		data metadata.UpdateAttrIndexInput) error
 	UpdatePropertyGroup(ctx context.Context, h http.Header, cond *metadata.PropertyGroupCondition) (
 		resp *metadata.Response, err error)
 	ExchangePropertyGroupIndex(ctx context.Context, h http.Header, cond *metadata.ExchangeGroupIndex) (

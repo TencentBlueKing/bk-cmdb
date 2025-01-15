@@ -6,6 +6,7 @@ import (
 
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/selector"
 )
 
 // CreateServiceInstance create service instances
@@ -203,4 +204,78 @@ func (s *service) ServiceInstanceFindLabels(ctx context.Context, h http.Header,
 		Do().
 		Into(resp)
 	return
+}
+
+// ListServiceInstancesWithHost list service instance with host
+func (s *service) ListServiceInstancesWithHost(ctx context.Context, h http.Header,
+	data *metadata.ListServiceInstancesWithHostInput) (*metadata.MultipleServiceInstance, error) {
+
+	resp := new(metadata.MultipleServiceInstanceResult)
+	subPath := "/findmany/proc/service_instance/with_host"
+
+	err := s.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+
+	return &resp.Data, nil
+}
+
+// ListServiceInstancesDetails list service instance details
+func (s *service) ListServiceInstancesDetails(ctx context.Context, h http.Header,
+	data *metadata.ListServiceInstanceDetailOption) (*metadata.MultipleServiceInstanceDetail, error) {
+
+	resp := new(metadata.MultipleServiceInstanceDetailResult)
+	subPath := "/findmany/proc/service_instance/details"
+
+	err := s.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+
+	return &resp.Data, nil
+}
+
+// UpdateSvrInstanceLabels update service instance labels
+func (s *service) UpdateSvrInstanceLabels(ctx context.Context, h http.Header,
+	data *selector.SvcInstLabelUpdateOption) error {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/updatemany/proc/service_instance/labels"
+
+	err := s.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
 }

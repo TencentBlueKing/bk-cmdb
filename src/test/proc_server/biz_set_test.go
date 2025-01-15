@@ -219,7 +219,7 @@ var _ = Describe("biz set test", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("prepare environment, add host to resource pool and transfer to biz set", func() {
+	It(fmt.Sprintf("prepare environment, add host to biz %d", bizID1), func() {
 		// add host
 		input := map[string]interface{}{
 			"bk_biz_id": bizID1,

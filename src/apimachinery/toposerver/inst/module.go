@@ -170,3 +170,53 @@ func (t *instanceClient) SearchModuleWithRelation(ctx context.Context, appID str
 		Into(resp)
 	return
 }
+
+// BatchCreateModule create modules batch
+func (t *instanceClient) BatchCreateModule(ctx context.Context, h http.Header, data map[string]interface{}) (
+	mapstr.MapStr, errors.CCErrorCoder) {
+
+	resp := new(metadata.CreateInstResult)
+	subPath := "/createmany/module"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+
+	return resp.Data, nil
+}
+
+// ListModulesByServiceTemplateID list modules by service template id
+func (t *instanceClient) ListModulesByServiceTemplateID(ctx context.Context, bizID int64, svrTemplateID int64,
+	h http.Header, data map[string]interface{}) (*metadata.InstDataInfo, errors.CCErrorCoder) {
+
+	resp := new(metadata.ResponseInstData)
+	subPath := "/module/bk_biz_id/%d/service_template_id/%d"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, bizID, svrTemplateID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+
+	return &resp.Data, nil
+}

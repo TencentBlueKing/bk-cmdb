@@ -124,3 +124,26 @@ func (t *object) SelectPropertyGroupByObjectID(ctx context.Context, objID string
 		Into(resp)
 	return
 }
+
+// UpdateObjectAttributeIndex update object attribute index
+func (t *object) UpdateObjectAttributeIndex(ctx context.Context, objID string, id int64, h http.Header,
+	data metadata.UpdateAttrIndexInput) error {
+
+	resp := new(metadata.Response)
+	subPath := "/update/objectattr/index/%s/%d"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(data).
+		SubResourcef(subPath, objID, id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+	if resp.CCError() != nil {
+		return resp.CCError()
+	}
+	return nil
+}

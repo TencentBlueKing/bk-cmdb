@@ -47,6 +47,9 @@ type ApiServerClientInterface interface {
 	CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error)
 	UpdateObjectAtt(ctx context.Context, objID string, h http.Header,
 		data map[string]interface{}) (resp *metadata.Response, err error)
+	CreateBizCustomField(ctx context.Context, bizID int64, h http.Header, params *metadata.Attribute) (
+		*metadata.ObjAttDes, error)
+	UpdateBizCustomField(ctx context.Context, bizID, id int64, h http.Header, params mapstr.MapStr) error
 	DeleteObjectAtt(ctx context.Context, objID string, h http.Header) (resp *metadata.Response, err error)
 	GetObjectAttr(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ObjectAttrResult, err error)
 	GetHostData(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.QueryInstResult, err error)
@@ -68,7 +71,6 @@ type ApiServerClientInterface interface {
 		request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)
 	ImportAssociation(ctx context.Context, h http.Header, objID string,
 		input *metadata.RequestImportAssociation) (resp *metadata.ResponeImportAssociation, err error)
-
 	CreateBiz(ctx context.Context, h http.Header, dat map[string]interface{}) (
 		resp *metadata.CreateInstResult, err error)
 	UpdateBiz(ctx context.Context, bizID string, h http.Header, data map[string]interface{}) (
@@ -77,6 +79,8 @@ type ApiServerClientInterface interface {
 		h http.Header) errors.CCErrorCoder
 	UpdateBizPropertyBatch(ctx context.Context, h http.Header, param metadata.UpdateBizPropertyBatchParameter) (
 		resp *metadata.Response, err error)
+	UpdateBusinessStatus(ctx context.Context, flag string, bizID int64, h http.Header,
+		data *metadata.UpdateBusinessStatusOption) error
 	DeleteBiz(ctx context.Context, h http.Header, param metadata.DeleteBizParam) error
 	SearchBiz(ctx context.Context, h http.Header, param *metadata.QueryBusinessRequest) (
 		resp *metadata.SearchInstResult, err error)
@@ -118,6 +122,8 @@ type ApiServerClientInterface interface {
 	HealthCheck() (bool, error)
 	SearchProject(ctx context.Context, h http.Header, params *metadata.SearchProjectOption) (resp *metadata.InstResult,
 		err error)
+	TransferHostToResPool(ctx context.Context, bizID int64, h http.Header,
+		data *metadata.TransferHostWithAutoClearServiceInstanceOption) error
 }
 
 // NewApiServerClientInterface TODO

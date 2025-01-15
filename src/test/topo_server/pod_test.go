@@ -20,6 +20,7 @@ package topo_server_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"configcenter/pkg/filter"
 	"configcenter/src/common"
@@ -451,5 +452,71 @@ var _ = Describe("pod test", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(result.Info)).To(Equal(1))
+	})
+
+	It("list container by topo", func() {
+		params := &types.GetContainerByTopoOption{
+			BizID:           bizID,
+			PodFields:       []string{"operator"},
+			ContainerFields: []string{"container_uid"},
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+			},
+		}
+
+		resp, err := kubeClient.ListContainerByTopo(context.Background(), header, params)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.Info[0].Container["container_uid"]).To(Equal("containerUID"))
+	})
+
+	It("update cluster type", func() {
+		params := &types.UpdateClusterTypeOpt{
+			BizID: bizID,
+			ID:    clusterID,
+			Type:  types.SharedClusterType,
+		}
+		err := kubeClient.UpdateClusterType(context.Background(), header, params)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("check update cluster type", func() {
+		params := &types.QueryClusterOption{
+			BizID:  bizID,
+			Fields: []string{"type"},
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+			},
+		}
+		resp, err := kubeClient.SearchCluster(context.Background(), header, params)
+		util.RegisterResponseWithRid(resp, header)
+		Expect(err).NotTo(HaveOccurred())
+		result := fmt.Sprintf("%v", resp.Data)
+		Expect(result).To(ContainSubstring(string(types.SharedClusterType)))
+	})
+
+	It("delete pods batch", func() {
+		input := &types.DeletePodsOption{
+			Data: []types.DeletePodData{
+				{
+					BizID:  bizID,
+					PodIDs: []int64{podID},
+				}},
+		}
+		err := kubeClient.DeletePods(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("check delete pods batch", func() {
+		input := &types.PodQueryOption{
+			BizID: bizID,
+			Page: metadata.BasePage{
+				Start: 0,
+				Limit: 10,
+			}}
+		resp, err := kubeClient.ListPod(context.Background(), header, input)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.Count).To(Equal(0))
 	})
 })

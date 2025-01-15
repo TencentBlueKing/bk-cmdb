@@ -75,6 +75,13 @@ type KubeOperationInterface interface {
 	ListPod(ctx context.Context, header http.Header, option *types.PodQueryOption) (
 		*metadata.InstDataInfo, errors.CCErrorCoder)
 
+	DeletePods(ctx context.Context, header http.Header, params *types.DeletePodsOption) errors.CCErrorCoder
+
+	UpdateClusterType(ctx context.Context, header http.Header, params *types.UpdateClusterTypeOpt) error
+
+	ListContainerByTopo(ctx context.Context, header http.Header, params *types.GetContainerByTopoOption) (
+		*types.ContainerInfo, errors.CCErrorCoder)
+
 	BatchCreatePod(ctx context.Context, header http.Header, data *types.CreatePodsOption) ([]int64, errors.CCErrorCoder)
 
 	// ListContainer list container

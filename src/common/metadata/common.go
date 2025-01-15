@@ -433,6 +433,12 @@ type BatchCreateSetRequest struct {
 	Sets []map[string]interface{} `json:"sets"`
 }
 
+// BatchCreateSetResp batch create set response struct
+type BatchCreateSetResp struct {
+	Data     []OneSetCreateResult `json:"data"`
+	BaseResp `json:",inline"`
+}
+
 // OneSetCreateResult create one set return result
 type OneSetCreateResult struct {
 	Index    int         `json:"index"`

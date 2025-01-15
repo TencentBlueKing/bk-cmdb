@@ -13,11 +13,11 @@
 package inst
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/errors"
 	"context"
 	"net/http"
 
+	"configcenter/src/common"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 )
 
@@ -126,4 +126,30 @@ func (t *instanceClient) SearchBriefBizTopo(ctx context.Context, h http.Header, 
 		Do().
 		Into(resp)
 	return
+}
+
+// SearchNodeRelation search brief node relation
+func (t *instanceClient) SearchNodeRelation(ctx context.Context, h http.Header,
+	input *metadata.GetBriefBizRelationOptions) ([]*metadata.BriefBizRelations, error) {
+
+	resp := new(metadata.BriefBizRelationsResp)
+	subPath := "/find/topo/biz/brief_node_relation"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(input).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
+	}
+
+	if resp.CCError() != nil {
+		return nil, resp.CCError()
+	}
+
+	return resp.BriefBizRelations, nil
 }

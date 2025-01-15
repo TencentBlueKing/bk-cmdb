@@ -9,6 +9,7 @@ import (
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	params "configcenter/src/common/paraparse"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
 	"configcenter/src/test/util"
@@ -18,8 +19,8 @@ import (
 )
 
 var _ = Describe("business test", func() {
-	var bizId, bizId2 string
-	var bizIdInt int64
+	var bizId, bizId2, bizID string
+	var bizIdInt, bizId1, bizID2, hostID1 int64
 
 	It("create business bk_biz_name = 'eereeede'", func() {
 		test.DeleteAllBizs()
@@ -40,6 +41,154 @@ var _ = Describe("business test", func() {
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("eereeede"))
 		bizId = commonutil.GetStrByInterface(rsp.Data["bk_biz_id"])
+	})
+
+	It("create business bk_biz_name = 'test_biz_status', set and module", func() {
+		input := map[string]interface{}{
+			"life_cycle":        "2",
+			"language":          "1",
+			"bk_biz_maintainer": "admin",
+			"bk_biz_productor":  "",
+			"bk_biz_tester":     "",
+			"bk_biz_developer":  "",
+			"operator":          "",
+			"bk_biz_name":       "test_biz_status",
+			"time_zone":         "Africa/Accra",
+		}
+		rsp, err := apiServerClient.CreateBiz(context.Background(), header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data).To(ContainElement("test_biz_status"))
+		bizID = commonutil.GetStrByInterface(rsp.Data["bk_biz_id"])
+		bizIdStr := commonutil.GetStrByInterface(bizID)
+		bizId1, err = strconv.ParseInt(bizIdStr, 10, 64)
+	})
+
+	It("add host and get host id", func() {
+		cloudID := test.GetCloudID()
+		hostInput := map[string]interface{}{
+			"bk_biz_id": bizId1,
+			"host_info": map[string]interface{}{
+				"1": map[string]interface{}{
+					"bk_host_innerip": "127.0.0.8",
+					"bk_cloud_id":     cloudID,
+				},
+			},
+		}
+		hostRsp, err := hostServerClient.AddHost(context.Background(), header, hostInput)
+		util.RegisterResponseWithRid(hostRsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hostRsp.Result).To(Equal(true), hostRsp.ToString())
+
+		searchInput := &metadata.HostCommonSearch{
+			AppID: bizId1,
+		}
+		resp, err := hostServerClient.SearchHostWithBiz(context.Background(), header, searchInput)
+		util.RegisterResponseWithRid(err, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.Result).To(Equal(true))
+		Expect(resp.Data.Count).To(Equal(1))
+		hostID1, err = commonutil.GetInt64ByInterface(resp.Data.Info[0]["host"].(map[string]interface{})["bk_host_id"])
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("change biz status disable with host", func() {
+		input := &metadata.UpdateBusinessStatusOption{
+			BizName: "test_biz_status",
+		}
+		err := apiServerClient.UpdateBusinessStatus(context.Background(), string(common.DataStatusDisabled), bizId1,
+			header, input)
+		util.RegisterResponseWithRid(err, header)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It(fmt.Sprintf("transfer host to resource pool, biz: %d", bizId1), func() {
+		transferData := &metadata.DefaultModuleHostConfigParams{
+			ApplicationID: bizId1,
+			HostIDs:       []int64{hostID1},
+		}
+		resp, transferErr := hostServerClient.MoveHostToResourcePool(context.Background(), header, transferData)
+		util.RegisterResponseWithRid(resp, header)
+		Expect(transferErr).NotTo(HaveOccurred())
+		Expect(resp.CCError()).NotTo(HaveOccurred())
+	})
+
+	It("change biz status disable", func() {
+		input := &metadata.UpdateBusinessStatusOption{
+			BizName: "eereeede",
+		}
+		var err error
+		bizID2, err = strconv.ParseInt(bizId, 10, 64)
+		Expect(err).To(BeNil())
+		err = apiServerClient.UpdateBusinessStatus(context.Background(), string(common.DataStatusDisabled), bizID2,
+			header, input)
+		util.RegisterResponseWithRid(err, header)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("check change biz status disable", func() {
+		input := &metadata.QueryCondition{
+			Condition: mapstr.MapStr{
+				"bk_biz_name": "eereeede",
+			},
+		}
+		resp, err := apiServerClient.ReadInstance(context.Background(), header, "biz", input)
+		util.RegisterResponseWithRid(resp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.Data.Count).To(Equal(0))
+	})
+
+	It("change biz status enable", func() {
+		input := &metadata.UpdateBusinessStatusOption{
+			BizName: "eereeede",
+		}
+		err := apiServerClient.UpdateBusinessStatus(context.Background(), string(common.DataStatusEnable), bizID2,
+			header, input)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("check change biz status enable", func() {
+		input := &metadata.QueryCondition{
+			Condition: mapstr.MapStr{
+				"bk_biz_name": "eereeede",
+			},
+		}
+		resp, err := apiServerClient.ReadInstance(context.Background(), header, "biz", input)
+		util.RegisterResponseWithRid(resp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.Data.Count).To(Equal(1))
+		Expect(resp.Data.Info[0]["bk_biz_name"]).To(Equal("eereeede"))
+		id, err := commonutil.GetInt64ByInterface(resp.Data.Info[0]["bk_biz_id"])
+		Expect(err).To(BeNil())
+		Expect(id).To(Equal(bizID2))
+	})
+
+	It("change biz status disable", func() {
+		input := &metadata.UpdateBusinessStatusOption{
+			BizName: "test_biz_status",
+		}
+		err := apiServerClient.UpdateBusinessStatus(context.Background(), string(common.DataStatusDisabled), bizId1,
+			header, input)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It(fmt.Sprintf("delete business bk_biz_id = %d", bizId1), func() {
+		input := metadata.DeleteBizParam{
+			BizID: []int64{bizId1},
+		}
+		err := apiServerClient.DeleteBiz(context.Background(), header, input)
+		util.RegisterResponseWithRid(err, header)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("search business basic info", func() {
+		bizID, err := strconv.ParseInt(bizId, 10, 64)
+		rsp, err := instClient.GetAppBasicInfo(context.Background(), header, bizID)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Data.BizName).To(Equal("eereeede"))
+		Expect(rsp.Data.BizID).To(Equal(bizID))
 	})
 
 	It("create business bk_biz_name = 'eereeede' again", func() {
@@ -97,6 +246,30 @@ var _ = Describe("business test", func() {
 		bizIdInt, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
 		Expect(err).NotTo(HaveOccurred())
 		bizId2 = strconv.FormatInt(bizIdInt, 10)
+	})
+
+	It("search resource business", func() {
+		rsp, err := instClient.GetDefaultApp(context.Background(), header)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Data.Count).To(Equal(1))
+		Expect(rsp.Data.Info[0]).To(ContainElement("资源池"))
+	})
+
+	It("search business bk_biz_name = 'mmrmm'", func() {
+		input := &params.SearchParams{
+			Condition: map[string]interface{}{
+				"bk_biz_name": "mmrmm",
+			},
+		}
+		rsp, err := instClient.SearchApp(context.Background(), header, input)
+		util.RegisterResponseWithRid(rsp, header)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Data.Count).To(Equal(1))
+		Expect(rsp.Data.Info[0]["bk_biz_name"]).To(Equal("mmrmm"))
+		id, err := commonutil.GetInt64ByInterface(rsp.Data.Info[0]["bk_biz_id"])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(id).To(Equal(bizIdInt))
 	})
 
 	It("search business change start limit", func() {

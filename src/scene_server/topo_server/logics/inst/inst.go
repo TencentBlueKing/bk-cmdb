@@ -1172,8 +1172,16 @@ func (c *commonInst) validMainLineParentID(kit *rest.Kit, objID string, data map
 	}
 
 	def, exist := data.Get(common.BKDefaultField)
-	if exist && def.(int) != common.DefaultFlagDefaultValue {
-		return nil
+	if exist {
+		defaultInt, err := util.GetIntByInterface(def)
+		if err != nil {
+			blog.Errorf("failed to parse the default value, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+		if defaultInt != common.DefaultFlagDefaultValue {
+			return nil
+		}
 	}
 
 	bizID, err := metadata.GetBizID(data)
