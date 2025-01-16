@@ -85,6 +85,7 @@
         this.selected = value
       },
       selected(selected) {
+        if(selected === this.value) return
         this.$emit('input', selected)
         this.$emit('on-selected', selected)
       }
