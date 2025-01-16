@@ -40,7 +40,7 @@
               name="categoryName"
               v-validate="'required|namedCharacter|length:128'"
               v-model="mainCategoryName"
-              @on-confirm="handleEditCategory(mainCategory, 'main', index)"
+              @on-confirm="handleEditCategory(mainCategory, 'main')"
               @on-cancel="handleCloseEditMain">
             </category-input>
           </div>
@@ -114,7 +114,7 @@
               name="categoryName"
               v-validate="'required|namedCharacter|length:128'"
               v-model="childCategoryName"
-              @on-confirm="handleEditCategory(childCategory, 'child', index)"
+              @on-confirm="handleEditCategory(childCategory, 'child')"
               @on-cancel="handleCloseEditChild">
             </category-input>
             <template v-else>
@@ -276,8 +276,8 @@
       ...mapGetters('objectBiz', ['bizId'])
     },
     watch: {
-      list(list) {
-        this.displayList = list
+      list() {
+        this.handleFilter()
       },
       keyword() {
         this.handleFilter()
@@ -366,7 +366,7 @@
           this.createdCategory(name, rootId)
         }
       },
-      async handleEditCategory(data, type, mainIndex) {
+      async handleEditCategory(data, type) {
         if (!await this.$validator.validateAll()) {
           this.$bkMessage({
             message: this.errors.first('categoryName') || this.$t('请输入分类名称'),
@@ -386,16 +386,17 @@
             this.$success(this.$t('保存成功'))
             this.handleCloseEditChild()
             this.handleCloseEditMain()
-            if (mainIndex !== undefined && type === 'child') {
-              const childList = this.list[mainIndex].child_category_list.map((child) => {
+            const index = this.list.findIndex(category => category.id === res.bk_root_id)
+            if (type === 'child') {
+              const childList = this.list[index].child_category_list.map((child) => {
                 if (child.id === res.id) {
                   return res
                 }
                 return child
               })
-              this.$set(this.list[mainIndex], 'child_category_list', childList)
+              this.$set(this.list[index], 'child_category_list', childList)
             } else {
-              this.$set(this.list[mainIndex], 'name', res.name)
+              this.$set(this.list[index], 'name', res.name)
             }
           })
             .finally(() => {
