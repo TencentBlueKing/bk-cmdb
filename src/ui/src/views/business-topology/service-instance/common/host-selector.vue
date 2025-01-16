@@ -17,7 +17,7 @@
         <h2 class="title">{{title || $t('选择主机')}}</h2>
         <div class="host-list">
           <div class="top-bar">
-            <div class="topo-path">已自动过滤<div class="path" :title="topoPath">{{topoPath}}</div>可选的主机：</div>
+            <div class="topo-path">{{ $t('已自动过滤') }}<div class="path" :title="topoPath">{{topoPath}}</div>{{ $t('可选的主机：') }}</div>
             <div class="search-input">
               <bk-input clearable right-icon="bk-icon icon-search" v-model.trim="keyword"></bk-input>
             </div>

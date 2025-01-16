@@ -83,6 +83,7 @@
   import Tippy from 'bk-magic-vue/lib/utils/tippy'
   import Axios from 'axios'
   import has from 'has'
+  import i18n from '@/i18n'
   export default {
     name: 'cmdb-tag-input',
     components: {
@@ -95,7 +96,7 @@
       },
       placeholder: {
         type: String,
-        default: '请输入'
+        default: i18n.t('请输入')
       },
       disabled: {
         type: Boolean,
@@ -127,7 +128,7 @@
       historyKey: String,
       historyLabel: {
         type: String,
-        default: '最近选择'
+        default: i18n.t('最近选择')
       },
       historyRecord: {
         type: Number,
@@ -137,7 +138,7 @@
       exactSearchMethod: Function,
       emptyText: {
         type: String,
-        default: '暂无数据'
+        default: i18n.t('暂无数据')
       },
       tagClearable: {
         type: Boolean,
