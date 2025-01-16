@@ -164,7 +164,7 @@
                 rule.operator = 'exist'
               } else {
                 rule.operator = 'contains'
-                rule.value = String(value.id).trim()
+                rule.value = String(value.name).trim()
               }
               rules.push(rule)
             } else {
