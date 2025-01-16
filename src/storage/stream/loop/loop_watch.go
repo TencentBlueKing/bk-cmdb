@@ -10,6 +10,7 @@
  * limitations under the License.
  */
 
+// Package loop defines loop watch logics
 package loop
 
 import (
@@ -45,23 +46,17 @@ func (lw *LoopsWatch) WithOne(opts *types.LoopOneOptions) error {
 		return err
 	}
 
-	startToken, err := opts.TokenHandler.GetStartWatchToken(context.Background())
+	watchOpt, err := lw.updateStartTokenInfo(&opts.LoopOptions)
 	if err != nil {
-		blog.Errorf("%s job, run loop watch %s, but get start token failed, err: %v", opts.Name,
-			opts.WatchOpt.Collection, err)
 		return err
 	}
-
-	// update the start token.
-	if len(startToken) != 0 {
-		opts.WatchOpt.StartAfterToken = &types.EventToken{Data: startToken}
-	}
+	watchOpt.WatchFatalErrorCallback = opts.TokenHandler.ResetWatchToken
 
 	var cancel func()
 	var cancelCtx context.Context
 	cancelCtx, cancel = context.WithCancel(context.Background())
 
-	watcher, err := lw.streamWatch.Watch(cancelCtx, opts.WatchOpt)
+	watcher, err := lw.streamWatch.Watch(cancelCtx, watchOpt)
 	if err != nil {
 		blog.Errorf("%s job, run loop, but watch failed, err: %v", opts.Name, err)
 		cancel()
@@ -87,6 +82,25 @@ func (lw *LoopsWatch) WithOne(opts *types.LoopOneOptions) error {
 	return nil
 }
 
+func (lw *LoopsWatch) updateStartTokenInfo(opts *types.LoopOptions) (*types.WatchOptions, error) {
+	startToken, err := opts.TokenHandler.GetStartWatchToken(context.Background())
+	if err != nil {
+		blog.Errorf("%s job, loop watch db %s, but get start watch token failed, err: %v", opts.Name,
+			lw.streamWatch.DBName, err)
+		return nil, err
+	}
+
+	// update the start token.
+	if len(startToken.Token) != 0 {
+		opts.WatchOpt.StartAfterToken = &types.EventToken{Data: startToken.Token}
+	}
+	if startToken.StartAtTime != nil {
+		opts.WatchOpt.StartAtTime = startToken.StartAtTime
+	}
+
+	return opts.WatchOpt, nil
+}
+
 // WithBatch allows users to watch events with batch.
 func (lw *LoopsWatch) WithBatch(opts *types.LoopBatchOptions) error {
 	if err := opts.Validate(); err != nil {
@@ -94,23 +108,17 @@ func (lw *LoopsWatch) WithBatch(opts *types.LoopBatchOptions) error {
 		return err
 	}
 
-	startToken, err := opts.TokenHandler.GetStartWatchToken(context.Background())
+	watchOpt, err := lw.updateStartTokenInfo(&opts.LoopOptions)
 	if err != nil {
-		blog.Errorf("%s job, run loop watch batch %s, but get start token failed, err: %v", opts.Name,
-			opts.WatchOpt.Collection, err)
 		return err
 	}
-
-	// update the start token.
-	if len(startToken) != 0 {
-		opts.WatchOpt.StartAfterToken = &types.EventToken{Data: startToken}
-	}
+	watchOpt.WatchFatalErrorCallback = opts.TokenHandler.ResetWatchToken
 
 	var cancel func()
 	var cancelCtx context.Context
 	cancelCtx, cancel = context.WithCancel(context.Background())
 
-	watcher, err := lw.streamWatch.Watch(cancelCtx, opts.WatchOpt)
+	watcher, err := lw.streamWatch.Watch(cancelCtx, watchOpt)
 	if err != nil {
 		blog.Errorf("%s job, run loop, but watch failed, err: %v", opts.Name, err)
 		cancel()
@@ -166,23 +174,16 @@ func (lw *LoopsWatch) watchRetry(cancel context.CancelFunc,
 			cancel()
 
 			// use the last token to resume so that we can start again from where we stopped.
-			lastToken, err := opts.TokenHandler.GetStartWatchToken(ctx)
+			watchOpt, err := lw.updateStartTokenInfo(opts)
 			if err != nil {
-				blog.Errorf("%s job, run loop watch, but get last event token failed, err: %v", opts.Name, err)
 				// notify retry signal, exit loop
 				close(retrySignal)
 				continue
 			}
+			opts.WatchOpt = watchOpt
 
-			blog.Errorf("%s job, the former watch loop: %s failed, start retry again from token: %s.",
-				opts.Name, opts.WatchOpt.Collection, lastToken)
-
-			// set start after token if needed.
-			if len(lastToken) != 0 {
-				// we have already received the new event and handle it success,
-				// so we need to use this token. otherwise, we should still use the w.watchOpt.StartAfterToken
-				opts.WatchOpt.StartAfterToken = &types.EventToken{Data: lastToken}
-			}
+			blog.Errorf("%s job, the former watch loop: %s failed, start retry again from token: %+v.", opts.Name,
+				lw.streamWatch.DBName, watchOpt.StartAfterToken)
 
 			var cancelCtx context.Context
 			cancelCtx, cancel = context.WithCancel(ctx)
@@ -199,7 +200,8 @@ func (lw *LoopsWatch) watchRetry(cancel context.CancelFunc,
 			// start handle loop jobs
 			go doHandler(cancelCtx, watcher, retrySignal)
 
-			blog.Warnf("%s job, retry loop %s from token: %s success.", opts.Name, opts.WatchOpt.Collection, lastToken)
+			blog.Warnf("%s job, retry loop %s from token: %+v success.", opts.Name, lw.streamWatch.DBName,
+				watchOpt.StartAfterToken)
 		}
 	}
 }
@@ -219,23 +221,20 @@ func (lw *LoopsWatch) tryLoopWithBatch(ctxWithCancel context.Context,
 	}
 
 	for {
-
 		reWatch, loop := observer.canLoop()
 		if reWatch {
 			// stop the tick to release resource.
 			ticker.Stop()
-			blog.Warnf("%s job, master status has changed, try to re-watch again, collection：%s", opts.Name,
-				opts.WatchOpt.Collection)
-
+			blog.Warnf("%s job, master status has changed, try to re-watch again, db：%s", opts.Name,
+				lw.streamWatch.DBName)
 			// trigger re-watch action now.
 			close(retrySignal)
-
 			// exit the for loop
 			return
 		}
 
 		if !loop {
-			blog.V(5).Infof("%s job, loop %s event, but not master, skip.", opts.Name, opts.WatchOpt.Collection)
+			blog.V(5).Infof("%s job, loop %s event, but not master, skip.", opts.Name, lw.streamWatch.DBName)
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -247,18 +246,15 @@ func (lw *LoopsWatch) tryLoopWithBatch(ctxWithCancel context.Context,
 			case <-ctxWithCancel.Done():
 				// stop the tick to release resource.
 				ticker.Stop()
-
-				blog.Warnf("%s job, received cancel loop watch %s signal, exit loop.", opts.Name,
-					opts.WatchOpt.Collection)
+				blog.Warnf("%s job, received cancel loop watch %s signal, exit loop.", opts.Name, lw.streamWatch.DBName)
 				// exist the goroutine
 				return
 
 			case one := <-watcher.EventChan:
 				batchEvents = append(batchEvents, one)
-
 				if blog.V(4) {
 					blog.Infof("%s job, received %s event, detail: %s, op-time: %s, rid: %s", opts.Name,
-						opts.WatchOpt.Collection, one.String(), one.ClusterTime.String(), one.ID())
+						lw.streamWatch.DBName, one.String(), one.ClusterTime.String(), one.ID())
 				}
 
 				// calculate event count, try to get more event for a batch
@@ -266,14 +262,12 @@ func (lw *LoopsWatch) tryLoopWithBatch(ctxWithCancel context.Context,
 					// continue to get more events
 					continue
 				}
-
 			case <-ticker.C:
 				// handle with batch event.
 				if len(batchEvents) == 0 {
 					// ticks, but no events received, loop next round to get events.
 					continue
 				}
-
 			case <-opts.StopNotifier:
 				ticker.Stop()
 				blog.Warnf("received stop %s loop watch job notify, stopping now.", opts.Name)
@@ -284,50 +278,62 @@ func (lw *LoopsWatch) tryLoopWithBatch(ctxWithCancel context.Context,
 			break
 		}
 
-		// for safety guarantee
-		if len(batchEvents) == 0 {
-			continue
-		}
-
-		first := batchEvents[0]
-
-		blog.Infof("%s job, received %s batch %d events, first op-time: %s rid: %s.", opts.Name, opts.WatchOpt.Collection,
-			len(batchEvents), first.ClusterTime.String(), first.ID())
-
-		retry := opts.EventHandler.DoBatch(batchEvents)
-		if retry {
-
-			if retryObserver.canStillRetry() {
-				blog.Warnf("%s job, received %s %d events in batch, but do batch failed, retry now, rid: %s", opts.Name,
-					opts.WatchOpt.Collection, len(batchEvents), first.ID())
-				// an error occurred, we need to retry it later.
-				// tell the schedule to re-watch again.
-				close(retrySignal)
-				// exist this goroutine.
-				return
-			}
-
-			blog.Warnf("%s job, collection %s batch watch retry exceed max count, skip, rid: %s.", opts.Name,
-				opts.WatchOpt.Collection, first.ID())
-			// save the event token now.
-		}
-
-		// reset retry counter so that the previous retry count will not affect the next event
-		retryObserver.resetRetryCounter()
-
-		last := batchEvents[len(batchEvents)-1]
-		// update the last watched token for resume usage.
-		if err := opts.TokenHandler.SetLastWatchToken(ctxWithCancel, last.Token.Data); err != nil {
-			blog.Errorf("%s job, loop watch %s event, but set last token failed, err: %v, rid: %s, retry later.",
-				opts.Name, opts.WatchOpt.Collection, err, first.ID())
-
-			// retry later.
-			close(retrySignal)
-			// exist this goroutine
+		if lw.handleBatchEvents(ctxWithCancel, batchEvents, opts, retryObserver, retrySignal) {
 			return
 		}
 	}
+}
 
+// handleBatchEvents handle batch events, returns if the loop watch needs retry
+func (lw *LoopsWatch) handleBatchEvents(ctx context.Context, batchEvents []*types.Event, opts *types.LoopBatchOptions,
+	retryObserver *retryHandler, retrySignal chan struct{}) bool {
+
+	// for safety guarantee
+	if len(batchEvents) == 0 {
+		return false
+	}
+
+	first := batchEvents[0]
+
+	blog.Infof("%s job, received %s batch %d events, first op-time: %s rid: %s.", opts.Name, lw.streamWatch.DBName,
+		len(batchEvents), first.ClusterTime.String(), first.ID())
+
+	retry := opts.EventHandler.DoBatch(batchEvents)
+	if retry {
+		if retryObserver.canStillRetry() {
+			blog.Warnf("%s job, received %s %d events in batch, but do batch failed, retry now, rid: %s", opts.Name,
+				lw.streamWatch.DBName, len(batchEvents), first.ID())
+			// an error occurred, we need to retry it later.
+			// tell the schedule to re-watch again.
+			close(retrySignal)
+			// exit this goroutine.
+			return true
+		}
+
+		blog.Warnf("%s job, collection %s batch watch retry exceed max count, skip, rid: %s.", opts.Name,
+			lw.streamWatch.DBName, first.ID())
+		// save the event token now.
+	}
+
+	// reset retry counter so that the previous retry count will not affect the next event
+	retryObserver.resetRetryCounter()
+
+	last := batchEvents[len(batchEvents)-1]
+	// update the last watched token for resume usage.
+	lastToken := &types.TokenInfo{
+		Token:       last.Token.Data,
+		StartAtTime: &last.ClusterTime,
+	}
+	if err := opts.TokenHandler.SetLastWatchToken(ctx, lastToken); err != nil {
+		blog.Errorf("%s job, loop watch %s event, but set last token failed, err: %v, rid: %s, retry later.",
+			opts.Name, lw.streamWatch.DBName, err, first.ID())
+
+		// retry later.
+		close(retrySignal)
+		// exit this goroutine
+		return true
+	}
+	return false
 }
 
 // tryLoopWithOne try handle event one by one
@@ -346,19 +352,17 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 		select {
 		case <-ctxWithCancel.Done():
 			blog.Warnf("%s job, received cancel loop watch %s signal, exit loop, exit loop", opts.Name,
-				opts.WatchOpt.Collection)
+				lw.streamWatch.DBName)
 			return
-
 		case <-opts.StopNotifier:
 			blog.Warnf("received stop %s loop watch job notify, stopping now.", opts.Name)
 			return
-
 		default:
 		}
 
 		reWatch, loop := observer.canLoop()
 		if reWatch {
-			blog.Warnf("%s job, master status has changed, try to re-watch %s again", opts.Name, opts.WatchOpt.Collection)
+			blog.Warnf("%s job, master status has changed, try to re-watch %s again", opts.Name, lw.streamWatch.DBName)
 			// trigger re-watch action now.
 			close(retrySignal)
 			// exit the for loop
@@ -366,12 +370,12 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 		}
 
 		if !loop {
-			blog.Infof("%s job, received %s %s event, but not master, skip. details: %s, rid: %s",
-				opts.Name, opts.WatchOpt.Collection, one.OperationType, one.String(), one.ID())
+			blog.Infof("%s job, received %s %s event, but not master, skip. details: %s, rid: %s", opts.Name,
+				lw.streamWatch.DBName, one.OperationType, one.String(), one.ID())
 			continue
 		}
 
-		blog.Infof("%s job, received %s event, type: %s, op-time: %s rid: %s", opts.Name, opts.WatchOpt.Collection,
+		blog.Infof("%s job, received %s event, type: %s, op-time: %s rid: %s", opts.Name, lw.streamWatch.DBName,
 			one.OperationType, one.ClusterTime.String(), one.ID())
 
 		if blog.V(4) {
@@ -381,7 +385,7 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 		retry := lw.tryOne(one, opts)
 		if retry {
 			if retryObserver.canStillRetry() {
-				blog.Warnf("%s job, retry watch %s later. rid: %s", opts.Name, opts.WatchOpt.Collection, one.ID())
+				blog.Warnf("%s job, retry watch %s later. rid: %s", opts.Name, lw.streamWatch.DBName, one.ID())
 				// an error occurred, we need to retry it later.
 				// tell the schedule to re-watch again.
 				close(retrySignal)
@@ -390,7 +394,7 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 			}
 
 			blog.Warnf("%s job, retry %s event exceed max count, skip, detail: %s, rid: %s", opts.Name,
-				opts.WatchOpt.Collection, one.String(), one.ID())
+				lw.streamWatch.DBName, one.String(), one.ID())
 			// save the event token now.
 		}
 
@@ -398,10 +402,13 @@ func (lw *LoopsWatch) tryLoopWithOne(ctxWithCancel context.Context,
 		retryObserver.resetRetryCounter()
 
 		// update the last watched token for resume usage.
-		if err := opts.TokenHandler.SetLastWatchToken(ctxWithCancel, one.Token.Data); err != nil {
+		lastToken := &types.TokenInfo{
+			Token:       one.Token.Data,
+			StartAtTime: &one.ClusterTime,
+		}
+		if err := opts.TokenHandler.SetLastWatchToken(ctxWithCancel, lastToken); err != nil {
 			blog.Errorf("%s job, loop watch %s event, but set last watched token failed, err: %v, rid: %s, "+
-				"retry later.",
-				opts.WatchOpt.Collection, err, one.ID())
+				"retry later.", lw.streamWatch.DBName, err, one.ID())
 
 			// retry later.
 			close(retrySignal)
@@ -418,7 +425,7 @@ func (lw *LoopsWatch) tryOne(e *types.Event, opts *types.LoopOneOptions) (retry 
 		retry := opts.EventHandler.DoAdd(e)
 		if retry {
 			blog.Warnf("%s job, received %s %s event,  but do add job failed, retry now, rid: %s", opts.Name,
-				opts.WatchOpt.Collection, e.OperationType, e.ID())
+				lw.streamWatch.DBName, e.OperationType, e.ID())
 
 			return retry
 		}
@@ -427,7 +434,7 @@ func (lw *LoopsWatch) tryOne(e *types.Event, opts *types.LoopOneOptions) (retry 
 		retry := opts.EventHandler.DoUpdate(e)
 		if retry {
 			blog.Warnf("%s job, received %s %s event, but do update job failed, retry now, rid: %s", opts.Name,
-				opts.WatchOpt.Collection, e.OperationType, e.ID())
+				lw.streamWatch.DBName, e.OperationType, e.ID())
 
 			return retry
 		}
@@ -436,19 +443,19 @@ func (lw *LoopsWatch) tryOne(e *types.Event, opts *types.LoopOneOptions) (retry 
 		retry := opts.EventHandler.DoDelete(e)
 		if retry {
 			blog.Warnf("%s job, received %s %s event, but do delete job failed, retry now, rid: %s", opts.Name,
-				opts.WatchOpt.Collection, e.OperationType, e.ID())
+				lw.streamWatch.DBName, e.OperationType, e.ID())
 
 			return retry
 		}
 
 	case types.Invalidate:
 		blog.Errorf("%s job, watch %s event, received invalid operation type, doc: %s, rid: %s", opts.Name,
-			opts.WatchOpt.Collection, e.DocBytes, e.ID())
+			lw.streamWatch.DBName, e.DocBytes, e.ID())
 		return false
 
 	default:
 		blog.Errorf("%s job, watch %s event, received unsupported operation type, doc: %s, rid: %s", opts.Name,
-			opts.WatchOpt.Collection, e.DocBytes, e.ID())
+			lw.streamWatch.DBName, e.DocBytes, e.ID())
 		return false
 	}
 

@@ -134,10 +134,11 @@ func (c *Client) WatchWithStartFrom(kit *rest.Kit, key event.Key, opts *watch.Wa
 	}
 
 	node := new(watch.ChainNode)
-	err = c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID).One(kit.Ctx, node)
+	err = c.watchDB.Shard(kit.ShardOpts()).Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID).
+		One(kit.Ctx, node)
 	if err != nil {
 		blog.ErrorJSON("get chain node from mongo failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
-		if !c.watchDB.IsNotFoundError(err) {
+		if !mongodb.IsNotFoundError(err) {
 			return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 
@@ -415,7 +416,7 @@ func (c *Client) getBizSetRelationEventDetailFromMongo(kit *rest.Kit, bizSetIDs 
 	}
 
 	bizSets := make([]metadata.BizSetInst, 0)
-	err := mongodb.Client().Table(common.BKTableNameBaseBizSet).Find(bizSetCond).
+	err := c.db.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseBizSet).Find(bizSetCond).
 		Fields(common.BKBizSetIDField, common.BKBizSetScopeField).All(kit.Ctx, &bizSets)
 	if err != nil {
 		blog.Errorf("get biz sets by cond(%+v) failed, err: %v, rid: %s", bizSetCond, err, kit.Rid)
@@ -477,8 +478,8 @@ func (c *Client) getBizIDArrStrByCond(kit *rest.Kit, cond map[string]interface{}
 	for start := uint64(0); ; start += step {
 		oneStep := make([]metadata.BizInst, 0)
 
-		err := c.db.Table(common.BKTableNameBaseApp).Find(cond).Fields(common.BKAppIDField).Start(start).
-			Limit(step).Sort(common.BKAppIDField).All(kit.Ctx, &oneStep)
+		err := c.db.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseApp).Find(cond).Fields(common.BKAppIDField).
+			Start(start).Limit(step).Sort(common.BKAppIDField).All(kit.Ctx, &oneStep)
 		if err != nil {
 			blog.Errorf("get biz by cond(%+v) failed, err: %v, rid: %s", cond, err, kit.Rid)
 			return "", err

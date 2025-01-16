@@ -16,11 +16,12 @@ import (
 	"fmt"
 	"strings"
 
-	"configcenter/pkg/conv"
-	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	types2 "configcenter/src/common/types"
 	"configcenter/src/common/watch"
-	kubetypes "configcenter/src/kube/types"
+	"configcenter/src/thirdparty/monitor"
+	"configcenter/src/thirdparty/monitor/meta"
 )
 
 var resourceKeyMap = map[watch.CursorType]Key{
@@ -38,11 +39,6 @@ var resourceKeyMap = map[watch.CursorType]Key{
 	watch.BizSet:                  BizSetKey,
 	watch.BizSetRelation:          BizSetRelationKey,
 	watch.Plat:                    PlatKey,
-	watch.KubeCluster:             KubeClusterKey,
-	watch.KubeNode:                KubeNodeKey,
-	watch.KubeNamespace:           KubeNamespaceKey,
-	watch.KubeWorkload:            KubeWorkloadKey,
-	watch.KubePod:                 KubePodKey,
 	watch.Project:                 ProjectKey,
 }
 
@@ -75,29 +71,47 @@ type HostArchive struct {
 	Detail metadata.HostMapStr `bson:"detail"`
 }
 
-// ObjInstTablePrefixRegex TODO
-const ObjInstTablePrefixRegex = "^" + common.BKObjectInstShardingTablePrefix
+// ReduceChainNode remove conflict chain node, returns reduced chain nodes
+func ReduceChainNode(chainNodeMap map[string][]*watch.ChainNode, tenantID, flowKey string, conflictErr error,
+	metrics *EventMetrics, rid string) map[string][]*watch.ChainNode {
 
-// InstAsstTablePrefixRegex TODO
-const InstAsstTablePrefixRegex = "^" + common.BKObjectInstAsstShardingTablePrefix
+	chainNodes := chainNodeMap[tenantID]
 
-// ConvertLabel 由于目前使用版本的mongodb不支持key中包含的.的查询，存入db的时候是将.以编码的方式存入，这里需要进行解码
-func ConvertLabel(podDetail map[string]interface{}) map[string]interface{} {
-	labels, ok := podDetail[kubetypes.LabelsField]
-	if !ok {
-		return podDetail
+	rid = rid + ":" + chainNodes[0].Oid
+	monitor.Collect(&meta.Alarm{
+		RequestID: rid,
+		Type:      meta.EventFatalError,
+		Detail: fmt.Sprintf("run event flow, but got conflict %s tenant %s cursor with chain nodes",
+			flowKey, tenantID),
+		Module:    types2.CC_MODULE_CACHESERVICE,
+		Dimension: map[string]string{"retry_conflict_nodes": "yes"},
+	})
+
+	if len(chainNodes) <= 1 {
+		delete(chainNodeMap, tenantID)
+		return chainNodeMap
 	}
 
-	labelMap, ok := labels.(map[string]string)
-	if !ok {
-		return podDetail
+	for index, reducedChainNode := range chainNodes {
+		if isConflictChainNode(reducedChainNode, conflictErr) {
+			metrics.CollectConflict()
+			chainNodes = append(chainNodes[:index], chainNodes[index+1:]...)
+
+			// need do with retry with reduce
+			blog.ErrorJSON("run flow, insert %s tenant %s event with reduce node %s, remain nodes: %s, rid: %s",
+				flowKey, tenantID, reducedChainNode, chainNodes, rid)
+			chainNodeMap[tenantID] = chainNodes
+			return chainNodeMap
+		}
 	}
 
-	newLabels := make(map[string]string)
-	for key, val := range labelMap {
-		newLabels[conv.DecodeDot(key)] = val
-	}
-	podDetail[kubetypes.LabelsField] = newLabels
+	// when no cursor conflict node is found, discard the first node and try to insert the others
+	blog.ErrorJSON("run flow, insert %s tenant %s event with reduce node %s, remain nodes: %s, rid: %s",
+		flowKey, tenantID, chainNodes[0], chainNodes[1:], rid)
+	chainNodeMap[tenantID] = chainNodes[1:]
+	return chainNodeMap
+}
 
-	return podDetail
+func isConflictChainNode(chainNode *watch.ChainNode, err error) bool {
+	return strings.Contains(err.Error(), chainNode.Cursor) && strings.Contains(err.Error(), "index_cursor")
 }

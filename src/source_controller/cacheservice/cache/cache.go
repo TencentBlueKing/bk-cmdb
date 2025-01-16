@@ -27,13 +27,12 @@ import (
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
-	"configcenter/src/storage/reflector"
 	"configcenter/src/storage/stream"
 )
 
 // NewCache new cache service
-func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface,
-	watchDB dal.DB) (*ClientSet, error) {
+func NewCache(loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB) (*ClientSet,
+	error) {
 
 	if err := mainline.NewMainlineCache(loopW); err != nil {
 		return nil, fmt.Errorf("new business cache failed, err: %v", err)
@@ -56,7 +55,7 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 		return nil, fmt.Errorf("new common topo cache failed, err: %v", err)
 	}
 
-	watchCli := watch.NewClient(watchDB, mongodb.Client(), redis.Client())
+	watchCli := watch.NewClient(mongodb.Dal("watch"), mongodb.Dal(), redis.Client())
 
 	generalCache, err := general.New(isMaster, loopW, watchCli)
 	if err != nil {

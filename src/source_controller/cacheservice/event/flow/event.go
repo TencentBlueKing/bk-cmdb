@@ -14,31 +14,17 @@ package flow
 
 import (
 	"context"
-	"fmt"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/cacheservice/event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
-// NewEvent TODO
-func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB,
-	ccDB dal.DB) error {
-	watchMongoDB, ok := watchDB.(*local.Mongo)
-	if !ok {
-		blog.Errorf("watch event, but watch db is not an instance of local mongo to start transaction")
-		return fmt.Errorf("watch db is not an instance of local mongo")
-	}
-
+// NewEvent new event flow
+func NewEvent(watchTask *task.Task) error {
 	e := Event{
-		watch:    watch,
-		isMaster: isMaster,
-		watchDB:  watchMongoDB,
-		ccDB:     ccDB,
+		task: watchTask,
 	}
 
 	if err := e.runHost(context.Background()); err != nil {
@@ -102,21 +88,15 @@ func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterf
 	return nil
 }
 
-// Event TODO
+// Event is the event flow struct
 type Event struct {
-	watch    stream.LoopInterface
-	watchDB  *local.Mongo
-	ccDB     dal.DB
-	isMaster discovery.ServiceManageInterface
+	task *task.Task
 }
 
 func (e *Event) runHost(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.HostKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(metadata.HostMapStr),
 	}
 
@@ -126,10 +106,7 @@ func (e *Event) runHost(ctx context.Context) error {
 func (e *Event) runModuleHostRelation(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.ModuleHostRelationKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -139,10 +116,7 @@ func (e *Event) runModuleHostRelation(ctx context.Context) error {
 func (e *Event) runBiz(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.BizKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -152,10 +126,7 @@ func (e *Event) runBiz(ctx context.Context) error {
 func (e *Event) runSet(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.SetKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -165,10 +136,7 @@ func (e *Event) runSet(ctx context.Context) error {
 func (e *Event) runModule(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.ModuleKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -178,10 +146,7 @@ func (e *Event) runModule(ctx context.Context) error {
 func (e *Event) runObjectBase(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.ObjectBaseKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -191,10 +156,7 @@ func (e *Event) runObjectBase(ctx context.Context) error {
 func (e *Event) runProcess(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.ProcessKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -204,10 +166,7 @@ func (e *Event) runProcess(ctx context.Context) error {
 func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.ProcessInstanceRelationKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -217,10 +176,7 @@ func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
 func (e *Event) runInstAsst(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.InstAsstKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -230,10 +186,7 @@ func (e *Event) runInstAsst(ctx context.Context) error {
 func (e *Event) runBizSet(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.BizSetKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -243,10 +196,7 @@ func (e *Event) runBizSet(ctx context.Context) error {
 func (e *Event) runPlat(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.PlatKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
@@ -256,10 +206,7 @@ func (e *Event) runPlat(ctx context.Context) error {
 func (e *Event) runProject(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.ProjectKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
+		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 

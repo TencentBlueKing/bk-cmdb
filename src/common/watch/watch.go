@@ -71,7 +71,7 @@ func (w *WatchEventOptions) Validate(isInner bool) error {
 
 	if len(w.Filter.SubResource) > 0 || len(w.Filter.SubResources) > 0 {
 		switch w.Resource {
-		case ObjectBase, MainlineInstance, InstAsst, KubeWorkload:
+		case ObjectBase, MainlineInstance, InstAsst:
 		default:
 			return fmt.Errorf("%s event cannot have sub resource", w.Resource)
 		}

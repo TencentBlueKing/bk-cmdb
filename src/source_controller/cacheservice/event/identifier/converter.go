@@ -21,6 +21,8 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/mongo/sharding"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/types"
 
 	"github.com/tidwall/gjson"
@@ -122,16 +124,26 @@ var hostIDJson = `{"bk_host_id":%d}`
 // 2. care about all kinds of event types.
 // 3. do not care the event's order, cause we all convert to host events type.
 func (f *hostIdentity) rearrangeHostRelationEvents(es []*types.Event, rid string) ([]*types.Event, error) {
-	deleteEventsMap := make(map[string]*types.Event, 0)
-	deleteOids := make([]string, 0)
+	deleteEventsMap := make(map[string]map[string]*types.Event)
+	deleteOidsMap := make(map[string][]string)
 	hitEvents := make([]*types.Event, 0)
 	// remind if related host's events has already been hit, if yes, then skip this event.
 	reminder := make(map[int64]struct{})
 	for idx := range es {
 		one := es[idx]
 		if one.OperationType == types.Delete {
-			deleteEventsMap[one.Oid] = one
-			deleteOids = append(deleteOids, one.Oid)
+			tenantID, _, err := common.SplitTenantTableName(one.Collection)
+			if err != nil {
+				blog.Errorf("host identify event, host relation event collection %s is invalid, doc: %s, rid: %s",
+					one.Collection, one.DocBytes, rid)
+				continue
+			}
+
+			if _, exists := deleteEventsMap[tenantID]; !exists {
+				deleteEventsMap[tenantID] = make(map[string]*types.Event)
+			}
+			deleteEventsMap[tenantID][one.Oid] = one
+			deleteOidsMap[tenantID] = append(deleteOidsMap[tenantID], one.Oid)
 			continue
 		}
 
@@ -160,49 +172,59 @@ func (f *hostIdentity) rearrangeHostRelationEvents(es []*types.Event, rid string
 		return hitEvents, nil
 	}
 
-	filter := map[string]interface{}{
-		"oid":  map[string]interface{}{common.BKDBIN: deleteOids},
-		"coll": common.BKTableNameModuleHostConfig,
-	}
-
-	docs := make([]bsoncore.Document, 0)
-	err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).All(context.Background(), &docs)
-	if err != nil {
-		f.metrics.CollectMongoError()
-		blog.Errorf("host identify event, get archive host relation from mongodb failed, oid: %+v, err: %v, rid: %v",
-			deleteOids, err, rid)
-		return nil, err
-	}
-
-	for _, doc := range docs {
-		hostID, ok := doc.Lookup("detail", common.BKHostIDField).Int64OK()
-		if !ok {
-			blog.Errorf("host id type is illegal, skip, relation: %s, rid: %s", doc.Lookup("detail").String(), rid)
-			continue
-		}
-		if hostID <= 0 {
-			blog.Errorf("host identify event, get host id from relation: %s failed, skip, rid: %s",
-				doc.Lookup("detail").String(), rid)
-			continue
+	for tenantID, deleteOids := range deleteOidsMap {
+		filter := map[string]interface{}{
+			"oid":  map[string]interface{}{common.BKDBIN: deleteOids},
+			"coll": common.BKTableNameModuleHostConfig,
 		}
 
-		if _, exist := reminder[hostID]; exist {
-			// this host has already been hit, skip now.
-			blog.Infof("host identify event, relation deleted host id: %d is aggregated, oid: %s, rid: %s",
-				hostID, doc.Lookup("oid").String(), rid)
-			continue
+		docs := make([]bsoncore.Document, 0)
+		err := mongodb.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(common.BKTableNameDelArchive).
+			Find(filter).All(context.Background(), &docs)
+		if err != nil {
+			f.metrics.CollectMongoError()
+			blog.Errorf("host identify event, get archive host relation from mongodb failed, oid: %+v, err: %v, rid: %v",
+				deleteOids, err, rid)
+			return nil, err
 		}
-		reminder[hostID] = struct{}{}
 
-		event, exist := deleteEventsMap[doc.Lookup("oid").String()]
-		if !exist {
-			blog.Errorf("host identify event, get archived event's instance with oid :%s failed, skip, rid: %s",
-				doc.Lookup("oid").String(), rid)
-			continue
+		for _, doc := range docs {
+			hostID, ok := doc.Lookup("detail", common.BKHostIDField).Int64OK()
+			if !ok {
+				blog.Errorf("host id type is illegal, skip, relation: %s, rid: %s", doc.Lookup("detail").String(), rid)
+				continue
+			}
+			if hostID <= 0 {
+				blog.Errorf("host identify event, get host id from relation: %s failed, skip, rid: %s",
+					doc.Lookup("detail").String(), rid)
+				continue
+			}
+
+			if _, exist := reminder[hostID]; exist {
+				// this host has already been hit, skip now.
+				blog.Infof("host identify event, relation deleted host id: %d is aggregated, oid: %s, rid: %s",
+					hostID, doc.Lookup("oid").String(), rid)
+				continue
+			}
+			reminder[hostID] = struct{}{}
+
+			deleteEventsOidMap, exist := deleteEventsMap[tenantID]
+			if !exist {
+				blog.Errorf("host identify event, get archived event's instance with tenant: %s failed, skip, rid: %s",
+					tenantID, rid)
+				continue
+			}
+
+			event, exist := deleteEventsOidMap[doc.Lookup("oid").String()]
+			if !exist {
+				blog.Errorf("host identify event, get archived event's instance with tenant: %s oid: %s failed, "+
+					"skip, rid: %s", tenantID, doc.Lookup("oid").String(), rid)
+				continue
+			}
+			event.DocBytes = []byte(fmt.Sprintf(hostIDJson, hostID))
+			event.Document = nil
+			hitEvents = append(hitEvents, event)
 		}
-		event.DocBytes = []byte(fmt.Sprintf(hostIDJson, hostID))
-		event.Document = nil
-		hitEvents = append(hitEvents, event)
 	}
 
 	return hitEvents, nil
@@ -218,10 +240,8 @@ func (f *hostIdentity) rearrangeProcessEvents(es []*types.Event, rid string) ([]
 		return es, nil
 	}
 
-	processIDs := make([]int64, 0)
-	deleteOids := make([]string, 0)
-	idToOid := make(map[int64]string)
-	oidToEvent := make(map[string]*types.Event)
+	processIDsMap := make(map[string][]int64)
+	deleteOidsMap := make(map[string][]string)
 	reminder := make(map[string]struct{})
 	for idx := range es {
 		one := es[idx]
@@ -233,9 +253,15 @@ func (f *hostIdentity) rearrangeProcessEvents(es []*types.Event, rid string) ([]
 			continue
 		}
 
-		oidToEvent[one.Oid] = one
+		tenantID, _, err := common.SplitTenantTableName(one.Collection)
+		if err != nil {
+			blog.Errorf("host identify event, process event collection %s is invalid, doc: %s, rid: %s", one.Collection,
+				one.DocBytes, rid)
+			continue
+		}
+
 		if one.OperationType == types.Delete {
-			deleteOids = append(deleteOids, one.Oid)
+			deleteOidsMap[tenantID] = append(deleteOidsMap[tenantID], one.Oid)
 			reminder[one.Oid] = struct{}{}
 			continue
 		}
@@ -246,64 +272,68 @@ func (f *hostIdentity) rearrangeProcessEvents(es []*types.Event, rid string) ([]
 			continue
 		}
 
-		processIDs = append(processIDs, processID)
-		idToOid[processID] = one.Oid
+		processIDsMap[tenantID] = append(processIDsMap[tenantID], processID)
 		reminder[one.Oid] = struct{}{}
 	}
 
 	// got 0 valid event
-	if len(processIDs) == 0 && len(deleteOids) == 0 {
+	if len(processIDsMap) == 0 && len(deleteOidsMap) == 0 {
 		return es[:0], nil
 	}
 
 	// now we need to convert these process ids and delete oids to host ids.
 	// convert process ids to host ids.
-	notHitProcess, hostList, err := f.convertProcessToHost(processIDs, rid)
-	if err != nil {
-		return nil, err
-	}
-
-	// get these process's host from cc_DelArchive
-	if len(notHitProcess) != 0 {
-		start := int64(es[0].ClusterTime.Sec)
-		hostIDs, err := f.getHostWithProcessRelationFromDelArchive(start, notHitProcess, rid)
+	hostListMap := make(map[string][]int64)
+	for tenant, processIDs := range processIDsMap {
+		notHitProcess, hostList, err := f.convertProcessToHost(tenant, processIDs, rid)
 		if err != nil {
 			return nil, err
 		}
-		hostList = append(hostList, hostIDs...)
+
+		// get these process's host from cc_DelArchive
+		if len(notHitProcess) != 0 {
+			start := int64(es[0].ClusterTime.Sec)
+			hostIDs, err := f.getHostWithProcessRelationFromDelArchive(tenant, start, notHitProcess, rid)
+			if err != nil {
+				return nil, err
+			}
+			hostList = append(hostList, hostIDs...)
+		}
+
+		hostListMap[tenant] = hostList
 	}
 
-	if len(deleteOids) != 0 {
+	for tenant, deleteOids := range deleteOidsMap {
 		start := int64(es[0].ClusterTime.Sec)
-		hostIDs, err := f.getDeletedProcessHosts(start, deleteOids, rid)
+		hostIDs, err := f.getDeletedProcessHosts(tenant, start, deleteOids, rid)
 		if err != nil {
 			return nil, err
 		}
-		hostList = append(hostList, hostIDs...)
+		hostListMap[tenant] = append(hostListMap[tenant], hostIDs...)
 	}
 
-	// now we get all the host's ids list
-	// it should be much more less than the process's count
-	hostList = util.IntArrayUnique(hostList)
-
-	cnt := len(hostList)
-	if cnt > len(es) {
-		// host count is always less or equal than the count of events.
-		// when this happens, somethings must be wrong.
-		blog.ErrorJSON("got more host count than it's process, use host count instead, es: %s, host: %s, rid: %s",
-			es, hostList, rid)
-		// continue handle this, but redirect count to event's count
-		cnt = len(es)
+	for tenantID, hostList := range hostListMap {
+		// now we get all the host's ids list
+		// it should be much more less than the process's count
+		hostListMap[tenantID] = util.IntArrayUnique(hostList)
 	}
 
-	// reset the event's document info to host id field.
-	for i := 0; i < cnt; i++ {
-		es[i].DocBytes = []byte(fmt.Sprintf(hostIDJson, hostList[i]))
-		es[i].Document = nil
+	events := make([]*types.Event, 0)
+	for _, e := range es {
+		tenantID, _, err := common.SplitTenantTableName(e.Collection)
+		if err != nil {
+			continue
+		}
+		hostList := hostListMap[tenantID]
+		if len(hostList) == 0 {
+			continue
+		}
+		// reset the event's document info to host id field.
+		e.DocBytes = []byte(fmt.Sprintf(hostIDJson, hostList[0]))
+		hostListMap[tenantID] = hostList[1:]
+		e.Document = nil
+		events = append(events, e)
 	}
-
-	// remove the unused events
-	es = es[:cnt]
 	return es, nil
 }
 
@@ -316,7 +346,7 @@ type processRelation struct {
 // convert process ids to host ids.
 // we may can not find process's relations info, cause it may already been deleted. so we need
 // to find it in cc_DelArchive collection.
-func (f *hostIdentity) convertProcessToHost(pIDs []int64, rid string) ([]int64, []int64, error) {
+func (f *hostIdentity) convertProcessToHost(tenantID string, pIDs []int64, rid string) ([]int64, []int64, error) {
 	if len(pIDs) == 0 {
 		return make([]int64, 0), make([]int64, 0), nil
 	}
@@ -326,8 +356,8 @@ func (f *hostIdentity) convertProcessToHost(pIDs []int64, rid string) ([]int64, 
 	}
 
 	relations := make([]*processRelation, 0)
-	err := f.ccDB.Table(common.BKTableNameProcessInstanceRelation).Find(filter).Fields(common.BKHostIDField,
-		common.BKProcessIDField).All(context.Background(), &relations)
+	err := mongodb.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(common.BKTableNameProcessInstanceRelation).
+		Find(filter).Fields(common.BKHostIDField, common.BKProcessIDField).All(context.Background(), &relations)
 	if err != nil {
 		blog.Errorf("host identify event, get process instance relation failed, err: %v, rid: %s", err, rid)
 		return nil, nil, err
@@ -361,8 +391,9 @@ func (f *hostIdentity) convertProcessToHost(pIDs []int64, rid string) ([]int64, 
 // getHostWithProcessRelationFromDelArchive TODO
 // get host ids from cc_DelArchive with process's ids
 // a process has only one relation, so we can use process ids find it's unique relations.
-func (f *hostIdentity) getHostWithProcessRelationFromDelArchive(startUnix int64, pIDs []int64, rid string) (
-	[]int64, error) {
+func (f *hostIdentity) getHostWithProcessRelationFromDelArchive(tenantID string, startUnix int64, pIDs []int64,
+	rid string) ([]int64, error) {
+
 	filter := mapstr.MapStr{
 		"coll": common.BKTableNameProcessInstanceRelation,
 		// this archive doc's created time must be greater than start unix time.
@@ -373,8 +404,8 @@ func (f *hostIdentity) getHostWithProcessRelationFromDelArchive(startUnix int64,
 	}
 
 	relations := make([]map[string]*processRelation, 0)
-	err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).Fields("detail").
-		All(context.Background(), &relations)
+	err := mongodb.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(common.BKTableNameDelArchive).
+		Find(filter).Fields("detail").All(context.Background(), &relations)
 	if err != nil {
 		f.metrics.CollectMongoError()
 		blog.Errorf("host identify event, get archive deleted instance process relations failed, "+
@@ -395,14 +426,17 @@ func (f *hostIdentity) getHostWithProcessRelationFromDelArchive(startUnix int64,
 	return hostIDs, nil
 }
 
-func (f *hostIdentity) getDeletedProcessHosts(startUnix int64, oids []string, rid string) ([]int64, error) {
+func (f *hostIdentity) getDeletedProcessHosts(tenantID string, startUnix int64, oids []string, rid string) ([]int64,
+	error) {
+
 	filter := map[string]interface{}{
 		"oid":  map[string]interface{}{common.BKDBIN: oids},
 		"coll": common.BKTableNameBaseProcess,
 	}
 
 	docs := make([]bsoncore.Document, 0)
-	err := f.ccDB.Table(common.BKTableNameDelArchive).Find(filter).Fields("detail").All(context.Background(), &docs)
+	err := mongodb.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(common.BKTableNameDelArchive).
+		Find(filter).Fields("detail").All(context.Background(), &docs)
 	if err != nil {
 		f.metrics.CollectMongoError()
 		blog.Errorf("host identify event, get archive deleted process instances, oids: %+v, err: %v, rid: %v",
@@ -431,5 +465,5 @@ func (f *hostIdentity) getDeletedProcessHosts(startUnix int64, oids []string, ri
 	}
 
 	// then get hosts list with these process ids.
-	return f.getHostWithProcessRelationFromDelArchive(startUnix, pList, rid)
+	return f.getHostWithProcessRelationFromDelArchive(tenantID, startUnix, pList, rid)
 }

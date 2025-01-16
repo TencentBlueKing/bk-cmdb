@@ -18,7 +18,6 @@ import (
 	"configcenter/pkg/cache/general"
 	"configcenter/src/common"
 	"configcenter/src/common/watch"
-	kubetypes "configcenter/src/kube/types"
 
 	"github.com/tidwall/gjson"
 )
@@ -364,128 +363,6 @@ var PlatKey = Key{
 	},
 }
 
-// kubeFields kube related resource id and name fields, used for validation
-var kubeFields = []string{common.BKFieldID, common.BKFieldName}
-
-// KubeClusterKey kube cluster event watch key
-var KubeClusterKey = Key{
-	namespace:          watchCacheNamespace + kubetypes.KubeCluster,
-	collection:         kubetypes.BKTableNameBaseCluster,
-	ttlSeconds:         6 * 60 * 60,
-	generalResCacheKey: general.KubeClusterKey,
-	validator: func(doc []byte) error {
-		fields := gjson.GetManyBytes(doc, kubeFields...)
-		for idx := range kubeFields {
-			if !fields[idx].Exists() {
-				return fmt.Errorf("field %s not exist", kubeFields[idx])
-			}
-		}
-		return nil
-	},
-	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, common.BKFieldName).String()
-	},
-	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, common.BKFieldID).Int()
-	},
-}
-
-// KubeNodeKey kube node event watch key
-var KubeNodeKey = Key{
-	namespace:          watchCacheNamespace + kubetypes.KubeNode,
-	collection:         kubetypes.BKTableNameBaseNode,
-	ttlSeconds:         6 * 60 * 60,
-	generalResCacheKey: general.KubeNodeKey,
-	validator: func(doc []byte) error {
-		fields := gjson.GetManyBytes(doc, kubeFields...)
-		for idx := range kubeFields {
-			if !fields[idx].Exists() {
-				return fmt.Errorf("field %s not exist", kubeFields[idx])
-			}
-		}
-		return nil
-	},
-	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, common.BKFieldName).String()
-	},
-	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, common.BKFieldID).Int()
-	},
-}
-
-// KubeNamespaceKey kube namespace event watch key
-var KubeNamespaceKey = Key{
-	namespace:          watchCacheNamespace + kubetypes.KubeNamespace,
-	collection:         kubetypes.BKTableNameBaseNamespace,
-	ttlSeconds:         6 * 60 * 60,
-	generalResCacheKey: general.KubeNamespaceKey,
-	validator: func(doc []byte) error {
-		fields := gjson.GetManyBytes(doc, kubeFields...)
-		for idx := range kubeFields {
-			if !fields[idx].Exists() {
-				return fmt.Errorf("field %s not exist", kubeFields[idx])
-			}
-		}
-		return nil
-	},
-	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, common.BKFieldName).String()
-	},
-	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, common.BKFieldID).Int()
-	},
-}
-
-// KubeWorkloadKey kube workload event watch key
-var KubeWorkloadKey = Key{
-	namespace:          watchCacheNamespace + kubetypes.KubeWorkload,
-	collection:         kubetypes.BKTableNameBaseWorkload,
-	ttlSeconds:         6 * 60 * 60,
-	generalResCacheKey: general.KubeWorkloadKey,
-	validator: func(doc []byte) error {
-		fields := gjson.GetManyBytes(doc, kubeFields...)
-		for idx := range kubeFields {
-			if !fields[idx].Exists() {
-				return fmt.Errorf("field %s not exist", kubeFields[idx])
-			}
-		}
-
-		if fields[0].Int() <= 0 {
-			return fmt.Errorf("invalid workload id: %s, should be integer type and > 0", fields[0].Raw)
-		}
-		return nil
-	},
-	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, common.BKFieldName).String()
-	},
-	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, common.BKFieldID).Int()
-	},
-}
-
-// KubePodKey kube Pod event watch key
-// NOTE: pod event detail has container info, can not be treated as general resource cache detail
-var KubePodKey = Key{
-	namespace:  watchCacheNamespace + kubetypes.KubePod,
-	collection: kubetypes.BKTableNameBasePod,
-	ttlSeconds: 6 * 60 * 60,
-	validator: func(doc []byte) error {
-		fields := gjson.GetManyBytes(doc, kubeFields...)
-		for idx := range kubeFields {
-			if !fields[idx].Exists() {
-				return fmt.Errorf("field %s not exist", kubeFields[idx])
-			}
-		}
-		return nil
-	},
-	instName: func(doc []byte) string {
-		return gjson.GetBytes(doc, common.BKFieldName).String()
-	},
-	instID: func(doc []byte) int64 {
-		return gjson.GetBytes(doc, common.BKFieldID).Int()
-	},
-}
-
 var projectFields = []string{common.BKFieldID, common.BKProjectNameField}
 
 // ProjectKey project event watch key
@@ -539,20 +416,20 @@ type Key struct {
 // general resource detail will be stored by ResDetailKey while event related info will be stored by this key
 // Note: do not change the format, it will affect the way in event server to
 // get the details with lua scripts.
-func (k Key) DetailKey(cursor string) string {
-	return k.namespace + ":detail:" + cursor
+func (k Key) DetailKey(tenantID, cursor string) string {
+	return k.namespace + ":detail:" + tenantID + ":" + cursor
 }
 
 // GeneralResDetailKey generates the general resource detail key by chain node, in the order of instance id then oid
 // NOTE: only general resource detail will be stored by this key and reused by general resource detail cache,
 // mix-event or special event detail will all be stored by DetailKey
-func (k Key) GeneralResDetailKey(node *watch.ChainNode) string {
+func (k Key) GeneralResDetailKey(tenantID string, node *watch.ChainNode) string {
 	if k.generalResCacheKey == nil || node == nil {
 		return ""
 	}
 
 	uniqueKey, _ := k.generalResCacheKey.IDKey(node.InstanceID, node.Oid)
-	return k.generalResCacheKey.DetailKey(uniqueKey, node.SubResource...)
+	return k.generalResCacheKey.DetailKey(tenantID, uniqueKey, node.SubResource...)
 }
 
 // IsGeneralRes returns if the event is general resource whose detail is stored separately
@@ -612,9 +489,4 @@ func (k Key) ShardingCollection(objID, supplierAccount string) string {
 	}
 
 	return common.GetObjectInstTableName(objID, supplierAccount)
-}
-
-// SupplierAccount get event supplier account
-func (k Key) SupplierAccount(doc []byte) string {
-	return gjson.GetBytes(doc, common.TenantID).String()
 }

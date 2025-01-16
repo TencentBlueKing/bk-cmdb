@@ -122,9 +122,19 @@ func initResource(cacheSvr *CacheServer) error {
 		return err
 	}
 
-	dbErr := mongodb.InitClient("", &cacheSvr.Config.Mongo)
-	if dbErr != nil {
-		blog.Errorf("failed to connect the db server, error info is %s", dbErr.Error())
+	cryptoConf, err := cc.Crypto("crypto")
+	if err != nil {
+		blog.Errorf("get crypto config failed, err: %v", err)
+		return err
+	}
+
+	if dbErr := mongodb.SetShardingCli("", &cacheSvr.Config.Mongo, cryptoConf); dbErr != nil {
+		blog.Errorf("failed to connect the db server, err: %v", dbErr)
+		return dbErr
+	}
+
+	if dbErr := mongodb.SetShardingCli("watch", &cacheSvr.Config.WatchMongo, cryptoConf); dbErr != nil {
+		blog.Errorf("new watch db sharding client failed, err: %v", dbErr)
 		return dbErr
 	}
 

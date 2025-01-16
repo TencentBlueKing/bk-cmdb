@@ -10,18 +10,19 @@
  * limitations under the License.
  */
 
-// Package event TODO
+// Package event defines event watch logics
 package event
 
 import "go.mongodb.org/mongo-driver/mongo"
 
-// Event TODO
+// Event is the struct for event watch
 type Event struct {
 	database string
+	DBName   string
 	client   *mongo.Client
 }
 
-// NewEvent TODO
-func NewEvent(client *mongo.Client, db string) (*Event, error) {
-	return &Event{client: client, database: db}, nil
+// NewEvent new Event
+func NewEvent(client *mongo.Client, db, dbName string) (*Event, error) {
+	return &Event{client: client, database: db, DBName: dbName}, nil
 }

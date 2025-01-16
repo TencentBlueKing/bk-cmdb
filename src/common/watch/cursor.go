@@ -22,10 +22,8 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/storage/stream/types"
 
-	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -73,11 +71,6 @@ var (
 		BizSet:                  14,
 		BizSetRelation:          15,
 		Plat:                    16,
-		KubeCluster:             17,
-		KubeNode:                18,
-		KubeNamespace:           19,
-		KubeWorkload:            20,
-		KubePod:                 21,
 		Project:                 22,
 	}
 
@@ -124,17 +117,6 @@ const (
 	Plat CursorType = "plat"
 	// Project project event cursor type
 	Project CursorType = "project"
-	// kube related cursor types
-	// KubeCluster cursor type
-	KubeCluster CursorType = "kube_cluster"
-	// KubeNode cursor type
-	KubeNode CursorType = "kube_node"
-	// KubeNamespace cursor type
-	KubeNamespace CursorType = "kube_namespace"
-	// KubeWorkload cursor type, including all workloads(e.g. deployment) with their type specified in sub-resource
-	KubeWorkload CursorType = "kube_workload"
-	// KubePod cursor type, its event detail is pod info with containers in it
-	KubePod CursorType = "kube_pod"
 )
 
 // ToInt TODO
@@ -161,8 +143,7 @@ func (ct *CursorType) ParseInt(typ int) {
 // ListCursorTypes returns all support CursorTypes.
 func ListCursorTypes() []CursorType {
 	return []CursorType{Host, ModuleHostRelation, Biz, Set, Module, ObjectBase, Process, ProcessInstanceRelation,
-		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation, Plat, KubeCluster, KubeNode, KubeNamespace,
-		KubeWorkload, KubePod, Project}
+		HostIdentifier, MainlineInstance, InstAsst, BizSet, BizSetRelation, Plat, Project}
 }
 
 // Cursor is a self-defined token which is corresponding to the mongodb's resume token.
@@ -339,11 +320,6 @@ var collEventCursorTypeMap = map[string]CursorType{
 	common.BKTableNameInstAsst:                InstAsst,
 	common.BKTableNameBaseBizSet:              BizSet,
 	common.BKTableNameBasePlat:                Plat,
-	kubetypes.BKTableNameBaseCluster:          KubeCluster,
-	kubetypes.BKTableNameBaseNode:             KubeNode,
-	kubetypes.BKTableNameBaseNamespace:        KubeNamespace,
-	kubetypes.BKTableNameBaseWorkload:         KubeWorkload,
-	kubetypes.BKTableNameBasePod:              KubePod,
 	common.BKTableNameBaseProject:             Project,
 }
 
@@ -370,13 +346,6 @@ func GetEventCursor(coll string, e *types.Event, instID int64) (string, error) {
 
 		// add unique key for common object instance.
 		hCursor.UniqKey = strconv.FormatInt(instID, 10)
-	case KubeWorkload:
-		if instID <= 0 {
-			return "", errors.New("invalid kube workload id")
-		}
-
-		// add unique key for kube workload, composed by workload type and id.
-		hCursor.UniqKey = fmt.Sprintf("%s:%d", gjson.GetBytes(e.DocBytes, kubetypes.KindField).String(), instID)
 	}
 
 	hCursorEncode, err := hCursor.Encode()
