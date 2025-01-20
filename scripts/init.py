@@ -205,7 +205,6 @@ elasticsearch-replica-num = "$es_replica_num"
 #    domainUrl: http://127.0.0.1:80/
 #    bkLoginUrl: http://127.0.0.1/login/?app_id=%s&amp;c_url=%s
 #    appCode: cc
-#    checkUrl: http://127.0.0.1/login/accounts/get_user/?bk_token=
 #    bkAccountUrl: http://127.0.0.1/login/accounts/get_all_user/?bk_token=%s
 #    resourcesPath: /tmp/
 #    htmlRoot: /data/cmdb/web
@@ -416,6 +415,7 @@ apiGW:
   bkGseApiGatewayUrl:
   bkNoticeApiGatewayUrl:
   bkCmdbApiGatewayUrl:
+  bkLoginApiGatewayUrl:
   appCode:
   appSecret:
   username:
@@ -501,7 +501,6 @@ webServer:
     #登录地址
     bkLoginUrl: ${paas_url}/login/?app_id=%s&c_url=%s
     appCode: cc
-    checkUrl: ${paas_url}/login/accounts/get_user/?bk_token=
     bkAccountUrl: ${paas_url}/login/accounts/get_all_user/?bk_token=%s
     resourcesPath: /tmp/
     #前端基础页面位置

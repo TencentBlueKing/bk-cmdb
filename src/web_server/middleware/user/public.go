@@ -54,16 +54,6 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		blog.Infof("login user with plugin failed, rid: %s", rid)
 		return false
 	}
-	if true == isMultiOwner || true == userInfo.MultiTenant {
-		ownerM := NewTenantManager(userInfo.UserName, userInfo.TenantUin, userInfo.Language)
-		ownerM.CacheCli = m.cacheCli
-		ownerM.Engine = m.engine
-		// 初始化失败，不影响登录
-		_, err := ownerM.InitTenant()
-		if nil != err {
-			blog.ErrorJSON("init onwer resource pool failed, err:%s, user:%s, rid: %s", err, userInfo, rid)
-		}
-	}
 	strOwnerUinList := []byte("")
 	if 0 != len(userInfo.TenantUinArr) {
 		strOwnerUinList, _ = json.Marshal(userInfo.TenantUinArr)

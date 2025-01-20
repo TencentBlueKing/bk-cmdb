@@ -250,6 +250,7 @@ data:
       bkGseApiGatewayUrl: {{ .Values.bkGseApiGatewayUrl }}
       bkNoticeApiGatewayUrl: {{ .Values.bkNoticeApiGatewayUrl }}
       bkCmdbApiGatewayUrl: {{ .Values.bkCmdbApiGatewayUrl }}
+      bkLoginApiGatewayUrl: {{ .Values.bkLoginApiGatewayUrl }}
       appCode: {{ .Values.common.apiGW.appCode }}
       appSecret: {{ .Values.common.apiGW.appSecret }}
       username: {{ .Values.common.apiGW.username }}

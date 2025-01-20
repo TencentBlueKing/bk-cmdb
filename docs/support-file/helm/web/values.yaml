@@ -173,6 +173,9 @@ bkNoticeApiGatewayUrl: "http://bkapi.example.com"
 # CMDB API Gateway url
 bkCmdbApiGatewayUrl: "http://bkapi.example.com"
 
+# 蓝鲸登录 API Gateway url
+bkLoginApiGatewayUrl: "http://bkapi.example.com"
+
 ## 蓝鲸共享资源URL
 bkSharedResUrl:
 
@@ -214,7 +217,6 @@ web:
     ## @param common.webServer.site.httpsDomainUrl bk-cmdb web https domain address
     ## @param common.webServer.site.bkDomain bk-cmdb web bk domain address
     ## @param common.webServer.site.appCode bk-cmdb app code
-    ## @param common.webServer.site.checkUrl bk-login user check url
     ## @param common.webServer.site.resourcesPath bk-cmdb frontend resource path
     ## @param common.webServer.site.htmlRoot bk-cmdb frontend html root
     ## @param common.webServer.site.authScheme bk-cmdb authentication scheme

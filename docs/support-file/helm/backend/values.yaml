@@ -914,6 +914,9 @@ bkNoticeApiGatewayUrl: "http://bkapi.example.com"
 # CMDB API Gateway url
 bkCmdbApiGatewayUrl: "http://bkapi.example.com"
 
+# 蓝鲸登录 API Gateway url
+bkLoginApiGatewayUrl: "http://bkapi.example.com"
+
 ## @section bk-cmdb common config parameters
 ##
 common:

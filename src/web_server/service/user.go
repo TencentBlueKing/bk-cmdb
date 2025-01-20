@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
-	webcom "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user"
 
 	"github.com/gin-contrib/sessions"
@@ -185,26 +184,6 @@ func (s *Service) UpdateTenant(c *gin.Context) {
 	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(tenant.Role, 10))
 	if err := session.Save(); err != nil {
 		blog.Errorf("save session failed, err: %v, rid: %s", err, rid)
-	}
-
-	// not user, notice not privilege
-	uin, _ := session.Get(common.WEBSessionUinKey).(string)
-	language := webcom.GetLanguageByHTTPRequest(c)
-
-	tenantM := user.NewTenantManager(uin, tenant.TenantID, language)
-	tenantM.CacheCli = s.CacheCli
-	tenantM.Engine = s.Engine
-	tenantM.ApiCli = s.ApiCli
-	permissions, err := tenantM.InitTenant()
-	if nil != err {
-		blog.Errorf("InitTenant error: %v, rid: %s", err, rid)
-		c.JSON(http.StatusBadRequest, metadata.BaseResp{
-			Result:      false,
-			Code:        err.GetCode(),
-			ErrMsg:      err.Error(),
-			Permissions: permissions,
-		})
-		return
 	}
 
 	ret := metadata.LoginChangeTenantResult{}

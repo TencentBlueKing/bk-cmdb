@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/ginservice"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/apigw"
 	noticeCli "configcenter/src/thirdparty/apigw/notice"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
@@ -229,14 +228,6 @@ func (s *Service) Healthz(c *gin.Context) {
 func (s *Service) InitNotice() error {
 	if !s.Config.EnableNotification {
 		return nil
-	}
-
-	if apigwcli.Client() == nil {
-		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry(), []apigw.ClientType{apigw.Cmdb, apigw.Notice})
-		if err != nil {
-			blog.Errorf("init apigw clientset failed, err: %v", err)
-			return err
-		}
 	}
 
 	s.NoticeCli = apigwcli.Client().Notice()

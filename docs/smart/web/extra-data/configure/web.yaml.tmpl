@@ -41,7 +41,6 @@ webServer:
     bkLoginUrl: ${BKPAAS_LOGIN_URL}?app_id=%s&c_url=%s
     bkHttpsLoginUrl: ${BKPAAS_LOGIN_URL}?app_id=%s&c_url=%s
     appCode: ${BK_CMDB_APP_CODE}
-    checkUrl: ${BKPAAS_LOGIN_URL}/accounts/get_user/?bk_token=
     resourcesPath: /tmp/
     # 前端基础页面位置
     htmlRoot: /app/web/
@@ -135,6 +134,7 @@ openTelemetry:
 apiGW:
   bkNoticeApiGatewayUrl: ${BK_APIGW_BK_NOTICE_URL}
   bkCmdbApiGatewayUrl: ${BK_APIGW_BK_CMDB_URL}
+  bkLoginApiGatewayUrl: ${BK_APIGW_BK_LOGIN_URL}
   appCode: ${BK_CMDB_APP_CODE}
   appSecret: ${BK_CMDB_APP_SECRET}
   username: admin

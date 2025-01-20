@@ -100,6 +100,7 @@ func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 		}
 
 		err = tenant.ExecForAllTenants(func(tenantID string) error {
+			kit = kit.NewKit()
 			kit.TenantID = tenantID
 			exists, err := s.watchDB.Shard(kit.ShardOpts()).HasTable(s.ctx, key.ChainCollection())
 			if err != nil {

@@ -31,7 +31,7 @@ func SetProxyHeader(c *gin.Context) {
 	c.Request.Header.Del("Accept-Encoding")
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, GetLanguageByHTTPRequest(c))
-	httpheader.AddTenantID(c.Request.Header, ownerID)
+	httpheader.SetTenantID(c.Request.Header, ownerID)
 }
 
 // GetLanguageByHTTPRequest get language by http request cookie
