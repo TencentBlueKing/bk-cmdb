@@ -38,6 +38,7 @@
   import { mapGetters } from 'vuex'
   import has from 'has'
   import { CONFIG_MODE } from '@/service/service-template/index.js'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default {
     props: {
@@ -163,8 +164,10 @@
               if (isAny) {
                 rule.operator = 'exist'
               } else {
+                // 对枚举类型特殊处理
+                const val = item.type === PROPERTY_TYPES.ENUM ? value.name : value.id
                 rule.operator = 'contains'
-                rule.value = String(value.name).trim()
+                rule.value = String(val).trim()
               }
               rules.push(rule)
             } else {
