@@ -30,7 +30,7 @@ spec:
           res=$(curl -s -X POST \
           -H 'Content-Type:application/json' \
           -H 'X-Bkcmdb-User:migrate' \
-          -H 'X-Bk-Tenant-Id:0' \
+          -H 'X-Bk-Tenant-Id:system' \
           --data '{"host": "http://{{  $ingressHost }}"}' \
           "http://{{ template "bk-cmdb.adminserver" . }}/migrate/v3/authcenter/init"
           )

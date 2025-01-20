@@ -18,6 +18,7 @@
 | BK_CMDB_APIGW_JWT_PUBLICKEY            | cmdb API GATEWAY网关公钥             |             |
 | BK_APIGW_BK_NOTICE_URL                 | 消息通知中心API GATEWAY网关地址            |             |
 | BK_APIGW_BK_CMDB_URL                   | cmdb API GATEWAY网关地址             |             |
+| BK_APIGW_BK_LOGIN_URL                  | 蓝鲸登录API GATEWAY网关地址              |             |
 | BK_CMDB_MONGODB_HOST                   | cmdb mongodb地址                   |             |
 | BK_CMDB_MONGODB_PORT                   | cmdb mongodb端口                   |             |
 | BK_CMDB_MONGODB_USERNAME               | cmdb mongodb用户                   |             |

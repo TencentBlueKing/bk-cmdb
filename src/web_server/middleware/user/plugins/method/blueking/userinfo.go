@@ -14,19 +14,16 @@
 package blueking
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
-	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
-	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/resource/esb"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
@@ -42,23 +39,6 @@ func init() {
 	manager.RegisterPlugin(plugin) // ("blueking login system", "self", "")
 }
 
-type loginResultData struct {
-	UserName string `json:"username"`
-	ChName   string `json:"chname"`
-	Phone    string `json:"Phone"`
-	Email    string `json:"email"`
-	Role     string `json:"role"`
-	Language string `json:"language"`
-	OwnerUin string `json:"owner_uin"`
-}
-
-type loginResult struct {
-	Message string
-	Code    string
-	Result  bool
-	Data    *loginResultData
-}
-
 type user struct{}
 
 // LoginUser user login
@@ -72,49 +52,21 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		return nil, false
 	}
 
-	checkUrl, err := cc.String("webServer.site.checkUrl")
-	if err != nil {
-		blog.Errorf("get login url config item not found, rid: %s", rid)
-		return nil, false
-	}
-
-	var resultData loginResult
-	httpCli := httpclient.NewHttpClient()
-	httpCli.SetTimeOut(30 * time.Second)
-
-	tlsConf, err := apiutil.NewTLSClientConfigFromConfig("webServer.site.paas.tls")
-	if err != nil {
-		blog.Errorf("get tls config error, err: %v, rid: %s", err, rid)
-		return nil, false
-	}
-
-	if err := m.setTLSConf(&tlsConf, httpCli, rid); err != nil {
-		blog.Errorf("set tls config error, err: %v, rid: %s", err, rid)
-		return nil, false
-	}
-
 	for _, bkToken := range bkTokens {
-		loginURL := checkUrl + bkToken
-		loginResultByteArr, err := httpCli.GET(loginURL, nil, nil)
+		userInfo, err := apigwcli.Client().Login().GetUserByToken(c.Request.Context(), c.Request.Header, bkToken)
 		if err != nil {
-			blog.Errorf("get user info return error: %v, rid: %s", err, rid)
-			continue
-		}
-		blog.V(3).Infof("get user info url: %s, result: %s, rid: %s", loginURL, string(loginResultByteArr), rid)
-
-		err = json.Unmarshal(loginResultByteArr, &resultData)
-		if err != nil {
-			blog.Errorf("fail to unmarshal data: %s, error: %v, rid: %s", string(loginResultByteArr), err, rid)
-			return nil, false
-		}
-
-		if !resultData.Result {
-			blog.Errorf("get user info return error, error code: %s, error message: %s, rid: %s", resultData.Code,
-				resultData.Message, rid)
+			blog.Errorf("get user info by token %s failed, err: %v, rid: %s", bkToken, err, rid)
 			continue
 		}
 
-		user = setUser(resultData, bkToken)
+		user = &metadata.LoginUserInfo{
+			UserName:  userInfo.Username,
+			ChName:    userInfo.DisplayName,
+			BkToken:   bkToken,
+			TenantUin: userInfo.TenantID,
+			IsTenant:  false,
+			Language:  userInfo.Language,
+		}
 		break
 	}
 	if user == nil {
@@ -135,27 +87,6 @@ func getBkTokens(c *gin.Context) (bkTokens []string) {
 		}
 	}
 	return bkTokens
-}
-
-// setUser get userInfo from resultData
-func setUser(resultData loginResult, bkToken string) (user *metadata.LoginUserInfo) {
-	userDetail := resultData.Data
-	if len(userDetail.OwnerUin) == 0 {
-		userDetail.OwnerUin = common.BKDefaultTenantID
-	}
-
-	user = &metadata.LoginUserInfo{
-		UserName:  userDetail.UserName,
-		ChName:    userDetail.ChName,
-		Phone:     userDetail.Phone,
-		Email:     userDetail.Email,
-		Role:      userDetail.Role,
-		BkToken:   bkToken,
-		TenantUin: userDetail.OwnerUin,
-		IsTenant:  false,
-		Language:  userDetail.Language,
-	}
-	return user
 }
 
 // GetLoginUrl get login url
@@ -227,19 +158,4 @@ func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadat
 	}
 
 	return users, nil
-}
-
-func (m *user) setTLSConf(tlsConf *apiutil.TLSClientConfig, httpCli *httpclient.HttpClient, rid string) error {
-	if tlsConf != nil && !tlsConf.InsecureSkipVerify {
-		if err := httpCli.SetTLSVerify(tlsConf); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	if err := httpCli.SetTlsNoVerity(); err != nil {
-		blog.Warnf("httpCli.SetTlsNoVerity failed, err: %+v, rid: %s", err, rid)
-	}
-
-	return nil
 }

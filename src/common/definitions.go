@@ -74,7 +74,7 @@ const (
 	BKInstParentStr = "bk_parent_id"
 
 	// BKDefaultTenantID the default tenant value
-	BKDefaultTenantID = "0"
+	BKDefaultTenantID = "system"
 
 	// BKSuperTenantID the super tenant value
 	BKSuperTenantID = "superadmin"

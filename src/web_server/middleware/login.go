@@ -96,7 +96,7 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, language)
-	httpheader.AddTenantID(c.Request.Header, ownerID)
+	httpheader.SetTenantID(c.Request.Header, ownerID)
 	httpheader.SetUserToken(c.Request.Header, bkToken)
 	httpheader.SetUserTicket(c.Request.Header, bkTicket)
 

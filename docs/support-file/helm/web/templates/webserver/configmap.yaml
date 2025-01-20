@@ -39,7 +39,6 @@ data:
         bkLoginUrl: {{ include "cmdb.webserver.bkLoginUrl" . }}
         bkHttpsLoginUrl: {{ include "cmdb.webserver.bkHttpsLoginUrl" . }}
         appCode: {{ .Values.web.webServer.site.appCode }}
-        checkUrl: {{ .Values.bkLoginApiUrl }}/accounts/get_user/?bk_token=
         resourcesPath: {{ .Values.web.webServer.site.resourcesPath }}
         #前端基础页面位置
         htmlRoot: {{ .Values.web.webServer.site.htmlRoot }}
@@ -109,6 +108,7 @@ data:
       bkGseApiGatewayUrl: {{ .Values.bkGseApiGatewayUrl }}
       bkNoticeApiGatewayUrl: {{ .Values.bkNoticeApiGatewayUrl }}
       bkCmdbApiGatewayUrl: {{ .Values.bkCmdbApiGatewayUrl }}
+      bkLoginApiGatewayUrl: {{ .Values.bkLoginApiGatewayUrl }}
       appCode: {{ .Values.web.apiGW.appCode }}
       appSecret: {{ .Values.web.apiGW.appSecret }}
       username: {{ .Values.web.apiGW.username }}

@@ -63,7 +63,6 @@ type Site struct {
 	BkLoginUrl      string
 	BkHttpsLoginUrl string
 	AppCode         string
-	CheckUrl        string
 	// available value: internal, iam
 	AuthScheme string
 	// available value: off, on
