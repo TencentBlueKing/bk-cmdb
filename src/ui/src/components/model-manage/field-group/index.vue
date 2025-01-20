@@ -579,7 +579,7 @@
     },
     async created() {
       this.handleFilter = debounce(this.filterField, 300)
-      this.initProperies()
+      await this.initProperies()
 
       this.$nextTick(() => {
         this.execRouteAction()
