@@ -120,13 +120,20 @@
       },
       localSelected: {
         get() {
-          console.log(this.value, 'this.value')
           return this.value
         },
         set(value) {
           const [id, type] = value.split('-')
           this.$emit('input', value)
           this.$emit('select', value, Number(id), type === 'bizset')
+        }
+      }
+    },
+    watch: {
+      localSelected() {
+        const hasFirstPage = this.displayList.filter(list => list.id === this.value).length
+        if (!hasFirstPage) {
+          this.setBizChoose()
         }
       }
     },
@@ -195,6 +202,9 @@
           this.displayList = value
         }
 
+        this.setBizChoose()
+      },
+      setBizChoose() {
         // 由于使用了分页加载，当前选中的业务可能不在列表中select组件无法回显，通过调用registerOption解决
         this.$nextTick(() => {
           const selectedOption = this.normalizationList.find(item => item.id === this.localSelected)
@@ -216,13 +226,11 @@
             const lowerName = option.name.toLowerCase()
             const matched = lowerName.indexOf(searchValue) !== -1
             if (matched) {
-              console.log(option)
               displayList.push(option)
             } else {
               const pinyinList = this.$bkToPinyin(lowerName, true, '-').split('-')
               const pinyinStr = pinyinList.reduce((res, cur) => res + cur[0], '')
               if (pinyinList.join('').indexOf(searchValue) !== -1 || pinyinStr.indexOf(searchValue) !== -1) {
-                console.log(option, 'pppyy')
                 displayList.push(option)
               }
             }
