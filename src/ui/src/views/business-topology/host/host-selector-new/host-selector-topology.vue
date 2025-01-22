@@ -368,6 +368,7 @@
             this.$set(data, 'status', 'finished')
             this.$set(data, 'host_count', count.host_count)
             this.$set(data, 'service_instance_count', count.service_instance_count)
+            this.$forceUpdate()  
           })
         } catch (error) {
           console.error(error)

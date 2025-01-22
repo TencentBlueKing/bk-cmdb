@@ -1920,6 +1920,8 @@
     "如需使用该功能，您需要：": "If you need to use this function, you need to：",
     "联系平台维护人员开启": "Contact the platform maintenance staff to enable it",
     "模型默认分组不可删除": "The default model group cannot be deleted",
+    "已自动过滤": "Automatically filtered",
+    "可选的主机：": "Optional host:",
     "前往模型管理": "Go to model management",
     "刚刚刷新": "Last refreshed just now",
     "大于1小时前刷新": "Last refreshed more than 1h ago",

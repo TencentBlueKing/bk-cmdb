@@ -63,9 +63,15 @@
         return count > 1
       }
     },
+    watch: {
+      selected() {
+        if (!(this.selected.length || this.showIPTag) && FilterStore.activeCollection) FilterStore.setActiveCollection(null)
+      }
+    },
     methods: {
       handleResetAll() {
         FilterStore.resetAll()
+        FilterStore.setActiveCollection(null)
       }
     }
   }
