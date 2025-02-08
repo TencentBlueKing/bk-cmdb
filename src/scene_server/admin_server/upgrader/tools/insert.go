@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -101,10 +102,24 @@ func InsertData(kit *rest.Kit, db dal.RDB, table string, data []interface{}, ins
 		AuditDataField: insertOps.AuditDataField,
 		AuditTypeData:  insertOps.AuditTypeField,
 	}
-	if err = AddCreateAuditLog(kit, mongodb.Dal().Shard(kit.ShardOpts()), insertData, auditField); err != nil {
+	if err = AddCreateAuditLog(kit, db, insertData, auditField); err != nil {
 		blog.Errorf("add audit log failed, err: %v", err)
 		return nil, err
 	}
+
+	if common.IsPlatformTable(table) {
+		return idFields, nil
+	}
+
+	if kit.TenantID != common.BKDefaultTenantID || !insertOps.IsTemplateData {
+		return idFields, nil
+	}
+	// add data to tenant template
+	if err := InsertTemplateData(kit, insertOps, insertData, true); err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
+		return nil, err
+	}
+
 	return idFields, nil
 }
 
@@ -207,6 +222,31 @@ func InterfaceToMapStr(data interface{}) (map[string]interface{}, error) {
 	return resultData, nil
 }
 
+// InsertTemplateData insert template data
+func InsertTemplateData(kit *rest.Kit, insertOps *InsertOptions, data []map[string]interface{}, isPre bool) error {
+	nextIDs, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameTenantTemplate,
+		len(data))
+	if err != nil {
+		blog.Errorf("get next %d data IDs failed, table: %s, err: %v", len(data), common.BKTableNameTenantTemplate, err)
+		return err
+	}
+
+	templateData := make([]TemplateData, len(data))
+	for i, item := range data {
+		templateData[i].IsPre = isPre
+		templateData[i].Type = insertOps.Type
+		templateData[i].ID = int64(nextIDs[i])
+		templateData[i].Data = item
+	}
+
+	err = mongodb.Dal().Shard(kit.SysShardOpts()).Table(common.BKTableNameTenantTemplate).Insert(kit.Ctx, templateData)
+	if err != nil {
+		blog.Errorf("add data for table %s failed, data: %+v, err: %v", templateData, err)
+		return err
+	}
+	return nil
+}
+
 // InsertOptions the options of insert field for audit and data
 type InsertOptions struct {
 	UniqueFields   []string
@@ -214,4 +254,18 @@ type InsertOptions struct {
 	IDField        []string
 	AuditDataField *AuditDataField `bson:",inline"`
 	AuditTypeField *AuditResType   `bson:",inline"`
+	IsTemplateData bool
+	Type           string
+}
+
+type TemplateData struct {
+	Type  string        `json:"type"`
+	IsPre bool          `json:"is_pre"`
+	ID    int64         `json:"id"`
+	Data  mapstr.MapStr `json:"data"`
+}
+
+type TenantTemplateFields struct {
+	Data  InsertOptions `json:"data"`
+	Table string        `json:"table"`
 }

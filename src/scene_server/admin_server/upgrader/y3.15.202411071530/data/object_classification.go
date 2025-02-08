@@ -55,7 +55,7 @@ var objClassificationDataData = []Classification{
 	},
 }
 
-func addObjClassificationData(kit *rest.Kit, db dal.Dal) error {
+func addObjClassificationData(kit *rest.Kit, db dal.RDB) error {
 	objClassification := make([]interface{}, 0)
 	for _, asst := range objClassificationDataData {
 		objClassification = append(objClassification, asst)
@@ -73,8 +73,11 @@ func addObjClassificationData(kit *rest.Kit, db dal.Dal) error {
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModelClassificationRes,
 		},
+		IsTemplateData: true,
+		Type:           "obj_classification",
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjClassification, objClassification,
+
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjClassification, objClassification,
 		needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjClassification, err)

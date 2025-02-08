@@ -28,7 +28,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func addSelfIncrIDData(kit *rest.Kit, db dal.Dal) error {
+func addSelfIncrIDData(kit *rest.Kit, db dal.RDB) error {
 
 	objIDs := []string{"host", "set", "module", "bk_project", "biz", "process", "plat", "bk_biz_set_obj"}
 	ids := make([]string, 0)
@@ -54,7 +54,7 @@ func addSelfIncrIDData(kit *rest.Kit, db dal.Dal) error {
 		IgnoreKeys:   []string{"_id"},
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.SysShardOpts()), common.BKTableNameIDgenerator, needAddIDs, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameIDgenerator, needAddIDs, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameIDgenerator, err)
 		return err

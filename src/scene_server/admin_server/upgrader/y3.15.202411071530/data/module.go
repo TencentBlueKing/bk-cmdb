@@ -43,7 +43,7 @@ var moduleMap = map[string]map[string]interface{}{
 	},
 }
 
-func addModuleData(kit *rest.Kit, db dal.Dal, bizID int64, moduleNames []string, setID int64) error {
+func addModuleData(kit *rest.Kit, db dal.RDB, bizID int64, moduleNames []string, setID int64) error {
 
 	categoryID := defaultServiceCategoryID
 	moduleAdd := make([]interface{}, 0)
@@ -80,7 +80,8 @@ func addModuleData(kit *rest.Kit, db dal.Dal, bizID int64, moduleNames []string,
 			ResNameField: common.BKModuleNameField,
 		},
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBaseModule, moduleAdd, needField)
+
+	_, err := tools.InsertData(kit, db, common.BKTableNameBaseModule, moduleAdd, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed,common.BKTableNameAsstDes, err: %v", err)
 		return err

@@ -27,7 +27,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func addSystemData(kit *rest.Kit, db dal.Dal) error {
+func addSystemData(kit *rest.Kit, db dal.RDB) error {
 	blog.Infof("start add init data for table: %s", common.BKTableNameSystem)
 
 	data := map[string]interface{}{common.HostCrossBizField: common.HostCrossBizValue}
@@ -35,8 +35,7 @@ func addSystemData(kit *rest.Kit, db dal.Dal) error {
 		UniqueFields: []string{common.HostCrossBizField},
 		IgnoreKeys:   make([]string, 0),
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.SysShardOpts()), common.BKTableNameSystem, []interface{}{data},
-		needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []interface{}{data}, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameSystem, err)
 		return err
@@ -51,7 +50,7 @@ func addSystemData(kit *rest.Kit, db dal.Dal) error {
 	return nil
 }
 
-func initConfigAdmin(kit *rest.Kit, db dal.Dal) error {
+func initConfigAdmin(kit *rest.Kit, db dal.RDB) error {
 	configData := map[string]interface{}{
 		common.BKFieldDBID:           common.ConfigAdminID,
 		common.CreateTimeField:       time.Now(),
@@ -63,7 +62,7 @@ func initConfigAdmin(kit *rest.Kit, db dal.Dal) error {
 		UniqueFields: []string{"_id"},
 		IgnoreKeys:   make([]string, 0),
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.SysShardOpts()), common.BKTableNameSystem, []interface{}{configData},
+	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []interface{}{configData},
 		needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameSystem, err)

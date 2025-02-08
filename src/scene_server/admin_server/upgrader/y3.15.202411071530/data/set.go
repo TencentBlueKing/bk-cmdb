@@ -38,7 +38,7 @@ var (
 	}
 )
 
-func addSetBaseData(kit *rest.Kit, db dal.Dal, bizID int64) (map[string]interface{}, error) {
+func addSetBaseData(kit *rest.Kit, db dal.RDB, bizID int64) (map[string]interface{}, error) {
 	setData[common.BKAppIDField] = bizID
 	setData[common.BKInstParentStr] = bizID
 	setData[common.CreateTimeField] = time.Now()
@@ -61,7 +61,7 @@ func addSetBaseData(kit *rest.Kit, db dal.Dal, bizID int64) (map[string]interfac
 		},
 	}
 
-	ids, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBaseSet, []interface{}{setData},
+	ids, err := tools.InsertData(kit, db, common.BKTableNameBaseSet, []interface{}{setData},
 		needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseApp, err)
