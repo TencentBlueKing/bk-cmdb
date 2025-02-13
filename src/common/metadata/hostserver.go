@@ -1060,8 +1060,14 @@ func (f *FindHostTotalTopo) Validate(errProxy errors.DefaultCCErrorIf) errors.CC
 
 // HostMainlineTopoResult result of host mainline topo
 type HostMainlineTopoResult struct {
-	Count int                  `json:"count"`
-	Info  []HostDetailWithTopo `json:"info"`
+	Count int                   `json:"count"`
+	Info  []*HostDetailWithTopo `json:"info"`
+}
+
+// HostMainlineTopoResp response of host mainline topo
+type HostMainlineTopoResp struct {
+	BaseResp `json:",inline"`
+	Data     *HostMainlineTopoResult `json:"data"`
 }
 
 // Validate validate hostIDs length
@@ -1204,6 +1210,12 @@ type HostIDsResp struct {
 	HostIDs []int64 `json:"bk_host_ids"`
 }
 
+// CreateHostBatchResult create host batch result
+type CreateHostBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     HostIDsResp `json:"data"`
+}
+
 // CountHostCPUReq count host cpu num request
 type CountHostCPUReq struct {
 	BizID int64     `json:"bk_biz_id,omitempty"`
@@ -1245,6 +1257,12 @@ type BizHostCpuCount struct {
 	HostCount      int64 `json:"host_count"`
 	CpuCount       int64 `json:"cpu_count"`
 	NoCpuHostCount int64 `json:"no_cpu_host_count"`
+}
+
+// BizHostCpuCountResult host cpu count in biz result
+type BizHostCpuCountResult struct {
+	BaseResp `json:",inline"`
+	Data     []BizHostCpuCount `json:"data"`
 }
 
 // AddCloudHostToBizParam add cloud host to biz idle module request parameter
@@ -1333,4 +1351,21 @@ func (u *UpdateHostOpt) Validate() errors.RawErrorInfo {
 	}
 
 	return errors.RawErrorInfo{}
+}
+
+// HostIDReq host id request
+type HostIDReq struct {
+	HostIDs []int64 `json:"bk_host_id"`
+}
+
+// HostSrvTmplResult find host service template result
+type HostSrvTmplResult struct {
+	HostID     int64   `json:"bk_host_id"`
+	SrvTmplIDs []int64 `json:"service_template_id"`
+}
+
+// HostSrvTmplResp find host service template response
+type HostSrvTmplResp struct {
+	BaseResp `json:",inline"`
+	Data     []HostSrvTmplResult `json:"data"`
 }
