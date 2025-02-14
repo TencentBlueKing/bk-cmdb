@@ -43,6 +43,7 @@ func init() {
 type authConf struct {
 	resource     string
 	resourceFile string
+	env          string
 	logv         int32
 }
 
@@ -84,6 +85,7 @@ func NewAuthCommand() *cobra.Command {
 func (c *authConf) addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&c.resource, "resource", "r", "", "the resource for authorize")
 	cmd.PersistentFlags().StringVarP(&c.resourceFile, "rsc-file", "f", "", "the resource file path for authorize")
+	cmd.PersistentFlags().StringVarP(&c.env, "environment", "e", "", "the environment for service discovery")
 	cmd.PersistentFlags().Int32VarP(&c.logv, "logV", "v", 0,
 		"the log level of request, default request body log level is 4")
 }
@@ -106,7 +108,7 @@ func newAuthService(c *authConf) (*authService, error) {
 	if err := client.Ping(); err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
 	}
-	serviceDiscovery, err := discovery.NewServiceDiscovery(client)
+	serviceDiscovery, err := discovery.NewServiceDiscovery(client, c.env)
 	if err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.ZkAddr, err)
 	}

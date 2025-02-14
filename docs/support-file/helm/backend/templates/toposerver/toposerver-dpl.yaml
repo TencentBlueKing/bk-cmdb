@@ -38,6 +38,7 @@ spec:
         - --config={{ .Values.toposerver.configDir }}
         {{- end }}
         - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        - --env={{ .Values.serviceDiscoveryEnv }}
         {{- if .Values.toposerver.command.logDir }}
         - --log-dir={{ .Values.toposerver.command.logDir }}
         {{- end }}
