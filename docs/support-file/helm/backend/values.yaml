@@ -1806,3 +1806,14 @@ apigatewaySync:
   bcsSyncAppCode: "bk-bcs-cmdb-sync"
   ## 此变量在运维维护的变量中，没有对应的变量
   hcmAppCode: "bk-hcm"
+
+## @section topology spread constraints
+topologySpreadConstraints:
+  ## The maximum skew allowed between the number of matching pods in any two topologies.
+  maxSkew: 1
+  ## The key from metadata.labelKeys to use for spreading.
+  topologyKey: "topology.kubernetes.io/zone"
+  ## Defines what happens when it's not possible to satisfy the requested distribution.
+  ## - "DoNotSchedule": Prevent new Pods from being scheduled until the constraint is satisfied.
+  ## - "ScheduleAnyway": Schedule new Pods as usual but still try to achieve even distribution over time.
+  whenUnsatisfiable: "ScheduleAnyway"
