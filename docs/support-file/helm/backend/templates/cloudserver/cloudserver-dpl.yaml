@@ -38,6 +38,7 @@ spec:
         - --config={{ .Values.cloudserver.configDir }}
         {{- end }}
         - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        - --env={{ .Values.serviceDiscoveryEnv }}
         - --enable_cryptor={{ .Values.cloudserver.command.enableCryptor }}
         {{- if .Values.cloudserver.command.logDir }}
         - --log-dir={{ .Values.cloudserver.command.logDir }}

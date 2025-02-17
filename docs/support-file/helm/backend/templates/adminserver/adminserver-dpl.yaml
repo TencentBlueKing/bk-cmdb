@@ -35,6 +35,7 @@ spec:
         args:
         - --addrport=$(POD_IP):{{ .Values.adminserver.port }}
         - --config={{ .Values.adminserver.configDir }}/migrate.yaml
+        - --env={{ .Values.serviceDiscoveryEnv }}
         {{- if .Values.adminserver.command.logDir }}
         - --log-dir={{ .Values.adminserver.command.logDir }}
         {{- end }}
