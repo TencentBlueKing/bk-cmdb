@@ -82,6 +82,7 @@
     "host_property_bk_cloud_vendor": "Cloud vendor",
     "host_property_bk_cloud_region": "Cloud Region",
     "host_property_bk_cloud_zone": "Cloud Zone",
+    "host_property_bk_os_kernel_version": "OS kernel version",
     "process_property_bk_biz_id": "Business ID",
     "process_property_bk_process_name": "Alias",
     "process_property_description": "Description",
