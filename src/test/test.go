@@ -106,7 +106,7 @@ func init() {
 	Expect(err).Should(BeNil())
 	Expect(client.Start()).Should(BeNil())
 	Expect(client.Ping()).Should(BeNil())
-	disc, err := discovery.NewServiceDiscovery(client)
+	disc, err := discovery.NewServiceDiscovery(client, "")
 	Expect(err).Should(BeNil())
 	c := &util.APIMachineryConfig{
 		QPS:       20000,

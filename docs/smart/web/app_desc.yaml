@@ -1,5 +1,5 @@
 specVersion: 3
-appVersion: "3.14.3"
+appVersion: "3.14.5"
 app:
   region: "default"
   bkAppCode: "bk_cmdb_saas"
@@ -25,6 +25,12 @@ modules:
           replicas: 1
           resQuotaPlan: default
           targetPort: 80
+          services:
+            - name: web
+              exposedType:
+                name: bk/http
+              targetPort: 80
+              port: 80
       configuration:
         env:
         - name: "GO_INSTALL_PACKAGE_SPEC"

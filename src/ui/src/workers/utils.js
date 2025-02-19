@@ -23,7 +23,7 @@ export const postData = async (url, data = {}, config = {}) => {
     method: 'POST',
     mode: 'cors',
     credentials: 'include',
-    headers: customHeaders,
+    headers: customHeaders(),
     body: JSON.stringify(data)
   })
 

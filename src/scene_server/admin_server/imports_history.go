@@ -178,12 +178,10 @@ import (
 	// v3.12.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.12.202309211735"
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.12.202310301633"
-	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.12.202310302130"
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.12.202311061800"
 
 	// v3.13.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.13.202401221600"
-	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.13.202402181900"
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.13.202402191140"
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.13.202402281158"
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.13.202403151855"
@@ -193,9 +191,11 @@ import (
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.13.202408011044"
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.13.202408071435"
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.13.202410091435"
+	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.13.202410311500"
 
 	// 3.14.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.14.202404031701"
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.14.202405141035"
 	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.14.202410100930"
+	_ "configcenter/src/scene_server/admin_server/upgrader/history/y3.14.202502101200"
 )

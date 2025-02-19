@@ -62,7 +62,6 @@
         FilterForm.show()
       },
       handleRemove() {
-        FilterStore.setActiveCollection(null)
         FilterStore.resetIP()
       }
     }

@@ -38,6 +38,7 @@ spec:
         - --config={{ .Values.cacheservice.configDir }}
         {{- end }}
         - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        - --env={{ .Values.serviceDiscoveryEnv }}
         {{- if .Values.cacheservice.command.logDir }}
         - --log-dir={{ .Values.cacheservice.command.logDir }}
         {{- end }}

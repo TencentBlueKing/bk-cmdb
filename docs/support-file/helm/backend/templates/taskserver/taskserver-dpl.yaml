@@ -38,6 +38,7 @@ spec:
         - --config={{ .Values.taskserver.configDir }}
         {{- end }}
         - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        - --env={{ .Values.serviceDiscoveryEnv }}
         {{- if .Values.taskserver.command.logDir }}
         - --log-dir={{ .Values.taskserver.command.logDir }}
         {{- end }}
