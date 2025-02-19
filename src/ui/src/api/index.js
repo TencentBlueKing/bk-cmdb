@@ -31,9 +31,8 @@ const axiosInstance = Axios.create({
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
   (config) => {
-    config.headers.common = {
-      ...config.headers.common,
-      ...customHeaders
+    for (const [key, value] of Object.entries(customHeaders())) {
+      config.headers[key] = value
     }
     return config
   },

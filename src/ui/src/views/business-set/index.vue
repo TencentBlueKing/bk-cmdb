@@ -77,7 +77,7 @@
           </cmdb-property-value>
         </template>
       </bk-table-column>
-      <bk-table-column :label="$t('操作')" fixed="right" min-width="154">
+      <bk-table-column :label="$t('操作')" fixed="right" :min-width="$i18n.locale === 'en' ? 170 : 154">
         <template slot-scope="{ row }">
           <cmdb-auth class="mr10" :auth="{ type: $OPERATION.R_BIZ_SET_RESOURCE, relation: [row.bk_biz_set_id] }">
             <template slot-scope="{ disabled }">
@@ -412,7 +412,7 @@
 
       const handleDelete = (inst) => {
         $bkInfo({
-          title: '确定删除',
+          title: t('确定删除'),
           subTitle: t('确认要删除', { name: inst[MODEL_NAME_KEY] }),
           confirmLoading: true,
           confirmFn: async () => {
@@ -469,7 +469,7 @@
 
       const handleSaveSuccess = () => {
         managementFormState.show = false
-        getList()
+        RouterQuery.refresh()
       }
 
       const handleFilterValueChange = () => {

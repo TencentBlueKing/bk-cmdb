@@ -42,7 +42,7 @@
         </process-bind-info-value>
       </template>
     </bk-table-column>
-    <bk-table-column v-if="!readonly" :label="$t('操作')" width="150" fixed="right" :resizable="false">
+    <bk-table-column v-if="!readonly" :label="$t('操作')" width="150" :resizable="false">
       <template slot-scope="{ row }">
         <cmdb-auth class="mr10" :auth="{ type: $OPERATION.U_SERVICE_INSTANCE, relation: [bizId] }">
           <bk-button slot-scope="{ disabled }" v-test-id="'edit'"

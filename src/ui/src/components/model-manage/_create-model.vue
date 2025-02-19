@@ -37,7 +37,7 @@
                 name="modelGroup"
                 :value="modelDialog.data.bk_classification_id"
                 :scroll-height="200">
-                <bk-option v-for="(option) in classifications"
+                <bk-option v-for="(option) in allClassifications"
                   :key="option.bk_classification_id"
                   :id="option.bk_classification_id"
                   :name="option.bk_classification_name">
@@ -142,7 +142,10 @@
     computed: {
       ...mapGetters('objectModelClassify', [
         'classifications'
-      ])
+      ]),
+      allClassifications() {
+        return this.classifications.filter((item)=> !item.bk_ishidden)
+      }
     },
     watch: {
       isShow(isShow) {

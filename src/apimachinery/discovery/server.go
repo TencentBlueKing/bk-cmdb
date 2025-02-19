@@ -22,7 +22,7 @@ import (
 	"configcenter/src/common/types"
 )
 
-func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*server, error) {
+func newServerDiscover(disc *registerdiscover.RegDiscover, path, name, env string) (*server, error) {
 	discoverChan, eventErr := disc.DiscoverService(path)
 	if nil != eventErr {
 		return nil, eventErr
@@ -31,6 +31,7 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name string) (*
 	svr := &server{
 		path:         path,
 		name:         name,
+		environment:  env,
 		servers:      make([]*types.ServerInfo, 0),
 		discoverChan: discoverChan,
 		serversChan:  make(chan []string, 1),
@@ -46,7 +47,9 @@ type server struct {
 	// server's name
 	name         string
 	path         string
+	environment  string
 	servers      []*types.ServerInfo
+	master       *types.ServerInfo
 	discoverChan <-chan *registerdiscover.DiscoverEvent
 	serversChan  chan []string
 }
@@ -90,8 +93,8 @@ func (s *server) IsMaster(UUID string) bool {
 	}
 	s.RLock()
 	defer s.RUnlock()
-	if 0 < len(s.servers) {
-		return s.servers[0].UUID == UUID
+	if s.master != nil {
+		return s.master.UUID == UUID
 	}
 	return false
 
@@ -124,6 +127,7 @@ func (s *server) resetServer() {
 	s.Lock()
 	defer s.Unlock()
 	s.servers = make([]*types.ServerInfo, 0)
+	s.master = nil
 }
 
 // setServersChan 当监听到服务节点变化时，将最新的服务节点信息放入该channel里
@@ -153,6 +157,7 @@ func (s *server) getInstances() []string {
 
 func (s *server) updateServer(svrs []string) {
 	servers := make([]*types.ServerInfo, 0)
+	var master *types.ServerInfo
 
 	for _, svr := range svrs {
 		server := new(types.ServerInfo)
@@ -175,16 +180,19 @@ func (s *server) updateServer(svrs []string) {
 			continue
 		}
 
-		servers = append(servers, server)
+		if server.Environment == s.environment {
+			servers = append(servers, server)
+		}
+		if master == nil {
+			master = server
+		}
 	}
 
-	if len(servers) != 0 {
-		s.Lock()
-		s.servers = servers
-		s.Unlock()
-
-		if blog.V(5) {
-			blog.InfoJSON("update component with new server instance %s about path: %s", servers, s.path)
-		}
+	s.Lock()
+	s.servers = servers
+	s.master = master
+	s.Unlock()
+	if blog.V(5) {
+		blog.InfoJSON("update component with new server instance %s about path: %s", servers, s.path)
 	}
 }

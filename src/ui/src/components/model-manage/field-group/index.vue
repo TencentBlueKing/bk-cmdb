@@ -579,15 +579,7 @@
     },
     async created() {
       this.handleFilter = debounce(this.filterField, 300)
-      const [properties, groups, uniqueList] = await Promise.all([
-        this.getProperties(),
-        this.getPropertyGroups(),
-        this.getVerification()
-      ])
-      this.properties = properties
-      this.groups = groups
-      this.uniqueList = uniqueList
-      this.init(properties, groups)
+      await this.initProperies()
 
       this.$nextTick(() => {
         this.execRouteAction()
@@ -672,6 +664,17 @@
             this.handleSliderHidden()
           }
         }
+        this.properties = properties
+        this.groups = groups
+        this.uniqueList = uniqueList
+        this.init(properties, groups)
+      },
+      async initProperies() {
+        const [properties, groups, uniqueList] = await Promise.all([
+          this.getProperties(),
+          this.getPropertyGroups(),
+          this.getVerification()
+        ])
         this.properties = properties
         this.groups = groups
         this.uniqueList = uniqueList

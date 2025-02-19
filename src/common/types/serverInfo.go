@@ -102,6 +102,8 @@ type ServerInfo struct {
 	Pid        int    `json:"pid"`
 	// UUID is used to distinguish which service is master in zookeeper
 	UUID string `json:"uuid"`
+	// Environment is the server's environment, servers can only discover other servers in the same environment
+	Environment string `json:"env"`
 }
 
 // NewServerInfo new a ServerInfo object
@@ -128,14 +130,15 @@ func NewServerInfo(conf *config.CCAPIConfig) (*ServerInfo, error) {
 	}
 
 	info := &ServerInfo{
-		IP:         ip,
-		Port:       port,
-		RegisterIP: registerIP,
-		HostName:   hostname,
-		Scheme:     "http",
-		Version:    version.GetVersion(),
-		Pid:        os.Getpid(),
-		UUID:       xid.New().String(),
+		IP:          ip,
+		Port:        port,
+		RegisterIP:  registerIP,
+		HostName:    hostname,
+		Scheme:      "http",
+		Version:     version.GetVersion(),
+		Pid:         os.Getpid(),
+		UUID:        xid.New().String(),
+		Environment: conf.Environment,
 	}
 	return info, nil
 }

@@ -63,7 +63,7 @@ var (
 	// in static ip scenarios, and require special processing
 	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
 		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit", "bk_cpu_architecture",
-		common.BKHostInnerIPField, common.BKHostInnerIPv6Field}
+		common.BKOsKernelVersionField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field}
 	reqireFields = append(compareFields, common.BKHostIDField, common.BKAddressingField, common.BKHostOuterIPField,
 		common.BKHostOuterIPv6Field)
 
@@ -559,21 +559,22 @@ func needToUpdate(src, toCompare, addressing string) bool {
 }
 
 type hostDiscoverMsg struct {
-	ostype      string
-	osname      string
-	platform    string
-	version     string
-	cpumodule   string
-	hostname    string
-	osbit       string
-	arch        string
-	cpunum      int64
-	disk        uint64
-	mem         uint64
-	outerMACArr []string
-	innerMACArr []string
-	hasOuterMAC bool
-	hasInnerMAC bool
+	ostype          string
+	osname          string
+	platform        string
+	version         string
+	cpumodule       string
+	hostname        string
+	osbit           string
+	arch            string
+	osKernelVersion string
+	cpunum          int64
+	disk            uint64
+	mem             uint64
+	outerMACArr     []string
+	innerMACArr     []string
+	hasOuterMAC     bool
+	hasInnerMAC     bool
 }
 
 type hostInfo struct {
@@ -601,6 +602,7 @@ func getHostInfoFromMsgV10(val *gjson.Result, host *hostInfo) *hostDiscoverMsg {
 	hostMsg.platform = strings.TrimSpace(val.Get("data.system.platform").String())
 	hostMsg.version = val.Get("data.system.platVer").String()
 	hostMsg.arch = strings.TrimSpace(val.Get("data.system.arch").String())
+	hostMsg.osKernelVersion = strings.TrimSpace(val.Get("data.system.kernelVersion").String())
 
 	switch strings.ToLower(hostMsg.ostype) {
 	case common.HostOSTypeName[common.HostOSTypeEnumLinux]:
@@ -766,6 +768,7 @@ func getOsInfoFromMsg(val *gjson.Result, innerIP, outerIP string) *hostDiscoverM
 	hostMsg.ostype = strings.TrimSpace(val.Get("data.system.info.os").String())
 	hostMsg.platform = strings.TrimSpace(val.Get("data.system.info.platform").String())
 	hostMsg.version = val.Get("data.system.info.platformVersion").String()
+	hostMsg.osKernelVersion = strings.TrimSpace(val.Get("data.system.info.kernelVersion").String())
 
 	switch strings.ToLower(hostMsg.ostype) {
 	case common.HostOSTypeName[common.HostOSTypeEnumLinux]:
@@ -938,6 +941,13 @@ func parseSetter(val *gjson.Result, innerIP, outerIP string) (map[string]interfa
 		raw.Write([]byte("\"" + hostMsg.osbit + "\""))
 	}
 
+	if hostMsg.osKernelVersion != "" {
+		setter[common.BKOsKernelVersionField] = hostMsg.osKernelVersion
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_kernel_version\":")
+		raw.Write([]byte("\"" + hostMsg.osKernelVersion + "\""))
+	}
+
 	raw.WriteByte('}')
 	return setter, raw.String()
 }
@@ -975,6 +985,9 @@ func printSetterInfo(hostMsg *hostDiscoverMsg, innerIP, outerIP string) {
 	}
 	if hostMsg.osbit == "" {
 		blog.V(4).Infof("bk_os_bit not found in message for %s", innerIP)
+	}
+	if hostMsg.osKernelVersion == "" {
+		blog.V(4).Infof("bk_os_kernel_version not found in message for %s", innerIP)
 	}
 }
 
@@ -1083,6 +1096,13 @@ func parseV10Setter(val *gjson.Result, host *hostInfo) (
 		raw.WriteString(",")
 		raw.WriteString("\"bk_cpu_architecture\":")
 		raw.Write([]byte("\"" + hostMsg.arch + "\""))
+	}
+
+	if hostMsg.osKernelVersion != "" {
+		setter[common.BKOsKernelVersionField] = hostMsg.osKernelVersion
+		raw.WriteString(",")
+		raw.WriteString("\"bk_os_kernel_version\":")
+		raw.Write([]byte("\"" + hostMsg.osKernelVersion + "\""))
 	}
 
 	raw.WriteByte('}')

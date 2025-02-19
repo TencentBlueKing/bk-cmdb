@@ -242,7 +242,7 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, he
 		})
 	}
 
-	resp, err := h.getAgentStatus(statusReqList, true, header, rid)
+	resp, err := h.getAgentStatus(statusReqList, header, rid)
 	if err != nil {
 		blog.Errorf("get agent status error, host: %v, err: %v, rid: %s", events, err, rid)
 		return
@@ -421,7 +421,7 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{},
 		})
 	}
 
-	resp, err := h.getAgentStatus(statusReqList, false, header, rid)
+	resp, err := h.getAgentStatus(statusReqList, header, rid)
 	if err != nil {
 		blog.Errorf("get agent status error,  hostInfo: %v, err: %v, rid: %s", hosts, err, rid)
 		return nil, err
@@ -554,7 +554,7 @@ func (h *HostIdentifier) getV1OnStatusAgent(hosts []map[string]interface{}, stat
 	return hostIDs, hostInfos, hostMap
 }
 
-func (h *HostIdentifier) getAgentStatus(statusReqList []StatusReq, always bool, header http.Header, rid string) (
+func (h *HostIdentifier) getAgentStatus(statusReqList []StatusReq, header http.Header, rid string) (
 	map[string]string, error) {
 
 	if len(statusReqList) == 0 {
@@ -563,7 +563,7 @@ func (h *HostIdentifier) getAgentStatus(statusReqList []StatusReq, always bool, 
 
 	switch h.apiVersion {
 	case types.V2:
-		result, err := h.getAgentStatusByV2Api(statusReqList, always, header)
+		result, err := h.getAgentStatusByV2Api(statusReqList, header)
 		if err != nil {
 			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
 			return nil, err
@@ -572,7 +572,7 @@ func (h *HostIdentifier) getAgentStatus(statusReqList []StatusReq, always bool, 
 		return result, nil
 
 	case types.V1:
-		result, err := h.getAgentStatusByV1Api(statusReqList, always, rid)
+		result, err := h.getAgentStatusByV1Api(statusReqList, rid)
 		if err != nil {
 			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
 			return nil, err
@@ -584,7 +584,7 @@ func (h *HostIdentifier) getAgentStatus(statusReqList []StatusReq, always bool, 
 	return nil, errors.New("can not find api about get agent status")
 }
 
-func (h *HostIdentifier) getAgentStatusByV2Api(statusReqList []StatusReq, always bool, header http.Header) (
+func (h *HostIdentifier) getAgentStatusByV2Api(statusReqList []StatusReq, header http.Header) (
 	map[string]string, error) {
 
 	// build agentID request list
@@ -613,7 +613,7 @@ func (h *HostIdentifier) getAgentStatusByV2Api(statusReqList []StatusReq, always
 	failCount := 0
 	var err error
 	var resp *gse.ListAgentStateResp
-	for always || failCount < retryTimes {
+	for failCount < retryTimes {
 		resp, err = h.gseApiGWClient.ListAgentState(h.ctx, header, req)
 		if err != nil {
 			h.metric.getAgentStatusTotal.WithLabelValues("failed").Inc()
@@ -628,14 +628,14 @@ func (h *HostIdentifier) getAgentStatusByV2Api(statusReqList []StatusReq, always
 		break
 	}
 
-	if !always && failCount >= retryTimes {
+	if failCount >= retryTimes {
 		return nil, err
 	}
 
 	return statusMap, nil
 }
 
-func (h *HostIdentifier) getAgentStatusByV1Api(statusReqList []StatusReq, always bool, rid string) (map[string]string,
+func (h *HostIdentifier) getAgentStatusByV1Api(statusReqList []StatusReq, rid string) (map[string]string,
 	error) {
 
 	req := new(getstatus.AgentStatusRequest)
@@ -648,7 +648,7 @@ func (h *HostIdentifier) getAgentStatusByV1Api(statusReqList []StatusReq, always
 	failCount := 0
 	resp := new(getstatus.AgentStatusResponse)
 	// 调用gse api server 查询agent状态
-	for always || failCount < retryTimes {
+	for failCount < retryTimes {
 		resp, err = h.gseApiServerClient.GetAgentStatus(context.Background(), req)
 		if err != nil {
 			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
@@ -668,7 +668,7 @@ func (h *HostIdentifier) getAgentStatusByV1Api(statusReqList []StatusReq, always
 		break
 	}
 
-	if !always && failCount >= retryTimes {
+	if failCount >= retryTimes {
 		return nil, errors.New("find agent status from apiServer error")
 	}
 

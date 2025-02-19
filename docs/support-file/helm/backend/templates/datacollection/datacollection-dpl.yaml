@@ -38,6 +38,7 @@ spec:
         - --config={{ .Values.datacollection.configDir }}
         {{- end }}
         - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        - --env={{ .Values.serviceDiscoveryEnv }}
         {{- if .Values.datacollection.command.logDir }}
         - --log-dir={{ .Values.datacollection.command.logDir }}
         {{- end }}

@@ -165,7 +165,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		if err != nil {
 			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 		}
-		serviceDiscovery, err := discovery.NewServiceDiscovery(client)
+		serviceDiscovery, err := discovery.NewServiceDiscovery(client, input.SrvInfo.Environment)
 		if err != nil {
 			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 		}

@@ -32,9 +32,10 @@ import (
 )
 
 // GenerateApplyPlan 生成主机属性自动应用执行计划
-func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option metadata.HostApplyPlanOption) (metadata.HostApplyPlanResult, errors.CCErrorCoder) {
-	rid := kit.Rid
+func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option metadata.HostApplyPlanOption) (
+	metadata.HostApplyPlanResult, errors.CCErrorCoder) {
 
+	rid := kit.Rid
 	result := metadata.HostApplyPlanResult{
 		Plans:          make([]metadata.OneHostApplyPlan, 0),
 		HostAttributes: make([]metadata.Attribute, 0),
@@ -56,11 +57,10 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	for _, item := range option.Rules {
 		attributeIDs = append(attributeIDs, item.AttributeID)
 	}
-	attributes, err := p.listHostAttributes(kit, bizID, attributeIDs...)
-	if err != nil {
-		blog.Errorf("GenerateApplyPlan failed, listHostAttributes failed, attributeIDs: %s, err: %s, rid: %s",
-			attributeIDs, err.Error(), rid)
-		return result, err
+	attributes, ccErr := p.listHostAttributes(kit, bizID, attributeIDs...)
+	if ccErr != nil {
+		blog.Errorf("listHostAttributes failed, ccErr: %v, attributeIDs: %v, rid: %s", ccErr, attributeIDs, rid)
+		return result, ccErr
 	}
 
 	fields := []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field,
@@ -85,7 +85,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 			CloudID int64 `mapstructure:"bk_cloud_id"`
 		}{}
 		if err := mapstruct.Decode2Struct(item, &host); err != nil {
-			blog.Errorf("parse hostID failed, host: %v, err: %v, rid: %s", item, err, rid)
+			blog.Errorf("parse hostID failed, err: %v, host: %v, rid: %s", err, item, rid)
 			return result, kit.CCError.CCError(common.CCErrCommParseDBFailed)
 		}
 		hostMap[host.HostID] = item
@@ -104,7 +104,7 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	}
 	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBasePlat).Find(cloudFilter).All(kit.Ctx,
 		&clouds); err != nil {
-		blog.Errorf("find cloud failed, filter: %v, err: %v, rid: %s", cloudFilter, err.Error(), rid)
+		blog.Errorf("list clouds instances failed, err: %v, filter: %+v, rid: %s", err, cloudFilter, rid)
 		return result, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	cloudMap := make(map[int64]metadata.CloudInst)
@@ -129,12 +129,12 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 			hostApplyPlans = append(hostApplyPlans, hostApplyPlan)
 			continue
 		}
-		hostApplyPlan, err = p.generateOneHostApplyPlan(kit, hostModule.HostID, host, hostModule.ModuleIDs,
+		hostApplyPlan, ccErr = p.generateOneHostApplyPlan(kit, hostModule.HostID, host, hostModule.ModuleIDs,
 			option.Rules, attributes, option.ConflictResolvers)
-		if err != nil {
+		if ccErr != nil {
 			blog.Errorf("generate one host apply plan failed, host: %v, moduleIDs: %v, rules: %v, err: %v, rid: %s",
-				host, hostModule.ModuleIDs, option.Rules, err, rid)
-			return result, err
+				host, hostModule.ModuleIDs, option.Rules, ccErr, rid)
+			return result, ccErr
 		}
 		if hostApplyPlan.UnresolvedConflictCount > 0 {
 			unresolvedConflictCount += 1
@@ -168,12 +168,74 @@ func (p *hostApplyRule) GenerateApplyPlan(kit *rest.Kit, bizID int64, option met
 	return result, nil
 }
 
+func isOrganizationEqual(expectValue interface{}, propertyValue interface{}) (bool, errors.CCErrorCoder) {
+	eValue, ok := expectValue.(primitive.A)
+	if !ok {
+		blog.Errorf("expect value type is not primitive.A, type: %T, value: %v", expectValue, expectValue)
+		return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
+	}
+	pValue, ccErr := metadata.CheckInterfaceSliceType(propertyValue)
+	if ccErr != nil {
+		blog.Errorf("propertyValue value type is not primitive.A or []interface{}, type: %T, value: %v", propertyValue,
+			propertyValue)
+		return false, ccErr
+	}
+
+	expectValueList := make([]int, 0)
+	for _, eValue := range []interface{}(eValue) {
+		value, err := util.GetIntByInterface(eValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+		}
+		expectValueList = append(expectValueList, value)
+	}
+
+	ruleValueList := make([]int, 0)
+	for _, rValue := range pValue {
+		value, err := util.GetIntByInterface(rValue)
+		if err != nil {
+			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+		}
+		ruleValueList = append(ruleValueList, value)
+	}
+
+	return cmp.Equal(expectValueList, ruleValueList), nil
+}
+
+func isEnumMultiEqual(expectValue interface{}, propertyValue interface{}) (bool, errors.CCErrorCoder) {
+	eValue, ok := expectValue.(primitive.A)
+	if !ok {
+		blog.Errorf("expect value type is not primitive.A, type: %T, value: %v", expectValue, expectValue)
+		return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
+	}
+
+	pValue, ccErr := metadata.CheckInterfaceSliceType(propertyValue)
+	if ccErr != nil {
+		blog.Errorf("propertyValue value type is not primitive.A or []interface{}, type: %T, value: %v", propertyValue,
+			propertyValue)
+		return false, ccErr
+	}
+
+	expectValueList, err := util.SliceInterfaceToString(eValue)
+	if err != nil {
+		blog.Errorf("interface array transfer to string array falied, err: %v", err)
+		return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+	}
+
+	ruleValueList, err := util.SliceInterfaceToString(pValue)
+	if err != nil {
+		blog.Errorf("interface array transfer to string array falied, err: %v", err)
+		return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
+	}
+
+	return cmp.Equal(expectValueList, ruleValueList), nil
+}
+
 // isRuleEqualOrNot : When the attribute type is "organization", the type obtained from the database is the database's
 // native primitive.A type. When converted to []interface{}, the type is int64, the type of propertyValue is
 // []interface{}, and the type of each element inside is json.Number, which needs to be unified before comparing.
 // The rest of the attribute types can be compared directly in non-organization scenarios.
 func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue interface{}) (bool, errors.CCErrorCoder) {
-
 	// in the transfer host scenario, the rule may be empty.
 	if expectValue == nil {
 		return false, nil
@@ -183,33 +245,7 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 
 	switch pType {
 	case common.FieldTypeOrganization:
-		value, ok := expectValue.(primitive.A)
-		if !ok {
-			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
-		}
-		if _, ok := propertyValue.([]interface{}); !ok {
-			return false, errors.New(common.CCErrCommUnexpectedFieldType, "property value type error")
-		}
-
-		expectValueList := make([]int, 0)
-		for _, eValue := range []interface{}(value) {
-			value, err := util.GetIntByInterface(eValue)
-			if err != nil {
-				return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
-			}
-			expectValueList = append(expectValueList, value)
-		}
-
-		ruleValueList := make([]int, 0)
-		for _, rValue := range propertyValue.([]interface{}) {
-			value, err := util.GetIntByInterface(rValue)
-			if err != nil {
-				return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
-			}
-			ruleValueList = append(ruleValueList, value)
-		}
-
-		return cmp.Equal(expectValueList, ruleValueList), nil
+		return isOrganizationEqual(expectValue, propertyValue)
 
 	// 当属性是int类型时，需要转为统一类型进行对比
 	case common.FieldTypeInt:
@@ -223,7 +259,7 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
 
-	// 当属性是int类型时，需要转为统一类型进行对比
+	// 当属性是float类型时，需要转为统一类型进行对比
 	case common.FieldTypeFloat:
 		propertyValue, err = util.GetFloat64ByInterface(propertyValue)
 		if err != nil {
@@ -246,6 +282,10 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 		if err != nil {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, err.Error())
 		}
+
+		// 当属性是enummulti类型时，需要转为统一类型进行对比
+	case common.FieldTypeEnumMulti:
+		return isEnumMultiEqual(expectValue, propertyValue)
 	}
 
 	return cmp.Equal(expectValue, propertyValue), nil

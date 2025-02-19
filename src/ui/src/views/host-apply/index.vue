@@ -101,7 +101,7 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       mode() {
-        return this.$route.params.mode
+        return this.$route.params.mode ?? CONFIG_MODE.MODULE
       },
       isModuleMode() {
         return this.mode === CONFIG_MODE.MODULE

@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch, nextTick } from 'vue'
   import { useStore } from '@/store'
   import debounce from 'lodash.debounce'
   import { isEmptyPropertyValue } from '@/utils/tools'
@@ -63,7 +63,7 @@
   const props = defineProps({
     value: {
       type: [Array, String, Number],
-      default: () => []
+      default: () => ([])
     },
     disabled: {
       type: Boolean,
@@ -102,13 +102,7 @@
   const store = useStore()
   const searchRequestId = Symbol('orgSearch')
 
-  const initValue = props.value
-  const localMultiple = computed(() => {
-    if (Array.isArray(initValue) && initValue.length > 1 && !props.multiple) {
-      return true
-    }
-    return props.multiple
-  })
+  const localMultiple = computed(() => props.multiple)
 
   const treeProps = computed(() => ({
     showCheckbox: localMultiple.value,
@@ -136,10 +130,28 @@
       return this.value || ''
     },
     set(value) {
-      emit('on-checked', value)
-      emit('change', value)
-      emit('input', value)
+      let val = value || null
+      if (val) {
+        val = Array.isArray(value) ? value : [value]
+      }
+      emit('on-checked', val)
+      emit('change', val)
+      emit('input', val)
     }
+  })
+
+  watch(() => props.multiple, (isMultiple) => {
+    checked.value = []
+    nextTick(() => {
+      const { checked: checkedData } = tree.value
+      if (isMultiple) {
+        checkedData.forEach((id) => {
+          tree.value?.setChecked(id, { emitEvent: true, checked: false })
+        })
+      } else {
+        tree.value?.setSelected(-1, true)
+      }
+    })
   })
 
   const loadTree = async () => {

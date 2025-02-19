@@ -371,8 +371,7 @@ func (lgc *Logics) AssignHostToApp(kit *rest.Kit, conf *metadata.DefaultModuleHo
 	}
 	if len(errHostID) > 0 {
 		errHostIP := lgc.convertHostIDToHostIP(kit, errHostID)
-		blog.Errorf("assign host to app, notExistAppModuleHost error, has host not belong to resource directory module,"+
-			" input:%+v, rid:%s", conf, kit.Rid)
+		blog.Errorf("has host not belong to resource directory module, input: %+v, rid: %s", conf, kit.Rid)
 		return nil, kit.CCError.Errorf(common.CCErrHostModuleConfigNotMatch, strings.Join(errHostIP, ","))
 	}
 

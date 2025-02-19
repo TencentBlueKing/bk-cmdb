@@ -15,44 +15,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_13_202402181900
+package y3_14_202502101200
 
 import (
 	"context"
 
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 )
 
-const (
-	// bizSetID 相关业务集：全业务-蓝盾测试部署专用
-	bizSetID = 9992001
-	oldName  = "description"
-	newName  = "bk_biz_set_desc"
-)
+func init() {
+	history.RegistUpgrader("y3.14.202502101200", upgrade)
+}
 
-func updateBizSetDescField(ctx context.Context, db dal.RDB) error {
-	cond := map[string]interface{}{
-		common.BKBizSetIDField: bizSetID,
-		newName:                mapstr.MapStr{"$exists": true},
-	}
-	count, err := db.Table(common.BKTableNameBaseBizSet).Find(cond).Count(ctx)
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
+
+	blog.Infof("start execute y3.14.202502101200")
+	err = addHostOsKernelVersionField(ctx, db, conf)
 	if err != nil {
-		blog.Errorf("find business set failed, filter: %v, err: %v", cond, err)
+		blog.Errorf("upgrade y3.14.202502101200 add host os kernel version field failed, error: %v", err)
 		return err
 	}
-	if count != 0 {
-		return nil
-	}
+	blog.Infof("execute y3.14.202502101200, add host os kernel version field success!")
 
-	filter := map[string]interface{}{
-		common.BKBizSetIDField: bizSetID,
-	}
-	if err := db.Table(common.BKTableNameBaseBizSet).RenameColumn(ctx, filter, oldName, newName); err != nil {
-		blog.Errorf("rename biz set description field failed, filter: %v, err: %v", filter, err)
-		return err
-	}
 	return nil
 }
