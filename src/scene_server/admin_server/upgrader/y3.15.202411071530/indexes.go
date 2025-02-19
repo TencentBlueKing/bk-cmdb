@@ -1801,245 +1801,7 @@ var (
 			Background: true,
 		},
 	}
-	bizInstanceIndexes = []types.Index{
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkObjID_bkInstID",
-			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
-			Keys:                    bson.D{{"id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstObjID_bkAsstInstID",
-			Keys:                    bson.D{{"bk_asst_obj_id", 1}, {"bk_asst_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstID",
-			Keys:                    bson.D{{"bk_asst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "bkInstID_bkAsstInstID_bkObjAsstID",
-			Keys:                    bson.D{{"bk_inst_id", 1}, {"bk_asst_inst_id", 1}, {"bk_obj_asst_id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-	}
-	moduleInstanceIndexes = []types.Index{
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkObjID_bkInstID",
-			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
-			Keys:                    bson.D{{"id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstObjID_bkAsstInstID",
-			Keys:                    bson.D{{"bk_asst_obj_id", 1}, {"bk_asst_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstID",
-			Keys:                    bson.D{{"bk_asst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "bkInstID_bkAsstInstID_bkObjAsstID",
-			Keys:                    bson.D{{"bk_inst_id", 1}, {"bk_asst_inst_id", 1}, {"bk_obj_asst_id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-	}
-	processInstanceIndexes = []types.Index{
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkObjID_bkInstID",
-			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
-			Keys:                    bson.D{{"id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstObjID_bkAsstInstID",
-			Keys:                    bson.D{{"bk_asst_obj_id", 1}, {"bk_asst_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstID",
-			Keys:                    bson.D{{"bk_asst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "bkInstID_bkAsstInstID_bkObjAsstID",
-			Keys:                    bson.D{{"bk_inst_id", 1}, {"bk_asst_inst_id", 1}, {"bk_obj_asst_id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-	}
-	setInstanceIndexes = []types.Index{
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkObjID_bkInstID",
-			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
-			Keys:                    bson.D{{"id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstObjID_bkAsstInstID",
-			Keys:                    bson.D{{"bk_asst_obj_id", 1}, {"bk_asst_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstID",
-			Keys:                    bson.D{{"bk_asst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "bkInstID_bkAsstInstID_bkObjAsstID",
-			Keys:                    bson.D{{"bk_inst_id", 1}, {"bk_asst_inst_id", 1}, {"bk_obj_asst_id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-	}
-	platInstanceIndexes = []types.Index{
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkObjID_bkInstID",
-			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
-			Keys:                    bson.D{{"id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstObjID_bkAsstInstID",
-			Keys:                    bson.D{{"bk_asst_obj_id", 1}, {"bk_asst_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstID",
-			Keys:                    bson.D{{"bk_asst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "bkInstID_bkAsstInstID_bkObjAsstID",
-			Keys:                    bson.D{{"bk_inst_id", 1}, {"bk_asst_inst_id", 1}, {"bk_obj_asst_id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-	}
-	bkProjectInstanceIndexes = []types.Index{
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkObjID_bkInstID",
-			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
-			Keys:                    bson.D{{"id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstObjID_bkAsstInstID",
-			Keys:                    bson.D{{"bk_asst_obj_id", 1}, {"bk_asst_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstID",
-			Keys:                    bson.D{{"bk_asst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "bkInstID_bkAsstInstID_bkObjAsstID",
-			Keys:                    bson.D{{"bk_inst_id", 1}, {"bk_asst_inst_id", 1}, {"bk_obj_asst_id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-	}
-	hostInstanceIndexes = []types.Index{
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkObjID_bkInstID",
-			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
-			Keys:                    bson.D{{"id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstObjID_bkAsstInstID",
-			Keys:                    bson.D{{"bk_asst_obj_id", 1}, {"bk_asst_inst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "bkAsstID",
-			Keys:                    bson.D{{"bk_asst_id", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "bkInstID_bkAsstInstID_bkObjAsstID",
-			Keys:                    bson.D{{"bk_inst_id", 1}, {"bk_asst_inst_id", 1}, {"bk_obj_asst_id", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-	}
-	bkBizSetObjInstIndexes = []types.Index{
+	instAsstCommonIndexes = []types.Index{
 		{
 			Name:                    common.CCLogicIndexNamePrefix + "bkObjID_bkInstID",
 			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_inst_id", 1}},
@@ -2113,3 +1875,150 @@ var (
 		},
 	}
 )
+
+var templateIndexes = []types.Index{
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "AsstDes_" + "ID",
+		Keys:       bson.D{{"data.id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "association",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ObjAttDes_" + "bkObjID_bkPropertyID_bkBizID",
+		Keys:       bson.D{{"data.bk_obj_id", 1}, {"data.bk_property_id", 1}, {"data.bk_biz_id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": common.BKTableNameObjAttDes,
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ObjAttDes_" + "ID",
+		Keys:       bson.D{{"data.id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "obj_attribute",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ObjUnique_" + "ID",
+		Keys:       bson.D{{"data.id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "unique_keys",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ServiceCategory_" + "ID",
+		Keys:       bson.D{{"data.id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "service_category",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ServiceCategory_" + "name_bkParentID_bkBizID",
+		Keys:       bson.D{{"data.name", 1}, {"data.bk_parent_id", 1}, {"data.bk_biz_id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "service_category",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "PropertyGroup_" + "ID",
+		Keys:       bson.D{{"data.id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "property_group",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "PropertyGroup_" + "bkBizID_bkGroupName_bkObjID",
+		Keys:       bson.D{{"data.bk_biz_id", 1}, {"data.bk_group_name", 1}, {"data.bk_obj_id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "property_group",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "PropertyGroup_" + "bkObjID_bkBizID_bkGroupIndex",
+		Keys:       bson.D{{"data.bk_obj_id", 1}, {"data.bk_biz_id", 1}, {"data.bk_group_index", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "property_group",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "BasePlat_" + "bkCloudName",
+		Keys:       bson.D{{"data.bk_cloud_name", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type":               "plat",
+			"data.bk_cloud_name": map[string]string{common.BKDBType: "string"}},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ObjClassification_" + "ID",
+		Keys:       bson.D{{"data.id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "obj_classification",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ObjClassification_" + "bkClassificationID",
+		Keys:       bson.D{{"data.bk_classification_id", 1}},
+		Unique:     true,
+		Background: false,
+		PartialFilterExpression: map[string]interface{}{
+			"type":                      "obj_classification",
+			"data.bk_classification_id": map[string]string{common.BKDBType: "string"}},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ObjClassification_" + "bkClassificationName",
+		Keys:       bson.D{{"data.bk_classification_name", 1}},
+		Unique:     true,
+		Background: false,
+		PartialFilterExpression: map[string]interface{}{
+			"type":                        "obj_classification",
+			"data.bk_classification_name": map[string]string{common.BKDBType: "string"}},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ObjDes_" + "ID",
+		Keys:       bson.D{{"data.id", 1}},
+		Unique:     true,
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			"type": "object",
+		},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ObjDes_" + "bkObjID",
+		Keys:       bson.D{{"data.bk_obj_id", 1}},
+		Unique:     true,
+		Background: false,
+		PartialFilterExpression: map[string]interface{}{
+			"type":           "object",
+			"data.bk_obj_id": map[string]string{common.BKDBType: "string"}},
+	},
+	{
+		Name:       common.CCLogicUniqueIdxNamePrefix + "ObjDes_" + "bkObjName",
+		Keys:       bson.D{{"data.bk_obj_name", 1}},
+		Unique:     true,
+		Background: false,
+		PartialFilterExpression: map[string]interface{}{
+			"type":             "object",
+			"data.bk_obj_name": map[string]string{common.BKDBType: "string"}},
+	},
+}

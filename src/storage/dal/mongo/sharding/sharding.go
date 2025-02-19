@@ -30,3 +30,13 @@ type ShardingDB interface {
 	Ping() error
 	ExecForAllDB(handler func(db local.DB) error) error
 }
+
+// NewTenantDB is the new tenant client interface
+type NewTenantDB interface {
+	Shard(opt ShardOpts) local.DB
+	InitTxnManager(r redis.Client) error
+	Ping() error
+	ExecForAllDB(handler func(db local.DB) error) error
+	NewTenantCli() *local.MongoClient
+	DBConfig() *local.MongoCliConf
+}

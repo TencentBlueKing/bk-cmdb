@@ -48,9 +48,9 @@ var objUniqueKeys = map[string][][]string{
 	"bk_biz_set_obj": {{"bk_biz_set_name"}, {"bk_biz_set_id"}},
 }
 
-func getUniqueKeys(kit *rest.Kit, db dal.Dal) ([]objectUnique, error) {
+func getUniqueKeys(kit *rest.Kit, db dal.RDB) ([]objectUnique, error) {
 	attrArr := make([]metadata.Attribute, 0)
-	err := db.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(nil).All(kit.Ctx, &attrArr)
+	err := db.Table(common.BKTableNameObjAttDes).Find(nil).All(kit.Ctx, &attrArr)
 	if err != nil {
 		blog.Errorf("get host unique fields failed, err: %v", err)
 		return nil, err
@@ -82,7 +82,7 @@ func getUniqueKeys(kit *rest.Kit, db dal.Dal) ([]objectUnique, error) {
 	return uniqueKeys, nil
 }
 
-func addObjectUniqueData(kit *rest.Kit, db dal.Dal) error {
+func addObjectUniqueData(kit *rest.Kit, db dal.RDB) error {
 
 	uniqueKeysArr, err := getUniqueKeys(kit, db)
 	if err != nil {
@@ -107,11 +107,22 @@ func addObjectUniqueData(kit *rest.Kit, db dal.Dal) error {
 			ResIDField:   "id",
 			ResNameField: "bk_obj_id",
 		},
+		Type: "unique_keys",
 	}
 
-	_, err = tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjUnique, objUniqueData, needField)
+	_, err = tools.InsertData(kit, db, common.BKTableNameObjUnique, objUniqueData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseBizSet, err)
+		return err
+	}
+	// add tenant template data
+	dataMap := make(map[string]interface{}, len(objUniqueData))
+	for key, item := range objUniqueKeys {
+		dataMap[key] = item
+	}
+	err = tools.InsertTemplateData(kit, needField, []map[string]interface{}{dataMap}, true)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 	return nil
@@ -122,7 +133,6 @@ type objectUnique struct {
 	ObjID    string      `bson:"bk_obj_id"`
 	Keys     []uniqueKey `bson:"keys"`
 	IsPre    bool        `bson:"ispre"`
-	TenantID string      `bson:"tenant_id"`
 	LastTime time.Time   `bson:"last_time"`
 }
 

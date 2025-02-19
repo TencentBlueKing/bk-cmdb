@@ -65,7 +65,7 @@ var asstTypes = []associationKind{
 	},
 }
 
-func addAssociationData(kit *rest.Kit, db dal.Dal) error {
+func addAssociationData(kit *rest.Kit, db dal.RDB) error {
 	dataInterface := make([]interface{}, 0)
 	for _, asstType := range asstTypes {
 		asstType.IsPre = &trueVar
@@ -85,8 +85,11 @@ func addAssociationData(kit *rest.Kit, db dal.Dal) error {
 			ResIDField:   "id",
 			ResNameField: "bk_asst_name",
 		},
+		IsTemplateData: true,
+		Type:           "association",
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameAsstDes, dataInterface, needFields)
+
+	_, err := tools.InsertData(kit, db, common.BKTableNameAsstDes, dataInterface, needFields)
 	if err != nil {
 		blog.Errorf("insert association data for table %s failed, err: %v", common.BKTableNameAsstDes, err)
 		return err

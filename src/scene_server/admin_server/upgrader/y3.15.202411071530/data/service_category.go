@@ -48,7 +48,7 @@ var (
 	}
 )
 
-func addServiceCategoryData(kit *rest.Kit, db dal.Dal) error {
+func addServiceCategoryData(kit *rest.Kit, db dal.RDB) error {
 	parentServiceCategory := make([]interface{}, 0)
 	for _, value := range parentCategory {
 		category := ServiceCategory{
@@ -72,10 +72,11 @@ func addServiceCategoryData(kit *rest.Kit, db dal.Dal) error {
 			ResIDField:   "id",
 			ResNameField: "name",
 		},
+		IsTemplateData: true,
+		Type:           "service_category",
 	}
 
-	parentIDs, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameServiceCategory,
-		parentServiceCategory, needField)
+	parentIDs, err := tools.InsertData(kit, db, common.BKTableNameServiceCategory, parentServiceCategory, needField)
 	if err != nil {
 		blog.Errorf("insert service category data for table %s failed, err: %v", common.BKTableNameServiceCategory, err)
 		return err
@@ -118,10 +119,11 @@ func addServiceCategoryData(kit *rest.Kit, db dal.Dal) error {
 			ResIDField:   "id",
 			ResNameField: "name",
 		},
+		IsTemplateData: true,
+		Type:           "service_category",
 	}
 
-	subIds, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameServiceCategory, subCategoryData,
-		needField)
+	subIds, err := tools.InsertData(kit, db, common.BKTableNameServiceCategory, subCategoryData, needField)
 	if err != nil {
 		blog.Errorf("insert service category data for table %s failed, err: %v", common.BKTableNameServiceCategory, err)
 		return err

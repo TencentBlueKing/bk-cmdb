@@ -43,7 +43,7 @@ func (s *Service) BackgroundTask(options options.Config) error {
 	if err != nil {
 		return fmt.Errorf("connect mongo server failed %s", err.Error())
 	}
-
+	
 	logics.DBSync(s.Engine, db, options)
 
 	return nil

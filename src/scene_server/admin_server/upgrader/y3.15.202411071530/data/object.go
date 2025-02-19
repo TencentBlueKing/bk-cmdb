@@ -126,7 +126,7 @@ type Object struct {
 	ObjSortNumber int64       `bson:"obj_sort_number"`
 }
 
-func addObjectData(kit *rest.Kit, db dal.Dal) error {
+func addObjectData(kit *rest.Kit, db dal.RDB) error {
 	objectDataArr := make([]interface{}, 0)
 	for _, obj := range objectData {
 		obj.Time = tools.NewTime()
@@ -145,8 +145,11 @@ func addObjectData(kit *rest.Kit, db dal.Dal) error {
 			ResIDField:   "id",
 			ResNameField: "bk_obj_name",
 		},
+		IsTemplateData: true,
+		Type:           "object",
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjDes, objectDataArr, needField)
+
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjDes, objectDataArr, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjDes, err)
 		return err

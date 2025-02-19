@@ -43,7 +43,7 @@ var (
 	}
 )
 
-func addBizSetData(kit *rest.Kit, db dal.Dal) error {
+func addBizSetData(kit *rest.Kit, db dal.RDB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKBizSetNameField},
@@ -56,8 +56,7 @@ func addBizSetData(kit *rest.Kit, db dal.Dal) error {
 		},
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBaseBizSet, []interface{}{bizSetData},
-		needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameBaseBizSet, []interface{}{bizSetData}, needField)
 	if err != nil {
 		blog.Errorf("insert default biz data for table %s failed, err: %v", common.BKTableNameBaseBizSet, err)
 		return err

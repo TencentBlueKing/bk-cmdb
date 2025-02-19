@@ -106,6 +106,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
+	logics.SetProcessConfig(*process.Config)
 	if err := service.BackgroundTask(*process.Config); err != nil {
 		return err
 	}
