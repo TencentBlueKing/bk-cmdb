@@ -18,6 +18,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -151,6 +152,12 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 
 	if cond.FileName == "" {
 		cond.FileName = fmt.Sprintf("batch_export_object_%d", time.Now().UnixNano())
+	}
+	if isValid := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`).MatchString(cond.FileName); !isValid {
+		blog.Errorf("invalid file name failed, filename: %s, rid: %s", cond.FileName, rid)
+		msg := getReturnStr(common.CCErrCommHTTPInputInvalid, "invalid file name", nil)
+		_, _ = c.Writer.Write([]byte(msg))
+		return
 	}
 
 	fileDir := fmt.Sprintf("%s/%s_%d.zip", dirFileName, cond.FileName, time.Now().UnixNano())
