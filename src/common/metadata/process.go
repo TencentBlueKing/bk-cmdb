@@ -1159,6 +1159,12 @@ type ServiceTemplate struct {
 	HostApplyEnabled bool      `field:"host_apply_enabled" json:"host_apply_enabled" bson:"host_apply_enabled"`
 }
 
+// ServiceTemplateResp service template response
+type ServiceTemplateResp struct {
+	Data     ServiceTemplate `json:"data"`
+	BaseResp `json:",inline"`
+}
+
 // Validate TODO
 func (st *ServiceTemplate) Validate(errProxy cErr.DefaultCCErrorIf) (field string, err error) {
 	st.Name, err = valid.ValidTopoNameField(st.Name, "name", errProxy)
