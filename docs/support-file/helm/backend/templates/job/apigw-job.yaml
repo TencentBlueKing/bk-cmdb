@@ -39,6 +39,8 @@ spec:
           value: {{ .Values.apigatewaySync.jobAppCode }}
         - name: BK_NODEMAN_APP_CODE
           value: {{ .Values.apigatewaySync.nodeManAppCode }}
+        - name: BK_NODEMGR_APP_CODE
+          value: {{ .Values.apigatewaySync.nodeMgrAppCode }}
         - name: BK_BCS_APP_CODE
           value: {{ .Values.apigatewaySync.bcsAppCode }}
         - name: BK_BCS_SYNC_APP_CODE
