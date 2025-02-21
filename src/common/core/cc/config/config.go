@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/pflag"
 )
 
 // CCAPIConfig define configuration of ccapi server
@@ -25,6 +27,7 @@ type CCAPIConfig struct {
 	RegDiscover string
 	RegisterIP  string
 	ExConfig    string
+	Environment string
 	Qps         int64
 	Burst       int64
 }
@@ -107,4 +110,13 @@ func getPortFunc(addrPort string) (uint, error) {
 		return uint(0), err
 	}
 	return uint(port), nil
+}
+
+// AddFlags add common flags for cc api config
+func (conf *CCAPIConfig) AddFlags(fs *pflag.FlagSet, defaultAddrPort string) {
+	fs.StringVar(&conf.AddrPort, "addrport", defaultAddrPort, "The ip address and port for the serve on")
+	fs.StringVar(&conf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
+	fs.StringVar(&conf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
+	fs.StringVar(&conf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
+	fs.StringVar(&conf.Environment, "env", "", "the environment of the server, used for service discovery")
 }

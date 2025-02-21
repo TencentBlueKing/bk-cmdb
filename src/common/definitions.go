@@ -393,6 +393,9 @@ const (
 	// BKCpuField the host cpu field
 	BKCpuField = "bk_cpu"
 
+	// BKOsKernelVersionField the host os kernel version field
+	BKOsKernelVersionField = "bk_os_kernel_version"
+
 	// BKCpuModuleField the host cpu module field
 	BKCpuModuleField = "bk_cpu_module"
 

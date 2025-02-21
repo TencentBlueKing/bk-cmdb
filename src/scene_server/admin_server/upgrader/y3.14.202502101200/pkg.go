@@ -15,33 +15,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package options defines transfer service options.
-package options
+package y3_14_202502101200
 
 import (
-	"configcenter/src/common/core/cc/config"
+	"context"
 
-	"github.com/spf13/pflag"
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
 )
 
-// ServerOption define option of server in flags
-type ServerOption struct {
-	ServConf *config.CCAPIConfig
-	// ExSyncConfFile is the transfer service extra sync config file path
-	ExSyncConfFile string
+func init() {
+	upgrader.RegistUpgrader("y3.14.202502101200", upgrade)
 }
 
-// NewServerOption new ServerOption
-func NewServerOption() *ServerOption {
-	s := ServerOption{
-		ServConf: config.NewCCAPIConfig(),
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+
+	blog.Infof("start execute y3.14.202502101200")
+	err = addHostOsKernelVersionField(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("upgrade y3.14.202502101200 add host os kernel version field failed, error: %v", err)
+		return err
 	}
+	blog.Infof("execute y3.14.202502101200, add host os kernel version field success!")
 
-	return &s
-}
-
-// AddFlags add flags
-func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
-	s.ServConf.AddFlags(fs, "127.0.0.1:50010")
-	fs.StringVar(&s.ExSyncConfFile, "sync-config", "", "The config path. e.g conf/sync.yaml")
+	return nil
 }

@@ -38,6 +38,7 @@ spec:
         - --config={{ .Values.synchronizeserver.configDir }}
         {{- end }}
         - --regdiscv={{ include "cmdb.configAndServiceCenter.addr" . }}
+        - --env={{ .Values.serviceDiscoveryEnv }}
         {{- if .Values.synchronizeserver.command.logDir }}
         - --log-dir={{ .Values.synchronizeserver.command.logDir }}
         {{- end }}

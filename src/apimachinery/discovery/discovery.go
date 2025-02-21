@@ -58,7 +58,7 @@ type Interface interface {
 }
 
 // NewServiceDiscovery new a simple discovery module which can be used to get alive server address
-func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
+func NewServiceDiscovery(client *zk.ZkClient, env string) (DiscoveryInterface, error) {
 	disc := registerdiscover.NewRegDiscoverEx(client)
 
 	d := &discover{
@@ -81,7 +81,7 @@ func NewServiceDiscovery(client *zk.ZkClient) (DiscoveryInterface, error) {
 		}
 
 		path := fmt.Sprintf("%s/%s", types.CC_SERV_BASEPATH, component)
-		svr, err := newServerDiscover(disc, path, component)
+		svr, err := newServerDiscover(disc, path, component, env)
 		if err != nil {
 			return nil, fmt.Errorf("discover %s failed, err: %v", component, err)
 		}

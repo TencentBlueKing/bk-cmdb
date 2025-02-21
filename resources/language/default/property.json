@@ -80,6 +80,7 @@
     "host_property_bk_cloud_vendor": "云厂商",
     "host_property_bk_cloud_region": "云地域（Region）",
     "host_property_bk_cloud_zone": "云可用区（Zone）",
+    "host_property_bk_os_kernel_version": "操作系统内核版本",
     "process_property_bk_biz_id": "业务ID",
     "process_property_bk_process_name": "进程别名",
     "process_property_description": "备注",

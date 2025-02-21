@@ -5,11 +5,11 @@ spec_version: 1
 release:
   # 发布版本号；
   # 资源配置更新，需更新此版本号才会发布资源版本，此版本号和 sdk 版本号一致，错误设置会影响调用方使用
-  version: 3.14.4
+  version: 3.14.5
   # 版本标题
-  title: "3.14.4"
+  title: "3.14.5"
   # 版本描述
-  comment: "3.14.4"
+  comment: "3.14.5"
 
 # 定义网关基本信息，用于命令 `sync_apigw_config`
 apigateway:
@@ -79,6 +79,54 @@ grant_permissions:
     grant_dimension: "resource"
     resource_names:
       - batch_update_host_all_properties
+  - bk_app_code: {{ environ.BK_NODEMGR_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - search_business
+      - search_cloud_area
+      - search_biz_inst_topo
+      - get_biz_internal_module
+      - find_topo_node_paths
+      - find_module_batch
+      - list_hosts_without_biz
+      - list_biz_hosts
+      - list_service_template
+      - list_service_instance
+      - list_process_instance
+      - list_proc_template
+      - find_set_batch
+      - search_set
+      - search_module
+      - search_object_attribute
+      - find_host_topo_relation
+      - find_host_biz_relations
+      - find_host_by_service_template
+      - find_host_by_set_template
+      - find_host_by_topo
+      - find_host_relations_with_topo
+      - resource_watch
+      - find_host_identifier_push_result
+      - list_service_instance_detail
+      - create_dynamic_group
+      - get_dynamic_group
+      - search_dynamic_group
+      - execute_dynamic_group
+      - get_mainline_object_topo
+      - list_biz_hosts_topo
+      - list_service_instance_by_host
+      - list_service_instance_by_set_template
+      - list_set_template
+      - batch_update_host
+      - bind_host_agent
+      - unbind_host_agent
+      - add_host_to_business_idle
+      - push_host_identifier
+      - update_dynamic_group
+      - delete_dynamic_group
+      - create_cloud_area
+      - update_cloud_area
+      - delete_cloud_area
+      - update_host_cloud_area_field
   - bk_app_code: {{ environ.BK_BCS_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
