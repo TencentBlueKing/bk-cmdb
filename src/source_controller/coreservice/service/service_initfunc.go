@@ -490,6 +490,18 @@ func (s *coreService) initModelQuote(web *restful.WebService) {
 	utility.AddToRestfulWebService(web)
 }
 
+func (s *coreService) initTenant(web *restful.WebService) {
+	utility := rest.NewRestUtility(rest.Config{
+		ErrorIf:  s.engine.CCErr,
+		Language: s.engine.Language,
+	})
+
+	// get all tenants
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/list/tenants", Handler: s.GetAllTenants})
+
+	utility.AddToRestfulWebService(web)
+}
+
 func (s *coreService) initService(web *restful.WebService) {
 	c := &capability.Capability{
 		Utility: rest.NewRestUtility(rest.Config{ErrorIf: s.engine.CCErr, Language: s.engine.Language}),
@@ -519,6 +531,7 @@ func (s *coreService) initService(web *restful.WebService) {
 	kube.InitKube(c)
 	s.initProject(web)
 	s.initModelQuote(web)
+	s.initTenant(web)
 	fieldtmpl.InitFieldTemplate(c)
 	idrule.InitIDRule(c)
 

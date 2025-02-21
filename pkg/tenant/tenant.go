@@ -24,34 +24,49 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/pkg/tenant/types"
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/header/util"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
 var (
-	allTenants = make([]Tenant, 0)
-	db         local.DB
-	once       sync.Once
+	allTenants      = make([]types.Tenant, 0)
+	db              local.DB
+	apiMachineryCli apimachinery.ClientSetInterface
+	once            sync.Once
+	tenantMap       = make(map[string]*types.Tenant)
+	lock            sync.RWMutex
 )
+
+// GetTenant get tenant
+func GetTenant(tenantID string) (*types.Tenant, bool) {
+	lock.RLock()
+	defer lock.RUnlock()
+	if data, ok := tenantMap[tenantID]; ok {
+		return data, ok
+	}
+	return nil, false
+}
 
 // Options is tenant initialize options
 type Options struct {
-	DB local.DB
-	// TODO add redis cache and api machinery client
+	DB              local.DB
+	ApiMachineryCli apimachinery.ClientSetInterface
 }
 
 // Init initialize tenant info
 func Init(opts *Options) error {
 	if opts == nil {
-		return fmt.Errorf("options is nil")
+		return fmt.Errorf("options is invalid")
 	}
-
-	if opts.DB == nil {
-		return fmt.Errorf("db is nil")
+	if ((opts.DB != nil) && (opts.ApiMachineryCli != nil)) || ((opts.DB == nil) && (opts.ApiMachineryCli == nil)) {
+		return fmt.Errorf("options is invalid, db: %v, api machinery: %v", opts.DB, opts.ApiMachineryCli)
 	}
 	db = opts.DB
-
+	apiMachineryCli = opts.ApiMachineryCli
 	var err error
 	once.Do(func() {
 		if err = refreshTenantInfo(); err != nil {
@@ -84,18 +99,32 @@ func refreshTenantInfo() error {
 			return err
 		}
 	}
+	if apiMachineryCli != nil {
+		allTenants, err = apiMachineryCli.CoreService().Tenant().GetAllTenants(context.Background(),
+			util.GenDefaultHeader())
+		if err != nil {
+			blog.Errorf("get all tenants from api machinery failed, err: %v", err)
+			return err
+		}
+	}
+
+	lock.Lock()
+	for _, tenant := range allTenants {
+		tenantMap[tenant.TenantID] = &tenant
+	}
+	lock.Unlock()
 	return nil
 }
 
 // GetAllTenants get all tenants
-func GetAllTenants() []Tenant {
+func GetAllTenants() []types.Tenant {
 	// TODO right now only support default tenant for compatible, use actual tenants later
-	return []Tenant{{TenantID: common.BKDefaultTenantID, Status: EnabledStatus}}
+	return []types.Tenant{{TenantID: common.BKDefaultTenantID, Status: types.EnabledStatus}}
 }
 
 // GetAllTenantsFromDB get all tenants from db
-func GetAllTenantsFromDB(ctx context.Context, db local.DB) ([]Tenant, error) {
-	tenants := make([]Tenant, 0)
+func GetAllTenantsFromDB(ctx context.Context, db local.DB) ([]types.Tenant, error) {
+	tenants := make([]types.Tenant, 0)
 	err := db.Table(common.BKTableNameTenant).Find(nil).All(ctx, &tenants)
 	if err != nil {
 		return nil, fmt.Errorf("get all tenants from db failed, err: %v", err)

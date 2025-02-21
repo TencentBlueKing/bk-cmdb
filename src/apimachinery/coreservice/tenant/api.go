@@ -17,19 +17,35 @@
 
 package tenant
 
-// Tenant is the tenant info
-type Tenant struct {
-	TenantID string `bson:"tenant_id"`
-	Status   Status `bson:"status"`
-	Database string `bson:"database"`
-}
+import (
+	"context"
+	"net/http"
 
-// Status is the tenant status
-type Status string
-
-const (
-	// DisabledStatus is the disabled status for tenant
-	DisabledStatus Status = "disabled"
-	// EnabledStatus is the enabled status for tenant
-	EnabledStatus Status = "enabled"
+	"configcenter/pkg/tenant/types"
+	"configcenter/src/common/errors"
 )
+
+// GetAllTenants get all tenants
+func (t *tenant) GetAllTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder) {
+
+	resp := new(types.AllTenantsResult)
+	subPath := "/list/tenants"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp.Data, nil
+}

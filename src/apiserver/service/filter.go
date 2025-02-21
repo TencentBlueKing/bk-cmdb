@@ -18,6 +18,8 @@ import (
 	"net/http"
 	"strings"
 
+	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/types"
 	"configcenter/src/ac/parser"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
@@ -430,6 +432,28 @@ func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response,
 			return
 		}
 		req.Request.Header = header
+
+		fchain.ProcessFilter(req, resp)
+		return
+	}
+}
+
+// TenantVerify the filter that handles tenant verification
+func (s *service) TenantVerify() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
+
+		tenantID := httpheader.GetTenantID(req.Request.Header)
+		tenantData, exist := tenant.GetTenant(tenantID)
+		if !exist || tenantData.Status != types.EnabledStatus {
+			blog.Errorf("invalid tenant: %s, rid: %s", tenantID, httpheader.GetRid(req.Request.Header))
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrAPICheckTenantInvalid,
+				ErrMsg: "invalid tenant",
+				Result: false,
+			}
+			_ = resp.WriteAsJson(rsp)
+			return
+		}
 
 		fchain.ProcessFilter(req, resp)
 		return
