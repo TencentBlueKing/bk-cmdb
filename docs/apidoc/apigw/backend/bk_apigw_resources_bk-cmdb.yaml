@@ -13187,3 +13187,131 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
+  /api/v3/findmany/tenant_set:
+    post:
+      operationId: list_tenant_set
+      description: 查询租户集
+      tags:
+        - tenant_set
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/tenant_set
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v3/findmany/tenant_set/{tenant_set_id}/tenant:
+    post:
+      operationId: list_tenant_in_tenant_set
+      description: 查询租户集中的租户列表
+      tags:
+        - tenant_set
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/tenant_set/{tenant_set_id}/tenant
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v3/findmany/tenant_set/{tenant_set_id}/tenant/{tenant_id}/biz:
+    post:
+      operationId: search_business_in_tenant_set
+      description: 查询租户集中的业务
+      tags:
+        - tenant_set
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/tenant_set/{tenant_set_id}/tenant/{tenant_id}/biz
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/findmany/tenant_set/{tenant_set_id}/tenant/{tenant_id}/biz/{bk_biz_id}/hosts:
+    post:
+      operationId: list_biz_hosts_in_tenant_set
+      description: 查询租户集中业务下的主机
+      tags:
+        - tenant_set
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/tenant_set/{tenant_set_id}/tenant/{tenant_id}/biz/{bk_biz_id}/hosts
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+          pluginConfigs:
+            - type: bk-rate-limit
+              yaml: |
+                rates:
+                  __default:
+                  - period: 1
+                    tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
