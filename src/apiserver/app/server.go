@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
@@ -50,6 +51,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		return fmt.Errorf("new backbone failed, err: %v", err)
+	}
+
+	err = tenant.Init(&tenant.Options{ApiMachineryCli: engine.CoreAPI})
+	if err != nil {
+		return err
 	}
 
 	redisConf, err := engine.WithRedis()
