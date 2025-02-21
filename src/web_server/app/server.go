@@ -153,11 +153,12 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 	if webSvr.Config.EnableNotification {
 		apigwClients = append(apigwClients, apigw.Notice)
 	}
-	err = apigwcli.Init("apiGW", engine.Metric().Registry(), apigwClients)
-	if err != nil {
-		return nil, fmt.Errorf("init api gateway client error, err: %v", err)
+	if len(apigwClients) > 0 {
+		err = apigwcli.Init("apiGW", engine.Metric().Registry(), apigwClients)
+		if err != nil {
+			return nil, fmt.Errorf("init api gateway client error, err: %v", err)
+		}
 	}
-
 	// init api client
 	switch webSvr.Config.DeploymentMethod {
 	case common.BluekingDeployment:

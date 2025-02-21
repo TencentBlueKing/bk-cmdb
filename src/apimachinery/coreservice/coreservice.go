@@ -35,6 +35,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/project"
 	"configcenter/src/apimachinery/coreservice/settemplate"
 	ccSystem "configcenter/src/apimachinery/coreservice/system"
+	"configcenter/src/apimachinery/coreservice/tenant"
 	"configcenter/src/apimachinery/coreservice/topographics"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/transaction"
@@ -64,6 +65,7 @@ type CoreServiceClientInterface interface {
 	ModelQuote() modelquote.Interface
 	FieldTemplate() fieldtmpl.Interface
 	IDRule() idrule.Interface
+	Tenant() tenant.TenantClientInterface
 }
 
 // NewCoreServiceClient TODO
@@ -182,4 +184,8 @@ func (c *coreService) FieldTemplate() fieldtmpl.Interface {
 // IDRule return the id rule client
 func (c *coreService) IDRule() idrule.Interface {
 	return idrule.New(c.restCli)
+}
+
+func (c *coreService) Tenant() tenant.TenantClientInterface {
+	return tenant.New(c.restCli)
 }
