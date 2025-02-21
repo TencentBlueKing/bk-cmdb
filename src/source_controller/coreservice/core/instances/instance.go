@@ -606,7 +606,7 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 	// delete object instance mapping.
 	if metadata.IsCommon(objID) {
 		filter := map[string]interface{}{common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs}}
-		if err := mongodb.Shard(kit.ShardOpts()).Table("cc_ObjectBaseMapping").Delete(kit.Ctx, filter); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table("ObjectBaseMapping").Delete(kit.Ctx, filter); err != nil {
 			blog.Errorf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s", objID, err,
 				instIDs, kit.Rid)
 			return nil, err
@@ -656,7 +656,7 @@ func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string
 	// delete object instance mapping.
 	if metadata.IsCommon(objID) {
 		filter := map[string]interface{}{common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs}}
-		if err := mongodb.Shard(kit.ShardOpts()).Table("cc_ObjectBaseMapping").Delete(kit.Ctx, filter); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table("ObjectBaseMapping").Delete(kit.Ctx, filter); err != nil {
 			blog.Errorf("delete object %s instance mapping failed, err: %s, instance: %v, rid: %s", objID, err,
 				instIDs, kit.Rid)
 			return nil, err

@@ -20,7 +20,7 @@ import (
 )
 
 func init() {
-	registerIndexes("cc_ObjectBaseMapping", commInstanceObjectBaseMappingIndexes)
+	registerIndexes("ObjectBaseMapping", commInstanceObjectBaseMappingIndexes)
 }
 
 var commInstanceObjectBaseMappingIndexes = []types.Index{
