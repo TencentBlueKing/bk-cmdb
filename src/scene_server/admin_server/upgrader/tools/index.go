@@ -26,8 +26,8 @@ import (
 )
 
 // CreateIndexes create table index
-func CreateIndexes(kit *rest.Kit, db dal.Dal, table string, indexes []types.Index) error {
-	existIndexes, err := db.Shard(kit.ShardOpts()).Table(table).Indexes(kit.Ctx)
+func CreateIndexes(kit *rest.Kit, db dal.RDB, table string, indexes []types.Index) error {
+	existIndexes, err := db.Table(table).Indexes(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get %s table exist index failed, err: %v", table, err)
 		return err
@@ -61,7 +61,7 @@ func CreateIndexes(kit *rest.Kit, db dal.Dal, table string, indexes []types.Inde
 		blog.Infof("table %s index is up to date", table)
 		return nil
 	}
-	if err = db.Shard(kit.ShardOpts()).Table(table).BatchCreateIndexes(kit.Ctx, insertIndexes); err != nil {
+	if err = db.Table(table).BatchCreateIndexes(kit.Ctx, insertIndexes); err != nil {
 		blog.Errorf("create %s table index %+v failed, err: %v", table, insertIndexes, err)
 		return err
 	}

@@ -32,7 +32,7 @@ var associationMap = map[string]string{
 	"host":   "module",
 }
 
-func addObjAssociationData(kit *rest.Kit, db dal.Dal) error {
+func addObjAssociationData(kit *rest.Kit, db dal.RDB) error {
 
 	asstData := make([]interface{}, 0)
 	for obj, asstObj := range associationMap {
@@ -60,9 +60,11 @@ func addObjAssociationData(kit *rest.Kit, db dal.Dal) error {
 			AuditType:    metadata.AssociationKindType,
 			ResourceType: metadata.MainlineInstanceRes,
 		},
+		IsTemplateData: true,
+		Type:           "obj_association",
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjAsst, asstData, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjAsst, asstData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjAsst, err)
 		return err

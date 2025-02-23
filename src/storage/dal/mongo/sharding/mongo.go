@@ -50,7 +50,7 @@ type ShardingMongoManager struct {
 }
 
 // NewShardingMongo returns new sharding db manager for mongo
-func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryptor.Cryptor) (ShardingDB, error) {
+func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryptor.Cryptor) (NewTenantDB, error) {
 	// connect master mongodb
 	masterCli, err := local.NewMongoClient(true, "", &config, timeout)
 	if err != nil {
@@ -188,6 +188,16 @@ func (m *ShardingMongoManager) Shard(opt ShardOpts) local.DB {
 		return m.IgnoreTenant()
 	}
 	return m.Tenant(opt.Tenant())
+}
+
+// NewTenantCli returns the new tenant db client
+func (m *ShardingMongoManager) NewTenantCli() *local.MongoClient {
+	return m.newTenantCli
+}
+
+// DBConfig returns the db config
+func (m *ShardingMongoManager) DBConfig() *local.MongoCliConf {
+	return m.conf
 }
 
 // Tenant returns the db client for tenant

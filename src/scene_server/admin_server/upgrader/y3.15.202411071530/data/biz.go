@@ -32,24 +32,15 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func addBizData(kit *rest.Kit, db dal.Dal) error {
-
-	if kit.TenantID == types.GetBlueKing() {
-		if err := addBizModule(kit, db, []interface{}{blueKingBizData, resBizData}, bizAuditType); err != nil {
-			blog.Errorf("add biz module or set data failed, %v", err)
-			return err
-		}
-		return nil
-	}
-	if err := addBizModule(kit, db, []interface{}{resBizData}, bizAuditType); err != nil {
+func addBizData(kit *rest.Kit, db dal.RDB) error {
+	if err := addBizModule(kit, db, []interface{}{blueKingBizData, resBizData}, bizAuditType); err != nil {
 		blog.Errorf("add biz module or set data failed, %v", err)
 		return err
 	}
 	return nil
-
 }
 
-func addBizModule(kit *rest.Kit, db dal.Dal, data []interface{}, auditField *tools.AuditResType) error {
+func addBizModule(kit *rest.Kit, db dal.RDB, data []interface{}, auditField *tools.AuditResType) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKAppNameField},
@@ -62,7 +53,8 @@ func addBizModule(kit *rest.Kit, db dal.Dal, data []interface{}, auditField *too
 			ResNameField: "bk_biz_name",
 		},
 	}
-	ids, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBaseApp, data, needField)
+
+	ids, err := tools.InsertData(kit, db, common.BKTableNameBaseApp, data, needField)
 	if err != nil {
 		blog.Errorf("insert biz data for table %s failed, err: %v, data: %+v", common.BKTableNameBaseApp, err, data)
 		return err
@@ -102,7 +94,7 @@ func addBizModule(kit *rest.Kit, db dal.Dal, data []interface{}, auditField *too
 	return nil
 }
 
-func addBizAsstData(kit *rest.Kit, db dal.Dal, bizID int64, moduleNames []string) error {
+func addBizAsstData(kit *rest.Kit, db dal.RDB, bizID int64, moduleNames []string) error {
 	// add resource business cluster
 	ids, err := addSetBaseData(kit, db, bizID)
 	if err != nil {

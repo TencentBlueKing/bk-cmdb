@@ -62,7 +62,7 @@ func getAttrData() []*attribute {
 	return objAttrData
 }
 
-func addObjAttrData(kit *rest.Kit, db dal.Dal) error {
+func addObjAttrData(kit *rest.Kit, db dal.RDB) error {
 	if len(objAttrData) == 0 {
 		getAttrData()
 	}
@@ -92,8 +92,11 @@ func addObjAttrData(kit *rest.Kit, db dal.Dal) error {
 			ResIDField:   common.BKFieldID,
 			ResNameField: "bk_property_name",
 		},
+		IsTemplateData: true,
+		Type:           "obj_attribute",
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjAttDes, attributeData, needField)
+
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjAttDes, attributeData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjAttDes, err)
 		return err

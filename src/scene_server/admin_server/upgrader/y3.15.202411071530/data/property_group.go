@@ -27,7 +27,7 @@ import (
 	"configcenter/src/storage/dal"
 )
 
-func addPropertyGroupData(kit *rest.Kit, db dal.Dal) error {
+func addPropertyGroupData(kit *rest.Kit, db dal.RDB) error {
 	propertyGroupArr := make([]interface{}, 0)
 	for _, group := range propertyGroupData {
 		group.IsDefault = true
@@ -47,10 +47,11 @@ func addPropertyGroupData(kit *rest.Kit, db dal.Dal) error {
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModelGroupRes,
 		},
+		IsTemplateData: true,
+		Type:           "property_group",
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNamePropertyGroup, propertyGroupArr,
-		needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNamePropertyGroup, propertyGroupArr, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseBizSet, err)
 		return err

@@ -20,12 +20,12 @@ package data
 import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/scene_server/admin_server/upgrader/types"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 var (
-	commonTableDataArr = []func(kit *rest.Kit, db dal.Dal) error{
+	commonTableDataArr = []func(kit *rest.Kit, db dal.RDB) error{
 		addServiceCategoryData,
 		addBizData,
 		addAssociationData,
@@ -38,30 +38,27 @@ var (
 		addPropertyGroupData,
 		addObjectUniqueData,
 	}
-	defaultTableDataArr = []func(kit *rest.Kit, db dal.Dal) error{
+	defaultTableDataArr = []func(kit *rest.Kit, db dal.RDB) error{
 		addSystemData,
 		addSelfIncrIDData,
 	}
 )
 
-// InitData add init data
-func InitData(kit *rest.Kit, db dal.Dal) error {
-	dataArr := append(commonTableDataArr, defaultTableDataArr...)
-
-	for _, handler := range dataArr {
-		if err := handler(types.GetBlueKingKit(), db); err != nil {
+// InitData add default tenant init data
+func InitData(kit *rest.Kit, db dal.RDB) error {
+	for _, handler := range commonTableDataArr {
+		if err := handler(kit, db); err != nil {
 			blog.Errorf("add init data failed, err: %v", err)
 			return err
 		}
 	}
 
-	if kit.TenantID != types.GetBlueKing() {
-		for _, handler := range commonTableDataArr {
-			if err := handler(kit, db); err != nil {
-				blog.Errorf("add init data failed, err: %v", err)
-				return err
-			}
+	for _, handler := range defaultTableDataArr {
+		if err := handler(kit, mongodb.Dal().Shard(kit.SysShardOpts())); err != nil {
+			blog.Errorf("add init data failed, err: %v", err)
+			return err
 		}
 	}
+
 	return nil
 }

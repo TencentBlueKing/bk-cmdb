@@ -40,7 +40,7 @@ var cloudAreaData = []CloudArea{
 	},
 }
 
-func addCloudAreaData(kit *rest.Kit, db dal.Dal) error {
+func addCloudAreaData(kit *rest.Kit, db dal.RDB) error {
 	cloudData := make([]interface{}, 0)
 	for _, data := range cloudAreaData {
 		data.Time = tools.NewTime()
@@ -59,9 +59,11 @@ func addCloudAreaData(kit *rest.Kit, db dal.Dal) error {
 			ResIDField:   common.BKCloudIDField,
 			ResNameField: "bk_cloud_name",
 		},
+		IsTemplateData: true,
+		Type:           "plat",
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBasePlat, cloudData, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBasePlat, err)
 		return err
