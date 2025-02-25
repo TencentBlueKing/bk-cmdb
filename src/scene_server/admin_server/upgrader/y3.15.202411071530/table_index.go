@@ -25,10 +25,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/kube/types"
-	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	upgradertypes "configcenter/src/scene_server/admin_server/upgrader/types"
-	"configcenter/src/storage/dal"
+	"configcenter/src/scene_server/admin_server/logics"
+	"configcenter/src/storage/dal/mongo/local"
 	daltypes "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 var tableIndexMap = map[string][]daltypes.Index{
@@ -94,27 +94,28 @@ var tableIndexMap = map[string][]daltypes.Index{
 	"cc_ObjectBaseMapping":                       objectBaseMappingIndexes,
 }
 
-var platTableIndexesArr = []string{common.BKTableNameSystem, common.BKTableNameIDgenerator}
+var platTableIndexesArr = []string{common.BKTableNameSystem, common.BKTableNameIDgenerator,
+	common.BKTableNameTenantTemplate}
 
-var tableInstAsstIndexesMap = map[string][]daltypes.Index{
-	common.BKInnerObjIDApp:     bizInstanceIndexes,
-	common.BKInnerObjIDModule:  moduleInstanceIndexes,
-	common.BKProcessObjectName: processInstanceIndexes,
-	common.BKInnerObjIDHost:    hostInstanceIndexes,
-	common.BKInnerObjIDProject: bkProjectInstanceIndexes,
-	common.BKInnerObjIDBizSet:  bkBizSetObjInstIndexes,
-	common.BKInnerObjIDPlat:    platInstanceIndexes,
-	common.BKInnerObjIDSet:     setInstanceIndexes,
+var tableInstAsstArr = []string{
+	common.BKInnerObjIDApp,
+	common.BKInnerObjIDModule,
+	common.BKProcessObjectName,
+	common.BKInnerObjIDHost,
+	common.BKInnerObjIDProject,
+	common.BKInnerObjIDBizSet,
+	common.BKInnerObjIDPlat,
+	common.BKInnerObjIDSet,
 }
 
-func initTableIndex(kit *rest.Kit, db dal.Dal, tableIndexMap map[string][]daltypes.Index) error {
+func initTableIndex(kit *rest.Kit, db local.DB, tableIndexMap map[string][]daltypes.Index) error {
 	for table, index := range tableIndexMap {
-		if err := tools.CreateTable(kit, db.Shard(kit.ShardOpts()), table); err != nil {
+		if err := logics.CreateTable(kit, db, table); err != nil {
 			blog.Errorf("create table %s failed, err: %v", table, err)
 			return err
 		}
 
-		if err := tools.CreateIndexes(kit, db, table, index); err != nil {
+		if err := logics.CreateIndexes(kit, db, table, index); err != nil {
 			blog.Errorf("create table %s failed, err: %v", table, err)
 			return err
 		}
@@ -125,32 +126,32 @@ func initTableIndex(kit *rest.Kit, db dal.Dal, tableIndexMap map[string][]daltyp
 		return err
 	}
 
-	if kit.TenantID != upgradertypes.GetBlueKing() {
-		return nil
-	}
 	for _, table := range platTableIndexesArr {
-		if err := tools.CreateTable(kit, db.Shard(kit.SysShardOpts()), table); err != nil {
+		if err := logics.CreateTable(kit, mongodb.Dal().Shard(kit.SysShardOpts()), table); err != nil {
 			fmt.Errorf("create plat table failed, err: %v", err)
 			return err
 		}
 	}
 
+	err := logics.CreateIndexes(kit, mongodb.Dal().Shard(kit.SysShardOpts()), common.BKTableNameTenantTemplate,
+		templateIndexes)
+	if err != nil {
+		blog.Errorf("create table %s failed, err: %v", common.BKTableNameTenantTemplate, err)
+		return err
+	}
+
 	return nil
 }
 
-func buildInstAsstTableName(objID, tenantID string) string {
-	return fmt.Sprintf("cc_InstAsst_%s_pub_%s", tenantID, objID)
-}
-
-func createInstAsstTable(kit *rest.Kit, db dal.Dal) error {
-	for obj, index := range tableInstAsstIndexesMap {
-		tableName := buildInstAsstTableName(obj, kit.TenantID)
-		if err := tools.CreateTable(kit, db.Shard(kit.ShardOpts()), tableName); err != nil {
+func createInstAsstTable(kit *rest.Kit, db local.DB) error {
+	for _, obj := range tableInstAsstArr {
+		tableName := common.GetObjectInstAsstTableName(obj, kit.TenantID)
+		if err := logics.CreateTable(kit, db, tableName); err != nil {
 			blog.Errorf("create table %s failed, err: %v", tableName, err)
 			return err
 		}
 
-		if err := tools.CreateIndexes(kit, db, tableName, index); err != nil {
+		if err := logics.CreateIndexes(kit, db, tableName, instAsstCommonIndexes); err != nil {
 			return err
 		}
 	}

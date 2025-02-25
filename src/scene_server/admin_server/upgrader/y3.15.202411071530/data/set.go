@@ -23,9 +23,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/scene_server/admin_server/service/utils"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var (
@@ -38,7 +39,7 @@ var (
 	}
 )
 
-func addSetBaseData(kit *rest.Kit, db dal.Dal, bizID int64) (map[string]interface{}, error) {
+func addSetBaseData(kit *rest.Kit, db local.DB, bizID int64) (map[string]interface{}, error) {
 	setData[common.BKAppIDField] = bizID
 	setData[common.BKInstParentStr] = bizID
 	setData[common.CreateTimeField] = time.Now()
@@ -46,22 +47,22 @@ func addSetBaseData(kit *rest.Kit, db dal.Dal, bizID int64) (map[string]interfac
 	setData[common.BKSetDescField] = ""
 	setData[common.BKDescriptionField] = ""
 
-	needField := &tools.InsertOptions{
+	needField := &utils.InsertOptions{
 		UniqueFields: []string{common.BKAppIDField, common.BKSetNameField, common.BKInstParentStr},
 		IgnoreKeys:   []string{common.BKSetIDField},
 		IDField:      []string{common.BKSetIDField},
-		AuditDataField: &tools.AuditDataField{
+		AuditDataField: &utils.AuditDataField{
 			BizIDField:   common.BKAppIDField,
 			ResIDField:   common.BKSetIDField,
 			ResNameField: common.BKSetNameField,
 		},
-		AuditTypeField: &tools.AuditResType{
+		AuditTypeField: &utils.AuditResType{
 			AuditType:    common.BKInnerObjIDSet,
 			ResourceType: metadata.SetRes,
 		},
 	}
 
-	ids, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBaseSet, []interface{}{setData},
+	ids, err := utils.InsertData(kit, db, common.BKTableNameBaseSet, []mapstr.MapStr{setData},
 		needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseApp, err)

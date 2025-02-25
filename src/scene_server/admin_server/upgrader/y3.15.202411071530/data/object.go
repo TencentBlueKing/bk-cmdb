@@ -21,9 +21,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var objectData = []Object{
@@ -126,29 +129,42 @@ type Object struct {
 	ObjSortNumber int64       `bson:"obj_sort_number"`
 }
 
-func addObjectData(kit *rest.Kit, db dal.Dal) error {
-	objectDataArr := make([]interface{}, 0)
+func addObjectData(kit *rest.Kit, db local.DB) error {
+	objectDataArr := make([]mapstr.MapStr, 0)
 	for _, obj := range objectData {
 		obj.Time = tools.NewTime()
-		objectDataArr = append(objectDataArr, obj)
+		item, err := util.ConvStructToMap(obj)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
+		objectDataArr = append(objectDataArr, item)
 	}
 
-	needField := &tools.InsertOptions{
+	needField := &utils.InsertOptions{
 		UniqueFields: []string{"bk_obj_id"},
 		IgnoreKeys:   []string{"id", "obj_sort_number"},
 		IDField:      []string{common.BKFieldID},
-		AuditTypeField: &tools.AuditResType{
+		AuditTypeField: &utils.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModuleRes,
 		},
-		AuditDataField: &tools.AuditDataField{
+		AuditDataField: &utils.AuditDataField{
 			ResIDField:   "id",
 			ResNameField: "bk_obj_name",
 		},
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjDes, objectDataArr, needField)
+
+	_, err := utils.InsertData(kit, db, common.BKTableNameObjDes, objectDataArr, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjDes, err)
+		return err
+	}
+
+	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
+	err = tools.InsertTemplateData(kit, db, objectDataArr, "object", []string{"data.bk_obj_id"}, idOptions)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 	return nil

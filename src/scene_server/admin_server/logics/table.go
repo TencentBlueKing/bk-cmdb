@@ -15,17 +15,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package tools provides some tools for upgrade
-package tools
+package logics
 
 import (
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // CreateTable create table if not exists
-func CreateTable(kit *rest.Kit, db dal.RDB, table string) error {
+func CreateTable(kit *rest.Kit, db local.DB, table string) error {
+	if common.IsPlatformTable(table) {
+		db = mongodb.Shard(kit.SysShardOpts())
+	}
 	exists, err := db.HasTable(kit.Ctx, table)
 	if err != nil {
 		blog.Errorf("check if %s exists failed, err: %v", table, err)

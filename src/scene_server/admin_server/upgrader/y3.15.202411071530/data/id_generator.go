@@ -23,12 +23,13 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/scene_server/admin_server/service/utils"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
-func addSelfIncrIDData(kit *rest.Kit, db dal.Dal) error {
+func addSelfIncrIDData(kit *rest.Kit, db local.DB) error {
 
 	objIDs := []string{"host", "set", "module", "bk_project", "biz", "process", "plat", "bk_biz_set_obj"}
 	ids := make([]string, 0)
@@ -37,10 +38,10 @@ func addSelfIncrIDData(kit *rest.Kit, db dal.Dal) error {
 	}
 	ids = append(ids, metadata.GetIDRule(common.GlobalIDRule))
 
-	needAddIDs := make([]interface{}, 0)
+	needAddIDs := make([]mapstr.MapStr, 0)
 	curTime := time.Now()
 	for _, id := range ids {
-		addID := map[string]interface{}{
+		addID := mapstr.MapStr{
 			common.BKFieldDBID:     id,
 			common.BKFieldSeqID:    0,
 			common.CreateTimeField: curTime,
@@ -49,12 +50,12 @@ func addSelfIncrIDData(kit *rest.Kit, db dal.Dal) error {
 		needAddIDs = append(needAddIDs, addID)
 	}
 
-	needField := &tools.InsertOptions{
+	needField := &utils.InsertOptions{
 		UniqueFields: []string{"_id"},
 		IgnoreKeys:   []string{"_id"},
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.SysShardOpts()), common.BKTableNameIDgenerator, needAddIDs, needField)
+	_, err := utils.InsertData(kit, db, common.BKTableNameIDgenerator, needAddIDs, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameIDgenerator, err)
 		return err

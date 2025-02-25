@@ -23,9 +23,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/scene_server/admin_server/service/utils"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var moduleMap = map[string]map[string]interface{}{
@@ -43,10 +44,10 @@ var moduleMap = map[string]map[string]interface{}{
 	},
 }
 
-func addModuleData(kit *rest.Kit, db dal.Dal, bizID int64, moduleNames []string, setID int64) error {
+func addModuleData(kit *rest.Kit, db local.DB, bizID int64, moduleNames []string, setID int64) error {
 
 	categoryID := defaultServiceCategoryID
-	moduleAdd := make([]interface{}, 0)
+	moduleAdd := make([]mapstr.MapStr, 0)
 	for _, moduleName := range moduleNames {
 		moduleData := moduleMap[moduleName]
 		moduleData[common.BKModuleNameField] = moduleName
@@ -64,23 +65,24 @@ func addModuleData(kit *rest.Kit, db dal.Dal, bizID int64, moduleNames []string,
 		moduleData[common.LastTimeField] = time.Now()
 		moduleAdd = append(moduleAdd, moduleData)
 	}
-	moduleAuditType := &tools.AuditResType{
+	moduleAuditType := &utils.AuditResType{
 		AuditType:    metadata.ModelType,
 		ResourceType: metadata.ModuleRes,
 	}
 
-	needField := &tools.InsertOptions{
+	needField := &utils.InsertOptions{
 		UniqueFields:   []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleNameField},
 		IgnoreKeys:     []string{common.BKModuleIDField},
 		IDField:        []string{common.BKModuleIDField},
 		AuditTypeField: moduleAuditType,
-		AuditDataField: &tools.AuditDataField{
+		AuditDataField: &utils.AuditDataField{
 			BizIDField:   common.BKAppIDField,
 			ResIDField:   common.BKModuleIDField,
 			ResNameField: common.BKModuleNameField,
 		},
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBaseModule, moduleAdd, needField)
+
+	_, err := utils.InsertData(kit, db, common.BKTableNameBaseModule, moduleAdd, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed,common.BKTableNameAsstDes, err: %v", err)
 		return err

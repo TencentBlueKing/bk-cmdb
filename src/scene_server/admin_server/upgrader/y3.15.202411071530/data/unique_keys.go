@@ -23,9 +23,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 func generateUniqueKey(objID, propertyID string) string {
@@ -48,12 +51,12 @@ var objUniqueKeys = map[string][][]string{
 	"bk_biz_set_obj": {{"bk_biz_set_name"}, {"bk_biz_set_id"}},
 }
 
-func getUniqueKeys(kit *rest.Kit, db dal.Dal) ([]objectUnique, error) {
+func getUniqueKeys(kit *rest.Kit, db local.DB) ([]objectUnique, [][]string, error) {
 	attrArr := make([]metadata.Attribute, 0)
-	err := db.Shard(kit.ShardOpts()).Table(common.BKTableNameObjAttDes).Find(nil).All(kit.Ctx, &attrArr)
+	err := db.Table(common.BKTableNameObjAttDes).Find(nil).All(kit.Ctx, &attrArr)
 	if err != nil {
 		blog.Errorf("get host unique fields failed, err: %v", err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	attrIDMap := make(map[string]uint64)
@@ -61,7 +64,9 @@ func getUniqueKeys(kit *rest.Kit, db dal.Dal) ([]objectUnique, error) {
 		attrIDMap[generateUniqueKey(attr.ObjectID, attr.PropertyID)] = uint64(attr.ID)
 	}
 	uniqueKeys := make([]objectUnique, 0)
+	var attributes [][]string
 	for objID, value := range objUniqueKeys {
+		tempValue := objID
 		for _, property := range value {
 			keys := make([]uniqueKey, 0)
 			for _, field := range property {
@@ -69,7 +74,9 @@ func getUniqueKeys(kit *rest.Kit, db dal.Dal) ([]objectUnique, error) {
 					Kind: "property",
 					ID:   attrIDMap[generateUniqueKey(objID, field)],
 				})
+				tempValue += "-" + field
 			}
+			attributes = append(attributes, property)
 			uniqueKeys = append(uniqueKeys, objectUnique{
 				Keys:     keys,
 				ObjID:    objID,
@@ -79,39 +86,50 @@ func getUniqueKeys(kit *rest.Kit, db dal.Dal) ([]objectUnique, error) {
 		}
 	}
 
-	return uniqueKeys, nil
+	return uniqueKeys, attributes, nil
 }
 
-func addObjectUniqueData(kit *rest.Kit, db dal.Dal) error {
+func addObjectUniqueData(kit *rest.Kit, db local.DB) error {
 
-	uniqueKeysArr, err := getUniqueKeys(kit, db)
+	uniqueKeysArr, attributes, err := getUniqueKeys(kit, db)
 	if err != nil {
 		blog.Errorf("get unique keys failed, err: %v", err)
 		return err
 	}
 
-	objUniqueData := make([]interface{}, 0)
+	objUniqueData := make([]mapstr.MapStr, 0)
 	for _, key := range uniqueKeysArr {
-		objUniqueData = append(objUniqueData, key)
+		item, err := util.ConvStructToMap(key)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			continue
+		}
+		objUniqueData = append(objUniqueData, item)
 	}
 
-	needField := &tools.InsertOptions{
+	needField := &utils.InsertOptions{
 		UniqueFields: []string{"keys"},
 		IgnoreKeys:   []string{common.BKFieldID},
 		IDField:      []string{common.BKFieldID},
-		AuditTypeField: &tools.AuditResType{
+		AuditTypeField: &utils.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModelUniqueRes,
 		},
-		AuditDataField: &tools.AuditDataField{
+		AuditDataField: &utils.AuditDataField{
 			ResIDField:   "id",
 			ResNameField: "bk_obj_id",
 		},
 	}
 
-	_, err = tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjUnique, objUniqueData, needField)
+	_, err = utils.InsertData(kit, db, common.BKTableNameObjUnique, objUniqueData, needField)
 	if err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseBizSet, err)
+		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjUnique, err)
+		return err
+	}
+	// add tenant template data
+	err = tools.InsertUniqueKeyTmp(kit, db, objUniqueData, attributes)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 	return nil
@@ -122,7 +140,6 @@ type objectUnique struct {
 	ObjID    string      `bson:"bk_obj_id"`
 	Keys     []uniqueKey `bson:"keys"`
 	IsPre    bool        `bson:"ispre"`
-	TenantID string      `bson:"tenant_id"`
 	LastTime time.Time   `bson:"last_time"`
 }
 

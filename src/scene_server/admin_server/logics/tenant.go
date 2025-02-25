@@ -15,50 +15,40 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package data
+package logics
 
 import (
-	"configcenter/src/common/blog"
+	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/driver/mongodb"
 )
 
 var (
-	commonTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addServiceCategoryData,
-		addBizData,
-		addAssociationData,
-		addBizSetData,
-		addObjAssociationData,
-		addObjClassificationData,
-		addObjectData,
-		addObjAttrData,
-		addCloudAreaData,
-		addPropertyGroupData,
-		addObjectUniqueData,
-	}
-	defaultTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addSystemData,
-		addSelfIncrIDData,
-	}
+	newTenantCli NewTenantInterface
 )
 
-// InitData add default tenant init data
-func InitData(kit *rest.Kit, db local.DB) error {
-	for _, handler := range commonTableDataArr {
-		if err := handler(kit, db); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
-	}
+// SetNewTenantCli set sharding mongo manager
+func SetNewTenantCli(cli NewTenantInterface) {
+	newTenantCli = cli
+}
 
-	for _, handler := range defaultTableDataArr {
-		if err := handler(kit, mongodb.Dal().Shard(kit.SysShardOpts())); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
-	}
+// NewTenantInterface get new tenant cli interface
+type NewTenantInterface interface {
+	NewTenantCli(tenant string) local.DB
+	NewTenantDBName() string
+}
 
-	return nil
+// GetNewTenantCli get new tenant db
+func GetNewTenantCli(kit *rest.Kit) local.DB {
+	return newTenantCli.NewTenantCli(kit.TenantID)
+}
+
+// GetNewTenantDBName get new tenant db name
+func GetNewTenantDBName() string {
+	return newTenantCli.NewTenantDBName()
+}
+
+// GetSystemTenant get system tenant # TODO get the default tenant when multi-tenancy is not enabled
+func GetSystemTenant() string {
+	return common.BKDefaultTenantID
 }
