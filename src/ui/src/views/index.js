@@ -35,7 +35,6 @@ import hostApply from '@/views/host-apply/router.config'
 import businessTopology from '@/views/business-topology/router.config'
 
 import cloudArea from '@/views/cloud-area/router.config'
-import cloudAccount from '@/views/cloud-account/router.config'
 import cloudResource from '@/views/cloud-resource/router.config'
 import project from '@/views/project/router.config'
 
@@ -116,7 +115,6 @@ export const resourceViews = injectStatusComponents(flatternViews([
   generalModel,
   resourceManagement,
   cloudArea,
-  cloudAccount,
   cloudResource,
   project
 ]))
