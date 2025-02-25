@@ -43,7 +43,6 @@ import {
   MENU_MODEL_FIELD_TEMPLATE,
 
   MENU_ANALYSIS_AUDIT,
-  MENU_ANALYSIS_OPERATION,
 
   MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
 } from './menu-symbol'
@@ -188,11 +187,6 @@ const menus = [{
     i18n: '操作审计',
     icon: 'icon-cc-nav-audit-02',
     route: getMenuRoute(analysisViews, MENU_ANALYSIS_AUDIT)
-  }, {
-    id: MENU_ANALYSIS_OPERATION,
-    i18n: '运营统计',
-    icon: 'icon-cc-statistics',
-    route: getMenuRoute(analysisViews, MENU_ANALYSIS_OPERATION)
   }]
 }, {
   id: MENU_PLATFORM_MANAGEMENT,

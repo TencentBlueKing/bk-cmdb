@@ -27,7 +27,6 @@ import serviceInstance from '@/views/service-instance/router.config'
 import serviceSynchronous from '@/views/business-synchronous/router.config'
 import resourceManagement from '@/views/resource-manage/router.config'
 import customFields from '@/views/custom-fields/router.config'
-import operation from '@/views/operation/router.config'
 
 import setSync from '@/views/set-sync/router.config'
 import setTemplate from '@/views/set-template/router.config'
@@ -130,8 +129,7 @@ export const modelViews = injectStatusComponents(flatternViews([
 ]))
 
 export const analysisViews = injectStatusComponents(flatternViews([
-  audit,
-  operation
+  audit
 ]))
 
 

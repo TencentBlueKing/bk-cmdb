@@ -103,7 +103,6 @@ export const MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL = 'menu_model_field_template_s
  * 运营分析
  */
 export const MENU_ANALYSIS_AUDIT = 'menu_analysis_audit'
-export const MENU_ANALYSIS_OPERATION = 'menu_analysis_operation'
 export const MENU_ANALYSIS_STATISTICS = 'menu_analysis_statistics'
 
 /**
