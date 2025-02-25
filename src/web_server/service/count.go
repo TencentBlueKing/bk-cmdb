@@ -146,18 +146,30 @@ func (s *Service) countHostsBySvcTmpl(kit *rest.Kit, setTmplID int64, opt *metad
 	}
 
 	relOpt := &metadata.GroupRelResByIDsOption{
-		IDs:      allModuleIDs,
 		IDField:  common.BKModuleIDField,
 		RelField: common.BKHostIDField,
 	}
-	relMap, err := s.ApiCli.GroupRelResByIDs(kit.Ctx, kit.Header, metadata.ModuleHostRelGroupByRes, relOpt)
-	if err != nil {
-		blog.Errorf("group host relations by modules failed, err: %v, opt: %+v, rid: %s", err, relOpt, kit.Rid)
-		return nil, err
+	total := len(allModuleIDs)
+	allRelMap := make(map[int64][]interface{})
+	for start := 0; start < total; start += common.BKMaxUpdateOrCreatePageSize {
+		if total-start >= common.BKMaxUpdateOrCreatePageSize {
+			relOpt.IDs = allModuleIDs[start : start+common.BKMaxUpdateOrCreatePageSize]
+		} else {
+			relOpt.IDs = allModuleIDs[start:total]
+		}
+
+		relMap, err := s.ApiCli.GroupRelResByIDs(kit.Ctx, kit.Header, metadata.ModuleHostRelGroupByRes, relOpt)
+		if err != nil {
+			blog.Errorf("group host relations by modules failed, err: %v, opt: %+v, rid: %s", err, relOpt, kit.Rid)
+			return nil, err
+		}
+		for moduleID, hostIDVal := range relMap {
+			allRelMap[moduleID] = append(allRelMap[moduleID], hostIDVal...)
+		}
 	}
 
 	tmplHostMap := make(map[int64][]int64)
-	for moduleID, hostIDVal := range relMap {
+	for moduleID, hostIDVal := range allRelMap {
 		hostIDs, err := util.SliceInterfaceToInt64(hostIDVal)
 		if err != nil {
 			blog.Errorf("convert host ids(%+v) to int64 failed, err: %v, rid: %s", hostIDVal, err, kit.Rid)
