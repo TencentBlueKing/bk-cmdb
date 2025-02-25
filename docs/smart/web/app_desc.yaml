@@ -1,7 +1,6 @@
 specVersion: 3
 appVersion: "3.14.5"
 app:
-  region: "default"
   bkAppCode: "bk_cmdb_saas"
   bkAppName: "蓝鲸配置平台"
   bkAppNameEn: "CMDB"
@@ -31,6 +30,12 @@ modules:
                 name: bk/http
               targetPort: 80
               port: 80
+      observability:
+        monitoring:
+          metrics:
+            - process: web
+              serviceName: web
+              path: /metrics
       configuration:
         env:
         - name: "GO_INSTALL_PACKAGE_SPEC"

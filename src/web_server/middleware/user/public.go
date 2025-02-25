@@ -15,6 +15,7 @@ package user
 import (
 	"encoding/json"
 
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -33,6 +34,7 @@ type publicUser struct {
 	config   options.Config
 	engine   *backbone.Engine
 	cacheCli redis.Client
+	apiCli   apiserver.ApiServerClientInterface
 }
 
 // LoginUser  user login
@@ -58,6 +60,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 		ownerM := NewOwnerManager(userInfo.UserName, userInfo.OnwerUin, userInfo.Language)
 		ownerM.CacheCli = m.cacheCli
 		ownerM.Engine = m.engine
+		ownerM.ApiCli = m.apiCli
 		// 初始化失败，不影响登录
 		_, err := ownerM.InitOwner()
 		if nil != err {

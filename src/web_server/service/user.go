@@ -41,7 +41,7 @@ func (s *Service) GetUserList(c *gin.Context) {
 	rid := httpheader.GetRid(c.Request.Header)
 	rspBody := metadata.LonginSystemUserListResult{}
 
-	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli, s.ApiCli)
 	userList, rawErr := userManger.GetUserList(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(c.Request.Header))
 	if rawErr != nil && rawErr.ErrCode != 0 {

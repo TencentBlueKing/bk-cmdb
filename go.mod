@@ -33,6 +33,7 @@ require (
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.2
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.4.0
 	github.com/robfig/cron v1.2.0
@@ -45,7 +46,8 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.398
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.398
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.398
-	github.com/tidwall/gjson v1.14.1
+	github.com/tidwall/gjson v1.14.2
+	github.com/tidwall/sjson v1.2.5
 	github.com/xdg-go/scram v1.1.1
 	github.com/xuri/excelize/v2 v2.7.1
 	go.mongodb.org/mongo-driver v1.9.1
@@ -114,7 +116,6 @@ require (
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect

@@ -25,7 +25,11 @@ import (
 
 // GetRid get request id from http header
 func GetRid(header http.Header) string {
-	return header.Get(BkRidHeader)
+	if rid := header.Get(BkRidHeader); rid != "" {
+		return rid
+	}
+	// get request id from apigw rid header if not set
+	return header.Get(BkApigwRidHeader)
 }
 
 // GetBkJWT get blueking api gateway jwt info from http header
