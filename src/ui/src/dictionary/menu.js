@@ -32,7 +32,6 @@ import {
 
   MENU_RESOURCE_MANAGEMENT,
   MENU_RESOURCE_CLOUD_AREA,
-  MENU_RESOURCE_CLOUD_RESOURCE,
 
   MENU_MODEL_MANAGEMENT,
   MENU_MODEL_TOPOLOGY,
@@ -133,11 +132,6 @@ const menus = [{
     i18n: '管控区域',
     icon: 'icon-cc-network-segment',
     route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_AREA, 'resource')
-  }, {
-    id: MENU_RESOURCE_CLOUD_RESOURCE,
-    i18n: '云资源发现',
-    icon: 'icon-cc-cloud-discover',
-    route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_RESOURCE, 'resource')
   }]
 }, {
   id: MENU_MODEL,

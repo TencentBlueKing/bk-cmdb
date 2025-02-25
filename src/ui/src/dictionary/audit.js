@@ -58,7 +58,6 @@ export const types = {
   },
   cloud_resource: {
     cloud_area: t('管控区域'),
-    cloud_account: t('云账户'),
     cloud_sync_task: t('云同步任务')
   },
   biz_topology: {
