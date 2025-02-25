@@ -18,200 +18,169 @@
 package tools
 
 import (
-	"fmt"
-	"strings"
-
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/driver/mongodb"
-
-	"github.com/google/go-cmp/cmp"
-	"go.mongodb.org/mongo-driver/bson"
+	"configcenter/src/scene_server/admin_server/service/utils"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
-var ignoreKeysArr = []string{"create_time", "last_time", "_id"}
+func InsertTemplateData(kit *rest.Kit, db local.DB, data []mapstr.MapStr, dataType string, uniqueField []string,
+	idOption *IDOptions) error {
 
-// InsertData insert data for upgrade
-func InsertData(kit *rest.Kit, db dal.RDB, table string, data []interface{}, insertOps *InsertOptions) (
-	map[string]interface{}, error) {
-
-	result := make([]mapstr.MapStr, 0)
-	err := db.Table(table).Find(mapstr.MapStr{}).All(kit.Ctx, &result)
-	if err != nil {
-		blog.Errorf("find exist data failed, table: %s, err: %v", table, err)
-		return nil, err
-	}
-
-	idFields := make(map[string]interface{})
-	if len(insertOps.IDField) > 0 {
-		for _, item := range result {
-			valueStr := getUniqueStr(item, insertOps)
-			if valueStr == "" {
-				continue
-			}
-			if id, ok := item[insertOps.IDField[0]]; ok {
-				idFields[valueStr] = id
-			}
-		}
-	}
-
-	existData := make(map[string]mapstr.MapStr)
-	for _, item := range result {
-		valueStr := getUniqueStr(item, insertOps)
-		existData[valueStr] = item
-	}
-
-	insertData, err := getInsertData(existData, data, insertOps)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(insertData) == 0 {
-		blog.Infof("no data to insert, table: %s", table)
-		return idFields, nil
-	}
-
-	if len(insertOps.IDField) > 0 {
-		nextIDs, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
-		if err != nil {
-			blog.Errorf("get next %d data IDs failed, table: %s, err: %v", len(insertData), table, err)
-			return nil, fmt.Errorf("get next %d data IDs failed, table: %s, err: %v", len(insertData), table, err)
-		}
-		for index, value := range insertData {
-			for _, idField := range insertOps.IDField {
-				value[idField] = nextIDs[index]
-			}
-			idFields[getUniqueStr(value, insertOps)] = nextIDs[index]
-		}
-	}
-
-	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("add data for table %s failed, data: %+v, err: %v", insertData, err)
-		return nil, err
-	}
-
-	// add audit log
-	if insertOps.AuditDataField == nil {
-		return idFields, nil
-	}
-	auditField := &AuditStruct{
-		AuditDataField: insertOps.AuditDataField,
-		AuditTypeData:  insertOps.AuditTypeField,
-	}
-	if err = AddCreateAuditLog(kit, mongodb.Dal().Shard(kit.ShardOpts()), insertData, auditField); err != nil {
-		blog.Errorf("add audit log failed, err: %v", err)
-		return nil, err
-	}
-	return idFields, nil
-}
-
-func getUniqueStr(item mapstr.MapStr, compareFiled *InsertOptions) string {
-	var strArr []string
-	for _, uniqueValue := range compareFiled.UniqueFields {
-		if _, ok := item[uniqueValue]; !ok {
-			continue
-		}
-		str := util.GetStrByInterface(item[uniqueValue])
-		strArr = append(strArr, str)
-	}
-	return strings.Join(strArr, "*")
-}
-
-func getInsertData(existData map[string]mapstr.MapStr, data []interface{}, compareFiled *InsertOptions) (
-	[]map[string]interface{}, error) {
-
-	insertData := make([]map[string]interface{}, 0)
+	dataMap := make([]mapstr.MapStr, 0)
 	for _, item := range data {
-		mapStrData, err := InterfaceToMapStr(item)
+		for _, key := range idOption.RemoveKeys {
+			delete(item, key)
+		}
+
+		tmp := metadata.TemplateData{
+			Type:  dataType,
+			IsPre: true,
+			Data:  item,
+		}
+
+		tmp.Data = item
+		result, err := util.ConvStructToMap(tmp)
 		if err != nil {
-			blog.Errorf("interface to mapStr failed, err: %v, data: %+v", err, item)
-			return nil, err
+			blog.Errorf("convert struct to map failed, err: %v, rid: %s", err, kit.Rid)
+			return err
 		}
-		valueStr := getUniqueStr(mapStrData, compareFiled)
-		if _, exist := existData[valueStr]; !exist {
-			insertData = append(insertData, mapStrData)
-			continue
-		}
-
-		if err = cmpData(mapStrData, existData[valueStr], compareFiled.IgnoreKeys); err != nil {
-			return nil, err
-		}
-	}
-	return insertData, nil
-}
-
-func cmpData(data mapstr.MapStr, existData mapstr.MapStr, ignoreKeys []string) error {
-	ignoreKeys = append(ignoreKeys, ignoreKeysArr...)
-	for _, key := range ignoreKeys {
-		delete(existData, key)
-		delete(data, key)
+		dataMap = append(dataMap, result)
 	}
 
-	var err error
-	data, err = dataNumericConvert(data)
+	uniqueField = append(uniqueField, "type")
+	needFields := &utils.InsertOptions{
+		UniqueFields: uniqueField,
+		IgnoreKeys:   []string{idOption.IDField},
+		IDField:      []string{idOption.IDField},
+		AuditTypeField: &utils.AuditResType{
+			AuditType:    metadata.TenantTemplate,
+			ResourceType: metadata.TenantTemplateRes,
+		},
+		AuditDataField: &utils.AuditDataField{
+			ResIDField:   idOption.IDField,
+			ResNameField: "type",
+		},
+	}
+
+	_, err := utils.InsertData(kit, db, common.BKTableNameTenantTemplate, dataMap, needFields)
 	if err != nil {
-		blog.Errorf("data numeric convert error, data: %+v, err: %v", data, err)
-		return err
-	}
-	existData, err = dataNumericConvert(existData)
-	if err != nil {
-		blog.Errorf("data numeric convert error, data: %+v, err: %v", existData, err)
+		blog.Errorf("insert %s data for table %s failed, err: %v", dataType, common.BKTableNameAsstDes, err)
 		return err
 	}
 
-	if !cmp.Equal(data, existData) {
-		blog.Errorf("the data in database is different from the data to be inserted, existData: %+v, insertData: %+v",
-			existData, data)
-		return fmt.Errorf("data in database is different from the data to be inserted")
-	}
 	return nil
 }
 
-func dataNumericConvert(data mapstr.MapStr) (mapstr.MapStr, error) {
-	for key, value := range data {
-		if !util.IsNumeric(value) {
-			continue
-		}
-		valueInt64, err := util.GetInt64ByInterface(value)
-		if err != nil {
-			blog.Errorf("get value int64 error, key: %s, value: %v, type: %T, err: %v", key, value, value, err)
-			return nil, err
-		}
-		data[key] = valueInt64
-	}
-	return data, nil
-}
+func InsertSvrTmp(kit *rest.Kit, db local.DB, data []mapstr.MapStr, isParent bool, parentName []string) error {
 
-// InterfaceToMapStr interface to mapstr
-func InterfaceToMapStr(data interface{}) (map[string]interface{}, error) {
+	dataMap := make([]mapstr.MapStr, 0)
+	uniqueKeys := []string{"data.name", "data.bk_biz_id", "is_parent"}
+	RemoveKeys := []string{"id", "bk_root_id", "bk_parent_id"}
+	for i, item := range data {
+		for _, key := range RemoveKeys {
+			delete(item, key)
+		}
+		tmp := metadata.SvrCategoryTmp{
+			IsParent:   isParent,
+			Name:       item["name"].(string),
+			ParentName: parentName[i],
+			Type:       "service_category",
+			IsPre:      true,
+			Data:       item,
+		}
 
-	resultData := make(map[string]interface{})
-	switch value := data.(type) {
-	case map[string]interface{}:
-		return value, nil
-	default:
-		out, err := bson.Marshal(data)
+		tmp.Data = item
+		result, err := util.ConvStructToMap(tmp)
 		if err != nil {
-			blog.Errorf("marshal error %v, data: %v", err, data)
-			return nil, fmt.Errorf("marshal error %v", err)
+			blog.Errorf("convert struct to map failed, err: %v, rid: %s", err, kit.Rid)
+			return err
 		}
-		if err = bson.Unmarshal(out, &resultData); err != nil {
-			blog.Errorf("marshal error %v, data: %v", err, data)
-			return nil, fmt.Errorf("unmarshal error %v", err)
-		}
+		dataMap = append(dataMap, result)
 	}
 
-	return resultData, nil
+	uniqueField := append(uniqueKeys, "type")
+	needFields := &utils.InsertOptions{
+		UniqueFields: uniqueField,
+		IgnoreKeys:   []string{"id"},
+		IDField:      []string{"id"},
+		AuditTypeField: &utils.AuditResType{
+			AuditType:    metadata.TenantTemplate,
+			ResourceType: metadata.TenantTemplateRes,
+		},
+		AuditDataField: &utils.AuditDataField{
+			ResIDField:   "id",
+			ResNameField: "type",
+		},
+	}
+
+	_, err := utils.InsertData(kit, db, common.BKTableNameTenantTemplate, dataMap, needFields)
+	if err != nil {
+		blog.Errorf("insert service_category template data for table %s failed, err: %v", common.BKTableNameAsstDes,
+			err)
+		return err
+	}
+
+	return nil
 }
 
-// InsertOptions the options of insert field for audit and data
-type InsertOptions struct {
-	UniqueFields   []string
-	IgnoreKeys     []string
-	IDField        []string
-	AuditDataField *AuditDataField `bson:",inline"`
-	AuditTypeField *AuditResType   `bson:",inline"`
+func InsertUniqueKeyTmp(kit *rest.Kit, db local.DB, data []mapstr.MapStr, attributes [][]string) error {
+
+	dataMap := make([]mapstr.MapStr, 0)
+	uniqueKeys := []string{"bk_obj_id", "attributes"}
+	removeKeys := []string{"id"}
+	for i, item := range data {
+		for _, key := range removeKeys {
+			delete(item, key)
+		}
+		tmp := metadata.UniqueKeyTmp{
+			Type:       metadata.TemplateTypeUniqueKeys,
+			Attributes: attributes[i],
+			ObjectID:   item["bk_obj_id"].(string),
+			IsPre:      true,
+			Data:       item,
+		}
+
+		tmp.Data = item
+		result, err := util.ConvStructToMap(tmp)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+		dataMap = append(dataMap, result)
+	}
+
+	uniqueField := append(uniqueKeys, "type")
+	needFields := &utils.InsertOptions{
+		UniqueFields: uniqueField,
+		IgnoreKeys:   []string{"id"},
+		IDField:      []string{"id"},
+		AuditTypeField: &utils.AuditResType{
+			AuditType:    metadata.TenantTemplate,
+			ResourceType: metadata.TenantTemplateRes,
+		},
+		AuditDataField: &utils.AuditDataField{
+			ResIDField:   "id",
+			ResNameField: "type",
+		},
+	}
+
+	_, err := utils.InsertData(kit, db, common.BKTableNameTenantTemplate, dataMap, needFields)
+	if err != nil {
+		blog.Errorf("insert service_category template data for table %s failed, err: %v", common.BKTableNameAsstDes,
+			err)
+		return err
+	}
+
+	return nil
+}
+
+// IDOptions the options of data template id
+type IDOptions struct {
+	IDField    string
+	RemoveKeys []string
 }
