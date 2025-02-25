@@ -18,22 +18,8 @@
 package types
 
 import (
-	"configcenter/src/common"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
-
-// GetBlueKingKit 后续改为从tenant包获取
-func GetBlueKingKit() *rest.Kit {
-	blueKingKit := rest.NewKit()
-	blueKingKit.TenantID = GetBlueKing()
-	return blueKingKit
-}
-
-// GetBlueKing 获取蓝鲸租户ID,后续修改为默认租户
-func GetBlueKing() string {
-	return common.BKDefaultTenantID
-}
 
 // MigrateResp migrate response
 type MigrateResp struct {

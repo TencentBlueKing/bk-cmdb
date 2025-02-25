@@ -1723,3 +1723,26 @@ const ShardingDBConfID = "sharding_db_config"
 
 // SnapshotChannelName is host snapshot channel name
 const SnapshotChannelName = "cmdb_snapshot"
+
+// Objects is all objects
+var Objects = []string{
+	BKInnerObjIDApp,
+	BKInnerObjIDModule,
+	BKInnerObjIDProc,
+	BKInnerObjIDHost,
+	BKInnerObjIDProject,
+	BKInnerObjIDBizSet,
+	BKInnerObjIDPlat,
+	BKInnerObjIDSet,
+}
+
+const (
+	// BKTenantTemplateTypeField is type field for tenant template
+	BKTenantTemplateTypeField = "type"
+
+	// BKTenantTemplateIDField is id field for tenant template
+	BKTenantTemplateIDField = "id"
+
+	// BKTenantIsPreField is isPre field for tenant template
+	BKTenantIsPreField = "is_pre"
+)

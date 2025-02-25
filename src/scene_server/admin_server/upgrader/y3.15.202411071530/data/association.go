@@ -21,9 +21,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var asstTypes = []associationKind{
@@ -65,32 +68,47 @@ var asstTypes = []associationKind{
 	},
 }
 
-func addAssociationData(kit *rest.Kit, db dal.Dal) error {
-	dataInterface := make([]interface{}, 0)
+func addAssociationData(kit *rest.Kit, db local.DB) error {
+	dataInterface := make([]mapstr.MapStr, 0)
 	for _, asstType := range asstTypes {
 		asstType.IsPre = &trueVar
 		asstType.Direction = metadata.DestinationToSource
-		dataInterface = append(dataInterface, asstType)
+		item, err := util.ConvStructToMap(asstType)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
+		dataInterface = append(dataInterface, item)
 	}
 
-	needFields := &tools.InsertOptions{
+	needFields := &utils.InsertOptions{
 		UniqueFields: []string{common.AssociationKindIDField},
 		IgnoreKeys:   []string{"id"},
 		IDField:      []string{metadata.AttributeFieldID},
-		AuditTypeField: &tools.AuditResType{
+		AuditTypeField: &utils.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModelAssociationRes,
 		},
-		AuditDataField: &tools.AuditDataField{
+		AuditDataField: &utils.AuditDataField{
 			ResIDField:   "id",
 			ResNameField: "bk_asst_name",
 		},
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameAsstDes, dataInterface, needFields)
+
+	_, err := utils.InsertData(kit, db, common.BKTableNameAsstDes, dataInterface, needFields)
 	if err != nil {
 		blog.Errorf("insert association data for table %s failed, err: %v", common.BKTableNameAsstDes, err)
 		return err
 	}
+
+	idOption := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
+
+	err = tools.InsertTemplateData(kit, db, dataInterface, "association", []string{"data.bk_asst_id"}, idOption)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
+		return err
+	}
+
 	return nil
 }
 

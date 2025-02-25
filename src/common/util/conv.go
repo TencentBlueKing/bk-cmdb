@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	ccjson "configcenter/src/common/json"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // GetStrByInterface TODO
@@ -371,4 +373,16 @@ func DecodeRawJsonArr[T any](data []json.RawMessage) ([]T, error) {
 		}
 	}
 	return result, nil
+}
+
+// ConvStructToMap convert struct to map
+func ConvStructToMap(obj interface{}) (map[string]interface{}, error) {
+	data, err := bson.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]interface{})
+	err = bson.Unmarshal(data, &result)
+	return result, err
 }
