@@ -1,10 +1,8 @@
-
-
 # BK-CMDB
 
 蓝鲸配置平台（蓝鲸CMDB）是一个面向资产及应用的企业级配置管理平台。
 
-本文档内容为如何在 Kubernetes 集群上部署 BK-CMDB 服务。
+本文档内容为如何在 Kubernetes 集群上部署 BK-CMDB 后台服务。
 
 说明：内置的mongodb、redis、zookeeper、elasticsearch等组件仅用于测试环境，正式环境部署必须配置为外部组件。
 
@@ -21,32 +19,37 @@
 - Kubernetes 1.12+
 - Helm 3+
 
+快速部署k8s集群可参考：[蓝鲸官方白皮书](https://bk.tencent.com/docs/markdown/ZH/DeploymentGuides/7.1/get-k8s-create-bcssh.md)
 
+### 镜像制作
+
+制作cmdb镜像请参考：[CMDB 编译指南](../../../overview/source_compile.md)
 
 ### 安装Chart
 
  使用以下命令安装名称为`bkcmdb`的release, 其中`<bkcmdb helm repo url>`代表helm仓库地址, password为自己设置的任意密码:
 
 ```shell
+# 添加helm仓库
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
 $ helm repo add bkee <bkcmdb helm repo url>
-$ helm install bkcmdb bkee/bkcmdb --set mongodb.auth.password=${password} --set redis.auth.password=${password}
+# 更新并拉取依赖
+$ helm dependency update
+# 执行部署
+$ helm install cmdb-backend bkee/cmdb-backend --set mongodb.auth.password=${password} --set redis.auth.password=${password}
 ```
 
-上述命令将使用默认配置在Kubernetes集群中部署bkcmdb, 并输出访问指引。
-
-
-
+上述命令将使用默认配置在Kubernetes集群中部署BK-CMDB 后台服务
+注：执行部署前请检查values.yaml镜像配置中的镜像地址
 ### 卸载Chart
 
-使用以下命令卸载`bkcmdb`:
+使用以下命令卸载`cmdb-backend`:
 
 ```shell
-$ helm uninstall bkcmdb
+$ helm uninstall cmdb-backend
 ```
 
-上述命令将移除所有和bkrepo相关的Kubernetes组件。
-
-
+上述命令将移除所有和cmdb-backend相关的Kubernetes组件。
 
 ## Chart依赖
 
@@ -63,29 +66,35 @@ $ helm uninstall bkcmdb
 
 |      参数       |     描述     |    默认值    |
 | :-------------: | :----------: | :----------: |
-| image.registry | 镜像源域名 | mirrors.tencent.com |
+| image.registry | 镜像源域名 | hub.bktencent.com |
 | image.pullPolicy | 镜像拉取策略 | IfNotPresent |
 
 ### 启动时初始化配置说明
 
 启动时会执行job，分别对cmdb依赖的mongodb数据库进行初始化操作，以及往GSE注册dataid
 
-| 参数                     | 描述                          | 默认值 |
-| :----------------------: | :---------------------------: | :----: |
-| migrate.enabled | 是否在执行helm时启动该job | true |
-| migrate.image.repository | 初始化job所需要的镜像仓库地址 | migrate |
-| migrate.image.tag | 初始化job所需要的镜像版本 | {TAG_NAME} |
-| migrateDataId | 是否在启动时往GSE注册dataid | false |
+|            参数            |           描述           |    默认值     |
+|:------------------------:|:----------------------:|:----------:|
+|     migrate.enabled      |    是否在执行helm时启动该job    |    true    |
+| migrate.image.repository |    初始化job所需要的镜像仓库地址    |  migrate   |
+|    migrate.image.tag     |     初始化job所需要的镜像版本     | {TAG_NAME} |
+|      migrate.migrateDataId       |   是否在启动时往GSE注册dataid   |   false    |
+|     migrate.migrateOldDataId     | 是否在启动时往GSE注册旧版本dataid  |   false    |
+|         migrate.dataid.migrateWay          | 通过何种方式调用gse接口注册dataid,可选值esb和apigw |    esb     |
 
 ### 蓝鲸产品URL配置
 
-|   参数   |   描述   |         默认值          |
-| :------: | :------: | :---------------------: |
-| bkPaasUrl | paas地址 | http://paas.example.com |
-| bkIamApiUrl | bkiam后端地址 | http://bkiam-web |
-| bkComponentApiUrl | 蓝鲸ESB地址 | http://bkapi.paas.example.com |
-| bkLoginApiUrl | 蓝鲸登录地址 | http://bk-login-web |
-| bkNodemanUrl | 节点管理地址 | http://apps.paas.example.com/bk--nodeman |
+|   参数   |     描述      |                   默认值                    |
+| :------: |:-----------:|:----------------------------------------:|
+| bkPaasUrl |   paas地址    |         http://paas.example.com          |
+| bkIamApiUrl |  bkiam后端地址  |             http://bkiam-web             |
+| bkComponentApiUrl |   蓝鲸ESB地址   |      http://bkapi.paas.example.com       |
+| bkLoginApiUrl |   蓝鲸登录地址    |           http://bk-login-web            |
+| bkNodemanUrl |   节点管理地址    | http://apps.paas.example.com/bk--nodeman |
+| bkApigatewayName | 蓝鲸网关cmdb组件名 |                 bk-cmdb                  |
+| bkGseApiGatewayUrl |   蓝鲸 GSE API Gateway url    |         http://bkapi.example.com         |
+| bkNoticeApiGatewayUrl |   蓝鲸 Notice API Gateway url    |         http://bkapi.example.com         |
+| bkCmdbApiGatewayUrl |   CMDB API Gateway url    |         http://bkapi.example.com         |
 
 ### adminserver服务配置说明
 
@@ -288,25 +297,6 @@ $ helm uninstall bkcmdb
 |     synchronizeserver.command.logLevel     |            日志等级             |                3                 |
 |   synchronizeserver.command.logToStdErr    |     是否把日志输出到stderr      |              false               |
 |         synchronizeserver.workDir          |            工作目录             |      /data/cmdb/cmdb_synchronizeserver    |
-
-### webserver服务配置说明
-
-|                 参数                 |              描述               |              默认值              |
-| :----------------------------------: | :-----------------------------: | :------------------------------: |
-|         webserver.enabled          | 是否在执行helm时启动 |               true               |
-|     webserver.image.repository     |        服务镜像名        | cmdb_webserver |
-|        webserver.image.tag         |          服务镜像版本           | {TAG_NAME} |
-|         webserver.replicas         |           pod副本数量           |                1                 |
-|           webserver.port           |            服务端口             |                80                |
-| webserver.ingress.enabled | 开启ingress访问 | true |
-| webserver.ingress.hosts | ingress代理访问的域名 |cmdb.example.com|
-|         webserver.service.type         | 服务类型 | ClusterIP |
-|         webserver.service.targetPort         | 代理的目标端口 | 80 |
-|         webserver.service.nodePort         | 访问端口 |  |
-|      webserver.command.logDir      |          日志存放路径           |              /data/cmdb/cmdb_webserver/logs              |
-|     webserver.command.logLevel     |            日志等级             |                3                 |
-|   webserver.command.logToStdErr    |     是否把日志输出到stderr      |              false               |
-|         webserver.workDir          |            工作目录             |      /data/cmdb/cmdb_webserver      |
 
 ### 服务开启鉴权开关
 
