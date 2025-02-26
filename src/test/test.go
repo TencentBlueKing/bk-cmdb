@@ -303,7 +303,7 @@ func DeleteAllObjects() {
 
 		objCond := mapstr.MapStr{common.BKObjIDField: mapstr.MapStr{common.BKDBIN: objIDs}}
 		objTables := []string{common.BKTableNameObjDes, common.BKTableNameObjAttDes, common.BKTableNameObjUnique,
-			"cc_ObjectBaseMapping", common.BKTableNamePropertyGroup}
+			common.BKTableNameObjectBaseMapping, common.BKTableNamePropertyGroup}
 		for _, table := range objTables {
 			err = db.Shard(shardOpts).Table(table).Delete(ctx, objCond)
 			if err != nil {

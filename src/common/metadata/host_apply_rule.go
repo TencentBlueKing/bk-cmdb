@@ -38,7 +38,7 @@ type HostApplyRule struct {
 	// NOCC:tosa/linelength(忽略长度)
 	ServiceTemplateID int64 `field:"service_template_id" json:"service_template_id" bson:"service_template_id" mapstructure:"service_template_id"`
 
-	// `id` field of table: `cc_AsstDes`, not the same with bk_property_id
+	// `id` field of table: `AsstDes`, not the same with bk_property_id
 	AttributeID   int64       `field:"bk_attribute_id" json:"bk_attribute_id" bson:"bk_attribute_id" mapstructure:"bk_attribute_id"`
 	PropertyValue interface{} `field:"bk_property_value" json:"bk_property_value" bson:"bk_property_value" mapstructure:"bk_property_value"`
 

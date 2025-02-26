@@ -31,7 +31,7 @@ import (
 
 const (
 	// BKTableNameFullSyncCond is the full synchronization cache condition table
-	BKTableNameFullSyncCond = "cc_FullSyncCond"
+	BKTableNameFullSyncCond = "FullSyncCond"
 )
 
 // FullSyncCond is the full synchronization cache condition

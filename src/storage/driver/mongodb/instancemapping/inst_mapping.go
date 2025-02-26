@@ -43,7 +43,7 @@ document 只包含bk_obj_id, bk_inst_id 两个字段
 ***/
 
 var (
-	tableName = "cc_ObjectBaseMapping"
+	tableName = common.BKTableNameObjectBaseMapping
 )
 
 // GetInstanceObjectMapping TODO
