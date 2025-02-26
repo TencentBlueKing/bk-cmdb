@@ -124,7 +124,7 @@ func SetLanguage(header http.Header, value string) {
 	header.Set(LanguageHeader, value)
 }
 
-// SetTenantID set supplier account to http header
+// SetTenantID set tenant id to http header
 func SetTenantID(header http.Header, value string) {
 	header.Set(TenantHeader, value)
 }

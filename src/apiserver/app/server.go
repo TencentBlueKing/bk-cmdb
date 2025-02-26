@@ -15,7 +15,10 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"configcenter/pkg/tenant"
+	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
@@ -38,7 +41,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	svc := service.NewService()
-
 	apiSvr := new(APIServer)
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: apiSvr.onApiServerConfigUpdate,
@@ -73,7 +75,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		blog.Errorf("get tls config error, err: %v", err)
 		return err
 	}
-
 	client, err := util.NewClient(&config)
 	if err != nil {
 		return fmt.Errorf("new proxy client failed, err: %v", err)
@@ -85,7 +86,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	svc.SetConfig(engine, client, engine.Discovery(), engine.CoreAPI, cache, limiter)
-
 	ctnr := restful.NewContainer()
 	ctnr.Router(restful.CurlyRouter{})
 
@@ -95,7 +95,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		ctnr.Add(item)
 	}
 	apiSvr.Core = engine
-
+	if err = initTenant(engine.CoreAPI); err != nil {
+		return err
+	}
 	err = backbone.StartServer(ctx, cancel, engine, ctnr, false)
 	if err != nil {
 		return err
@@ -103,6 +105,28 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	select {
 	case <-ctx.Done():
+	}
+	return nil
+}
+
+func initTenant(apiMachineryCli apimachinery.ClientSetInterface) error {
+	coreExist := false
+	for retry := 0; retry < 10; retry++ {
+		if _, err := apiMachineryCli.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
+			blog.Errorf("connect core server failed: %v", err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+		coreExist = true
+		break
+	}
+	if !coreExist {
+		blog.Errorf("core server not exist")
+		return fmt.Errorf("core server not exist")
+	}
+	err := tenant.Init(&tenant.Options{ApiMachineryCli: apiMachineryCli})
+	if err != nil {
+		return err
 	}
 	return nil
 }

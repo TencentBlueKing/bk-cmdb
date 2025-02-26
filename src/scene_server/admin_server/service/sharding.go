@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
@@ -323,7 +323,7 @@ func (s *Service) saveUpdateShardingDBAudit(kit *rest.Kit, preConf, curConf *sha
 func (s *Service) GetTenantDBRelation(req *restful.Request, resp *restful.Response) {
 	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)
 
-	relations := make([]tenant.Tenant, 0)
+	relations := make([]types.Tenant, 0)
 	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Find(nil).Fields("tenant_id", "database").
 		All(kit.Ctx, &relations)
 	if err != nil {
