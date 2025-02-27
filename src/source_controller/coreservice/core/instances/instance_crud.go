@@ -72,7 +72,8 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 
 	if len(mappings) != 0 {
 		// save new object mappings data for inner object instance.
-		if err := mongodb.Shard(kit.ShardOpts()).Table("cc_ObjectBaseMapping").Insert(kit.Ctx, mappings); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjectBaseMapping).Insert(kit.Ctx,
+			mappings); err != nil {
 			return nil, err
 		}
 	}
@@ -127,7 +128,8 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		mapping[common.BKObjIDField] = objID
 
 		// save instance object type mapping.
-		if err := mongodb.Shard(kit.ShardOpts()).Table("cc_ObjectBaseMapping").Insert(kit.Ctx, mapping); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameObjectBaseMapping).Insert(kit.Ctx,
+			mapping); err != nil {
 			return 0, err
 		}
 	}

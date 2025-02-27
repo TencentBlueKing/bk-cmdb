@@ -190,52 +190,52 @@ const (
 // table names
 const (
 	// BKTableNameBaseCluster the table name of the Cluster
-	BKTableNameBaseCluster = "cc_ClusterBase"
+	BKTableNameBaseCluster = "ClusterBase"
 
 	// BKTableNameBaseNode the table name of the Node
-	BKTableNameBaseNode = "cc_NodeBase"
+	BKTableNameBaseNode = "NodeBase"
 
 	// BKTableNameBaseNamespace the table name of the Namespace
-	BKTableNameBaseNamespace = "cc_NamespaceBase"
+	BKTableNameBaseNamespace = "NamespaceBase"
 
 	// BKTableNameBaseWorkload virtual table name of Workload, specific workload data are stored in separate tables
-	BKTableNameBaseWorkload = "cc_WorkloadBase"
+	BKTableNameBaseWorkload = "WorkloadBase"
 
 	// BKTableNameBaseDeployment the table name of the Deployment
-	BKTableNameBaseDeployment = "cc_DeploymentBase"
+	BKTableNameBaseDeployment = "DeploymentBase"
 
 	// BKTableNameBaseStatefulSet the table name of the StatefulSet
-	BKTableNameBaseStatefulSet = "cc_StatefulSetBase"
+	BKTableNameBaseStatefulSet = "StatefulSetBase"
 
 	// BKTableNameBaseDaemonSet the table name of the DaemonSet
-	BKTableNameBaseDaemonSet = "cc_DaemonSetBase"
+	BKTableNameBaseDaemonSet = "DaemonSetBase"
 
 	// BKTableNameGameDeployment the table name of the GameDeployment
-	BKTableNameGameDeployment = "cc_GameDeploymentBase"
+	BKTableNameGameDeployment = "GameDeploymentBase"
 
 	// BKTableNameGameStatefulSet the table name of the GameStatefulSet
-	BKTableNameGameStatefulSet = "cc_GameStatefulSetBase"
+	BKTableNameGameStatefulSet = "GameStatefulSetBase"
 
 	// BKTableNameBaseCronJob the table name of the CronJob
-	BKTableNameBaseCronJob = "cc_CronJobBase"
+	BKTableNameBaseCronJob = "CronJobBase"
 
 	// BKTableNameBaseJob the table name of the Job
-	BKTableNameBaseJob = "cc_JobBase"
+	BKTableNameBaseJob = "JobBase"
 
 	// BKTableNameBasePodWorkload the table name of the Pod Workload
-	BKTableNameBasePodWorkload = "cc_PodWorkloadBase"
+	BKTableNameBasePodWorkload = "PodWorkloadBase"
 
 	// BKTableNameBaseCustom the table name of the Custom Workload
-	BKTableNameBaseCustom = "cc_CustomBase"
+	BKTableNameBaseCustom = "CustomBase"
 
 	// BKTableNameBasePod the table name of the Pod
-	BKTableNameBasePod = "cc_PodBase"
+	BKTableNameBasePod = "PodBase"
 
 	// BKTableNameBaseContainer the table name of the Container
-	BKTableNameBaseContainer = "cc_ContainerBase"
+	BKTableNameBaseContainer = "ContainerBase"
 
 	// BKTableNameNsSharedClusterRel the table name of shared cluster and biz relation by namespace dimension
-	BKTableNameNsSharedClusterRel = "cc_NsSharedClusterRelation"
+	BKTableNameNsSharedClusterRel = "NsSharedClusterRelation"
 )
 
 // common field names

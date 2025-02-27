@@ -21,106 +21,109 @@ import (
 // table names
 const (
 	// BKTableNamePropertyGroup the table name of the property group
-	BKTableNamePropertyGroup = "cc_PropertyGroup"
+	BKTableNamePropertyGroup = "PropertyGroup"
 
 	// BKTableNameAsstDes the table name of the asst des
-	BKTableNameAsstDes = "cc_AsstDes"
+	BKTableNameAsstDes = "AsstDes"
 
 	// BKTableNameObjDes the table name of the object
-	BKTableNameObjDes = "cc_ObjDes"
+	BKTableNameObjDes = "ObjDes"
 
 	// BKTableNameObjUnique the table name of the object
-	BKTableNameObjUnique = "cc_ObjectUnique"
+	BKTableNameObjUnique = "ObjectUnique"
 
 	// BKTableNameObjAttDes the table name of the object attribute
-	BKTableNameObjAttDes = "cc_ObjAttDes"
+	BKTableNameObjAttDes = "ObjAttDes"
 
 	// BKTableNameObjClassification the table name of the object classification
-	BKTableNameObjClassification = "cc_ObjClassification"
+	BKTableNameObjClassification = "ObjClassification"
 
 	// BKTableNameInstAsst the table name of the inst association
-	BKTableNameInstAsst = "cc_InstAsst"
+	BKTableNameInstAsst = "InstAsst"
 
-	BKTableNameBaseApp    = "cc_ApplicationBase"
-	BKTableNameBaseBizSet = "cc_BizSetBase"
+	BKTableNameBaseApp    = "ApplicationBase"
+	BKTableNameBaseBizSet = "BizSetBase"
 
 	// BKTableNameModelQuoteRelation model reference relationship table name.
-	BKTableNameModelQuoteRelation = "cc_ModelQuoteRelation"
+	BKTableNameModelQuoteRelation = "ModelQuoteRelation"
 
-	BKTableNameBaseProject = "cc_ProjectBase"
-	BKTableNameBaseHost    = "cc_HostBase"
-	BKTableNameBaseModule  = "cc_ModuleBase"
-	BKTableNameBaseInst    = "cc_ObjectBase"
-	BKTableNameBasePlat    = "cc_PlatBase"
-	BKTableNameBaseSet     = "cc_SetBase"
-	BKTableNameBaseProcess = "cc_Process"
+	BKTableNameBaseProject = "ProjectBase"
+	BKTableNameBaseHost    = "HostBase"
+	BKTableNameBaseModule  = "ModuleBase"
+	BKTableNameBaseInst    = "ObjectBase"
+	BKTableNameBasePlat    = "PlatBase"
+	BKTableNameBaseSet     = "SetBase"
+	BKTableNameBaseProcess = "Process"
 
-	BKTableNameDelArchive     = "cc_DelArchive"
-	BKTableNameKubeDelArchive = "cc_KubeDelArchive"
+	BKTableNameDelArchive     = "DelArchive"
+	BKTableNameKubeDelArchive = "KubeDelArchive"
 
-	BKTableNameModuleHostConfig = "cc_ModuleHostConfig"
-	BKTableNameSystem           = "cc_System"
-	BKTableNameHistory          = "cc_History"
-	BKTableNameHostFavorite     = "cc_HostFavourite"
-	BKTableNameAuditLog         = "cc_AuditLog"
-	BKTableNamePlatformAuditLog = "cc_PlatformAuditLog"
-	BKTableNameUserAPI          = "cc_UserAPI"
-	BKTableNameDynamicGroup     = "cc_DynamicGroup"
-	BKTableNameUserCustom       = "cc_UserCustom"
-	BKTableNameObjAsst          = "cc_ObjAsst"
-	BKTableNameTopoGraphics     = "cc_TopoGraphics"
-	BKTableNameTransaction      = "cc_Transaction"
-	BKTableNameIDgenerator      = "cc_idgenerator"
+	BKTableNameModuleHostConfig = "ModuleHostConfig"
+	BKTableNameSystem           = "System"
+	BKTableNameHistory          = "History"
+	BKTableNameHostFavorite     = "HostFavourite"
+	BKTableNameAuditLog         = "AuditLog"
+	BKTableNamePlatformAuditLog = "PlatformAuditLog"
+	BKTableNameUserAPI          = "UserAPI"
+	BKTableNameDynamicGroup     = "DynamicGroup"
+	BKTableNameUserCustom       = "UserCustom"
+	BKTableNameObjAsst          = "ObjAsst"
+	BKTableNameTopoGraphics     = "TopoGraphics"
+	BKTableNameTransaction      = "Transaction"
+	BKTableNameIDgenerator      = "idgenerator"
 
-	BKTableNameHostLock = "cc_HostLock"
+	BKTableNameHostLock = "HostLock"
 
 	// process tables
-	BKTableNameServiceCategory         = "cc_ServiceCategory"
-	BKTableNameServiceTemplate         = "cc_ServiceTemplate"
-	BKTableNameServiceTemplateAttr     = "cc_ServiceTemplateAttr"
-	BKTableNameServiceInstance         = "cc_ServiceInstance"
-	BKTableNameProcessTemplate         = "cc_ProcessTemplate"
-	BKTableNameProcessInstanceRelation = "cc_ProcessInstanceRelation"
+	BKTableNameServiceCategory         = "ServiceCategory"
+	BKTableNameServiceTemplate         = "ServiceTemplate"
+	BKTableNameServiceTemplateAttr     = "ServiceTemplateAttr"
+	BKTableNameServiceInstance         = "ServiceInstance"
+	BKTableNameProcessTemplate         = "ProcessTemplate"
+	BKTableNameProcessInstanceRelation = "ProcessInstanceRelation"
 
-	BKTableNameSetTemplate                = "cc_SetTemplate"
-	BKTableNameSetTemplateAttr            = "cc_SetTemplateAttr"
-	BKTableNameSetServiceTemplateRelation = "cc_SetServiceTemplateRelation"
-	BKTableNameAPITask                    = "cc_APITask"
-	BKTableNameAPITaskSyncHistory         = "cc_APITaskSyncHistory"
+	BKTableNameSetTemplate                = "SetTemplate"
+	BKTableNameSetTemplateAttr            = "SetTemplateAttr"
+	BKTableNameSetServiceTemplateRelation = "SetServiceTemplateRelation"
+	BKTableNameAPITask                    = "APITask"
+	BKTableNameAPITaskSyncHistory         = "APITaskSyncHistory"
 
 	// BKTableNameHostApplyRule rule for host property auto apply
-	BKTableNameHostApplyRule = "cc_HostApplyRule"
+	BKTableNameHostApplyRule = "HostApplyRule"
 
 	// BKTableNameWatchToken the table to store the latest watch token for database
-	BKTableNameWatchToken = "cc_WatchToken"
+	BKTableNameWatchToken = "WatchToken"
 
 	// BKTableNameLastWatchEvent is the table to store the latest watch event info for resources
 	BKTableNameLastWatchEvent = "LastWatchEvent"
 
 	// BKTableNameMainlineInstance is a virtual collection name which represent for mainline instance events
-	BKTableNameMainlineInstance = "cc_MainlineInstance"
+	BKTableNameMainlineInstance = "MainlineInstance"
 
 	// BKTableNameFieldTemplate  field template table
-	BKTableNameFieldTemplate = "cc_FieldTemplate"
+	BKTableNameFieldTemplate = "FieldTemplate"
 
 	// BKTableNameObjAttDesTemplate  field template  attribute description table
-	BKTableNameObjAttDesTemplate = "cc_ObjAttDesTemplate"
+	BKTableNameObjAttDesTemplate = "ObjAttDesTemplate"
 
 	// BKTableNameObjectUniqueTemplate  field template unique checklist table
-	BKTableNameObjectUniqueTemplate = "cc_ObjectUniqueTemplate"
+	BKTableNameObjectUniqueTemplate = "ObjectUniqueTemplate"
 
 	// BKTableNameObjFieldTemplateRelation  object and field template relationship table
-	BKTableNameObjFieldTemplateRelation = "cc_ObjFieldTemplateRelation"
+	BKTableNameObjFieldTemplateRelation = "ObjFieldTemplateRelation"
 
 	// BKTableNameTenant is the tenant table
 	BKTableNameTenant = "Tenant"
 
 	// BKTableNameTenantTemplate is the tenant template(public data that needs to be initialized for all tenants) table
 	BKTableNameTenantTemplate = "TenantTemplate"
+
+	// BKTableNameObjectBaseMapping object base mapping table
+	BKTableNameObjectBaseMapping = "ObjectBaseMapping"
 )
 
 // AllTables is all table names, not include the sharding tables which is created dynamically,
-// such as object instance sharding table 'cc_ObjectBase_{supplierAccount}_pub_{objectID}'.
+// such as object instance sharding table 'ObjectBase_{supplierAccount}_pub_{objectID}'.
 var AllTables = []string{
 	BKTableNamePropertyGroup,
 	BKTableNameObjDes,
@@ -179,13 +182,13 @@ const (
 )
 
 // GetObjectInstTableName return the object instance table name in sharding mode base on
-// the object ID. Format: cc_ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_0_pub_switch'.
+// the object ID. Format: ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'ObjectBase_0_pub_switch'.
 func GetObjectInstTableName(objID, tenantID string) string {
 	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstShardingTablePrefix, tenantID, TableSpecifierPublic, objID)
 }
 
 // GetObjectInstObjIDByTableName return the object id
-// example: cc_ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_ObjectBase_0_pub_switch',return switch.
+// example: ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'ObjectBase_0_pub_switch',return switch.
 func GetObjectInstObjIDByTableName(collectionName, tenantID string) (string, error) {
 	prefix := fmt.Sprintf("%s%s_", BKObjectInstShardingTablePrefix, tenantID)
 	suffix := strings.TrimPrefix(collectionName, prefix)
@@ -197,7 +200,7 @@ func GetObjectInstObjIDByTableName(collectionName, tenantID string) (string, err
 }
 
 // GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
-// the object ID. Format: cc_InstAsst_{supplierAccount}_{Specifier}_{ObjectID}, such as 'cc_InstAsst_0_pub_switch'.
+// the object ID. Format: InstAsst_{supplierAccount}_{Specifier}_{ObjectID}, such as 'InstAsst_0_pub_switch'.
 func GetObjectInstAsstTableName(objID, tenantID string) string {
 	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstAsstShardingTablePrefix, tenantID, TableSpecifierPublic, objID)
 }
@@ -213,13 +216,13 @@ func IsObjectShardingTable(tableName string) bool {
 
 // IsObjectInstShardingTable returns if the target table is an object instance sharding table.
 func IsObjectInstShardingTable(tableName string) bool {
-	// check object instance table, cc_ObjectBase_{Specifier}_{ObjectID}
+	// check object instance table, ObjectBase_{Specifier}_{ObjectID}
 	return strings.HasPrefix(tableName, BKObjectInstShardingTablePrefix)
 }
 
 // IsObjectInstAsstShardingTable returns if the target table is an object instance association sharding table.
 func IsObjectInstAsstShardingTable(tableName string) bool {
-	// check object instance association table, cc_InstAsst_{Specifier}_{ObjectID}
+	// check object instance association table, InstAsst_{Specifier}_{ObjectID}
 	return strings.HasPrefix(tableName, BKObjectInstAsstShardingTablePrefix)
 }
 
