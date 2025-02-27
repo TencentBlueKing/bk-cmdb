@@ -21,55 +21,68 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
+	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
-var cloudAreaData = []CloudArea{
+var cloudAreaData = []cloudArea{
 	{
-		CloudID:   common.BKDefaultDirSubArea,
 		CloudName: "Default Area",
 		Status:    "1",
 		Default:   int64(common.BuiltIn),
 	},
 	{
-		CloudID:   common.UnassignedCloudAreaID,
 		CloudName: common.UnassignedCloudAreaName,
 		Default:   int64(common.BuiltIn),
 	},
 }
 
-func addCloudAreaData(kit *rest.Kit, db dal.Dal) error {
-	cloudData := make([]interface{}, 0)
+func addCloudAreaData(kit *rest.Kit, db local.DB) error {
+	cloudData := make([]mapstr.MapStr, 0)
 	for _, data := range cloudAreaData {
 		data.Time = tools.NewTime()
-		cloudData = append(cloudData, data)
+		item, err := util.ConvStructToMap(data)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
+		cloudData = append(cloudData, item)
 	}
 
-	needField := &tools.InsertOptions{
+	needField := &utils.InsertOptions{
 		UniqueFields: []string{common.BKCloudNameField},
 		IgnoreKeys:   []string{common.BKCloudIDField},
 		IDField:      []string{common.BKCloudIDField},
-		AuditTypeField: &tools.AuditResType{
+		AuditTypeField: &utils.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModuleRes,
 		},
-		AuditDataField: &tools.AuditDataField{
+		AuditDataField: &utils.AuditDataField{
 			ResIDField:   common.BKCloudIDField,
 			ResNameField: "bk_cloud_name",
 		},
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBasePlat, cloudData, needField)
+	_, err := utils.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBasePlat, err)
+		return err
+	}
+
+	idOption := &tools.IDOptions{IDField: "id", RemoveKeys: []string{common.BKCloudIDField}}
+	err = tools.InsertTemplateData(kit, db, cloudData, "plat", []string{"data.bk_cloud_name"}, idOption)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 	return nil
 }
 
-type CloudArea struct {
+type cloudArea struct {
 	CloudID     int64  ` bson:"bk_cloud_id"`
 	CloudName   string ` bson:"bk_cloud_name"`
 	Status      string ` bson:"bk_status"`
