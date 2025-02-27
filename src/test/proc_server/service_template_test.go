@@ -10,8 +10,10 @@ import (
 
 	"configcenter/src/common"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	params "configcenter/src/common/paraparse"
+	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/selector"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/test"
@@ -2843,5 +2845,806 @@ var _ = Describe("service template attribute test", func() {
 			util.RegisterResponseWithRid(err, header)
 			Expect(err).To(HaveOccurred())
 		})
+	})
+})
+
+var _ = Describe("service template host apply rule test", func() {
+	ctx := context.Background()
+	var hostID1, hostID2, hostID3, defaultCloudID int64
+	var servTmplTestBizID, servTmplTestSetID, servTmplTestModuleID, categoryID, servTmplID int64
+	var attrID1, attrID2, attrID3 int64
+	var hostApplyID1, hostApplyID2 int64
+	var taskID1, taskID2, taskID3 string
+
+	It("service template host apply rule test", func() {
+		By("add biz")
+		func() {
+			input := map[string]interface{}{
+				"life_cycle":        "2",
+				"language":          "1",
+				"bk_biz_maintainer": "admin",
+				"bk_biz_name":       "servTmplTest",
+				"time_zone":         "Asia/Shanghai",
+			}
+			rsp, err := apiServerClient.CreateBiz(ctx, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			servTmplTestBizID, err = commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+			Expect(err).NotTo(HaveOccurred())
+		}()
+
+		By("create cloud area")
+		func() {
+			resp, err := hostServerClient.CreateCloudArea(context.Background(), header, map[string]interface{}{
+				common.BKCloudNameField:     "servTmplTestArea",
+				common.BKProjectStatusField: "1",
+				common.BKCloudVendor:        "1",
+			})
+			util.RegisterResponseWithRid(resp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.Result).To(Equal(true))
+			defaultCloudID = int64(resp.Data.Created.ID)
+		}()
+
+		By("add hosts to business idle module")
+		func() {
+			input := metadata.HostListParam{
+				ApplicationID: servTmplTestBizID,
+				HostList: []mapstr.MapStr{
+					{
+						common.BKHostInnerIPField: "25.0.0.1",
+						common.BKHostNameField:    "host1",
+						common.BKCloudIDField:     defaultCloudID,
+						common.BKAddressingField:  common.BKAddressingStatic,
+						"bk_sla":                  "1",
+						"bk_state":                "运营中[需告警]",
+					},
+					{
+						common.BKHostInnerIPField: "25.0.0.2",
+						common.BKHostNameField:    "host2",
+						common.BKCloudIDField:     defaultCloudID,
+						common.BKAddressingField:  common.BKAddressingStatic,
+						"bk_sla":                  "1",
+						"bk_state":                "开发中[无告警]",
+					},
+					{
+						common.BKHostInnerIPField: "25.0.0.3",
+						common.BKHostNameField:    "host3",
+						common.BKCloudIDField:     defaultCloudID,
+						common.BKAddressingField:  common.BKAddressingStatic,
+						"bk_sla":                  "1",
+						"bk_state":                "备用机",
+					},
+				},
+			}
+			rsp, err := hostServerClient.AddHostToBizIdle(ctx, header, &input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(rsp.HostIDs)).To(Equal(3))
+			hostID1 = rsp.HostIDs[0]
+			hostID2 = rsp.HostIDs[1]
+			hostID3 = rsp.HostIDs[2]
+		}()
+
+		By("create service category")
+		func() {
+			input := map[string]interface{}{
+				"bk_parent_id":      1,
+				common.BKAppIDField: servTmplTestBizID,
+				"name":              "servTmplTest",
+			}
+			rsp, err := serviceClient.CreateServiceCategory(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+			j, err := json.Marshal(rsp.Data)
+			data := metadata.ServiceCategory{}
+			err = json.Unmarshal(j, &data)
+			Expect(err).NotTo(HaveOccurred())
+			categoryID = data.ID
+		}()
+
+		By("create service template1")
+		func() {
+			input := map[string]interface{}{
+				common.BKServiceCategoryIDField: categoryID,
+				common.BKAppIDField:             servTmplTestBizID,
+				common.BKFieldName:              "servTmpl1",
+			}
+			rsp, err := serviceClient.CreateServiceTemplate(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true), rsp.ToString())
+			j, err := json.Marshal(rsp.Data)
+			Expect(err).NotTo(HaveOccurred())
+			data := metadata.ServiceTemplate{}
+			err = json.Unmarshal(j, &data)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(data.Name).To(Equal("servTmpl1"))
+			Expect(data.ServiceCategoryID).To(Equal(categoryID))
+			servTmplID = data.ID
+		}()
+
+		By("find service template test1")
+		func() {
+			rsp, err := serviceClient.FindSrvTmpl(context.Background(), header, servTmplID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.BizID).To(Equal(servTmplTestBizID))
+			Expect(rsp.ID).To(Equal(servTmplID))
+			Expect(rsp.Name).To(Equal("servTmpl1"))
+			Expect(rsp.ServiceCategoryID).To(Equal(categoryID))
+			Expect(rsp.HostApplyEnabled).To(Equal(false))
+		}()
+
+		By("create host attr1")
+		func() {
+			input := &metadata.ObjAttDes{
+				Attribute: metadata.Attribute{
+					ObjectID:      "host",
+					PropertyID:    "hostapply1",
+					PropertyName:  "hostapply1",
+					PropertyGroup: "default",
+					IsEditable:    true,
+					PropertyType:  "singlechar",
+				},
+			}
+			rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			j, err := json.Marshal(rsp.Data)
+			Expect(err).NotTo(HaveOccurred())
+			data := metadata.Attribute{}
+			err = json.Unmarshal(j, &data)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(data.ObjectID).To(Equal(input.ObjectID))
+			Expect(data.PropertyID).To(Equal(input.PropertyID))
+			Expect(data.PropertyName).To(Equal(input.PropertyName))
+			Expect(data.PropertyGroup).To(Equal(input.PropertyGroup))
+			Expect(data.IsEditable).To(Equal(input.IsEditable))
+			Expect(data.PropertyType).To(Equal(input.PropertyType))
+			attrID1 = data.ID
+		}()
+
+		By("create host attr2")
+		func() {
+			input := &metadata.ObjAttDes{
+				Attribute: metadata.Attribute{
+					ObjectID:      "host",
+					PropertyID:    "hostapply2",
+					PropertyName:  "hostapply2",
+					PropertyGroup: "default",
+					IsEditable:    true,
+					PropertyType:  "singlechar",
+				},
+			}
+			rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			j, err := json.Marshal(rsp.Data)
+			Expect(err).NotTo(HaveOccurred())
+			data := metadata.Attribute{}
+			err = json.Unmarshal(j, &data)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(data.ObjectID).To(Equal(input.ObjectID))
+			Expect(data.PropertyID).To(Equal(input.PropertyID))
+			Expect(data.PropertyName).To(Equal(input.PropertyName))
+			Expect(data.PropertyGroup).To(Equal(input.PropertyGroup))
+			Expect(data.IsEditable).To(Equal(input.IsEditable))
+			Expect(data.PropertyType).To(Equal(input.PropertyType))
+			attrID2 = data.ID
+		}()
+
+		By("create host attr3")
+		func() {
+			input := &metadata.ObjAttDes{
+				Attribute: metadata.Attribute{
+					ObjectID:      "host",
+					PropertyID:    "hostapply3",
+					PropertyName:  "hostapply3",
+					PropertyGroup: "default",
+					IsEditable:    true,
+					PropertyType:  "singlechar",
+				},
+			}
+			rsp, err := apiServerClient.CreateObjectAtt(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			j, err := json.Marshal(rsp.Data)
+			Expect(err).NotTo(HaveOccurred())
+			data := metadata.Attribute{}
+			err = json.Unmarshal(j, &data)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(data.ObjectID).To(Equal(input.ObjectID))
+			Expect(data.PropertyID).To(Equal(input.PropertyID))
+			Expect(data.PropertyName).To(Equal(input.PropertyName))
+			Expect(data.PropertyGroup).To(Equal(input.PropertyGroup))
+			Expect(data.IsEditable).To(Equal(input.IsEditable))
+			Expect(data.PropertyType).To(Equal(input.PropertyType))
+			attrID3 = data.ID
+		}()
+
+		By("create set")
+		func() {
+			input := mapstr.MapStr{
+				common.BKSetNameField:       "servTmplTestSet",
+				common.BKParentIDField:      servTmplTestBizID,
+				common.BKAppIDField:         servTmplTestBizID,
+				common.BKSetStatusField:     "1",
+				common.BKSetEnvField:        "3",
+				common.BKSetTemplateIDField: 0,
+			}
+			rsp, e := instClient.CreateSet(context.Background(), servTmplTestBizID, header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(e).NotTo(HaveOccurred())
+			Expect(rsp[common.BKSetNameField].(string)).To(Equal("servTmplTestSet"))
+
+			parentIdRes, err := commonutil.GetInt64ByInterface(rsp[common.BKParentIDField])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(parentIdRes).To(Equal(servTmplTestBizID))
+			bizIdRes, err := commonutil.GetInt64ByInterface(rsp[common.BKAppIDField])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bizIdRes).To(Equal(servTmplTestBizID))
+
+			var err1 error
+			servTmplTestSetID, err1 = commonutil.GetInt64ByInterface(rsp[common.BKSetIDField])
+			Expect(err1).NotTo(HaveOccurred())
+		}()
+
+		By("create module")
+		func() {
+			input := map[string]interface{}{
+				common.BKModuleNameField:        "servTmplTestModule",
+				common.BKInstParentStr:          servTmplTestSetID,
+				common.BKServiceCategoryIDField: categoryID,
+				common.BKServiceTemplateIDField: servTmplID,
+			}
+			rsp, err := instClient.CreateModule(context.Background(), servTmplTestBizID, servTmplTestSetID,
+				header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+
+			var err1 error
+			servTmplTestModuleID, err1 = commonutil.GetInt64ByInterface(rsp["bk_module_id"])
+			Expect(err1).NotTo(HaveOccurred())
+		}()
+
+		By("create host apply1")
+		func() {
+			urlTemplate := "/create/host_apply_rule/bk_biz_id/%d"
+
+			option := metadata.CreateHostApplyRuleOption{
+				ServiceTemplateID: servTmplID,
+				AttributeID:       attrID1,
+				PropertyValue:     "11",
+			}
+
+			rsp := metadata.HostApplyRuleResp{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(option).
+				SubResourcef(urlTemplate, servTmplTestBizID).
+				WithHeaders(header).
+				Do().Into(&rsp)
+
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			hostApplyID1 = rsp.Data.ID
+		}()
+
+		By("create host apply2")
+		func() {
+			urlTemplate := "/create/host_apply_rule/bk_biz_id/%d"
+
+			option := metadata.CreateHostApplyRuleOption{
+				ServiceTemplateID: servTmplID,
+				AttributeID:       attrID2,
+				PropertyValue:     "22",
+			}
+
+			rsp := metadata.HostApplyRuleResp{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(option).
+				SubResourcef(urlTemplate, servTmplTestBizID).
+				WithHeaders(header).
+				Do().Into(&rsp)
+
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			hostApplyID2 = rsp.Data.ID
+		}()
+
+		By("transfer host1 to servTmplTestModule")
+		func() {
+			input := map[string]interface{}{
+				common.BKAppIDField:    servTmplTestBizID,
+				common.BKHostIDField:   []int64{hostID1},
+				common.BKModuleIDField: []int64{servTmplTestModuleID},
+			}
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+		}()
+
+		By("update service template host apply rule status test")
+		func() {
+			input := metadata.UpdateHostApplyEnableStatusOption{
+				IDs:    []int64{servTmplID},
+				Enable: true,
+			}
+			err := serviceClient.UpdateSrvTmplHostApplyStatus(context.Background(), header, servTmplTestBizID, &input)
+			Expect(err).NotTo(HaveOccurred())
+		}()
+
+		By("run service template host apply rule test")
+		func() {
+			input := metadata.HostApplyServiceTemplateOption{
+				HostApplyPlanBase: metadata.HostApplyPlanBase{
+					BizID:   servTmplTestBizID,
+					Changed: true,
+					AdditionalRules: []metadata.CreateHostApplyRuleOption{
+						{
+							ServiceTemplateID: servTmplID,
+							AttributeID:       attrID1,
+							PropertyValue:     "11",
+						},
+						{
+							ServiceTemplateID: servTmplID,
+							AttributeID:       attrID2,
+							PropertyValue:     "22",
+						},
+					},
+					HostIDs: []int64{hostID1},
+				},
+				ServiceTemplateIDs: []int64{servTmplID},
+			}
+			rsp, err := serviceClient.UpdateSrvTmplHostApplyRuleRun(context.Background(), header, &input)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(rsp.BizID).To(Not(Equal(int64(0))))
+			Expect(rsp.TaskID).To(Not(Equal("")))
+			taskID1 = rsp.TaskID
+		}()
+
+		By("list host apply rule tasks status test")
+		func() {
+			for {
+				input := metadata.HostApplyTaskStatusOption{
+					BizID:   servTmplTestBizID,
+					TaskIDs: []string{taskID1},
+				}
+				rsp, err := serviceClient.ListSrvTmplHostApplyRuleTaskStatus(context.Background(), header, &input)
+				util.RegisterResponseWithRid(rsp, header)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(rsp.TaskInfo[0].TaskID).To(Equal(taskID1))
+				if rsp.TaskInfo[0].Status == "finished" {
+					break
+				}
+				time.Sleep(3 * time.Second)
+			}
+		}()
+
+		By("search host1")
+		func() {
+			input := &metadata.HostCommonSearch{
+				AppID: servTmplTestBizID,
+				Condition: []metadata.SearchCondition{
+					{
+						ObjectID: common.BKInnerObjIDHost,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    common.BKHostIDField,
+								Operator: common.BKDBEQ,
+								Value:    hostID1,
+							},
+						},
+						Fields: []string{common.BKHostIDField, common.BKHostNameField, "hostapply1", "hostapply2"},
+					},
+				},
+				Page: metadata.BasePage{
+					Sort: common.BKHostIDField,
+				},
+			}
+
+			rsp, err := hostServerClient.SearchHostWithBiz(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			host := rsp.Data.Info[0]["host"].(map[string]interface{})
+
+			hostIdRes, err := commonutil.GetInt64ByInterface(host["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hostIdRes).To(Equal(hostID1))
+			Expect(host[common.BKHostNameField].(string)).To(Equal("host1"))
+			Expect(host["hostapply1"].(string)).To(Equal("11"))
+			Expect(host["hostapply2"].(string)).To(Equal("22"))
+		}()
+
+		By("transfer host2 and host3 to servTmplTestModule")
+		func() {
+			input := map[string]interface{}{
+				common.BKAppIDField:    servTmplTestBizID,
+				common.BKHostIDField:   []int64{hostID2, hostID3},
+				common.BKModuleIDField: []int64{servTmplTestModuleID},
+			}
+			rsp, err := hostServerClient.TransferHostModule(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+		}()
+
+		By("search host2")
+		func() {
+			input := &metadata.HostCommonSearch{
+				AppID: servTmplTestBizID,
+				Condition: []metadata.SearchCondition{
+					{
+						ObjectID: common.BKInnerObjIDHost,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    common.BKHostIDField,
+								Operator: common.BKDBIN,
+								Value:    []int64{hostID2, hostID3},
+							},
+						},
+						Fields: []string{common.BKHostIDField, common.BKHostNameField, "hostapply1", "hostapply2"},
+					},
+				},
+				Page: metadata.BasePage{
+					Sort: common.BKHostIDField,
+				},
+			}
+
+			rsp, err := hostServerClient.SearchHostWithBiz(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(2))
+
+			host2 := rsp.Data.Info[0]["host"].(map[string]interface{})
+			hostIdRes2, err := commonutil.GetInt64ByInterface(host2["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hostIdRes2).To(Equal(hostID2))
+			Expect(host2[common.BKHostNameField].(string)).To(Equal("host2"))
+			Expect(host2["hostapply1"].(string)).To(Equal("11"))
+			Expect(host2["hostapply2"].(string)).To(Equal("22"))
+
+			host3 := rsp.Data.Info[1]["host"].(map[string]interface{})
+			hostIdRes3, err := commonutil.GetInt64ByInterface(host3["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hostIdRes3).To(Equal(hostID3))
+			Expect(host3[common.BKHostNameField].(string)).To(Equal("host3"))
+			Expect(host3["hostapply1"].(string)).To(Equal("11"))
+			Expect(host3["hostapply2"].(string)).To(Equal("22"))
+		}()
+
+		By("create host apply3")
+		func() {
+			urlTemplate := "/create/host_apply_rule/bk_biz_id/%d"
+
+			option := metadata.CreateHostApplyRuleOption{
+				ModuleID:      servTmplTestModuleID,
+				AttributeID:   attrID2,
+				PropertyValue: "33",
+			}
+
+			rsp := metadata.HostApplyRuleResp{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(option).
+				SubResourcef(urlTemplate, servTmplTestBizID).
+				WithHeaders(header).
+				Do().Into(&rsp)
+
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+		}()
+
+		By("enable host apply3")
+		func() {
+			url := "/module/host_apply_enable_status/bk_biz_id/%d"
+
+			input := metadata.UpdateHostApplyEnableStatusOption{
+				Enable:     true,
+				ClearRules: false,
+				IDs:        []int64{servTmplTestModuleID},
+			}
+
+			rsp := metadata.Response{}
+			err := apiServerClient.Client().Put().
+				WithContext(ctx).
+				Body(input).
+				SubResourcef(url, servTmplTestBizID).
+				WithHeaders(header).
+				Do().Into(&rsp)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+		}()
+
+		By("run module host apply rule test")
+		func() {
+			url := "/host/updatemany/module/host_apply_plan/run"
+
+			input := metadata.HostApplyModulesOption{
+				HostApplyPlanBase: metadata.HostApplyPlanBase{
+					BizID:   servTmplTestBizID,
+					Changed: true,
+					AdditionalRules: []metadata.CreateHostApplyRuleOption{
+						{
+							ModuleID:      servTmplTestModuleID,
+							AttributeID:   attrID2,
+							PropertyValue: "33",
+						},
+					},
+					HostIDs: []int64{hostID2, hostID3},
+				},
+				ModuleIDs: []int64{servTmplTestModuleID},
+			}
+
+			rsp := metadata.HostApplyTaskResp{}
+			err := apiServerClient.Client().Post().
+				WithContext(ctx).
+				Body(input).
+				SubResourcef(url).
+				WithHeaders(header).
+				Do().Into(&rsp)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Code).To(Equal(common.CCErrHostApplyIsEnableForSrvTmplFail))
+		}()
+
+		By("find service template host apply rule relation test1")
+		func() {
+			input := metadata.RuleRelatedServiceTemplateOption{
+				ApplicationID: servTmplTestBizID,
+				QueryFilter: &querybuilder.QueryFilter{
+					Rule: querybuilder.CombinedRule{
+						Condition: querybuilder.ConditionAnd,
+						Rules: []querybuilder.Rule{
+							querybuilder.AtomRule{
+								Field:    strconv.FormatInt(attrID1, 10),
+								Operator: querybuilder.OperatorContains,
+								Value:    "11",
+							},
+						},
+					},
+				},
+			}
+			rsp, err := serviceClient.FindSrvTmplHostApplyRuleRelation(context.Background(), header, &input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(len(rsp)).To(Equal(1))
+			Expect(rsp[0].ID).To(Equal(servTmplID))
+			Expect(rsp[0].Name).To(Equal("servTmpl1"))
+		}()
+
+		By("find service template host apply rule relation test2")
+		func() {
+			input := metadata.RuleRelatedServiceTemplateOption{
+				ApplicationID: servTmplTestBizID,
+				QueryFilter: &querybuilder.QueryFilter{
+					Rule: querybuilder.CombinedRule{
+						Condition: querybuilder.ConditionAnd,
+						Rules: []querybuilder.Rule{
+							querybuilder.AtomRule{
+								Field:    strconv.FormatInt(attrID2, 10),
+								Operator: querybuilder.OperatorContains,
+								Value:    "22",
+							},
+						},
+					},
+				},
+			}
+			rsp, err := serviceClient.FindSrvTmplHostApplyRuleRelation(context.Background(), header, &input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(len(rsp)).To(Equal(1))
+			Expect(rsp[0].ID).To(Equal(servTmplID))
+			Expect(rsp[0].Name).To(Equal("servTmpl1"))
+
+		}()
+
+		By("find service template test2")
+		func() {
+			rsp, err := serviceClient.FindSrvTmpl(context.Background(), header, servTmplID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.BizID).To(Equal(servTmplTestBizID))
+			Expect(rsp.ID).To(Equal(servTmplID))
+			Expect(rsp.HostApplyEnabled).To(Equal(true))
+		}()
+
+		By("update service template host apply rule test")
+		func() {
+			input := metadata.HostApplyServiceTemplateOption{
+				HostApplyPlanBase: metadata.HostApplyPlanBase{
+					BizID:         servTmplTestBizID,
+					Changed:       true,
+					RemoveRuleIDs: []int64{hostApplyID1},
+					AdditionalRules: []metadata.CreateHostApplyRuleOption{
+						{
+							ServiceTemplateID: servTmplID,
+							AttributeID:       attrID3,
+							PropertyValue:     "33",
+						},
+					},
+				},
+				ServiceTemplateIDs: []int64{servTmplID},
+			}
+			rsp, err := serviceClient.UpdateSrvTmplHostApplyRuleRun(context.Background(), header, &input)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(rsp.BizID).To(Not(Equal(int64(0))))
+			Expect(rsp.TaskID).To(Not(Equal("")))
+			taskID2 = rsp.TaskID
+		}()
+
+		By("list host apply rule tasks status test")
+		func() {
+			for {
+				input := metadata.HostApplyTaskStatusOption{
+					BizID:   servTmplTestBizID,
+					TaskIDs: []string{taskID2},
+				}
+				rsp, err := serviceClient.ListSrvTmplHostApplyRuleTaskStatus(context.Background(), header, &input)
+				util.RegisterResponseWithRid(rsp, header)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(rsp.TaskInfo[0].TaskID).To(Equal(taskID2))
+				if rsp.TaskInfo[0].Status == "finished" {
+					break
+				}
+				time.Sleep(3 * time.Second)
+			}
+		}()
+
+		By("run service template host apply rule test")
+		func() {
+			input := metadata.HostApplyServiceTemplateOption{
+				HostApplyPlanBase: metadata.HostApplyPlanBase{
+					BizID:   servTmplTestBizID,
+					Changed: true,
+					AdditionalRules: []metadata.CreateHostApplyRuleOption{
+						{
+							ServiceTemplateID: servTmplID,
+							AttributeID:       attrID3,
+							PropertyValue:     "33",
+						},
+						{
+							ServiceTemplateID: servTmplID,
+							AttributeID:       attrID2,
+							PropertyValue:     "22",
+						},
+					},
+					HostIDs: []int64{hostID1},
+				},
+				ServiceTemplateIDs: []int64{servTmplID},
+			}
+			rsp, err := serviceClient.UpdateSrvTmplHostApplyRuleRun(context.Background(), header, &input)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(rsp.BizID).To(Not(Equal(int64(0))))
+			Expect(rsp.TaskID).To(Not(Equal("")))
+			taskID3 = rsp.TaskID
+		}()
+
+		By("list host apply rule tasks status test")
+		func() {
+			for {
+				input := metadata.HostApplyTaskStatusOption{
+					BizID:   servTmplTestBizID,
+					TaskIDs: []string{taskID3},
+				}
+				rsp, err := serviceClient.ListSrvTmplHostApplyRuleTaskStatus(context.Background(), header, &input)
+				util.RegisterResponseWithRid(rsp, header)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(rsp.TaskInfo[0].TaskID).To(Equal(taskID3))
+				if rsp.TaskInfo[0].Status == "finished" {
+					break
+				}
+				time.Sleep(3 * time.Second)
+			}
+		}()
+
+		By("search host3")
+		func() {
+			input := &metadata.HostCommonSearch{
+				AppID: servTmplTestBizID,
+				Condition: []metadata.SearchCondition{
+					{
+						ObjectID: common.BKInnerObjIDHost,
+						Condition: []metadata.ConditionItem{
+							{
+								Field:    common.BKHostIDField,
+								Operator: common.BKDBEQ,
+								Value:    hostID1,
+							},
+						},
+						Fields: []string{common.BKHostIDField, common.BKHostNameField,
+							"hostapply1", "hostapply2", "hostapply3"},
+					},
+				},
+				Page: metadata.BasePage{
+					Sort: common.BKHostIDField,
+				},
+			}
+
+			rsp, err := hostServerClient.SearchHostWithBiz(context.Background(), header, input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Result).To(Equal(true))
+			Expect(rsp.Data.Count).To(Equal(1))
+			host := rsp.Data.Info[0]["host"].(map[string]interface{})
+
+			hostIdRes, err := commonutil.GetInt64ByInterface(host["bk_host_id"])
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hostIdRes).To(Equal(hostID1))
+			Expect(host[common.BKHostNameField].(string)).To(Equal("host1"))
+			Expect(host["hostapply1"].(string)).To(Equal("11"))
+			Expect(host["hostapply2"].(string)).To(Equal("22"))
+			Expect(host["hostapply3"].(string)).To(Equal("33"))
+		}()
+
+		By("list host apply")
+		func() {
+			input := metadata.ListHostApplyRuleOption{
+				ApplicationID:      servTmplTestBizID,
+				ServiceTemplateIDs: []int64{servTmplID},
+				Page: metadata.BasePage{
+					Sort:  common.BKFieldID,
+					Limit: 10,
+					Start: 0,
+				},
+			}
+			rsp, err := hostServerClient.ListSrvTmplHostApplyRules(context.Background(), header, &input)
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Count).To(Equal(int64(2)))
+
+			Expect(rsp.Info[0].ID).To(Equal(hostApplyID2))
+			Expect(rsp.Info[0].BizID).To(Equal(servTmplTestBizID))
+			Expect(rsp.Info[0].ServiceTemplateID).To(Equal(servTmplID))
+			Expect(rsp.Info[0].AttributeID).To(Equal(attrID2))
+
+			Expect(rsp.Info[1].BizID).To(Equal(servTmplTestBizID))
+			Expect(rsp.Info[1].ServiceTemplateID).To(Equal(servTmplID))
+			Expect(rsp.Info[1].AttributeID).To(Equal(attrID3))
+		}()
+
+		By("delete service template host apply rule test")
+		func() {
+			input := metadata.DeleteHostApplyRuleOption{
+				RuleIDs:            []int64{hostApplyID1, hostApplyID2},
+				ServiceTemplateIDs: []int64{servTmplID},
+			}
+			err := serviceClient.DeleteSrvTmplHostApplyRule(context.Background(), header, servTmplTestBizID, &input)
+			Expect(err).NotTo(HaveOccurred())
+		}()
+
+		By("list host apply")
+		func() {
+			input := metadata.ListHostApplyRuleOption{
+				ApplicationID:      servTmplTestBizID,
+				ServiceTemplateIDs: []int64{servTmplID},
+				Page: metadata.BasePage{
+					Sort:  common.BKFieldID,
+					Limit: 10,
+					Start: 0,
+				},
+			}
+			rsp, err := hostServerClient.ListSrvTmplHostApplyRules(context.Background(), header, &input)
+
+			util.RegisterResponseWithRid(rsp, header)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.Count).To(Equal(int64(1)))
+
+			Expect(rsp.Info[0].BizID).To(Equal(servTmplTestBizID))
+			Expect(rsp.Info[0].ServiceTemplateID).To(Equal(servTmplID))
+			Expect(rsp.Info[0].AttributeID).To(Equal(attrID3))
+		}()
 	})
 })

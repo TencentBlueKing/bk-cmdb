@@ -883,3 +883,55 @@ func (hs *hostServer) UnbindAgent(ctx context.Context, h http.Header,
 	}
 	return nil
 }
+
+// ListHostApplyRules list host apply rules
+func (hs *hostServer) ListSrvTmplHostApplyRules(ctx context.Context, h http.Header,
+	params *metadata.ListHostApplyRuleOption) (*metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.MultipleHostApplyRuleResp)
+	subPath := "/host/findmany/service_template/host_apply_rule"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(params).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &resp.Data, nil
+}
+
+// AddHostToBizIdle add host to biz idle module
+func (hs *hostServer) AddHostToBizIdle(ctx context.Context, header http.Header, option *metadata.HostListParam) (
+	*metadata.HostIDsResp, errors.CCErrorCoder) {
+
+	resp := new(metadata.CreateHostBatchResult)
+	subPath := "/hosts/add/business_idle"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}

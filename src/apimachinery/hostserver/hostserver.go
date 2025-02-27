@@ -76,7 +76,7 @@ type HostServerClientInterface interface {
 	SearchHostWithBiz(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (
 		resp *metadata.SearchHostResult, err error)
 	SearchHostWithAsstDetail(ctx context.Context, h http.Header, dat *metadata.HostCommonSearch) (resp *metadata.
-	SearchHostResult, err error)
+		SearchHostResult, err error)
 	UpdateHostBatch(ctx context.Context, h http.Header, dat interface{}) (resp *metadata.Response, err error)
 	UpdateHostPropertyBatch(ctx context.Context, h http.Header, data map[string]interface{}) errors.CCErrorCoder
 
@@ -120,6 +120,10 @@ type HostServerClientInterface interface {
 		*metadata.RspIDs, errors.CCErrorCoder)
 	DeleteCloudHostFromBiz(ctx context.Context, header http.Header,
 		option *metadata.DeleteCloudHostFromBizParam) errors.CCErrorCoder
+	ListSrvTmplHostApplyRules(ctx context.Context, h http.Header,
+		params *metadata.ListHostApplyRuleOption) (*metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder)
+	AddHostToBizIdle(ctx context.Context, header http.Header, option *metadata.HostListParam) (
+		*metadata.HostIDsResp, errors.CCErrorCoder)
 }
 
 // NewHostServerClientInterface TODO

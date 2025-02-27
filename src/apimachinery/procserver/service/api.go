@@ -73,6 +73,19 @@ type ServiceClientInterface interface {
 		*metadata.ServiceTemplateGeneralDiff, errors.CCErrorCoder)
 	SyncServiceInstanceByTemplate(ctx context.Context, h http.Header,
 		opt *metadata.SyncServiceInstanceByTemplateOption) errors.CCErrorCoder
+
+	UpdateSrvTmplHostApplyStatus(ctx context.Context, h http.Header, bizID int64,
+		opt *metadata.UpdateHostApplyEnableStatusOption) errors.CCErrorCoder
+	DeleteSrvTmplHostApplyRule(ctx context.Context, h http.Header, bizID int64,
+		opt *metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder
+	UpdateSrvTmplHostApplyRuleRun(ctx context.Context, h http.Header,
+		opt *metadata.HostApplyServiceTemplateOption) (*metadata.HostApplyTaskResult, errors.CCErrorCoder)
+	FindSrvTmpl(ctx context.Context, h http.Header, tmplID int64) (
+		*metadata.ServiceTemplate, errors.CCErrorCoder)
+	FindSrvTmplHostApplyRuleRelation(ctx context.Context, h http.Header,
+		opt *metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder)
+	ListSrvTmplHostApplyRuleTaskStatus(ctx context.Context, header http.Header,
+		option *metadata.HostApplyTaskStatusOption) (*metadata.HostApplyTaskStatusRsp, errors.CCErrorCoder)
 }
 
 // NewServiceClientInterface TODO

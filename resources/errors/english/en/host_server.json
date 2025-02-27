@@ -59,6 +59,7 @@
 	"1110065": "Failed to query bk-network area, host_count field failed to be added",
 	"1110066": "can't delete default bk-network area",
 	"1110067": "Failed to query bk-network area, sync_task_ids field failed to be added",
+	"1110068": "The operation failed, host apply is enabled for the service template corresponding to the module",
 
 	"1110080": "Fail to add host to resource pool",
 	"": ""

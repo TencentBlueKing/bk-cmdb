@@ -681,6 +681,11 @@ func (s *Service) UpdateModuleHostApplyRule(ctx *rest.Contexts) {
 		return
 	}
 
+	if err := s.checkModuleSrvTmpl(ctx.Kit, syncOpt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
 	taskInfo := metadata.APITaskDetail{}
 	// The host is automatically updated asynchronously in the application scenario. The instID corresponds to the
 	// BizID, but if the task is created according to the business level, a large number of task conflict scenarios will
@@ -710,11 +715,59 @@ func (s *Service) UpdateModuleHostApplyRule(ctx *rest.Contexts) {
 	ctx.RespEntity(metadata.HostApplyTaskResult{BizID: taskInfo.InstID, TaskID: taskInfo.TaskID})
 }
 
+// checkModuleSrvTmpl check module service template host apply enable status
+func (s *Service) checkModuleSrvTmpl(kit *rest.Kit, syncOpt *metadata.HostApplyModulesOption) error {
+	moduleInput := metadata.QueryCondition{
+		Fields: []string{common.BKServiceTemplateIDField},
+		Condition: map[string]interface{}{
+			common.BKModuleIDField:          map[string]interface{}{common.BKDBIN: syncOpt.ModuleIDs},
+			common.BKServiceTemplateIDField: map[string]interface{}{common.BKDBNE: 0},
+		},
+	}
+	tmplResp, err := s.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, &moduleInput)
+	if err != nil {
+		blog.Errorf("get module service template failed, err: %v, input: %v, rid: %s", err, moduleInput, kit.Rid)
+		return err
+	}
+	if len(tmplResp.Info) == 0 {
+		return nil
+	}
+
+	tmplIDs := make([]int64, 0)
+	for _, tmpl := range tmplResp.Info {
+		tmplID, err := tmpl.Int64(common.BKServiceTemplateIDField)
+		if err != nil {
+			blog.Errorf("get service template id failed, err: %v, input: %v, rid: %s", err, tmpl, kit.Rid)
+			return err
+		}
+		tmplIDs = append(tmplIDs, tmplID)
+	}
+
+	queryFilter := []map[string]interface{}{{
+		common.BKFieldID: map[string]interface{}{
+			common.BKDBIN: tmplIDs,
+		},
+		common.HostApplyEnabledField: true,
+	}}
+
+	instCnt, err := s.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameServiceTemplate, queryFilter)
+	if err != nil {
+		blog.Errorf("count service template enable host apply failed, err: %v, input: %v, rid: %s",
+			err, queryFilter, kit.Rid)
+		return err
+	}
+
+	if instCnt[0] != 0 {
+		blog.Errorf("host apply is enabled for the service template, count: %v, rid: %s", instCnt, kit.Rid)
+		return kit.CCError.Error(common.CCErrHostApplyIsEnableForSrvTmplFail)
+	}
+	return nil
+}
+
 // ExecModuleHostApplyRule the host automatically applies rules in the asynchronous execution module scenario.
 func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
-
-	rid := ctx.Kit.Rid
-
 	planReq := new(metadata.HostApplyModulesOption)
 	if err := ctx.DecodeInto(planReq); err != nil {
 		ctx.RespAutoError(err)
@@ -727,47 +780,10 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		// enable host apply on module
-		op := &metadata.UpdateOption{
-			Condition: map[string]interface{}{
-				common.BKModuleIDField: map[string]interface{}{common.BKDBIN: planReq.ModuleIDs}},
-			Data: map[string]interface{}{common.HostApplyEnabledField: true},
-		}
-
-		_, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.BKInnerObjIDModule, op)
-		if err != nil {
-			blog.Errorf("update instance of module failed, option: %s, err: %v, rid: %s", op, err, rid)
+		if err := s.enableHostApplyRuleOnModule(ctx.Kit, planReq); err != nil {
+			blog.Errorf("enable apply rule failed, bizID: %d, req: %v, err: %v, rid: %s", planReq.BizID, planReq,
+				err, ctx.Kit.Rid)
 			return err
-		}
-		rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
-		for _, rule := range planReq.AdditionalRules {
-
-			rulesOption = append(rulesOption, metadata.CreateOrUpdateApplyRuleOption{
-				AttributeID:   rule.AttributeID,
-				ModuleID:      rule.ModuleID,
-				PropertyValue: rule.PropertyValue})
-		}
-		// 1、update or add rules.
-		saveRuleOp := metadata.BatchCreateOrUpdateApplyRuleOption{Rules: rulesOption}
-		if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
-			planReq.BizID, saveRuleOp); ccErr != nil {
-			blog.Errorf("update host rule failed, bizID: %s, req: %s, err: %v, rid: %s", planReq.BizID, saveRuleOp,
-				ccErr, rid)
-			return ccErr
-		}
-
-		// 2、delete rules.
-		if len(planReq.RemoveRuleIDs) > 0 {
-			removeOp := metadata.DeleteHostApplyRuleOption{
-				RuleIDs:   planReq.RemoveRuleIDs,
-				ModuleIDs: planReq.ModuleIDs}
-			if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(ctx.Kit.Ctx, ctx.Kit.Header,
-				planReq.BizID, removeOp); ccErr != nil {
-				blog.Errorf("delete apply rule failed, bizID: %d, req: %s, err: %v, rid: %s", planReq.BizID, removeOp,
-					ccErr, rid)
-				return ccErr
-			}
 		}
 		return nil
 	})
@@ -800,6 +816,54 @@ func (s *Service) ExecModuleHostApplyRule(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+// enableHostApplyRuleOnModule enable host apply on module
+func (s *Service) enableHostApplyRuleOnModule(kit *rest.Kit, planReq *metadata.HostApplyModulesOption) error {
+
+	// enable host apply on module
+	op := &metadata.UpdateOption{
+		Condition: map[string]interface{}{
+			common.BKModuleIDField: map[string]interface{}{common.BKDBIN: planReq.ModuleIDs}},
+		Data: map[string]interface{}{common.HostApplyEnabledField: true},
+	}
+
+	_, err := s.Engine.CoreAPI.CoreService().Instance().UpdateInstance(kit.Ctx, kit.Header,
+		common.BKInnerObjIDModule, op)
+	if err != nil {
+		blog.Errorf("update instance of module failed, option: %s, err: %v, rid: %s", op, err, kit.Rid)
+		return err
+	}
+	rulesOption := make([]metadata.CreateOrUpdateApplyRuleOption, 0)
+	for _, rule := range planReq.AdditionalRules {
+
+		rulesOption = append(rulesOption, metadata.CreateOrUpdateApplyRuleOption{
+			AttributeID:   rule.AttributeID,
+			ModuleID:      rule.ModuleID,
+			PropertyValue: rule.PropertyValue})
+	}
+	// 1、update or add rules.
+	saveRuleOp := metadata.BatchCreateOrUpdateApplyRuleOption{Rules: rulesOption}
+	if _, ccErr := s.CoreAPI.CoreService().HostApplyRule().BatchUpdateHostApplyRule(kit.Ctx, kit.Header,
+		planReq.BizID, saveRuleOp); ccErr != nil {
+		blog.Errorf("update host rule failed, bizID: %s, req: %s, err: %v, rid: %s", planReq.BizID, saveRuleOp,
+			ccErr, kit.Rid)
+		return ccErr
+	}
+
+	// 2、delete rules.
+	if len(planReq.RemoveRuleIDs) > 0 {
+		removeOp := metadata.DeleteHostApplyRuleOption{
+			RuleIDs:   planReq.RemoveRuleIDs,
+			ModuleIDs: planReq.ModuleIDs}
+		if ccErr := s.CoreAPI.CoreService().HostApplyRule().DeleteHostApplyRule(kit.Ctx, kit.Header,
+			planReq.BizID, removeOp); ccErr != nil {
+			blog.Errorf("delete apply rule failed, bizID: %d, req: %s, err: %v, rid: %s", planReq.BizID, removeOp,
+				ccErr, kit.Rid)
+			return ccErr
+		}
+	}
+	return nil
 }
 
 func (s *Service) getModuleRelateHostApply(kit *rest.Kit, bizID int64, moduleIDs []int64, srvTemplateIDs []int64) (

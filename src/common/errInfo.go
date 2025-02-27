@@ -743,6 +743,7 @@ const (
 	CCErrHostFindManyCloudAreaAddHostCountFieldFail           = 1110065
 	CCErrDeleteDefaultCloudAreaFail                           = 1110066
 	CCErrHostFindManyCloudAreaAddSyncTaskIDsFieldFail         = 1110067
+	CCErrHostApplyIsEnableForSrvTmplFail                      = 1110068
 
 	// web 1111XXX
 	CCErrWebFileNoFound              = 1111001

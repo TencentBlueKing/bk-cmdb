@@ -49,6 +49,12 @@ type HostApplyRule struct {
 	LastTime   time.Time `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
 }
 
+// HostApplyRuleResp host apply rule response
+type HostApplyRuleResp struct {
+	BaseResp `json:",inline"`
+	Data     HostApplyRule `json:"data"`
+}
+
 // Validate TODO
 func (h *HostApplyRule) Validate() (string, error) {
 	return "", nil
@@ -71,6 +77,12 @@ type UpdateHostApplyRuleOption struct {
 type MultipleHostApplyRuleResult struct {
 	Count int64           `json:"count" mapstructure:"count"`
 	Info  []HostApplyRule `json:"info" mapstructure:"info"`
+}
+
+// MultipleHostApplyRuleResp host apply rule response
+type MultipleHostApplyRuleResp struct {
+	BaseResp `json:",inline"`
+	Data     MultipleHostApplyRuleResult `json:"data"`
 }
 
 // ListHostApplyRuleOption TODO
@@ -342,6 +354,12 @@ type HostAppyTaskInfo struct {
 	Status string `json:"status"`
 }
 
+// HostApplyRulesTaskResp task Resp
+type HostApplyRulesTaskResp struct {
+	BaseResp `json:",inline"`
+	Data     HostApplyTaskStatusRsp `json:"data"`
+}
+
 // HostApplyTaskStatusRsp host automatic application task status query information.
 type HostApplyTaskStatusRsp struct {
 	BizID    int64              `json:"bk_biz_id"`
@@ -352,6 +370,12 @@ type HostApplyTaskStatusRsp struct {
 type HostApplyTaskResult struct {
 	BizID  int64  `json:"bk_biz_id"`
 	TaskID string `json:"task_id"`
+}
+
+// HostApplyTaskResp task Resp
+type HostApplyTaskResp struct {
+	BaseResp `json:",inline"`
+	Data     HostApplyTaskResult `json:"data"`
 }
 
 // HostApplyModulesOption request parameters automatically applied by the host in the module scenario.

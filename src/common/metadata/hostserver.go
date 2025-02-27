@@ -1204,6 +1204,12 @@ type HostIDsResp struct {
 	HostIDs []int64 `json:"bk_host_ids"`
 }
 
+// CreateHostBatchResult create host batch result
+type CreateHostBatchResult struct {
+	BaseResp `json:",inline"`
+	Data     HostIDsResp `json:"data"`
+}
+
 // CountHostCPUReq count host cpu num request
 type CountHostCPUReq struct {
 	BizID int64     `json:"bk_biz_id,omitempty"`
