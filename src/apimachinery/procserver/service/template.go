@@ -262,3 +262,152 @@ func (s *service) ListServiceTemplateAttribute(ctx context.Context, h http.Heade
 
 	return resp.Data, nil
 }
+
+// UpdateSrvTmplHostApplyStatus 更新服务模板主机自动应用状态
+func (s *service) UpdateSrvTmplHostApplyStatus(ctx context.Context, h http.Header, bizID int64,
+	opt *metadata.UpdateHostApplyEnableStatusOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/updatemany/proc/service_template/host_apply_enable_status/biz/%d"
+
+	err := s.client.Put().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteSrvTmplHostApplyRule 删除服务模板场景下主机自动应用规则
+func (s *service) DeleteSrvTmplHostApplyRule(ctx context.Context, h http.Header, bizID int64,
+	opt *metadata.DeleteHostApplyRuleOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/deletemany/proc/service_template/host_apply_rule/biz/%d"
+
+	err := s.client.Delete().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath, bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateSrvTmplHostApplyRuleRun 编辑服务模板场景下主机自动应用规则
+func (s *service) UpdateSrvTmplHostApplyRuleRun(ctx context.Context, h http.Header,
+	opt *metadata.HostApplyServiceTemplateOption) (*metadata.HostApplyTaskResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.HostApplyTaskResp)
+	subPath := "/updatemany/proc/service_template/host_apply_plan/run"
+
+	err := s.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// FindSrvTmpl 获取服务模板
+func (s *service) FindSrvTmpl(ctx context.Context, h http.Header, tmplID int64) (
+	*metadata.ServiceTemplate, errors.CCErrorCoder) {
+
+	resp := new(metadata.ServiceTemplateResp)
+	subPath := "/find/proc/service_template/%d"
+
+	err := s.client.Get().
+		WithContext(ctx).
+		SubResourcef(subPath, tmplID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// FindSrvTmplHostApplyRuleRelation 根据配置字段搜索服务模板
+func (s *service) FindSrvTmplHostApplyRuleRelation(ctx context.Context, h http.Header,
+	opt *metadata.RuleRelatedServiceTemplateOption) ([]metadata.SrvTemplate, errors.CCErrorCoder) {
+
+	resp := new(metadata.ServiceTemplatesResponse)
+	subPath := "/find/proc/service_template/host_apply_rule_related"
+
+	err := s.client.Post().
+		WithContext(ctx).
+		Body(opt).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// ListSrvTmplHostApplyRuleTaskStatus list host apply rule task status
+func (s *service) ListSrvTmplHostApplyRuleTaskStatus(ctx context.Context, header http.Header,
+	option *metadata.HostApplyTaskStatusOption) (*metadata.HostApplyTaskStatusRsp, errors.CCErrorCoder) {
+
+	ret := new(metadata.HostApplyRulesTaskResp)
+	subPath := "/findmany/proc/service_template/host_apply_plan/status"
+
+	err := s.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(ret)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+	if err := ret.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &ret.Data, nil
+}
