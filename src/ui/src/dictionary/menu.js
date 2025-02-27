@@ -32,8 +32,6 @@ import {
 
   MENU_RESOURCE_MANAGEMENT,
   MENU_RESOURCE_CLOUD_AREA,
-  MENU_RESOURCE_CLOUD_ACCOUNT,
-  MENU_RESOURCE_CLOUD_RESOURCE,
 
   MENU_MODEL_MANAGEMENT,
   MENU_MODEL_TOPOLOGY,
@@ -43,7 +41,6 @@ import {
   MENU_MODEL_FIELD_TEMPLATE,
 
   MENU_ANALYSIS_AUDIT,
-  MENU_ANALYSIS_OPERATION,
 
   MENU_PLATFORM_MANAGEMENT_GLOBAL_CONFIG,
 } from './menu-symbol'
@@ -135,16 +132,6 @@ const menus = [{
     i18n: '管控区域',
     icon: 'icon-cc-network-segment',
     route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_AREA, 'resource')
-  }, {
-    id: MENU_RESOURCE_CLOUD_ACCOUNT,
-    i18n: '云账户',
-    icon: 'icon-cc-cloud-account',
-    route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_ACCOUNT, 'resource')
-  }, {
-    id: MENU_RESOURCE_CLOUD_RESOURCE,
-    i18n: '云资源发现',
-    icon: 'icon-cc-cloud-discover',
-    route: getMenuRoute(resourceViews, MENU_RESOURCE_CLOUD_RESOURCE, 'resource')
   }]
 }, {
   id: MENU_MODEL,
@@ -188,11 +175,6 @@ const menus = [{
     i18n: '操作审计',
     icon: 'icon-cc-nav-audit-02',
     route: getMenuRoute(analysisViews, MENU_ANALYSIS_AUDIT)
-  }, {
-    id: MENU_ANALYSIS_OPERATION,
-    i18n: '运营统计',
-    icon: 'icon-cc-statistics',
-    route: getMenuRoute(analysisViews, MENU_ANALYSIS_OPERATION)
   }]
 }, {
   id: MENU_PLATFORM_MANAGEMENT,

@@ -103,7 +103,6 @@ export const MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL = 'menu_model_field_template_s
  * 运营分析
  */
 export const MENU_ANALYSIS_AUDIT = 'menu_analysis_audit'
-export const MENU_ANALYSIS_OPERATION = 'menu_analysis_operation'
 export const MENU_ANALYSIS_STATISTICS = 'menu_analysis_statistics'
 
 /**
@@ -132,10 +131,6 @@ export const MENU_BUSINESS_DELETE_SERVICE = 'menu_business_delete_service'
 
 // 管控区域
 export const MENU_RESOURCE_CLOUD_AREA = 'menu_resource_cloud_area'
-// 云账户
-export const MENU_RESOURCE_CLOUD_ACCOUNT = 'menu_resource_cloud_account'
-// 云资源发现
-export const MENU_RESOURCE_CLOUD_RESOURCE = 'menu_resource_cloud_resource'
 
 // 业务集资源实例
 export const MENU_RESOURCE_BUSINESS_SET = 'menu_resource_business_set'

@@ -56,7 +56,6 @@ import processTemplate from './modules/api/process-template.js'
 import businessSynchronous from './modules/api/business-synchronous.js'
 import serviceInstance from './modules/api/service-instance.js'
 import processInstance from './modules/api/process-instance.js'
-import operationChart from './modules/api/operation-chart'
 import instanceLabel from './modules/api/instance-label.js'
 import fullTextSearch from './modules/api/full-text-search.js'
 import setSync from './modules/api/set-sync.js'
@@ -131,7 +130,6 @@ const store = new Vuex.Store({
     businessSynchronous,
     serviceInstance,
     processInstance,
-    operationChart,
     instanceLabel,
     fullTextSearch,
     setSync,
