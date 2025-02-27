@@ -381,8 +381,8 @@ web:
 
 ## @section bk-cmdb config and service center parameters
 ##
-# configAndServiceCenter:
-#   addr:
+configAndServiceCenter:
+  addr:
 
 ## @section mongodb parameters
 ##
