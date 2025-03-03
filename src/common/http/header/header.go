@@ -38,8 +38,11 @@ const (
 
 // new http header keys in the standard of api gateway
 const (
-	// BkRidHeader is the blueking api gateway request id http header key
-	BkRidHeader = "X-Bkapi-Request-Id"
+	// BkApigwRidHeader is the blueking api gateway request id http header key
+	BkApigwRidHeader = "X-Bkapi-Request-Id"
+
+	// BkRidHeader is the request id http header key
+	BkRidHeader = "X-Request-ID"
 
 	// BkAuthHeader is the blueking api gateway authorization http header key
 	BkAuthHeader = "X-Bkapi-Authorization"

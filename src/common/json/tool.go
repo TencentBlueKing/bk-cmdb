@@ -14,8 +14,10 @@ package json
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 // CutJsonDataWithFields cut jsonData and only return the "fields" be targeted.
@@ -49,4 +51,20 @@ func CutJsonDataWithFields(jsonData *string, fields []string) *string {
 	jsonBuffer.Write([]byte{'}'})
 	cutOff := jsonBuffer.String()
 	return &cutOff
+}
+
+// ReplaceJsonKey replace the oldKey with newKey in jsonData
+func ReplaceJsonKey(jsonData []byte, keyMap map[string]string) ([]byte, error) {
+	var err error
+	for oldKey, newKey := range keyMap {
+		jsonData, err = sjson.SetRawBytes(jsonData, newKey, []byte(gjson.GetBytes(jsonData, oldKey).Raw))
+		if err != nil {
+			return nil, fmt.Errorf("set %s key using %s value failed, err: %v", newKey, oldKey, err)
+		}
+		jsonData, err = sjson.DeleteBytes(jsonData, oldKey)
+		if err != nil {
+			return nil, fmt.Errorf("remove %s key failed, err: %v", oldKey, err)
+		}
+	}
+	return jsonData, nil
 }

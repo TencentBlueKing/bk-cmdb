@@ -64,9 +64,12 @@ func (s *Service) WebService() *gin.Engine {
 	ws := gin.New()
 	ws.Use(gin.Logger())
 
+	middleware.Engine = s.Engine
+	middleware.CacheCli = s.CacheCli
+
 	ws.Use(middleware.RequestIDMiddleware)
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
-	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
+	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery(), s.ApiCli))
 	ws.Use(func(c *gin.Context) {
 		defer func() {
 			// suppresses logging of a stack when err is ErrAbortHandler, same as net/http
@@ -87,8 +90,6 @@ func (s *Service) WebService() *gin.Engine {
 	})
 
 	opentelemetry.UseOtlpMiddleware(ws)
-
-	middleware.Engine = s.Engine
 
 	s.initService(ws)
 

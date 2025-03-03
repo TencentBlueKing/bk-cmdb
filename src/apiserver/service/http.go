@@ -13,7 +13,6 @@
 package service
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,12 +24,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	ccjson "configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
 
 	"github.com/emicklei/go-restful/v3"
-	"github.com/tidwall/gjson"
 )
 
 // Get TODO
@@ -164,28 +163,14 @@ func parseResponse(req *restful.Request, resp *restful.Response, body io.ReadClo
 	}
 	defer body.Close()
 
-	buf := bytes.NewBuffer([]byte{'{'})
-
-	gjson.ParseBytes(bodyBytes).ForEach(func(key, value gjson.Result) bool {
-		keyStr := key.String()
-		switch keyStr {
-		case common.HTTPBKAPIErrorCode:
-			keyStr = common.BkAPIErrorCode
-		case common.HTTPBKAPIErrorMessage:
-			keyStr = common.BkAPIErrorMessage
-		}
-
-		buf.WriteByte('"')
-		buf.WriteString(keyStr)
-		buf.WriteString(`":`)
-		buf.WriteString(value.Raw)
-		buf.WriteByte(',')
-		return true
-	})
-
-	convertedBody := buf.Bytes()
-	if len(convertedBody) > 0 {
-		convertedBody[len(convertedBody)-1] = '}'
+	keyMap := map[string]string{
+		common.HTTPBKAPIErrorCode:    common.BkAPIErrorCode,
+		common.HTTPBKAPIErrorMessage: common.BkAPIErrorMessage,
+	}
+	convertedBody, err := ccjson.ReplaceJsonKey(bodyBytes, keyMap)
+	if err != nil {
+		blog.Errorf("replace resp(%s) key failed, err: %v, rid: %s", string(bodyBytes), err, rid)
+		return
 	}
 
 	resp.Header().Set("Content-Length", strconv.Itoa(len(convertedBody)))
