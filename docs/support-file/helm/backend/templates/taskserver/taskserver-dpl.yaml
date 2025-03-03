@@ -26,6 +26,13 @@ spec:
         {{ toYaml .Values.taskserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      topologySpreadConstraints:
+        - maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
+          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey }}
+          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              component: taskserver
       containers:
       - name: taskserver
         image: {{ .Values.image.registry }}/{{ .Values.taskserver.image.repository }}:v{{ default .Chart.AppVersion .Values.taskserver.image.tag }}
@@ -98,7 +105,7 @@ spec:
 
       {{- with .Values.taskserver.affinity }}
       affinity:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.taskserver.tolerations }}

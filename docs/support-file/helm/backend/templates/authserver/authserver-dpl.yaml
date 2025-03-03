@@ -26,6 +26,13 @@ spec:
         {{ toYaml .Values.authserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      topologySpreadConstraints:
+        - maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
+          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey }}
+          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              component: authserver
       containers:
       - name: authserver
         image: {{ .Values.image.registry }}/{{ .Values.authserver.image.repository }}:v{{ default .Chart.AppVersion .Values.authserver.image.tag }}
@@ -100,7 +107,7 @@ spec:
 
       {{- with .Values.authserver.affinity }}
       affinity:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.authserver.tolerations }}
