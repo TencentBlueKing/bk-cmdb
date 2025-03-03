@@ -328,6 +328,7 @@ data:
   mongodb.yaml: |-
     mongodb:
       host: {{ include "cmdb.mongodb.addr" . | quote }}
+      port: {{ .Values.mongodb.externalMongodb.port }}
       usr: {{ include "cmdb.mongodb.usr" . | quote }}
       pwd: {{ include "cmdb.mongodb.pwd" . | quote }}
       database: {{ .Values.mongodb.externalMongodb.database }}
@@ -342,6 +343,7 @@ data:
 
     watch:
       host: {{ include "cmdb.mongodb.watch.addr" . | quote }}
+      port: {{ .Values.mongodb.watch.port }}
       usr: {{ include "cmdb.mongodb.watch.usr" . | quote }}
       pwd: {{ include "cmdb.mongodb.watch.pwd" . | quote }}
       database: {{ .Values.mongodb.watch.database }}
@@ -350,6 +352,7 @@ data:
       mechanism: {{ .Values.mongodb.watch.mechanism }}
       rsName: {{ .Values.mongodb.watch.rsName }}
       socketTimeoutSeconds: {{ .Values.mongodb.watch.socketTimeoutSeconds }}
+      enable: {{ .Values.mongodb.watch.enable }}
 
   redis.yaml: |-
     redis:

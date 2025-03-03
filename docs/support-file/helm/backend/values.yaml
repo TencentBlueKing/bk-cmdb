@@ -153,7 +153,7 @@ apiserver:
         protocol: TCP
         port: 80
         targetPort: 80
-        nodePort:
+      #  nodePort:
     ## apiserver.service.externalPort bk-cmdb apiserver service external port
     ##
     externalPort: 80
@@ -257,7 +257,7 @@ authserver:
         protocol: TCP
         port: 80
         targetPort: 80
-        nodePort:
+      #  nodePort:
     ## authserver.service.externalPort bk-cmdb authserver service external port
     ##
     externalPort: 80
@@ -1811,3 +1811,16 @@ apigatewaySync:
 
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:
+
+
+## @section topology spread constraints
+topologySpreadConstraints:
+  ## The maximum skew allowed between the number of matching pods in any two topologies.
+  maxSkew: 1
+  ## The key from metadata.labelKeys to use for spreading.
+  topologyKey: topology.kubernetes.io/zone
+  ## Defines what happens when it's not possible to satisfy the requested distribution.
+  ## - "DoNotSchedule": Prevent new Pods from being scheduled until the constraint is satisfied.
+  ## - "ScheduleAnyway": Schedule new Pods as usual but still try to achieve even distribution over time.
+  whenUnsatisfiable: ScheduleAnyway
+

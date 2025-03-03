@@ -26,6 +26,13 @@ spec:
         {{ toYaml .Values.datacollection.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      topologySpreadConstraints:
+        - maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
+          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey }}
+          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              component: datacollection
       containers:
       - name: datacollection
         image: {{ .Values.image.registry }}/{{ .Values.datacollection.image.repository }}:v{{ default .Chart.AppVersion .Values.datacollection.image.tag }}
@@ -99,7 +106,7 @@ spec:
 
       {{- with .Values.datacollection.affinity }}
       affinity:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.datacollection.tolerations }}
