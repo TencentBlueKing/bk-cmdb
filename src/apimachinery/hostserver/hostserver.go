@@ -82,17 +82,17 @@ type HostServerClientInterface interface {
 
 	// CreateDynamicGroup TODO
 	// dynamic group interfaces.
-	CreateDynamicGroup(ctx context.Context, header http.Header, data map[string]interface{}) (resp *metadata.IDResult,
+	CreateDynamicGroup(ctx context.Context, header http.Header, data *metadata.DynamicGroup) (resp *metadata.IDResult,
 		err error)
 	UpdateDynamicGroup(ctx context.Context, bizID, id string, header http.Header,
-		data map[string]interface{}) (resp *metadata.BaseResp, err error)
+		data *metadata.DynamicGroup) (resp *metadata.BaseResp, err error)
 	DeleteDynamicGroup(ctx context.Context, bizID, id string, header http.Header) (resp *metadata.BaseResp, err error)
 	GetDynamicGroup(ctx context.Context, bizID, id string, header http.Header) (resp *metadata.GetDynamicGroupResult,
 		err error)
 	SearchDynamicGroup(ctx context.Context, bizID string, header http.Header,
 		data *metadata.QueryCondition) (resp *metadata.SearchDynamicGroupResult, err error)
 	ExecuteDynamicGroup(ctx context.Context, bizID, id string, header http.Header,
-		data map[string]interface{}) (resp *metadata.Response, err error)
+		data *metadata.ExecuteOption) (resp *metadata.ResponseInstData, err error)
 
 	HostSearch(ctx context.Context, h http.Header, params *metadata.HostCommonSearch) (resp *metadata.QueryInstResult,
 		err error)
@@ -124,6 +124,44 @@ type HostServerClientInterface interface {
 		params *metadata.ListHostApplyRuleOption) (*metadata.MultipleHostApplyRuleResult, errors.CCErrorCoder)
 	AddHostToBizIdle(ctx context.Context, header http.Header, option *metadata.HostListParam) (
 		*metadata.HostIDsResp, errors.CCErrorCoder)
+
+	CountBizHostCPU(ctx context.Context, header http.Header, option *metadata.CountHostCPUReq) (
+		[]metadata.BizHostCpuCount, errors.CCErrorCoder)
+	UpdateHostsAllProperty(ctx context.Context, header http.Header,
+		option *metadata.UpdateHostOpt) errors.CCErrorCoder
+
+	FindModuleHostRelation(ctx context.Context, header http.Header, bizID int64,
+		option *metadata.FindModuleHostRelationParameter) (*metadata.FindModuleHostRelationResult, errors.CCErrorCoder)
+	FindHostByServiceTmpl(ctx context.Context, header http.Header, bizID int64,
+		option *metadata.FindHostsBySrvTplOpt) (*metadata.SearchHost, errors.CCErrorCoder)
+	FindHostBySetTmpl(ctx context.Context, header http.Header, bizID int64,
+		option *metadata.FindHostsBySetTplOpt) (*metadata.SearchHost, errors.CCErrorCoder)
+	ListResourcePoolHosts(ctx context.Context, header http.Header,
+		option *metadata.ListHostsParameter) (*metadata.ListHostResult, errors.CCErrorCoder)
+	ListHostsWithoutApp(ctx context.Context, header http.Header,
+		option *metadata.ListHostsWithNoBizParameter) (*metadata.ListHostResult, errors.CCErrorCoder)
+
+	FindHostByTopoInst(ctx context.Context, header http.Header, bizID int64,
+		option *metadata.FindHostsByTopoOpt) (*metadata.SearchHost, errors.CCErrorCoder)
+	FindHostDetailTopo(ctx context.Context, header http.Header,
+		option *metadata.ListHostsDetailAndTopoOption) (*metadata.HostMainlineTopoResult, errors.CCErrorCoder)
+	FindHostRelationWithTopo(ctx context.Context, header http.Header,
+		option *metadata.FindHostRelationWtihTopoOpt) (*metadata.HostConfigResult, errors.CCErrorCoder)
+	FindHostServiceTmpl(ctx context.Context, header http.Header, option *metadata.HostIDReq) (
+		*metadata.HostSrvTmplResp, errors.CCErrorCoder)
+	FindHostTotalMainlineTopo(ctx context.Context, header http.Header, bizID int64,
+		option *metadata.FindHostTotalTopo) (*metadata.HostMainlineTopoResult, errors.CCErrorCoder)
+
+	UpdateHostCloudArea(ctx context.Context, header http.Header,
+		option *metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
+	UpdateHostToRecycle(ctx context.Context, header http.Header,
+		option *metadata.DefaultModuleHostConfigParams) errors.CCErrorCoder
+	FindHostModules(ctx context.Context, header http.Header,
+		option *metadata.HostModuleRelationParameter) (*metadata.HostModuleResp, errors.CCErrorCoder)
+	FindHostTopoRelation(ctx context.Context, header http.Header,
+		option *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, errors.CCErrorCoder)
+	TransferHostResourceDirectory(ctx context.Context, header http.Header,
+		option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
 }
 
 // NewHostServerClientInterface TODO

@@ -4,6 +4,7 @@ package test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -18,6 +19,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
 	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/mapstr"
@@ -374,4 +376,48 @@ func GetResBizID() int64 {
 	Expect(err).NotTo(HaveOccurred())
 
 	return biz.BizID
+}
+
+// GetBizIdleModule get biz idle module
+func GetBizIdleModule(bizID int64) int64 {
+	moduleID, err := getDefaultModule(bizID, common.DefaultResModuleFlag)
+	Expect(err).NotTo(HaveOccurred())
+	return moduleID
+}
+
+// GetBizRecycleModule get biz idle module
+func GetBizRecycleModule(bizID int64) int64 {
+	moduleID, err := getDefaultModule(bizID, common.DefaultRecycleModuleFlag)
+	Expect(err).NotTo(HaveOccurred())
+	return moduleID
+}
+
+// GetBizFaultModule get biz idle module
+func GetBizFaultModule(bizID int64) int64 {
+	moduleID, err := getDefaultModule(bizID, common.DefaultFaultModuleFlag)
+	Expect(err).NotTo(HaveOccurred())
+	return moduleID
+}
+
+// getDefaultModule get biz default module
+func getDefaultModule(bizID int64, defaultModuleFlag int) (int64, error) {
+	moduleFilter := map[string]interface{}{
+		common.BKAppIDField: bizID,
+	}
+
+	switch defaultModuleFlag {
+	case common.DefaultResModuleFlag, common.DefaultFaultModuleFlag, common.DefaultRecycleModuleFlag:
+		moduleFilter[common.BKDefaultField] = defaultModuleFlag
+	default:
+		blog.Errorf("unknown default module failed, bizID: %d, defaultModuleFlag: %d, rid: %s",
+			bizID, defaultModuleFlag)
+		return 0, errors.New("unknown default module")
+	}
+
+	module := new(metadata.Module)
+	err := GetDB().Table(common.BKTableNameBaseModule).Find(moduleFilter).Fields(common.BKModuleIDField).
+		One(context.Background(), module)
+	Expect(err).NotTo(HaveOccurred())
+
+	return module.ModuleID, nil
 }
