@@ -26,13 +26,6 @@ spec:
         {{ toYaml .Values.eventserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
-      topologySpreadConstraints:
-        - maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
-          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey }}
-          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable }}
-          labelSelector:
-            matchLabels:
-              component: eventserver
       containers:
       - name: eventserver
         image: {{ .Values.image.registry }}/{{ .Values.eventserver.image.repository }}:v{{ default .Chart.AppVersion .Values.eventserver.image.tag }}
