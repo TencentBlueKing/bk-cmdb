@@ -14,11 +14,6 @@
   <div class="cloud-area-layout">
     <cmdb-tips class="cloud-area-tips" tips-key="cloud-area-tips">
       <i18n path="管控区域提示语">
-        <template #resource>
-          <bk-button text size="small" style="padding: 0" @click="linkResource">
-            {{$t('云资源发现')}}
-          </bk-button>
-        </template>
         <template #agent>
           <bk-button text size="small" style="padding: 0" @click="linkAgent">
             {{$t('节点管理')}}
@@ -137,7 +132,6 @@
   import Loading from '@/components/loading/loading.vue'
   import throttle from 'lodash.throttle'
   import debounce from 'lodash.debounce'
-  import { MENU_RESOURCE_CLOUD_RESOURCE } from '@/dictionary/menu-symbol'
   import { UNASSIGNED_CLOUD_ID } from '@/dictionary/global-constants.js'
   import TaskRegionSelector from '@/views/cloud-resource/children/task-region-selector'
   export default {
@@ -349,12 +343,6 @@
           return `${id}(${name})`
         }
         return id
-      },
-      linkResource() {
-        this.$routerActions.redirect({
-          name: MENU_RESOURCE_CLOUD_RESOURCE,
-          history: true
-        })
       },
       linkAgent() {
         const topWindow = window.top
