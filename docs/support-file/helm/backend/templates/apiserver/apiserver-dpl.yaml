@@ -26,13 +26,6 @@ spec:
         {{ toYaml .Values.apiserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
-      topologySpreadConstraints:
-        - maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
-          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey }}
-          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable }}
-          labelSelector:
-            matchLabels:
-              component: apiserver
       containers:
       - name: apiserver
         image: {{ .Values.image.registry }}/{{ .Values.apiserver.image.repository }}:v{{ default .Chart.AppVersion .Values.apiserver.image.tag }}

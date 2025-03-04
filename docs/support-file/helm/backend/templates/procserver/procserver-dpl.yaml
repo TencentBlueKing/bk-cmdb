@@ -26,13 +26,6 @@ spec:
         {{ toYaml .Values.procserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
-      topologySpreadConstraints:
-        - maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
-          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey }}
-          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable }}
-          labelSelector:
-            matchLabels:
-              component: procserver
       containers:
       - name: procserver
         image: {{ .Values.image.registry }}/{{ .Values.procserver.image.repository }}:v{{ default .Chart.AppVersion .Values.procserver.image.tag }}

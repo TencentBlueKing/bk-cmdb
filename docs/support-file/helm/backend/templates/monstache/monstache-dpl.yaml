@@ -26,13 +26,6 @@ spec:
         {{ toYaml .Values.monstache.podAnnotations | indent 8 }}
       {{- end }}
     spec:
-      topologySpreadConstraints:
-        - maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
-          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey }}
-          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable }}
-          labelSelector:
-            matchLabels:
-              component: monstache
       containers:
       - name: monstache
         image: {{ .Values.image.registry }}/{{ .Values.monstache.image.repository }}:{{ .Values.monstache.image.tag }}
@@ -50,6 +43,10 @@ spec:
         {{- if .Values.monstache.resources }}
         resources: {{ toYaml .Values.monstache.resources | nindent 10 }}
         {{- end }}
+      {{- with .Values.monstache.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: configures
           configMap:

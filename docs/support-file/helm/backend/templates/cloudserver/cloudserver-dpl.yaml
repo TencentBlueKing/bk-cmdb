@@ -26,13 +26,6 @@ spec:
         {{ toYaml .Values.cloudserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
-      topologySpreadConstraints:
-        - maxSkew: {{ .Values.topologySpreadConstraints.maxSkew }}
-          topologyKey: {{ .Values.topologySpreadConstraints.topologyKey }}
-          whenUnsatisfiable: {{ .Values.topologySpreadConstraints.whenUnsatisfiable }}
-          labelSelector:
-            matchLabels:
-              component: cloudserver
       containers:
       - name: cloudserver
         image: {{ .Values.image.registry }}/{{ .Values.cloudserver.image.repository }}:v{{ default .Chart.AppVersion .Values.cloudserver.image.tag }}
