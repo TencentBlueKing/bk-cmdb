@@ -14,9 +14,11 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"configcenter/pkg/cache/general"
+	tenantset "configcenter/pkg/types/tenant-set"
 	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -97,6 +99,8 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iam.Type
 	case iam.Module:
 		return types.ResourcePullMethod{ListInstance: s.lgc.ListModuleInstance,
 			FetchInstanceInfo: s.lgc.FetchSetModuleNameInfo}, nil
+	case iam.TenantSet:
+		return genTenantSetMethod()
 	default:
 		if iam.IsIAMSysInstance(resourceType) {
 			return types.ResourcePullMethod{
@@ -448,6 +452,55 @@ func genGeneralCacheMethod(kit *rest.Kit) (types.ResourcePullMethod, error) {
 		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
 			page types.Page) (*types.ListInstanceResult, error) {
 			return nil, fmt.Errorf("%s do not support %s", iam.GeneralCache, types.ListInstanceByPolicyMethod)
+		},
+	}, nil
+}
+
+func genTenantSetMethod() (types.ResourcePullMethod, error) {
+	return types.ResourcePullMethod{
+		ListInstance: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+
+			if page.Offset > 0 {
+				return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
+			}
+
+			if filter != nil {
+				if filter.Parent != nil {
+					return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
+				}
+
+				if len(filter.Keyword) != 0 {
+					if !strings.Contains(strings.ToLower(tenantset.DefaultTenantSetName),
+						strings.ToLower(filter.Keyword)) {
+						return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
+					}
+				}
+			}
+
+			return &types.ListInstanceResult{Count: 1, Results: []types.InstanceResource{{
+				ID:          strconv.FormatInt(tenantset.DefaultTenantSetID, 10),
+				DisplayName: tenantset.DefaultTenantSetName,
+			}}}, nil
+		},
+		FetchInstanceInfo: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.FetchInstanceInfoFilter) (
+			[]map[string]interface{}, error) {
+
+			res := make([]map[string]interface{}, 0)
+			for _, id := range filter.IDs {
+				if id == strconv.FormatInt(tenantset.DefaultTenantSetID, 10) {
+					res = append(res, map[string]interface{}{
+						types.IDField:   id,
+						types.NameField: tenantset.DefaultTenantSetName,
+					})
+					break
+				}
+			}
+			return res, nil
+		},
+		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+			page types.Page) (*types.ListInstanceResult, error) {
+			return nil, fmt.Errorf("%s do not support %s", iam.TenantSet, types.ListInstanceByPolicyMethod)
 		},
 	}, nil
 }

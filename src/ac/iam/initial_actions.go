@@ -150,6 +150,8 @@ var ActionIDNameMap = map[ActionID]string{
 	EditFullSyncCond:                    "全量同步缓存条件编辑",
 	DeleteFullSyncCond:                  "全量同步缓存条件删除",
 	ViewGeneralCache:                    "通用缓存查询",
+	ViewTenantSet:                       "租户集查看",
+	AccessTenantSet:                     "租户集访问",
 }
 
 // GenerateActions generate all the actions registered to IAM.
@@ -195,6 +197,7 @@ func GenerateStaticActions() []ResourceAction {
 	resourceActionList = append(resourceActionList, genIDRuleActions()...)
 	resourceActionList = append(resourceActionList, genFullSyncCondActions()...)
 	resourceActionList = append(resourceActionList, genCacheActions()...)
+	resourceActionList = append(resourceActionList, genTenantSetActions()...)
 
 	return resourceActionList
 }
@@ -1660,6 +1663,37 @@ func genCacheActions() []ResourceAction {
 			}},
 			Version: 1,
 			Hidden:  true,
+		},
+	}
+}
+
+func genTenantSetActions() []ResourceAction {
+	tenantSetResource := RelateResourceType{
+		SystemID: SystemIDCMDB,
+		ID:       TenantSet,
+		InstanceSelections: []RelatedInstanceSelection{{
+			SystemID: SystemIDCMDB,
+			ID:       TenantSetSelection,
+		}},
+	}
+
+	return []ResourceAction{
+		{
+			ID:                   ViewTenantSet,
+			Name:                 ActionIDNameMap[ViewTenantSet],
+			NameEn:               "View Tenant Set",
+			Type:                 View,
+			RelatedResourceTypes: []RelateResourceType{tenantSetResource},
+			Version:              1,
+			Hidden:               true,
+		}, {
+			ID:                   AccessTenantSet,
+			Name:                 ActionIDNameMap[AccessTenantSet],
+			NameEn:               "Access Tenant Set",
+			Type:                 View,
+			RelatedResourceTypes: []RelateResourceType{tenantSetResource},
+			Version:              1,
+			Hidden:               true,
 		},
 	}
 }

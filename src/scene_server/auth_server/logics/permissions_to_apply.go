@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"strconv"
 
+	tenantset "configcenter/pkg/types/tenant-set"
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -180,6 +181,15 @@ func (lgc *Logics) getInstIDNameMap(kit *rest.Kit, instTypeIDsMap map[iam.TypeID
 	instIDNameMap := make(map[int64]string)
 
 	for instType, instIDs := range instTypeIDsMap {
+		if instType == iam.TenantSet {
+			for _, id := range instIDs {
+				if id == tenantset.DefaultTenantSetID {
+					instIDNameMap[id] = tenantset.DefaultTenantSetName
+					break
+				}
+			}
+			continue
+		}
 		idField := GetResourceIDField(instType)
 		nameField := GetResourceNameField(instType)
 		if idField == "" || nameField == "" {

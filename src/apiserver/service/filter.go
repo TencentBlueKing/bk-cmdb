@@ -16,10 +16,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"configcenter/pkg/tenant"
 	"configcenter/pkg/tenant/types"
+	tenantset "configcenter/pkg/types/tenant-set"
+	"configcenter/src/ac/meta"
 	"configcenter/src/ac/parser"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
@@ -197,6 +200,58 @@ func (s *service) WebCoreFilterChan(req *restful.Request, resp *restful.Response
 	s.urlFilterChan(req, resp, chain, s.discovery.CoreService(), rootPath, "/api/v3")
 }
 
+// TenantSetFilterChan is the filter chan for tenant set api
+func (s *service) TenantSetFilterChan(discovery discovery.Interface, targetURL string) restful.FilterFunction {
+	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+		// check if the request tenant is system tenant
+		tenantID := httpheader.GetTenantID(req.Request.Header)
+		if tenantID != common.BKDefaultTenantID {
+			resp.WriteAsJson(&metadata.BaseResp{
+				Result: false,
+				Code:   common.CCErrCommAuthNotHavePermission,
+				ErrMsg: "only system tenant can access this api",
+			})
+			return
+		}
+
+		// check if tenant set id is the same with the default tenant set id
+		if req.PathParameter("tenant_set_id") != strconv.FormatInt(tenantset.DefaultTenantSetID, 10) {
+			resp.WriteAsJson(&metadata.BaseResp{
+				Result: false,
+				Code:   common.CCErrCommParamsInvalid,
+				ErrMsg: "tenant set id is invalid",
+			})
+			return
+		}
+
+		// authorize access tenant set permission
+		if auth.EnableAuthorize() {
+			user := meta.UserInfo{
+				UserName: httpheader.GetUser(req.Request.Header),
+				TenantID: tenantID,
+			}
+			resource := meta.ResourceAttribute{Basic: meta.Basic{Type: meta.TenantSet, Action: meta.AccessTenantSet,
+				InstanceID: tenantset.DefaultTenantSetID}}
+			if authResp, authorized := s.authorizeReq(req, user, resource); !authorized {
+				resp.WriteAsJson(authResp)
+				return
+			}
+		}
+
+		// replace url with the target url
+		for key, value := range req.PathParameters() {
+			targetURL = strings.Replace(targetURL, fmt.Sprintf("{%s}", key), value, 1)
+		}
+		req.Request.URL.Path = targetURL
+		req.Request.RequestURI = targetURL
+
+		// replace tenant id with the specified tenant id
+		httpheader.SetTenantID(req.Request.Header, req.PathParameter("tenant_id"))
+
+		s.urlFilterChan(req, resp, chain, discovery, "", "")
+	}
+}
+
 // urlFilterChan url filter chan, modify the request to dispatch it to specific sever
 func (s *service) urlFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain,
 	discovery discovery.Interface, prevRoot, root string) {
@@ -264,8 +319,6 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() err
 	bool) {
 
 	rid := httpheader.GetRid(req.Request.Header)
-	path := req.Request.URL.Path
-	language := httpheader.GetLanguage(req.Request.Header)
 	attribute, err := parser.ParseAttribute(req, s.engine)
 	if err != nil {
 		blog.Errorf("authFilter failed, caller: %s, parse auth attribute for %s %s failed, err: %v, rid: %s",
@@ -281,14 +334,22 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() err
 		blog.InfoJSON("auth filter parsed attribute: %s, rid: %s", attribute, rid)
 	}
 
-	decisions, err := s.authorizer.AuthorizeBatch(req.Request.Context(), req.Request.Header, attribute.User,
-		attribute.Resources...)
+	return s.authorizeReq(req, attribute.User, attribute.Resources...)
+}
+
+func (s *service) authorizeReq(req *restful.Request, user meta.UserInfo, resources ...meta.ResourceAttribute) (
+	*metadata.BaseResp, bool) {
+
+	rid := httpheader.GetRid(req.Request.Header)
+	path := req.Request.URL.Path
+	errf := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(req.Request.Header))
+
+	decisions, err := s.authorizer.AuthorizeBatch(req.Request.Context(), req.Request.Header, user, resources...)
 	if err != nil {
-		blog.Errorf("authFilter failed, authorized request failed, url: %s, err: %v, rid: %s",
-			path, err, rid)
+		blog.Errorf("authorized request failed, url: %s, err: %v, rid: %s", path, err, rid)
 		return &metadata.BaseResp{
 			Code:   common.CCErrCommCheckAuthorizeFailed,
-			ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+			ErrMsg: errf.Error(common.CCErrCommCheckAuthorizeFailed).Error(),
 			Result: false,
 		}, false
 	}
@@ -301,37 +362,36 @@ func (s *service) verifyAuthorizeStatus(req *restful.Request, errFunc func() err
 		}
 	}
 
-	if !authorized {
-		s.noPermissionRequestTotal.With(
-			prometheus.Labels{
-				metrics.LabelHandler: path,
-				metrics.LabelAppCode: httpheader.GetAppCode(req.Request.Header),
-			},
-		).Inc()
+	if authorized {
+		return nil, true
+	}
 
-		permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header,
-			attribute.Resources)
-		if err != nil {
-			blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
-			return &metadata.BaseResp{
-				Code:   common.CCErrCommCheckAuthorizeFailed,
-				ErrMsg: errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommCheckAuthorizeFailed).Error(),
-				Result: false,
-			}, false
-		}
+	s.noPermissionRequestTotal.With(
+		prometheus.Labels{
+			metrics.LabelHandler: path,
+			metrics.LabelAppCode: httpheader.GetAppCode(req.Request.Header),
+		},
+	).Inc()
 
-		blog.WarnJSON("authFilter failed, url: %s, attribute: %s, permission: %s, rid: %s", path, attribute,
-			permission, rid)
-
+	permission, err := s.authorizer.GetPermissionToApply(req.Request.Context(), req.Request.Header, resources)
+	if err != nil {
+		blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
 		return &metadata.BaseResp{
-			Code:        common.CCNoPermission,
-			ErrMsg:      errFunc().CreateDefaultCCErrorIf(language).Error(common.CCErrCommAuthNotHavePermission).Error(),
-			Result:      false,
-			Permissions: permission,
+			Code:   common.CCErrCommCheckAuthorizeFailed,
+			ErrMsg: errf.Error(common.CCErrCommCheckAuthorizeFailed).Error(),
+			Result: false,
 		}, false
 	}
 
-	return nil, true
+	blog.Warnf("request has no permission, url: %s, user: %+v, resources: %+v, permission: %+v, rid: %s", path,
+		user, resources, permission, rid)
+
+	return &metadata.BaseResp{
+		Code:        common.CCNoPermission,
+		ErrMsg:      errf.Error(common.CCErrCommAuthNotHavePermission).Error(),
+		Result:      false,
+		Permissions: permission,
+	}, false
 }
 
 // KEYS[1] is the redis key to incr and expire

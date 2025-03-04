@@ -105,6 +105,7 @@ var ccIamResTypeMap = map[meta.ResourceType]TypeID{
 	meta.IDRuleIncrID:             TypeID(""),
 	meta.FullSyncCond:             TypeID(""),
 	meta.GeneralCache:             GeneralCache,
+	meta.TenantSet:                TenantSet,
 }
 
 // ConvertResourceType convert resource type from CMDB to IAM
@@ -584,6 +585,10 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
 	},
 	meta.GeneralCache: {
 		meta.Find: ViewGeneralCache,
+	},
+	meta.TenantSet: {
+		meta.Find:            ViewTenantSet,
+		meta.AccessTenantSet: AccessTenantSet,
 	},
 }
 

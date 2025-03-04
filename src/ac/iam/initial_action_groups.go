@@ -52,6 +52,9 @@ func GenerateStaticActionGroups() []ActionGroup {
 	// generate container management action groups, contains container related actions
 	ActionGroups = append(ActionGroups, genContainerManagementActionGroups()...)
 
+	// generate tenant set action groups
+	ActionGroups = append(ActionGroups, genTenantSetActionGroups()...)
+
 	return ActionGroups
 }
 
@@ -627,6 +630,19 @@ func genGlobalSettingsActionGroups() []ActionGroup {
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func genTenantSetActionGroups() []ActionGroup {
+	return []ActionGroup{
+		{
+			Name:   "租户集",
+			NameEn: "Tenant Set",
+			Actions: []ActionWithID{
+				{ID: ViewTenantSet},
+				{ID: AccessTenantSet},
 			},
 		},
 	}

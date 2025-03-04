@@ -213,4 +213,6 @@ const (
 
 	// AccessBizSet access business set related resources, including business and business related resources
 	AccessBizSet Action = "accessBizSet"
+	// AccessTenantSet access tenant set related tenant resources
+	AccessTenantSet Action = "accessTenantSet"
 )
