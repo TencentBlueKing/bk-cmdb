@@ -154,6 +154,18 @@ type HostConfigData struct {
 	Page  BasePage     `json:"page"`
 }
 
+// HostConfigResult host config result
+type HostConfigResult struct {
+	Count int64        `json:"count"`
+	Info  []ModuleHost `json:"info"`
+}
+
+// HostConfigResp host config response
+type HostConfigResp struct {
+	BaseResp `json:",inline"`
+	Data     HostConfigResult `json:"data"`
+}
+
 // HostModuleResp TODO
 type HostModuleResp struct {
 	BaseResp `json:",inline"`

@@ -523,7 +523,7 @@ func (hs *hostServer) UpdateHostPropertyBatch(ctx context.Context, h http.Header
 
 // CreateDynamicGroup is dynamic group create action api machinery.
 func (hs *hostServer) CreateDynamicGroup(ctx context.Context, header http.Header,
-	data map[string]interface{}) (resp *metadata.IDResult, err error) {
+	data *metadata.DynamicGroup) (resp *metadata.IDResult, err error) {
 
 	resp = new(metadata.IDResult)
 	subPath := "/dynamicgroup"
@@ -540,7 +540,7 @@ func (hs *hostServer) CreateDynamicGroup(ctx context.Context, header http.Header
 
 // UpdateDynamicGroup is dynamic group update action api machinery.
 func (hs *hostServer) UpdateDynamicGroup(ctx context.Context, bizID, id string,
-	header http.Header, data map[string]interface{}) (resp *metadata.BaseResp, err error) {
+	header http.Header, data *metadata.DynamicGroup) (resp *metadata.BaseResp, err error) {
 
 	resp = new(metadata.BaseResp)
 	subPath := "/dynamicgroup/%s/%s"
@@ -608,9 +608,9 @@ func (hs *hostServer) SearchDynamicGroup(ctx context.Context, bizID string, head
 
 // ExecuteDynamicGroup is dynamic group execute action base on conditions api machinery.
 func (hs *hostServer) ExecuteDynamicGroup(ctx context.Context, bizID, id string, header http.Header,
-	data map[string]interface{}) (resp *metadata.Response, err error) {
+	data *metadata.ExecuteOption) (resp *metadata.ResponseInstData, err error) {
 
-	resp = new(metadata.Response)
+	resp = new(metadata.ResponseInstData)
 	subPath := "/dynamicgroup/data/%s/%s"
 
 	err = hs.client.Post().
@@ -934,4 +934,446 @@ func (hs *hostServer) AddHostToBizIdle(ctx context.Context, header http.Header, 
 	}
 
 	return &resp.Data, nil
+}
+
+// CountBizHostCPU count biz host CPU
+func (hs *hostServer) CountBizHostCPU(ctx context.Context, header http.Header, option *metadata.CountHostCPUReq) (
+	[]metadata.BizHostCpuCount, errors.CCErrorCoder) {
+
+	resp := new(metadata.BizHostCpuCountResult)
+	subPath := "/host/count/cpu"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// UpdateHostsAllProperty updatemany hosts all property
+func (hs *hostServer) UpdateHostsAllProperty(ctx context.Context, header http.Header,
+	option *metadata.UpdateHostOpt) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/updatemany/hosts/all/property"
+
+	err := hs.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// FindModuleHostRelation findmany module host relation
+func (hs *hostServer) FindModuleHostRelation(ctx context.Context, header http.Header, bizID int64,
+	option *metadata.FindModuleHostRelationParameter) (*metadata.FindModuleHostRelationResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.FindModuleHostRelationResp)
+	subPath := "/findmany/module_relation/bk_biz_id/%d"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// FindHostByServiceTmpl findmany host by service templates
+func (hs *hostServer) FindHostByServiceTmpl(ctx context.Context, header http.Header, bizID int64,
+	option *metadata.FindHostsBySrvTplOpt) (*metadata.SearchHost, errors.CCErrorCoder) {
+
+	resp := new(metadata.SearchHostResult)
+	subPath := "/findmany/hosts/by_service_templates/biz/%d"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// FindHostBySetTmpl findmany host by set templates
+func (hs *hostServer) FindHostBySetTmpl(ctx context.Context, header http.Header, bizID int64,
+	option *metadata.FindHostsBySetTplOpt) (*metadata.SearchHost, errors.CCErrorCoder) {
+
+	resp := new(metadata.SearchHostResult)
+	subPath := "/findmany/hosts/by_set_templates/biz/%d"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// ListResourcePoolHosts list resource pool hosts
+func (hs *hostServer) ListResourcePoolHosts(ctx context.Context, header http.Header,
+	option *metadata.ListHostsParameter) (*metadata.ListHostResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListHostResp)
+	subPath := "/hosts/list_resource_pool_hosts"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// ListHostsWithoutApp list hosts without app
+func (hs *hostServer) ListHostsWithoutApp(ctx context.Context, header http.Header,
+	option *metadata.ListHostsWithNoBizParameter) (*metadata.ListHostResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.ListHostResp)
+	subPath := "/hosts/list_hosts_without_app"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// FindHostByTopoInst findmany host by topo inst
+func (hs *hostServer) FindHostByTopoInst(ctx context.Context, header http.Header, bizID int64,
+	option *metadata.FindHostsByTopoOpt) (*metadata.SearchHost, errors.CCErrorCoder) {
+
+	resp := new(metadata.SearchHostResult)
+	subPath := "/findmany/hosts/by_topo/biz/%d"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// FindHostDetailTopo findmany host detail topo
+func (hs *hostServer) FindHostDetailTopo(ctx context.Context, header http.Header,
+	option *metadata.ListHostsDetailAndTopoOption) (*metadata.HostMainlineTopoResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.HostMainlineTopoResp)
+	subPath := "/findmany/hosts/detail_topo"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// FindHostRelationWithTopo findmany host detail topo
+func (hs *hostServer) FindHostRelationWithTopo(ctx context.Context, header http.Header,
+	option *metadata.FindHostRelationWtihTopoOpt) (*metadata.HostConfigResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.HostConfigResp)
+	subPath := "/findmany/hosts/relation/with_topo"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// FindHostServiceTmpl findmany host service template
+func (hs *hostServer) FindHostServiceTmpl(ctx context.Context, header http.Header, option *metadata.HostIDReq) (
+	*metadata.HostSrvTmplResp, errors.CCErrorCoder) {
+
+	resp := new(metadata.HostSrvTmplResp)
+	subPath := "/findmany/hosts/service_template"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// FindHostTotalMainlineTopo findmany host total mainline topo
+func (hs *hostServer) FindHostTotalMainlineTopo(ctx context.Context, header http.Header, bizID int64,
+	option *metadata.FindHostTotalTopo) (*metadata.HostMainlineTopoResult, errors.CCErrorCoder) {
+
+	resp := new(metadata.HostMainlineTopoResp)
+	subPath := "/findmany/hosts/total_mainline_topo/biz//findmany/hosts/total_mainline_topo/biz/%d"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath, bizID).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
+}
+
+// UpdateHostCloudArea update host cloud area
+func (hs *hostServer) UpdateHostCloudArea(ctx context.Context, header http.Header,
+	option *metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/updatemany/hosts/cloudarea_field"
+
+	err := hs.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateHostToRecycle update host to recycle module
+func (hs *hostServer) UpdateHostToRecycle(ctx context.Context, header http.Header,
+	option *metadata.DefaultModuleHostConfigParams) errors.CCErrorCoder {
+
+	resp := new(metadata.HostSrvTmplResp)
+	subPath := "/hosts/modules/recycle"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// FindHostModules find host modules
+func (hs *hostServer) FindHostModules(ctx context.Context, header http.Header,
+	option *metadata.HostModuleRelationParameter) (*metadata.HostModuleResp, errors.CCErrorCoder) {
+
+	resp := new(metadata.HostModuleResp)
+	subPath := "/hosts/modules/read"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// FindHostTopoRelation find host topo relation
+func (hs *hostServer) FindHostTopoRelation(ctx context.Context, header http.Header,
+	option *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, errors.CCErrorCoder) {
+
+	resp := new(metadata.HostConfig)
+	subPath := "/host/topo/relation/read"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}
+
+// TransferHostResourceDirectory transfer host resource directory
+func (hs *hostServer) TransferHostResourceDirectory(ctx context.Context, header http.Header,
+	option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/host/transfer/resource/directory"
+
+	err := hs.client.Post().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
 }
