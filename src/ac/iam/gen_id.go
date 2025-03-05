@@ -56,6 +56,7 @@ var genIamResFuncMap = map[meta.ResourceType]func(ActionID, TypeID, *meta.Resour
 	meta.FieldTemplate:            genFieldTemplateResource,
 	meta.FullSyncCond:             genSkipResource,
 	meta.GeneralCache:             genGeneralCacheResource,
+	meta.TenantSet:                genTenantSetResource,
 }
 
 // GenIamResource TODO
@@ -750,6 +751,20 @@ func genGeneralCacheResource(act ActionID, typ TypeID, att *meta.ResourceAttribu
 
 	if len(att.InstanceIDEx) > 0 {
 		r.ID = att.InstanceIDEx
+	}
+
+	return []types.Resource{r}, nil
+}
+
+func genTenantSetResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
+	r := types.Resource{
+		System: SystemIDCMDB,
+		Type:   types.ResourceType(typ),
+	}
+
+	// compatible for authorize any
+	if attribute.InstanceID > 0 {
+		r.ID = strconv.FormatInt(attribute.InstanceID, 10)
 	}
 
 	return []types.Resource{r}, nil

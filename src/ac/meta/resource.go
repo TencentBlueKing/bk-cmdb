@@ -65,6 +65,7 @@ const (
 	FulltextSearch           ResourceType = "fulltextSearch"
 	FieldTemplate            ResourceType = "fieldTemplate"
 	IDRuleIncrID             ResourceType = "idRuleIncrID"
+	TenantSet                ResourceType = "tenantSet"
 )
 
 // kube related auth resource in CMDB

@@ -282,5 +282,14 @@ func GenerateStaticInstanceSelections() []InstanceSelection {
 				},
 			},
 		},
+		{
+			ID:     TenantSetSelection,
+			Name:   "租户集列表",
+			NameEn: "Tenant Set List",
+			ResourceTypeChain: []ResourceChain{{
+				SystemID: SystemIDCMDB,
+				ID:       TenantSet,
+			}},
+		},
 	}
 }

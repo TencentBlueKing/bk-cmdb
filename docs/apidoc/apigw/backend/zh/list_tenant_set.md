@@ -96,8 +96,10 @@
         "bk_scope": {
           "match_all": true
         },
-        "create_time": "2021-09-06T08:10:50.168Z",
-        "last_time": "2021-10-15T02:30:01.867Z"
+        "bk_created_at": "2025-03-03 10:00:00",
+        "bk_created_by": "admin",
+        "bk_updated_at": "2025-03-03 10:00:00",
+        "bk_updated_by": "admin"
       }
     ]
   }

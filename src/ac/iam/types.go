@@ -257,6 +257,8 @@ const (
 	BizHostApply TypeID = "biz_host_apply"
 	// Project project type id
 	Project TypeID = "project"
+	// TenantSet is the tenant set type id
+	TenantSet TypeID = "tenant_set"
 )
 
 // ResourceType TODO
@@ -534,6 +536,11 @@ const (
 	// ViewGeneralCache view general resource cache
 	ViewGeneralCache = "view_general_cache"
 
+	// ViewTenantSet is the view tenant set action id
+	ViewTenantSet ActionID = "view_tenant_set"
+	// AccessTenantSet is the access tenant set action id
+	AccessTenantSet ActionID = "access_tenant_set"
+
 	// Unsupported TODO
 	// Unknown is an action that can not be recognized
 	Unsupported ActionID = "unsupported"
@@ -717,6 +724,8 @@ const (
 	GeneralCacheSelection InstanceSelectionID = "general_cache"
 	// BizTopoSelection is biz topo instance selection id
 	BizTopoSelection InstanceSelectionID = "biz_topo"
+	// TenantSetSelection is tenant set instance selection id
+	TenantSetSelection InstanceSelectionID = "tenant_set"
 )
 
 // InstanceSelection TODO

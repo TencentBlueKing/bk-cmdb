@@ -54,6 +54,7 @@ var ResourceTypeIDMap = map[TypeID]string{
 	GeneralCache:              "通用缓存",
 	Set:                       "集群",
 	Module:                    "模块",
+	TenantSet:                 "租户集",
 }
 
 // GenerateResourceTypes generate all the resource types registered to IAM.
@@ -462,6 +463,18 @@ func genPublicResources() []ResourceType {
 			NameEn:        "General Resource Cache",
 			Description:   "通用缓存",
 			DescriptionEn: "general resource cache",
+			ProviderConfig: ResourceConfig{
+				Path: "/auth/v3/find/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            TenantSet,
+			Name:          ResourceTypeIDMap[TenantSet],
+			NameEn:        "Tenant Set",
+			Description:   "租户集",
+			DescriptionEn: "tenant set",
+			Parents:       nil,
 			ProviderConfig: ResourceConfig{
 				Path: "/auth/v3/find/resource",
 			},
