@@ -181,7 +181,7 @@ func NewDataCollection(ctx context.Context, op *options.ServerOption) (*DataColl
 	errors.SetGlobalCCError(engine.CCErr)
 
 	// set hash.
-	newDataCollection.hash = collections.NewHash(svrInfo.RegisterIP, svrInfo.Port, engine.Discovery())
+	newDataCollection.hash = collections.NewHash(svrInfo.UUID, engine.Discovery())
 
 	// set backbone engine.
 	newDataCollection.engine = engine

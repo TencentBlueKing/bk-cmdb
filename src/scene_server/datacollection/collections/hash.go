@@ -13,8 +13,6 @@
 package collections
 
 import (
-	"fmt"
-	"net/url"
 	"time"
 
 	"configcenter/src/apimachinery/discovery"
@@ -40,17 +38,17 @@ type Hash struct {
 	// discovery is cc service discovery handler.
 	discovery discovery.DiscoveryInterface
 
-	// nodes records datacollection nodes infos, hash value -> address.
-	nodes map[string]string
+	// nodes records datacollection nodes infos, key is hash value.
+	nodes map[string]struct{}
 }
 
 // NewHash creates a new hash object with local node hash value.
-func NewHash(ip string, port uint, discovery discovery.DiscoveryInterface) *Hash {
+func NewHash(uuid string, discovery discovery.DiscoveryInterface) *Hash {
 	h := &Hash{
-		localHashValue: fmt.Sprintf("%s:%d", ip, port),
+		localHashValue: uuid,
 		consistent:     consistent.New(),
 		discovery:      discovery,
-		nodes:          make(map[string]string),
+		nodes:          make(map[string]struct{}),
 	}
 	go h.updateLoop()
 
@@ -89,7 +87,7 @@ func (h *Hash) updateLoop() {
 		isFirst = false
 
 		// discovery.
-		servers, err := h.discovery.DataCollect().GetServers()
+		servers, err := h.discovery.DataCollect().GetServersForHash()
 		if err != nil {
 			blog.Errorf("Hash| update services hash values, %+v", err)
 			continue
@@ -97,35 +95,24 @@ func (h *Hash) updateLoop() {
 		blog.V(4).Infof("Hash| discovery newest servers now, %+v", servers)
 
 		// query.
-		newest := make(map[string]string)
+		newest := make(map[string]struct{})
 
 		for _, svr := range servers {
-			// parse servers address, format: "scheme://ip:port".
-			u, err := url.Parse(svr)
-			if err != nil {
-				blog.Errorf("Hash| update newest servers, node: %s, %+v", svr, err)
-				continue
-			}
-
-			if len(u.Hostname()) == 0 || len(u.Port()) == 0 {
+			if len(svr) == 0 {
 				continue
 			}
 
 			// update newest and current node records.
-			hashValue := fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
-			newest[hashValue] = svr
+			newest[svr] = struct{}{}
 		}
 
 		// update.
-		for hashValue, svr := range newest {
+		for hashValue := range newest {
 			if _, isExist := h.nodes[hashValue]; !isExist {
 				// new node, add to consistent, do not add more replicas.
 				blog.Infof("Hash| add new consistent hash node, %s", hashValue)
 				h.consistent.Add(hashValue)
 			}
-
-			// upsert.
-			h.nodes[hashValue] = svr
 		}
 
 		// delete.
