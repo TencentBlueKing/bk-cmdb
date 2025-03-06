@@ -41,32 +41,15 @@ export const verifyAuth = resources => $http.post('auth/verify', {
 /**
  * 获取免查看鉴权的模型
  */
-export const getViewAuthFreeModels = () => {
-  const allModels = store.getters['objectModelClassify/models']
-  const presetModels = store.getters['objectModelClassify/presetModels']
-
-  // mainLineModel中默认没有id，在此先补充
-  const mainLineModels = store.state.objectMainLineModule.mainLineModels.map(mainItem => ({
-    id: allModels.find(preItem => preItem.bk_obj_id === mainItem.bk_obj_id)?.id,
-    bk_obj_id: mainItem.bk_obj_id,
-    bk_obj_name: mainItem.bk_obj_name
-  }))
-
-  return ([...mainLineModels, ...presetModels]).map(model => ({
-    id: model.id,
-    bk_obj_id: model.bk_obj_id,
-    bk_obj_name: model.bk_obj_name
-  }))
-}
+export const getViewAuthFreeModels = () => store.getters['objectModelClassify/viewAuthFreeModels']
 
 /**
  * 判断一个模型是否为免查看鉴权
  * @param {Object} model 单个模型
  */
 export const isViewAuthFreeModel = (model) => {
-  const authFreeModels = getViewAuthFreeModels()
   const dataKey = model.bk_obj_id ? 'bk_obj_id' : 'id'
-  return authFreeModels.some(item => item[dataKey] === model[dataKey])
+  return store.getters['objectModelClassify/viewAuthFreeModelSet'].has(model[dataKey])
 }
 
 /**
