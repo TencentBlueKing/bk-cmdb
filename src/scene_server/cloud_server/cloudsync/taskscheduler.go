@@ -40,7 +40,7 @@ var (
 type taskScheduler struct {
 	zkClient   *zkclient.ZkClient
 	logics     *logics.Logics
-	addrport   string
+	uuid       string
 	reflector  reflector.Interface
 	hashring   *consistent.Consistent
 	tasklist   map[string]*metadata.CloudSyncTask
@@ -52,7 +52,7 @@ type taskScheduler struct {
 type SchedulerConf struct {
 	ZKClient  *zkclient.ZkClient
 	Logics    *logics.Logics
-	AddrPort  string
+	UUID      string
 	MongoConf local.MongoConf
 }
 
@@ -66,7 +66,7 @@ func NewTaskScheduler(conf *SchedulerConf) (*taskScheduler, error) {
 	return &taskScheduler{
 		zkClient:   conf.ZKClient,
 		logics:     conf.Logics,
-		addrport:   conf.AddrPort,
+		uuid:       conf.UUID,
 		hashring:   consistent.New(),
 		tasklist:   make(map[string]*metadata.CloudSyncTask),
 		reflector:  reflector,
@@ -92,7 +92,7 @@ func (t *taskScheduler) Schedule(ctx context.Context) error {
 // watchServerNode 监听zk的cloudserver节点变化，有变化时重置哈希环
 func (t *taskScheduler) watchServerNode() error {
 	go func() {
-		for servers := range t.logics.Discovery().CloudServer().GetServersChan() {
+		for servers := range t.logics.Discovery().CloudServer().GetServersChanForHash() {
 			t.setHashring(servers)
 		}
 	}()
@@ -196,7 +196,7 @@ func (t *taskScheduler) GetTaskList() ([]*metadata.CloudSyncTask, error) {
 			blog.Errorf("hashring Get err:%s", err.Error())
 			return nil, err
 		} else {
-			if node == t.addrport {
+			if node == t.uuid {
 				task := *t.tasklist[oid]
 				tasks = append(tasks, &task)
 			}

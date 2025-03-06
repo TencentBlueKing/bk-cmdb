@@ -98,7 +98,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	syncConf := cloudsync.SyncConf{
 		ZKClient:  service.Engine.ServiceManageClient().Client(),
 		Logics:    process.Service.Logics,
-		AddrPort:  input.SrvInfo.Instance(),
+		UUID:      input.SrvInfo.UUID,
 		MongoConf: mongoConf,
 	}
 	err = cloudsync.CloudSync(&syncConf)
