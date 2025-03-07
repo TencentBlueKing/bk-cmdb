@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tools
+package utils
 
 import (
 	"time"
@@ -25,12 +25,40 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 )
 
+// InsertOptions the options of insert field for audit and data
+type InsertOptions struct {
+	UniqueFields   []string
+	IgnoreKeys     []string
+	IDField        []string
+	AuditDataField *AuditDataField `bson:",inline"`
+	AuditTypeField *AuditResType   `bson:",inline"`
+}
+
+// AuditResType audit type field
+type AuditResType struct {
+	AuditType    metadata.AuditType    `bson:"audit_type"`
+	ResourceType metadata.ResourceType `bson:"resource_type"`
+}
+
+// AuditDataField audit data field
+type AuditDataField struct {
+	BizIDField   string
+	ResIDField   string
+	ResNameField string
+}
+
+// AuditStruct audit struct
+type AuditStruct struct {
+	AuditDataField *AuditDataField `bson:",inline"`
+	AuditTypeData  *AuditResType   `bson:",inline"`
+}
+
 // AddCreateAuditLog add create data audit log
-func AddCreateAuditLog(kit *rest.Kit, db dal.RDB, auditData []map[string]interface{}, auditField *AuditStruct) error {
+func AddCreateAuditLog(kit *rest.Kit, db local.DB, auditData []map[string]interface{}, auditField *AuditStruct) error {
 	if auditField.AuditTypeData == nil {
 		return nil
 	}
@@ -102,22 +130,4 @@ type auditLog struct {
 	BusinessID         int64                    `bson:"bk_biz_id,omitempty"`
 	ResourceID         interface{}              `bson:"resource_id"`
 	ResourceName       string                   `bson:"resource_name"`
-}
-
-// AuditResType audit type field
-type AuditResType struct {
-	AuditType    metadata.AuditType    `bson:"audit_type"`
-	ResourceType metadata.ResourceType `bson:"resource_type"`
-}
-
-// AuditDataField audit data field
-type AuditDataField struct {
-	BizIDField   string
-	ResIDField   string
-	ResNameField string
-}
-
-type AuditStruct struct {
-	AuditDataField *AuditDataField `bson:",inline"`
-	AuditTypeData  *AuditResType   `bson:",inline"`
 }

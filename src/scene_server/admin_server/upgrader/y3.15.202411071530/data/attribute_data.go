@@ -3287,8 +3287,8 @@ var bizSetObjAttrData = []*attribute{
 
 // attribute attribute metadata definition
 type attribute struct {
-	BizID             int64       `bson:"bk_biz_id"`
 	ID                int64       `bson:"id"`
+	BizID             int64       `bson:"bk_biz_id"`
 	ObjectID          string      `bson:"bk_obj_id"`
 	PropertyID        string      `bson:"bk_property_id"`
 	PropertyName      string      `bson:"bk_property_name"`
