@@ -142,7 +142,7 @@ const mutations = {
   },
   setViewAuthFreeModelSet(state) {
     state.viewAuthFreeModels.forEach((item)=> {
-      state.viewAuthFreeModelSet.add(item?.bk_obj_id ?? item?.id)
+      state.viewAuthFreeModelSet.add(item?.bk_obj_id || item?.id)
     })
   },
   setViewAuthFreeModels(state) {
