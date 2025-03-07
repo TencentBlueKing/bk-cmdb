@@ -89,7 +89,7 @@ func (h *Hash) updateLoop() {
 		isFirst = false
 
 		// discovery.
-		servers, err := h.discovery.DataCollect().GetServers()
+		servers, err := h.discovery.DataCollect().GetServersForHash()
 		if err != nil {
 			blog.Errorf("Hash| update services hash values, %+v", err)
 			continue
