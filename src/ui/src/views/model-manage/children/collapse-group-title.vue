@@ -20,55 +20,9 @@
     <div class="drag-icon" v-if="dragIcon"></div>
     <bk-icon class="group-collapse-icon" type="down-shape" />
     <p class="group-title-text" v-bk-overflow-tips>{{title}}</p>
-    <bk-dropdown-menu
-      @click.native.stop
-      v-if="dropdownMenu"
-      class="group-dropdown-menu"
-      trigger="click"
-      align="left"
-    >
-      <template #dropdown-trigger>
-        <div class="more-operation-btn">
-          <bk-icon type="more" />
-        </div>
-      </template>
-
-      <template #dropdown-content>
-        <ul class="bk-dropdown-list" v-if="visibleCommands.length">
-          <li v-for="(cmd, cmdIndex) in visibleCommands" :key="cmdIndex">
-            <!-- 带权限的按钮 -->
-            <cmdb-auth
-              v-if="cmd.auth"
-              :auth="cmd.auth"
-              @update-auth="cmd.onUpdateAuth"
-            >
-              <template #default="{ disabled: authDisabled }">
-                <dropdown-option-button
-                  v-bk-tooltips="{
-                    content: cmd.disabledTooltips,
-                    disabled: !cmd.disabled && cmd.disabledTooltips,
-                    placement: 'right'
-                  }"
-                  :disabled="authDisabled || cmd.disabled"
-                  @click="cmd.handler"
-                >
-                  {{ cmd.text }}
-                </dropdown-option-button>
-              </template>
-            </cmdb-auth>
-
-            <!-- 无权限按钮 -->
-            <dropdown-option-button
-              v-else
-              :disabled="cmd.disabled"
-              @click="cmd.handler"
-            >
-              {{ cmd.text }}
-            </dropdown-option-button>
-          </li>
-        </ul>
-      </template>
-    </bk-dropdown-menu>
+    <div class="more-operation-btn" v-if="dropdownMenu" @click.stop="handleClick">
+      <bk-icon type="more" />
+    </div>
     <bk-tag v-if="isNewClassify" theme="success" radius="2px">{{$t('新的')}}</bk-tag>
   </div>
 </template>
@@ -127,7 +81,7 @@
         default: false
       }
     },
-    setup(props) {
+    setup(props, { emit }) {
       const isDropdownVisible = ref(false)
       const commandsRef = toRef(props, 'commands')
       const visibleCommands = computed(() => commandsRef.value.map((cmd) => {
@@ -148,9 +102,13 @@
       })
         .filter(cmd => cmd.visible))
 
+      const handleClick = (event) => {
+        emit('showOperation', event, visibleCommands.value)
+      }
       return {
         visibleCommands,
         isDropdownVisible,
+        handleClick
       }
     },
   })
