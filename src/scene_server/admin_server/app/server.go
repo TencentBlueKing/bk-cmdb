@@ -63,7 +63,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	db := mongodb.Dal()
 	process.Service.SetDB(db)
-	logics.SetNewTenantCli(db.(logics.NewTenantInterface))
 
 	watchDB, err := sharding.NewDisableDBShardingMongo(process.Config.WatchDB.GetMongoConf(), time.Minute)
 	if err != nil {

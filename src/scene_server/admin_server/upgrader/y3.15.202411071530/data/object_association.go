@@ -18,13 +18,12 @@
 package data
 
 import (
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -48,7 +47,7 @@ func addObjAssociationData(kit *rest.Kit, db local.DB) error {
 			OnDelete:        metadata.NoAction,
 			IsPre:           &trueVar,
 		}
-		item, err := util.ConvStructToMap(asst)
+		item, err := tools.ConvStructToMap(asst)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			return err
@@ -56,28 +55,28 @@ func addObjAssociationData(kit *rest.Kit, db local.DB) error {
 		asstData = append(asstData, item)
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.AssociationObjAsstIDField},
 		IgnoreKeys:   []string{common.BKFieldID},
 		IDField:      []string{common.BKFieldID},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			ResIDField:   common.BKFieldID,
 			ResNameField: common.AssociationObjAsstIDField,
 		},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.AssociationKindType,
 			ResourceType: metadata.MainlineInstanceRes,
 		},
 	}
 
-	_, err := utils.InsertData(kit, db, common.BKTableNameObjAsst, asstData, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjAsst, asstData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjAsst, err)
 		return err
 	}
 
 	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, asstData, "obj_association", []string{"data.bk_obj_asst_id"}, idOptions)
+	err = tools.InsertTemplateData(kit, db, asstData, needField, idOptions, tenant.TemplateTypeObjAssociation)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

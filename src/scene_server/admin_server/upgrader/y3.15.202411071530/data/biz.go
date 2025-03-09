@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	svrutils "configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -41,13 +40,13 @@ func addBizData(kit *rest.Kit, db local.DB) error {
 	return nil
 }
 
-func addBizModule(kit *rest.Kit, db local.DB, data []interface{}, auditField *svrutils.AuditResType) error {
-	needField := &svrutils.InsertOptions{
+func addBizModule(kit *rest.Kit, db local.DB, data []interface{}, auditField *tools.AuditResType) error {
+	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKAppNameField},
 		IgnoreKeys:     []string{common.BKAppIDField},
 		IDField:        []string{common.BKAppIDField},
 		AuditTypeField: auditField,
-		AuditDataField: &svrutils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			BizIDField:   "bk_biz_id",
 			ResIDField:   common.BKAppIDField,
 			ResNameField: "bk_biz_name",
@@ -56,7 +55,7 @@ func addBizModule(kit *rest.Kit, db local.DB, data []interface{}, auditField *sv
 
 	var dataMap []mapstr.MapStr
 	for _, item := range data {
-		itemMap, err := util.ConvStructToMap(item)
+		itemMap, err := tools.ConvStructToMap(item)
 		if err != nil {
 			blog.Errorf("failed to convert struct to map, err: %v", err)
 			return err
@@ -64,7 +63,7 @@ func addBizModule(kit *rest.Kit, db local.DB, data []interface{}, auditField *sv
 		dataMap = append(dataMap, itemMap)
 	}
 
-	ids, err := svrutils.InsertData(kit, db, common.BKTableNameBaseApp, dataMap, needField)
+	ids, err := tools.InsertData(kit, db, common.BKTableNameBaseApp, dataMap, needField)
 	if err != nil {
 		blog.Errorf("insert biz data for table %s failed, err: %v, data: %+v", common.BKTableNameBaseApp, err, data)
 		return err
@@ -146,7 +145,7 @@ var (
 		Default:       common.DefaultAppFlag,
 		BizID:         1,
 	}
-	bizAuditType = &svrutils.AuditResType{
+	bizAuditType = &tools.AuditResType{
 		AuditType:    metadata.BusinessType,
 		ResourceType: metadata.BusinessRes,
 	}

@@ -20,13 +20,12 @@ package data
 import (
 	"time"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -51,7 +50,7 @@ var objUniqueKeys = map[string][][]string{
 	"bk_biz_set_obj": {{"bk_biz_set_name"}, {"bk_biz_set_id"}},
 }
 
-func getUniqueKeys(kit *rest.Kit, db local.DB) ([]objectUnique, [][]string, error) {
+func getUniqueKeys(kit *rest.Kit, db local.DB) ([]objectUnique, []tenant.UniqueKeyTmp, error) {
 	attrArr := make([]metadata.Attribute, 0)
 	err := db.Table(common.BKTableNameObjAttDes).Find(nil).All(kit.Ctx, &attrArr)
 	if err != nil {
@@ -64,9 +63,8 @@ func getUniqueKeys(kit *rest.Kit, db local.DB) ([]objectUnique, [][]string, erro
 		attrIDMap[generateUniqueKey(attr.ObjectID, attr.PropertyID)] = uint64(attr.ID)
 	}
 	uniqueKeys := make([]objectUnique, 0)
-	var attributes [][]string
+	var attributes []tenant.UniqueKeyTmp
 	for objID, value := range objUniqueKeys {
-		tempValue := objID
 		for _, property := range value {
 			keys := make([]uniqueKey, 0)
 			for _, field := range property {
@@ -74,9 +72,11 @@ func getUniqueKeys(kit *rest.Kit, db local.DB) ([]objectUnique, [][]string, erro
 					Kind: "property",
 					ID:   attrIDMap[generateUniqueKey(objID, field)],
 				})
-				tempValue += "-" + field
 			}
-			attributes = append(attributes, property)
+			attributes = append(attributes, tenant.UniqueKeyTmp{
+				ObjectID: objID,
+				Keys:     property,
+			})
 			uniqueKeys = append(uniqueKeys, objectUnique{
 				Keys:     keys,
 				ObjID:    objID,
@@ -99,7 +99,7 @@ func addObjectUniqueData(kit *rest.Kit, db local.DB) error {
 
 	objUniqueData := make([]mapstr.MapStr, 0)
 	for _, key := range uniqueKeysArr {
-		item, err := util.ConvStructToMap(key)
+		item, err := tools.ConvStructToMap(key)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			continue
@@ -107,27 +107,35 @@ func addObjectUniqueData(kit *rest.Kit, db local.DB) error {
 		objUniqueData = append(objUniqueData, item)
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{"keys"},
 		IgnoreKeys:   []string{common.BKFieldID},
 		IDField:      []string{common.BKFieldID},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModelUniqueRes,
 		},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			ResIDField:   "id",
 			ResNameField: "bk_obj_id",
 		},
 	}
 
-	_, err = utils.InsertData(kit, db, common.BKTableNameObjUnique, objUniqueData, needField)
+	_, err = tools.InsertData(kit, db, common.BKTableNameObjUnique, objUniqueData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjUnique, err)
 		return err
 	}
 	// add tenant template data
-	err = tools.InsertUniqueKeyTmp(kit, db, objUniqueData, attributes)
+	uniqueTmpData := make([]tenant.TenantTmpData[tenant.UniqueKeyTmp], 0)
+	for _, data := range attributes {
+		uniqueTmpData = append(uniqueTmpData, tenant.TenantTmpData[tenant.UniqueKeyTmp]{
+			Type:  tenant.TemplateTypeUniqueKeys,
+			IsPre: true,
+			Data:  data,
+		})
+	}
+	err = tools.InsertUniqueKeyTmp(kit, db, uniqueTmpData)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

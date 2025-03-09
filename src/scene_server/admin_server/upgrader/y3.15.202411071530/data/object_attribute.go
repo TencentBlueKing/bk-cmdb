@@ -18,13 +18,12 @@
 package data
 
 import (
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -79,7 +78,7 @@ func addObjAttrData(kit *rest.Kit, db local.DB) error {
 			indexMap[attr.ObjectID+attr.PropertyGroup] += 1
 		}
 		attr.PropertyIndex = indexMap[attr.ObjectID+attr.PropertyGroup]
-		item, err := util.ConvStructToMap(attr)
+		item, err := tools.ConvStructToMap(attr)
 		if err != nil {
 			blog.Errorf("convert attribute to mapstr failed, err: %v", err)
 			return err
@@ -87,30 +86,29 @@ func addObjAttrData(kit *rest.Kit, db local.DB) error {
 		attributeData = append(attributeData, item)
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKObjIDField, common.BKPropertyIDField, common.BKAppIDField},
 		IgnoreKeys:   []string{"id", "bk_property_index"},
 		IDField:      []string{common.BKFieldID},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModelAttributeRes,
 		},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			BizIDField:   "bk_biz_id",
 			ResIDField:   common.BKFieldID,
 			ResNameField: "bk_property_name",
 		},
 	}
 
-	_, err := utils.InsertData(kit, db, common.BKTableNameObjAttDes, attributeData, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjAttDes, attributeData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjAttDes, err)
 		return err
 	}
 
-	uniqueKeys := []string{"data.bk_obj_id", "data.bk_property_id", "data.bk_biz_id"}
 	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, attributeData, "obj_attribute", uniqueKeys, idOptions)
+	err = tools.InsertTemplateData(kit, db, attributeData, needField, idOptions, tenant.TemplateTypeObjAttribute)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

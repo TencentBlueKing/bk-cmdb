@@ -36,7 +36,6 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/dal/types"
-	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/monitor"
 	"configcenter/src/thirdparty/monitor/meta"
 )
@@ -748,9 +747,6 @@ func ErrDropIndexNameNotFound(err error) bool {
 
 // CreateIndexes create table index
 func CreateIndexes(kit *rest.Kit, db local.DB, table string, indexes []types.Index) error {
-	if common.IsPlatformTable(table) {
-		db = mongodb.Shard(kit.SysShardOpts())
-	}
 	existIndexes, err := db.Table(table).Indexes(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get %s table exist index failed, err: %v", table, err)

@@ -18,14 +18,13 @@
 package data
 
 import (
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	mCommon "configcenter/src/scene_server/admin_server/common"
-	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -34,7 +33,7 @@ func addPropertyGroupData(kit *rest.Kit, db local.DB) error {
 	propertyGroupArr := make([]mapstr.MapStr, 0)
 	for _, group := range propertyGroupData {
 		group.IsDefault = true
-		item, err := util.ConvStructToMap(group)
+		item, err := tools.ConvStructToMap(group)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			return err
@@ -42,30 +41,29 @@ func addPropertyGroupData(kit *rest.Kit, db local.DB) error {
 		propertyGroupArr = append(propertyGroupArr, item)
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKObjIDField, common.BKAppIDField, common.BKPropertyGroupIndexField},
 		IgnoreKeys:   []string{common.BKFieldID, common.BKPropertyGroupIndexField},
 		IDField:      []string{common.BKFieldID},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			BizIDField:   "bk_biz_id",
 			ResIDField:   common.BKFieldID,
 			ResNameField: "bk_group_name",
 		},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModelGroupRes,
 		},
 	}
 
-	_, err := utils.InsertData(kit, db, common.BKTableNamePropertyGroup, propertyGroupArr, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNamePropertyGroup, propertyGroupArr, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseBizSet, err)
 		return err
 	}
 
-	uniqueKeys := []string{"data.bk_obj_id", "data.bk_biz_id", "data.bk_group_index"}
 	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, propertyGroupArr, "property_group", uniqueKeys, idOptions)
+	err = tools.InsertTemplateData(kit, db, propertyGroupArr, needField, idOptions, tenant.TemplateTypePropertyGroup)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

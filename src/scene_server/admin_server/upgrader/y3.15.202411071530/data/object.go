@@ -18,13 +18,12 @@
 package data
 
 import (
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -133,7 +132,7 @@ func addObjectData(kit *rest.Kit, db local.DB) error {
 	objectDataArr := make([]mapstr.MapStr, 0)
 	for _, obj := range objectData {
 		obj.Time = tools.NewTime()
-		item, err := util.ConvStructToMap(obj)
+		item, err := tools.ConvStructToMap(obj)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			return err
@@ -141,28 +140,28 @@ func addObjectData(kit *rest.Kit, db local.DB) error {
 		objectDataArr = append(objectDataArr, item)
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{"bk_obj_id"},
 		IgnoreKeys:   []string{"id", "obj_sort_number"},
 		IDField:      []string{common.BKFieldID},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModuleRes,
 		},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			ResIDField:   "id",
 			ResNameField: "bk_obj_name",
 		},
 	}
 
-	_, err := utils.InsertData(kit, db, common.BKTableNameObjDes, objectDataArr, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjDes, objectDataArr, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjDes, err)
 		return err
 	}
 
 	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, objectDataArr, "object", []string{"data.bk_obj_id"}, idOptions)
+	err = tools.InsertTemplateData(kit, db, objectDataArr, needField, idOptions, tenant.TemplateTypeObject)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

@@ -18,13 +18,12 @@
 package data
 
 import (
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -61,7 +60,7 @@ var objClassificationDataData = []Classification{
 func addObjClassificationData(kit *rest.Kit, db local.DB) error {
 	objClassification := make([]mapstr.MapStr, 0)
 	for _, asst := range objClassificationDataData {
-		item, err := util.ConvStructToMap(asst)
+		item, err := tools.ConvStructToMap(asst)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			return err
@@ -69,21 +68,21 @@ func addObjClassificationData(kit *rest.Kit, db local.DB) error {
 		objClassification = append(objClassification, item)
 	}
 
-	needField := &utils.InsertOptions{
-		UniqueFields: []string{"bk_classification_name"},
-		IgnoreKeys:   []string{"id"},
+	needField := &tools.InsertOptions{
+		UniqueFields: []string{metadata.ClassFieldClassificationName},
+		IgnoreKeys:   []string{metadata.ClassificationFieldID},
 		IDField:      []string{metadata.ClassificationFieldID},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			ResIDField:   "id",
 			ResNameField: "bk_classification_name",
 		},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModelClassificationRes,
 		},
 	}
 
-	_, err := utils.InsertData(kit, db, common.BKTableNameObjClassification, objClassification,
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjClassification, objClassification,
 		needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjClassification, err)
@@ -91,8 +90,8 @@ func addObjClassificationData(kit *rest.Kit, db local.DB) error {
 	}
 
 	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, objClassification, "obj_classification",
-		[]string{"data.bk_classification_name"}, idOptions)
+	err = tools.InsertTemplateData(kit, db, objClassification, needField, idOptions,
+		tenant.TemplateTypeObjClassification)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err
