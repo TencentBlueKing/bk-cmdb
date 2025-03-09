@@ -18,13 +18,12 @@
 package data
 
 import (
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -43,38 +42,42 @@ var cloudAreaData = []cloudArea{
 
 func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 	cloudData := make([]mapstr.MapStr, 0)
+	cloudTmpData := make([]mapstr.MapStr, 0)
 	for _, data := range cloudAreaData {
 		data.Time = tools.NewTime()
-		item, err := util.ConvStructToMap(data)
+		item, err := tools.ConvStructToMap(data)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			return err
 		}
 		cloudData = append(cloudData, item)
+		if data.CloudName != "Default Area" {
+			cloudTmpData = append(cloudTmpData, item)
+		}
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKCloudNameField},
 		IgnoreKeys:   []string{common.BKCloudIDField},
 		IDField:      []string{common.BKCloudIDField},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModuleRes,
 		},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			ResIDField:   common.BKCloudIDField,
 			ResNameField: "bk_cloud_name",
 		},
 	}
 
-	_, err := utils.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBasePlat, err)
 		return err
 	}
 
 	idOption := &tools.IDOptions{IDField: "id", RemoveKeys: []string{common.BKCloudIDField}}
-	err = tools.InsertTemplateData(kit, db, cloudData, "plat", []string{"data.bk_cloud_name"}, idOption)
+	err = tools.InsertTemplateData(kit, db, cloudTmpData, needField, idOption, tenant.TemplateTypePlat)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

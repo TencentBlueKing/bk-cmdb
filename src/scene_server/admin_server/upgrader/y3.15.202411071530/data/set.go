@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/service/utils"
+	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -47,22 +47,22 @@ func addSetBaseData(kit *rest.Kit, db local.DB, bizID int64) (map[string]interfa
 	setData[common.BKSetDescField] = ""
 	setData[common.BKDescriptionField] = ""
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKAppIDField, common.BKSetNameField, common.BKInstParentStr},
 		IgnoreKeys:   []string{common.BKSetIDField},
 		IDField:      []string{common.BKSetIDField},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			BizIDField:   common.BKAppIDField,
 			ResIDField:   common.BKSetIDField,
 			ResNameField: common.BKSetNameField,
 		},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    common.BKInnerObjIDSet,
 			ResourceType: metadata.SetRes,
 		},
 	}
 
-	ids, err := utils.InsertData(kit, db, common.BKTableNameBaseSet, []mapstr.MapStr{setData},
+	ids, err := tools.InsertData(kit, db, common.BKTableNameBaseSet, []mapstr.MapStr{setData},
 		needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseApp, err)

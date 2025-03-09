@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/service/utils"
+	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -50,12 +50,12 @@ func addSelfIncrIDData(kit *rest.Kit, db local.DB) error {
 		needAddIDs = append(needAddIDs, addID)
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{"_id"},
 		IgnoreKeys:   []string{"_id"},
 	}
 
-	_, err := utils.InsertData(kit, db, common.BKTableNameIDgenerator, needAddIDs, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameIDgenerator, needAddIDs, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameIDgenerator, err)
 		return err

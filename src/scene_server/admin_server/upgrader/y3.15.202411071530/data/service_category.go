@@ -21,13 +21,13 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -52,12 +52,17 @@ var (
 
 func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 	parentServiceCategory := make([]mapstr.MapStr, 0)
+	tmpData := make([]tenant.SvrCategoryTmp, 0)
 	for _, value := range parentCategory {
 		category := ServiceCategory{
 			Name:      value,
 			IsBuiltIn: true,
 		}
-		item, err := util.ConvStructToMap(category)
+		tmpData = append(tmpData, tenant.SvrCategoryTmp{
+			Name:       value,
+			ParentName: "",
+		})
+		item, err := tools.ConvStructToMap(category)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			return err
@@ -66,22 +71,22 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 	}
 
 	// add parent category data
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKFieldName, common.BKParentIDField, common.BKAppIDField},
 		IgnoreKeys:   []string{common.BKFieldID, common.BKRootIDField},
 		IDField:      []string{common.BKFieldID, common.BKRootIDField},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.PlatformSetting,
 			ResourceType: metadata.ServiceCategoryRes,
 		},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			BizIDField:   "bk_biz_id",
 			ResIDField:   "id",
 			ResNameField: "name",
 		},
 	}
 
-	parentIDs, err := utils.InsertData(kit, db, common.BKTableNameServiceCategory, parentServiceCategory, needField)
+	parentIDs, err := tools.InsertData(kit, db, common.BKTableNameServiceCategory, parentServiceCategory, needField)
 	if err != nil {
 		blog.Errorf("insert service category data for table %s failed, err: %v", common.BKTableNameServiceCategory, err)
 		return err
@@ -91,13 +96,19 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 		parentIDs[name] = value
 	}
 
-	parentName := make([]string, len(parentServiceCategory))
-	err = tools.InsertSvrTmp(kit, db, parentServiceCategory, true, parentName)
+	svrTmpData := make([]tenant.TenantTmpData[tenant.SvrCategoryTmp], 0)
+	for _, item := range tmpData {
+		svrTmpData = append(svrTmpData, tenant.TenantTmpData[tenant.SvrCategoryTmp]{
+			Type:  tenant.TemplateTypeServiceCategory,
+			IsPre: true,
+			Data:  item,
+		})
+	}
+	err = tools.InsertSvrCategoryTmp(kit, db, svrTmpData)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
-
 	if err = addSubSrvCategoryData(kit, db, parentIDs); err != nil {
 		blog.Errorf("add sub service category data failed, err: %v", err)
 		return err
@@ -109,7 +120,7 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]interface{}) error {
 	// add sub category data
 	subCategoryData := make([]mapstr.MapStr, 0)
-	parentNames := make([]string, 0)
+	tmpData := make([]tenant.SvrCategoryTmp, 0)
 	for key, value := range subCategoryMap {
 		parentID, err := util.GetInt64ByInterface(parentIDs[key])
 		if err != nil {
@@ -124,38 +135,49 @@ func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]inte
 				IsBuiltIn: true,
 				BizID:     0,
 			}
-			item, err := util.ConvStructToMap(category)
+			item, err := tools.ConvStructToMap(category)
 			if err != nil {
 				blog.Errorf("convert struct to map failed, err: %v", err)
 				return err
 			}
 			subCategoryData = append(subCategoryData, item)
-			parentNames = append(parentNames, key)
+			tmpData = append(tmpData, tenant.SvrCategoryTmp{
+				Name:       subValue,
+				ParentName: key,
+			})
 		}
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKFieldName, common.BKParentIDField, common.BKAppIDField},
 		IgnoreKeys:   []string{common.BKFieldID},
 		IDField:      []string{common.BKFieldID},
-		AuditTypeField: &utils.AuditResType{
+		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.PlatformSetting,
 			ResourceType: metadata.ServiceCategoryRes,
 		},
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			BizIDField:   "bk_biz_id",
 			ResIDField:   "id",
 			ResNameField: "name",
 		},
 	}
 
-	subIds, err := utils.InsertData(kit, db, common.BKTableNameServiceCategory, subCategoryData, needField)
+	subIds, err := tools.InsertData(kit, db, common.BKTableNameServiceCategory, subCategoryData, needField)
 	if err != nil {
 		blog.Errorf("insert service category data for table %s failed, err: %v", common.BKTableNameServiceCategory, err)
 		return err
 	}
 
-	err = tools.InsertSvrTmp(kit, db, subCategoryData, false, parentNames)
+	svrTmpData := make([]tenant.TenantTmpData[tenant.SvrCategoryTmp], 0)
+	for _, item := range tmpData {
+		svrTmpData = append(svrTmpData, tenant.TenantTmpData[tenant.SvrCategoryTmp]{
+			Type:  tenant.TemplateTypeServiceCategory,
+			IsPre: true,
+			Data:  item,
+		})
+	}
+	err = tools.InsertSvrCategoryTmp(kit, db, svrTmpData)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

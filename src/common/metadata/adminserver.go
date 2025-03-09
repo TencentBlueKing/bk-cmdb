@@ -32,32 +32,3 @@ type ReponseSysUserConfig struct {
 
 // CCSystemUserConfigSwitch TODO
 const CCSystemUserConfigSwitch = "user_config_switch"
-
-// TemplateData template data struct
-type TemplateData struct {
-	Type  string                 `json:"type"`
-	IsPre bool                   `json:"is_pre"`
-	ID    int64                  `json:"id"`
-	Data  map[string]interface{} `json:"data"`
-}
-
-// SvrCategoryTmp tenant template for service category
-type SvrCategoryTmp struct {
-	IsParent   bool                   `bson:"is_parent"`
-	Name       string                 `bson:"name"`
-	ParentName string                 `bson:"parent_name"`
-	Type       string                 `json:"type"`
-	IsPre      bool                   `json:"is_pre"`
-	ID         int64                  `json:"id"`
-	Data       map[string]interface{} `json:"data"`
-}
-
-// UniqueKeyTmp tenant template for unique keys
-type UniqueKeyTmp struct {
-	ObjectID   string                 `bson:"bk_obj_id"`
-	Attributes []string               `bson:"attributes"`
-	Type       string                 `json:"type"`
-	IsPre      bool                   `json:"is_pre"`
-	ID         int64                  `json:"id"`
-	Data       map[string]interface{} `json:"data"`
-}

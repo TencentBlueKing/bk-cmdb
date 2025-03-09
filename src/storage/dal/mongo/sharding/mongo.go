@@ -205,9 +205,9 @@ func (m *ShardingMongoManager) NewTenantCli(tenant string) local.DB {
 	return db
 }
 
-// NewTenantDBName returns the new tenant db name
-func (m *ShardingMongoManager) NewTenantDBName() string {
-	return m.newTenantCli.DBName()
+// NewTenantDB returns the new tenant db name
+func (m *ShardingMongoManager) NewTenantDB() string {
+	return m.newTenantCli.UUID()
 }
 
 // Tenant returns the db client for tenant

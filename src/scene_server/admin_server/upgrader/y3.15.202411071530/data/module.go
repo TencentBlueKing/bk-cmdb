@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/service/utils"
+	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -65,24 +65,24 @@ func addModuleData(kit *rest.Kit, db local.DB, bizID int64, moduleNames []string
 		moduleData[common.LastTimeField] = time.Now()
 		moduleAdd = append(moduleAdd, moduleData)
 	}
-	moduleAuditType := &utils.AuditResType{
+	moduleAuditType := &tools.AuditResType{
 		AuditType:    metadata.ModelType,
 		ResourceType: metadata.ModuleRes,
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleNameField},
 		IgnoreKeys:     []string{common.BKModuleIDField},
 		IDField:        []string{common.BKModuleIDField},
 		AuditTypeField: moduleAuditType,
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			BizIDField:   common.BKAppIDField,
 			ResIDField:   common.BKModuleIDField,
 			ResNameField: common.BKModuleNameField,
 		},
 	}
 
-	_, err := utils.InsertData(kit, db, common.BKTableNameBaseModule, moduleAdd, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameBaseModule, moduleAdd, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed,common.BKTableNameAsstDes, err: %v", err)
 		return err

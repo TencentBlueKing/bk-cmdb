@@ -18,14 +18,13 @@
 package data
 
 import (
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
-	"configcenter/src/common/util"
-	"configcenter/src/scene_server/admin_server/service/utils"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -40,7 +39,7 @@ var (
 		},
 		Time: tools.NewTime(),
 	}
-	bizSetAudit = &utils.AuditResType{
+	bizSetAudit = &tools.AuditResType{
 		AuditType:    metadata.BizSetType,
 		ResourceType: metadata.BizSetRes,
 	}
@@ -48,31 +47,30 @@ var (
 
 func addBizSetData(kit *rest.Kit, db local.DB) error {
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKBizSetNameField},
 		IgnoreKeys:     []string{common.BKBizSetIDField},
 		IDField:        []string{common.BKBizSetIDField},
 		AuditTypeField: bizSetAudit,
-		AuditDataField: &utils.AuditDataField{
+		AuditDataField: &tools.AuditDataField{
 			ResIDField:   "bk_biz_set_id",
 			ResNameField: "bk_biz_set_name",
 		},
 	}
-	data, err := util.ConvStructToMap(bizSetData)
+	data, err := tools.ConvStructToMap(bizSetData)
 	if err != nil {
 		blog.Errorf("convert struct to map failed, err: %v", err)
 		return err
 	}
 
-	_, err = utils.InsertData(kit, db, common.BKTableNameBaseBizSet, []mapstr.MapStr{data}, needField)
+	_, err = tools.InsertData(kit, db, common.BKTableNameBaseBizSet, []mapstr.MapStr{data}, needField)
 	if err != nil {
 		blog.Errorf("insert default biz data for table %s failed, err: %v", common.BKTableNameBaseBizSet, err)
 		return err
 	}
 
 	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"bk_biz_set_id"}}
-	err = tools.InsertTemplateData(kit, db, []mapstr.MapStr{data}, "biz_set", []string{"data.bk_biz_set_name"},
-		idOptions)
+	err = tools.InsertTemplateData(kit, db, []mapstr.MapStr{data}, needField, idOptions, tenant.TemplateTypeBizSet)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

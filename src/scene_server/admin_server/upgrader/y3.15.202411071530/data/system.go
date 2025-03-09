@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/admin_server/service/utils"
+	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -32,11 +32,11 @@ func addSystemData(kit *rest.Kit, db local.DB) error {
 	blog.Infof("start add init data for table: %s", common.BKTableNameSystem)
 
 	data := map[string]interface{}{common.HostCrossBizField: common.HostCrossBizValue}
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.HostCrossBizField},
 		IgnoreKeys:   make([]string, 0),
 	}
-	_, err := utils.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{data}, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{data}, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameSystem, err)
 		return err
@@ -59,11 +59,11 @@ func initConfigAdmin(kit *rest.Kit, db local.DB) error {
 		common.ConfigAdminValueField: initConfig,
 	}
 
-	needField := &utils.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{"_id"},
 		IgnoreKeys:   make([]string, 0),
 	}
-	_, err := utils.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{configData},
+	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{configData},
 		needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameSystem, err)

@@ -18,9 +18,10 @@
 package collections
 
 import (
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
-	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/types"
+
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -37,93 +38,98 @@ var commTenantTemplateIndexes = []types.Index{
 		PartialFilterExpression: make(map[string]interface{}),
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TemplateTypeObjAttribute + "_bkObjID_bkPropertyID_bkBizID",
-		Keys:       bson.D{{"data.bk_obj_id", 1}, {"data.bk_property_id", 1}, {"data.bk_biz_id", 1}},
+		Name: common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypeObjAttribute) +
+			"_bkObjID_bkPropertyID",
+		Keys:       bson.D{{"data.bk_obj_id", 1}, {"data.bk_property_id", 1}},
 		Unique:     true,
 		Background: true,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TemplateTypeObjAttribute,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypeObjAttribute,
 		},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TempalteTypePropertyGroup + "_bkBizID_bkGroupName_bkObjID",
-		Keys:       bson.D{{"data.bk_biz_id", 1}, {"data.bk_group_name", 1}, {"data.bk_obj_id", 1}},
+		Name: common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypePropertyGroup) +
+			"_bkGroupName_bkObjID",
+		Keys:       bson.D{{"data.bk_group_name", 1}, {"data.bk_obj_id", 1}},
 		Unique:     true,
 		Background: true,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TempalteTypePropertyGroup,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypePropertyGroup,
 		},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TempalteTypePropertyGroup + "_bkObjID_bkBizID_bkGroupIndex",
-		Keys:       bson.D{{"data.bk_obj_id", 1}, {"data.bk_biz_id", 1}, {"data.bk_group_index", 1}},
+		Name: common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypePropertyGroup) +
+			"_bkObjID_bkGroupIndex",
+		Keys:       bson.D{{"data.bk_obj_id", 1}, {"data.bk_group_index", 1}},
 		Unique:     true,
 		Background: true,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TempalteTypePropertyGroup,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypePropertyGroup,
 		},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TempalteTypePlat + "_bkCloudName",
+		Name:       common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypePlat) + "_bkCloudName",
 		Keys:       bson.D{{"data.bk_cloud_name", 1}},
 		Unique:     true,
 		Background: true,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TempalteTypePlat,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypePlat,
 			"data.bk_cloud_name":             map[string]string{common.BKDBType: "string"}},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TempalteTypeObjClassification + "_bkClassificationID",
+		Name: common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypeObjClassification) +
+			"_bkClassificationID",
 		Keys:       bson.D{{"data.bk_classification_id", 1}},
 		Unique:     true,
 		Background: false,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TempalteTypeObjClassification,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypeObjClassification,
 			"data.bk_classification_id":      map[string]string{common.BKDBType: "string"}},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TempalteTypeObjClassification + "_bkClassificationName",
+		Name: common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypeObjClassification) +
+			"_bkClassificationName",
 		Keys:       bson.D{{"data.bk_classification_name", 1}},
 		Unique:     true,
 		Background: false,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TempalteTypeObjClassification,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypeObjClassification,
 			"data.bk_classification_name":    map[string]string{common.BKDBType: "string"}},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TemplateTypeObject + "_bkObjID",
+		Name:       common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypeObject) + "_bkObjID",
 		Keys:       bson.D{{"data.bk_obj_id", 1}},
 		Unique:     true,
 		Background: false,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TemplateTypeObject,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypeObject,
 			"data.bk_obj_id":                 map[string]string{common.BKDBType: "string"}},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TemplateTypeObject + "_bkObjName",
+		Name:       common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypeObject) + "_bkObjName",
 		Keys:       bson.D{{"data.bk_obj_name", 1}},
 		Unique:     true,
 		Background: false,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TemplateTypeObject,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypeObject,
 			"data.bk_obj_name":               map[string]string{common.BKDBType: "string"}},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TemplateTypeBizSet + "_bkBizSetName",
+		Name:       common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypeBizSet) + "_bkBizSetName",
 		Keys:       bson.D{{"data.bk_biz_set_name", 1}},
 		Unique:     true,
 		Background: true,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TemplateTypeBizSet,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypeBizSet,
 		},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + metadata.TemplateTypeServiceCategory + "_nameParentName",
-		Keys:       bson.D{{"name", 1}, {"parent_name", 1}},
+		Name:       common.CCLogicUniqueIdxNamePrefix + string(tenant.TemplateTypeServiceCategory) + "_nameParentName",
+		Keys:       bson.D{{"data.name", 1}, {"data.parent_name", 1}},
 		Unique:     true,
 		Background: true,
 		PartialFilterExpression: map[string]interface{}{
-			common.BKTenantTemplateTypeField: metadata.TemplateTypeServiceCategory,
+			common.BKTenantTemplateTypeField: tenant.TemplateTypeServiceCategory,
 		},
 	},
 }

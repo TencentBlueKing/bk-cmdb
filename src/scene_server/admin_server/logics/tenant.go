@@ -23,29 +23,16 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 )
 
-var (
-	newTenantCli NewTenantInterface
-)
-
-// SetNewTenantCli set sharding mongo manager
-func SetNewTenantCli(cli NewTenantInterface) {
-	newTenantCli = cli
-}
-
 // NewTenantInterface get new tenant cli interface
 type NewTenantInterface interface {
 	NewTenantCli(tenant string) local.DB
-	NewTenantDBName() string
+	NewTenantDB() string
 }
 
 // GetNewTenantCli get new tenant db
-func GetNewTenantCli(kit *rest.Kit) local.DB {
-	return newTenantCli.NewTenantCli(kit.TenantID)
-}
-
-// GetNewTenantDBName get new tenant db name
-func GetNewTenantDBName() string {
-	return newTenantCli.NewTenantDBName()
+func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string) {
+	newTenantCli := cli.(NewTenantInterface)
+	return newTenantCli.NewTenantCli(kit.TenantID), newTenantCli.NewTenantDB()
 }
 
 // GetSystemTenant get system tenant # TODO get the default tenant when multi-tenancy is not enabled

@@ -1724,8 +1724,8 @@ const ShardingDBConfID = "sharding_db_config"
 // SnapshotChannelName is host snapshot channel name
 const SnapshotChannelName = "cmdb_snapshot"
 
-// Objects is all objects
-var Objects = []string{
+// BKInnerObjects is inner objects
+var BKInnerObjects = []string{
 	BKInnerObjIDApp,
 	BKInnerObjIDModule,
 	BKInnerObjIDProc,

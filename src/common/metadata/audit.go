@@ -657,9 +657,6 @@ const (
 
 	// Sharding is sharding db related audit type
 	Sharding AuditType = "sharding"
-
-	// TenantTemplate is tenant template audit type
-	TenantTemplate AuditType = "tenant_template"
 )
 
 // ResourceType TODO

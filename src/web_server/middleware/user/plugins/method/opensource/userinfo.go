@@ -77,7 +77,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 			Email:     "blueking",
 			Role:      "",
 			BkToken:   "",
-			TenantUin: "0",
+			TenantUin: "",
 			IsTenant:  false,
 			Language:  webCommon.GetLanguageByHTTPRequest(c),
 		}, true
