@@ -15,50 +15,27 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package data
+package logics
 
 import (
-	"configcenter/src/common/blog"
+	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/driver/mongodb"
 )
 
-var (
-	commonTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addServiceCategoryData,
-		addBizData,
-		addAssociationData,
-		addBizSetData,
-		addObjAssociationData,
-		addObjClassificationData,
-		addObjectData,
-		addObjAttrData,
-		addCloudAreaData,
-		addPropertyGroupData,
-		addObjectUniqueData,
-	}
-	defaultTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addSystemData,
-		addSelfIncrIDData,
-	}
-)
+// NewTenantInterface get new tenant cli interface
+type NewTenantInterface interface {
+	NewTenantCli(tenant string) local.DB
+	NewTenantDB() string
+}
 
-// InitData add default tenant init data
-func InitData(kit *rest.Kit, db local.DB) error {
-	for _, handler := range commonTableDataArr {
-		if err := handler(kit, db); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
-	}
+// GetNewTenantCli get new tenant db
+func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string) {
+	newTenantCli := cli.(NewTenantInterface)
+	return newTenantCli.NewTenantCli(kit.TenantID), newTenantCli.NewTenantDB()
+}
 
-	for _, handler := range defaultTableDataArr {
-		if err := handler(kit, mongodb.Dal().Shard(kit.SysShardOpts())); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
-	}
-
-	return nil
+// GetSystemTenant get system tenant # TODO get the default tenant when multi-tenancy is not enabled
+func GetSystemTenant() string {
+	return common.BKDefaultTenantID
 }

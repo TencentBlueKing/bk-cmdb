@@ -15,49 +15,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package data
+package logics
 
 import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/driver/mongodb"
 )
 
-var (
-	commonTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addServiceCategoryData,
-		addBizData,
-		addAssociationData,
-		addBizSetData,
-		addObjAssociationData,
-		addObjClassificationData,
-		addObjectData,
-		addObjAttrData,
-		addCloudAreaData,
-		addPropertyGroupData,
-		addObjectUniqueData,
+// CreateTable create table if not exists
+func CreateTable(kit *rest.Kit, db local.DB, table string) error {
+	exists, err := db.HasTable(kit.Ctx, table)
+	if err != nil {
+		blog.Errorf("check if %s exists failed, err: %v", table, err)
+		return err
 	}
-	defaultTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addSystemData,
-		addSelfIncrIDData,
-	}
-)
-
-// InitData add default tenant init data
-func InitData(kit *rest.Kit, db local.DB) error {
-	for _, handler := range commonTableDataArr {
-		if err := handler(kit, db); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
+	if exists {
+		return nil
 	}
 
-	for _, handler := range defaultTableDataArr {
-		if err := handler(kit, mongodb.Dal().Shard(kit.SysShardOpts())); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
+	if err = db.CreateTable(kit.Ctx, table); err != nil {
+		blog.Errorf("create %s table failed, err: %v", table, err)
+		return err
 	}
 
 	return nil

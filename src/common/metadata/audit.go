@@ -762,6 +762,9 @@ const (
 
 	// ShardingRes is sharding db related audit resource type
 	ShardingRes ResourceType = "sharding"
+
+	// TenantTemplateRes is tenant template related audit resource type
+	TenantTemplateRes ResourceType = "tenant_template"
 )
 
 // OperateFromType TODO

@@ -18,20 +18,27 @@
 package data
 
 import (
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
-func addPropertyGroupData(kit *rest.Kit, db dal.Dal) error {
-	propertyGroupArr := make([]interface{}, 0)
+func addPropertyGroupData(kit *rest.Kit, db local.DB) error {
+	propertyGroupArr := make([]mapstr.MapStr, 0)
 	for _, group := range propertyGroupData {
 		group.IsDefault = true
-		propertyGroupArr = append(propertyGroupArr, group)
+		item, err := tools.ConvStructToMap(group)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
+		propertyGroupArr = append(propertyGroupArr, item)
 	}
 
 	needField := &tools.InsertOptions{
@@ -49,17 +56,22 @@ func addPropertyGroupData(kit *rest.Kit, db dal.Dal) error {
 		},
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNamePropertyGroup, propertyGroupArr,
-		needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNamePropertyGroup, propertyGroupArr, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseBizSet, err)
 		return err
 	}
 
+	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
+	err = tools.InsertTemplateData(kit, db, propertyGroupArr, needField, idOptions, tenant.TemplateTypePropertyGroup)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
+		return err
+	}
 	return nil
 }
 
-var propertyGroupData = []metadata.Group{
+var propertyGroupData = []Group{
 	{
 		ObjectID:   common.BKInnerObjIDApp,
 		GroupID:    mCommon.BaseInfo,
@@ -159,4 +171,17 @@ var propertyGroupData = []metadata.Group{
 		GroupName:  "基础信息",
 		GroupIndex: 1,
 	},
+}
+
+// Group group metadata definition
+type Group struct {
+	ID         int64  `field:"id" json:"id" bson:"id"`
+	BizID      int64  `field:"bk_biz_id" json:"bk_biz_id" bson:"bk_biz_id"`
+	GroupID    string `field:"bk_group_id" json:"bk_group_id" bson:"bk_group_id"`
+	GroupName  string `field:"bk_group_name" json:"bk_group_name" bson:"bk_group_name"`
+	GroupIndex int64  `field:"bk_group_index" json:"bk_group_index" bson:"bk_group_index"`
+	ObjectID   string `field:"bk_obj_id" json:"bk_obj_id" bson:"bk_obj_id"`
+	IsDefault  bool   `field:"bk_isdefault" json:"bk_isdefault" bson:"bk_isdefault"`
+	IsPre      bool   `field:"ispre" json:"ispre" bson:"ispre"`
+	IsCollapse bool   `field:"is_collapse" json:"is_collapse" bson:"is_collapse"`
 }

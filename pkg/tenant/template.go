@@ -15,21 +15,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package tenant
 
-import (
-	"configcenter/src/common/metadata"
-)
-
-// MigrateResp migrate response
-type MigrateResp struct {
-	metadata.BaseResp `bson:",inline"`
-	Data              *MigrateInfo `json:"data"`
+// TenantTmpData tenant template data struct
+type TenantTmpData[T any] struct {
+	Type  TenantTemplateType `bson:"type"`
+	IsPre bool               `bson:"is_pre"`
+	ID    int64              `bson:"id"`
+	Data  T                  `bson:"data"`
 }
 
-// MigrateInfo migrate info
-type MigrateInfo struct {
-	PreVersion       string   `json:"pre_version"`
-	CurrentVersion   string   `json:"current_version"`
-	FinishedVersions []string `json:"finished_migrations"`
+// SvrCategoryTmp tenant template for service category
+type SvrCategoryTmp struct {
+	Name       string `bson:"name"`
+	ParentName string `bson:"parent_name"`
+}
+
+// UniqueKeyTmp tenant template for unique keys
+type UniqueKeyTmp struct {
+	ObjectID string   `bson:"bk_obj_id"`
+	Keys     []string `bson:"keys"`
 }

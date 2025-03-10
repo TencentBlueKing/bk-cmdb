@@ -23,11 +23,12 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
-func addSystemData(kit *rest.Kit, db dal.Dal) error {
+func addSystemData(kit *rest.Kit, db local.DB) error {
 	blog.Infof("start add init data for table: %s", common.BKTableNameSystem)
 
 	data := map[string]interface{}{common.HostCrossBizField: common.HostCrossBizValue}
@@ -35,8 +36,7 @@ func addSystemData(kit *rest.Kit, db dal.Dal) error {
 		UniqueFields: []string{common.HostCrossBizField},
 		IgnoreKeys:   make([]string, 0),
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.SysShardOpts()), common.BKTableNameSystem, []interface{}{data},
-		needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{data}, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameSystem, err)
 		return err
@@ -51,7 +51,7 @@ func addSystemData(kit *rest.Kit, db dal.Dal) error {
 	return nil
 }
 
-func initConfigAdmin(kit *rest.Kit, db dal.Dal) error {
+func initConfigAdmin(kit *rest.Kit, db local.DB) error {
 	configData := map[string]interface{}{
 		common.BKFieldDBID:           common.ConfigAdminID,
 		common.CreateTimeField:       time.Now(),
@@ -63,7 +63,7 @@ func initConfigAdmin(kit *rest.Kit, db dal.Dal) error {
 		UniqueFields: []string{"_id"},
 		IgnoreKeys:   make([]string, 0),
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.SysShardOpts()), common.BKTableNameSystem, []interface{}{configData},
+	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{configData},
 		needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameSystem, err)
