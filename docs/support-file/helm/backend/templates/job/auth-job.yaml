@@ -1,4 +1,4 @@
-{{- if .Values.iam.auth.enabled }}
+{{- if .Values.iam.job.enabled }}
 {{- $ingressHost := .Values.authserver.ingress.host -}}
 apiVersion: batch/v1
 kind: Job

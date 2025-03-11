@@ -1009,6 +1009,9 @@ iam:
   auth:
     ## @parem iam.auth.enabled Enable bk-iam authentication
     enabled: false
+    ## @parem iam.job.enabled Enable bk-iam job
+  job:
+    enabled: false
 
 ## @section Blueking url parameters
 ##
