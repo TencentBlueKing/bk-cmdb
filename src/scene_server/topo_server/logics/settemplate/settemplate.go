@@ -112,12 +112,6 @@ func (st *setTemplate) getModuleResult(kit *rest.Kit, bizID, setTemplateID, setI
 			" rid: %s", bizID, setTemplateID, setID, filter, modules, kit.Rid)
 		return nil, err
 	}
-
-	if len(modules.Data.Info) == 0 {
-		blog.Errorf("list module http reply failed, bizID: %d, setTemplateID: %d, setID: %d, filter: %+v, reply: %+v,"+
-			" rid: %s", bizID, setTemplateID, setID, filter, modules, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
-	}
 	return modules.Data.Info, nil
 }
 
