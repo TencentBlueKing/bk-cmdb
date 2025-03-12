@@ -51,6 +51,8 @@ data:
         helpDocUrl: {{ .Values.web.webServer.site.helpDocUrl }}
         # 蓝鲸共享资源URL
         bkSharedResUrl: {{ .Values.bkSharedResUrl }}
+        # 网关API访问地址模板
+        bkApiUrlTmpl: {{ .Values.bkApiUrlTmpl }}
         paas:
           # pass的tls相关配置
           tls:

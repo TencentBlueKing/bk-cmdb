@@ -443,7 +443,7 @@ func (c *Mongo) NextSequence(ctx context.Context, sequenceName string) (uint64, 
 	// 直接使用新的context，确保不会用到事务,不会因为context含有session而使用分布式事务，防止产生相同的序列号
 	ctx = context.Background()
 
-	coll := c.cli.Database().Collection("cc_idgenerator")
+	coll := c.cli.Database().Collection(common.BKTableNameIDgenerator)
 
 	Update := bson.M{
 		"$inc":         bson.M{"SequenceID": c.conf.IDGenStep},
@@ -490,7 +490,7 @@ func (c *Mongo) NextSequences(ctx context.Context, sequenceName string, num int)
 	// 直接使用新的context，确保不会用到事务,不会因为context含有session而使用分布式事务，防止产生相同的序列号
 	ctx = context.Background()
 
-	coll := c.cli.Database().Collection("cc_idgenerator")
+	coll := c.cli.Database().Collection(common.BKTableNameIDgenerator)
 
 	Update := bson.M{
 		"$inc":         bson.M{"SequenceID": num * c.conf.IDGenStep},

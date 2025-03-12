@@ -1396,8 +1396,6 @@ const (
 	WEBSessionPhoneKey = "phone"
 	// WEBSessionEmailKey TODO
 	WEBSessionEmailKey = "email"
-	// WEBSessionRoleKey TODO
-	WEBSessionRoleKey = "role"
 	// WEBSessionTenantUinKey is the tenant uin session key
 	WEBSessionTenantUinKey = "tenant_uin"
 	// WEBSessionTenantUinListeKey is the tenant uin list session key

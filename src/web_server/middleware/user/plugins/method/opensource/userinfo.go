@@ -75,7 +75,6 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 			ChName:    cookieUser,
 			Phone:     "",
 			Email:     "blueking",
-			Role:      "",
 			BkToken:   "",
 			TenantUin: "0",
 			IsTenant:  false,

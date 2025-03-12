@@ -75,6 +75,8 @@ type Site struct {
 	HelpDocUrl        string
 	// BkSharedResUrl is the blueking shared resource url
 	BkSharedResUrl string
+	// BkSharedResUrl is the blueking shared resource url
+	BkApiUrlTmpl string
 }
 
 // Config TODO

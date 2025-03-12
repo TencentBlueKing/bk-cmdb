@@ -28,7 +28,6 @@ import (
 type LoginUserInfoTenantUinList struct {
 	TenantID   string `json:"id"`
 	TenantName string `json:"name"`
-	Role       int64  `json:"role"`
 }
 
 // LoginUserInfo login user info
@@ -37,7 +36,6 @@ type LoginUserInfo struct {
 	ChName       string                       `json:"chname"`
 	Phone        string                       `json:"phone"`
 	Email        string                       `json:"email"`
-	Role         string                       `json:"-"`
 	BkToken      string                       `json:"bk_token"`
 	BkTicket     string                       `json:"bk_ticket"`
 	TenantUin    string                       `json:"current_tenant"`
