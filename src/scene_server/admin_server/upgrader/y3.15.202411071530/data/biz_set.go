@@ -18,7 +18,7 @@
 package data
 
 import (
-	"configcenter/pkg/tenant"
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -69,8 +69,8 @@ func addBizSetData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"bk_biz_set_id"}}
-	err = tools.InsertTemplateData(kit, db, []mapstr.MapStr{data}, needField, idOptions, tenant.TemplateTypeBizSet)
+	idOptions := &tools.IDOptions{ResNameField: common.BKBizSetNameField, RemoveKeys: []string{"bk_biz_set_id"}}
+	err = tools.InsertTemplateData(kit, db, []mapstr.MapStr{data}, needField, idOptions, tenanttmp.TemplateTypeBizSet)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

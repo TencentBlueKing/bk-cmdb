@@ -24,13 +24,12 @@ import (
 
 	"configcenter/pkg/tenant"
 	"configcenter/pkg/tenant/types"
-	"configcenter/src/apimachinery/coreservice"
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/index"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal/mongo/local"
@@ -47,18 +46,15 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 
 	_, exist := tenant.GetTenant(kit.TenantID)
 	if exist {
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrorUnknownOrUnrecognizedError, fmt.Errorf("tenant already exist")),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
+		resp.WriteEntity(metadata.NewSuccessResp("tenant exist"))
 		return
 	}
 
-	cli, dbUUID := logics.GetNewTenantCli(kit, mongodb.Dal())
-	if cli == nil {
-		blog.Errorf("get new tenant client failed, rid: %s", kit.Rid)
+	cli, dbUUID, err := logics.GetNewTenantCli(kit, mongodb.Dal())
+	if err != nil {
+		blog.Errorf("get new tenant db failed, err: %v, rid: %s", err, kit.Rid)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrorUnknownOrUnrecognizedError, fmt.Errorf("get new tenant client failed")),
+			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, fmt.Errorf("get new tenant db failed")),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
@@ -67,16 +63,26 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 	if err := addTableIndexes(kit, cli); err != nil {
 		blog.Errorf("create table and indexes for tenant %s failed, err: %v, rid: %s", kit.TenantID, err, kit.Rid)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrorUnknownOrUnrecognizedError, err.Error()),
+			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
-	if err := addDataFromTemplate(kit, cli, s.CoreAPI.CoreService()); err != nil {
+	// add default area
+	if err := addDefaultArea(kit, cli); err != nil {
+		blog.Errorf("add default area failed, err: %v, rid: %s", err, kit.Rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+
+	if err := addDataFromTemplate(kit, cli); err != nil {
 		blog.Errorf("create init data for tenant %s failed, err: %v", kit.TenantID, err)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrorUnknownOrUnrecognizedError, err.Error()),
+			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
@@ -88,25 +94,16 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 		Database: dbUUID,
 		Status:   types.EnabledStatus,
 	}
-	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Insert(kit.Ctx, data)
+	err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Insert(kit.Ctx, data)
 	if err != nil {
 		blog.Errorf("add tenant db relations failed, err: %v, rid: %s", err, kit.Rid)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrorUnknownOrUnrecognizedError, err.Error()),
+			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
-	// add default area
-	if err := addDefaultArea(kit, cli); err != nil {
-		blog.Errorf("add default area failed, err: %v, rid: %s", err, kit.Rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrorUnknownOrUnrecognizedError, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
-	}
 	resp.WriteEntity(metadata.NewSuccessResp("add tenant success"))
 }
 
@@ -124,7 +121,7 @@ func addDefaultArea(kit *rest.Kit, db local.DB) error {
 	}
 
 	err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, metadata.CloudArea{
-		CloudID:    0,
+		CloudID:    common.BKDefaultDirSubArea,
 		CloudName:  "Default Area",
 		Default:    int64(common.BuiltIn),
 		CreateTime: time.Now(),
@@ -140,7 +137,7 @@ func addDefaultArea(kit *rest.Kit, db local.DB) error {
 // addTableIndexes add table indexes
 func addTableIndexes(kit *rest.Kit, db local.DB) error {
 	tableIndexes := index.TableIndexes()
-	for _, object := range common.BKInnerObjects {
+	for _, object := range tenanttmp.BKInnerObjects {
 		instAsstTable := common.GetObjectInstAsstTableName(object, kit.TenantID)
 		tableIndexes[instAsstTable] = index.InstanceAssociationIndexes()
 	}
@@ -164,33 +161,10 @@ func addTableIndexes(kit *rest.Kit, db local.DB) error {
 	return nil
 }
 
-func addDataFromTemplate(kit *rest.Kit, db local.DB, coreAPI coreservice.CoreServiceClientInterface) error {
+func addDataFromTemplate(kit *rest.Kit, db local.DB) error {
 
-	for _, ty := range tenant.AllTemplateTypes {
-		tmpData := make([]tenant.TenantTmpData[mapstr.MapStr], 0)
-		lastId := 0
-		for {
-			filter := mapstr.MapStr{
-				"type": ty,
-				"id":   map[string]interface{}{common.BKDBGT: lastId},
-			}
-			result := make([]tenant.TenantTmpData[mapstr.MapStr], 0)
-			err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameTenantTemplate).Find(filter).
-				Sort("id").Limit(uint64(common.BKMaxInstanceLimit)).All(kit.Ctx, &result)
-			if err != nil {
-				blog.Errorf("get template data for type %s failed, err: %v, rid: %s", ty, err, kit.Rid)
-				return err
-			}
-
-			if len(result) > 0 {
-				tmpData = append(tmpData, result...)
-				lastId = int(result[len(result)-1].ID)
-			}
-			if len(result) < common.BKMaxInstanceLimit {
-				break
-			}
-		}
-		if err := typeHandlerMap[ty](kit, db, tmpData, coreAPI); err != nil {
+	for _, ty := range tenanttmp.AllTemplateTypes {
+		if err := typeHandlerMap[ty](kit, db); err != nil {
 			blog.Errorf("add template data failed for type %s, err: %v, rid: %s", ty, err, kit.Rid)
 			return err
 		}

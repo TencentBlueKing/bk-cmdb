@@ -18,7 +18,7 @@
 package data
 
 import (
-	"configcenter/pkg/tenant"
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -47,9 +47,8 @@ var objPropertyMap = map[string]string{
 	"bk_project":     "default",
 }
 
-func getAttrData() {
+func getAttrData() []*attribute {
 	for key, value := range objAttrMap {
-		attributeArr := make([]*attribute, 0)
 		for _, attr := range value {
 			attr.ObjectID = key
 			attr.Time = tools.NewTime()
@@ -58,10 +57,10 @@ func getAttrData() {
 			if propertyGroup, ok := objPropertyMap[key]; ok {
 				attr.PropertyGroup = propertyGroup
 			}
-			attributeArr = append(attributeArr, attr)
 		}
-		objAttrData = append(objAttrData, attributeArr...)
+		objAttrData = append(objAttrData, value...)
 	}
+	return objAttrData
 }
 
 func addObjAttrData(kit *rest.Kit, db local.DB) error {
@@ -107,8 +106,8 @@ func addObjAttrData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, attributeData, needField, idOptions, tenant.TemplateTypeObjAttribute)
+	idOptions := &tools.IDOptions{ResNameField: "bk_property_name", RemoveKeys: []string{"id"}}
+	err = tools.InsertTemplateData(kit, db, attributeData, needField, idOptions, tenanttmp.TemplateTypeObjAttribute)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

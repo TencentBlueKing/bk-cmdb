@@ -38,8 +38,8 @@ func upgrade(kit *rest.Kit, db dal.Dal) error {
 		return fmt.Errorf("non-system tenants cannot initialize")
 	}
 
-	dbCli, _ := logics.GetNewTenantCli(kit, db)
-	if dbCli == nil {
+	dbCli, _, err := logics.GetNewTenantCli(kit, db)
+	if err != nil {
 		blog.Errorf("get new tenant db failed, rid: %s", kit.Rid)
 		return fmt.Errorf("get new tenant db failed")
 	}

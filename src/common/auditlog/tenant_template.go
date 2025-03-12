@@ -20,46 +20,51 @@ package auditlog
 import (
 	"time"
 
-	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 )
 
-// tenantTemplateAuditLog provides methods to generate tenant template audit log.
 type tenantTemplateAuditLog struct {
 	audit
 }
 
 // GenerateAuditLog generate audit log
-func (a *tenantTemplateAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter,
-	data []mapstr.MapStr, auditOpt *AuditOpts) []metadata.AuditLog {
+func (t *tenantTemplateAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter,
+	data []interface{}, auditOpt *AuditOpts) []metadata.AuditLog {
 
 	auditLogs := make([]metadata.AuditLog, 0)
-	for _, item := range data {
+
+	for index, item := range data {
+		resourceName := ""
+		if len(auditOpt.ResourceName) != 0 {
+			resourceName = auditOpt.ResourceName[index]
+		}
 		auditLogs = append(auditLogs, metadata.AuditLog{
-			Action:      metadata.AuditCreate,
+			Action:      metadata.AuditTenantInit,
 			OperateFrom: metadata.FromCCSystem,
-			OperationDetail: &metadata.BasicOpDetail{
-				Details: parameter.NewBasicContent(item),
+			OperationDetail: &metadata.TenantTmpDetail{
+				Type: auditOpt.Type,
+				TenantTmpBasicOpDetail: metadata.TenantTmpBasicOpDetail{
+					Details: parameter.NewTmpBasicContent(item),
+				},
 			},
 			OperationTime: metadata.Time{Time: time.Now()},
-			ResourceName:  auditOpt.ResourceName,
-			AuditType:     auditOpt.AuditType,
-			ResourceType:  auditOpt.ResourceType,
-			ResourceID:    auditOpt.ResourceID,
+			ResourceName:  resourceName,
+			AuditType:     metadata.PlatformSetting,
+			ResourceType:  metadata.TenantTemplateRes,
+			ResourceID:    auditOpt.ResourceID[index],
 		})
 	}
 	return auditLogs
 }
 
 // SaveAuditLog save audit log
-func SaveAuditLog(kit *rest.Kit, db local.DB, auditLogs ...metadata.AuditLog) error {
+func (t *tenantTemplateAuditLog) SaveAuditLog(kit *rest.Kit, db local.DB, auditLogs ...metadata.AuditLog) error {
 	logRows := make([]metadata.AuditLog, 0)
 
 	ids, err := mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameAuditLog, len(auditLogs))
@@ -98,19 +103,14 @@ func SaveAuditLog(kit *rest.Kit, db local.DB, auditLogs ...metadata.AuditLog) er
 	return db.Table(common.BKTableNameAuditLog).Insert(kit.Ctx, logRows)
 }
 
-// NewTenantTemplateAudit get tenant template audit log
-func NewTenantTemplateAudit(clientSet coreservice.CoreServiceClientInterface) *tenantTemplateAuditLog {
-	return &tenantTemplateAuditLog{
-		audit: audit{
-			clientSet: clientSet,
-		},
-	}
-}
-
 // AuditOpts audit options
 type AuditOpts struct {
-	ResourceID   interface{}
-	ResourceName string
-	AuditType    metadata.AuditType
-	ResourceType metadata.ResourceType
+	Type         string
+	ResourceID   []int64
+	ResourceName []string
+}
+
+// NewTenantTemplateAuditLog new tenant template audit log
+func NewTenantTemplateAuditLog() *tenantTemplateAuditLog {
+	return &tenantTemplateAuditLog{}
 }

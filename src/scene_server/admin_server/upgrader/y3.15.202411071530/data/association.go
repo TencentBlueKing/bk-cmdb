@@ -18,7 +18,7 @@
 package data
 
 import (
-	"configcenter/pkg/tenant"
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -100,8 +100,8 @@ func addAssociationData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	idOption := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, dataMap, needFields, idOption, tenant.TemplateTypeAssociation)
+	idOption := &tools.IDOptions{ResNameField: common.AssociationKindNameField, RemoveKeys: []string{"id"}}
+	err = tools.InsertTemplateData(kit, db, dataMap, needFields, idOption, tenanttmp.TemplateTypeAssociation)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

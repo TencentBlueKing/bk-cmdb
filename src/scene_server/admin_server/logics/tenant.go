@@ -18,21 +18,33 @@
 package logics
 
 import (
+	"fmt"
+
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
 // NewTenantInterface get new tenant cli interface
 type NewTenantInterface interface {
-	NewTenantCli(tenant string) local.DB
-	NewTenantDB() string
+	NewTenantCli(tenant string) (local.DB, string, error)
 }
 
 // GetNewTenantCli get new tenant db
-func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string) {
-	newTenantCli := cli.(NewTenantInterface)
-	return newTenantCli.NewTenantCli(kit.TenantID), newTenantCli.NewTenantDB()
+func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string, error) {
+	newTenantCli, ok := cli.(NewTenantInterface)
+	if !ok {
+		blog.Errorf("get new tenant cli failed, rid: %s", kit.Rid)
+		return nil, "", fmt.Errorf("get new tenant cli failed")
+	}
+
+	dbCli, dbUUID, err := newTenantCli.NewTenantCli(kit.TenantID)
+	if err != nil || dbCli == nil {
+		blog.Errorf("get new tenant cli failed, err: %v, tenant: %s, rid: %s", err, kit.TenantID, kit.Rid)
+		return nil, "", fmt.Errorf("get new tenant cli failed, err: %v", err)
+	}
+	return dbCli, dbUUID, nil
 }
 
 // GetSystemTenant get system tenant # TODO get the default tenant when multi-tenancy is not enabled

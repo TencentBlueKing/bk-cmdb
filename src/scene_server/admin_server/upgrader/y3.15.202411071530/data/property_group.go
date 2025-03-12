@@ -18,7 +18,7 @@
 package data
 
 import (
-	"configcenter/pkg/tenant"
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -42,7 +42,7 @@ func addPropertyGroupData(kit *rest.Kit, db local.DB) error {
 	}
 
 	needField := &tools.InsertOptions{
-		UniqueFields: []string{common.BKObjIDField, common.BKAppIDField, common.BKPropertyGroupIndexField},
+		UniqueFields: []string{common.BKObjIDField, common.BKAppIDField, common.BKPropertyGroupNameField},
 		IgnoreKeys:   []string{common.BKFieldID, common.BKPropertyGroupIndexField},
 		IDField:      []string{common.BKFieldID},
 		AuditDataField: &tools.AuditDataField{
@@ -62,8 +62,8 @@ func addPropertyGroupData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	idOptions := &tools.IDOptions{IDField: "id", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, propertyGroupArr, needField, idOptions, tenant.TemplateTypePropertyGroup)
+	idOptions := &tools.IDOptions{ResNameField: "bk_group_name", RemoveKeys: []string{"id"}}
+	err = tools.InsertTemplateData(kit, db, propertyGroupArr, needField, idOptions, tenanttmp.TemplateTypePropertyGroup)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

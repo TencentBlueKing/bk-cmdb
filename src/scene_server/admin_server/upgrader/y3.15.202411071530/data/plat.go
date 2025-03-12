@@ -18,7 +18,7 @@
 package data
 
 import (
-	"configcenter/pkg/tenant"
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -76,8 +76,8 @@ func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	idOption := &tools.IDOptions{IDField: "id", RemoveKeys: []string{common.BKCloudIDField}}
-	err = tools.InsertTemplateData(kit, db, cloudTmpData, needField, idOption, tenant.TemplateTypePlat)
+	idOption := &tools.IDOptions{ResNameField: "bk_cloud_name", RemoveKeys: []string{common.BKCloudIDField}}
+	err = tools.InsertTemplateData(kit, db, cloudTmpData, needField, idOption, tenanttmp.TemplateTypePlat)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err

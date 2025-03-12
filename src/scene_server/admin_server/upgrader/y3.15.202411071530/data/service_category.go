@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/pkg/tenant"
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -52,13 +52,13 @@ var (
 
 func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 	parentServiceCategory := make([]mapstr.MapStr, 0)
-	tmpData := make([]tenant.SvrCategoryTmp, 0)
+	tmpData := make([]tenanttmp.SvrCategoryTmp, 0)
 	for _, value := range parentCategory {
 		category := ServiceCategory{
 			Name:      value,
 			IsBuiltIn: true,
 		}
-		tmpData = append(tmpData, tenant.SvrCategoryTmp{
+		tmpData = append(tmpData, tenanttmp.SvrCategoryTmp{
 			Name:       value,
 			ParentName: "",
 		})
@@ -96,10 +96,10 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 		parentIDs[name] = value
 	}
 
-	svrTmpData := make([]tenant.TenantTmpData[tenant.SvrCategoryTmp], 0)
+	svrTmpData := make([]tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp], 0)
 	for _, item := range tmpData {
-		svrTmpData = append(svrTmpData, tenant.TenantTmpData[tenant.SvrCategoryTmp]{
-			Type:  tenant.TemplateTypeServiceCategory,
+		svrTmpData = append(svrTmpData, tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp]{
+			Type:  tenanttmp.TemplateTypeServiceCategory,
 			IsPre: true,
 			Data:  item,
 		})
@@ -120,7 +120,7 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]interface{}) error {
 	// add sub category data
 	subCategoryData := make([]mapstr.MapStr, 0)
-	tmpData := make([]tenant.SvrCategoryTmp, 0)
+	tmpData := make([]tenanttmp.SvrCategoryTmp, 0)
 	for key, value := range subCategoryMap {
 		parentID, err := util.GetInt64ByInterface(parentIDs[key])
 		if err != nil {
@@ -141,7 +141,7 @@ func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]inte
 				return err
 			}
 			subCategoryData = append(subCategoryData, item)
-			tmpData = append(tmpData, tenant.SvrCategoryTmp{
+			tmpData = append(tmpData, tenanttmp.SvrCategoryTmp{
 				Name:       subValue,
 				ParentName: key,
 			})
@@ -169,10 +169,10 @@ func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]inte
 		return err
 	}
 
-	svrTmpData := make([]tenant.TenantTmpData[tenant.SvrCategoryTmp], 0)
+	svrTmpData := make([]tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp], 0)
 	for _, item := range tmpData {
-		svrTmpData = append(svrTmpData, tenant.TenantTmpData[tenant.SvrCategoryTmp]{
-			Type:  tenant.TemplateTypeServiceCategory,
+		svrTmpData = append(svrTmpData, tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp]{
+			Type:  tenanttmp.TemplateTypeServiceCategory,
 			IsPre: true,
 			Data:  item,
 		})

@@ -20,7 +20,7 @@ package data
 import (
 	"time"
 
-	"configcenter/pkg/tenant"
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -50,7 +50,7 @@ var objUniqueKeys = map[string][][]string{
 	"bk_biz_set_obj": {{"bk_biz_set_name"}, {"bk_biz_set_id"}},
 }
 
-func getUniqueKeys(kit *rest.Kit, db local.DB) ([]objectUnique, []tenant.UniqueKeyTmp, error) {
+func getUniqueKeys(kit *rest.Kit, db local.DB) ([]objectUnique, []tenanttmp.UniqueKeyTmp, error) {
 	attrArr := make([]metadata.Attribute, 0)
 	err := db.Table(common.BKTableNameObjAttDes).Find(nil).All(kit.Ctx, &attrArr)
 	if err != nil {
@@ -63,7 +63,7 @@ func getUniqueKeys(kit *rest.Kit, db local.DB) ([]objectUnique, []tenant.UniqueK
 		attrIDMap[generateUniqueKey(attr.ObjectID, attr.PropertyID)] = uint64(attr.ID)
 	}
 	uniqueKeys := make([]objectUnique, 0)
-	var attributes []tenant.UniqueKeyTmp
+	var attributes []tenanttmp.UniqueKeyTmp
 	for objID, value := range objUniqueKeys {
 		for _, property := range value {
 			keys := make([]uniqueKey, 0)
@@ -73,7 +73,7 @@ func getUniqueKeys(kit *rest.Kit, db local.DB) ([]objectUnique, []tenant.UniqueK
 					ID:   attrIDMap[generateUniqueKey(objID, field)],
 				})
 			}
-			attributes = append(attributes, tenant.UniqueKeyTmp{
+			attributes = append(attributes, tenanttmp.UniqueKeyTmp{
 				ObjectID: objID,
 				Keys:     property,
 			})
@@ -127,10 +127,10 @@ func addObjectUniqueData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 	// add tenant template data
-	uniqueTmpData := make([]tenant.TenantTmpData[tenant.UniqueKeyTmp], 0)
+	uniqueTmpData := make([]tenanttmp.TenantTmpData[tenanttmp.UniqueKeyTmp], 0)
 	for _, data := range attributes {
-		uniqueTmpData = append(uniqueTmpData, tenant.TenantTmpData[tenant.UniqueKeyTmp]{
-			Type:  tenant.TemplateTypeUniqueKeys,
+		uniqueTmpData = append(uniqueTmpData, tenanttmp.TenantTmpData[tenanttmp.UniqueKeyTmp]{
+			Type:  tenanttmp.TemplateTypeUniqueKeys,
 			IsPre: true,
 			Data:  data,
 		})

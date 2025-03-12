@@ -15,9 +15,55 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tenant
+package tenant_template
 
+import "configcenter/src/common"
+
+// BKInnerObjects is inner objects
+var BKInnerObjects = []string{
+	common.BKInnerObjIDApp,
+	common.BKInnerObjIDModule,
+	common.BKInnerObjIDProc,
+	common.BKInnerObjIDHost,
+	common.BKInnerObjIDProject,
+	common.BKInnerObjIDBizSet,
+	common.BKInnerObjIDPlat,
+	common.BKInnerObjIDSet,
+}
+
+const (
+	// BKTenantTemplateTypeField is type field for tenant template
+	BKTenantTemplateTypeField = "type"
+
+	// BKTenantTemplateIDField is id field for tenant template
+	BKTenantTemplateIDField = "id"
+
+	// BKTenantIsPreField is isPre field for tenant template
+	BKTenantIsPreField = "is_pre"
+)
+
+// TenantTemplateType tenant template type
 type TenantTemplateType string
+
+// TenantTmpData tenant template data struct
+type TenantTmpData[T any] struct {
+	Type  TenantTemplateType `bson:"type"`
+	IsPre bool               `bson:"is_pre"`
+	ID    int64              `bson:"id"`
+	Data  T                  `bson:"data"`
+}
+
+// SvrCategoryTmp tenant template for service category
+type SvrCategoryTmp struct {
+	Name       string `bson:"name"`
+	ParentName string `bson:"parent_name"`
+}
+
+// UniqueKeyTmp tenant template for unique keys
+type UniqueKeyTmp struct {
+	ObjectID string   `bson:"bk_obj_id"`
+	Keys     []string `bson:"keys"`
+}
 
 // tenant template type
 const (

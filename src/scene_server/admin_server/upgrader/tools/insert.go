@@ -21,12 +21,9 @@ import (
 	"fmt"
 	"strings"
 
-	"configcenter/pkg/tenant"
-	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/driver/mongodb"
@@ -112,151 +109,6 @@ func InsertData(kit *rest.Kit, db dal.RDB, table string, data []mapstr.MapStr, i
 	return idFields, nil
 }
 
-func InsertTemplateData(kit *rest.Kit, db dal.RDB, data []mapstr.MapStr,
-	insertOps *InsertOptions, idOption *IDOptions, dataType tenant.TenantTemplateType) error {
-
-	tmpData := make([]tenant.TenantTmpData[mapstr.MapStr], 0)
-	for _, item := range data {
-		for _, idField := range idOption.RemoveKeys {
-			delete(item, idField)
-		}
-		tmpData = append(tmpData, tenant.TenantTmpData[mapstr.MapStr]{
-			Type:  dataType,
-			IsPre: true,
-			Data:  item,
-		})
-	}
-
-	result := make([]tenant.TenantTmpData[mapstr.MapStr], 0)
-	cond := mapstr.MapStr{
-		"type": string(dataType),
-	}
-	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameTenantTemplate).Find(cond).All(kit.Ctx, &result)
-	if err != nil {
-		blog.Errorf("find exist data failed, table: %s, err: %v", common.BKTableNameTenantTemplate, err)
-		return err
-	}
-	insertData, err := cmpTenantTmp(result, tmpData, insertOps.UniqueFields, insertOps.IgnoreKeys)
-
-	if err = insertTmpData[mapstr.MapStr](kit, db, common.BKTableNameTenantTemplate, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameTenantTemplate, err)
-		return err
-	}
-	return nil
-}
-
-func InsertSvrCategoryTmp(kit *rest.Kit, db dal.RDB, data []tenant.TenantTmpData[tenant.SvrCategoryTmp]) error {
-
-	result := make([]tenant.TenantTmpData[tenant.SvrCategoryTmp], 0)
-	cond := mapstr.MapStr{
-		"type": tenant.TemplateTypeServiceCategory,
-	}
-	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameTenantTemplate).Find(cond).All(kit.Ctx, &result)
-	if err != nil {
-		blog.Errorf("find exist data failed, table: %s, err: %v", common.BKTableNameTenantTemplate, err)
-		return err
-	}
-	insertData := make([]tenant.TenantTmpData[tenant.SvrCategoryTmp], 0)
-	existUniqueMap := make(map[string]interface{}, 0)
-	for _, item := range result {
-		existUniqueMap[strings.Join([]string{item.Data.ParentName, item.Data.Name}, "*")] = struct{}{}
-	}
-	for _, item := range data {
-		uniqueStr := strings.Join([]string{item.Data.ParentName, item.Data.Name}, "*")
-		if _, ok := existUniqueMap[uniqueStr]; ok {
-			continue
-		}
-		insertData = append(insertData, item)
-	}
-
-	if err = insertTmpData[tenant.SvrCategoryTmp](kit, db, common.BKTableNameTenantTemplate, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameTenantTemplate, err)
-		return err
-	}
-	return nil
-}
-
-func InsertUniqueKeyTmp(kit *rest.Kit, db dal.RDB, data []tenant.TenantTmpData[tenant.UniqueKeyTmp]) error {
-
-	result := make([]tenant.TenantTmpData[tenant.UniqueKeyTmp], 0)
-	cond := mapstr.MapStr{
-		"type": tenant.TemplateTypeUniqueKeys,
-	}
-	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameTenantTemplate).Find(cond).All(kit.Ctx, &result)
-	if err != nil {
-		blog.Errorf("find exist data failed, table: %s, err: %v", common.BKTableNameTenantTemplate, err)
-		return err
-	}
-	insertData := make([]tenant.TenantTmpData[tenant.UniqueKeyTmp], 0)
-	existUniqueMap := make(map[string]interface{}, 0)
-	for _, item := range result {
-		existUniqueMap[strings.Join(item.Data.Keys, "*")] = struct{}{}
-	}
-	for _, item := range data {
-		uniqueStr := strings.Join(item.Data.Keys, "*")
-		if _, ok := existUniqueMap[uniqueStr]; ok {
-			continue
-		}
-		insertData = append(insertData, item)
-	}
-
-	if err = insertTmpData[tenant.UniqueKeyTmp](kit, db, common.BKTableNameTenantTemplate, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameTenantTemplate, err)
-		return err
-	}
-	return nil
-}
-
-func insertTmpData[T tenant.UniqueKeyTmp | tenant.SvrCategoryTmp | mapstr.MapStr](kit *rest.Kit, db dal.RDB,
-	table string, insertData []tenant.TenantTmpData[T]) error {
-
-	if len(insertData) == 0 {
-		blog.Infof("no data to insert, table: %s", table)
-		return nil
-	}
-
-	nextIDs, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
-	if err != nil {
-		blog.Errorf("get next %d data IDs failed, table: %s, err: %v", len(insertData), table, err)
-		return fmt.Errorf("get next %d data IDs failed, table: %s, err: %v", len(insertData), table, err)
-	}
-	for index := range insertData {
-		insertData[index].ID = int64(nextIDs[index])
-	}
-
-	if err := mongodb.Dal().Shard(kit.SysShardOpts()).Table(table).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("add data for table %s failed, data: %+v, err: %v", insertData, err)
-		return err
-	}
-
-	// add audit log
-	auditField := &AuditStruct{
-		AuditDataField: &AuditDataField{
-			ResIDField:   "id",
-			ResNameField: "type",
-		},
-		AuditTypeData: &AuditResType{
-			AuditType:    metadata.PlatformSetting,
-			ResourceType: metadata.TenantTemplateRes,
-		},
-	}
-	auditDataMap := make([]map[string]interface{}, 0)
-	for _, item := range insertData {
-		dataMap, err := ConvStructToMap(item)
-		if err != nil {
-			blog.Errorf("convert struct to map failed, err: %v", err)
-			return err
-		}
-		auditDataMap = append(auditDataMap, dataMap)
-	}
-
-	if err := AddCreateAuditLog(kit, db, auditDataMap, auditField); err != nil {
-		blog.Errorf("add audit log failed, err: %v", err)
-		return err
-	}
-	return nil
-}
-
 func getUniqueStr(item mapstr.MapStr, uniqueFields []string) string {
 	var strArr []string
 	for _, uniqueValue := range uniqueFields {
@@ -267,40 +119,6 @@ func getUniqueStr(item mapstr.MapStr, uniqueFields []string) string {
 		strArr = append(strArr, str)
 	}
 	return strings.Join(strArr, "*")
-}
-
-func cmpTenantTmp(existData, data []tenant.TenantTmpData[mapstr.MapStr],
-	uniqueFields, ignoreFields []string) ([]tenant.TenantTmpData[mapstr.MapStr], error) {
-
-	dataMap := make(map[string]tenant.TenantTmpData[mapstr.MapStr])
-	for _, item := range data {
-		valueStr := getUniqueStr(item.Data, uniqueFields)
-		if valueStr == "" {
-			continue
-		}
-		dataMap[valueStr] = item
-	}
-
-	exitMap := make(map[string]tenant.TenantTmpData[mapstr.MapStr])
-	for _, item := range existData {
-		valueStr := getUniqueStr(item.Data, uniqueFields)
-		if valueStr == "" {
-			continue
-		}
-		exitMap[valueStr] = item
-	}
-
-	insertData := make([]tenant.TenantTmpData[mapstr.MapStr], 0)
-	for key, value := range dataMap {
-		if _, exist := exitMap[key]; !exist {
-			insertData = append(insertData, value)
-			continue
-		}
-		if err := cmpData(value.Data, exitMap[key].Data, ignoreFields); err != nil {
-			return nil, err
-		}
-	}
-	return insertData, nil
 }
 
 func getInsertData(existData map[string]mapstr.MapStr, data []mapstr.MapStr, compareFiled *InsertOptions) (
@@ -401,6 +219,10 @@ type InsertOptions struct {
 
 // ConvStructToMap convert struct to map
 func ConvStructToMap(obj interface{}) (map[string]interface{}, error) {
+	if data, isOk := obj.(map[string]interface{}); isOk {
+		return data, nil
+	}
+
 	data, err := bson.Marshal(obj)
 	if err != nil {
 		return nil, err
@@ -413,6 +235,6 @@ func ConvStructToMap(obj interface{}) (map[string]interface{}, error) {
 
 // IDOptions the options of data template id
 type IDOptions struct {
-	IDField    string
-	RemoveKeys []string
+	ResNameField string
+	RemoveKeys   []string
 }

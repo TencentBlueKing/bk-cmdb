@@ -191,23 +191,18 @@ func (m *ShardingMongoManager) Shard(opt ShardOpts) local.DB {
 }
 
 // NewTenantCli returns the new tenant db client
-func (m *ShardingMongoManager) NewTenantCli(tenant string) local.DB {
+func (m *ShardingMongoManager) NewTenantCli(tenant string) (local.DB, string, error) {
 	client := m.newTenantCli
 	txnManager, err := m.tm.DB(client.UUID())
 	if err != nil {
-		return local.NewErrDB(err)
+		return nil, "", err
 	}
 
 	db, err := local.NewMongo(client, txnManager, m.conf, &local.MongoOptions{Tenant: tenant})
 	if err != nil {
-		return local.NewErrDB(err)
+		return nil, "", err
 	}
-	return db
-}
-
-// NewTenantDB returns the new tenant db name
-func (m *ShardingMongoManager) NewTenantDB() string {
-	return m.newTenantCli.UUID()
+	return db, m.newTenantCli.UUID(), nil
 }
 
 // Tenant returns the db client for tenant
