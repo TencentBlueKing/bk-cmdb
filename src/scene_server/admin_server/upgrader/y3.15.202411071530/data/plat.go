@@ -45,6 +45,8 @@ func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 	cloudTmpData := make([]mapstr.MapStr, 0)
 	for _, data := range cloudAreaData {
 		data.Time = tools.NewTime()
+		data.Creator = "cc_system"
+		data.LastEditor = "cc_system"
 		item, err := tools.ConvStructToMap(data)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
@@ -88,8 +90,11 @@ func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 type cloudArea struct {
 	CloudID     int64  ` bson:"bk_cloud_id"`
 	CloudName   string ` bson:"bk_cloud_name"`
+	AccountID   int64  `bson:"bk_account_id"`
 	Status      string ` bson:"bk_status"`
 	CloudVendor string ` bson:"bk_cloud_vendor"`
+	Creator     string `bson:"bk_creator"`
+	LastEditor  string `bson:"bk_last_editor"`
 	VpcID       string ` bson:"bk_vpc_id"`
 	VpcName     string ` bson:"bk_vpc_name"`
 	Region      string ` bson:"bk_region"`

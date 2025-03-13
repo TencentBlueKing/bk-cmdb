@@ -36,6 +36,7 @@ var (
 		common.BKSetEnvField:        "3",
 		common.BKSetStatusField:     "1",
 		common.BKSetTemplateIDField: 0,
+		common.BKSetCapacityField:   nil,
 	}
 )
 

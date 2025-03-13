@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -61,8 +62,14 @@ func InsertTemplateData(kit *rest.Kit, db dal.RDB, data []mapstr.MapStr,
 		return err
 	}
 
+	// get audit resName
+	resNames := make([]string, 0)
+	for _, item := range insertData {
+		resNames = append(resNames, util.GetStrByInterface(item.Data[idOption.ResNameField]))
+	}
+
 	if err = insertTmpData[mapstr.MapStr](kit, db, common.BKTableNameTenantTemplate, insertData,
-		idOption.ResNameField); err != nil {
+		resNames); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameTenantTemplate, err)
 		return err
 	}
@@ -85,16 +92,19 @@ func InsertSvrCategoryTmp(kit *rest.Kit, db dal.RDB, data []tenanttmp.TenantTmpD
 	for _, item := range result {
 		existUniqueMap[item.Data.ParentName+"*"+item.Data.Name] = struct{}{}
 	}
+
+	resNames := make([]string, 0)
 	for _, item := range data {
 		uniqueStr := item.Data.ParentName + "*" + item.Data.Name
 		if _, ok := existUniqueMap[uniqueStr]; ok {
 			continue
 		}
 		insertData = append(insertData, item)
+		resNames = append(resNames, item.Data.Name)
 	}
 
 	if err = insertTmpData[tenanttmp.SvrCategoryTmp](kit, db, common.BKTableNameTenantTemplate,
-		insertData, "name"); err != nil {
+		insertData, resNames); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameTenantTemplate, err)
 		return err
 	}
@@ -117,16 +127,19 @@ func InsertUniqueKeyTmp(kit *rest.Kit, db dal.RDB, data []tenanttmp.TenantTmpDat
 	for _, item := range result {
 		existUniqueMap[strings.Join(item.Data.Keys, "*")] = struct{}{}
 	}
+
+	resNames := make([]string, 0)
 	for _, item := range data {
 		uniqueStr := strings.Join(item.Data.Keys, "*")
 		if _, ok := existUniqueMap[uniqueStr]; ok {
 			continue
 		}
 		insertData = append(insertData, item)
+		resNames = append(resNames, util.GetStrByInterface(item.Data.ObjectID))
 	}
 
 	if err = insertTmpData[tenanttmp.UniqueKeyTmp](kit, db, common.BKTableNameTenantTemplate, insertData,
-		"bk_obj_id"); err != nil {
+		resNames); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameTenantTemplate, err)
 		return err
 	}
@@ -134,7 +147,7 @@ func InsertUniqueKeyTmp(kit *rest.Kit, db dal.RDB, data []tenanttmp.TenantTmpDat
 }
 
 func insertTmpData[T tenanttmp.UniqueKeyTmp | tenanttmp.SvrCategoryTmp | mapstr.MapStr](kit *rest.Kit, db dal.RDB,
-	table string, insertData []tenanttmp.TenantTmpData[T], resNameField string) error {
+	table string, insertData []tenanttmp.TenantTmpData[T], resNames []string) error {
 
 	if len(insertData) == 0 {
 		blog.Infof("no data to insert, table: %s", table)
@@ -158,13 +171,13 @@ func insertTmpData[T tenanttmp.UniqueKeyTmp | tenanttmp.SvrCategoryTmp | mapstr.
 	// add audit log
 	auditField := &AuditStruct{
 		AuditDataField: &AuditDataField{
-			ResIDField:   "id",
-			ResNameField: resNameField,
+			ResIDField: "id",
 		},
 		AuditTypeData: &AuditResType{
 			AuditType:    metadata.PlatformSetting,
 			ResourceType: metadata.TenantTemplateRes,
 		},
+		ResNames: resNames,
 	}
 	auditDataMap := make([]map[string]interface{}, 0)
 	for _, item := range insertData {
@@ -176,7 +189,7 @@ func insertTmpData[T tenanttmp.UniqueKeyTmp | tenanttmp.SvrCategoryTmp | mapstr.
 		auditDataMap = append(auditDataMap, dataMap)
 	}
 
-	if err := AddCreateAuditLog(kit, db, auditDataMap, auditField); err != nil {
+	if err := AddTmpAuditLog(kit, db, auditDataMap, auditField); err != nil {
 		blog.Errorf("add audit log failed, err: %v", err)
 		return err
 	}

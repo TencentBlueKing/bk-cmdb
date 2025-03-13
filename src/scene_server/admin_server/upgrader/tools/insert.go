@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 
 	"github.com/google/go-cmp/cmp"
@@ -35,7 +35,7 @@ import (
 var ignoreKeysArr = []string{"create_time", "last_time", "_id"}
 
 // InsertData insert data for upgrade
-func InsertData(kit *rest.Kit, db dal.RDB, table string, data []mapstr.MapStr, insertOps *InsertOptions) (
+func InsertData(kit *rest.Kit, db local.DB, table string, data []mapstr.MapStr, insertOps *InsertOptions) (
 	map[string]interface{}, error) {
 
 	result := make([]mapstr.MapStr, 0)

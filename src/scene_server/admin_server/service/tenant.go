@@ -121,6 +121,8 @@ func addDefaultArea(kit *rest.Kit, db local.DB) error {
 	}
 
 	err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, metadata.CloudArea{
+		Creator:    common.CCSystemOperatorUserName,
+		LastEditor: common.CCSystemOperatorUserName,
 		CloudID:    common.BKDefaultDirSubArea,
 		CloudName:  "Default Area",
 		Default:    int64(common.BuiltIn),

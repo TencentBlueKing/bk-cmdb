@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
@@ -42,28 +43,19 @@ func AddCreateAuditLog(kit *rest.Kit, db dal.RDB, auditData []map[string]interfa
 		return err
 	}
 
-	auditLogs := make([]auditLog, len(auditData))
+	auditLogs := make([]*auditLog, len(auditData))
 	for i, data := range auditData {
+		var bizID int64
 		if auditField.AuditDataField.BizIDField != "" {
-			bizID, err := util.GetInt64ByInterface(data[auditField.AuditDataField.BizIDField])
+			bizID, err = util.GetInt64ByInterface(data[auditField.AuditDataField.BizIDField])
 			if err != nil {
 				blog.Errorf("get businessID failed, err: %v, auditData: %+v", err, data)
 				return err
 			}
-			auditLogs[i].BusinessID = bizID
 		}
-		auditLogs[i] = auditLog{
-			ID:          int64(ids[i]),
-			Action:      metadata.AuditCreate,
-			OperateFrom: metadata.FromCCSystem,
-			OperationDetail: &metadata.BasicOpDetail{
-				Details: NewBasicContent(data, metadata.AuditCreate),
-			},
-			OperationTime: time.Now(),
-			ResourceName:  util.GetStrByInterface(data[auditField.AuditDataField.ResNameField]),
-			AuditField:    auditField.AuditTypeData,
-			ResourceID:    data[auditField.AuditDataField.ResIDField],
-		}
+		resName := util.GetStrByInterface(data[auditField.AuditDataField.ResNameField])
+		auditLogs[i] = getAuditLog(int64(ids[i]), data, resName, auditField.AuditTypeData,
+			data[auditField.AuditDataField.ResIDField], bizID)
 	}
 
 	if err = db.Table(common.BKTableNameAuditLog).Insert(kit.Ctx, auditLogs); err != nil {
@@ -71,6 +63,59 @@ func AddCreateAuditLog(kit *rest.Kit, db dal.RDB, auditData []map[string]interfa
 		return err
 	}
 	return nil
+}
+
+func AddTmpAuditLog(kit *rest.Kit, db dal.RDB, auditData []map[string]interface{}, auditField *AuditStruct) error {
+	if auditField.AuditTypeData == nil {
+		return nil
+	}
+
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameAuditLog,
+		len(auditData))
+	if err != nil {
+		blog.Errorf("get next %d audit log IDs failed, err: %v", len(auditData), err)
+		return err
+	}
+
+	auditLogs := make([]*auditLog, len(auditData))
+	for i, data := range auditData {
+		var bizID int64
+		if auditField.AuditDataField.BizIDField != "" {
+			bizID, err = util.GetInt64ByInterface(data[auditField.AuditDataField.BizIDField])
+			if err != nil {
+				blog.Errorf("get businessID failed, err: %v, auditData: %+v", err, data)
+				return err
+			}
+		}
+		auditLogs[i] = getAuditLog(int64(ids[i]), data, auditField.ResNames[i], auditField.AuditTypeData,
+			data[auditField.AuditDataField.ResIDField], bizID)
+	}
+
+	if err = db.Table(common.BKTableNameAuditLog).Insert(kit.Ctx, auditLogs); err != nil {
+		blog.Errorf("add audit log %+v error %v", auditLogs, err)
+		return err
+	}
+	return nil
+}
+
+func getAuditLog(id int64, data mapstr.MapStr, resName string, auditType *AuditResType,
+	resID interface{}, bizID int64) *auditLog {
+
+	auditData := &auditLog{
+		ID:          id,
+		BusinessID:  bizID,
+		Action:      metadata.AuditCreate,
+		OperateFrom: metadata.FromCCSystem,
+		OperationDetail: &metadata.BasicOpDetail{
+			Details: NewBasicContent(data, metadata.AuditCreate),
+		},
+		OperationTime: time.Now(),
+		ResourceName:  resName,
+		AuditField:    auditType,
+		ResourceID:    resID,
+	}
+
+	return auditData
 }
 
 // NewBasicContent get basicContent by data and self.
@@ -120,4 +165,5 @@ type AuditDataField struct {
 type AuditStruct struct {
 	AuditDataField *AuditDataField `bson:",inline"`
 	AuditTypeData  *AuditResType   `bson:",inline"`
+	ResNames       []string
 }

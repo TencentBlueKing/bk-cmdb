@@ -55,6 +55,7 @@ func addBizModule(kit *rest.Kit, db local.DB, data []interface{}, auditField *to
 
 	var dataMap []mapstr.MapStr
 	for _, item := range data {
+
 		itemMap, err := tools.ConvStructToMap(item)
 		if err != nil {
 			blog.Errorf("failed to convert struct to map, err: %v", err)
@@ -134,6 +135,7 @@ var (
 		Language:      "1",
 		LifeCycle:     common.DefaultAppLifeCycleNormal,
 		Default:       common.DefaultFlagDefaultValue,
+		Time:          tools.NewTime(),
 	}
 	resBizData = bizData{
 		BizName:       common.DefaultAppName,
@@ -143,7 +145,7 @@ var (
 		Language:      "1",
 		LifeCycle:     common.DefaultAppLifeCycleNormal,
 		Default:       common.DefaultAppFlag,
-		BizID:         1,
+		Time:          tools.NewTime(),
 	}
 	bizAuditType = &tools.AuditResType{
 		AuditType:    metadata.BusinessType,
@@ -152,7 +154,6 @@ var (
 )
 
 type bizData struct {
-	ID            int64       `bson:"id"`
 	BizMaintainer string      `bson:"bk_biz_maintainer"`
 	LifeCycle     string      `bson:"life_cycle"`
 	Time          *tools.Time `bson:",inline"`
