@@ -18,26 +18,27 @@
 package watch
 
 import (
-	"context"
-	"encoding/json"
+	"fmt"
 	"time"
 
 	synctypes "configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
-	"configcenter/src/source_controller/transfer-service/sync/util"
-	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/types"
 )
 
 // resTypeWatchOptMap is cmdb data sync resource type to db watch options map
-var resTypeWatchOptMap = map[synctypes.ResType]types.Options{
+var resTypeWatchOptMap = map[synctypes.ResType]*types.WatchCollOptions{
 	synctypes.ServiceInstance: {
-		EventStruct: new(metadata.ServiceInstance),
-		Collection:  common.BKTableNameServiceInstance,
+		CollectionOptions: types.CollectionOptions{
+			CollectionFilter: &types.CollectionFilter{
+				Regex: fmt.Sprintf("_%s$", common.BKTableNameServiceInstance),
+			},
+			EventStruct: new(metadata.ServiceInstance),
+		},
 	},
 }
 
@@ -45,45 +46,26 @@ var resTypeWatchOptMap = map[synctypes.ResType]types.Options{
 func (w *Watcher) watchDB(resType synctypes.ResType) error {
 	handler := w.tokenHandlers[resType]
 
-	token, err := handler.getWatchTokenInfo(context.Background(), common.BKStartAtTimeField)
-	if err != nil {
-		blog.Errorf("get %s watch db token info failed, err: %v", resType, err)
-		return err
-	}
-
-	startAtTime := &types.TimeStamp{Sec: uint32(time.Now().Unix())}
-	if token.StartAtTime != nil {
-		startAtTime = &types.TimeStamp{
-			Sec:  uint32(token.StartAtTime.Unix()),
-			Nano: uint32(token.StartAtTime.Nanosecond()),
-		}
-	}
-
-	watchOpts := resTypeWatchOptMap[resType]
-	watchOpts.StartAtTime = startAtTime
-	watchOpts.WatchFatalErrorCallback = handler.resetWatchToken
-
-	opts := &types.LoopBatchOptions{
-		LoopOptions: types.LoopOptions{
-			Name: string(resType),
-			WatchOpt: &types.WatchOptions{
-				Options: watchOpts,
-			},
+	opts := &types.LoopBatchTaskOptions{
+		WatchTaskOptions: &types.WatchTaskOptions{
+			Name:         string(resType),
+			CollOpts:     resTypeWatchOptMap[resType],
 			TokenHandler: handler,
 			RetryOptions: &types.RetryOptions{
 				MaxRetryCount: 3,
 				RetryDuration: 1 * time.Second,
 			},
 		},
-		EventHandler: &types.BatchHandler{
-			DoBatch: func(es []*types.Event) (retry bool) {
-				return w.handleDBEvents(resType, watchOpts.Collection, es)
+		EventHandler: &types.TaskBatchHandler{
+			DoBatch: func(dbInfo *types.DBInfo, es []*types.Event) bool {
+				return w.handleDBEvents(resType, es)
 			},
 		},
 		BatchSize: common.BKMaxLimitSize,
 	}
 
-	if err = w.loopW.WithBatch(opts); err != nil {
+	err := w.task.AddLoopBatchTask(opts)
+	if err != nil {
 		blog.Errorf("watch %s events from db failed, err: %v", resType, err)
 		return err
 	}
@@ -92,55 +74,12 @@ func (w *Watcher) watchDB(resType synctypes.ResType) error {
 }
 
 // handleDBEvents handle db events
-func (w *Watcher) handleDBEvents(resType synctypes.ResType, coll string, es []*types.Event) (retry bool) {
-	kit := util.NewKit()
-
-	// get deleted event oid to detail map
-	delOids := make([]string, 0)
-	for _, e := range es {
-		if e.OperationType == types.Delete {
-			delOids = append(delOids, e.Oid)
-		}
-	}
-
-	delOidMap := make(map[string]json.RawMessage)
-	if len(delOids) > 0 {
-		cond := mapstr.MapStr{
-			"oid":  mapstr.MapStr{common.BKDBIN: delOids},
-			"coll": coll,
-		}
-		archives := make([]delArchiveInfo, 0)
-		err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(cond).All(kit.Ctx, &archives)
-		if err != nil {
-			blog.Errorf("get del archive failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
-			return true
-		}
-
-		for _, archive := range archives {
-			if archive.Detail == nil {
-				continue
-			}
-
-			detail, err := json.Marshal(archive.Detail)
-			if err != nil {
-				blog.Errorf("marshal del archive detail failed, err: %v, archive: %+v, rid: %s", err, archive, kit.Rid)
-				return true
-			}
-			delOidMap[archive.Oid] = detail
-		}
-	}
+func (w *Watcher) handleDBEvents(resType synctypes.ResType, es []*types.Event) bool {
+	kit := rest.NewKit()
 
 	eventInfos := make([]*synctypes.EventInfo, 0)
 	for _, e := range es {
 		eventType := watch.ConvertOperateType(e.OperationType)
-		if eventType == watch.Delete {
-			delDetail, exists := delOidMap[e.Oid]
-			if !exists {
-				continue
-			}
-			e.DocBytes = delDetail
-		}
-
 		eventInfo, needSync := w.metadata.ParseEventDetail(eventType, resType, e.Oid, e.DocBytes)
 		if !needSync {
 			continue
@@ -155,9 +94,4 @@ func (w *Watcher) handleDBEvents(resType synctypes.ResType, coll string, es []*t
 	}
 
 	return false
-}
-
-type delArchiveInfo struct {
-	Oid    string        `bson:"oid"`
-	Detail mapstr.MapStr `bson:"detail"`
 }

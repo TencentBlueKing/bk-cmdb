@@ -29,7 +29,9 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/source_controller/transfer-service/app/options"
 	"configcenter/src/source_controller/transfer-service/sync"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/stream/task"
+	"configcenter/src/storage/stream/types"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
@@ -43,13 +45,16 @@ type Service struct {
 
 // New Service
 func New(conf *options.Config, engine *backbone.Engine) (*Service, error) {
-	loopW, err := stream.NewLoopStream(conf.Mongo.GetMongoConf(), engine.ServiceManageInterface)
-	if err != nil {
-		blog.Errorf("new loop stream failed, err: %v", err)
-		return nil, err
+	watchTaskOpt := &types.NewTaskOptions{
+		StopNotifier: make(<-chan struct{}),
+	}
+	watchTask, taskErr := task.New(mongodb.Dal(), mongodb.Dal("watch"), engine.ServiceManageInterface, watchTaskOpt)
+	if taskErr != nil {
+		blog.Errorf("new watch task instance failed, err: %v", taskErr)
+		return nil, taskErr
 	}
 
-	syncer, err := sync.NewSyncer(conf, engine.ServiceManageInterface, loopW, engine.CoreAPI.CacheService(),
+	syncer, err := sync.NewSyncer(conf, engine.ServiceManageInterface, watchTask, engine.CoreAPI.CacheService(),
 		engine.Metric().Registry())
 	if err != nil {
 		blog.Errorf("new syncer failed, err: %v", err)

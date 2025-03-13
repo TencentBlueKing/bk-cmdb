@@ -19,20 +19,26 @@ package watch
 
 import (
 	"context"
+	"time"
 
 	synctypes "configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/types"
 )
 
-const tokenTable = "cc_SrcSyncDataToken"
+const (
+	tokenTable  = "SrcSyncDataToken"
+	cursorTable = "SrcSyncDataCursor"
+)
 
-var _ types.TokenHandler = new(tokenHandler)
+var _ types.TaskTokenHandler = new(tokenHandler)
 
 // tokenHandler is cmdb data syncer event token handler
 type tokenHandler struct {
@@ -44,62 +50,65 @@ func newTokenHandler(resource synctypes.ResType) *tokenHandler {
 	return &tokenHandler{resource: resource}
 }
 
-// tokenInfo is cmdb data syncer event token info
-type tokenInfo struct {
-	Resource    synctypes.ResType           `bson:"resource"`
-	Token       string                      `bson:"token"`
-	Cursor      map[watch.CursorType]string `bson:"cursor"`
-	StartAtTime *metadata.Time              `bson:"start_at_time"`
-}
-
 // SetLastWatchToken set last event watch token
-func (t *tokenHandler) SetLastWatchToken(ctx context.Context, token string) error {
+func (t *tokenHandler) SetLastWatchToken(ctx context.Context, uuid string, watchDB local.DB,
+	token *types.TokenInfo) error {
+
 	tokenData := mapstr.MapStr{
-		common.BKTokenField: token,
+		common.BKTokenField:       token,
+		common.BKStartAtTimeField: token.StartAtTime,
 	}
-	return t.setWatchTokenInfo(ctx, tokenData)
-}
-
-// GetStartWatchToken get event start watch token
-func (t *tokenHandler) GetStartWatchToken(ctx context.Context) (string, error) {
-	info, err := t.getWatchTokenInfo(ctx, common.BKTokenField)
-	if err != nil {
-		return "", err
-	}
-
-	return info.Token, nil
-}
-
-// resetWatchToken reset watch token and start watch time
-func (t *tokenHandler) resetWatchToken(startAtTime types.TimeStamp) error {
 	filter := map[string]interface{}{
-		"resource": t.resource,
-	}
-	data := mapstr.MapStr{
-		common.BKCursorField:      make(map[watch.CursorType]string),
-		common.BKTokenField:       "",
-		common.BKStartAtTimeField: startAtTime,
+		"resource": watch.GenDBWatchTokenID(uuid, string(t.resource)),
 	}
 
-	if err := mongodb.Client("watch").Table(tokenTable).Upsert(context.Background(), filter, data); err != nil {
-		blog.Errorf("reset %s watch token failed, data: %+v, err: %v", t.resource, data, err)
+	if err := watchDB.Table(tokenTable).Upsert(ctx, filter, tokenData); err != nil {
+		blog.Errorf("set %s watch token info failed, data: %+v, err: %v", t.resource, tokenData, err)
 		return err
 	}
 	return nil
 }
 
-// getWatchTokenInfo get event watch token info
-func (t *tokenHandler) getWatchTokenInfo(ctx context.Context, fields ...string) (*tokenInfo, error) {
+// GetStartWatchToken get event start watch token
+func (t *tokenHandler) GetStartWatchToken(ctx context.Context, uuid string, watchDB local.DB) (*types.TokenInfo,
+	error) {
+
+	filter := map[string]interface{}{
+		"resource": watch.GenDBWatchTokenID(uuid, string(t.resource)),
+	}
+
+	info := new(types.TokenInfo)
+	if err := watchDB.Table(tokenTable).Find(filter).One(ctx, &info); err != nil {
+		if mongodb.IsNotFoundError(err) {
+			return &types.TokenInfo{Token: "", StartAtTime: &types.TimeStamp{Sec: uint32(time.Now().Unix())}}, nil
+		}
+		blog.Errorf("get %s event watch token info failed, err: %v", t.resource, err)
+		return nil, err
+	}
+
+	return info, nil
+}
+
+// cursorInfo is cmdb data syncer event token info
+type cursorInfo struct {
+	Resource    synctypes.ResType           `bson:"resource"`
+	Cursor      map[watch.CursorType]string `bson:"cursor"`
+	StartAtTime *metadata.Time              `bson:"start_at_time"`
+}
+
+// getWatchCursorInfo get event watch token info
+func (t *tokenHandler) getWatchCursorInfo(kit *rest.Kit) (*cursorInfo, error) {
 	filter := map[string]interface{}{
 		"resource": t.resource,
 	}
 
-	info := new(tokenInfo)
-	if err := mongodb.Client("watch").Table(tokenTable).Find(filter).Fields(fields...).One(ctx, &info); err != nil {
-		if mongodb.Client("watch").IsNotFoundError(err) {
-			return new(tokenInfo), nil
+	info := new(cursorInfo)
+	err := mongodb.Dal("watch").Shard(kit.ShardOpts()).Table(cursorTable).Find(filter).One(kit.Ctx, &info)
+	if err != nil {
+		if mongodb.IsNotFoundError(err) {
+			return new(cursorInfo), nil
 		}
-		blog.Errorf("get %s event watch token info failed, err: %v", t.resource, err)
+		blog.Errorf("get %s event watch token info failed, err: %v, rid: %s", t.resource, err, kit.Rid)
 		return nil, err
 	}
 
@@ -110,14 +119,14 @@ func (t *tokenHandler) getWatchTokenInfo(ctx context.Context, fields ...string) 
 	return info, nil
 }
 
-// getWatchTokenInfo get event watch token info
-func (t *tokenHandler) setWatchTokenInfo(ctx context.Context, data mapstr.MapStr) error {
+// setWatchCursorInfo get event watch token info
+func (t *tokenHandler) setWatchCursorInfo(kit *rest.Kit, data mapstr.MapStr) error {
 	filter := map[string]interface{}{
 		"resource": t.resource,
 	}
 
-	if err := mongodb.Client("watch").Table(tokenTable).Upsert(ctx, filter, data); err != nil {
-		blog.Errorf("set %s watch token info failed, data: %+v, err: %v", t.resource, data, err)
+	if err := mongodb.Dal("watch").Shard(kit.ShardOpts()).Table(cursorTable).Upsert(kit.Ctx, filter, data); err != nil {
+		blog.Errorf("set %s watch token info failed, data: %+v, err: %v, rid: %s", t.resource, data, err, kit.Rid)
 		return err
 	}
 
