@@ -120,6 +120,9 @@ const (
 
 	// BKTableNameObjectBaseMapping object base mapping table
 	BKTableNameObjectBaseMapping = "ObjectBaseMapping"
+
+	// BKTableNameWatchDBRelation is the db and watch db relation table
+	BKTableNameWatchDBRelation = "WatchDBRelation"
 )
 
 // AllTables is all table names, not include the sharding tables which is created dynamically,
