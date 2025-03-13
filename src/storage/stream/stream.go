@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-// Package stream TODO
+// Package stream defines mongodb change stream logics
 package stream
 
 import (
@@ -29,8 +29,7 @@ import (
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
-// Interface TODO
-// Stream Interface defines all the functionality it have.
+// Interface defines all the functionality it has.
 type Interface interface {
 	List(ctx context.Context, opts *types.ListOptions) (ch chan *types.Event, err error)
 	Watch(ctx context.Context, opts *types.WatchOptions) (*types.Watcher, error)
@@ -68,14 +67,14 @@ func newEvent(conf local.MongoConf) (*event.Event, error) {
 		return nil, err
 	}
 
-	event, err := event.NewEvent(client, connStr.Database)
+	event, err := event.NewEvent(client, connStr.Database, conf.Name)
 	if err != nil {
 		return nil, fmt.Errorf("new event failed, err: %v", err)
 	}
 	return event, nil
 }
 
-// LoopInterface TODO
+// LoopInterface is the interface for event loop stream.
 type LoopInterface interface {
 	WithOne(opts *types.LoopOneOptions) error
 	WithBatch(opts *types.LoopBatchOptions) error
