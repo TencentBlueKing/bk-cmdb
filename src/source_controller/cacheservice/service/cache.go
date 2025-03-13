@@ -56,7 +56,7 @@ func (s *cacheService) SearchHostWithInnerIPInCache(ctx *rest.Contexts) {
 		Keys:     []string{general.IPCloudIDKey(opt.InnerIP, opt.CloudID)},
 		Fields:   opt.Fields,
 	}
-	details, err := s.cacheSet.General.ListDetailByUniqueKey(ctx.Kit, listOpt, true)
+	details, err := s.cacheSet.General.ListDetailByUniqueKey(ctx.Kit, listOpt)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -92,7 +92,7 @@ func (s *cacheService) SearchHostWithAgentIDInCache(ctx *rest.Contexts) {
 		Keys:     []string{general.AgentIDKey(opt.AgentID)},
 		Fields:   opt.Fields,
 	}
-	details, err := s.cacheSet.General.ListDetailByUniqueKey(ctx.Kit, listOpt, true)
+	details, err := s.cacheSet.General.ListDetailByUniqueKey(ctx.Kit, listOpt)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -126,7 +126,7 @@ func (s *cacheService) SearchHostWithHostIDInCache(ctx *rest.Contexts) {
 		IDs:      []int64{opt.HostID},
 		Fields:   opt.Fields,
 	}
-	details, err := s.cacheSet.General.ListDetailByIDs(ctx.Kit, listOpt, true)
+	details, err := s.cacheSet.General.ListDetailByIDs(ctx.Kit, listOpt)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -171,7 +171,7 @@ func (s *cacheService) listHostWithHostIDInCache(kit *rest.Kit, ids []int64, fie
 		IDs:      ids,
 		Fields:   fields,
 	}
-	details, err := s.cacheSet.General.ListDetailByIDs(kit, listOpt, true)
+	details, err := s.cacheSet.General.ListDetailByIDs(kit, listOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (s *cacheService) ListHostWithPageInCache(ctx *rest.Contexts) {
 
 	if len(opt.HostIDs) > 0 {
 		cntCond := mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: opt.HostIDs}}
-		cnt, err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(cntCond).Count(ctx.Kit.Ctx)
+		cnt, err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(cntCond).Count(ctx.Kit.Ctx)
 		if err != nil {
 			blog.Errorf("count host failed, err: %v, cond: %+v, rid: %s", err, cntCond, ctx.Kit.Rid)
 			ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, err.Error())
@@ -249,7 +249,7 @@ func (s *cacheService) ListBusinessInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	details, err := s.cacheSet.Business.ListBusiness(ctx.Kit.Ctx, opt)
+	details, err := s.cacheSet.Business.ListBusiness(ctx.Kit, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list business with id in cache failed, err: %v", err)
 		return
@@ -266,7 +266,7 @@ func (s *cacheService) ListModulesInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	details, err := s.cacheSet.Business.ListModules(ctx.Kit.Ctx, opt)
+	details, err := s.cacheSet.Business.ListModules(ctx.Kit, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list modules with id in cache failed, err: %v", err)
 		return
@@ -283,7 +283,7 @@ func (s *cacheService) ListSetsInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	details, err := s.cacheSet.Business.ListSets(ctx.Kit.Ctx, opt)
+	details, err := s.cacheSet.Business.ListSets(ctx.Kit, opt)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "list sets with id in cache failed, err: %v", err)
 		return
@@ -298,7 +298,7 @@ func (s *cacheService) SearchBusinessInCache(ctx *rest.Contexts) {
 		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid biz id")
 		return
 	}
-	biz, err := s.cacheSet.Business.GetBusiness(ctx.Kit.Ctx, bizID)
+	biz, err := s.cacheSet.Business.GetBusiness(ctx.Kit, bizID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed,
 			"search biz with id in cache, but get biz failed, err: %v", err)
@@ -315,7 +315,7 @@ func (s *cacheService) SearchSetInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	set, err := s.cacheSet.Business.GetSet(ctx.Kit.Ctx, setID)
+	set, err := s.cacheSet.Business.GetSet(ctx.Kit, setID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search set with id in cache failed, err: %v", err)
 		return
@@ -331,7 +331,7 @@ func (s *cacheService) SearchModuleInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	module, err := s.cacheSet.Business.GetModuleDetail(ctx.Kit.Ctx, moduleID)
+	module, err := s.cacheSet.Business.GetModuleDetail(ctx.Kit, moduleID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search module with id in cache failed, err: %v", err)
 		return
@@ -349,7 +349,7 @@ func (s *cacheService) SearchCustomLayerInCache(ctx *rest.Contexts) {
 		return
 	}
 
-	inst, err := s.cacheSet.Business.GetCustomLevelDetail(ctx.Kit.Ctx, objID, ctx.Kit.TenantID, instID)
+	inst, err := s.cacheSet.Business.GetCustomLevelDetail(ctx.Kit, objID, instID)
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search custom layer with id in cache failed, err: %v",
 			err)
@@ -380,7 +380,7 @@ func (s *cacheService) SearchBizTopologyNodePath(ctx *rest.Contexts) {
 
 	opt.Business = bizID
 
-	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit.Ctx, opt, ctx.Kit.TenantID)
+	paths, err := s.cacheSet.Tree.SearchNodePath(ctx.Kit, opt)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -399,7 +399,7 @@ func (s *cacheService) SearchBusinessBriefTopology(ctx *rest.Contexts) {
 		return
 	}
 
-	topo, err := s.cacheSet.Topology.GetBizTopology(ctx.Kit, bizID)
+	topo, err := s.cacheSet.Topo.GetBizTopo(ctx.Kit, string(types.BriefType), &types.GetBizTopoOption{BizID: bizID})
 	if err != nil {
 		ctx.RespErrorCodeOnly(common.CCErrCommDBSelectFailed, "search biz topology, select db failed, err: %v", err)
 		return
@@ -861,7 +861,7 @@ func (s *cacheService) ListGeneralCacheByIDs(cts *rest.Contexts) {
 		return
 	}
 
-	details, err := s.cacheSet.General.ListDetailByIDs(cts.Kit, opt, false)
+	details, err := s.cacheSet.General.ListDetailByIDs(cts.Kit, opt)
 	if err != nil {
 		cts.RespAutoError(err)
 		return
@@ -894,7 +894,7 @@ func (s *cacheService) ListGeneralCacheByUniqueKey(cts *rest.Contexts) {
 		return
 	}
 
-	details, err := s.cacheSet.General.ListDetailByUniqueKey(cts.Kit, opt, true)
+	details, err := s.cacheSet.General.ListDetailByUniqueKey(cts.Kit, opt)
 	if err != nil {
 		cts.RespAutoError(err)
 		return

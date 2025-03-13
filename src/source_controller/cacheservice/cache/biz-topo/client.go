@@ -44,7 +44,7 @@ func (t *Topo) GetBizTopo(kit *rest.Kit, typ string, opt *types.GetBizTopoOption
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "opt")
 	}
 
-	topology, err := topoKey.GetTopology(kit.Ctx, opt.BizID)
+	topology, err := topoKey.GetTopology(kit, opt.BizID)
 	if err == nil {
 		if len(*topology) != 0 {
 			// get data from cache succeed
@@ -57,14 +57,14 @@ func (t *Topo) GetBizTopo(kit *rest.Kit, typ string, opt *types.GetBizTopoOption
 		err, kit.Rid)
 
 	// do not get biz topology from cache, get it from db directly.
-	bizTopo, err := topo.GenBizTopo(kit.Ctx, opt.BizID, topoType, false, kit.Rid)
+	bizTopo, err := topo.GenBizTopo(kit, opt.BizID, topoType, false)
 	if err != nil {
 		blog.Errorf("generate biz: %d %s topology from db failed, err: %v, rid: %s", opt.BizID, topoType, err, kit.Rid)
 		return nil, err
 	}
 
 	// update it to cache directly.
-	topology, err = topoKey.UpdateTopology(kit.Ctx, bizTopo)
+	topology, err = topoKey.UpdateTopology(kit, opt.BizID, bizTopo)
 	if err != nil {
 		blog.Errorf("update biz: %d %s topology cache failed, err: %v, rid: %s", opt.BizID, topoType, err, kit.Rid)
 		// do not return error
@@ -90,13 +90,13 @@ func (t *Topo) RefreshBizTopo(kit *rest.Kit, typ string, opt *types.RefreshBizTo
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "opt")
 	}
 
-	bizTopo, err := topo.GenBizTopo(kit.Ctx, opt.BizID, topoType, false, kit.Rid)
+	bizTopo, err := topo.GenBizTopo(kit, opt.BizID, topoType, false)
 	if err != nil {
 		blog.Errorf("generate biz: %d %s topology from db failed, err: %v, rid: %s", opt.BizID, topoType, err, kit.Rid)
 		return err
 	}
 
-	_, err = topoKey.UpdateTopology(kit.Ctx, bizTopo)
+	_, err = topoKey.UpdateTopology(kit, opt.BizID, bizTopo)
 	if err != nil {
 		blog.Errorf("update biz: %d %s topology cache failed, err: %v, rid: %s", opt.BizID, topoType, err, kit.Rid)
 		return err

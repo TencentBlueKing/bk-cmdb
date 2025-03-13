@@ -18,7 +18,6 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"sync"
@@ -26,7 +25,7 @@ import (
 
 	fullsynccond "configcenter/pkg/cache/full-sync-cond"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/util"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
 	"configcenter/src/storage/driver/redis"
 )
@@ -87,8 +86,8 @@ func (c *Cache) handleFullSyncCondEvent() {
 	for {
 		select {
 		case e := <-c.fullSyncCondCh:
-			rid := util.GenerateRID()
-			blog.V(4).Infof("received %s full sync cond event: %+v, rid: %s", c.key.Resource(), e, rid)
+			kit := rest.NewKit()
+			blog.V(4).Infof("received %s full sync cond event: %+v, rid: %s", c.key.Resource(), e, kit.Rid)
 
 			for eventType, conds := range e.EventMap {
 				switch eventType {
@@ -97,9 +96,11 @@ func (c *Cache) handleFullSyncCondEvent() {
 					fallthrough
 				case types.Upsert:
 					for _, cond := range conds {
+						kit = kit.WithTenant(cond.TenantID)
 						idListKey, err := c.GenFullSyncCondIDListKey(cond)
 						if err != nil {
-							blog.Errorf("gen full sync cond(%+v) id list key failed, err: %v, rid: %s", cond, err, rid)
+							blog.Errorf("gen full sync cond(%+v) id list key failed, err: %v, rid: %s", cond, err,
+								kit.Rid)
 							continue
 						}
 
@@ -109,7 +110,7 @@ func (c *Cache) handleFullSyncCondEvent() {
 						condInfo, exists := c.fullSyncCondMap.Get(idListKey)
 						if !exists {
 							if !cond.IsAll && cond.Condition == nil {
-								blog.Errorf("full sync cond %d is invalid, rid: %s", cond.ID, rid)
+								blog.Errorf("full sync cond %d is invalid, rid: %s", cond.ID, kit.Rid)
 								continue
 							}
 							c.fullSyncCondMap.Set(idListKey, &types.FullSyncCondInfo{
@@ -128,7 +129,7 @@ func (c *Cache) handleFullSyncCondEvent() {
 							c.fullSyncCondMap.Set(idListKey, condInfo)
 
 							for retry := 0; retry < 3; retry++ {
-								if err = c.updateFullSyncCondTTL(idListKey, ttl, rid); err == nil {
+								if err = c.updateFullSyncCondTTL(kit, idListKey, ttl); err == nil {
 									break
 								}
 								time.Sleep(100 * time.Millisecond * time.Duration(retry))
@@ -137,9 +138,11 @@ func (c *Cache) handleFullSyncCondEvent() {
 					}
 				case types.Delete:
 					for _, cond := range conds {
+						kit = kit.WithTenant(cond.TenantID)
 						idListKey, err := c.GenFullSyncCondIDListKey(cond)
 						if err != nil {
-							blog.Errorf("gen full sync cond(%+v) id list key failed, err: %v, rid: %s", cond, err, rid)
+							blog.Errorf("gen full sync cond(%+v) id list key failed, err: %v, rid: %s", cond, err,
+								kit.Rid)
 							continue
 						}
 
@@ -147,7 +150,7 @@ func (c *Cache) handleFullSyncCondEvent() {
 						c.fullSyncCondMap.Remove(idListKey)
 
 						for retry := 0; retry < 3; retry++ {
-							if err = c.deleteFullSyncCondIDList(idListKey, rid); err == nil {
+							if err = c.deleteFullSyncCondIDList(kit, idListKey); err == nil {
 								break
 							}
 							time.Sleep(100 * time.Millisecond * time.Duration(retry))
@@ -160,36 +163,36 @@ func (c *Cache) handleFullSyncCondEvent() {
 	}
 }
 
-func (c *Cache) updateFullSyncCondTTL(idListKey string, ttl time.Duration, rid string) error {
+func (c *Cache) updateFullSyncCondTTL(kit *rest.Kit, idListKey string, ttl time.Duration) error {
 	// update id list ttl
-	err := redis.Client().Expire(context.Background(), idListKey, c.withRandomExpireSeconds(ttl*2)).Err()
+	err := redis.Client().Expire(kit.Ctx, idListKey, c.withRandomExpireSeconds(ttl*2)).Err()
 	if err != nil {
-		blog.Errorf("update id list key: %s ttl to %s failed, err: %v, rid: %s", idListKey, ttl, err, rid)
+		blog.Errorf("update id list key: %s ttl to %s failed, err: %v, rid: %s", idListKey, ttl, err, kit.Rid)
 		return err
 	}
 
 	// update id list expire key ttl
 	expireKey := c.key.IDListExpireKey(idListKey)
-	err = redis.Client().Expire(context.Background(), expireKey, c.withRandomExpireSeconds(ttl)).Err()
+	err = redis.Client().Expire(kit.Ctx, expireKey, c.withRandomExpireSeconds(ttl)).Err()
 	if err != nil {
-		blog.Errorf("update id list expire key: %s ttl to %s failed, err: %v, rid: %s", expireKey, ttl, err, rid)
+		blog.Errorf("update id list expire key: %s ttl to %s failed, err: %v, rid: %s", expireKey, ttl, err, kit.Rid)
 		return err
 	}
 
 	return nil
 }
 
-func (c *Cache) deleteFullSyncCondIDList(idListKey string, rid string) error {
+func (c *Cache) deleteFullSyncCondIDList(kit *rest.Kit, idListKey string) error {
 	// remove id list expire key, the id list will be treated as expired
 	expireKey := c.key.IDListExpireKey(idListKey)
-	if err := redis.Client().Del(context.Background(), expireKey).Err(); err != nil {
-		blog.Errorf("delete expire key: %s failed, err: %v, rid: %s", expireKey, err, rid)
+	if err := redis.Client().Del(kit.Ctx, expireKey).Err(); err != nil {
+		blog.Errorf("delete expire key: %s failed, err: %v, rid: %s", expireKey, err, kit.Rid)
 		return err
 	}
 
-	exists, err := isIDListExists(context.Background(), idListKey, rid)
+	exists, err := isIDListExists(kit, idListKey)
 	if err != nil {
-		blog.Errorf("check if id list key %s exists failed, err: %v, rid: %s", idListKey, err, rid)
+		blog.Errorf("check if id list key %s exists failed, err: %v, rid: %s", idListKey, err, kit.Rid)
 		return err
 	}
 
@@ -198,14 +201,14 @@ func (c *Cache) deleteFullSyncCondIDList(idListKey string, rid string) error {
 	}
 
 	// rename the id list to avoid reusing the out-dated id list if same id list is watched again
-	oldIDListKey := fmt.Sprintf("%s-old", c.key.IDListTempKey(idListKey, rid))
-	err = redis.Client().Rename(context.Background(), idListKey, oldIDListKey).Err()
+	oldIDListKey := fmt.Sprintf("%s-old", c.key.IDListTempKey(idListKey, kit.Rid))
+	err = redis.Client().Rename(kit.Ctx, idListKey, oldIDListKey).Err()
 	if err != nil {
 		return err
 	}
 
 	// delete old id list in background
-	go c.deleteIDList(context.Background(), oldIDListKey, rid)
+	go c.deleteIDList(kit, oldIDListKey)
 	return nil
 }
 
@@ -220,7 +223,7 @@ func (c *Cache) GenFullSyncCondIDListKey(cond *fullsynccond.FullSyncCond) (strin
 	}
 
 	// generate id list key by sub resource and full sync cond id
-	keys := []string{cond.TenantID}
+	keys := make([]string, 0)
 
 	if cond.SubResource != "" {
 		keys = append(keys, cond.SubResource)
@@ -230,7 +233,7 @@ func (c *Cache) GenFullSyncCondIDListKey(cond *fullsynccond.FullSyncCond) (strin
 		keys = append(keys, strconv.FormatInt(cond.ID, 10))
 	}
 
-	return c.key.IDListKey(keys...), nil
+	return c.key.IDListKey(cond.TenantID, keys...), nil
 }
 
 // genFullSyncCondRefreshIDListOpt generate refresh id list option by full sync cond
@@ -240,9 +243,7 @@ func genFullSyncCondRefreshIDListOpt(idListKey string, condInfo *types.FullSyncC
 		filterOpt: &types.IDListFilterOpt{
 			IDListKey: idListKey,
 			BasicFilter: &types.BasicFilter{
-				SubRes:   condInfo.SubResource,
-				TenantID: condInfo.TenantID,
-				IsSystem: false,
+				SubRes: condInfo.SubResource,
 			},
 			IsAll: condInfo.IsAll,
 			Cond:  condInfo.Condition,

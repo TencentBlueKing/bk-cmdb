@@ -38,7 +38,7 @@ import (
 )
 
 // AddData add data to general resource cache
-func (c *Cache) AddData(ctx context.Context, dataArr []types.WatchEventData, rid string) error {
+func (c *Cache) AddData(kit *rest.Kit, dataArr []types.WatchEventData) error {
 	if !c.NeedCache() {
 		return nil
 	}
@@ -53,20 +53,20 @@ func (c *Cache) AddData(ctx context.Context, dataArr []types.WatchEventData, rid
 	idKeyMap := make(map[string]*addIDToListOpt)
 
 	for _, data := range dataArr {
-		pip, idKeyMap = c.parseAddData(data, pip, idKeyMap, rid)
+		pip, idKeyMap = c.parseAddData(kit, data, pip, idKeyMap)
 	}
 
 	var err error
 	for _, addOpt := range idKeyMap {
 		addOpt.pip = pip
-		pip, err = c.addIDToListWithRefresh(ctx, addOpt, rid)
+		pip, err = c.addIDToListWithRefresh(kit, addOpt)
 		if err != nil {
 			return err
 		}
 	}
 
 	if _, err = pip.Exec(); err != nil {
-		blog.Errorf("add data to %s cache failed, err: %v, data: %+v, rid: %s", c.key.Resource(), err, dataArr, rid)
+		blog.Errorf("add data to %s cache failed, err: %v, data: %+v, rid: %s", c.key.Resource(), err, dataArr, kit.Rid)
 		return err
 	}
 
@@ -74,12 +74,12 @@ func (c *Cache) AddData(ctx context.Context, dataArr []types.WatchEventData, rid
 }
 
 // parseAddData parse added event watch data
-func (c *Cache) parseAddData(data types.WatchEventData, pip ccredis.Pipeliner, idKeyMap map[string]*addIDToListOpt,
-	rid string) (ccredis.Pipeliner, map[string]*addIDToListOpt) {
+func (c *Cache) parseAddData(kit *rest.Kit, data types.WatchEventData, pip ccredis.Pipeliner,
+	idKeyMap map[string]*addIDToListOpt) (ccredis.Pipeliner, map[string]*addIDToListOpt) {
 
 	info, err := c.parseData(data)
 	if err != nil {
-		blog.Errorf("parse %s data: %+v failed, err: %v, rid: %s", c.key.Resource(), data, err, rid)
+		blog.Errorf("parse %s data: %+v failed, err: %v, rid: %s", c.key.Resource(), data, err, kit.Rid)
 		return pip, idKeyMap
 	}
 
@@ -88,10 +88,10 @@ func (c *Cache) parseAddData(data types.WatchEventData, pip ccredis.Pipeliner, i
 	// add id to system id lists
 	if c.needCacheAll {
 		if len(info.subRes) == 0 {
-			idKeyMap = c.recordIDToAddForSystem(idKeyMap, id, score, "", info.tenant)
+			idKeyMap = c.recordIDToAddForSystem(kit, idKeyMap, id, score, "")
 		} else {
 			for _, subRes := range info.subRes {
-				idKeyMap = c.recordIDToAddForSystem(idKeyMap, id, score, subRes, info.tenant)
+				idKeyMap = c.recordIDToAddForSystem(kit, idKeyMap, id, score, subRes)
 			}
 		}
 	}
@@ -99,7 +99,7 @@ func (c *Cache) parseAddData(data types.WatchEventData, pip ccredis.Pipeliner, i
 	// generate full sync cond id list to id & score map
 	c.fullSyncCondMap.Range(func(idListKey string, cond *types.FullSyncCondInfo) bool {
 		// remove id from the id list if not matches the full sync cond
-		if !c.isFullSyncCondMatched(data.Data, info, cond, rid) {
+		if !c.isFullSyncCondMatched(data.Data, info, cond, kit.Rid) {
 			pip.ZRem(idListKey, id)
 			return false
 		}
@@ -120,24 +120,25 @@ func (c *Cache) parseAddData(data types.WatchEventData, pip ccredis.Pipeliner, i
 		redisKeys, err := lgc.genKey(data, info)
 		if err != nil {
 			blog.Errorf("generate %s %s redis key from data: %+v failed, err: %v, rid: %s", c.key.Resource(), typ,
-				data, err, rid)
+				data, err, kit.Rid)
 			continue
 		}
 
 		for _, redisKey := range redisKeys {
-			pip.Set(c.key.UniqueKey(string(typ), redisKey), id, c.withRandomExpireSeconds(c.expireSeconds))
+			pip.Set(c.key.UniqueKey(string(typ), kit.TenantID, redisKey), id,
+				c.withRandomExpireSeconds(c.expireSeconds))
 		}
 	}
 
 	return pip, idKeyMap
 }
 
-func (c *Cache) recordIDToAddForSystem(idKeyMap map[string]*addIDToListOpt, id string, score float64,
-	subRes, supplier string) map[string]*addIDToListOpt {
+func (c *Cache) recordIDToAddForSystem(kit *rest.Kit, idKeyMap map[string]*addIDToListOpt, id string, score float64,
+	subRes string) map[string]*addIDToListOpt {
 
-	idListKey := c.Key().IDListKey()
+	idListKey := c.Key().IDListKey(kit.TenantID)
 	if subRes != "" {
-		idListKey = c.Key().IDListKey(subRes)
+		idListKey = c.Key().IDListKey(kit.TenantID, subRes)
 	}
 
 	_, exists := idKeyMap[idListKey]
@@ -149,9 +150,7 @@ func (c *Cache) recordIDToAddForSystem(idKeyMap map[string]*addIDToListOpt, id s
 				filterOpt: &types.IDListFilterOpt{
 					IDListKey: idListKey,
 					BasicFilter: &types.BasicFilter{
-						SubRes:   subRes,
-						TenantID: supplier,
-						IsSystem: true,
+						SubRes: subRes,
 					},
 					IsAll: true,
 				},
@@ -166,12 +165,6 @@ func (c *Cache) recordIDToAddForSystem(idKeyMap map[string]*addIDToListOpt, id s
 // isFullSyncCondMatched check if data matches full sync cond
 func (c *Cache) isFullSyncCondMatched(data filter.MatchedData, info *basicInfo, cond *types.FullSyncCondInfo,
 	rid string) bool {
-
-	if info.tenant != common.BKDefaultTenantID && info.tenant != cond.TenantID &&
-		cond.TenantID != common.BKSuperTenantID {
-		blog.V(4).Infof("%s data(%+v) tenant not matches cond(%+v), rid: %s", c.key.Resource(), data, cond, rid)
-		return false
-	}
 
 	subResMatched := true
 	if cond.SubResource != "" {
@@ -216,27 +209,27 @@ type addIDToListOpt struct {
 }
 
 // addIDToListWithRefresh add id to id list cache, refresh the id list if needed
-func (c *Cache) addIDToListWithRefresh(ctx context.Context, opt *addIDToListOpt, rid string) (ccredis.Pipeliner,
+func (c *Cache) addIDToListWithRefresh(kit *rest.Kit, opt *addIDToListOpt) (ccredis.Pipeliner,
 	error) {
 
 	idListKey := opt.filterOpt.IDListKey
 
 	// try refresh id list if it's not exist or is expired
-	notExists, expired, err := c.tryRefreshIDListIfNeeded(ctx, opt.refreshIDListOpt, rid)
+	notExists, expired, err := c.tryRefreshIDListIfNeeded(kit, opt.refreshIDListOpt)
 	if err != nil {
-		blog.Errorf("try refresh id list %s failed, err: %v, opt: %+v, rid: %s", idListKey, err, opt.filterOpt, rid)
+		blog.Errorf("try refresh id list %s failed, err: %v, opt: %+v, rid: %s", idListKey, err, opt.filterOpt, kit.Rid)
 		return nil, err
 	}
 
 	// id list is refreshing not exist or expired, add id to temp id list key
 	if notExists || expired {
-		tempKey, err := redis.Client().Get(ctx, c.key.IDListTempKey(idListKey)).Result()
+		tempKey, err := redis.Client().Get(kit.Ctx, c.key.IDListTempKey(idListKey)).Result()
 		if err != nil {
 			if !redis.IsNilErr(err) {
-				blog.Errorf("get id list %s temp key failed, err: %v, rid: %s", idListKey, err, rid)
+				blog.Errorf("get id list %s temp key failed, err: %v, rid: %s", idListKey, err, kit.Rid)
 				return nil, err
 			}
-			tempKey = c.key.IDListTempKey(idListKey, rid)
+			tempKey = c.key.IDListTempKey(idListKey, kit.Rid)
 		}
 
 		for id, score := range opt.idMap {
@@ -270,7 +263,7 @@ func (c *Cache) addIDToList(opt *addIDToListOpt) ccredis.Pipeliner {
 }
 
 // RemoveData remove data from general resource cache
-func (c *Cache) RemoveData(ctx context.Context, dataArr []types.WatchEventData, rid string) error {
+func (c *Cache) RemoveData(kit *rest.Kit, dataArr []types.WatchEventData) error {
 	if !c.NeedCache() {
 		return nil
 	}
@@ -285,32 +278,33 @@ func (c *Cache) RemoveData(ctx context.Context, dataArr []types.WatchEventData, 
 	idKeyMap := make(map[string]*removeIDFromListOpt)
 
 	for _, data := range dataArr {
-		pip, idKeyMap = c.parseRemoveData(data, pip, idKeyMap, rid)
+		pip, idKeyMap = c.parseRemoveData(kit, data, pip, idKeyMap)
 	}
 
 	var err error
 	for _, delOpt := range idKeyMap {
 		delOpt.pip = pip
-		pip, err = c.removeIDFromListWithRefresh(ctx, delOpt, rid)
+		pip, err = c.removeIDFromListWithRefresh(kit, delOpt)
 		if err != nil {
 			return err
 		}
 	}
 
 	if _, err = pip.Exec(); err != nil {
-		blog.Errorf("del data from %s cache failed, err: %v, data: %+v, rid: %s", c.key.Resource(), err, dataArr, rid)
+		blog.Errorf("del data from %s cache failed, err: %v, data: %+v, rid: %s", c.key.Resource(), err, dataArr,
+			kit.Rid)
 		return err
 	}
 
 	return nil
 }
 
-func (c *Cache) parseRemoveData(data types.WatchEventData, pip ccredis.Pipeliner,
-	idKeyMap map[string]*removeIDFromListOpt, rid string) (ccredis.Pipeliner, map[string]*removeIDFromListOpt) {
+func (c *Cache) parseRemoveData(kit *rest.Kit, data types.WatchEventData, pip ccredis.Pipeliner,
+	idKeyMap map[string]*removeIDFromListOpt) (ccredis.Pipeliner, map[string]*removeIDFromListOpt) {
 
 	info, err := c.parseData(data)
 	if err != nil {
-		blog.Errorf("parse %s data: %+v failed, err: %v, rid: %s", c.key.Resource(), data, err, rid)
+		blog.Errorf("parse %s data: %+v failed, err: %v, rid: %s", c.key.Resource(), data, err, kit.Rid)
 		return pip, idKeyMap
 	}
 
@@ -319,17 +313,17 @@ func (c *Cache) parseRemoveData(data types.WatchEventData, pip ccredis.Pipeliner
 	// remove id from system id lists
 	if c.needCacheAll {
 		if len(info.subRes) == 0 {
-			idKeyMap = c.recordIDToRemoveForSystem(idKeyMap, id, "", info.tenant)
+			idKeyMap = c.recordIDToRemoveForSystem(kit, idKeyMap, id, "")
 		} else {
 			for _, subRes := range info.subRes {
-				idKeyMap = c.recordIDToRemoveForSystem(idKeyMap, id, subRes, info.tenant)
+				idKeyMap = c.recordIDToRemoveForSystem(kit, idKeyMap, id, subRes)
 			}
 		}
 	}
 
 	// generate full sync cond id list to id & score map
 	c.fullSyncCondMap.Range(func(idListKey string, cond *types.FullSyncCondInfo) bool {
-		if !c.isFullSyncCondMatched(data.Data, info, cond, rid) {
+		if !c.isFullSyncCondMatched(data.Data, info, cond, kit.Rid) {
 			return false
 		}
 
@@ -349,23 +343,23 @@ func (c *Cache) parseRemoveData(data types.WatchEventData, pip ccredis.Pipeliner
 		redisKeys, err := lgc.genKey(data, info)
 		if err != nil {
 			blog.Errorf("generate %s %s redis key from data: %+v failed, err: %v, rid: %s", c.key.Resource(), typ,
-				data, err, rid)
+				data, err, kit.Rid)
 			continue
 		}
 
 		for _, redisKey := range redisKeys {
-			pip.Del(c.key.UniqueKey(string(typ), redisKey))
+			pip.Del(c.key.UniqueKey(string(typ), kit.TenantID, redisKey))
 		}
 	}
 	return pip, idKeyMap
 }
 
-func (c *Cache) recordIDToRemoveForSystem(idKeyMap map[string]*removeIDFromListOpt, id string,
-	subRes, supplier string) map[string]*removeIDFromListOpt {
+func (c *Cache) recordIDToRemoveForSystem(kit *rest.Kit, idKeyMap map[string]*removeIDFromListOpt, id string,
+	subRes string) map[string]*removeIDFromListOpt {
 
-	idListKey := c.Key().IDListKey()
+	idListKey := c.Key().IDListKey(kit.TenantID)
 	if subRes != "" {
-		idListKey = c.Key().IDListKey(subRes)
+		idListKey = c.Key().IDListKey(kit.TenantID, subRes)
 	}
 
 	_, exists := idKeyMap[idListKey]
@@ -377,9 +371,7 @@ func (c *Cache) recordIDToRemoveForSystem(idKeyMap map[string]*removeIDFromListO
 				filterOpt: &types.IDListFilterOpt{
 					IDListKey: idListKey,
 					BasicFilter: &types.BasicFilter{
-						SubRes:   subRes,
-						TenantID: supplier,
-						IsSystem: true,
+						SubRes: subRes,
 					},
 					IsAll: true,
 				},
@@ -398,23 +390,23 @@ type removeIDFromListOpt struct {
 }
 
 // removeIDFromList remove id from id list cache, refresh the id list if needed
-func (c *Cache) removeIDFromListWithRefresh(ctx context.Context, opt *removeIDFromListOpt, rid string) (
+func (c *Cache) removeIDFromListWithRefresh(kit *rest.Kit, opt *removeIDFromListOpt) (
 	ccredis.Pipeliner, error) {
 
 	idListKey := opt.filterOpt.IDListKey
 
 	// try refresh id list if it's not exist or is expired
-	notExists, expired, err := c.tryRefreshIDListIfNeeded(ctx, opt.refreshIDListOpt, rid)
+	notExists, expired, err := c.tryRefreshIDListIfNeeded(kit, opt.refreshIDListOpt)
 	if err != nil {
-		blog.Errorf("try refresh id list %s failed, err: %v, opt: %+v, rid: %s", idListKey, err, opt.filterOpt, rid)
+		blog.Errorf("try refresh id list %s failed, err: %v, opt: %+v, rid: %s", idListKey, err, opt.filterOpt, kit.Rid)
 		return nil, err
 	}
 
 	// id list is refreshing not exist or expired, remove id from temp id list key
 	if notExists || expired {
-		tempKey, err := redis.Client().Get(ctx, c.key.IDListTempKey(idListKey)).Result()
+		tempKey, err := redis.Client().Get(kit.Ctx, c.key.IDListTempKey(idListKey)).Result()
 		if err != nil {
-			blog.Errorf("get  id list %s temp key failed, err: %v, rid: %s", idListKey, err, rid)
+			blog.Errorf("get id list %s temp key failed, err: %v, rid: %s", idListKey, err, kit.Rid)
 			return nil, err
 		}
 
@@ -447,35 +439,35 @@ type refreshIDListOpt struct {
 
 // tryRefreshIDListIfNeeded try refresh id list cache if it's not exist or expired
 // return params: notExists: returns if the id list is not exist, expired: returns if the id list is expired
-func (c *Cache) tryRefreshIDListIfNeeded(ctx context.Context, opt *refreshIDListOpt, rid string) (notExists bool,
+func (c *Cache) tryRefreshIDListIfNeeded(kit *rest.Kit, opt *refreshIDListOpt) (notExists bool,
 	expired bool, err error) {
 
 	idListKey := opt.filterOpt.IDListKey
-	exists, err := isIDListExists(ctx, idListKey, rid)
+	exists, err := isIDListExists(kit, idListKey)
 	if err != nil {
 		return false, false, err
 	}
 
 	if !exists {
-		c.tryRefreshIDList(ctx, opt, rid)
+		c.tryRefreshIDList(kit, opt)
 		return true, false, nil
 	}
 
-	expire, err := redis.Client().Get(ctx, c.key.IDListExpireKey(idListKey)).Result()
+	expire, err := redis.Client().Get(kit.Ctx, c.key.IDListExpireKey(idListKey)).Result()
 	if err != nil {
 		if redis.IsNilErr(err) {
-			blog.V(4).Infof("id list %s expire key not exists, refresh it now. rid: %s", idListKey, rid)
-			c.tryRefreshIDList(ctx, opt, rid)
+			blog.V(4).Infof("id list %s expire key not exists, refresh it now. rid: %s", idListKey, kit.Rid)
+			c.tryRefreshIDList(kit, opt)
 			return false, true, nil
 		}
 
-		blog.Errorf("get host id list expire key failed, err: %v, rid :%v", err, rid)
+		blog.Errorf("get host id list expire key failed, err: %v, rid :%v", err, kit.Rid)
 		return false, false, err
 	}
 
 	expireAt, err := strconv.ParseInt(expire, 10, 64)
 	if err != nil {
-		blog.Errorf("parse id list %s expire time %s failed, err: %v, rid: %s", idListKey, expire, err, rid)
+		blog.Errorf("parse id list %s expire time %s failed, err: %v, rid: %s", idListKey, expire, err, kit.Rid)
 		return false, false, err
 	}
 
@@ -488,19 +480,19 @@ func (c *Cache) tryRefreshIDListIfNeeded(ctx context.Context, opt *refreshIDList
 	// set expire key with a value which will enforce the id list key to expire within one minute
 	// which will block the refresh request for the next minute. This policy is used to avoid refreshing keys
 	// when redis is under high pressure or not well performed.
-	redis.Client().Set(ctx, c.key.IDListExpireKey(idListKey), time.Now().Unix()-expireSeconds+60, time.Minute)
+	redis.Client().Set(kit.Ctx, c.key.IDListExpireKey(idListKey), time.Now().Unix()-expireSeconds+60, time.Minute)
 
 	// expired, we refresh it now.
-	blog.V(4).Infof("id list %s is expired, refresh it now. rid: %s", idListKey, rid)
-	c.tryRefreshIDList(ctx, opt, rid)
+	blog.V(4).Infof("id list %s is expired, refresh it now. rid: %s", idListKey, kit.Rid)
+	c.tryRefreshIDList(kit, opt)
 	return false, true, nil
 }
 
 // tryRefreshIDList try refresh the general resource id list cache if it's not locked
-func (c *Cache) tryRefreshIDList(ctx context.Context, opt *refreshIDListOpt, rid string) {
+func (c *Cache) tryRefreshIDList(kit *rest.Kit, opt *refreshIDListOpt) {
 	idListKey := opt.filterOpt.IDListKey
 	if idListKey == "" {
-		blog.Errorf("id list key is not set, opt: %+v, rid: %s", opt, rid)
+		blog.Errorf("id list key is not set, opt: %+v, rid: %s", opt, kit.Rid)
 		return
 	}
 
@@ -508,7 +500,7 @@ func (c *Cache) tryRefreshIDList(ctx context.Context, opt *refreshIDListOpt, rid
 
 	// get local lock
 	if !c.refreshingLock.CanRefresh(lockKey) {
-		blog.V(4).Infof("%s id list lock %s is locked, skip refresh, rid: %s", c.key.Resource(), lockKey, rid)
+		blog.V(4).Infof("%s id list lock %s is locked, skip refresh, rid: %s", c.key.Resource(), lockKey, kit.Rid)
 		return
 	}
 
@@ -516,57 +508,60 @@ func (c *Cache) tryRefreshIDList(ctx context.Context, opt *refreshIDListOpt, rid
 	c.refreshingLock.SetRefreshing(lockKey)
 
 	// then get distribute lock
-	locked, err := redis.Client().SetNX(ctx, lockKey, rid, 5*time.Minute).Result()
+	locked, err := redis.Client().SetNX(kit.Ctx, lockKey, kit.Rid, 5*time.Minute).Result()
 	if err != nil {
-		blog.Errorf("get id list %s lock failed, err: %v, rid: %s", idListKey, err, rid)
+		blog.Errorf("get id list %s lock failed, err: %v, rid: %s", idListKey, err, kit.Rid)
 		c.refreshingLock.SetUnRefreshing(lockKey)
 		return
 	}
 
 	if !locked {
-		blog.V(4).Infof("%s id list key redis lock %s is locked, skip refresh, rid: %s", c.key.Resource(), lockKey, rid)
+		blog.V(4).Infof("%s id list key redis lock %s is locked, skip refresh, rid: %s", c.key.Resource(), lockKey,
+			kit.Rid)
 		c.refreshingLock.SetUnRefreshing(lockKey)
 		return
 	}
 
 	go func() {
-		ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-		blog.V(4).Infof("start refresh %s id list cache %s, rid: %s", c.key.Resource(), idListKey, rid)
+		kit.Ctx = util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+		blog.V(4).Infof("start refresh %s id list cache %s, rid: %s", c.key.Resource(), idListKey, kit.Rid)
 
 		defer c.refreshingLock.SetUnRefreshing(lockKey)
-		defer redis.Client().Del(ctx, lockKey)
+		defer redis.Client().Del(kit.Ctx, lockKey)
 
 		// already get lock, refresh the id list cache now
-		err = c.refreshIDList(ctx, opt, rid)
+		err = c.refreshIDList(kit, opt)
 		if err != nil {
-			blog.Errorf("refresh %s id list cache %s failed, err: %v, rid: %s", c.key.Resource(), idListKey, err, rid)
+			blog.Errorf("refresh %s id list cache %s failed, err: %v, rid: %s", c.key.Resource(), idListKey, err,
+				kit.Rid)
 			return
 		}
 
-		blog.V(4).Infof("refresh %s id list cache %s success, rid: %s", c.key.Resource(), idListKey, rid)
+		blog.V(4).Infof("refresh %s id list cache %s success, rid: %s", c.key.Resource(), idListKey, kit.Rid)
 	}()
 }
 
 // refreshIDList refresh the general resource id list cache
-func (c *Cache) refreshIDList(ctx context.Context, opt *refreshIDListOpt, rid string) error {
-	ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+func (c *Cache) refreshIDList(kit *rest.Kit, opt *refreshIDListOpt) error {
+	kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
 	idListKey := opt.filterOpt.IDListKey
-	tempKey := c.key.IDListTempKey(idListKey, rid)
+	tempKey := c.key.IDListTempKey(idListKey, kit.Rid)
 
 	// set the temp id list key in redis for the event watch to judge which temp id list to write to
-	err := redis.Client().Set(ctx, c.key.IDListTempKey(idListKey), tempKey, c.withRandomExpireSeconds(opt.ttl)).Err()
+	err := redis.Client().Set(kit.Ctx, c.key.IDListTempKey(idListKey), tempKey,
+		c.withRandomExpireSeconds(opt.ttl)).Err()
 	if err != nil {
-		blog.Errorf("set temp id list key %s failed, err: %v, rid: %s", tempKey, err, rid)
+		blog.Errorf("set temp id list key %s failed, err: %v, rid: %s", tempKey, err, kit.Rid)
 		return err
 	}
 	defer func() {
 		if err := redis.Client().Del(context.Background(), c.key.IDListTempKey(idListKey)).Err(); err != nil {
-			blog.Errorf("delete temp id list key %s failed, err: %v, rid: %s", tempKey, err, rid)
+			blog.Errorf("delete temp id list key %s failed, err: %v, rid: %s", tempKey, err, kit.Rid)
 		}
 	}()
 
-	blog.V(4).Infof("try to refresh id list %s with temp key: %s, rid: %s", idListKey, tempKey, rid)
+	blog.V(4).Infof("try to refresh id list %s with temp key: %s, rid: %s", idListKey, tempKey, kit.Rid)
 
 	listOpt := &types.ListDetailOpt{
 		OnlyListID:   true,
@@ -575,7 +570,7 @@ func (c *Cache) refreshIDList(ctx context.Context, opt *refreshIDListOpt, rid st
 	}
 	total := 0
 	for {
-		dbRes, err := c.listDataFromDB(ctx, listOpt, rid)
+		dbRes, err := c.listDataFromDB(kit, listOpt)
 		if err != nil {
 			return err
 		}
@@ -594,7 +589,8 @@ func (c *Cache) refreshIDList(ctx context.Context, opt *refreshIDListOpt, rid st
 		for _, data := range dbData {
 			id, score, err := c.generateID(data)
 			if err != nil {
-				blog.Errorf("generate %s id from data: %+v failed, err: %v, rid: %s", c.key.Resource(), data, err, rid)
+				blog.Errorf("generate %s id from data: %+v failed, err: %v, rid: %s", c.key.Resource(), data, err,
+					kit.Rid)
 				continue
 			}
 
@@ -606,7 +602,7 @@ func (c *Cache) refreshIDList(ctx context.Context, opt *refreshIDListOpt, rid st
 		}
 
 		if _, err = pip.Exec(); err != nil {
-			blog.Errorf("update temp id list %s failed, err: %v, data: %+v, rid: %s", tempKey, err, dbData, rid)
+			blog.Errorf("update temp id list %s failed, err: %v, data: %+v, rid: %s", tempKey, err, dbData, kit.Rid)
 			return err
 		}
 
@@ -616,7 +612,8 @@ func (c *Cache) refreshIDList(ctx context.Context, opt *refreshIDListOpt, rid st
 
 		info, err := c.parseData(dbData[stepLen-1])
 		if err != nil {
-			blog.Errorf("parse %s data(%+v) failed, err: %v, rid: %s", c.key.Resource(), dbData[stepLen-1], err, rid)
+			blog.Errorf("parse %s data(%+v) failed, err: %v, rid: %s", c.key.Resource(), dbData[stepLen-1], err,
+				kit.Rid)
 			return err
 		}
 
@@ -630,7 +627,7 @@ func (c *Cache) refreshIDList(ctx context.Context, opt *refreshIDListOpt, rid st
 	}
 
 	// if id list exists, we need to delete it
-	exists, err := isIDListExists(ctx, idListKey, rid)
+	exists, err := isIDListExists(kit, idListKey)
 	if err != nil {
 		return err
 	}
@@ -650,25 +647,26 @@ func (c *Cache) refreshIDList(ctx context.Context, opt *refreshIDListOpt, rid st
 	pipe.Set(c.key.IDListExpireKey(idListKey), time.Now().Unix(), c.withRandomExpireSeconds(opt.ttl))
 
 	if _, err = pipe.Exec(); err != nil {
-		blog.Errorf("refresh id list %s with temp key: %s failed, err :%v, rid: %s", idListKey, tempKey, err, rid)
+		blog.Errorf("refresh id list %s with temp key: %s failed, err :%v, rid: %s", idListKey, tempKey, err, kit.Rid)
 		return err
 	}
 
 	if exists {
 		// remove the old id list key in background
-		go c.deleteIDList(context.Background(), tempOldKey, rid)
+		kit.Ctx = context.Background()
+		go c.deleteIDList(kit, tempOldKey)
 	}
 
-	blog.V(4).Infof("refresh id list key: %s success, count: %d. rid: %s", idListKey, total, rid)
+	blog.V(4).Infof("refresh id list key: %s success, count: %d. rid: %s", idListKey, total, kit.Rid)
 	return nil
 }
 
 // deleteIDList delete the general resource id list cache
-func (c *Cache) deleteIDList(ctx context.Context, key string, rid string) error {
+func (c *Cache) deleteIDList(kit *rest.Kit, key string) error {
 	for {
 		cnt, err := redis.Client().ZRemRangeByRank(key, 0, types.PageSize).Result()
 		if err != nil {
-			blog.Errorf("delete id list: %s failed, err: %v, rid: %s", key, err, rid)
+			blog.Errorf("delete id list: %s failed, err: %v, rid: %s", key, err, kit.Rid)
 			return err
 		}
 
@@ -681,7 +679,7 @@ func (c *Cache) deleteIDList(ctx context.Context, key string, rid string) error 
 }
 
 // listIDsFromRedis list general resource id list from redis
-func (c *Cache) listIDsFromRedis(ctx context.Context, key string, opt *general.PagingOption, rid string) ([]string,
+func (c *Cache) listIDsFromRedis(kit *rest.Kit, key string, opt *general.PagingOption) ([]string,
 	error) {
 
 	if opt.Limit == 0 {
@@ -695,9 +693,9 @@ func (c *Cache) listIDsFromRedis(ctx context.Context, key string, opt *general.P
 			Max:   "+inf",
 			Count: opt.Limit,
 		}
-		ids, err := redis.Client().ZRangeByScore(ctx, key, redisOpt).Result()
+		ids, err := redis.Client().ZRangeByScore(kit.Ctx, key, redisOpt).Result()
 		if err != nil {
-			blog.Errorf("list %s ids from cache failed, err: %v, redis opt: %+v, rid: %s", key, err, redisOpt, rid)
+			blog.Errorf("list %s ids from cache failed, err: %v, redis opt: %+v, rid: %s", key, err, redisOpt, kit.Rid)
 			return nil, err
 		}
 		return ids, nil
@@ -710,28 +708,28 @@ func (c *Cache) listIDsFromRedis(ctx context.Context, key string, opt *general.P
 			Max:   "+",
 			Count: opt.Limit,
 		}
-		ids, err := redis.Client().ZRangeByLex(ctx, key, redisOpt).Result()
+		ids, err := redis.Client().ZRangeByLex(kit.Ctx, key, redisOpt).Result()
 		if err != nil {
-			blog.Errorf("list %s ids from cache failed, err: %v, redis opt: %+v, rid: %s", key, err, redisOpt, rid)
+			blog.Errorf("list %s ids from cache failed, err: %v, redis opt: %+v, rid: %s", key, err, redisOpt, kit.Rid)
 			return nil, err
 		}
 		return ids, nil
 	}
 
 	// list from start index
-	ids, err := redis.Client().ZRange(ctx, key, opt.StartIndex, opt.StartIndex+opt.Limit-1).Result()
+	ids, err := redis.Client().ZRange(kit.Ctx, key, opt.StartIndex, opt.StartIndex+opt.Limit-1).Result()
 	if err != nil {
-		blog.Errorf("list %s ids from cache failed, err: %v, opt: %+v, rid: %s", key, err, opt, rid)
+		blog.Errorf("list %s ids from cache failed, err: %v, opt: %+v, rid: %s", key, err, opt, kit.Rid)
 		return nil, err
 	}
 	return ids, nil
 }
 
 // countIDsFromRedis count general resource id list from redis
-func (c *Cache) countIDsFromRedis(ctx context.Context, key string, rid string) (int64, error) {
-	cnt, err := redis.Client().ZCard(ctx, key).Result()
+func (c *Cache) countIDsFromRedis(kit *rest.Kit, key string) (int64, error) {
+	cnt, err := redis.Client().ZCard(kit.Ctx, key).Result()
 	if err != nil {
-		blog.Errorf("count %s ids from cache failed, err: %v, rid: %s", key, err, rid)
+		blog.Errorf("count %s ids from cache failed, err: %v, rid: %s", key, err, kit.Rid)
 		return 0, err
 	}
 	return cnt, nil
@@ -748,8 +746,7 @@ func (c *Cache) RefreshIDList(kit *rest.Kit, opt *general.RefreshIDListOpt,
 	refreshOpt := &refreshIDListOpt{
 		filterOpt: &types.IDListFilterOpt{
 			BasicFilter: &types.BasicFilter{
-				SubRes:   opt.SubRes,
-				TenantID: kit.TenantID,
+				SubRes: opt.SubRes,
 			},
 			IsAll: true,
 		},
@@ -767,12 +764,11 @@ func (c *Cache) RefreshIDList(kit *rest.Kit, opt *general.RefreshIDListOpt,
 		}
 
 		refreshOpt.ttl = time.Duration(cond.Interval) * time.Hour
-		c.tryRefreshIDList(kit.Ctx, refreshOpt, kit.Rid)
+		c.tryRefreshIDList(kit, refreshOpt)
 		return nil
 	}
 
 	// refresh system id list cache
-	refreshOpt.filterOpt.IsSystem = true
 	idListTTL, err := c.validateIDList(refreshOpt.filterOpt)
 	if err != nil {
 		blog.Errorf("id list filter option is invalid, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
@@ -781,11 +777,11 @@ func (c *Cache) RefreshIDList(kit *rest.Kit, opt *general.RefreshIDListOpt,
 	refreshOpt.ttl = idListTTL
 
 	if opt.SubRes != "" {
-		refreshOpt.filterOpt.IDListKey = c.Key().IDListKey(opt.SubRes)
+		refreshOpt.filterOpt.IDListKey = c.Key().IDListKey(kit.TenantID, opt.SubRes)
 	} else {
-		refreshOpt.filterOpt.IDListKey = c.Key().IDListKey()
+		refreshOpt.filterOpt.IDListKey = c.Key().IDListKey(kit.TenantID)
 	}
 
-	c.tryRefreshIDList(kit.Ctx, refreshOpt, kit.Rid)
+	c.tryRefreshIDList(kit, refreshOpt)
 	return nil
 }

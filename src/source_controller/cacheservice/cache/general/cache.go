@@ -28,7 +28,7 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
 	"configcenter/src/source_controller/cacheservice/cache/general/watch"
 	watchcli "configcenter/src/source_controller/cacheservice/event/watch"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
 // Cache defines the general resource caching logics
@@ -38,9 +38,7 @@ type Cache struct {
 }
 
 // New Cache
-func New(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface, watchCli *watchcli.Client) (*Cache,
-	error) {
-
+func New(isMaster discovery.ServiceManageInterface, watchTask *task.Task, watchCli *watchcli.Client) (*Cache, error) {
 	cacheSet := cache.GetAllCache()
 
 	fullSyncCondChMap := make(map[general.ResType]chan<- types.FullSyncCondEvent)
@@ -51,7 +49,7 @@ func New(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface, 
 		fullSyncCondChMap[resType] = cacheInst.FullSyncCondCh()
 	}
 
-	fullSyncCondCli, err := fullsynccond.New(loopW, fullSyncCondChMap)
+	fullSyncCondCli, err := fullsynccond.New(watchTask, fullSyncCondChMap)
 	if err != nil {
 		return nil, fmt.Errorf("init full sync cond failed, err: %v", err)
 	}

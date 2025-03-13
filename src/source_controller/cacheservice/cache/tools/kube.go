@@ -18,10 +18,9 @@
 package tools
 
 import (
-	"context"
-
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/kube/types"
@@ -29,16 +28,16 @@ import (
 )
 
 // GenKubeSharedNsCond generate shared namespace condition by biz id
-func GenKubeSharedNsCond(ctx context.Context, bizID int64, nsIDField string, rid string) (mapstr.MapStr, error) {
-	ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+func GenKubeSharedNsCond(kit *rest.Kit, bizID int64, nsIDField string) (mapstr.MapStr, error) {
+	kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
 	sharedCond := mapstr.MapStr{types.BKAsstBizIDField: bizID}
 
 	relations := make([]types.NsSharedClusterRel, 0)
-	err := mongodb.Client().Table(types.BKTableNameNsSharedClusterRel).Find(sharedCond).
-		Fields(types.BKNamespaceIDField).All(ctx, &relations)
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameNsSharedClusterRel).Find(sharedCond).
+		Fields(types.BKNamespaceIDField).All(kit.Ctx, &relations)
 	if err != nil {
-		blog.Errorf("list kube shared namespace rel failed, err: %v, cond: %+v, rid: %v", err, sharedCond, rid)
+		blog.Errorf("list kube shared namespace rel failed, err: %v, cond: %+v, rid: %v", err, sharedCond, kit.Rid)
 		return nil, err
 	}
 

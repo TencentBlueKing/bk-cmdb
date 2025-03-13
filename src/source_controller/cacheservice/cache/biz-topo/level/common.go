@@ -19,8 +19,7 @@
 package level
 
 import (
-	"context"
-
+	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/key"
 	nodelgc "configcenter/src/source_controller/cacheservice/cache/biz-topo/logics/node"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
@@ -42,10 +41,10 @@ func newCommonCacheLevel(topoType types.TopoType, nextLevel LevelI, kinds ...str
 }
 
 // GetNodesByCache get topo nodes info by cache
-func (l *commonCacheLevel) GetNodesByCache(ctx context.Context, bizID int64, rid string) ([]types.Node, error) {
+func (l *commonCacheLevel) GetNodesByCache(kit *rest.Kit, bizID int64) ([]types.Node, error) {
 	allNodes := make([]types.Node, 0)
 	for _, kind := range l.kinds {
-		nodes, err := nodelgc.GetNodeInfoCache(l.topoKey, bizID, kind, rid)
+		nodes, err := nodelgc.GetNodeInfoCache(kit, l.topoKey, bizID, kind)
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +55,7 @@ func (l *commonCacheLevel) GetNodesByCache(ctx context.Context, bizID int64, rid
 		return allNodes, nil
 	}
 
-	childNodes, err := l.nextLevel.GetNodesByCache(ctx, bizID, rid)
+	childNodes, err := l.nextLevel.GetNodesByCache(kit, bizID)
 	if err != nil {
 		return nil, err
 	}

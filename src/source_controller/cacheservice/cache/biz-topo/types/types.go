@@ -56,6 +56,9 @@ type Node struct {
 
 	// ParentID topology node parent id, is an intermediate value only used to rearrange topology tree
 	ParentID int64 `json:"-"`
+
+	// Extra is the extra info for topology node
+	Extra any `json:"-"`
 }
 
 // TopoType is the topology tree type
@@ -64,4 +67,6 @@ type TopoType string
 const (
 	// KubeType is the kube topology tree type
 	KubeType TopoType = "kube"
+	// BriefType is the brief mainline topology tree type
+	BriefType TopoType = "brief"
 )

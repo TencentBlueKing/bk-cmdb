@@ -58,6 +58,7 @@ type ModuleInst struct {
 type BizInst struct {
 	BizID   int64  `bson:"bk_biz_id" mapstructure:"bk_biz_id"`
 	BizName string `bson:"bk_biz_name" mapstructure:"bk_biz_name"`
+	Default int    `bson:"default,omitempty"`
 }
 
 // BizBasicInfo TODO

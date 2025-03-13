@@ -38,7 +38,7 @@ func (c *Cache) ListPodLabelKey(kit *rest.Kit, opt *types.ListPodLabelKeyOption)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "opt")
 	}
 
-	return c.cacheSet.Label.GetKeys(kit.Ctx, opt.BizID, kit.Rid)
+	return c.cacheSet.Label.GetKeys(kit, opt.BizID)
 }
 
 // ListPodLabelValue list pod label values cache info
@@ -51,13 +51,13 @@ func (c *Cache) ListPodLabelValue(kit *rest.Kit, opt *types.ListPodLabelValueOpt
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "opt")
 	}
 
-	return c.cacheSet.Label.GetValues(kit.Ctx, opt.BizID, opt.Key, kit.Rid)
+	return c.cacheSet.Label.GetValues(kit, opt.BizID, opt.Key)
 }
 
 // RefreshPodLabel refresh biz pod label key and value cache
 func (c *Cache) RefreshPodLabel(kit *rest.Kit, opt *types.RefreshPodLabelOption) error {
 	// read from secondary in mongodb cluster.
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+	kit.Ctx = util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 
 	if opt == nil || opt.BizID <= 0 {
 		blog.Errorf("refresh pod label option %+v is invalid, rid: %s", opt, kit.Rid)
@@ -68,7 +68,7 @@ func (c *Cache) RefreshPodLabel(kit *rest.Kit, opt *types.RefreshPodLabelOption)
 
 	go func() {
 		blog.Infof("start refresh biz: %d pod label cache, rid: %s", opt.BizID, kit.Rid)
-		_, err := c.cacheSet.Label.RefreshPodLabel(ctx, refreshOpt, kit.Rid)
+		_, err := c.cacheSet.Label.RefreshPodLabel(kit, refreshOpt)
 		if err != nil {
 			blog.Errorf("refresh biz: %d pod label cache failed, err: %v, rid: %s", opt.BizID, err, kit.Rid)
 			return
