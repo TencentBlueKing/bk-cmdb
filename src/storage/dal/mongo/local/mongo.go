@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal/redis"
+	"configcenter/src/common/util/table"
 	"configcenter/src/storage/dal/types"
 
 	"github.com/tidwall/gjson"
@@ -343,12 +343,6 @@ func checkMongodbVersion(db string, client *mongo.Client) error {
 	return nil
 }
 
-// InitTxnManager TxnID management of initial transaction
-// TODO remove this
-func (c *Mongo) InitTxnManager(r redis.Client) error {
-	return c.tm.InitTxnManager(r)
-}
-
 // Close replica client
 func (c *Mongo) Close() error {
 	c.cli.Client().Disconnect(context.TODO())
@@ -417,6 +411,12 @@ func (c *Mongo) GetDBClient() *mongo.Client {
 func (c *Mongo) GetDBName() string {
 	return c.cli.DBName()
 }
+
+// GetMongoClient get mongo client
+func (c *Mongo) GetMongoClient() *MongoClient {
+	return c.cli
+}
+
 func (c *Mongo) redirectTable(tableName string) string {
 	if common.IsObjectInstShardingTable(tableName) {
 		tableName = common.BKTableNameBaseInst
@@ -575,6 +575,11 @@ func (c *Mongo) DropTable(ctx context.Context, collName string) error {
 
 // CreateTable 创建集合 TODO test
 func (c *Mongo) CreateTable(ctx context.Context, collName string) error {
+	opts := make([]*options.CreateCollectionOptions, 0)
+	if table.NeedPreImageTable(collName) {
+		opts = append(opts, options.CreateCollection().SetChangeStreamPreAndPostImages(bson.M{"enabled": true}))
+	}
+
 	if c.enableSharding {
 		var err error
 		collName, err = c.convColl(collName)
@@ -582,7 +587,7 @@ func (c *Mongo) CreateTable(ctx context.Context, collName string) error {
 			return err
 		}
 	}
-	return c.cli.Database().RunCommand(ctx, map[string]interface{}{"create": collName}).Err()
+	return c.cli.Database().CreateCollection(ctx, collName, opts...)
 }
 
 // RenameTable 更新集合名称
