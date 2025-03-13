@@ -376,34 +376,6 @@ var (
 			PartialFilterExpression: make(map[string]interface{}),
 		},
 	}
-	delArchiveIndexes = []types.Index{
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "OID_coll",
-			Keys:                    bson.D{{"oid", 1}, {"coll", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "coll",
-			Keys:                    bson.D{{"coll", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "OID",
-			Keys:                    bson.D{{"oid", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "time",
-			Keys:                    bson.D{{"time", -1}},
-			Background:              true,
-			ExpireAfterSeconds:      7 * 24 * 60 * 60,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-	}
 	deploymentBaseIndexes = []types.Index{
 		{
 			Name:                    common.CCLogicUniqueIdxNamePrefix + "ID",
