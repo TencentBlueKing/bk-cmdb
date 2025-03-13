@@ -307,6 +307,8 @@ var platformTableWithTenantMap = map[string]struct{}{
 	BKTableNameAPITaskSyncHistory: {},
 	BKTableNameFullSyncCond:       {},
 	BKTableNameCacheWatchToken:    {},
+	"SrcSyncDataToken":            {},
+	"SrcSyncDataCursor":           {},
 }
 
 // IsPlatformTableWithTenant returns if the target table is a platform table with tenant id field

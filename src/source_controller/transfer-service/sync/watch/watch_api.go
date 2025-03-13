@@ -18,7 +18,6 @@
 package watch
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,6 +26,7 @@ import (
 	"configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
@@ -47,7 +47,7 @@ var resTypeCursorMap = map[types.ResType][]watch.CursorType{
 }
 
 // watchAPI watch events by api
-func (w *Watcher) watchAPI(resType types.ResType, cursorType watch.CursorType) {
+func (w *Watcher) watchAPI(kit *rest.Kit, resType types.ResType, cursorType watch.CursorType) {
 	handler := w.tokenHandlers[resType]
 
 	prevStatus := false
@@ -68,10 +68,9 @@ func (w *Watcher) watchAPI(resType types.ResType, cursorType watch.CursorType) {
 		// is master status changed, re-watch event from new cursor
 		if !prevStatus {
 			prevStatus = true
-			token, err := handler.getWatchTokenInfo(context.Background(), common.BKCursorField,
-				common.BKStartAtTimeField)
+			token, err := handler.getWatchCursorInfo(kit)
 			if err != nil {
-				blog.Errorf("get %s watch token info failed, err: %v", resType, err)
+				blog.Errorf("get %s watch cursor info failed, err: %v, rid: %s", resType, err, kit.Rid)
 				time.Sleep(time.Second)
 				continue
 			}
@@ -82,15 +81,14 @@ func (w *Watcher) watchAPI(resType types.ResType, cursorType watch.CursorType) {
 			}
 		}
 
-		kit := util.NewKit()
-
 		// watch events by api and set next watch cursor
 		var lastCursor string
 		var err error
 		util.RetryWrapper(5, func() (bool, error) {
 			lastCursor, err = w.doWatchAPI(kit, resType, opt)
 			if err != nil {
-				blog.Errorf("watch %s events by api failed, err: %v, opt: %+v, rid: %s", resType, err, *opt, kit.Rid)
+				blog.Errorf("watch %s events by api failed, err: %v, opt: %+v, rid: %s", resType, err, *opt,
+					kit.Rid)
 				return true, err
 			}
 			return false, nil
@@ -103,7 +101,7 @@ func (w *Watcher) watchAPI(resType types.ResType, cursorType watch.CursorType) {
 			fmt.Sprintf("%s.%s", common.BKCursorField, cursorType): lastCursor,
 			common.BKStartAtTimeField:                              &metadata.Time{Time: time.Now()},
 		}
-		err = handler.setWatchTokenInfo(kit.Ctx, watchTokenInfo)
+		err = handler.setWatchCursorInfo(kit, watchTokenInfo)
 		if err != nil {
 			blog.Errorf("set %s watch cursor %s failed, err: %v, rid: %s", resType, lastCursor, err, kit.Rid)
 			time.Sleep(time.Second)
@@ -112,7 +110,7 @@ func (w *Watcher) watchAPI(resType types.ResType, cursorType watch.CursorType) {
 	}
 }
 
-func (w *Watcher) doWatchAPI(kit *util.Kit, resType types.ResType, opt *watch.WatchEventOptions) (string, error) {
+func (w *Watcher) doWatchAPI(kit *rest.Kit, resType types.ResType, opt *watch.WatchEventOptions) (string, error) {
 	// watch events by api
 	watchRes, ccErr := w.cacheCli.Cache().Event().InnerWatchEvent(kit.Ctx, kit.Header, opt)
 	if ccErr != nil {
@@ -179,7 +177,7 @@ type eventDetailMap struct {
 	update, create, delete map[string]json.RawMessage
 }
 
-func (w *Watcher) pushSyncData(kit *util.Kit, events []*types.EventInfo) error {
+func (w *Watcher) pushSyncData(kit *rest.Kit, events []*types.EventInfo) error {
 	eventInfoMap := w.classifyEvents(kit, events)
 
 	// push upsert and delete event info to transfer medium
@@ -222,7 +220,7 @@ func (w *Watcher) pushSyncData(kit *util.Kit, events []*types.EventInfo) error {
 }
 
 // classify events by resource type and sub resources and event type
-func (w *Watcher) classifyEvents(kit *util.Kit, events []*types.EventInfo) map[types.ResType]map[string]eventDetailMap {
+func (w *Watcher) classifyEvents(kit *rest.Kit, events []*types.EventInfo) map[types.ResType]map[string]eventDetailMap {
 	eventInfoMap := make(map[types.ResType]map[string]eventDetailMap)
 
 	for _, event := range events {

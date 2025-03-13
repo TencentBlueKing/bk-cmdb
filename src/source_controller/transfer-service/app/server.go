@@ -120,7 +120,12 @@ func (s *TransferService) initResource(exSyncConfFile string) error {
 		return fmt.Errorf("get mongo config failed, err: %v", err)
 	}
 
-	if err = mongodb.InitClient("", &s.Config.Mongo); err != nil {
+	cryptoConf, err := cc.Crypto("crypto")
+	if err != nil {
+		return fmt.Errorf("get crypto config failed, err: %v", err)
+	}
+
+	if err = mongodb.SetShardingCli("", &s.Config.Mongo, cryptoConf); err != nil {
 		return fmt.Errorf("init mongo client failed, err: %v", err)
 	}
 
@@ -129,7 +134,7 @@ func (s *TransferService) initResource(exSyncConfFile string) error {
 		return fmt.Errorf("get watch mongo config failed, err: %v", err)
 	}
 
-	if err = mongodb.InitClient("watch", &s.Config.WatchMongo); err != nil {
+	if err = mongodb.SetWatchCli("watch", &s.Config.WatchMongo, cryptoConf); err != nil {
 		return fmt.Errorf("init watch mongo client failed, err: %v", err)
 	}
 
