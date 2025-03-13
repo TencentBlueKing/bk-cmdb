@@ -42,15 +42,6 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	}
 
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-	if err := s.createWatchDBChainCollections(kit); err != nil {
-		blog.Errorf("create watch db chain collections failed, err: %v, rid: %s", err, rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
-	}
-
 	preVersion, finishedVersions, err := history.Upgrade(s.ctx, s.db.Shard(kit.SysShardOpts()), s.cache, s.iam,
 		updateCfg)
 	if err != nil {

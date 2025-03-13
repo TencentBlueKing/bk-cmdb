@@ -16,7 +16,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"time"
 
 	iamcli "configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
@@ -31,7 +30,6 @@ import (
 	"configcenter/src/scene_server/admin_server/iam"
 	"configcenter/src/scene_server/admin_server/logics"
 	svc "configcenter/src/scene_server/admin_server/service"
-	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/monitor"
@@ -64,11 +62,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	db := mongodb.Dal()
 	process.Service.SetDB(db)
 
-	watchDB, err := sharding.NewDisableDBShardingMongo(process.Config.WatchDB.GetMongoConf(), time.Minute)
-	if err != nil {
+	if err = mongodb.SetWatchCli("watch", &process.Config.WatchDB, process.Config.Crypto); err != nil {
 		return fmt.Errorf("connect watch mongo server failed, err: %v", err)
 	}
-	process.Service.SetWatchDB(watchDB)
+	process.Service.SetWatchDB(mongodb.Dal("watch"))
 
 	cache, err := redis.NewFromConfig(process.Config.Redis)
 	if err != nil {

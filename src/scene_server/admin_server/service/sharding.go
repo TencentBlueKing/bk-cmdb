@@ -46,9 +46,9 @@ func (s *Service) initShardingApi(api *restful.WebService) {
 
 // ShardingDBConfig is the sharding db config for api
 type ShardingDBConfig struct {
-	MasterDB     string                   `json:"master_db"`
-	ForNewTenant string                   `json:"for_new_tenant"`
-	SlaveDB      map[string]SlaveDBConfig `json:"slave_db"`
+	MasterDB   string                   `json:"master_db"`
+	ForNewData string                   `json:"for_new_data"`
+	SlaveDB    map[string]SlaveDBConfig `json:"slave_db"`
 }
 
 // SlaveDBConfig is the slave db config for api
@@ -69,9 +69,9 @@ func (s *Service) GetShardingDBConfig(req *restful.Request, resp *restful.Respon
 	}
 
 	result := &ShardingDBConfig{
-		MasterDB:     conf.MasterDB,
-		ForNewTenant: conf.ForNewTenant,
-		SlaveDB:      make(map[string]SlaveDBConfig),
+		MasterDB:   conf.MasterDB,
+		ForNewData: conf.ForNewData,
+		SlaveDB:    make(map[string]SlaveDBConfig),
 	}
 
 	for uuid, mongoConf := range conf.SlaveDB {
@@ -134,7 +134,7 @@ func (s *Service) getShardingDBConf(kit *rest.Kit) (*sharding.ShardingDBConf, er
 
 // UpdateShardingDBReq is the update sharding db config request
 type UpdateShardingDBReq struct {
-	ForNewTenant  string                       `json:"for_new_tenant,omitempty"`
+	ForNewData    string                       `json:"for_new_data,omitempty"`
 	CreateSlaveDB []SlaveDBConfig              `json:"create_slave_db,omitempty"`
 	UpdateSlaveDB map[string]UpdateSlaveDBInfo `json:"update_slave_db,omitempty"`
 }
@@ -177,8 +177,8 @@ func (s *Service) UpdateShardingDBConfig(req *restful.Request, resp *restful.Res
 
 	cond := map[string]any{common.MongoMetaID: common.ShardingDBConfID}
 	updateData := map[string]any{
-		"for_new_tenant": updateConf.ForNewTenant,
-		"slave_db":       updateConf.SlaveDB,
+		"for_new_data": updateConf.ForNewData,
+		"slave_db":     updateConf.SlaveDB,
 	}
 	err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(s.ctx, cond, updateData)
 	if err != nil {
@@ -247,23 +247,23 @@ func (s *Service) genUpdatedShardingDBConf(kit *rest.Kit, dbConf *sharding.Shard
 	}
 
 	// update new tenant db config, check if the new tenant db config exists
-	if conf.ForNewTenant != "" {
+	if conf.ForNewData != "" {
 		// use uuid to specify the new tenant db config for db that already exists
-		_, uuidExists := dbConf.SlaveDB[conf.ForNewTenant]
-		if conf.ForNewTenant == dbConf.MasterDB || uuidExists {
-			dbConf.ForNewTenant = conf.ForNewTenant
+		_, uuidExists := dbConf.SlaveDB[conf.ForNewData]
+		if conf.ForNewData == dbConf.MasterDB || uuidExists {
+			dbConf.ForNewData = conf.ForNewData
 			return dbConf, nil
 		}
 
 		// use name to specify the new tenant db config for new db that doesn't have uuid before creation
-		uuid, nameExists := nameUUIDMap[conf.ForNewTenant]
+		uuid, nameExists := nameUUIDMap[conf.ForNewData]
 		if nameExists {
-			dbConf.ForNewTenant = uuid
+			dbConf.ForNewData = uuid
 			return dbConf, nil
 		}
 
-		blog.Errorf("add new tenant db %s is invalid, rid: %s", conf.ForNewTenant, kit.Rid)
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "for_new_tenant")
+		blog.Errorf("add new tenant db %s is invalid, rid: %s", conf.ForNewData, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "for_new_data")
 	}
 	return dbConf, nil
 }
@@ -292,7 +292,7 @@ func (s *Service) genDBSlaveConf(kit *rest.Kit, name string, disabled bool, conf
 }
 
 func (s *Service) saveUpdateShardingDBAudit(kit *rest.Kit, preConf, curConf *sharding.ShardingDBConf) error {
-	id, err := s.db.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameAuditLog)
+	id, err := s.db.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNamePlatformAuditLog)
 	if err != nil {
 		blog.Errorf("generate next audit log id failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -311,7 +311,8 @@ func (s *Service) saveUpdateShardingDBAudit(kit *rest.Kit, preConf, curConf *sha
 		RequestID:       kit.Rid,
 	}
 
-	if err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameAuditLog).Insert(kit.Ctx, audit); err != nil {
+	err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNamePlatformAuditLog).Insert(kit.Ctx, audit)
+	if err != nil {
 		blog.Errorf("save sharding db config audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
