@@ -20,12 +20,15 @@ package y3_15_202411071530
 import (
 	"fmt"
 
+	"configcenter/pkg/tenant/types"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/scene_server/admin_server/upgrader/y3.15.202411071530/data"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func init() {
@@ -38,7 +41,7 @@ func upgrade(kit *rest.Kit, db dal.Dal) error {
 		return fmt.Errorf("non-system tenants cannot initialize")
 	}
 
-	dbCli, _, err := logics.GetNewTenantCli(kit, db)
+	dbCli, dbUUID, err := logics.GetNewTenantCli(kit, db)
 	if err != nil {
 		blog.Errorf("get new tenant db failed, rid: %s", kit.Rid)
 		return fmt.Errorf("get new tenant db failed")
@@ -50,6 +53,17 @@ func upgrade(kit *rest.Kit, db dal.Dal) error {
 
 	if err := data.InitData(kit, dbCli); err != nil {
 		blog.Errorf("add init data failed, err: %v", err)
+		return err
+	}
+
+	// add system tenant
+	err = mongodb.Dal().Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Insert(kit.Ctx, types.Tenant{
+		TenantID: logics.GetSystemTenant(),
+		Status:   types.EnabledStatus,
+		Database: dbUUID,
+	})
+	if err != nil {
+		blog.Errorf("add system tenant failed, err: %v", err)
 		return err
 	}
 
