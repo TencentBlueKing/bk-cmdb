@@ -15,23 +15,19 @@ package mixevent
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	types2 "configcenter/src/common/types"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/sharding"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 	"configcenter/src/storage/stream/types"
-	"configcenter/src/thirdparty/monitor"
-	"configcenter/src/thirdparty/monitor/meta"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -41,9 +37,7 @@ type MixEventFlowOptions struct {
 	MixKey       event.Key
 	Key          event.Key
 	WatchFields  []string
-	Watch        stream.LoopInterface
-	WatchDB      *local.Mongo
-	CcDB         dal.DB
+	Task         *task.Task
 	EventLockTTL time.Duration
 	EventLockKey string
 }
@@ -61,7 +55,7 @@ type MixEventFlow struct {
 type rearrangeEventsFunc func(rid string, es []*types.Event) ([]*types.Event, error)
 
 // parseEventFunc function type for parsing mix event into chain node and detail
-type parseEventFunc func(e *types.Event, id uint64, rid string) (*watch.ChainNode, []byte, bool, error)
+type parseEventFunc func(e *types.Event, id uint64, rid string) (string, *watch.ChainNode, []byte, bool, error)
 
 // NewMixEventFlow create a new mix event watch flow
 func NewMixEventFlow(opts MixEventFlowOptions, rearrangeEvents rearrangeEventsFunc, parseEvent parseEventFunc) (
@@ -90,55 +84,49 @@ const batchSize = 500
 // RunFlow run mix event flow
 func (f *MixEventFlow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run %s event flow for key: %s.", f.MixKey.Namespace(), f.Key.Namespace())
+
 	es := make(map[string]interface{})
-	watchOpts := &types.WatchOptions{
-		Options: types.Options{
-			EventStruct:     &es,
-			Collection:      f.Key.Collection(),
-			StartAfterToken: nil,
-		},
-	}
-	if f.Key.Collection() == common.BKTableNameBaseHost {
-		watchOpts.EventStruct = new(metadata.HostMapStr)
-	}
 
-	f.tokenHandler = newMixEventTokenHandler(f.MixKey, f.Key, f.WatchDB, f.metrics)
+	f.tokenHandler = newMixEventTokenHandler(f.MixKey, f.Key, f.metrics)
 
-	startAtTime, err := f.tokenHandler.getStartWatchTime(ctx)
-	if err != nil {
-		blog.Errorf("get start watch time for %s failed, err: %v", f.Key.Collection(), err)
-		return err
-	}
-	watchOpts.StartAtTime = startAtTime
-	watchOpts.WatchFatalErrorCallback = f.tokenHandler.resetWatchToken
-	watchOpts.Fields = f.WatchFields
-
-	opts := &types.LoopBatchOptions{
-		LoopOptions: types.LoopOptions{
-			Name:         fmt.Sprintf("%s_%s", f.MixKey.Namespace(), f.Key.Namespace()),
-			WatchOpt:     watchOpts,
+	opts := &types.LoopBatchTaskOptions{
+		WatchTaskOptions: &types.WatchTaskOptions{
+			Name: fmt.Sprintf("%s_%s", f.MixKey.Namespace(), f.Key.Namespace()),
+			CollOpts: &types.WatchCollOptions{
+				CollectionOptions: types.CollectionOptions{
+					CollectionFilter: &types.CollectionFilter{
+						Regex: fmt.Sprintf("_%s$", f.Key.Collection()),
+					},
+					EventStruct: &es,
+					Fields:      f.WatchFields,
+				},
+			},
 			TokenHandler: f.tokenHandler,
 			RetryOptions: &types.RetryOptions{
 				MaxRetryCount: 10,
 				RetryDuration: 1 * time.Second,
 			},
 		},
-		EventHandler: &types.BatchHandler{
+		EventHandler: &types.TaskBatchHandler{
 			DoBatch: f.doBatch,
 		},
 		BatchSize: batchSize,
 	}
 
-	if err := f.Watch.WithBatch(opts); err != nil {
-		blog.Errorf("watch %s events, but watch batch failed, err: %v", f.MixKey.Namespace(), err)
-		return err
+	if f.Key.Collection() == common.BKTableNameBaseHost {
+		opts.CollOpts.EventStruct = new(metadata.HostMapStr)
 	}
 
+	err := f.Task.AddLoopBatchTask(opts)
+	if err != nil {
+		blog.Errorf("watch %s events, but add watch batch task failed, err: %v", f.MixKey.Namespace(), err)
+		return err
+	}
 	return nil
 }
 
 // doBatch batch handle events
-func (f *MixEventFlow) doBatch(es []*types.Event) (retry bool) {
+func (f *MixEventFlow) doBatch(dbInfo *types.DBInfo, es []*types.Event) (retry bool) {
 	if len(es) == 0 {
 		return false
 	}
@@ -165,16 +153,20 @@ func (f *MixEventFlow) doBatch(es []*types.Event) (retry bool) {
 		return true
 	}
 
+	if len(events) == 0 {
+		return false
+	}
+
 	// get the lock to get sequences ids.
 	// otherwise, we can not guarantee the multiple event's id is in the right order/sequences
 	// it should be a natural increase order.
-	if err = f.getLock(rid); err != nil {
+	if err = f.getLock(dbInfo.UUID, rid); err != nil {
 		blog.Errorf("get %s lock failed, err: %v, rid: %s", f.MixKey.Namespace(), err, rid)
 		return true
 	}
 
 	// release the lock when the job is done or failed.
-	defer f.releaseLock(rid)
+	defer f.releaseLock(dbInfo.UUID, rid)
 
 	// last event in original events is used to generate
 	lastEvent := es[len(es)-1]
@@ -184,7 +176,7 @@ func (f *MixEventFlow) doBatch(es []*types.Event) (retry bool) {
 	}
 
 	// handle the rearranged events
-	retry, err = f.handleEvents(events, lastTokenData, rid)
+	retry, err = f.handleEvents(dbInfo, events, lastTokenData, rid)
 	if err != nil {
 		return retry
 	}
@@ -194,8 +186,10 @@ func (f *MixEventFlow) doBatch(es []*types.Event) (retry bool) {
 }
 
 // handleEvents handle the rearranged events, parse them into chain nodes and details, then insert into db and redis
-func (f *MixEventFlow) handleEvents(events []*types.Event, lastTokenData mapstr.MapStr, rid string) (bool, error) {
-	eventIDs, err := f.WatchDB.NextSequences(context.Background(), f.MixKey.Collection(), len(events))
+func (f *MixEventFlow) handleEvents(dbInfo *types.DBInfo, events []*types.Event, lastTokenData mapstr.MapStr,
+	rid string) (bool, error) {
+
+	eventIDs, err := dbInfo.WatchDB.NextSequences(context.Background(), f.MixKey.Collection(), len(events))
 	if err != nil {
 		blog.Errorf("get %s event ids failed, err: %v, rid: %s", f.Key.ChainCollection(), err, rid)
 		return true, err
@@ -205,7 +199,7 @@ func (f *MixEventFlow) handleEvents(events []*types.Event, lastTokenData mapstr.
 	pipe := redis.Client().Pipeline()
 	needSaveDetails := false
 
-	chainNodes := make([]*watch.ChainNode, 0)
+	chainNodes := make(map[string][]*watch.ChainNode, 0)
 	oids := make([]string, 0)
 	cursorMap := make(map[string]struct{})
 	for index, e := range events {
@@ -213,7 +207,7 @@ func (f *MixEventFlow) handleEvents(events []*types.Event, lastTokenData mapstr.
 		f.metrics.CollectBasic(e)
 		oids = append(oids, e.ID())
 
-		chainNode, detailBytes, retry, err := f.parseEvent(e, eventIDs[index], rid)
+		tenantID, chainNode, detailBytes, retry, err := f.parseEvent(e, eventIDs[index], rid)
 		if err != nil {
 			return retry, err
 		}
@@ -225,7 +219,7 @@ func (f *MixEventFlow) handleEvents(events []*types.Event, lastTokenData mapstr.
 		if len(detailBytes) > 0 {
 			// if hit cursor conflict, the former cursor node's detail will be overwritten by the later one, so it
 			// is not needed to remove the overlapped cursor node's detail again.
-			pipe.Set(f.MixKey.DetailKey(chainNode.Cursor), string(detailBytes),
+			pipe.Set(f.MixKey.DetailKey(tenantID, chainNode.Cursor), string(detailBytes),
 				time.Duration(f.MixKey.TTLSeconds())*time.Second)
 			needSaveDetails = true
 		}
@@ -240,12 +234,13 @@ func (f *MixEventFlow) handleEvents(events []*types.Event, lastTokenData mapstr.
 		}
 		cursorMap[chainNode.Cursor] = struct{}{}
 
-		chainNodes = append(chainNodes, chainNode)
+		chainNodes[tenantID] = append(chainNodes[tenantID], chainNode)
 	}
 
 	// if all events are invalid, set last token to the last events' token, do not need to retry for the invalid ones
 	if len(chainNodes) == 0 {
-		if err := f.tokenHandler.setLastWatchToken(context.Background(), lastTokenData); err != nil {
+		err = f.tokenHandler.setLastWatchToken(context.Background(), dbInfo.UUID, dbInfo.WatchDB, lastTokenData)
+		if err != nil {
 			f.metrics.CollectMongoError()
 			return false, err
 		}
@@ -262,28 +257,23 @@ func (f *MixEventFlow) handleEvents(events []*types.Event, lastTokenData mapstr.
 		}
 	}
 
-	retry, err := f.doInsertEvents(chainNodes, lastTokenData, rid)
+	retry, err := f.doInsertEvents(dbInfo, chainNodes, lastTokenData, rid)
 	if err != nil {
 		return retry, err
 	}
 
 	blog.Infof("insert %s event for %s success, oids: %v, rid: %s", f.MixKey.Namespace(), f.Key.Collection(), oids, rid)
 	return false, nil
-
 }
 
-func (f *MixEventFlow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenData map[string]interface{}, rid string) (
-	bool, error) {
+func (f *MixEventFlow) doInsertEvents(dbInfo *types.DBInfo, chainNodeMap map[string][]*watch.ChainNode,
+	lastTokenData map[string]interface{}, rid string) (bool, error) {
 
-	count := len(chainNodes)
-
-	if count == 0 {
+	if len(chainNodeMap) == 0 {
 		return false, nil
 	}
 
-	watchDBClient := f.WatchDB.GetDBClient()
-
-	session, err := watchDBClient.StartSession()
+	session, err := dbInfo.WatchDB.GetDBClient().StartSession()
 	if err != nil {
 		blog.Errorf("watch %s events, but start session failed, coll: %s, err: %v, rid: %s", f.MixKey.Namespace(),
 			f.Key.Collection(), err, rid)
@@ -292,49 +282,14 @@ func (f *MixEventFlow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenDa
 	defer session.EndSession(context.Background())
 
 	// insert events into db in an transaction
-	txnErr, conflictError := f.insertEvents(session, chainNodes, lastTokenData, rid)
-
+	txnErr, conflictError, conflictTenantID := f.insertEvents(dbInfo, session, chainNodeMap, lastTokenData, rid)
 	if txnErr != nil {
 		blog.Errorf("do insert %s events failed, err: %v, rid: %s", f.MixKey.Namespace(), txnErr, rid)
 
-		rid = rid + ":" + chainNodes[0].Oid
-		if conflictError != nil && len(chainNodes) >= 1 {
-			monitor.Collect(&meta.Alarm{
-				RequestID: rid,
-				Type:      meta.EventFatalError,
-				Detail: fmt.Sprintf("host identifier, but got conflict %s cursor with chain nodes",
-					f.Key.Collection()),
-				Module:    types2.CC_MODULE_CACHESERVICE,
-				Dimension: map[string]string{"retry_conflict_nodes": "yes"},
-			})
-
-			var conflictNode *watch.ChainNode
-			// get the conflict cursor
-			for idx := range chainNodes {
-				if strings.Contains(conflictError.Error(), chainNodes[idx].Cursor) {
-					// record conflict node
-					conflictNode = chainNodes[idx]
-					// remove the conflict cursor
-					chainNodes = append(chainNodes[0:idx], chainNodes[idx+1:]...)
-					break
-				}
-			}
-
-			if conflictNode == nil {
-				// this should not happen
-				// reduce event's one by one, then retry again.
-				blog.ErrorJSON("watch %s events, insert %s event with reduce node %s, remain nodes: %s, rid: %s",
-					f.MixKey.Namespace(), f.Key.Collection(), chainNodes[0], chainNodes[1:], rid)
-
-				// retry insert events
-				return f.doInsertEvents(chainNodes[1:], lastTokenData, rid)
-			}
-
-			blog.ErrorJSON("watch %s events, insert %s event with reduce node %s, remain nodes: %s, rid: %s",
-				f.MixKey.Namespace(), f.Key.Collection(), conflictNode, chainNodes, rid)
-
-			// retry insert events
-			return f.doInsertEvents(chainNodes, lastTokenData, rid)
+		if conflictError != nil && len(chainNodeMap[conflictTenantID]) >= 1 {
+			chainNodeMap = event.ReduceChainNode(chainNodeMap, conflictTenantID,
+				f.MixKey.Namespace()+":"+f.Key.Collection(), txnErr, f.metrics, rid)
+			return f.doInsertEvents(dbInfo, chainNodeMap, lastTokenData, rid)
 		}
 
 		// if an error occurred, roll back and re-watch again
@@ -346,11 +301,12 @@ func (f *MixEventFlow) doInsertEvents(chainNodes []*watch.ChainNode, lastTokenDa
 }
 
 // insertEvents insert events and last watch token
-func (f *MixEventFlow) insertEvents(session mongo.Session, chainNodes []*watch.ChainNode,
-	lastTokenData map[string]interface{}, rid string) (error, error) {
+func (f *MixEventFlow) insertEvents(dbInfo *types.DBInfo, session mongo.Session,
+	chainNodeMap map[string][]*watch.ChainNode, lastToken map[string]interface{}, rid string) (error, error, string) {
 
 	// conflictError record the conflict cursor error
 	var conflictError error
+	var conflictTenantID string
 
 	txnErr := mongo.WithSession(context.Background(), session, func(sc mongo.SessionContext) error {
 		if err := session.StartTransaction(); err != nil {
@@ -359,23 +315,48 @@ func (f *MixEventFlow) insertEvents(session mongo.Session, chainNodes []*watch.C
 			return err
 		}
 
-		if err := f.WatchDB.Table(f.MixKey.ChainCollection()).Insert(sc, chainNodes); err != nil {
-			blog.ErrorJSON("watch %s events, but insert chain nodes for %s failed, nodes: %s, err: %v, rid: %s",
-				f.Key.Collection(), f.MixKey.Namespace(), chainNodes, err, rid)
-			f.metrics.CollectMongoError()
-			_ = session.AbortTransaction(context.Background())
-
-			if event.IsConflictError(err) {
-				conflictError = err
+		for tenantID, chainNodes := range chainNodeMap {
+			if len(chainNodes) == 0 {
+				continue
 			}
-			return err
+
+			shardingDB := mongodb.Dal("watch").Shard(sharding.NewShardOpts().WithTenant(tenantID))
+
+			// insert chain nodes into db
+			if err := shardingDB.Table(f.MixKey.ChainCollection()).Insert(sc, chainNodes); err != nil {
+				blog.ErrorJSON("watch %s events, but insert chain nodes for %s failed, nodes: %s, err: %v, rid: %s",
+					f.Key.Collection(), f.MixKey.Namespace(), chainNodes, err, rid)
+				f.metrics.CollectMongoError()
+				_ = session.AbortTransaction(context.Background())
+
+				if event.IsConflictError(err) {
+					conflictError = err
+				}
+				return err
+			}
+
+			// set last watch event info
+			lastNode := chainNodes[len(chainNodes)-1]
+			lastNodeInfo := map[string]interface{}{
+				common.BKFieldID:     lastNode.ID,
+				common.BKCursorField: lastNode.Cursor,
+			}
+
+			filter := map[string]interface{}{
+				"_id":            f.MixKey.Collection(),
+				common.BKFieldID: mapstr.MapStr{common.BKDBLT: lastNode.ID},
+			}
+
+			if err := shardingDB.Table(common.BKTableNameLastWatchEvent).Update(sc, filter, lastNodeInfo); err != nil {
+				blog.Errorf("insert tenant %s mix event %s coll %s last event info(%+v) failed, err: %v, rid: %s",
+					tenantID, f.MixKey.Namespace(), f.Key.Collection(), lastNodeInfo, err, rid)
+				f.metrics.CollectMongoError()
+				_ = session.AbortTransaction(context.Background())
+				return err
+			}
 		}
 
-		lastNode := chainNodes[len(chainNodes)-1]
-		lastTokenData[common.BKFieldID] = lastNode.ID
-		lastTokenData[common.BKCursorField] = lastNode.Cursor
-		lastTokenData[common.BKStartAtTimeField] = lastNode.ClusterTime
-		if err := f.tokenHandler.setLastWatchToken(sc, lastTokenData); err != nil {
+		if err := f.tokenHandler.setLastWatchToken(sc, dbInfo.UUID, dbInfo.WatchDB, lastToken); err != nil {
 			f.metrics.CollectMongoError()
 			_ = session.AbortTransaction(context.Background())
 			return err
@@ -391,26 +372,27 @@ func (f *MixEventFlow) insertEvents(session mongo.Session, chainNodes []*watch.C
 		return nil
 	})
 
-	return txnErr, conflictError
+	return txnErr, conflictError, conflictTenantID
 }
 
-func (f *MixEventFlow) getLock(rid string) error {
+func (f *MixEventFlow) getLock(uuid, rid string) error {
+	lockKey := f.EventLockKey + ":" + uuid
 	timeout := time.After(f.EventLockTTL)
 	for {
 		select {
 		case <-timeout:
-			return fmt.Errorf("get %s: %s lock timeout", f.MixKey.Namespace(), f.EventLockKey)
+			return fmt.Errorf("get %s: %s lock timeout", f.MixKey.Namespace(), lockKey)
 		default:
 		}
 
-		success, err := redis.Client().SetNX(context.Background(), f.EventLockKey, 1, f.EventLockTTL).Result()
+		success, err := redis.Client().SetNX(context.Background(), lockKey, 1, f.EventLockTTL).Result()
 		if err != nil {
-			blog.Errorf("get %s: %s lock, err: %v, rid: %s", f.MixKey.Namespace(), f.EventLockKey, err, rid)
+			blog.Errorf("get %s: %s lock, err: %v, rid: %s", f.MixKey.Namespace(), lockKey, err, rid)
 			return err
 		}
 
 		if !success {
-			blog.V(3).Infof("get %s: %s lock failed, retry later, rid: %s", f.MixKey.Namespace(), f.EventLockKey, rid)
+			blog.V(3).Infof("get %s: %s lock failed, retry later, rid: %s", f.MixKey.Namespace(), lockKey, rid)
 			time.Sleep(300 * time.Millisecond)
 			continue
 		}
@@ -420,10 +402,11 @@ func (f *MixEventFlow) getLock(rid string) error {
 
 }
 
-func (f *MixEventFlow) releaseLock(rid string) {
-	_, err := redis.Client().Del(context.Background(), f.EventLockKey).Result()
+func (f *MixEventFlow) releaseLock(uuid, rid string) {
+	lockKey := f.EventLockKey + ":" + uuid
+	_, err := redis.Client().Del(context.Background(), lockKey).Result()
 	if err != nil {
-		blog.Errorf("delete %s lock key: %s failed, err: %v, rid: %s", f.MixKey.Namespace(), f.EventLockKey, err, rid)
+		blog.Errorf("delete %s lock key: %s failed, err: %v, rid: %s", f.MixKey.Namespace(), lockKey, err, rid)
 		return
 	}
 	return

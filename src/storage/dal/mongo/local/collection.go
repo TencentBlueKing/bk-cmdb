@@ -26,14 +26,11 @@ import (
 	"time"
 
 	"configcenter/src/common"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/common/util/table"
 	"configcenter/src/storage/dal/types"
 	dtype "configcenter/src/storage/types"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -245,10 +242,6 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 
 	var deleteCount uint64
 	err = c.tm.AutoRunWithTxn(ctx, c.cli.Client(), func(ctx context.Context) error {
-		if err := c.tryArchiveDeletedDoc(ctx, filter); err != nil {
-			mtc.collectErrorCount(c.collName, deleteOper)
-			return err
-		}
 		deleteRet, err := c.cli.Database().Collection(c.collName).DeleteMany(ctx, filter)
 		if err != nil {
 			mtc.collectErrorCount(c.collName, deleteOper)
@@ -260,70 +253,6 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 	})
 
 	return deleteCount, err
-}
-
-func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filter) error {
-	delArchiveTable, exists := table.GetDelArchiveTable(c.collName)
-	if !exists {
-		// do not archive the delete docs
-		return nil
-	}
-
-	filter, err := c.addTenantID(filter)
-	if err != nil {
-		return err
-	}
-
-	// only archive the specified fields for delete docs
-	var findOpts *options.FindOptions
-	fields := table.GetDelArchiveFields(c.collName)
-	if len(fields) > 0 {
-		projection := map[string]int{"_id": 1}
-		for _, field := range fields {
-			projection[field] = 1
-		}
-		findOpts = &options.FindOptions{Projection: projection}
-	}
-
-	docs := make([]bson.D, 0)
-	cursor, err := c.cli.Database().Collection(c.collName).Find(ctx, filter, findOpts)
-	if err != nil {
-		return err
-	}
-
-	if err := cursor.All(ctx, &docs); err != nil {
-		return err
-	}
-
-	if len(docs) == 0 {
-		return nil
-	}
-
-	archives := make([]interface{}, len(docs))
-	for idx, doc := range docs {
-		detail := make(bson.D, 0)
-		var oid string
-		for _, e := range doc {
-			if e.Key == "_id" {
-				rawOid, ok := e.Value.(primitive.ObjectID)
-				if !ok {
-					return errors.New("invalid object id")
-				}
-				oid = rawOid.Hex()
-				continue
-			}
-			detail = append(detail, e)
-		}
-		archives[idx] = metadata.DeleteArchive{
-			Oid:    oid,
-			Detail: detail,
-			Time:   time.Now(),
-			Coll:   c.collName,
-		}
-	}
-
-	_, err = c.cli.Database().Collection(delArchiveTable).InsertMany(ctx, archives)
-	return err
 }
 
 // BatchCreateIndexes 批量创建索引

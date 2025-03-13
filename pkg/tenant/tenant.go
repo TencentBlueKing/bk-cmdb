@@ -92,20 +92,22 @@ func Init(opts *Options) error {
 }
 
 func refreshTenantInfo() error {
-	var err error
 	if db != nil {
-		allTenants, err = GetAllTenantsFromDB(context.Background(), db)
+		dbAllTenants, err := GetAllTenantsFromDB(context.Background(), db)
 		if err != nil {
+			blog.Errorf("get all tenants from db failed, err: %v", err)
 			return err
 		}
+		allTenants = dbAllTenants
 	}
 	if apiMachineryCli != nil {
-		allTenants, err = apiMachineryCli.CoreService().Tenant().GetAllTenants(context.Background(),
+		apiAllTenants, err := apiMachineryCli.CoreService().Tenant().GetAllTenants(context.Background(),
 			util.GenDefaultHeader())
 		if err != nil {
 			blog.Errorf("get all tenants from api machinery failed, err: %v", err)
 			return err
 		}
+		allTenants = apiAllTenants
 	}
 
 	lock.Lock()
@@ -113,6 +115,8 @@ func refreshTenantInfo() error {
 		tenantMap[tenant.TenantID] = &tenant
 	}
 	lock.Unlock()
+
+	generateAndPushTenantEvent(allTenants)
 	return nil
 }
 

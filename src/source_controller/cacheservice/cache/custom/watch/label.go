@@ -19,15 +19,15 @@ package watch
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/pkg/conv"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
-	"configcenter/src/storage/driver/mongodb"
 	streamtypes "configcenter/src/storage/stream/types"
 )
 
@@ -40,11 +40,12 @@ func (w *Watcher) watchPodLabel() error {
 
 	opt := &watchOptions{
 		watchType: PodLabelWatchType,
-		watchOpts: &streamtypes.WatchOptions{
-			Options: streamtypes.Options{
-				Filter:      make(mapstr.MapStr),
+		watchOpts: &streamtypes.WatchCollOptions{
+			CollectionOptions: streamtypes.CollectionOptions{
 				EventStruct: new(kubetypes.Pod),
-				Collection:  kubetypes.BKTableNameBasePod,
+				CollectionFilter: &streamtypes.CollectionFilter{
+					Regex: fmt.Sprintf("_%s$", kubetypes.BKTableNameBasePod),
+				},
 				Fields: []string{kubetypes.BKIDField, kubetypes.BKBizIDField, kubetypes.LabelsField,
 					kubetypes.BKNamespaceIDField},
 			},
@@ -72,77 +73,82 @@ type podLabelWatcher struct {
 }
 
 // doBatch batch handle pod event for label key and value cache
-func (w *podLabelWatcher) doBatch(es []*streamtypes.Event) (retry bool) {
+func (w *podLabelWatcher) doBatch(dbInfo *streamtypes.DBInfo, es []*streamtypes.Event) bool {
 	if len(es) == 0 {
 		return false
 	}
 
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-	rid := es[0].ID()
+	kit := rest.NewKit().WithCtx(util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)).
+		WithRid(es[0].ID())
 
 	// group inserted and deleted pod events
-	insertPodMap := make(map[string]*kubetypes.Pod)
-	delOids := make([]string, 0)
-	nsIDs := make([]int64, 0)
+	insertPodMap := make(map[string]map[string]*kubetypes.Pod)
+	delPodMap := make(map[string]map[string]*kubetypes.Pod)
+	nsIDMap := make(map[string][]int64)
 
 	for idx := range es {
 		one := es[idx]
 
+		tenantID := one.TenantID
+		pod := one.Document.(*kubetypes.Pod)
+
 		switch one.OperationType {
 		case streamtypes.Insert:
-			pod := one.Document.(*kubetypes.Pod)
-			insertPodMap[one.Oid] = pod
-			nsIDs = append(nsIDs, pod.NamespaceID)
+			_, exists := insertPodMap[tenantID]
+			if !exists {
+				insertPodMap[tenantID] = make(map[string]*kubetypes.Pod)
+			}
+			insertPodMap[tenantID][one.Oid] = pod
+			nsIDMap[tenantID] = append(nsIDMap[tenantID], pod.NamespaceID)
 		case streamtypes.Delete:
 			_, exists := insertPodMap[one.Oid]
 			if exists {
 				delete(insertPodMap, one.Oid)
 				continue
 			}
-			delOids = append(delOids, one.Oid)
+			_, exists = delPodMap[tenantID]
+			if !exists {
+				delPodMap[tenantID] = make(map[string]*kubetypes.Pod)
+			}
+			delPodMap[tenantID][one.Oid] = pod
+			nsIDMap[tenantID] = append(nsIDMap[tenantID], pod.NamespaceID)
 		default:
 			// right now, pod can not be updated, so we only need to handle insert and delete event
 			continue
 		}
 
 		blog.V(5).Infof("watch custom resource cache, received coll: %s, oid: %s, op-time: %s, %s event, rid: %s",
-			one.Collection, one.Oid, one.ClusterTime.String(), one.OperationType, rid)
+			one.Collection, one.Oid, one.ClusterTime.String(), one.OperationType, kit.Rid)
 	}
 
-	delArchives, err := w.getDeletedPodInfo(ctx, delOids, rid)
-	if err != nil {
-		return true
-	}
+	for tenantID, nsIDs := range nsIDMap {
+		nsIDs = util.IntArrayUnique(nsIDs)
+		asstBiz, err := w.sharedNsCache.GetAsstBiz(kit, nsIDs)
+		if err != nil {
+			return false
+		}
 
-	for _, archive := range delArchives {
-		nsIDs = append(nsIDs, archive.Detail.NamespaceID)
-	}
+		// get biz to pod label key and value count map
+		keyCnt := make(map[int64]map[string]int64)
+		valueCnt := make(map[int64]map[string]map[string]int64)
 
-	nsIDs = util.IntArrayUnique(nsIDs)
-	asstBizInfo, err := w.sharedNsCache.GetAsstBiz(ctx, nsIDs, rid)
-	if err != nil {
-		return false
-	}
+		for _, pod := range insertPodMap[tenantID] {
+			w.countPodLabel(pod, asstBiz, keyCnt, valueCnt, 1)
+		}
+		for _, pod := range delPodMap[tenantID] {
+			w.countPodLabel(pod, asstBiz, keyCnt, valueCnt, -1)
+		}
 
-	// get biz to pod label key and value count map
-	keyCnt := make(map[int64]map[string]int64)
-	valueCnt := make(map[int64]map[string]map[string]int64)
+		kit = kit.WithTenant(tenantID)
 
-	for _, pod := range insertPodMap {
-		w.countPodLabel(pod, asstBizInfo, keyCnt, valueCnt, 1)
-	}
+		// update changed pod label key and value cache
+		if err := w.labelCache.UpdateKeyCount(kit, keyCnt); err != nil {
+			return true
+		}
 
-	for _, archive := range delArchives {
-		w.countPodLabel(archive.Detail, asstBizInfo, keyCnt, valueCnt, -1)
-	}
-
-	// update changed pod label key and value cache
-	if err = w.labelCache.UpdateKeyCount(ctx, keyCnt, rid); err != nil {
-		return true
-	}
-
-	if err = w.labelCache.UpdateValueCount(ctx, valueCnt, rid); err != nil {
-		return true
+		if err := w.labelCache.UpdateValueCount(kit, valueCnt); err != nil {
+			return true
+		}
 	}
 
 	return false
@@ -179,30 +185,4 @@ func (w *podLabelWatcher) countPodLabel(pod *kubetypes.Pod, asstBiz map[int64]in
 			valueCnt[bizID][key][value] += cnt
 		}
 	}
-}
-
-type podDelArchive struct {
-	Detail *kubetypes.Pod `bson:"detail"`
-}
-
-// getDeletedPodInfo get deleted pod info
-func (w *podLabelWatcher) getDeletedPodInfo(ctx context.Context, oids []string, rid string) ([]podDelArchive, error) {
-	delArchives := make([]podDelArchive, 0)
-	if len(oids) == 0 {
-		return delArchives, nil
-	}
-
-	cond := mapstr.MapStr{
-		"oid":  mapstr.MapStr{common.BKDBIN: oids},
-		"coll": kubetypes.BKTableNameBasePod,
-	}
-
-	err := mongodb.Client().Table(common.BKTableNameKubeDelArchive).Find(cond).Fields("detail.labels",
-		"detail.bk_biz_id", "detail.bk_namespace_id").All(ctx, &delArchives)
-	if err != nil {
-		blog.Errorf("get pod del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
-		return nil, err
-	}
-
-	return delArchives, nil
 }

@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-// Package types TODO
+// Package types defines event stream types
 package types
 
 import (
@@ -18,7 +18,11 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"time"
+
+	"configcenter/pkg/filter"
+	"configcenter/src/common"
 
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
@@ -66,35 +70,29 @@ const (
 	ListDone OperType = "listerDone"
 )
 
-// ListOptions TODO
+// ListOptions is the option to list data from specified collections by filter
 type ListOptions struct {
-	// Filter helps you filter out which kind of data's change event you want
-	// to receive, such as the filter :
-	// {"bk_obj_id":"biz"} means you can only receives the data that has this kv.
-	// Note: the filter's key must be a exist document key filed in the collection's
-	// document
-	Filter map[string]interface{}
-
-	// list the documents only with these fields.
-	Fields []string
-
-	// EventStruct is the point data struct that the event decoded into.
-	// Note: must be a point value.
-	EventStruct interface{}
-
-	// Collection defines which collection you want you watch.
-	Collection string
+	// CollOpts is the watch task id to list data options for different collections
+	CollOpts map[string]CollectionOptions
 
 	// Step defines the list step when the client try to list all the data defines in the
 	// namespace. default value is `DefaultListStep`, value range [200,2000]
 	PageSize *int
+
+	// WithRetry defines whether the list operation needs to retry when failed
+	WithRetry bool
 }
 
-// CheckSetDefault TODO
+// CheckSetDefault validate list options, and set default value for not set fields
 func (opts *ListOptions) CheckSetDefault() error {
-	if reflect.ValueOf(opts.EventStruct).Kind() != reflect.Ptr ||
-		reflect.ValueOf(opts.EventStruct).IsNil() {
-		return fmt.Errorf("invalid EventStruct field, must be a pointer and not nil")
+	if len(opts.CollOpts) == 0 {
+		return errors.New("invalid Namespace field, database and collection can not be empty")
+	}
+
+	for id, opt := range opts.CollOpts {
+		if err := opt.Validate(); err != nil {
+			return fmt.Errorf("collection options[%s] is invalid, err: %v", id, err)
+		}
 	}
 
 	if opts.PageSize != nil {
@@ -104,14 +102,83 @@ func (opts *ListOptions) CheckSetDefault() error {
 	} else {
 		opts.PageSize = &defaultListPageSize
 	}
+	return nil
+}
 
-	if len(opts.Collection) == 0 {
+// CollectionOptions is the options for collections with the same watch filter
+type CollectionOptions struct {
+	// CollectionFilter helps you filter out which kind of collection's change event you want to receive,
+	// such as the filter : {"$regex":"_HostBase$"} means you can only receive events from collections
+	// that ends with the suffix _HostBase
+	CollectionFilter *CollectionFilter
+
+	// Filter helps you filter out which kind of data's change event you want to receive,
+	// such as the filter: {"bk_obj_id":"biz"} means you can only receive the data that has this kv.
+	// Note: the filter's key must be an exist document key filed in the collection's document
+	Filter *filter.Expression
+
+	// Fields defines which fields will be returned along with the events
+	// this is optional, if not set, all the fields will be returned.
+	Fields []string
+
+	// EventStruct is the point data struct that the event decoded into.
+	// Note: must be a point value.
+	EventStruct interface{}
+}
+
+// Validate CollectionOptions
+func (opts *CollectionOptions) Validate() error {
+	if reflect.ValueOf(opts.EventStruct).Kind() != reflect.Ptr ||
+		reflect.ValueOf(opts.EventStruct).IsNil() {
+		return errors.New("invalid EventStruct field, must be a pointer and not nil")
+	}
+
+	if opts.CollectionFilter == nil {
 		return errors.New("invalid Namespace field, database and collection can not be empty")
+	}
+
+	if err := opts.CollectionFilter.Validate(); err != nil {
+		return err
+	}
+
+	if opts.Filter != nil {
+		validOpt := filter.NewDefaultExprOpt(nil)
+		validOpt.IgnoreRuleFields = true
+		return opts.Filter.Validate(validOpt)
 	}
 	return nil
 }
 
-// Options TODO
+// CollectionFilter is the collection filter for watch
+type CollectionFilter struct {
+	Regex string
+}
+
+// Validate CollectionFilter
+func (c *CollectionFilter) Validate() error {
+	if c.Regex == "" {
+		return errors.New("collection filter has no regex")
+	}
+
+	_, err := regexp.Compile(c.Regex)
+	if err != nil {
+		return fmt.Errorf("collection filter regex %s is invalid, err: %v", c.Regex, err)
+	}
+
+	return nil
+}
+
+// ToMongo convert to mongodb filter
+func (c *CollectionFilter) ToMongo() interface{} {
+	return bson.M{common.BKDBLIKE: c.Regex}
+}
+
+// Match checks if the collection name matches the filter
+func (c *CollectionFilter) Match(coll string) bool {
+	return regexp.MustCompile(c.Regex).MatchString(coll)
+}
+
+// Options is the options for watch change stream operation
 type Options struct {
 	// reference doc:
 	// https://docs.mongodb.com/manual/reference/method/db.collection.watch/#change-stream-with-full-document-update-lookup
@@ -124,29 +191,8 @@ type Options struct {
 	// default value is 1000ms
 	MaxAwaitTime *time.Duration
 
-	// OperationType describe which kind of operation you want to watch,
-	// such as a "insert" operation or a "replace" operation.
-	// If you don't set, it will means watch  all kinds of operations.
-	OperationType *OperType
-
-	// Filter helps you filter out which kind of data's change event you want
-	// to receive, such as the filter :
-	// {"bk_obj_id":"biz"} means you can only receives the data that has this kv.
-	// Note: the filter's key must be a exist document key filed in the collection's
-	// document
-	Filter map[string]interface{}
-
-	// CollectionFilter helps you filter out which kind of collection's change event you want to receive,
-	// such as the filter : {"$regex":"^cc_ObjectBase"} means you can only receive events from collections
-	// starts with the prefix cc_ObjectBase
-	CollectionFilter interface{}
-
-	// EventStruct is the point data struct that the event decoded into.
-	// Note: must be a point value.
-	EventStruct interface{}
-
-	// Collection defines which collection you want you watch.
-	Collection string
+	// CollOpts is the watch task id to watch options for different collections
+	CollOpts map[string]WatchCollOptions
 
 	// StartAfterToken describe where you want to watch the event.
 	// Note: the returned event doesn't contains the token represented,
@@ -160,20 +206,20 @@ type Options struct {
 	// WatchFatalErrorCallback the function to be called when watch failed with a fatal error
 	// reset the resume token and set the start time for next watch in case it use the mistaken token again
 	WatchFatalErrorCallback func(startAtTime TimeStamp) error `json:"-"`
-
-	// Fields defines which fields will be returned along with the events
-	// this is optional, if not set, all the fields will be returned.
-	Fields []string
 }
 
 var defaultMaxAwaitTime = time.Second
 
-// CheckSetDefault TODO
-// CheckSet check the legal of each option, and set the default value
+// CheckSetDefault check the legal of each option, and set the default value
 func (opts *Options) CheckSetDefault() error {
-	if reflect.ValueOf(opts.EventStruct).Kind() != reflect.Ptr ||
-		reflect.ValueOf(opts.EventStruct).IsNil() {
-		return fmt.Errorf("invalid EventStruct field, must be a pointer and not nil")
+	if len(opts.CollOpts) == 0 {
+		return errors.New("invalid Namespace field, database and collection can not be empty")
+	}
+
+	for i, opt := range opts.CollOpts {
+		if err := opt.Validate(); err != nil {
+			return fmt.Errorf("collection options[%s] is invalid, err: %v", i, err)
+		}
 	}
 
 	if opts.MajorityCommitted == nil {
@@ -184,11 +230,17 @@ func (opts *Options) CheckSetDefault() error {
 	if opts.MaxAwaitTime == nil {
 		opts.MaxAwaitTime = &defaultMaxAwaitTime
 	}
-
-	if len(opts.Collection) == 0 && opts.CollectionFilter == nil {
-		return errors.New("invalid Namespace field, database and collection can not be empty")
-	}
 	return nil
+}
+
+// WatchCollOptions is the watch options for collections with the same watch filter
+type WatchCollOptions struct {
+	// OperationType describe which kind of operation you want to watch,
+	// such as an "insert" operation or a "replace" operation.
+	// If you don't set, it will means watch  all kinds of operations.
+	OperationType *OperType
+
+	CollectionOptions
 }
 
 // TimeStamp TODO
@@ -282,7 +334,9 @@ type Event struct {
 	Document      interface{}
 	DocBytes      []byte
 	OperationType OperType
-	Collection    string
+	CollectionInfo
+	// TaskID is the task id of the event, which is used to distribute event to event watch task
+	TaskID string
 
 	// The timestamp from the oplog entry associated with the event.
 	ClusterTime TimeStamp
@@ -292,6 +346,16 @@ type Event struct {
 
 	// changed fields details in this event, describes which fields is updated or removed.
 	ChangeDesc *ChangeDescription
+}
+
+// CollectionInfo is the collection info of the event
+type CollectionInfo struct {
+	// Collection is the original collection name
+	Collection string
+	// ParsedColl is the parsed collection name without tenant id
+	ParsedColl string
+	// TenantID is the tenant ID separated from the collection name
+	TenantID string
 }
 
 // ChangeDescription TODO
@@ -311,15 +375,13 @@ func (e *Event) ID() string {
 	return fmt.Sprintf("%s-%d-%d", e.Oid, e.ClusterTime.Sec, e.ClusterTime.Nano)
 }
 
-// EventToken TODO
-// mongodb change stream token, which represent a event's identity.
+// EventToken mongodb change stream token, which represent a event's identity.
 type EventToken struct {
 	// Hex value of document's _id
 	Data string `bson:"_data"`
 }
 
-// EventStream TODO
-// reference:
+// EventStream reference:
 // https://docs.mongodb.com/manual/reference/change-events/
 type EventStream struct {
 	Token         EventToken          `bson:"_id"`
@@ -348,6 +410,13 @@ type UpdateDescription struct {
 	UpdatedFields map[string]interface{} `json:"updatedFields" bson:"updatedFields"`
 	// document's fields which is removed in a change stream
 	RemovedFields []string `json:"removedFields" bson:"removedFields"`
+}
+
+// RawEvent is the change stream event struct with raw event data
+type RawEvent struct {
+	EventStream `bson:",inline"`
+	FullDoc     bson.Raw `bson:"fullDocument"`
+	PreFullDoc  bson.Raw `bson:"fullDocumentBeforeChange"`
 }
 
 // EventInfo is mongodb event info
@@ -388,10 +457,19 @@ func GetEventDetail(detailStr *string) *string {
 	return &detail
 }
 
-// TokenHandler TODO
+// TokenHandler is the token handler interface
 type TokenHandler interface {
-	SetLastWatchToken(ctx context.Context, token string) error
-	GetStartWatchToken(ctx context.Context) (token string, err error)
+	SetLastWatchToken(ctx context.Context, token *TokenInfo) error
+	GetStartWatchToken(ctx context.Context) (token *TokenInfo, err error)
+	ResetWatchToken(startAtTime TimeStamp) error
+}
+
+// TokenInfo is the watch token info
+type TokenInfo struct {
+	Token       string     `bson:"token"`
+	StartAtTime *TimeStamp `bson:"start_at_time"`
+	// TenantID is used for tenant watch task token stores in platform table, do not set this field
+	TenantID string `bson:"tenant_id"`
 }
 
 // LoopOptions TODO
@@ -439,11 +517,11 @@ func (lo *LoopOneOptions) Validate() error {
 
 	if lo.RetryOptions != nil {
 		if lo.RetryOptions.MaxRetryCount <= 0 {
-			lo.RetryOptions.MaxRetryCount = defaultRetryCount
+			lo.RetryOptions.MaxRetryCount = DefaultRetryCount
 		}
 
 		if lo.RetryOptions.RetryDuration == 0 {
-			lo.RetryOptions.RetryDuration = defaultRetryDuration
+			lo.RetryOptions.RetryDuration = DefaultRetryDuration
 		}
 
 		if lo.RetryOptions.RetryDuration < 500*time.Millisecond {
@@ -451,8 +529,8 @@ func (lo *LoopOneOptions) Validate() error {
 		}
 	} else {
 		lo.RetryOptions = &RetryOptions{
-			MaxRetryCount: defaultRetryCount,
-			RetryDuration: defaultRetryDuration,
+			MaxRetryCount: DefaultRetryCount,
+			RetryDuration: DefaultRetryDuration,
 		}
 	}
 
@@ -474,8 +552,8 @@ type LoopBatchOptions struct {
 
 const (
 	defaultBatchSize     = 200
-	defaultRetryCount    = 10
-	defaultRetryDuration = 1 * time.Second
+	DefaultRetryCount    = 10
+	DefaultRetryDuration = 1 * time.Second
 )
 
 // Validate TODO
@@ -502,11 +580,11 @@ func (lo *LoopBatchOptions) Validate() error {
 
 	if lo.RetryOptions != nil {
 		if lo.RetryOptions.MaxRetryCount <= 0 {
-			lo.RetryOptions.MaxRetryCount = defaultRetryCount
+			lo.RetryOptions.MaxRetryCount = DefaultRetryCount
 		}
 
 		if lo.RetryOptions.RetryDuration == 0 {
-			lo.RetryOptions.RetryDuration = defaultRetryDuration
+			lo.RetryOptions.RetryDuration = DefaultRetryDuration
 		}
 
 		if lo.RetryOptions.RetryDuration < 200*time.Millisecond {
@@ -514,8 +592,8 @@ func (lo *LoopBatchOptions) Validate() error {
 		}
 	} else {
 		lo.RetryOptions = &RetryOptions{
-			MaxRetryCount: defaultRetryCount,
-			RetryDuration: defaultRetryDuration,
+			MaxRetryCount: DefaultRetryCount,
+			RetryDuration: DefaultRetryDuration,
 		}
 	}
 

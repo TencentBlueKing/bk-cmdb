@@ -24,9 +24,11 @@ import (
 	"strconv"
 	"time"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
@@ -56,13 +58,13 @@ func (c *SharedNsRelCache) genNsAsstBizRedisKey(nsID int64) string {
 }
 
 // GetAsstBiz get shared namespace associated biz info
-func (c *SharedNsRelCache) GetAsstBiz(ctx context.Context, nsIDs []int64, rid string) (map[int64]int64, error) {
+func (c *SharedNsRelCache) GetAsstBiz(kit *rest.Kit, nsIDs []int64) (map[int64]int64, error) {
 	redisKeys := make([]string, len(nsIDs))
 	for i, nsID := range nsIDs {
 		redisKeys[i] = c.genNsAsstBizRedisKey(nsID)
 	}
 
-	redisDataMap, err := c.nsAsstBizCache.List(ctx, redisKeys, rid)
+	redisDataMap, err := c.nsAsstBizCache.List(kit, redisKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +73,13 @@ func (c *SharedNsRelCache) GetAsstBiz(ctx context.Context, nsIDs []int64, rid st
 	for redisKey, redisData := range redisDataMap {
 		nsID, err := strconv.ParseInt(redisKey, 10, 64)
 		if err != nil {
-			blog.Errorf("parse shared ns id from redis key %s failed, err: %v", redisKey, err)
+			blog.Errorf("parse shared ns id from redis key %s failed, err: %v, rid: %s", redisKey, err, kit.Rid)
 			return nil, err
 		}
 
 		asstID, err := strconv.ParseInt(redisData, 10, 64)
 		if err != nil {
-			blog.Errorf("parse asst biz id from redis data %s failed, err: %v", redisData, err)
+			blog.Errorf("parse asst biz id from redis data %s failed, err: %v, rid: %s", redisData, err, kit.Rid)
 			return nil, err
 		}
 
@@ -88,35 +90,35 @@ func (c *SharedNsRelCache) GetAsstBiz(ctx context.Context, nsIDs []int64, rid st
 }
 
 // UpdateAsstBiz update shared namespace to associated biz cache by map[nsID]asstBizID
-func (c *SharedNsRelCache) UpdateAsstBiz(ctx context.Context, nsAsstBizMap map[int64]int64, rid string) error {
+func (c *SharedNsRelCache) UpdateAsstBiz(kit *rest.Kit, nsAsstBizMap map[int64]int64) error {
 	redisDataMap := make(map[string]interface{})
 	for nsID, asstBizID := range nsAsstBizMap {
 		redisDataMap[c.genNsAsstBizRedisKey(nsID)] = asstBizID
 	}
 
-	if err := c.nsAsstBizCache.BatchUpdate(ctx, redisDataMap, rid); err != nil {
-		blog.Errorf("update shared ns asst biz cache failed, err: %v, data: %+v, rid: %s", err, nsAsstBizMap, rid)
+	if err := c.nsAsstBizCache.BatchUpdate(kit, redisDataMap); err != nil {
+		blog.Errorf("update shared ns asst biz cache failed, err: %v, data: %+v, rid: %s", err, nsAsstBizMap, kit.Rid)
 		return err
 	}
 	return nil
 }
 
 // DeleteAsstBiz delete shared namespace to associated biz cache by nsIDs
-func (c *SharedNsRelCache) DeleteAsstBiz(ctx context.Context, nsIDs []int64, rid string) error {
+func (c *SharedNsRelCache) DeleteAsstBiz(kit *rest.Kit, nsIDs []int64) error {
 	redisKeys := make([]string, len(nsIDs))
 	for i, nsID := range nsIDs {
 		redisKeys[i] = c.genNsAsstBizRedisKey(nsID)
 	}
 
-	if err := c.nsAsstBizCache.BatchDelete(ctx, redisKeys, rid); err != nil {
-		blog.Errorf("delete shared ns asst biz cache failed, err: %v, keys: %+v, rid: %s", err, redisKeys, rid)
+	if err := c.nsAsstBizCache.BatchDelete(kit, redisKeys); err != nil {
+		blog.Errorf("delete shared ns asst biz cache failed, err: %v, keys: %+v, rid: %s", err, redisKeys, kit.Rid)
 		return err
 	}
 	return nil
 }
 
 // RefreshSharedNsRel refresh shared namespace relation key and value cache
-func (c *SharedNsRelCache) RefreshSharedNsRel(ctx context.Context, rid string) error {
+func (c *SharedNsRelCache) RefreshSharedNsRel(rid string) error {
 	// lock refresh shared namespace relation cache operation, returns error if it is already locked
 	lockKey := fmt.Sprintf("%s:shared_ns_rel_refresh:lock", Namespace)
 
@@ -133,22 +135,31 @@ func (c *SharedNsRelCache) RefreshSharedNsRel(ctx context.Context, rid string) e
 		return errors.New("there's a same refreshing task running, please retry later")
 	}
 
-	ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	kit := rest.NewKit().WithCtx(util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)).
+		WithRid(rid)
+	err = tenant.ExecForAllTenants(func(tenantID string) error {
+		kit = kit.WithTenant(tenantID)
 
-	relations, err := c.getAllSharedNsRel(ctx, rid)
+		relations, err := c.getAllSharedNsRel(kit)
+		if err != nil {
+			return err
+		}
+
+		nsAsstBizMap := make(map[string]interface{})
+		for _, rel := range relations {
+			nsAsstBizMap[c.genNsAsstBizRedisKey(rel.NamespaceID)] = rel.AsstBizID
+		}
+
+		// refresh label key and value count cache
+		err = c.nsAsstBizCache.Refresh(kit, "*", nsAsstBizMap)
+		if err != nil {
+			blog.Errorf("refresh shared ns asst biz cache failed, err: %v, data: %+v, rid: %s", err, nsAsstBizMap,
+				kit.Rid)
+			return err
+		}
+		return nil
+	})
 	if err != nil {
-		return err
-	}
-
-	nsAsstBizMap := make(map[string]interface{})
-	for _, rel := range relations {
-		nsAsstBizMap[c.genNsAsstBizRedisKey(rel.NamespaceID)] = rel.AsstBizID
-	}
-
-	// refresh label key and value count cache
-	err = c.nsAsstBizCache.Refresh(ctx, "*", nsAsstBizMap, rid)
-	if err != nil {
-		blog.Errorf("refresh shared ns asst biz cache failed, err: %v, data: %+v, rid: %s", err, nsAsstBizMap, rid)
 		return err
 	}
 
@@ -156,17 +167,17 @@ func (c *SharedNsRelCache) RefreshSharedNsRel(ctx context.Context, rid string) e
 }
 
 // getAllSharedNsRel get all shared namespace relations
-func (c *SharedNsRelCache) getAllSharedNsRel(ctx context.Context, rid string) ([]kubetypes.NsSharedClusterRel, error) {
+func (c *SharedNsRelCache) getAllSharedNsRel(kit *rest.Kit) ([]kubetypes.NsSharedClusterRel, error) {
 	cond := make(mapstr.MapStr)
 
 	all := make([]kubetypes.NsSharedClusterRel, 0)
 	for {
 		relations := make([]kubetypes.NsSharedClusterRel, 0)
-		err := mongodb.Client().Table(kubetypes.BKTableNameNsSharedClusterRel).Find(cond).
+		err := mongodb.Shard(kit.ShardOpts()).Table(kubetypes.BKTableNameNsSharedClusterRel).Find(cond).
 			Sort(kubetypes.BKNamespaceIDField).Fields(kubetypes.BKNamespaceIDField, kubetypes.BKAsstBizIDField).
-			All(ctx, &relations)
+			All(kit.Ctx, &relations)
 		if err != nil {
-			blog.Errorf("list kube shared namespace rel failed, err: %v, cond: %+v, rid: %v", err, cond, rid)
+			blog.Errorf("list kube shared namespace rel failed, err: %v, cond: %+v, rid: %v", err, cond, kit.Rid)
 			return nil, err
 		}
 
@@ -183,7 +194,6 @@ func (c *SharedNsRelCache) getAllSharedNsRel(ctx context.Context, rid string) ([
 
 // loopRefreshCache loop refresh shared namespace relation key and value cache every day at 3am
 func (c *SharedNsRelCache) loopRefreshCache() {
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 	for {
 		time.Sleep(2 * time.Hour)
 
@@ -196,7 +206,7 @@ func (c *SharedNsRelCache) loopRefreshCache() {
 		rid := util.GenerateRID()
 
 		blog.Infof("start refresh shared namespace relation cache task, rid: %s", rid)
-		err := c.RefreshSharedNsRel(ctx, rid)
+		err := c.RefreshSharedNsRel(rid)
 		if err != nil {
 			blog.Errorf("refresh shared namespace relation cache failed, err: %v, rid: %s", err, rid)
 			continue

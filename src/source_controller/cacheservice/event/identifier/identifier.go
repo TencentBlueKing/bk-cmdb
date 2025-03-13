@@ -15,35 +15,17 @@ package identifier
 
 import (
 	"context"
-	"fmt"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/cacheservice/event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
-// NewIdentity TODO
-func NewIdentity(
-	watch stream.LoopInterface,
-	isMaster discovery.ServiceManageInterface,
-	watchDB dal.DB,
-	ccDB dal.DB) error {
-
-	watchMongoDB, ok := watchDB.(*local.Mongo)
-	if !ok {
-		blog.Errorf("watch event, but watch db is not an instance of local mongo to start transaction")
-		return fmt.Errorf("watch db is not an instance of local mongo")
-	}
-
+// NewIdentity new host identifier event watch
+func NewIdentity(task *task.Task) error {
 	base := identityOptions{
-		watch:    watch,
-		isMaster: isMaster,
-		watchDB:  watchMongoDB,
-		ccDB:     ccDB,
+		task: task,
 	}
 
 	host := base
@@ -72,6 +54,15 @@ func NewIdentity(
 		return err
 	}
 	blog.Info("host identity events, watch process success.")
+
+	procRel := base
+	procRel.key = event.ProcessInstanceRelationKey
+	procRel.watchFields = []string{common.BKHostIDField}
+	if err := newIdentity(context.Background(), procRel); err != nil {
+		blog.Errorf("new host identify process relation event failed, err: %v", err)
+		return err
+	}
+	blog.Info("host identity events, watch process relation success.")
 
 	return nil
 }

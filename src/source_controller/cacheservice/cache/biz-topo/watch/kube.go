@@ -24,6 +24,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	kubetypes "configcenter/src/kube/types"
@@ -75,7 +76,7 @@ func (w *Watcher) watchKube() error {
 }
 
 // watchTopoLevel watch kube topo event
-func (w *kubeWatcher) watchTopo(obj string, doBatch func(es []*streamtypes.Event) bool) error {
+func (w *kubeWatcher) watchTopo(obj string, doBatch func(*streamtypes.DBInfo, []*streamtypes.Event) bool) error {
 	collections, err := kubetypes.GetCollectionWithObject(obj)
 	if err != nil {
 		blog.Errorf("get collections to watch for kube biz topo obj %s failed, err: %v", obj, err)
@@ -83,40 +84,37 @@ func (w *kubeWatcher) watchTopo(obj string, doBatch func(es []*streamtypes.Event
 	}
 
 	for _, collection := range collections {
-		watchOpts := &streamtypes.WatchOptions{
-			Options: streamtypes.Options{
-				EventStruct: kubeEventStructMap[obj],
-				Collection:  collection,
-				Filter:      mapstr.MapStr{},
-			},
-		}
+		tokenHandler := tokenhandler.NewMixTokenHandler(w.cacheKey.Namespace(), collection)
 
-		tokenHandler := tokenhandler.NewMixTokenHandler(w.cacheKey.Namespace(), collection, mongodb.Client())
-		startAtTime, err := tokenHandler.GetStartWatchTime(context.Background())
-		if err != nil {
-			blog.Errorf("get start watch time for %s failed, err: %v", watchOpts.Collection, err)
-			return err
-		}
-		watchOpts.StartAtTime = startAtTime
-		watchOpts.WatchFatalErrorCallback = tokenHandler.ResetWatchToken
-
-		loopOptions := &streamtypes.LoopBatchOptions{
-			LoopOptions: streamtypes.LoopOptions{
-				Name:         fmt.Sprintf("%s kube biz topo cache", obj),
-				WatchOpt:     watchOpts,
+		opts := &streamtypes.LoopBatchTaskOptions{
+			WatchTaskOptions: &streamtypes.WatchTaskOptions{
+				Name: fmt.Sprintf("%s kube biz topo cache", collection),
+				CollOpts: &streamtypes.WatchCollOptions{
+					CollectionOptions: streamtypes.CollectionOptions{
+						CollectionFilter: &streamtypes.CollectionFilter{
+							Regex: fmt.Sprintf("_%s$", collection),
+						},
+						EventStruct: new(commonResBaseInfo),
+					},
+				},
 				TokenHandler: tokenHandler,
 				RetryOptions: &streamtypes.RetryOptions{
 					MaxRetryCount: 10,
 					RetryDuration: 1 * time.Second,
 				},
 			},
-			EventHandler: &streamtypes.BatchHandler{
+			EventHandler: &streamtypes.TaskBatchHandler{
 				DoBatch: doBatch,
 			},
 			BatchSize: 200,
 		}
 
-		if err = w.watcher.loopW.WithBatch(loopOptions); err != nil {
+		if obj == kubetypes.KubePod {
+			opts.WatchTaskOptions.CollOpts.EventStruct = new(kubetypes.Pod)
+		}
+
+		err = w.watcher.task.AddLoopBatchTask(opts)
+		if err != nil {
 			blog.Errorf("watch kube biz topo collection %s failed, err: %v", collection, err)
 			return err
 		}
@@ -125,16 +123,9 @@ func (w *kubeWatcher) watchTopo(obj string, doBatch func(es []*streamtypes.Event
 	return nil
 }
 
-var kubeEventStructMap = map[string]interface{}{
-	kubetypes.KubeCluster:   new(kubetypes.Cluster),
-	kubetypes.KubeNamespace: new(kubetypes.Namespace),
-	kubetypes.KubeWorkload:  new(kubetypes.WorkloadBase),
-	kubetypes.KubePod:       new(kubetypes.Pod),
-}
-
 // onTopoLevelChange handle kube topo level event
-func (w *kubeWatcher) onTopoLevelChange(obj string) func(es []*streamtypes.Event) (retry bool) {
-	return func(es []*streamtypes.Event) (retry bool) {
+func (w *kubeWatcher) onTopoLevelChange(obj string) func(*streamtypes.DBInfo, []*streamtypes.Event) bool {
+	return func(dbInfo *streamtypes.DBInfo, es []*streamtypes.Event) bool {
 		if len(es) == 0 {
 			return false
 		}
@@ -143,7 +134,7 @@ func (w *kubeWatcher) onTopoLevelChange(obj string) func(es []*streamtypes.Event
 		rid := es[0].ID()
 
 		upsertCollOidMap := make(map[string][]primitive.ObjectID)
-		delCollOidMap := make(map[string][]string)
+		delCollOidMap := make(map[string][]commonResBaseInfo)
 
 		for idx := range es {
 			one := es[idx]
@@ -163,7 +154,9 @@ func (w *kubeWatcher) onTopoLevelChange(obj string) func(es []*streamtypes.Event
 				}
 				upsertCollOidMap[one.Collection] = append(upsertCollOidMap[one.Collection], oid)
 			case streamtypes.Delete:
-				delCollOidMap[one.Collection] = append(delCollOidMap[one.Collection], one.Oid)
+				baseInfo := *one.Document.(*commonResBaseInfo)
+				baseInfo.Oid = one.Oid
+				delCollOidMap[one.Collection] = append(delCollOidMap[one.Collection], baseInfo)
 			default:
 				continue
 			}
@@ -182,7 +175,7 @@ func (w *kubeWatcher) onTopoLevelChange(obj string) func(es []*streamtypes.Event
 			return true
 		}
 
-		bizList := make([]int64, 0)
+		bizListMap := make(map[string][]int64, 0)
 		for _, one := range es {
 			collOidKey := genCollOidKey(one.Collection, one.Oid)
 			switch one.OperationType {
@@ -194,19 +187,19 @@ func (w *kubeWatcher) onTopoLevelChange(obj string) func(es []*streamtypes.Event
 			case streamtypes.Insert:
 				bizID, exists := upsertBizIDMap[collOidKey]
 				if exists {
-					bizList = append(bizList, bizID...)
+					bizListMap[one.TenantID] = append(bizListMap[one.TenantID], bizID...)
 				}
 			case streamtypes.Delete:
 				bizID, exists := delBizIDMap[collOidKey]
 				if exists {
-					bizList = append(bizList, bizID...)
+					bizListMap[one.TenantID] = append(bizListMap[one.TenantID], bizID...)
 				}
 			default:
 				continue
 			}
 		}
 
-		topolgc.AddRefreshBizTopoTask(types.KubeType, util.IntArrayUnique(bizList), rid)
+		topolgc.AddRefreshBizTopoTask(types.KubeType, bizListMap, rid)
 		return false
 	}
 }
@@ -235,8 +228,17 @@ var kubeFieldsMap = map[string][]string{
 func (w *kubeWatcher) handleUpsertTopoLevelEvent(ctx context.Context, obj string,
 	collOidMap map[string][]primitive.ObjectID, rid string) (map[string][]int64, error) {
 
+	kit := rest.NewKit().WithCtx(ctx).WithRid(rid)
+
 	collOidBizMap := make(map[string][]int64)
 	for coll, oids := range collOidMap {
+		tenantID, table, err := common.SplitTenantTableName(coll)
+		if err != nil {
+			blog.Errorf("received invalid kube topology events, collection %s, oids: %+v, rid: %s", coll, oids, rid)
+			continue
+		}
+		kit = kit.WithTenant(tenantID)
+
 		// get upsert data from db
 		cond := mapstr.MapStr{
 			"_id": mapstr.MapStr{common.BKDBIN: oids},
@@ -245,13 +247,14 @@ func (w *kubeWatcher) handleUpsertTopoLevelEvent(ctx context.Context, obj string
 		docs := make([]mapStrWithOid, 0)
 
 		findOpt := dbtypes.NewFindOpts().SetWithObjectID(true)
-		err := mongodb.Client().Table(coll).Find(cond, findOpt).Fields(kubeFieldsMap[obj]...).All(ctx, &docs)
+		err = mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond, findOpt).Fields(kubeFieldsMap[obj]...).All(ctx,
+			&docs)
 		if err != nil {
 			blog.Errorf("get %s data by cond: %+v failed, err: %v, rid: %s", coll, cond, err, rid)
 			return nil, err
 		}
 
-		kind, err := getKubeNodeKind(obj, coll)
+		kind, err := getKubeNodeKind(obj, table)
 		if err != nil {
 			blog.Errorf("get %s kube node kind by coll %s failed, err: %v, rid: %s", obj, coll, err, rid)
 			continue
@@ -288,7 +291,7 @@ func (w *kubeWatcher) handleUpsertTopoLevelEvent(ctx context.Context, obj string
 		}
 
 		// add shared namespace nodes to asst biz's cache
-		asstBizInfo, err := w.sharedNsCache.GetAsstBiz(ctx, nsIDs, rid)
+		asstBizInfo, err := w.sharedNsCache.GetAsstBiz(kit, nsIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -306,7 +309,7 @@ func (w *kubeWatcher) handleUpsertTopoLevelEvent(ctx context.Context, obj string
 
 		for bizID, nodes := range bizNodeMap {
 			// save kube topo level node info to redis
-			err = nodelgc.AddNodeInfoCache(w.cacheKey, bizID, kind, nodes, rid)
+			err = nodelgc.AddNodeInfoCache(kit, w.cacheKey, bizID, kind, nodes)
 			if err != nil {
 				return nil, err
 			}
@@ -316,37 +319,29 @@ func (w *kubeWatcher) handleUpsertTopoLevelEvent(ctx context.Context, obj string
 	return collOidBizMap, nil
 }
 
-type commonDelArchive struct {
-	Oid    string            `bson:"oid"`
-	Detail commonResBaseInfo `bson:"detail"`
-}
-
 type commonResBaseInfo struct {
-	BizID int64 `bson:"bk_biz_id"`
-	ID    int64 `bson:"id"`
-	NsID  int64 `bson:"bk_namespace_id"`
+	Oid   string `bson:"-"`
+	BizID int64  `bson:"bk_biz_id"`
+	ID    int64  `bson:"id"`
+	NsID  int64  `bson:"bk_namespace_id"`
 }
 
 // handleDeleteTopoLevelEvent handle delete event for kube topo level
-func (w *kubeWatcher) handleDeleteTopoLevelEvent(ctx context.Context, obj string, collOidMap map[string][]string,
-	rid string) (map[string][]int64, error) {
+func (w *kubeWatcher) handleDeleteTopoLevelEvent(ctx context.Context, obj string,
+	collOidMap map[string][]commonResBaseInfo, rid string) (map[string][]int64, error) {
+
+	kit := rest.NewKit().WithCtx(ctx).WithRid(rid)
 
 	collOidBizMap := make(map[string][]int64)
-	for coll, oids := range collOidMap {
-		// get del archive data
-		cond := mapstr.MapStr{
-			"oid":  mapstr.MapStr{common.BKDBIN: oids},
-			"coll": coll,
-		}
-
-		docs := make([]commonDelArchive, 0)
-		err := mongodb.Client().Table(common.BKTableNameKubeDelArchive).Find(cond).All(ctx, &docs)
+	for coll, docs := range collOidMap {
+		tenantID, table, err := common.SplitTenantTableName(coll)
 		if err != nil {
-			blog.Errorf("get del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
-			return nil, err
+			blog.Errorf("received invalid delete kube topology events, coll %s, docs: %+v, rid: %s", coll, docs, rid)
+			continue
 		}
+		kit = kit.WithTenant(tenantID)
 
-		kind, err := getKubeNodeKind(obj, coll)
+		kind, err := getKubeNodeKind(obj, table)
 		if err != nil {
 			blog.Errorf("get %s kube node kind by coll %s failed, err: %v, rid: %s", obj, coll, err, rid)
 			continue
@@ -360,22 +355,22 @@ func (w *kubeWatcher) handleDeleteTopoLevelEvent(ctx context.Context, obj string
 			var nsID int64
 			switch obj {
 			case kubetypes.KubeNamespace:
-				nsID = doc.Detail.ID
+				nsID = doc.ID
 			case kubetypes.KubeWorkload:
-				nsID = doc.Detail.NsID
+				nsID = doc.NsID
 			}
 			nsIDs = append(nsIDs, nsID)
 
-			bizIDMap[doc.Detail.BizID] = append(bizIDMap[doc.Detail.BizID], doc.Detail.ID)
-			nsDocIDsMap[nsID] = append(nsDocIDsMap[nsID], doc.Detail.ID)
+			bizIDMap[doc.BizID] = append(bizIDMap[doc.BizID], doc.ID)
+			nsDocIDsMap[nsID] = append(nsDocIDsMap[nsID], doc.ID)
 
 			collOidKey := genCollOidKey(coll, doc.Oid)
-			collOidBizMap[collOidKey] = []int64{doc.Detail.BizID}
+			collOidBizMap[collOidKey] = []int64{doc.BizID}
 			nsKeyMap[nsID] = append(nsKeyMap[nsID], collOidKey)
 		}
 
 		// delete shared namespace node info in asst biz's cache
-		asstBizInfo, err := w.sharedNsCache.GetAsstBiz(ctx, nsIDs, rid)
+		asstBizInfo, err := w.sharedNsCache.GetAsstBiz(kit, nsIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -393,12 +388,12 @@ func (w *kubeWatcher) handleDeleteTopoLevelEvent(ctx context.Context, obj string
 
 		// delete kube topo level node info in redis
 		for bizID, ids := range bizIDMap {
-			err = nodelgc.DeleteNodeInfoCache(w.cacheKey, bizID, kind, ids, rid)
+			err = nodelgc.DeleteNodeInfoCache(kit, w.cacheKey, bizID, kind, ids)
 			if err != nil {
 				return nil, err
 			}
 
-			err = nodelgc.DeleteNodeCountCache(w.cacheKey, bizID, kind, ids, rid)
+			err = nodelgc.DeleteNodeCountCache(kit, w.cacheKey, bizID, kind, ids)
 			if err != nil {
 				return nil, err
 			}
@@ -460,151 +455,117 @@ var kubeEventDocParserMap = map[string]func(doc mapStrWithOid) (int64, types.Nod
 }
 
 // onContainerCountChange handle container count change event
-func (w *kubeWatcher) onContainerCountChange(es []*streamtypes.Event) (retry bool) {
+func (w *kubeWatcher) onContainerCountChange(dbInfo *streamtypes.DBInfo, es []*streamtypes.Event) bool {
 	if len(es) == 0 {
 		return false
 	}
 
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-	rid := es[0].ID()
+	kit := rest.NewKit().WithCtx(util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)).
+		WithRid(es[0].ID())
 
-	insertPodNsIDs := make([]int64, 0)
-	delOids := make([]string, 0)
+	tenantNsIDsMap := make(map[string][]int64)
 
 	for idx := range es {
 		one := es[idx]
 
 		switch one.OperationType {
-		case streamtypes.Insert:
+		case streamtypes.Insert, streamtypes.Delete:
 			pod, ok := one.Document.(*kubetypes.Pod)
 			if !ok {
-				blog.Errorf("kube pod event %s doc type %T is invalid, rid: %s", one.Oid, one.Document, rid)
+				blog.Errorf("kube pod event %s doc type %T is invalid, rid: %s", one.Oid, one.Document, kit.Rid)
 				continue
 			}
-			insertPodNsIDs = append(insertPodNsIDs, pod.NamespaceID)
-		case streamtypes.Delete:
-			delOids = append(delOids, one.Oid)
+			tenantNsIDsMap[one.TenantID] = append(tenantNsIDsMap[one.TenantID], pod.NamespaceID)
 		default:
 			// only handle insert and delete pod event.
 			continue
 		}
 
 		blog.V(5).Infof("watch kube topo container count cache, received oid: %s, op-time: %s, %s event, rid: %s",
-			one.Oid, one.ClusterTime.String(), one.OperationType, rid)
+			one.Oid, one.ClusterTime.String(), one.OperationType, kit.Rid)
 	}
 
-	delOidPodMap, delPodNsIDs, err := w.getDeletePodInfo(ctx, delOids, rid)
+	asstBizInfo := make(map[string]map[int64]int64)
+	for tenantID, nsIDs := range tenantNsIDsMap {
+		kit = kit.WithTenant(tenantID)
+		asstBiz, err := w.sharedNsCache.GetAsstBiz(kit, util.IntArrayUnique(nsIDs))
+		if err != nil {
+			return true
+		}
+		asstBizInfo[tenantID] = asstBiz
+	}
+
+	bizList, err := w.handlePodEvents(kit, es, asstBizInfo)
 	if err != nil {
 		return true
 	}
 
-	nsIDs := util.IntArrayUnique(append(insertPodNsIDs, delPodNsIDs...))
-	asstBizInfo, err := w.sharedNsCache.GetAsstBiz(ctx, nsIDs, rid)
-	if err != nil {
-		return true
-	}
-
-	bizList, err := w.handlePodEvents(ctx, es, delOidPodMap, asstBizInfo, rid)
-	if err != nil {
-		return true
-	}
-
-	topolgc.AddRefreshBizTopoTask(types.KubeType, bizList, rid)
+	topolgc.AddRefreshBizTopoTask(types.KubeType, bizList, kit.Rid)
 	return false
 }
 
-type podDelArchive struct {
-	Oid    string         `bson:"oid"`
-	Detail *kubetypes.Pod `bson:"detail"`
-}
-
-// getDeletePodInfo get delete pod info from del archive
-func (w *kubeWatcher) getDeletePodInfo(ctx context.Context, oids []string, rid string) (map[string]*kubetypes.Pod,
-	[]int64, error) {
-
-	cond := mapstr.MapStr{
-		"oid":  mapstr.MapStr{common.BKDBIN: oids},
-		"coll": kubetypes.BKTableNameBasePod,
-	}
-
-	archives := make([]podDelArchive, 0)
-	err := mongodb.Client().Table(common.BKTableNameKubeDelArchive).Find(cond).Fields("oid", "detail").All(ctx,
-		&archives)
-	if err != nil {
-		blog.Errorf("get pod del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
-		return nil, nil, err
-	}
-
-	podMap := make(map[string]*kubetypes.Pod)
-	nsIDs := make([]int64, 0)
-	for _, archive := range archives {
-		podMap[archive.Oid] = archive.Detail
-		nsIDs = append(nsIDs, archive.Detail.NamespaceID)
-	}
-
-	return podMap, nsIDs, nil
-}
-
 // handlePodEvents refresh pod events related workload container count, returns biz ids whose topo tree needs refreshing
-func (w *kubeWatcher) handlePodEvents(ctx context.Context, es []*streamtypes.Event,
-	delOidPodMap map[string]*kubetypes.Pod, asstBizInfo map[int64]int64, rid string) ([]int64, error) {
+func (w *kubeWatcher) handlePodEvents(kit *rest.Kit, es []*streamtypes.Event, asstBizInfo map[string]map[int64]int64) (
+	map[string][]int64, error) {
 
-	// wlKindIDMap is map[workload_kind][]workload_id, stores the pod events related workload info
-	wlKindIDMap := make(map[kubetypes.WorkloadType][]int64)
+	// tenantWlKindIDMap is map[tenant_id][workload_kind][]workload_id, stores the pod events related workload info
+	tenantWlKindIDMap := make(map[string]map[kubetypes.WorkloadType][]int64)
 	// wlBizIDMap is map[workload_kind]map[workload_id][]bk_biz_id, stores the workload to its related biz ids
 	wlBizIDMap := make(map[kubetypes.WorkloadType]map[int64][]int64)
-	// bizList is biz ids whose topo tree needs refreshing, in the order of pod events
-	bizList := make([]int64, 0)
+	// bizListMap is tenant to biz ids map whose topo tree needs refreshing, in the order of pod events
+	bizListMap := make(map[string][]int64, 0)
 	for idx := range es {
 		one := es[idx]
+		tenantID := one.TenantID
 
 		var pod *kubetypes.Pod
 		switch one.OperationType {
-		case streamtypes.Insert:
+		case streamtypes.Insert, streamtypes.Delete:
 			pod = one.Document.(*kubetypes.Pod)
-		case streamtypes.Delete:
-			var exists bool
-			pod, exists = delOidPodMap[one.Oid]
-			if !exists {
-				continue
-			}
 		default:
 			continue
 		}
 
 		// record the workloads that needs to refresh container count
-		wlKindIDMap[pod.Ref.Kind] = append(wlKindIDMap[pod.Ref.Kind], pod.Ref.ID)
+		if _, exists := tenantWlKindIDMap[tenantID]; !exists {
+			tenantWlKindIDMap[tenantID] = make(map[kubetypes.WorkloadType][]int64)
+		}
+		tenantWlKindIDMap[tenantID][pod.Ref.Kind] = append(tenantWlKindIDMap[tenantID][pod.Ref.Kind], pod.Ref.ID)
 
 		// record workload related biz info, including the pod's biz id and shared namespace asst biz id
-		_, exists := wlBizIDMap[pod.Ref.Kind]
-		if !exists {
+		if _, exists := wlBizIDMap[pod.Ref.Kind]; !exists {
 			wlBizIDMap[pod.Ref.Kind] = make(map[int64][]int64)
 		}
 		wlBizIDMap[pod.Ref.Kind][pod.Ref.ID] = []int64{pod.BizID}
-		bizList = append(bizList, pod.BizID)
+		bizListMap[tenantID] = append(bizListMap[tenantID], pod.BizID)
 
-		asstBizID, exists := asstBizInfo[pod.NamespaceID]
+		asstBizMap, exists := asstBizInfo[tenantID]
+		if !exists {
+			continue
+		}
+		asstBizID, exists := asstBizMap[pod.NamespaceID]
 		if exists {
 			wlBizIDMap[pod.Ref.Kind][pod.Ref.ID] = append(wlBizIDMap[pod.Ref.Kind][pod.Ref.ID], asstBizID)
-			bizList = append(bizList, asstBizID)
+			bizListMap[tenantID] = append(bizListMap[tenantID], asstBizID)
 		}
 	}
 
 	// refresh workload topo node container count cache by workload kind
-	for wlType, wlIDs := range wlKindIDMap {
-		wlIDs = util.IntArrayUnique(wlIDs)
-		if err := w.refreshWlCountCache(ctx, string(wlType), wlIDs, wlBizIDMap[wlType], rid); err != nil {
-			return nil, err
+	for tenantID, wlKindIDMap := range tenantWlKindIDMap {
+		kit = kit.WithTenant(tenantID)
+		for wlType, wlIDs := range wlKindIDMap {
+			wlIDs = util.IntArrayUnique(wlIDs)
+			if err := w.refreshWlCountCache(kit, string(wlType), wlIDs, wlBizIDMap[wlType]); err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	return bizList, nil
+	return bizListMap, nil
 }
 
 // refreshWlCountCache refresh workload topo node container count cache
-func (w *kubeWatcher) refreshWlCountCache(ctx context.Context, kind string, ids []int64, bizMap map[int64][]int64,
-	rid string) error {
-
+func (w *kubeWatcher) refreshWlCountCache(kit *rest.Kit, kind string, ids []int64, bizMap map[int64][]int64) error {
 	// get pods by pod workloads
 	podCond := mapstr.MapStr{
 		kubetypes.RefIDField:   mapstr.MapStr{common.BKDBIN: ids},
@@ -612,9 +573,9 @@ func (w *kubeWatcher) refreshWlCountCache(ctx context.Context, kind string, ids 
 	}
 
 	pods := make([]kubetypes.Pod, 0)
-	if err := mongodb.Client().Table(kubetypes.BKTableNameBasePod).Find(podCond).Fields(kubetypes.BKIDField,
-		kubetypes.RefIDField).All(ctx, &pods); err != nil {
-		blog.Errorf("get pod ids failed, cond: %+v, err: %v, rid: %s", podCond, err, rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(kubetypes.BKTableNameBasePod).Find(podCond).
+		Fields(kubetypes.BKIDField, kubetypes.RefIDField).All(kit.Ctx, &pods); err != nil {
+		blog.Errorf("get pod ids failed, cond: %+v, err: %v, rid: %s", podCond, err, kit.Rid)
 		return err
 	}
 
@@ -631,9 +592,10 @@ func (w *kubeWatcher) refreshWlCountCache(ctx context.Context, kind string, ids 
 				kubetypes.BKPodIDField: mapstr.MapStr{common.BKDBIN: podIDs},
 			}
 
-			cnt, err := mongodb.Client().Table(kubetypes.BKTableNameBaseContainer).Find(containerCond).Count(ctx)
+			cnt, err := mongodb.Shard(kit.ShardOpts()).Table(kubetypes.BKTableNameBaseContainer).Find(containerCond).
+				Count(kit.Ctx)
 			if err != nil {
-				blog.Errorf("count containers failed, cond: %+v, err: %v, rid: %s", containerCond, err, rid)
+				blog.Errorf("count containers failed, cond: %+v, err: %v, rid: %s", containerCond, err, kit.Rid)
 				return err
 			}
 			containerCnt = int64(cnt)
@@ -641,7 +603,7 @@ func (w *kubeWatcher) refreshWlCountCache(ctx context.Context, kind string, ids 
 
 		// refresh workload topo node count cache in related bizs
 		for _, bizID := range bizMap[wlID] {
-			err := nodelgc.AddNodeCountCache(w.cacheKey, bizID, kind, map[int64]int64{wlID: containerCnt}, rid)
+			err := nodelgc.AddNodeCountCache(kit, w.cacheKey, bizID, kind, map[int64]int64{wlID: containerCnt})
 			if err != nil {
 				return err
 			}

@@ -19,12 +19,12 @@
 package tree
 
 import (
-	"context"
-
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
 )
 
 // TreeI is the interface for topology tree
 type TreeI interface {
-	RearrangeBizTopo(ctx context.Context, topo *types.BizTopo, rid string) (*types.BizTopo, error)
+	RearrangeBizTopo(kit *rest.Kit, biz *metadata.BizInst, nodes []types.Node) (any, error)
 }

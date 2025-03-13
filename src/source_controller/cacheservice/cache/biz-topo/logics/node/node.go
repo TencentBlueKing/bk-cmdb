@@ -25,6 +25,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/key"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
@@ -38,8 +39,8 @@ import (
 const step = 500
 
 // PagedGetNodes loop getting paged nodes from db
-func PagedGetNodes(ctx context.Context, table string, nodeCond mapstr.MapStr, fields []string, parser NodeParser,
-	rid string) ([]types.Node, error) {
+func PagedGetNodes(kit *rest.Kit, table string, nodeCond mapstr.MapStr, fields []string, parser NodeParser) (
+	[]types.Node, error) {
 
 	nodes := make([]types.Node, 0)
 
@@ -47,10 +48,10 @@ func PagedGetNodes(ctx context.Context, table string, nodeCond mapstr.MapStr, fi
 	findOpt := dbtypes.NewFindOpts().SetWithObjectID(true)
 	for {
 		data := make([]mapstr.MapStr, 0)
-		err := mongodb.Client().Table(table).Find(cond, findOpt).Fields(fields...).Sort("_id").Limit(step).
-			All(ctx, &data)
+		err := mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond, findOpt).Fields(fields...).Sort("_id").
+			Limit(step).All(kit.Ctx, &data)
 		if err != nil {
-			blog.Errorf("get node data failed, table: %s, cond: %+v, err: %v, rid: %s", table, cond, err, rid)
+			blog.Errorf("get node data failed, table: %s, cond: %+v, err: %v, rid: %s", table, cond, err, kit.Rid)
 			return nil, err
 		}
 
@@ -58,7 +59,7 @@ func PagedGetNodes(ctx context.Context, table string, nodeCond mapstr.MapStr, fi
 			break
 		}
 
-		parsed, err := parser(ctx, data, rid)
+		parsed, err := parser(kit, data)
 		if err != nil {
 			return nil, err
 		}
@@ -75,7 +76,7 @@ func PagedGetNodes(ctx context.Context, table string, nodeCond mapstr.MapStr, fi
 }
 
 // NodeParser parse db node data to topo nodes
-type NodeParser func(ctx context.Context, data []mapstr.MapStr, rid string) ([]types.Node, error)
+type NodeParser func(kit *rest.Kit, data []mapstr.MapStr) ([]types.Node, error)
 
 // CombineChildNodes combine parent nodes with child nodes info
 func CombineChildNodes(nodes, childNodes []types.Node) []types.Node {
@@ -103,25 +104,25 @@ func CombineChildNodes(nodes, childNodes []types.Node) []types.Node {
 }
 
 // GenBizNodeListKey generate biz to topo node ids list cache key
-func GenBizNodeListKey(topoKey key.Key, bizID int64, kind string) string {
-	return fmt.Sprintf("%s:%s:list", topoKey.BizTopoKey(bizID), kind)
+func GenBizNodeListKey(topoKey key.Key, tenantID string, bizID int64, kind string) string {
+	return fmt.Sprintf("%s:%s:list", topoKey.BizTopoKey(tenantID, bizID), kind)
 }
 
 // GenNodeInfoKey generate biz topo node info separate cache key
-func GenNodeInfoKey(topoKey key.Key, bizID int64, kind string, id int64) string {
-	return fmt.Sprintf("%s:%s:%d", topoKey.BizTopoKey(bizID), kind, id)
+func GenNodeInfoKey(topoKey key.Key, tenantID string, bizID int64, kind string, id int64) string {
+	return fmt.Sprintf("%s:%s:%d", topoKey.BizTopoKey(tenantID, bizID), kind, id)
 }
 
 // AddNodeInfoCache add biz topo nodes info cache by kind
-func AddNodeInfoCache(topoKey key.Key, bizID int64, kind string, nodes []types.Node, rid string) error {
+func AddNodeInfoCache(kit *rest.Kit, topoKey key.Key, bizID int64, kind string, nodes []types.Node) error {
 	pip := redis.Client().Pipeline()
 	defer pip.Close()
 
-	listKey := GenBizNodeListKey(topoKey, bizID, kind)
+	listKey := GenBizNodeListKey(topoKey, kit.TenantID, bizID, kind)
 
 	ids := make([]interface{}, len(nodes))
 	for i, node := range nodes {
-		nodeKey := GenNodeInfoKey(topoKey, bizID, kind, node.ID)
+		nodeKey := GenNodeInfoKey(topoKey, kit.TenantID, bizID, kind, node.ID)
 		pip.Set(nodeKey, fmt.Sprintf(`{"id":%d,"nm":"%s","par":%d}`, node.ID, node.Name, node.ParentID), topoKey.TTL())
 		ids[i] = node.ID
 	}
@@ -130,23 +131,23 @@ func AddNodeInfoCache(topoKey key.Key, bizID int64, kind string, nodes []types.N
 
 	_, err := pip.Exec()
 	if err != nil {
-		blog.Errorf("cache biz %d topo nodes info failed, err: %v, nodes: %+v, rid: %s", bizID, err, nodes, rid)
+		blog.Errorf("cache biz %d topo nodes info failed, err: %v, nodes: %+v, rid: %s", bizID, err, nodes, kit.Rid)
 		return err
 	}
 	return nil
 }
 
 // DeleteNodeInfoCache delete biz topo nodes info cache by kind
-func DeleteNodeInfoCache(topoKey key.Key, bizID int64, kind string, ids []int64, rid string) error {
+func DeleteNodeInfoCache(kit *rest.Kit, topoKey key.Key, bizID int64, kind string, ids []int64) error {
 	pip := redis.Client().Pipeline()
 	defer pip.Close()
 
-	listKey := GenBizNodeListKey(topoKey, bizID, kind)
+	listKey := GenBizNodeListKey(topoKey, kit.TenantID, bizID, kind)
 	pip.Expire(listKey, topoKey.TTL())
 
 	idList := make([]interface{}, len(ids))
 	for i, id := range ids {
-		nodeKey := GenNodeInfoKey(topoKey, bizID, kind, id)
+		nodeKey := GenNodeInfoKey(topoKey, kit.TenantID, bizID, kind, id)
 		pip.Del(nodeKey)
 		idList[i] = id
 	}
@@ -154,17 +155,17 @@ func DeleteNodeInfoCache(topoKey key.Key, bizID int64, kind string, ids []int64,
 
 	_, err := pip.Exec()
 	if err != nil {
-		blog.Errorf("delete biz %d topo nodes info cache failed, err: %v, ids: %+v, rid: %s", bizID, err, ids, rid)
+		blog.Errorf("delete biz %d topo nodes info cache failed, err: %v, ids: %+v, rid: %s", bizID, err, ids, kit.Rid)
 		return err
 	}
 	return nil
 }
 
 // GetNodeInfoCache get biz topo nodes info cache by kind
-func GetNodeInfoCache(topoKey key.Key, bizID int64, kind string, rid string) ([]types.Node, error) {
+func GetNodeInfoCache(kit *rest.Kit, topoKey key.Key, bizID int64, kind string) ([]types.Node, error) {
 	ctx := context.Background()
 
-	listKey := GenBizNodeListKey(topoKey, bizID, kind)
+	listKey := GenBizNodeListKey(topoKey, kit.TenantID, bizID, kind)
 
 	cursor := uint64(0)
 
@@ -172,7 +173,7 @@ func GetNodeInfoCache(topoKey key.Key, bizID int64, kind string, rid string) ([]
 	for {
 		ids, nextCursor, err := redis.Client().SScan(listKey, cursor, "", step).Result()
 		if err != nil {
-			blog.Errorf("scan topo node cache list %s %d failed, err: %v, rid: %s", listKey, cursor, err, rid)
+			blog.Errorf("scan topo node cache list %s %d failed, err: %v, rid: %s", listKey, cursor, err, kit.Rid)
 			return nil, err
 		}
 		cursor = nextCursor
@@ -188,15 +189,15 @@ func GetNodeInfoCache(topoKey key.Key, bizID int64, kind string, rid string) ([]
 		for i, idStr := range ids {
 			id, err := strconv.ParseInt(idStr, 10, 64)
 			if err != nil {
-				blog.Errorf("parse node id %s failed, err: %v, rid: %s", idStr, err, rid)
+				blog.Errorf("parse node id %s failed, err: %v, rid: %s", idStr, err, kit.Rid)
 				continue
 			}
-			detailKeys[i] = GenNodeInfoKey(topoKey, bizID, kind, id)
+			detailKeys[i] = GenNodeInfoKey(topoKey, kit.TenantID, bizID, kind, id)
 		}
 
 		details, err := redis.Client().MGet(ctx, detailKeys...).Result()
 		if err != nil {
-			blog.Errorf("get topo node cache details by keys: %+v failed, err: %v, rid: %s", detailKeys, err, rid)
+			blog.Errorf("get topo node cache details by keys: %+v failed, err: %v, rid: %s", detailKeys, err, kit.Rid)
 			return nil, err
 		}
 
@@ -207,7 +208,7 @@ func GetNodeInfoCache(topoKey key.Key, bizID int64, kind string, rid string) ([]
 
 			strVal, ok := detail.(string)
 			if !ok {
-				blog.Errorf("node info cache detail type %T is invalid, detail: %v, rid: %s", detail, detail, rid)
+				blog.Errorf("node info cache detail type %T is invalid, detail: %v, rid: %s", detail, detail, kit.Rid)
 				continue
 			}
 
@@ -226,7 +227,7 @@ func GetNodeInfoCache(topoKey key.Key, bizID int64, kind string, rid string) ([]
 }
 
 // CrossCompareNodeInfoCache cross compare biz topo nodes info cache by kind
-func CrossCompareNodeInfoCache(topoKey key.Key, bizID int64, kind string, nodes []types.Node, rid string) error {
+func CrossCompareNodeInfoCache(kit *rest.Kit, topoKey key.Key, bizID int64, kind string, nodes []types.Node) error {
 	nodeMap := make(map[int64]struct{}, len(nodes))
 
 	// paged add biz topo node info cache
@@ -236,7 +237,7 @@ func CrossCompareNodeInfoCache(topoKey key.Key, bizID int64, kind string, nodes 
 
 		pagedNodes = append(pagedNodes, node)
 		if len(pagedNodes) == step {
-			if err := AddNodeInfoCache(topoKey, bizID, kind, pagedNodes, rid); err != nil {
+			if err := AddNodeInfoCache(kit, topoKey, bizID, kind, pagedNodes); err != nil {
 				return err
 			}
 			pagedNodes = make([]types.Node, 0)
@@ -244,19 +245,19 @@ func CrossCompareNodeInfoCache(topoKey key.Key, bizID int64, kind string, nodes 
 	}
 
 	if len(pagedNodes) > 0 {
-		if err := AddNodeInfoCache(topoKey, bizID, kind, pagedNodes, rid); err != nil {
+		if err := AddNodeInfoCache(kit, topoKey, bizID, kind, pagedNodes); err != nil {
 			return err
 		}
 	}
 
-	listKey := GenBizNodeListKey(topoKey, bizID, kind)
+	listKey := GenBizNodeListKey(topoKey, kit.TenantID, bizID, kind)
 	cursor := uint64(0)
 
 	// paged delete redundant biz topo node info cache
 	for {
 		ids, nextCursor, err := redis.Client().SScan(listKey, cursor, "", step).Result()
 		if err != nil {
-			blog.Errorf("scan topo node cache list %s %d failed, err: %v, rid: %s", listKey, cursor, err, rid)
+			blog.Errorf("scan topo node cache list %s %d failed, err: %v, rid: %s", listKey, cursor, err, kit.Rid)
 			return err
 		}
 		cursor = nextCursor
@@ -272,7 +273,7 @@ func CrossCompareNodeInfoCache(topoKey key.Key, bizID int64, kind string, nodes 
 		for _, idStr := range ids {
 			id, err := strconv.ParseInt(idStr, 10, 64)
 			if err != nil {
-				blog.Errorf("parse node id %s failed, err: %v, rid: %s", idStr, err, rid)
+				blog.Errorf("parse node id %s failed, err: %v, rid: %s", idStr, err, kit.Rid)
 				continue
 			}
 
@@ -283,7 +284,7 @@ func CrossCompareNodeInfoCache(topoKey key.Key, bizID int64, kind string, nodes 
 		}
 
 		if len(delIDs) > 0 {
-			if err = DeleteNodeInfoCache(topoKey, bizID, kind, delIDs, rid); err != nil {
+			if err = DeleteNodeInfoCache(kit, topoKey, bizID, kind, delIDs); err != nil {
 				return err
 			}
 		}
@@ -295,41 +296,41 @@ func CrossCompareNodeInfoCache(topoKey key.Key, bizID int64, kind string, nodes 
 }
 
 // GenNodeInfoCntKey generate biz topo node info count cache key
-func GenNodeInfoCntKey(topoKey key.Key, bizID int64, kind string, id int64) string {
-	return GenNodeInfoKey(topoKey, bizID, kind, id) + ":count"
+func GenNodeInfoCntKey(topoKey key.Key, tenantID string, bizID int64, kind string, id int64) string {
+	return GenNodeInfoKey(topoKey, tenantID, bizID, kind, id) + ":count"
 }
 
 // AddNodeCountCache add biz topo nodes count cache by kind
-func AddNodeCountCache(topoKey key.Key, bizID int64, kind string, cntMap map[int64]int64, rid string) error {
+func AddNodeCountCache(kit *rest.Kit, topoKey key.Key, bizID int64, kind string, cntMap map[int64]int64) error {
 	pip := redis.Client().Pipeline()
 	defer pip.Close()
 
 	for id, cnt := range cntMap {
-		cntKey := GenNodeInfoCntKey(topoKey, bizID, kind, id)
+		cntKey := GenNodeInfoCntKey(topoKey, kit.TenantID, bizID, kind, id)
 		pip.Set(cntKey, cnt, topoKey.TTL())
 	}
 
 	_, err := pip.Exec()
 	if err != nil {
-		blog.Errorf("cache biz %d topo node count info %+v failed, err: %v, rid: %s", bizID, cntMap, err, rid)
+		blog.Errorf("cache biz %d topo node count info %+v failed, err: %v, rid: %s", bizID, cntMap, err, kit.Rid)
 		return err
 	}
 	return nil
 }
 
 // DeleteNodeCountCache delete biz topo node count cache by kind
-func DeleteNodeCountCache(topoKey key.Key, bizID int64, kind string, ids []int64, rid string) error {
+func DeleteNodeCountCache(kit *rest.Kit, topoKey key.Key, bizID int64, kind string, ids []int64) error {
 	pip := redis.Client().Pipeline()
 	defer pip.Close()
 
 	for _, id := range ids {
-		nodeKey := GenNodeInfoCntKey(topoKey, bizID, kind, id)
+		nodeKey := GenNodeInfoCntKey(topoKey, kit.TenantID, bizID, kind, id)
 		pip.Del(nodeKey)
 	}
 
 	_, err := pip.Exec()
 	if err != nil {
-		blog.Errorf("delete biz %d topo nodes count cache failed, err: %v, ids: %+v, rid: %s", bizID, err, ids, rid)
+		blog.Errorf("delete biz %d topo nodes count cache failed, err: %v, ids: %+v, rid: %s", bizID, err, ids, kit.Rid)
 		return err
 	}
 	return nil

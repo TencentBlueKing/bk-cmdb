@@ -10,7 +10,7 @@ PUT /migrate/v3/update/system/sharding_db_config
 
 | 参数名称            | 参数类型              | 必选 | 描述                                          |
 |-----------------|-------------------|----|---------------------------------------------|
-| for_new_tenant  | string            | 否  | 指定新增租户数据写入哪个库。对于存量数据库指定它的唯一标识。对于新增的从库指定它的名称 |
+| for_new_data  | string            | 否  | 指定新增租户数据写入哪个库。对于存量数据库指定它的唯一标识。对于新增的从库指定它的名称 |
 | create_slave_db | object array      | 否  | 新增的从库配置数组                                   |
 | update_slave_db | map[string]object | 否  | 更新的从库唯一标识->从库配置的映射                          |
 
@@ -41,7 +41,7 @@ PUT /migrate/v3/update/system/sharding_db_config
 
 ```json
 {
-  "for_new_tenant": "slave1uuid",
+  "for_new_data": "slave1uuid",
   "create_slave_db": [
     {
       "name": "slave2",

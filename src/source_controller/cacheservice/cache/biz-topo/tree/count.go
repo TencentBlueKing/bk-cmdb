@@ -18,8 +18,8 @@
 package tree
 
 import (
-	"context"
-
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
 )
 
@@ -27,13 +27,19 @@ import (
 type TreeWithCount struct{}
 
 // RearrangeBizTopo rearrange business topology tree
-func (t *TreeWithCount) RearrangeBizTopo(_ context.Context, topo *types.BizTopo, _ string) (*types.BizTopo, error) {
+func (t *TreeWithCount) RearrangeBizTopo(_ *rest.Kit, biz *metadata.BizInst, nodes []types.Node) (any, error) {
 	cnt := int64(0)
-	for _, node := range topo.Nodes {
+	for _, node := range nodes {
 		if node.Count != nil {
 			cnt += *node.Count
 		}
 	}
-	topo.Biz.Count = &cnt
-	return topo, nil
+	return &types.BizTopo{
+		Biz: &types.BizInfo{
+			ID:    biz.BizID,
+			Name:  biz.BizName,
+			Count: &cnt,
+		},
+		Nodes: nodes,
+	}, nil
 }

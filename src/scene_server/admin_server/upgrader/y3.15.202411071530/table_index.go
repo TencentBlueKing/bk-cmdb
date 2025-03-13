@@ -52,7 +52,6 @@ var tableIndexMap = map[string][]daltypes.Index{
 	common.BKTableNameBasePlat:                   platBaseIndexes,
 	common.BKTableNameBaseSet:                    setBaseIndexes,
 	common.BKTableNameBaseProcess:                processIndexes,
-	common.BKTableNameDelArchive:                 delArchiveIndexes,
 	common.BKTableNameKubeDelArchive:             kubeDelArchiveIndexes,
 	common.BKTableNameModuleHostConfig:           moduleHostConfigIndexes,
 	common.BKTableNameHostFavorite:               nil,

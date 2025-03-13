@@ -18,7 +18,6 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -26,6 +25,7 @@ import (
 	"configcenter/pkg/cache/general"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -43,8 +43,7 @@ func init() {
 				return nil, fmt.Errorf("parse host id %+v failed, err: %v", data[idField], err)
 			}
 			return &basicInfo{
-				id:     id,
-				tenant: util.GetStrByInterface(data[common.TenantID]),
+				id: id,
 			}, nil
 		})
 
@@ -103,24 +102,24 @@ func genHostIPCloudIDKey(data any, info *basicInfo) ([]string, error) {
 	return keys, nil
 }
 
-func genHostByIPCloudIDKey(ctx context.Context, opt *getDataByKeysOpt, rid string) ([]any, error) {
+func genHostByIPCloudIDKey(kit *rest.Kit, opt *getDataByKeysOpt) ([]any, error) {
 	if len(opt.Keys) == 0 {
 		return make([]any, 0), nil
 	}
 
-	ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
 	cloudIDIPMap := make(map[int64][]string)
 	for i, key := range opt.Keys {
 		pair := strings.Split(key, ":")
 		if len(pair) != 2 {
-			blog.Errorf("host ip cloud id key %s is invalid, index: %d, rid: %s", key, i, rid)
+			blog.Errorf("host ip cloud id key %s is invalid, index: %d, rid: %s", key, i, kit.Rid)
 			return nil, fmt.Errorf("ip cloud id key %s is invalid", key)
 		}
 
 		cloudID, err := strconv.ParseInt(pair[1], 10, 64)
 		if err != nil {
-			blog.Errorf("parse cloud id (index: %d, key: %s) failed, err: %v, rid: %s", i, key, err, rid)
+			blog.Errorf("parse cloud id (index: %d, key: %s) failed, err: %v, rid: %s", i, key, err, kit.Rid)
 			return nil, err
 		}
 
@@ -143,8 +142,9 @@ func genHostByIPCloudIDKey(ctx context.Context, opt *getDataByKeysOpt, rid strin
 	}
 
 	hosts := make([]metadata.HostMapStr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(cond).All(ctx, &hosts); err != nil {
-		blog.Errorf("get host data by cond(%+v) failed, err: %v, rid: %s", cond, err, rid)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(cond).All(kit.Ctx, &hosts)
+	if err != nil {
+		blog.Errorf("get host data by cond(%+v) failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, err
 	}
 
@@ -170,20 +170,21 @@ func genHostAgentIDKey(data any, info *basicInfo) ([]string, error) {
 	return []string{general.AgentIDKey(agentID)}, nil
 }
 
-func genHostByAgentIDKey(ctx context.Context, opt *getDataByKeysOpt, rid string) ([]any, error) {
+func genHostByAgentIDKey(kit *rest.Kit, opt *getDataByKeysOpt) ([]any, error) {
 	if len(opt.Keys) == 0 {
 		return make([]any, 0), nil
 	}
 
-	ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
 	cond := mapstr.MapStr{
 		common.BKAgentIDField: mapstr.MapStr{common.BKDBType: "string", common.BKDBIN: opt.Keys},
 	}
 
 	hosts := make([]metadata.HostMapStr, 0)
-	if err := mongodb.Client().Table(common.BKTableNameBaseHost).Find(cond).All(ctx, &hosts); err != nil {
-		blog.Errorf("get host data by cond(%+v) failed, err: %v, rid: %s", cond, err, rid)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(cond).All(kit.Ctx, &hosts)
+	if err != nil {
+		blog.Errorf("get host data by cond(%+v) failed, err: %v, rid: %s", cond, err, kit.Rid)
 		return nil, err
 	}
 

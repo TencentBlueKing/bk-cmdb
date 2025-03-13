@@ -12,8 +12,6 @@
 
 package metadata
 
-import "time"
-
 // SearchHostWithInnerIPOption 通过IP查找host details请求参数
 type SearchHostWithInnerIPOption struct {
 	InnerIP string `json:"bk_host_innerip"`
@@ -42,14 +40,6 @@ type ListWithIDOption struct {
 	IDs []int64 `json:"ids"`
 	// only return these fields in hosts.
 	Fields []string `json:"fields"`
-}
-
-// DeleteArchive TODO
-type DeleteArchive struct {
-	Oid    string      `json:"oid" bson:"oid"`
-	Coll   string      `json:"coll" bson:"coll"`
-	Time   time.Time   `json:"time" bson:"time"`
-	Detail interface{} `json:"detail" bson:"detail"`
 }
 
 // ListHostWithPage TODO

@@ -20,126 +20,78 @@ package tokenhandler
 
 import (
 	"context"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/types"
 )
 
-var _ types.TokenHandler = new(MixHandler)
+var _ types.TaskTokenHandler = new(MixHandler)
 
 // MixHandler is a token handler for mix event composed of multiple types of events
 // token data: {"_id": $mixKey, $collection: {"token": $token, "start_at_time": $start_at_time}}
 type MixHandler struct {
 	mixKey     string
 	collection string
-	db         dal.DB
 }
 
 // NewMixTokenHandler generate a new mix event token handler
-func NewMixTokenHandler(mixKey, collection string, db dal.DB) *MixHandler {
+func NewMixTokenHandler(mixKey, collection string) *MixHandler {
 	return &MixHandler{
 		mixKey:     mixKey,
 		collection: collection,
-		db:         db,
 	}
 }
 
 // SetLastWatchToken set last mix event watch token
-func (m *MixHandler) SetLastWatchToken(ctx context.Context, token string) error {
+func (m *MixHandler) SetLastWatchToken(ctx context.Context, uuid string, watchDB local.DB,
+	token *types.TokenInfo) error {
+
 	filter := map[string]interface{}{
-		"_id": m.mixKey,
+		"_id": m.genWatchTokenID(uuid),
 	}
 
 	tokenInfo := mapstr.MapStr{
-		m.collection + ".token": token,
+		m.collection: token,
 	}
 
-	if err := m.db.Table(common.BKTableNameSystem).Upsert(ctx, filter, tokenInfo); err != nil {
-		blog.Errorf("set mix event %s last watch token failed, data: %+v, err: %v", m.mixKey, tokenInfo, err)
+	if err := watchDB.Table(common.BKTableNameCacheWatchToken).Upsert(ctx, filter, tokenInfo); err != nil {
+		blog.Errorf("set mix event %s:%s last watch token failed, data: %+v, err: %v", m.mixKey, uuid, tokenInfo, err)
 		return err
 	}
 	return nil
 }
 
 // GetStartWatchToken get mix event start watch token
-func (m *MixHandler) GetStartWatchToken(ctx context.Context) (string, error) {
+func (m *MixHandler) GetStartWatchToken(ctx context.Context, uuid string, watchDB local.DB) (*types.TokenInfo, error) {
 	filter := map[string]interface{}{
-		"_id": m.mixKey,
+		"_id": m.genWatchTokenID(uuid),
 	}
 
-	data := make(map[string]map[string]string)
-	err := m.db.Table(common.BKTableNameSystem).Find(filter).Fields(m.collection+".token").One(ctx, &data)
+	data := make(map[string]*types.TokenInfo)
+	err := watchDB.Table(common.BKTableNameCacheWatchToken).Find(filter).Fields(m.collection).One(ctx, &data)
 	if err != nil {
-		if !m.db.IsNotFoundError(err) {
+		if !mongodb.IsNotFoundError(err) {
 			blog.Errorf("get mix event start watch token by filter: %+v failed, err: %v", filter, err)
-			return "", err
-		}
-
-		return "", nil
-	}
-
-	tokenInfo, exist := data[m.collection]
-	if !exist {
-		blog.Infof("mix event %s start watch token is not found", m.mixKey)
-		return "", nil
-	}
-
-	return tokenInfo["token"], nil
-}
-
-// ResetWatchToken reset watch token and start watch time
-func (m *MixHandler) ResetWatchToken(startAtTime types.TimeStamp) error {
-	data := mapstr.MapStr{
-		m.collection: mapstr.MapStr{
-			common.BKTokenField:       "",
-			common.BKStartAtTimeField: startAtTime,
-		},
-	}
-
-	filter := map[string]interface{}{
-		"_id": m.mixKey,
-	}
-
-	if err := m.db.Table(common.BKTableNameSystem).Upsert(context.Background(), filter, data); err != nil {
-		blog.Errorf("reset mix watch token %s failed, data: %+v, err: %v", m.mixKey, data, err)
-		return err
-	}
-	return nil
-}
-
-// GetStartWatchTime get mix event start watch time
-func (m *MixHandler) GetStartWatchTime(ctx context.Context) (*types.TimeStamp, error) {
-	filter := map[string]interface{}{
-		"_id": m.mixKey,
-	}
-
-	data := make(map[string]map[string]metadata.Time)
-	if err := m.db.Table(common.BKTableNameSystem).Find(filter).Fields(m.collection+".start_at_time").
-		One(ctx, &data); err != nil {
-
-		if !m.db.IsNotFoundError(err) {
-			blog.Errorf("get mix event start watch time by filter: %+v failed, err: %v", filter, err)
 			return nil, err
 		}
 
-		blog.Infof("mix event %s start watch time is not found", m.mixKey)
-		return new(types.TimeStamp), nil
+		return &types.TokenInfo{Token: "", StartAtTime: &types.TimeStamp{Sec: uint32(time.Now().Unix())}}, nil
 	}
 
 	tokenInfo, exist := data[m.collection]
 	if !exist {
-		blog.Infof("mix event %s start watch time is not found", m.mixKey)
-		return new(types.TimeStamp), nil
+		blog.Infof("mix event %s:%s start watch token is not found", m.mixKey, uuid)
+		return &types.TokenInfo{Token: "", StartAtTime: &types.TimeStamp{Sec: uint32(time.Now().Unix())}}, nil
 	}
 
-	time := tokenInfo["start_at_time"].Time
+	return tokenInfo, nil
+}
 
-	return &types.TimeStamp{
-		Sec:  uint32(time.Unix()),
-		Nano: uint32(time.Nanosecond()),
-	}, nil
+func (m *MixHandler) genWatchTokenID(uuid string) string {
+	return m.mixKey + ":" + uuid
 }

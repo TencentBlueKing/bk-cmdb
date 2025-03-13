@@ -21,7 +21,6 @@ import (
 	"context"
 
 	"configcenter/src/common/metadata"
-	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/dal/types"
 )
 
@@ -81,9 +80,6 @@ func (e *errDB) CommitTransaction(_ context.Context, _ *metadata.TxnCapable) err
 func (e *errDB) AbortTransaction(_ context.Context, _ *metadata.TxnCapable) (bool, error) {
 	return false, e.err
 }
-
-// InitTxnManager return error for method chaining
-func (e *errDB) InitTxnManager(_ redis.Client) error { return e.err }
 
 type errColl struct {
 	err error

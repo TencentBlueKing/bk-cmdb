@@ -52,16 +52,6 @@ const (
 	MainlineInstance ResType = "mainline_instance"
 	// InstAsst is the resource type for instance association cache, its sub resource specifies the associated object id
 	InstAsst ResType = "inst_asst"
-	// KubeCluster is the resource type for kube cluster cache
-	KubeCluster ResType = "kube_cluster"
-	// KubeNode is the resource type for kube node cache
-	KubeNode ResType = "kube_node"
-	// KubeNamespace is the resource type for kube namespace cache
-	KubeNamespace ResType = "kube_namespace"
-	// KubeWorkload is the resource type for kube workload cache,  its sub resource specifies the workload type
-	KubeWorkload ResType = "kube_workload"
-	// KubePod is the resource type for kube pod cache, its event detail is pod info with containers in it
-	KubePod ResType = "kube_pod"
 )
 
 // SupportedResTypeMap is a map whose key is resource type that is supported by general resource cache
@@ -82,7 +72,6 @@ var ResTypeHasSubResMap = map[ResType]struct{}{
 	ObjectInstance:   {},
 	MainlineInstance: {},
 	InstAsst:         {},
-	KubeWorkload:     {},
 }
 
 // ValidateWithSubRes validate ResType with sub resource

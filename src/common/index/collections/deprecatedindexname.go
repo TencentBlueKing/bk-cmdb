@@ -111,11 +111,6 @@ var deprecatedIndexName = map[string][]string{
 	common.BKTableNameTopoGraphics: {
 		"scope_type_1_scope_id_1_node_type_1_bk_obj_id_1_bk_inst_id_1",
 	},
-	common.BKTableNameDelArchive: {
-		"oid_1",
-		"idx_oid_coll",
-		"idx_coll",
-	},
 	common.BKTableNameServiceInstance: {
 		"idx_bkBizID",
 		"idx_serviceTemplateID",

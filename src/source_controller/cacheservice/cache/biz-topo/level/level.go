@@ -19,14 +19,13 @@
 package level
 
 import (
-	"context"
-
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
 )
 
 // LevelI is the interface for topology tree level
 type LevelI interface {
-	GetNodesByDB(ctx context.Context, bizID int64, cond []mapstr.MapStr, rid string) ([]types.Node, error)
-	GetNodesByCache(ctx context.Context, bizID int64, rid string) ([]types.Node, error)
+	GetNodesByDB(kit *rest.Kit, bizID int64, cond []mapstr.MapStr) ([]types.Node, error)
+	GetNodesByCache(kit *rest.Kit, bizID int64) ([]types.Node, error)
 }

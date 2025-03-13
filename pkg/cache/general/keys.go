@@ -49,16 +49,6 @@ var (
 	MainlineInstKey = NewKey(MainlineInstance, 6*time.Hour, [2]int{0, 30 * 60}, genIDKeyByID, genDetailKeyWithoutSubRes)
 	// InstAsstKey is the instance association detail cache key
 	InstAsstKey = NewKey(InstAsst, 6*time.Hour, [2]int{0, 30 * 60}, genIDKeyByID, genDetailKeyWithoutSubRes)
-	// KubeClusterKey is the  detail cache key
-	KubeClusterKey = newGeneralKey(KubeCluster, 6*time.Hour, [2]int{0, 30 * 60})
-	// KubeNodeKey is the  detail cache key
-	KubeNodeKey = newGeneralKey(KubeNode, 6*time.Hour, [2]int{0, 30 * 60})
-	// KubeNamespaceKey is the  detail cache key
-	KubeNamespaceKey = newGeneralKey(KubeNamespace, 6*time.Hour, [2]int{0, 30 * 60})
-	// KubeWorkloadKey is the  detail cache key
-	KubeWorkloadKey = newGeneralKey(KubeWorkload, 6*time.Hour, [2]int{0, 30 * 60})
-	// KubePodKey is the  detail cache key
-	KubePodKey = newGeneralKey(KubePod, 6*time.Hour, [2]int{0, 30 * 60})
 )
 
 // newGeneralKey new general Key
@@ -93,11 +83,6 @@ var cacheKeyMap = map[ResType]*Key{
 	ObjectInstance:   ObjInstKey,
 	MainlineInstance: MainlineInstKey,
 	InstAsst:         InstAsstKey,
-	KubeCluster:      KubeClusterKey,
-	KubeNode:         KubeNodeKey,
-	KubeNamespace:    KubeNamespaceKey,
-	KubeWorkload:     KubeWorkloadKey,
-	KubePod:          KubePodKey,
 }
 
 // GetCacheKeyByResType get general resource detail cache key by resource type

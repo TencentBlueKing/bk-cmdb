@@ -18,7 +18,6 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -26,6 +25,7 @@ import (
 	"configcenter/pkg/filter"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
@@ -74,8 +74,7 @@ func parseDataWithOid[T any](parser func(data T) (*basicInfo, error)) dataParser
 			info.oid = val.Oid.Hex()
 		case filter.JsonString:
 			info = &basicInfo{
-				oid:    gjson.Get(string(val), common.MongoMetaID).String(),
-				tenant: gjson.Get(string(val), common.TenantID).String(),
+				oid: gjson.Get(string(val), common.MongoMetaID).String(),
 			}
 		default:
 			return nil, fmt.Errorf("data type %T is invalid", data)
@@ -90,8 +89,8 @@ func parseDataWithOid[T any](parser func(data T) (*basicInfo, error)) dataParser
 }
 
 func getDataByOid[T any](table string) dataGetterByKeys {
-	return func(ctx context.Context, opt *getDataByKeysOpt, rid string) ([]any, error) {
-		ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	return func(kit *rest.Kit, opt *getDataByKeysOpt) ([]any, error) {
+		kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
 		if len(opt.Keys) == 0 {
 			return make([]any, 0), nil
@@ -101,7 +100,7 @@ func getDataByOid[T any](table string) dataGetterByKeys {
 		for i, key := range opt.Keys {
 			oid, err := primitive.ObjectIDFromHex(key)
 			if err != nil {
-				blog.Errorf("parse oid (index: %d, key: %s) failed, err: %v, rid: %s", i, key, err, rid)
+				blog.Errorf("parse oid (index: %d, key: %s) failed, err: %v, rid: %s", i, key, err, kit.Rid)
 				return nil, err
 			}
 			oids[i] = oid
@@ -114,8 +113,8 @@ func getDataByOid[T any](table string) dataGetterByKeys {
 		dbOpts := dbtypes.NewFindOpts().SetWithObjectID(true)
 
 		dataArr := make([]dataWithOid[T], 0)
-		if err := mongodb.Client().Table(table).Find(cond, dbOpts).All(ctx, &dataArr); err != nil {
-			blog.Errorf("get %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, rid)
+		if err := mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond, dbOpts).All(kit.Ctx, &dataArr); err != nil {
+			blog.Errorf("get %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, kit.Rid)
 			return nil, err
 		}
 
@@ -124,11 +123,11 @@ func getDataByOid[T any](table string) dataGetterByKeys {
 }
 
 func listDataWithOid[T any](table string) dataLister {
-	return func(ctx context.Context, opt *listDataOpt, rid string) (*listDataRes, error) {
-		ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	return func(kit *rest.Kit, opt *listDataOpt) (*listDataRes, error) {
+		kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
 		if rawErr := opt.Validate(false); rawErr.ErrCode != 0 {
-			blog.Errorf("list general data option is invalid, err: %v, opt: %+v, rid: %s", rawErr, opt, rid)
+			blog.Errorf("list general data option is invalid, err: %v, opt: %+v, rid: %s", rawErr, opt, kit.Rid)
 			return nil, fmt.Errorf("list data option is invalid")
 		}
 
@@ -142,9 +141,9 @@ func listDataWithOid[T any](table string) dataLister {
 		}
 
 		if opt.Page.EnableCount {
-			cnt, err := mongodb.Client().Table(table).Find(cond).Count(ctx)
+			cnt, err := mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond).Count(kit.Ctx)
 			if err != nil {
-				blog.Errorf("count %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, rid)
+				blog.Errorf("count %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, kit.Rid)
 				return nil, err
 			}
 
@@ -154,7 +153,7 @@ func listDataWithOid[T any](table string) dataLister {
 		if opt.Page.StartOid != "" {
 			oid, err := primitive.ObjectIDFromHex(opt.Page.StartOid)
 			if err != nil {
-				blog.Errorf("parse start oid %s failed, err: %v, rid: %s", opt.Page.StartOid, err, rid)
+				blog.Errorf("parse start oid %s failed, err: %v, rid: %s", opt.Page.StartOid, err, kit.Rid)
 				return nil, err
 			}
 
@@ -171,10 +170,10 @@ func listDataWithOid[T any](table string) dataLister {
 		dbOpts := dbtypes.NewFindOpts().SetWithObjectID(true)
 
 		dataArr := make([]dataWithOid[T], 0)
-		err := mongodb.Client().Table(table).Find(cond, dbOpts).Sort(common.MongoMetaID).
-			Start(uint64(opt.Page.StartIndex)).Limit(uint64(opt.Page.Limit)).Fields(opt.Fields...).All(ctx, &dataArr)
+		err := mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond, dbOpts).Sort(common.MongoMetaID).Start(
+			uint64(opt.Page.StartIndex)).Limit(uint64(opt.Page.Limit)).Fields(opt.Fields...).All(kit.Ctx, &dataArr)
 		if err != nil {
-			blog.Errorf("list %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, rid)
+			blog.Errorf("list %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, kit.Rid)
 			return nil, err
 		}
 

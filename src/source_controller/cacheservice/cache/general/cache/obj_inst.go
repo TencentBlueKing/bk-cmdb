@@ -18,18 +18,14 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 
 	"configcenter/pkg/cache/general"
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
-	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
 
@@ -41,28 +37,17 @@ func init() {
 }
 
 // getObjInstTable get object instance table by objID and tenant account
-// NOTE: obj with "0" tenant can have inst with other suppliers, so we need to search the obj for its actual tenant
-func getObjInstTable(ctx context.Context, filter *types.BasicFilter, rid string) (string, error) {
-	cond := mapstr.MapStr{
-		common.BKObjIDField: filter.SubRes,
-	}
-
-	obj := new(metadata.Object)
-	err := mongodb.Client().Table(common.BKTableNameObjDes).Find(cond).Fields(common.TenantID).One(ctx, &obj)
-	if err != nil {
-		blog.Errorf("get object tenant account by cond(%+v) failed, err: %v, rid: %s", cond, err, rid)
-		return "", err
-	}
-	return common.GetInstTableName(filter.SubRes, obj.TenantID), nil
+func getObjInstTable(kit *rest.Kit, filter *types.BasicFilter) (string, error) {
+	return common.GetInstTableName(filter.SubRes, kit.TenantID), nil
 }
 
-func parseObjInstData(data dataWithTable[mapstr.MapStr]) (*basicInfo, error) {
+func parseObjInstData(data dataWithTenant[mapstr.MapStr]) (*basicInfo, error) {
 	instID, err := util.GetInt64ByInterface(data.Data[common.BKInstIDField])
 	if err != nil {
 		return nil, fmt.Errorf("parse id %+v failed, err: %v", data.Data[common.BKInstIDField], err)
 	}
 
-	kit := rest.NewKit()
+	kit := rest.NewKit().WithTenant(data.TenantID)
 	instObjMappings, err := instancemapping.GetInstanceObjectMapping(kit, []int64{instID})
 	if err != nil {
 		return nil, fmt.Errorf("get object ids from instance ids(%d) failed, err: %v", instID, err)
@@ -75,6 +60,5 @@ func parseObjInstData(data dataWithTable[mapstr.MapStr]) (*basicInfo, error) {
 	return &basicInfo{
 		id:     instID,
 		subRes: []string{instObjMappings[0].ObjectID},
-		tenant: instObjMappings[0].TenantID,
 	}, nil
 }

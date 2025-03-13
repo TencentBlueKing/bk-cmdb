@@ -23,6 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/key"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/topo"
@@ -30,52 +31,55 @@ import (
 )
 
 // RefreshBizTopo get biz topo info from db and update it to cache
-func RefreshBizTopo(topoKey key.Key, bizID int64, byCache bool, rid string) error {
-	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+func RefreshBizTopo(kit *rest.Kit, topoKey key.Key, bizID int64, byCache bool) error {
+	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, kit.Rid)
 	ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	kit = kit.WithCtx(ctx)
 	topoType := topoKey.Type()
 
-	blog.Infof("start refreshing biz %d %s topology, by cache: %v, rid: %s", bizID, topoType, byCache, rid)
+	blog.Infof("start refreshing biz %d %s topology, by cache: %v, rid: %s", bizID, topoType, byCache, kit.Rid)
 
-	bizTopo, err := topo.GenBizTopo(ctx, bizID, topoType, byCache, rid)
+	bizTopo, err := topo.GenBizTopo(kit, bizID, topoType, byCache)
 	if err != nil {
-		blog.Errorf("get biz %d %s topology to refresh failed, err: %v, rid: %s", bizID, topoType, err, rid)
+		blog.Errorf("get biz %d %s topology to refresh failed, err: %v, rid: %s", bizID, topoType, err, kit.Rid)
 		return err
 	}
 
 	// update it to cache directly.
-	_, err = topoKey.UpdateTopology(ctx, bizTopo)
+	_, err = topoKey.UpdateTopology(kit, bizID, bizTopo)
 	if err != nil {
-		blog.Errorf("refresh biz %d %s topology cache failed, err: %v, rid: %s", bizID, topoType, err, rid)
+		blog.Errorf("refresh biz %d %s topology cache failed, err: %v, rid: %s", bizID, topoType, err, kit.Rid)
 		return err
 	}
 
 	queue, exists := bizRefreshQueuePool[topoType]
 	if exists {
-		queue.Remove(bizID)
+		queue.Remove(kit.TenantID, bizID)
 	}
 
-	blog.Infof("refresh biz %d %s topology success, by cache: %v, rid: %s", bizID, topoType, byCache, rid)
+	blog.Infof("refresh biz %d %s topology success, by cache: %v, rid: %s", bizID, topoType, byCache, kit.Rid)
 	return nil
 }
 
 // TryRefreshBizTopoByCache try refresh biz topo cache by separate node cache, refresh from db data for the first time
-func TryRefreshBizTopoByCache(topoKey key.Key, bizID int64, rid string) error {
-	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, rid)
+func TryRefreshBizTopoByCache(kit *rest.Kit, topoKey key.Key, bizID int64) error {
+	ctx := context.WithValue(context.Background(), common.ContextRequestIDField, kit.Rid)
 	ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	kit = kit.WithCtx(ctx)
 
 	// check if biz topo cache exists, if not, refresh from db data
-	bizTopoKey := topoKey.BizTopoKey(bizID)
+	bizTopoKey := topoKey.BizTopoKey(kit.TenantID, bizID)
 	existRes, err := redis.Client().Exists(ctx, bizTopoKey).Result()
 	if err != nil {
-		blog.Errorf("check if biz %d topo cache exists failed, key: %s, err: %v, rid: %s", bizID, bizTopoKey, err, rid)
+		blog.Errorf("check if biz %d topo cache exists failed, key: %s, err: %v, rid: %s", bizID, bizTopoKey, err,
+			kit.Rid)
 		return err
 	}
 
 	if existRes != 1 {
-		return RefreshBizTopo(topoKey, bizID, false, rid)
+		return RefreshBizTopo(kit, topoKey, bizID, false)
 	}
 
 	// refresh biz topo from cache
-	return RefreshBizTopo(topoKey, bizID, true, rid)
+	return RefreshBizTopo(kit, topoKey, bizID, true)
 }

@@ -23,9 +23,11 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -33,8 +35,9 @@ import (
 	topolgc "configcenter/src/source_controller/cacheservice/cache/biz-topo/logics/topo"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/watch"
 	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
+	watchcli "configcenter/src/source_controller/cacheservice/event/watch"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
 // Topo defines the business topology caching logics
@@ -44,14 +47,14 @@ type Topo struct {
 }
 
 // New Topo
-func New(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface, cacheSet *cache.CacheSet) (*Topo,
-	error) {
+func New(isMaster discovery.ServiceManageInterface, watchTask *task.Task, cacheSet *cache.CacheSet,
+	watchCli *watchcli.Client) (*Topo, error) {
 
 	t := &Topo{
 		isMaster: isMaster,
 	}
 
-	watcher, err := watch.New(loopW, cacheSet)
+	watcher, err := watch.New(isMaster, watchTask, cacheSet, watchCli)
 	if err != nil {
 		return nil, fmt.Errorf("new watcher failed, err: %v", err)
 	}
@@ -85,42 +88,48 @@ func (t *Topo) loopBizTopoCache(topoKey key.Key) {
 }
 
 func (t *Topo) doLoopBizTopoToCache(topoKey key.Key, rid string) {
-	// read from secondary in mongodb cluster.
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+	_ = tenant.ExecForAllTenants(func(tenantID string) error {
+		// read from secondary in mongodb cluster.
+		ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+		kit := rest.NewKit().WithCtx(ctx).WithRid(rid).WithTenant(tenantID)
 
-	all, err := t.listAllBusiness(ctx)
-	if err != nil {
-		blog.Errorf("loop %s biz topology, but list all business failed, err: %v, rid: %s", topoKey.Type(), err, rid)
-		return
-	}
-
-	for _, biz := range all {
-		time.Sleep(50 * time.Millisecond)
-
-		rid := fmt.Sprintf("%s:%d", rid, biz.BizID)
-
-		err = topolgc.RefreshBizTopo(topoKey, biz.BizID, false, rid)
+		all, err := t.listAllBusiness(kit)
 		if err != nil {
-			blog.Errorf("loop refresh biz %d/%s %s topology failed, err: %v, rid: %s", biz.BizID, biz.BizName,
-				topoKey.Type(), err, rid)
-			continue
+			blog.Errorf("loop %s biz topology, but list all business failed, err: %v, rid: %s", topoKey.Type(), err,
+				rid)
+			return err
 		}
 
-		blog.Infof("loop refresh biz %d/%s %s topology success, rid: %s", biz.BizID, biz.BizName, topoKey.Type(), rid)
-	}
+		for _, biz := range all {
+			time.Sleep(50 * time.Millisecond)
+
+			kit = kit.WithRid(fmt.Sprintf("%s:%d", rid, biz.BizID))
+
+			err = topolgc.RefreshBizTopo(kit, topoKey, biz.BizID, false)
+			if err != nil {
+				blog.Errorf("loop refresh biz %d/%s %s topology failed, err: %v, rid: %s", biz.BizID, biz.BizName,
+					topoKey.Type(), err, kit.Rid)
+				continue
+			}
+
+			blog.Infof("loop refresh biz %d/%s %s topology success, rid: %s", biz.BizID, biz.BizName, topoKey.Type(),
+				kit.Rid)
+		}
+		return nil
+	})
 }
 
 const bizStep = 100
 
 // listAllBusiness list all business brief info
-func (t *Topo) listAllBusiness(ctx context.Context) ([]metadata.BizInst, error) {
+func (t *Topo) listAllBusiness(kit *rest.Kit) ([]metadata.BizInst, error) {
 	filter := mapstr.MapStr{}
 	all := make([]metadata.BizInst, 0)
 
 	for {
 		oneStep := make([]metadata.BizInst, 0)
-		err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).Fields(common.BKAppIDField,
-			common.BKAppNameField).Limit(bizStep).Sort(common.BKAppIDField).All(ctx, &oneStep)
+		err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseApp).Find(filter).Fields(common.BKAppIDField,
+			common.BKAppNameField).Limit(bizStep).Sort(common.BKAppIDField).All(kit.Ctx, &oneStep)
 		if err != nil {
 			return nil, err
 		}

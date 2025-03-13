@@ -21,52 +21,41 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache/custom"
 	"configcenter/src/source_controller/cacheservice/cache/general"
 	"configcenter/src/source_controller/cacheservice/cache/mainline"
-	"configcenter/src/source_controller/cacheservice/cache/topology"
 	"configcenter/src/source_controller/cacheservice/cache/topotree"
 	"configcenter/src/source_controller/cacheservice/event/watch"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
-	"configcenter/src/storage/reflector"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
 // NewCache new cache service
-func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface,
-	watchDB dal.DB) (*ClientSet, error) {
-
-	if err := mainline.NewMainlineCache(loopW); err != nil {
-		return nil, fmt.Errorf("new business cache failed, err: %v", err)
+func NewCache(watchTask *task.Task, isMaster discovery.ServiceManageInterface) (*ClientSet, error) {
+	if err := mainline.NewMainlineCache(isMaster); err != nil {
+		return nil, fmt.Errorf("new mainline cache failed, err: %v", err)
 	}
 
-	bizBriefTopoClient, err := topology.NewTopology(isMaster, loopW)
-	if err != nil {
-		return nil, err
-	}
-
-	mainlineClient := mainline.NewMainlineClient()
-
-	customCache, err := custom.New(isMaster, loopW)
+	customCache, err := custom.New(isMaster, watchTask)
 	if err != nil {
 		return nil, fmt.Errorf("new custom resource cache failed, err: %v", err)
 	}
 
-	topoTreeClient, err := biztopo.New(isMaster, loopW, customCache.CacheSet())
-	if err != nil {
-		return nil, fmt.Errorf("new common topo cache failed, err: %v", err)
-	}
+	watchCli := watch.NewClient(mongodb.Dal("watch"), mongodb.Dal(), redis.Client())
 
-	watchCli := watch.NewClient(watchDB, mongodb.Client(), redis.Client())
-
-	generalCache, err := general.New(isMaster, loopW, watchCli)
+	generalCache, err := general.New(isMaster, watchTask, watchCli)
 	if err != nil {
 		return nil, fmt.Errorf("new general resource cache failed, err: %v", err)
 	}
 
+	topoTreeClient, err := biztopo.New(isMaster, watchTask, customCache.CacheSet(), watchCli)
+	if err != nil {
+		return nil, fmt.Errorf("new common topo cache failed, err: %v", err)
+	}
+
+	mainlineClient := mainline.NewMainlineClient(generalCache)
+
 	cache := &ClientSet{
 		Tree:     topotree.NewTopologyTree(mainlineClient),
 		Business: mainlineClient,
-		Topology: bizBriefTopoClient,
 		Topo:     topoTreeClient,
 		Event:    watchCli,
 		Custom:   customCache,
@@ -78,7 +67,6 @@ func NewCache(reflector reflector.Interface, loopW stream.LoopInterface, isMaste
 // ClientSet is the cache client set
 type ClientSet struct {
 	Tree     *topotree.TopologyTree
-	Topology *topology.Topology
 	Topo     *biztopo.Topo
 	Business *mainline.Client
 	Event    *watch.Client
