@@ -90,19 +90,6 @@ func (ps *parseStream) watch() *parseStream {
 				}
 				authResource.InstanceID = model.ID
 			}
-		case watch.KubeWorkload:
-			body, err := ps.RequestCtx.getRequestBody()
-			if err != nil {
-				ps.err = err
-				return ps
-			}
-
-			// use sub resource(corresponding to the kind of the workload) for authorization if it is set
-			// if sub resource is not set, verify authorization of the resource(which means all sub resources)
-			subResource := gjson.GetBytes(body, "bk_filter."+common.BKSubResourceField)
-			if subResource.Exists() {
-				authResource.InstanceIDEx = subResource.String()
-			}
 		}
 
 		ps.Attribute.Resources = append(ps.Attribute.Resources, authResource)

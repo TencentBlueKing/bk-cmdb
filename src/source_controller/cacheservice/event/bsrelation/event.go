@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"sync"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
@@ -27,32 +28,36 @@ import (
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
 	mixevent "configcenter/src/source_controller/cacheservice/event/mix-event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/dal/mongo/sharding"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/types"
 )
 
 // newBizSetRelation init and run biz set relation event watch with sub event key
 func newBizSetRelation(ctx context.Context, opts mixevent.MixEventFlowOptions) error {
 	relation := bizSetRelation{
-		watch:             opts.Watch,
-		watchDB:           opts.WatchDB,
-		ccDB:              opts.CcDB,
-		mixKey:            opts.MixKey,
-		key:               opts.Key,
-		needCareBizFields: new(needCareBizFields),
-		allBizIDStr:       new(allBizIDStr),
-		metrics:           event.InitialMetrics(opts.Key.Collection(), "biz_set_relation"),
+		mixKey: opts.MixKey,
+		key:    opts.Key,
+		needCareBizFields: &needCareBizFields{
+			fieldMap: make(map[string]map[string]string),
+		},
+		allBizIDStr: &allBizIDStr{data: make(map[string]string)},
+		metrics:     event.InitialMetrics(opts.Key.Collection(), "biz_set_relation"),
 	}
 
 	// get need care biz fields for biz event conversion, then sync it in goroutine
-	fields, err := relation.getNeedCareBizFields(context.Background())
+	err := tenant.ExecForAllTenants(func(tenantID string) error {
+		fields, err := relation.getNeedCareBizFields(context.Background(), tenantID)
+		if err != nil {
+			blog.Errorf("run biz set relation watch, but get %s need care biz fields failed, err: %v", tenantID, err)
+			return err
+		}
+		relation.needCareBizFields.Set(tenantID, fields)
+		return nil
+	})
 	if err != nil {
-		blog.Errorf("run biz set relation watch, but get need care biz fields failed, err: %v", err)
 		return err
 	}
-	relation.needCareBizFields.Set(fields)
 
 	go relation.syncNeedCareBizFields()
 
@@ -66,11 +71,8 @@ func newBizSetRelation(ctx context.Context, opts mixevent.MixEventFlowOptions) e
 
 // bizSetRelation biz set relation event watch logic struct
 type bizSetRelation struct {
-	watch             stream.LoopInterface
-	watchDB           *local.Mongo
 	mixKey            event.Key
 	key               event.Key
-	ccDB              dal.DB
 	needCareBizFields *needCareBizFields
 	allBizIDStr       *allBizIDStr
 
@@ -91,16 +93,18 @@ func (b *bizSetRelation) rearrangeEvents(rid string, es []*types.Event) ([]*type
 }
 
 // parseEvent parse event into chain node and detail, detail is biz set id and its related biz ids
-func (b *bizSetRelation) parseEvent(e *types.Event, id uint64, rid string) (*watch.ChainNode, []byte, bool, error) {
+func (b *bizSetRelation) parseEvent(e *types.Event, id uint64, rid string) (string, *watch.ChainNode, []byte, bool,
+	error) {
+
 	switch e.OperationType {
 	case types.Insert, types.Update, types.Replace, types.Delete:
 	case types.Invalidate:
 		blog.Errorf("biz set relation event, received invalid event operation type, doc: %s, rid: %s", e.DocBytes, rid)
-		return nil, nil, false, nil
+		return "", nil, nil, false, nil
 	default:
 		blog.Errorf("biz set relation event, received unsupported event operation type: %s, doc: %s, rid: %s",
 			e.OperationType, e.DocBytes, rid)
-		return nil, nil, false, nil
+		return "", nil, nil, false, nil
 	}
 
 	name := b.key.Name(e.DocBytes)
@@ -108,7 +112,7 @@ func (b *bizSetRelation) parseEvent(e *types.Event, id uint64, rid string) (*wat
 	if err != nil {
 		blog.Errorf("get %s event cursor failed, name: %s, err: %v, oid: %s, rid: %s", b.key.Collection(), name,
 			err, e.ID(), rid)
-		return nil, nil, false, err
+		return "", nil, nil, false, err
 	}
 
 	chainNode := &watch.ChainNode{
@@ -119,7 +123,6 @@ func (b *bizSetRelation) parseEvent(e *types.Event, id uint64, rid string) (*wat
 		EventType: watch.ConvertOperateType(types.Update),
 		Token:     e.Token.Data,
 		Cursor:    cursor,
-		TenantID:  b.key.SupplierAccount(e.DocBytes),
 	}
 
 	if instanceID := b.mixKey.InstanceID(e.DocBytes); instanceID > 0 {
@@ -128,7 +131,7 @@ func (b *bizSetRelation) parseEvent(e *types.Event, id uint64, rid string) (*wat
 
 	relationDetail, err := b.getBizSetRelationDetail(e, rid)
 	if err != nil {
-		return nil, nil, true, err
+		return "", nil, nil, true, err
 	}
 
 	detail := types.EventDetail{
@@ -138,52 +141,51 @@ func (b *bizSetRelation) parseEvent(e *types.Event, id uint64, rid string) (*wat
 	if err != nil {
 		blog.Errorf("run %s flow, %s, marshal detail failed, name: %s, detail: %+v, err: %v, oid: %s, rid: %s",
 			b.mixKey.Collection(), b.key.Collection(), name, detail, err, e.ID(), rid)
-		return nil, nil, false, err
+		return "", nil, nil, false, err
 	}
 
-	return chainNode, detailBytes, false, nil
+	return e.TenantID, chainNode, detailBytes, false, nil
 }
 
 // allBizIDStr struct to cache all biz ids in string form to generate detail, refreshed when rearranging events
 type allBizIDStr struct {
-	data string
+	data map[string]string
 	lock sync.RWMutex
 }
 
 // Get get all biz ids in string form
-func (a *allBizIDStr) Get() string {
+func (a *allBizIDStr) Get(tenantID string) string {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
-	return a.data
+	return a.data[tenantID]
 }
 
 // Set set all biz ids in string form
-func (a *allBizIDStr) Set(data string) {
+func (a *allBizIDStr) Set(tenantID string, data string) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
-	a.data = data
+	a.data[tenantID] = data
 }
 
 // refreshAllBizIDStr refresh all biz ids in string form
-func (b *bizSetRelation) refreshAllBizIDStr(rid string) error {
+func (b *bizSetRelation) refreshAllBizIDStr(tenantID string, rid string) error {
 	// do not include resource pool and disabled biz in biz set
 	allBizIDCond := map[string]interface{}{
 		common.BKDefaultField:    mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag},
 		common.BKDataStatusField: map[string]interface{}{common.BKDBNE: common.DataStatusDisabled},
 	}
 
-	allBizID, err := b.getBizIDArrStrByCond(allBizIDCond, rid)
+	allBizID, err := b.getBizIDArrStrByCond(tenantID, allBizIDCond, rid)
 	if err != nil {
 		return err
 	}
 
-	b.allBizIDStr.Set(allBizID)
+	b.allBizIDStr.Set(tenantID, allBizID)
 	return nil
 }
 
 // getBizSetRelationDetail get biz set relation detail by biz set event
 func (b *bizSetRelation) getBizSetRelationDetail(e *types.Event, rid string) (string, error) {
-
 	// get biz set relation detail by the scope of biz set event doc bytes
 	bizSet := new(metadata.BizSetInst)
 	if err := json.Unmarshal(e.DocBytes, bizSet); err != nil {
@@ -196,7 +198,7 @@ func (b *bizSetRelation) getBizSetRelationDetail(e *types.Event, rid string) (st
 		return event.GenBizSetRelationDetail(bizSet.BizSetID, ""), nil
 	}
 
-	allBizID := b.allBizIDStr.Get()
+	allBizID := b.allBizIDStr.Get(e.TenantID)
 
 	// biz set that matches all biz uses the same all biz ids from cache
 	if bizSet.Scope.MatchAll {
@@ -208,11 +210,11 @@ func (b *bizSetRelation) getBizSetRelationDetail(e *types.Event, rid string) (st
 			}
 
 			var err error
-			allBizID, err = b.getBizIDArrStrByCond(allBizIDCond, rid)
+			allBizID, err = b.getBizIDArrStrByCond(e.TenantID, allBizIDCond, rid)
 			if err != nil {
 				return "", err
 			}
-			b.allBizIDStr.Set(allBizID)
+			b.allBizIDStr.Set(e.TenantID, allBizID)
 		}
 		return event.GenBizSetRelationDetail(bizSet.BizSetID, allBizID), nil
 	}
@@ -233,7 +235,7 @@ func (b *bizSetRelation) getBizSetRelationDetail(e *types.Event, rid string) (st
 	bizSetBizCond[common.BKDefaultField] = mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag}
 	bizSetBizCond[common.BKDataStatusField] = map[string]interface{}{common.BKDBNE: common.DataStatusDisabled}
 
-	bizIDStr, err := b.getBizIDArrStrByCond(bizSetBizCond, rid)
+	bizIDStr, err := b.getBizIDArrStrByCond(e.TenantID, bizSetBizCond, rid)
 	if err != nil {
 		return "", err
 	}
@@ -241,7 +243,9 @@ func (b *bizSetRelation) getBizSetRelationDetail(e *types.Event, rid string) (st
 	return event.GenBizSetRelationDetail(bizSet.BizSetID, bizIDStr), nil
 }
 
-func (b *bizSetRelation) getBizIDArrStrByCond(cond map[string]interface{}, rid string) (string, error) {
+func (b *bizSetRelation) getBizIDArrStrByCond(tenantID string, cond map[string]interface{}, rid string) (string,
+	error) {
+
 	const step = 500
 
 	bizIDJson := bytes.Buffer{}
@@ -249,8 +253,9 @@ func (b *bizSetRelation) getBizIDArrStrByCond(cond map[string]interface{}, rid s
 	for start := uint64(0); ; start += step {
 		oneStep := make([]metadata.BizInst, 0)
 
-		err := b.ccDB.Table(common.BKTableNameBaseApp).Find(cond).Fields(common.BKAppIDField).Start(start).
-			Limit(step).Sort(common.BKAppIDField).All(context.Background(), &oneStep)
+		err := mongodb.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(common.BKTableNameBaseApp).Find(cond).
+			Fields(common.BKAppIDField).Start(start).Limit(step).Sort(common.BKAppIDField).
+			All(context.Background(), &oneStep)
 		if err != nil {
 			blog.Errorf("get biz by cond(%+v) failed, err: %v, rid: %s", cond, err, rid)
 			return "", err

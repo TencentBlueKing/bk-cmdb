@@ -75,15 +75,16 @@ type ChainNode struct {
 	InstanceID int64 `json:"inst_id,omitempty" bson:"inst_id,omitempty"`
 	// SubResource the sub resource of the watched resource, eg. the object ID of the instance resource
 	SubResource []string `json:"bk_sub_resource,omitempty" bson:"bk_sub_resource,omitempty"`
-	// TenantID the supplier account of the chain node's related event resource.
-	TenantID string `json:"tenant_id" bson:"tenant_id"`
 }
 
 // LastChainNodeData TODO
 type LastChainNodeData struct {
-	Coll        string          `json:"_id" bson:"_id"`
-	ID          uint64          `json:"id" bson:"id"`
-	Token       string          `json:"token" bson:"token"`
-	Cursor      string          `json:"cursor" bson:"cursor"`
-	StartAtTime types.TimeStamp `json:"start_at_time,omitempty" bson:"start_at_time,omitempty"`
+	Coll   string `json:"_id" bson:"_id"`
+	ID     uint64 `json:"id" bson:"id"`
+	Cursor string `json:"cursor" bson:"cursor"`
+}
+
+// GenDBWatchTokenID generate db watch token identifier by db uuid and collection name
+func GenDBWatchTokenID(dbID, coll string) string {
+	return dbID + ":" + coll
 }

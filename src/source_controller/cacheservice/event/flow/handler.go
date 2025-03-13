@@ -19,48 +19,49 @@ package flow
 
 import (
 	"context"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/types"
 )
 
-var _ = types.TokenHandler(&flowTokenHandler{})
-
 type flowTokenHandler struct {
 	key     event.Key
-	watchDB dal.DB
 	metrics *event.EventMetrics
 }
 
 // NewFlowTokenHandler new flow token handler
-func NewFlowTokenHandler(key event.Key, watchDB dal.DB, metrics *event.EventMetrics) *flowTokenHandler {
+func NewFlowTokenHandler(key event.Key, metrics *event.EventMetrics) *flowTokenHandler {
 	return &flowTokenHandler{
 		key:     key,
-		watchDB: watchDB,
 		metrics: metrics,
 	}
 }
 
-/* SetLastWatchToken do not set last watch token in the do batch action(set it after events are successfully inserted)
-   when there are several masters watching db event, we use db transaction to avoid inserting duplicate data by setting
-   the last token after the insertion of db chain nodes in one transaction, since we have a unique index on the cursor
-   field, the later one will encounters an error when inserting nodes and roll back without setting the token and watch
-   another round from the last token of the last inserted node, thus ensures the sequence of db chain nodes.
+/*
+SetLastWatchToken do not set last watch token in the do batch action(set it after events are successfully inserted)
+when there are several masters watching db event, we use db transaction to avoid inserting duplicate data by setting
+the last token after the insertion of db chain nodes in one transaction, since we have a unique index on the cursor
+field, the later one will encounter an error when inserting nodes and roll back without setting the token and watch
+another round from the last token of the last inserted node, thus ensures the sequence of db chain nodes.
 */
-func (f *flowTokenHandler) SetLastWatchToken(ctx context.Context, token string) error {
+func (f *flowTokenHandler) SetLastWatchToken(_ context.Context, _ string, _ local.DB, _ *types.TokenInfo) error {
 	return nil
 }
 
 // setLastWatchToken set last watch token(used after events are successfully inserted)
-func (f *flowTokenHandler) setLastWatchToken(ctx context.Context, data map[string]interface{}) error {
+func (f *flowTokenHandler) setLastWatchToken(ctx context.Context, uuid string, watchDB local.DB,
+	data map[string]any) error {
+
 	filter := map[string]interface{}{
-		"_id": f.key.Collection(),
+		"_id": watch.GenDBWatchTokenID(uuid, f.key.Collection()),
 	}
-	if err := f.watchDB.Table(common.BKTableNameWatchToken).Update(ctx, filter, data); err != nil {
+	if err := watchDB.Table(common.BKTableNameWatchToken).Update(ctx, filter, data); err != nil {
 		blog.Errorf("set last watch token failed, err: %v, data: %+v", err, data)
 		return err
 	}
@@ -68,69 +69,24 @@ func (f *flowTokenHandler) setLastWatchToken(ctx context.Context, data map[strin
 }
 
 // GetStartWatchToken get start watch token from watch token db first, if an error occurred, get from chain db
-func (f *flowTokenHandler) GetStartWatchToken(ctx context.Context) (token string, err error) {
+func (f *flowTokenHandler) GetStartWatchToken(ctx context.Context, uuid string, watchDB local.DB) (*types.TokenInfo,
+	error) {
+
 	filter := map[string]interface{}{
-		"_id": f.key.Collection(),
+		"_id": watch.GenDBWatchTokenID(uuid, f.key.Collection()),
 	}
 
-	data := new(watch.LastChainNodeData)
-	err = f.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKTokenField).One(ctx, data)
+	data := new(types.TokenInfo)
+	err := watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKTokenField,
+		common.BKStartAtTimeField).One(ctx, data)
 	if err != nil {
-		if !f.watchDB.IsNotFoundError(err) {
+		if !mongodb.IsNotFoundError(err) {
 			f.metrics.CollectMongoError()
-			blog.ErrorJSON("run flow, but get start watch token failed, err: %v, filter: %+v", err, filter)
+			blog.Errorf("run flow, but get start watch token failed, err: %v, filter: %+v", err, filter)
 		}
-
-		tailNode := new(watch.ChainNode)
-		if err := f.watchDB.Table(f.key.ChainCollection()).Find(map[string]interface{}{}).Fields(common.BKTokenField).
-			Sort(common.BKFieldID+":-1").One(context.Background(), tailNode); err != nil {
-
-			if !f.watchDB.IsNotFoundError(err) {
-				f.metrics.CollectMongoError()
-				blog.Errorf("get last watch token from mongo failed, err: %v", err)
-				return "", err
-			}
-			// the tail node is not exist.
-			return "", nil
-		}
-		return tailNode.Token, nil
+		// the tail node is not exist.
+		return &types.TokenInfo{Token: "", StartAtTime: &types.TimeStamp{Sec: uint32(time.Now().Unix())}}, nil
 	}
 
-	return data.Token, nil
-}
-
-// resetWatchToken set watch token to empty and set the start watch time to the given one for next watch
-func (f *flowTokenHandler) resetWatchToken(startAtTime types.TimeStamp) error {
-	data := map[string]interface{}{
-		common.BKTokenField:       "",
-		common.BKStartAtTimeField: startAtTime,
-	}
-
-	filter := map[string]interface{}{
-		"_id": f.key.Collection(),
-	}
-
-	if err := f.watchDB.Table(common.BKTableNameWatchToken).Update(context.Background(), filter, data); err != nil {
-		blog.ErrorJSON("clear watch token failed, err: %s, collection: %s, data: %s", err, f.key.Collection(), data)
-		return err
-	}
-	return nil
-}
-
-func (f *flowTokenHandler) getStartWatchTime(ctx context.Context) (*types.TimeStamp, error) {
-	filter := map[string]interface{}{
-		"_id": f.key.Collection(),
-	}
-
-	data := new(watch.LastChainNodeData)
-	err := f.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKStartAtTimeField).One(ctx, data)
-	if err != nil {
-		if !f.watchDB.IsNotFoundError(err) {
-			f.metrics.CollectMongoError()
-			blog.ErrorJSON("run flow, but get start watch time failed, err: %v, filter: %+v", err, filter)
-			return nil, err
-		}
-		return new(types.TimeStamp), nil
-	}
-	return &data.StartAtTime, nil
+	return data, nil
 }

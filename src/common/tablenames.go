@@ -281,9 +281,9 @@ var platformTableMap = map[string]struct{}{
 	BKTableNameTenantTemplate:     {},
 	BKTableNamePlatformAuditLog:   {},
 	BKTableNameWatchToken:         {},
-	BKTableNameLastWatchEvent:     {},
 	BKTableNameAPITask:            {},
 	BKTableNameAPITaskSyncHistory: {},
+	BKTableNameWatchDBRelation:    {},
 }
 
 // IsPlatformTable returns if the target table is a platform table
@@ -317,16 +317,24 @@ func GenTenantTableName(tenantID, tableName string) string {
 	return fmt.Sprintf("%s_%s", tenantID, tableName)
 }
 
-// SplitTenantTableName split tenant table name to table name and tenant id
+// SplitTenantTableName split tenant table name to tenant id and table name
 func SplitTenantTableName(tenantTableName string) (string, string, error) {
 	if IsPlatformTable(tenantTableName) {
-		return tenantTableName, "", nil
+		return "", tenantTableName, nil
 	}
 
-	if !strings.Contains(tenantTableName, "_") {
-		return "", "", errors.New("tenant table name is invalid")
+	if strings.Contains(tenantTableName, "_"+BKObjectInstShardingTablePrefix) {
+		sepIdx := strings.LastIndex(tenantTableName, "_"+BKObjectInstShardingTablePrefix)
+		return tenantTableName[:sepIdx], tenantTableName[sepIdx+1:], nil
 	}
-	sepIdx := strings.LastIndex(tenantTableName, "_")
+
+	if strings.Contains(tenantTableName, "_"+BKObjectInstAsstShardingTablePrefix) {
+		sepIdx := strings.LastIndex(tenantTableName, "_"+BKObjectInstAsstShardingTablePrefix)
+		return tenantTableName[:sepIdx], tenantTableName[sepIdx+1:], nil
+	}
+
+	// TODO compatible for old table name with cc_ prefix, change this after this prefix is removed
+	sepIdx := strings.LastIndex(tenantTableName, "_cc_")
 	if sepIdx == -1 {
 		return "", "", errors.New("tenant table name is invalid")
 	}

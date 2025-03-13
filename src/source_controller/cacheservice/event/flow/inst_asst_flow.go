@@ -14,18 +14,16 @@ package flow
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/stream/types"
 )
 
-func newInstAsstFlow(ctx context.Context, opts flowOptions, getDeleteEventDetails getDeleteEventDetailsFunc,
-	parseEvent parseEventFunc) error {
-
-	flow, err := NewFlow(opts, getDeleteEventDetails, parseEvent)
+func newInstAsstFlow(ctx context.Context, opts flowOptions, parseEvent parseEventFunc) error {
+	flow, err := NewFlow(opts, parseEvent)
 	if err != nil {
 		return err
 	}
@@ -45,44 +43,34 @@ type InstAsstFlow struct {
 func (f *InstAsstFlow) RunFlow(ctx context.Context) error {
 	blog.Infof("start run flow for key: %s.", f.key.Namespace())
 
-	f.tokenHandler = NewFlowTokenHandler(f.key, f.watchDB, f.metrics)
+	f.tokenHandler = NewFlowTokenHandler(f.key, f.metrics)
 
-	startAtTime, err := f.tokenHandler.getStartWatchTime(ctx)
-	if err != nil {
-		blog.Errorf("get start watch time for %s failed, err: %v", f.key.Collection(), err)
-		return err
-	}
-
-	watchOpts := &types.WatchOptions{
-		Options: types.Options{
-			EventStruct: f.EventStruct,
-			// watch all tables with the prefix of instance association table
-			CollectionFilter: map[string]interface{}{
-				common.BKDBLIKE: event.InstAsstTablePrefixRegex,
+	opts := &types.LoopBatchTaskOptions{
+		WatchTaskOptions: &types.WatchTaskOptions{
+			Name: f.key.Namespace(),
+			CollOpts: &types.WatchCollOptions{
+				CollectionOptions: types.CollectionOptions{
+					CollectionFilter: &types.CollectionFilter{
+						Regex: fmt.Sprintf("_%s", common.BKObjectInstAsstShardingTablePrefix),
+					},
+					EventStruct: f.EventStruct,
+				},
 			},
-			StartAtTime:             startAtTime,
-			WatchFatalErrorCallback: f.tokenHandler.resetWatchToken,
-		},
-	}
-
-	opts := &types.LoopBatchOptions{
-		LoopOptions: types.LoopOptions{
-			Name:         f.key.Namespace(),
-			WatchOpt:     watchOpts,
 			TokenHandler: f.tokenHandler,
 			RetryOptions: &types.RetryOptions{
 				MaxRetryCount: 10,
 				RetryDuration: 1 * time.Second,
 			},
 		},
-		EventHandler: &types.BatchHandler{
+		EventHandler: &types.TaskBatchHandler{
 			DoBatch: f.doBatch,
 		},
 		BatchSize: batchSize,
 	}
 
-	if err := f.watch.WithBatch(opts); err != nil {
-		blog.Errorf("run flow, but watch batch failed, err: %v", err)
+	err := f.task.AddLoopBatchTask(opts)
+	if err != nil {
+		blog.Errorf("run %s flow, but add loop batch task failed, err: %v", f.key.Namespace(), err)
 		return err
 	}
 

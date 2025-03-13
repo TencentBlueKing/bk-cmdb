@@ -38,15 +38,7 @@ func (s *cacheService) Healthz(req *restful.Request, resp *restful.Response) {
 	meta.Items = append(meta.Items, zkItem)
 
 	// mongodb status
-	mongoItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityMongo}
-	if mongodb.Client() == nil {
-		mongoItem.IsHealthy = false
-		mongoItem.Message = "not connected"
-	} else if err := mongodb.Client().Ping(); err != nil {
-		mongoItem.IsHealthy = false
-		mongoItem.Message = err.Error()
-	}
-	meta.Items = append(meta.Items, mongoItem)
+	meta.Items = append(meta.Items, mongodb.Healthz()...)
 
 	// redis status
 	redisItem := metric.HealthItem{IsHealthy: true, Name: types.CCFunctionalityRedis}
