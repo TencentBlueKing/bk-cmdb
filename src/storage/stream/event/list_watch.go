@@ -18,19 +18,28 @@ import (
 
 	"configcenter/src/common/blog"
 	"configcenter/src/storage/stream/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// ListWatch TODO
+// ListWatch list all data and watch change stream events
 func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*types.Watcher, error) {
 	if err := opts.CheckSetDefault(); err != nil {
+		return nil, err
+	}
+
+	// list collections
+	collections, err := e.client.Database(e.database).ListCollectionNames(ctx, bson.M{})
+	if err != nil {
+		blog.Errorf("list db: %s collections failed, err :%v", e.database, err)
 		return nil, err
 	}
 
 	eventChan := make(chan *types.Event, types.DefaultEventChanSize)
 
 	go func() {
-		pipeline, streamOptions := generateOptions(&opts.Options)
+		pipeline, streamOptions, collOptsInfo := generateOptions(&opts.Options)
 
 		// TODO: should use the mongodb cluster timestamp, if the time is not synchronise with
 		// mongodb cluster time, then we may have to lost some events.
@@ -50,70 +59,25 @@ func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*t
 		// we watch the stream at first, so that we can know if we can watch success.
 		// and, we do not read the event stream immediately, we wait until all the data
 		// has been listed from database.
-		stream, err := e.client.Database(e.database).
-			Collection(opts.Collection).
-			Watch(ctx, pipeline, streamOptions)
-		if err != nil && isFatalError(err) {
-			// TODO: send alarm immediately.
-			blog.Errorf("mongodb watch collection: %s got a fatal error, skip resume token and retry, err: %v",
-				opts.Collection, err)
-			// reset the resume token, because we can not use the former resume token to watch success for now.
-			streamOptions.StartAfter = nil
-			opts.StartAfterToken = nil
-			// cause we have already got a fatal error, we can not try to watch from where we lost.
-			// so re-watch from 1 minutes ago to avoid lost events.
-			// Note: apparently, we may got duplicate events with this re-watch
-			startAtTime := uint32(time.Now().Unix()) - 60
-			streamOptions.StartAtOperationTime = &primitive.Timestamp{
-				T: startAtTime,
-				I: 0,
-			}
-			opts.StartAtTime = &types.TimeStamp{Sec: startAtTime}
-
-			if opts.WatchFatalErrorCallback != nil {
-				err := opts.WatchFatalErrorCallback(types.TimeStamp{Sec: startAtTime})
-				if err != nil {
-					blog.Errorf("do watch fatal error callback for coll %s failed, err: %v", opts.Collection, err)
-				}
-			}
-
-			stream, err = e.client.
-				Database(e.database).
-				Collection(opts.Collection).
-				Watch(ctx, pipeline, streamOptions)
-		}
-
+		stream, streamOptions, watchOpts, err := e.watch(ctx, pipeline, streamOptions, &opts.Options)
 		if err != nil {
 			blog.Fatalf("mongodb watch failed with conf: %+v, err: %v", *opts, err)
 		}
 
-		// prepare for list all the data.
-		totalCnt, err := e.client.Database(e.database).
-			Collection(opts.Collection).
-			CountDocuments(ctx, opts.Filter)
-		if err != nil {
-			// close the event stream.
-			stream.Close(ctx)
-
-			blog.Fatalf("count db %s, collection: %s with filter: %+v failed, err: %v",
-				e.database, opts.Collection, opts.Filter, err)
-		}
-
-		listOptions := &types.ListOptions{
-			Filter:      opts.Filter,
-			EventStruct: opts.EventStruct,
-			Collection:  opts.Collection,
-			PageSize:    opts.PageSize,
+		listOpts := &listOptions{
+			collections:  collections,
+			collOptsInfo: collOptsInfo,
+			pageSize:     opts.PageSize,
 		}
 
 		go func() {
 			// list all the data from the collection and send it as an event now.
-			e.lister(ctx, true, totalCnt, listOptions, eventChan)
+			e.lister(ctx, true, listOpts, eventChan)
 
 			select {
 			case <-ctx.Done():
-				blog.Errorf("received stopped watch signal, stop list db: %s, collection: %s, err: %v", e.database,
-					opts.Collection, ctx.Err())
+				blog.Errorf("received stopped watch signal, stop list db: %s, name: %s, err: %v", e.database, e.DBName,
+					ctx.Err())
 				return
 			default:
 
@@ -121,7 +85,15 @@ func (e *Event) ListWatch(ctx context.Context, opts *types.ListWatchOptions) (*t
 
 			// all the data has already listed and send the event.
 			// now, it's time to watch the event stream.
-			e.loopWatch(ctx, &opts.Options, streamOptions, stream, pipeline, eventChan)
+			loopOpts := &loopWatchOpts{
+				Options:       watchOpts,
+				streamOptions: streamOptions,
+				stream:        stream,
+				pipeline:      pipeline,
+				eventChan:     eventChan,
+				collOptsInfo:  collOptsInfo,
+			}
+			e.loopWatch(ctx, loopOpts)
 		}()
 	}()
 
