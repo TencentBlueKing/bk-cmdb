@@ -32,10 +32,13 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	commontype "configcenter/src/common/types"
+	"configcenter/src/common/util"
 	"configcenter/src/common/version"
 	"configcenter/src/common/watch"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/source_controller/cacheservice/event"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/sharding"
 	daltypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 	streamtypes "configcenter/src/storage/stream/types"
@@ -45,26 +48,23 @@ import (
 )
 
 func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) {
-
-	rHeader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-	if err := s.createWatchDBChainCollections(kit); err != nil {
-		blog.Errorf("create watch db chain collections failed, err: %v", err)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
-	}
+	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)
 
 	result, err := upgrader.Upgrade(kit, s.db, nil)
 	if err != nil {
 		blog.Errorf("db upgrade failed, err: %v", err)
 		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
+			Msg: kit.CCError.Errorf(common.CCErrCommMigrateFailed, err.Error()),
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+
+	if err = s.createWatchDBChainCollections(kit); err != nil {
+		blog.Errorf("create watch db chain collections failed, err: %v", err)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+			Msg: kit.CCError.Errorf(common.CCErrCommMigrateFailed, err.Error()),
+		})
 		return
 	}
 
@@ -75,19 +75,24 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 const dbChainTTLTime = 5 * 24 * 60 * 60
 
 func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
-	// create watch token table to store the last watch token info for every collections
-	exists, err := s.watchDB.Shard(kit.SysShardOpts()).HasTable(s.ctx, common.BKTableNameWatchToken)
-	if err != nil {
-		blog.Errorf("check if table %s exists failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, kit.Rid)
+	// TODO 在upgrader里增加一条master db到master watch db的relation
+
+	// get watch db uuid to db uuids relation
+	relations := make([]sharding.WatchDBRelation, 0)
+	if err := s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchDBRelation).Find(nil).
+		All(kit.Ctx, &relations); err != nil {
+		blog.Errorf("get watch db relation failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
-	if !exists {
-		err = s.watchDB.Shard(kit.SysShardOpts()).CreateTable(s.ctx, common.BKTableNameWatchToken)
-		if err != nil && !mongodb.IsDuplicatedError(err) {
-			blog.Errorf("create table %s failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, kit.Rid)
-			return err
-		}
+	watchDBToDBRelation := make(map[string][]string)
+	for _, relation := range relations {
+		watchDBToDBRelation[relation.WatchDB] = append(watchDBToDBRelation[relation.WatchDB], relation.DB)
+	}
+
+	// create watch token table and init the watch token for dbs
+	if err := s.createWatchToken(kit, watchDBToDBRelation); err != nil {
+		return err
 	}
 
 	// create watch chain node table and init the last token info as empty for all collections
@@ -100,8 +105,8 @@ func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 		}
 
 		err = tenant.ExecForAllTenants(func(tenantID string) error {
-			kit = kit.NewKit()
-			kit.TenantID = tenantID
+			// TODO 在新增租户初始化时同时增加watch相关表
+			kit = kit.NewKit().WithTenant(tenantID)
 			exists, err := s.watchDB.Shard(kit.ShardOpts()).HasTable(s.ctx, key.ChainCollection())
 			if err != nil {
 				blog.Errorf("check if table %s exists failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
@@ -116,11 +121,11 @@ func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 				}
 			}
 
-			if err = s.createWatchIndexes(kit, tenantID, cursorType, key); err != nil {
+			if err = s.createWatchIndexes(kit, cursorType, key); err != nil {
 				return err
 			}
 
-			if err = s.createWatchToken(kit, tenantID, key); err != nil {
+			if err = s.createLastWatchEvent(kit, key); err != nil {
 				return err
 			}
 			return nil
@@ -128,11 +133,81 @@ func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 		if err != nil {
 			return err
 		}
+
+		err = s.createWatchTokenForEventKey(kit, key, watchDBToDBRelation)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (s *Service) createWatchIndexes(kit *rest.Kit, tenantID string, cursorType watch.CursorType, key event.Key) error {
+func (s *Service) createWatchToken(kit *rest.Kit, watchDBToDBRelation map[string][]string) error {
+	return s.watchDB.ExecForAllDB(func(watchDB local.DB) error {
+		// create watch token table to store the last watch token info for db and every collection
+		exists, err := watchDB.HasTable(s.ctx, common.BKTableNameWatchToken)
+		if err != nil {
+			blog.Errorf("check if table %s exists failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, kit.Rid)
+			return err
+		}
+
+		if !exists {
+			err = watchDB.CreateTable(s.ctx, common.BKTableNameWatchToken)
+			if err != nil && !mongodb.IsDuplicatedError(err) {
+				blog.Errorf("create table %s failed, err: %v, rid: %s", common.BKTableNameWatchToken, err, kit.Rid)
+				return err
+			}
+		}
+
+		// get all exist db watch tokens
+		mongo, ok := watchDB.(*local.Mongo)
+		if !ok {
+			return fmt.Errorf("db is not *local.Mongo type")
+		}
+		uuids := watchDBToDBRelation[mongo.GetMongoClient().UUID()]
+		if len(uuids) == 0 {
+			return nil
+		}
+
+		filter := map[string]interface{}{
+			common.MongoMetaID: map[string]interface{}{common.BKDBIN: uuids},
+		}
+
+		existUUIDs, err := watchDB.Table(common.BKTableNameWatchToken).Distinct(kit.Ctx, common.MongoMetaID, filter)
+		if err != nil {
+			blog.Errorf("check if dbs(%+v) watch token exists failed, err: %v, rid: %s", uuids, err, kit.Rid)
+			return err
+		}
+
+		existUUIDMap := make(map[string]struct{})
+		for _, uuid := range existUUIDs {
+			existUUIDMap[util.GetStrByInterface(uuid)] = struct{}{}
+		}
+
+		// create watch token for dbs to be watched
+		for _, uuid := range uuids {
+			if _, exists := existUUIDMap[uuid]; exists {
+				continue
+			}
+
+			data := mapstr.MapStr{
+				common.MongoMetaID:  uuid,
+				common.BKTokenField: "",
+				common.BKStartAtTimeField: streamtypes.TimeStamp{
+					Sec:  uint32(time.Now().Unix()),
+					Nano: 0,
+				},
+			}
+			if err = watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+				blog.Errorf("create db watch token failed, err: %v, data: %+v, rid: %s", err, data, kit.Rid)
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (s *Service) createWatchIndexes(kit *rest.Kit, cursorType watch.CursorType, key event.Key) error {
 	indexes := []daltypes.Index{
 		{Name: "index_id", Keys: bson.D{{common.BKFieldID, -1}}, Background: true, Unique: true},
 		{Name: "index_cursor", Keys: bson.D{{common.BKCursorField, -1}}, Background: true, Unique: true},
@@ -172,12 +247,36 @@ func (s *Service) createWatchIndexes(kit *rest.Kit, tenantID string, cursorType 
 	return nil
 }
 
-func (s *Service) createWatchToken(kit *rest.Kit, tenantID string, key event.Key) error {
+func (s *Service) createWatchTokenForEventKey(kit *rest.Kit, key event.Key,
+	watchDBToDBRelation map[string][]string) error {
+
+	// create watch token of this key for every db
+	err := s.watchDB.ExecForAllDB(func(db local.DB) error {
+		mongo, ok := db.(*local.Mongo)
+		if !ok {
+			return fmt.Errorf("db is not *local.Mongo type")
+		}
+
+		for _, uuid := range watchDBToDBRelation[mongo.GetMongoClient().UUID()] {
+			if err := s.createWatchTokenForDB(kit, db, uuid, key); err != nil {
+				blog.Errorf("init %s key %s watch token failed, err: %v, rid: %s", uuid, key.Namespace(), err, kit.Rid)
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Service) createWatchTokenForDB(kit *rest.Kit, watchDB local.DB, uuid string, key event.Key) error {
 	filter := map[string]interface{}{
-		"_id": key.Collection(),
+		"_id": watch.GenDBWatchTokenID(uuid, key.Collection()),
 	}
 
-	count, err := s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchToken).Find(filter).Count(s.ctx)
+	count, err := watchDB.Table(common.BKTableNameWatchToken).Find(filter).Count(s.ctx)
 	if err != nil {
 		blog.Errorf("check if last watch token exists failed, err: %v, filter: %+v", err, filter)
 		return err
@@ -191,14 +290,15 @@ func (s *Service) createWatchToken(kit *rest.Kit, tenantID string, key event.Key
 		// host identity's watch token is different with other identity.
 		// only set coll is ok, the other fields is useless
 		data := mapstr.MapStr{
-			"_id":                              key.Collection(),
-			common.BKTableNameBaseHost:         watch.LastChainNodeData{Coll: common.BKTableNameBaseHost},
-			common.BKTableNameModuleHostConfig: watch.LastChainNodeData{Coll: common.BKTableNameModuleHostConfig},
-			common.BKTableNameBaseProcess:      watch.LastChainNodeData{Coll: common.BKTableNameBaseProcess},
+			"_id":                                     watch.GenDBWatchTokenID(uuid, key.Collection()),
+			common.BKTableNameBaseHost:                new(streamtypes.TokenInfo),
+			common.BKTableNameModuleHostConfig:        new(streamtypes.TokenInfo),
+			common.BKTableNameBaseProcess:             new(streamtypes.TokenInfo),
+			common.BKTableNameProcessInstanceRelation: new(streamtypes.TokenInfo),
 		}
-		err = s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchToken).Insert(s.ctx, data)
+		err = watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data)
 		if err != nil {
-			blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
+			blog.Errorf("init last watch token failed, err: %v, data: %+v, rid: %s", err, data, kit.Rid)
 			return err
 		}
 		return nil
@@ -207,30 +307,55 @@ func (s *Service) createWatchToken(kit *rest.Kit, tenantID string, key event.Key
 	if key.Collection() == event.BizSetRelationKey.Collection() {
 		// biz set relation's watch token is generated in the same way with the host identity's watch token
 		data := mapstr.MapStr{
-			"_id":                        key.Collection(),
-			common.BKTableNameBaseApp:    watch.LastChainNodeData{Coll: common.BKTableNameBaseApp},
-			common.BKTableNameBaseBizSet: watch.LastChainNodeData{Coll: common.BKTableNameBaseBizSet},
-			common.BKFieldID:             0,
-			common.BKTokenField:          "",
+			"_id":                        watch.GenDBWatchTokenID(uuid, key.Collection()),
+			common.BKTableNameBaseApp:    new(streamtypes.TokenInfo),
+			common.BKTableNameBaseBizSet: new(streamtypes.TokenInfo),
 		}
-		err = s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchToken).Insert(s.ctx, data)
+		err = watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data)
 		if err != nil {
-			blog.Errorf("init last biz set relation watch token failed, err: %v, data: %+v", err, data)
+			blog.Errorf("init last biz set rel watch token failed, err: %v, data: %+v, rid: %s", err, data, kit.Rid)
 			return err
 		}
 		return nil
 	}
 
-	data := watch.LastChainNodeData{
-		Coll:  key.Collection(),
-		Token: "",
-		StartAtTime: streamtypes.TimeStamp{
+	data := mapstr.MapStr{
+		common.MongoMetaID:  watch.GenDBWatchTokenID(uuid, key.Collection()),
+		common.BKTokenField: "",
+		common.BKStartAtTimeField: streamtypes.TimeStamp{
 			Sec:  uint32(time.Now().Unix()),
 			Nano: 0,
 		},
 	}
-	if err = s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
-		blog.Errorf("init last watch token failed, err: %v, data: %+v", err, data)
+	if err = watchDB.Table(common.BKTableNameWatchToken).Insert(s.ctx, data); err != nil {
+		blog.Errorf("init last watch token failed, err: %v, data: %+v, rid: %s", err, data, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+func (s *Service) createLastWatchEvent(kit *rest.Kit, key event.Key) error {
+	filter := map[string]interface{}{
+		"_id": key.Collection(),
+	}
+
+	count, err := s.watchDB.Shard(kit.ShardOpts()).Table(common.BKTableNameLastWatchEvent).Find(filter).Count(s.ctx)
+	if err != nil {
+		blog.Errorf("check if last watch event exists failed, err: %v, filter: %+v, rid: %s", err, filter, kit.Rid)
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	data := watch.LastChainNodeData{
+		Coll:   key.Collection(),
+		ID:     0,
+		Cursor: "",
+	}
+	if err = s.watchDB.Shard(kit.ShardOpts()).Table(common.BKTableNameLastWatchEvent).Insert(s.ctx, data); err != nil {
+		blog.Errorf("create last watch event failed, err: %v, data: %+v, rid: %s", err, data, kit.Rid)
 		return err
 	}
 	return nil
