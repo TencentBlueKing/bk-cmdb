@@ -24,64 +24,54 @@ import (
 	kubetypes "configcenter/src/kube/types"
 )
 
-var delArchiveCollMap = map[string]string{
-	common.BKTableNameModuleHostConfig:        common.BKTableNameDelArchive,
-	common.BKTableNameBaseHost:                common.BKTableNameDelArchive,
-	common.BKTableNameBaseApp:                 common.BKTableNameDelArchive,
-	common.BKTableNameBaseSet:                 common.BKTableNameDelArchive,
-	common.BKTableNameBaseModule:              common.BKTableNameDelArchive,
-	common.BKTableNameSetTemplate:             common.BKTableNameDelArchive,
-	common.BKTableNameBaseProcess:             common.BKTableNameDelArchive,
-	common.BKTableNameProcessInstanceRelation: common.BKTableNameDelArchive,
-	common.BKTableNameBaseBizSet:              common.BKTableNameDelArchive,
-	common.BKTableNameBasePlat:                common.BKTableNameDelArchive,
-	common.BKTableNameBaseProject:             common.BKTableNameDelArchive,
-	fullsynccond.BKTableNameFullSyncCond:      common.BKTableNameDelArchive,
+var delArchiveCollMap = map[string]struct{}{
+	common.BKTableNameModuleHostConfig:        {},
+	common.BKTableNameBaseHost:                {},
+	common.BKTableNameBaseApp:                 {},
+	common.BKTableNameBaseSet:                 {},
+	common.BKTableNameBaseModule:              {},
+	common.BKTableNameSetTemplate:             {},
+	common.BKTableNameBaseProcess:             {},
+	common.BKTableNameProcessInstanceRelation: {},
+	common.BKTableNameBaseBizSet:              {},
+	common.BKTableNameBasePlat:                {},
+	common.BKTableNameBaseProject:             {},
+	fullsynccond.BKTableNameFullSyncCond:      {},
 
-	common.BKTableNameBaseInst:         common.BKTableNameDelArchive,
-	common.BKTableNameMainlineInstance: common.BKTableNameDelArchive,
-	common.BKTableNameInstAsst:         common.BKTableNameDelArchive,
+	common.BKTableNameBaseInst:         {},
+	common.BKTableNameMainlineInstance: {},
+	common.BKTableNameInstAsst:         {},
 
-	common.BKTableNameServiceInstance: common.BKTableNameDelArchive,
+	common.BKTableNameServiceInstance: {},
 
-	kubetypes.BKTableNameBaseCluster:        common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseNode:           common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseNamespace:      common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseWorkload:       common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseDeployment:     common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseStatefulSet:    common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseDaemonSet:      common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameGameDeployment:     common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameGameStatefulSet:    common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseCronJob:        common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseJob:            common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBasePodWorkload:    common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseCustom:         common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBasePod:            common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameBaseContainer:      common.BKTableNameKubeDelArchive,
-	kubetypes.BKTableNameNsSharedClusterRel: common.BKTableNameKubeDelArchive,
+	kubetypes.BKTableNameBaseCluster:        {},
+	kubetypes.BKTableNameBaseNode:           {},
+	kubetypes.BKTableNameBaseNamespace:      {},
+	kubetypes.BKTableNameBaseWorkload:       {},
+	kubetypes.BKTableNameBaseDeployment:     {},
+	kubetypes.BKTableNameBaseStatefulSet:    {},
+	kubetypes.BKTableNameBaseDaemonSet:      {},
+	kubetypes.BKTableNameGameDeployment:     {},
+	kubetypes.BKTableNameGameStatefulSet:    {},
+	kubetypes.BKTableNameBaseCronJob:        {},
+	kubetypes.BKTableNameBaseJob:            {},
+	kubetypes.BKTableNameBasePodWorkload:    {},
+	kubetypes.BKTableNameBaseCustom:         {},
+	kubetypes.BKTableNameBasePod:            {},
+	kubetypes.BKTableNameBaseContainer:      {},
+	kubetypes.BKTableNameNsSharedClusterRel: {},
 }
 
-// GetDelArchiveTable get delete archive table
-func GetDelArchiveTable(table string) (string, bool) {
-	delArchiveTable, exists := delArchiveCollMap[table]
+// NeedPreImageTable check if table needs to enable change stream pre-image
+func NeedPreImageTable(table string) bool {
+	_, exists := delArchiveCollMap[table]
 	if exists {
-		return delArchiveTable, true
+		return true
 	}
 
 	if !common.IsObjectShardingTable(table) {
-		return "", false
+		return false
 	}
 
-	return common.BKTableNameDelArchive, true
-}
-
-// GetDelArchiveFields get delete archive fields by table
-func GetDelArchiveFields(table string) []string {
-	switch table {
-	case common.BKTableNameServiceInstance:
-		return []string{common.BKFieldID}
-	}
-
-	return make([]string, 0)
+	return true
 }
