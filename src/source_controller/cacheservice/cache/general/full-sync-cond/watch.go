@@ -31,6 +31,7 @@ import (
 	"configcenter/src/common/util"
 	cachetypes "configcenter/src/source_controller/cacheservice/cache/general/types"
 	tokenhandler "configcenter/src/source_controller/cacheservice/cache/token-handler"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/types"
 )
@@ -39,21 +40,19 @@ import (
 func (f *FullSyncCond) Watch() error {
 	tokenHandler := tokenhandler.NewMemoryTokenHandler()
 
-	startAtTime := &types.TimeStamp{Sec: uint32(time.Now().Unix())}
-
 	if err := f.initFullSyncCond(); err != nil {
 		return err
 	}
 
-	loopOptions := &types.LoopBatchOptions{
-		LoopOptions: types.LoopOptions{
+	opts := &types.LoopBatchTaskOptions{
+		WatchTaskOptions: &types.WatchTaskOptions{
 			Name: "full-sync-cond",
-			WatchOpt: &types.WatchOptions{
-				Options: types.Options{
-					Filter:      make(mapstr.MapStr),
+			CollOpts: &types.WatchCollOptions{
+				CollectionOptions: types.CollectionOptions{
+					CollectionFilter: &types.CollectionFilter{
+						Regex: fullsynccond.BKTableNameFullSyncCond,
+					},
 					EventStruct: new(fullsynccond.FullSyncCond),
-					Collection:  fullsynccond.BKTableNameFullSyncCond,
-					StartAtTime: startAtTime,
 				},
 			},
 			TokenHandler: tokenHandler,
@@ -62,14 +61,15 @@ func (f *FullSyncCond) Watch() error {
 				RetryDuration: 1 * time.Second,
 			},
 		},
-		EventHandler: &types.BatchHandler{
+		EventHandler: &types.TaskBatchHandler{
 			DoBatch: f.doBatch,
 		},
 		BatchSize: 200,
 	}
 
-	if err := f.loopW.WithBatch(loopOptions); err != nil {
-		blog.Errorf("watch full sync cond failed, err: %v", err)
+	err := f.task.AddLoopBatchTask(opts)
+	if err != nil {
+		blog.Errorf("add watch full sync cond task failed, err: %v", err)
 		return err
 	}
 
@@ -77,40 +77,9 @@ func (f *FullSyncCond) Watch() error {
 }
 
 // doBatch batch handle full sync cond event
-func (f *FullSyncCond) doBatch(es []*types.Event) (retry bool) {
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-
-	// get deleted full sync cond oid to info map
-	delOids := make([]string, 0)
-	for _, e := range es {
-		if e.OperationType == types.Delete {
-			delOids = append(delOids, e.Oid)
-		}
-	}
-
-	delOidCondMap := make(map[string]*fullsynccond.FullSyncCond)
-	if len(delOids) > 0 {
-		filter := mapstr.MapStr{
-			"oid":  mapstr.MapStr{common.BKDBIN: delOids},
-			"coll": fullsynccond.BKTableNameFullSyncCond,
-		}
-		archives := make([]delArchive, 0)
-		err := mongodb.Client().Table(common.BKTableNameDelArchive).Find(filter).All(ctx, &archives)
-		if err != nil {
-			blog.Errorf("get deleted full sync cond failed, err: %v, oids: %+v", err, delOids)
-			return true
-		}
-
-		for _, archive := range archives {
-			if archive.Detail == nil {
-				continue
-			}
-			delOidCondMap[archive.Oid] = archive.Detail
-		}
-	}
-
+func (f *FullSyncCond) doBatch(dbInfo *types.DBInfo, es []*types.Event) bool {
 	// aggregate full sync cond event
-	condMap := f.aggregateEvent(es, delOidCondMap)
+	condMap := f.aggregateEvent(es)
 
 	// generate full sync cond event
 	resEventMap := make(map[general.ResType]map[cachetypes.EventType][]*fullsynccond.FullSyncCond)
@@ -148,9 +117,7 @@ func (f *FullSyncCond) doBatch(es []*types.Event) (retry bool) {
 }
 
 // aggregateEvent aggregate full sync cond event
-func (f *FullSyncCond) aggregateEvent(es []*types.Event,
-	delOidCondMap map[string]*fullsynccond.FullSyncCond) map[types.OperType]map[string]*fullsynccond.FullSyncCond {
-
+func (f *FullSyncCond) aggregateEvent(es []*types.Event) map[types.OperType]map[string]*fullsynccond.FullSyncCond {
 	condMap := make(map[types.OperType]map[string]*fullsynccond.FullSyncCond)
 	supportedOps := []types.OperType{types.Insert, types.Update, types.Delete}
 	for _, op := range supportedOps {
@@ -185,16 +152,16 @@ func (f *FullSyncCond) aggregateEvent(es []*types.Event,
 
 			condMap[e.OperationType][condKey] = cond
 		case types.Delete:
-			cond, exists := delOidCondMap[e.Oid]
-			if !exists {
-				blog.Errorf("delete event %s has no matching del archive", e.Oid)
+			cond, ok := e.Document.(*fullsynccond.FullSyncCond)
+			if !ok {
+				blog.Errorf("event document %+v type is invalid", e.Document)
 				continue
 			}
 
 			condKey := genFullSyncCondUniqueKey(cond)
 
 			// if full sync cond with same unique key is inserted before, treat these event as not exists
-			_, exists = condMap[types.Insert][condKey]
+			_, exists := condMap[types.Insert][condKey]
 			if exists {
 				delete(condMap[types.Insert], condKey)
 				continue
@@ -223,11 +190,6 @@ func genFullSyncCondUniqueKey(cond *fullsynccond.FullSyncCond) string {
 	return fmt.Sprintf("%s:%s:%s", cond.Resource, cond.TenantID, cond.SubResource)
 }
 
-type delArchive struct {
-	Oid    string                     `bson:"oid"`
-	Detail *fullsynccond.FullSyncCond `bson:"detail"`
-}
-
 // initFullSyncCond get all full sync cond from db and send initialize event to channel
 func (f *FullSyncCond) initFullSyncCond() error {
 	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
@@ -235,26 +197,33 @@ func (f *FullSyncCond) initFullSyncCond() error {
 
 	fullSyncCondMap := make(map[general.ResType][]*fullsynccond.FullSyncCond)
 
-	cond := make(mapstr.MapStr)
+	err := mongodb.Dal().ExecForAllDB(func(db local.DB) error {
+		cond := make(mapstr.MapStr)
 
-	for {
-		paged := make([]*fullsynccond.FullSyncCond, 0)
-		err := mongodb.Client().Table(fullsynccond.BKTableNameFullSyncCond).Find(cond).Sort(fullsynccond.IDField).
-			Limit(cachetypes.PageSize).All(ctx, &paged)
-		if err != nil {
-			blog.Errorf("paged get full sync cond data failed, cond: %+v, err: %v, rid: %s", cond, err, rid)
-			return err
+		for {
+			paged := make([]*fullsynccond.FullSyncCond, 0)
+			err := db.Table(fullsynccond.BKTableNameFullSyncCond).Find(cond).Sort(fullsynccond.IDField).
+				Limit(cachetypes.PageSize).All(ctx, &paged)
+			if err != nil {
+				blog.Errorf("paged get full sync cond data failed, cond: %+v, err: %v, rid: %s", cond, err, rid)
+				return err
+			}
+
+			for _, data := range paged {
+				fullSyncCondMap[data.Resource] = append(fullSyncCondMap[data.Resource], data)
+			}
+
+			if len(paged) < cachetypes.PageSize {
+				break
+			}
+
+			cond[fullsynccond.IDField] = mapstr.MapStr{common.BKDBGT: paged[len(paged)-1].ID}
 		}
 
-		for _, data := range paged {
-			fullSyncCondMap[data.Resource] = append(fullSyncCondMap[data.Resource], data)
-		}
-
-		if len(paged) < cachetypes.PageSize {
-			break
-		}
-
-		cond[fullsynccond.IDField] = mapstr.MapStr{common.BKDBGT: paged[len(paged)-1].ID}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	// send init full sync cond event to channel

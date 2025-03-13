@@ -19,12 +19,12 @@
 package cache
 
 import (
-	"context"
 	"math/rand"
 	"sync"
 	"time"
 
 	"configcenter/pkg/cache/general"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
 	"configcenter/src/source_controller/cacheservice/cache/tools"
@@ -94,8 +94,6 @@ type basicInfo struct {
 	id     int64
 	oid    string
 	subRes []string
-	// tenant is tenant account
-	tenant string
 }
 
 // dataParser parse the general resource data to basic info
@@ -108,7 +106,7 @@ type getDataByKeysOpt struct {
 }
 
 // dataGetterByKeys get mongodb data by redis keys
-type dataGetterByKeys func(ctx context.Context, opt *getDataByKeysOpt, rid string) ([]any, error)
+type dataGetterByKeys func(kit *rest.Kit, opt *getDataByKeysOpt) ([]any, error)
 
 // listDataOpt is list general resource data from db option
 type listDataOpt struct {
@@ -127,7 +125,7 @@ type listDataRes struct {
 }
 
 // dataLister list mongodb data
-type dataLister func(ctx context.Context, opt *listDataOpt, rid string) (*listDataRes, error)
+type dataLister func(kit *rest.Kit, opt *listDataOpt) (*listDataRes, error)
 
 type uniqueKeyLogics struct {
 	// genKey generator redis key of the unique key type
@@ -174,28 +172,28 @@ func (c *Cache) CacheChangeCh() chan struct{} {
 }
 
 // NeedWatchRes returns whether all resource data needs to be watched, and the specified sub-resources to be watched
-func (c *Cache) NeedWatchRes() (bool, []string) {
+func (c *Cache) NeedWatchRes() (bool, map[string][]string) {
 	if c.needCacheAll || len(c.uniqueKeyLogics) != 0 {
 		return true, nil
 	}
 
-	needWatchAll := false
-	subRes := make([]string, 0)
+	needWatchAllTenants := make([]string, 0)
+	tenantSubResMap := make(map[string][]string)
 	c.fullSyncCondMap.Range(func(idListKey string, cond *types.FullSyncCondInfo) bool {
 		if cond.SubResource == "" {
-			needWatchAll = true
-			return true
+			needWatchAllTenants = append(needWatchAllTenants, cond.TenantID)
+			return false
 		}
 
-		subRes = append(subRes, cond.SubResource)
+		tenantSubResMap[cond.TenantID] = append(tenantSubResMap[cond.TenantID], cond.SubResource)
 		return false
 	})
 
-	if needWatchAll {
-		return true, nil
+	for _, tenantID := range needWatchAllTenants {
+		tenantSubResMap[tenantID] = make([]string, 0)
 	}
 
-	return false, subRes
+	return false, tenantSubResMap
 }
 
 // NeedCache returns if the general resource needs to be cached

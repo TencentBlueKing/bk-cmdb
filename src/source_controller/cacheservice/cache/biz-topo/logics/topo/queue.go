@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/key"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
@@ -32,14 +33,14 @@ type bizRefreshQueue struct {
 	sync.Mutex
 	topoKey  key.Key
 	bizIDs   []int64
-	bizIDMap map[int64]struct{}
+	bizIDMap map[int64]string
 }
 
 func newBizRefreshQueue(topoType types.TopoType) *bizRefreshQueue {
 	queue := &bizRefreshQueue{
 		topoKey:  key.TopoKeyMap[topoType],
 		bizIDs:   make([]int64, 0),
-		bizIDMap: make(map[int64]struct{}),
+		bizIDMap: make(map[int64]string),
 	}
 
 	return queue
@@ -48,14 +49,15 @@ func newBizRefreshQueue(topoType types.TopoType) *bizRefreshQueue {
 // Run refreshing biz topo cache task
 func (q *bizRefreshQueue) Run() {
 	for {
-		bizID, exists := q.Pop()
+		tenantID, bizID, exists := q.Pop()
 		if !exists {
 			time.Sleep(time.Millisecond * 50)
 			continue
 		}
 
 		rid := util.GenerateRID()
-		err := TryRefreshBizTopoByCache(q.topoKey, bizID, rid)
+		kit := rest.NewKit().WithRid(rid).WithTenant(tenantID)
+		err := TryRefreshBizTopoByCache(kit, q.topoKey, bizID)
 		if err != nil {
 			blog.Errorf("try refresh biz %d %s topo failed, err: %v, rid: %s", bizID, q.topoKey.Type(), err, rid)
 			time.Sleep(time.Millisecond * 100)
@@ -65,7 +67,7 @@ func (q *bizRefreshQueue) Run() {
 }
 
 // Push some need refresh bizs
-func (q *bizRefreshQueue) Push(bizIDs ...int64) {
+func (q *bizRefreshQueue) Push(tenantID string, bizIDs ...int64) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -73,34 +75,35 @@ func (q *bizRefreshQueue) Push(bizIDs ...int64) {
 		_, exists := q.bizIDMap[bizID]
 		if !exists {
 			q.bizIDs = append(q.bizIDs, bizID)
-			q.bizIDMap[bizID] = struct{}{}
+			q.bizIDMap[bizID] = tenantID
 		}
 	}
 }
 
 // Pop one need refresh biz
-func (q *bizRefreshQueue) Pop() (int64, bool) {
+func (q *bizRefreshQueue) Pop() (string, int64, bool) {
 	q.Lock()
 	defer q.Unlock()
 
 	if len(q.bizIDs) == 0 {
-		return 0, false
+		return "", 0, false
 	}
 
 	bizID := q.bizIDs[0]
 	q.bizIDs = q.bizIDs[1:]
+	tenantID := q.bizIDMap[bizID]
 	delete(q.bizIDMap, bizID)
 
-	return bizID, true
+	return tenantID, bizID, true
 }
 
 // Remove one need refresh biz
-func (q *bizRefreshQueue) Remove(bizID int64) {
+func (q *bizRefreshQueue) Remove(tenantID string, bizID int64) {
 	q.Lock()
 	defer q.Unlock()
 
-	_, exists := q.bizIDMap[bizID]
-	if !exists {
+	tenant, exists := q.bizIDMap[bizID]
+	if !exists || tenant != tenantID {
 		return
 	}
 
@@ -117,7 +120,7 @@ func (q *bizRefreshQueue) Remove(bizID int64) {
 var bizRefreshQueuePool = make(map[types.TopoType]*bizRefreshQueue)
 
 func init() {
-	refreshQueueTypes := []types.TopoType{types.KubeType}
+	refreshQueueTypes := []types.TopoType{types.KubeType, types.BriefType}
 	for _, queueType := range refreshQueueTypes {
 		queue := newBizRefreshQueue(queueType)
 		bizRefreshQueuePool[queueType] = queue
@@ -126,13 +129,15 @@ func init() {
 }
 
 // AddRefreshBizTopoTask add refresh biz topo cache task
-func AddRefreshBizTopoTask(topoType types.TopoType, bizIDs []int64, rid string) {
+func AddRefreshBizTopoTask(topoType types.TopoType, bizListMap map[string][]int64, rid string) {
 	queue, exists := bizRefreshQueuePool[topoType]
 	if !exists {
 		blog.Errorf("topo type %s has no biz refresh queue, rid: %s", topoType, rid)
 		return
 	}
 
-	bizIDs = util.IntArrayUnique(bizIDs)
-	queue.Push(bizIDs...)
+	for tenantID, bizIDs := range bizListMap {
+		bizIDs = util.IntArrayUnique(bizIDs)
+		queue.Push(tenantID, bizIDs...)
+	}
 }

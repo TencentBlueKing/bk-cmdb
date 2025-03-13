@@ -19,45 +19,36 @@
 package watch
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"strings"
-	"time"
 
 	"configcenter/pkg/cache/general/mapping"
 	"configcenter/pkg/filter"
+	"configcenter/pkg/tenant"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/cache/general/cache"
 	cachetypes "configcenter/src/source_controller/cacheservice/cache/general/types"
 	tokenhandler "configcenter/src/source_controller/cacheservice/cache/token-handler"
-	"configcenter/src/source_controller/cacheservice/event"
+	"configcenter/src/source_controller/cacheservice/event/loop"
 	watchcli "configcenter/src/source_controller/cacheservice/event/watch"
-	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/stream/types"
 )
 
 // Watcher defines mongodb event watcher for general resource
 type Watcher struct {
-	cache        *cache.Cache
-	isMaster     discovery.ServiceManageInterface
-	watchCli     *watchcli.Client
-	tokenHandler *tokenhandler.SingleHandler
-	eventKey     event.Key
+	cache       *cache.Cache
+	loopWatcher *loop.LoopWatcher
 }
 
 // Init general resource mongodb event watcher
 func Init(cache *cache.Cache, isMaster discovery.ServiceManageInterface, watchCli *watchcli.Client) error {
 	watcher := &Watcher{
-		cache:    cache,
-		isMaster: isMaster,
-		watchCli: watchCli,
+		cache:       cache,
+		loopWatcher: loop.NewLoopWatcher(isMaster, watchCli),
 	}
 
 	cache.CacheChangeCh() <- struct{}{}
@@ -78,134 +69,107 @@ func (w *Watcher) watch() error {
 		return err
 	}
 
-	w.eventKey, err = event.GetResourceKeyWithCursorType(cursorType)
+	name := fmt.Sprintf("%s%s:%s", common.BKCacheKeyV3Prefix, "common_res", resType)
+
+	loopEventChan := make(chan loop.TenantEvent)
+
+	go w.watchCacheChange(cursorType, name, loopEventChan)
+
+	opts := &loop.LoopWatchTaskOptions{
+		Name:         name,
+		CursorType:   cursorType,
+		TokenHandler: tokenhandler.NewSingleTokenHandler(name),
+		EventHandler: w.handleEvents,
+		TenantChan:   loopEventChan,
+	}
+
+	err = w.loopWatcher.AddLoopWatchTask(opts)
 	if err != nil {
-		blog.Errorf("get event key with cursor type %s failed, err: %v", cursorType, err)
+		blog.Errorf("watch %s brief biz topo cache failed, err: %v", cursorType, err)
 		return err
 	}
 
-	name := fmt.Sprintf("%s%s:%s", common.BKCacheKeyV3Prefix, "common_res", resType)
-	w.tokenHandler = tokenhandler.NewSingleTokenHandler(name, mongodb.Client())
-
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-	go w.loopWatch(ctx, cursorType)
 	return nil
 }
 
-func (w *Watcher) loopWatch(ctx context.Context, cursorType watch.CursorType) {
-	prevStatus := w.isMaster.IsMaster()
-
-	opts := &watch.WatchEventOptions{
-		Resource: cursorType,
-	}
-
+func (w *Watcher) watchCacheChange(cursorType watch.CursorType, name string, loopEventChan chan<- loop.TenantEvent) {
+	tenantChan := make(<-chan tenant.TenantEvent)
 	for {
-		// get need watched resource when initialization and cache changes, wait until the cache needs watch
 		select {
 		case <-w.cache.CacheChangeCh():
-			for {
-				watchAll, subRes := w.cache.NeedWatchRes()
-				if watchAll || len(subRes) > 0 {
-					opts.Filter.SubResources = subRes
-					break
-				}
-				blog.Infof("watch %s event, but do not need cache, wait until it needs cache again", cursorType)
-				prevStatus = false
-				select {
-				case <-w.cache.CacheChangeCh():
-				}
-			}
-		default:
-		}
-
-		isMaster := w.isMaster.IsMaster()
-		if !isMaster {
-			prevStatus = false
-			blog.V(4).Infof("watch %s event, but not master, skip.", cursorType)
-			time.Sleep(time.Minute)
-			continue
-		}
-
-		// need watch status changed, re-watch from the last cursor with renewed watch resource type
-		if !prevStatus {
-			prevStatus = isMaster
-			var err error
-			opts.Cursor, err = w.tokenHandler.GetStartWatchToken(ctx)
-			if err != nil {
-				blog.Errorf("get %s start watch token failed, err: %v", cursorType, err)
-				time.Sleep(500 * time.Millisecond)
+			// get need watched resource when initialization and cache changes
+			watchAll, tenantSubResMap := w.cache.NeedWatchRes()
+			if watchAll {
+				// watch all tenants' event
+				tenantChan = tenant.NewTenantEventChan(name)
 				continue
 			}
-			select {
-			case w.cache.CacheChangeCh() <- struct{}{}:
-			default:
-			}
-			continue
-		}
 
-		retryWrapper(5, func() error {
-			return w.doWatch(ctx, opts)
-		})
+			// watch specific tenants' event
+			if len(tenantSubResMap) > 0 {
+				for tenantID, subRes := range tenantSubResMap {
+					loopEventChan <- loop.TenantEvent{
+						EventType: watch.Update,
+						TenantID:  tenantID,
+						WatchOpts: &watch.WatchEventOptions{
+							Resource: cursorType,
+							Filter: watch.WatchEventFilter{
+								SubResources: util.StrArrayUnique(subRes),
+							},
+						},
+					}
+				}
+				continue
+			}
+			blog.Infof("watch %s event, but do not need cache, wait until it needs cache again", cursorType)
+		case e, ok := <-tenantChan:
+			if !ok {
+				// tenant chan is closed, cancel all tenants' loop watch task
+				for _, tenant := range tenant.GetAllTenants() {
+					loopEventChan <- loop.TenantEvent{
+						EventType: watch.Delete,
+						TenantID:  tenant.TenantID,
+					}
+				}
+				tenant.RemoveTenantEventChan(name)
+				tenantChan = make(<-chan tenant.TenantEvent)
+				continue
+			}
+
+			switch e.EventType {
+			case tenant.Create:
+				loopEventChan <- loop.TenantEvent{
+					EventType: watch.Create,
+					TenantID:  e.TenantID,
+					WatchOpts: &watch.WatchEventOptions{Resource: cursorType},
+				}
+			case tenant.Delete:
+				loopEventChan <- loop.TenantEvent{
+					EventType: watch.Delete,
+					TenantID:  e.TenantID,
+				}
+			}
+
+		}
 	}
 }
 
-func (w *Watcher) doWatch(ctx context.Context, opts *watch.WatchEventOptions) error {
-	kit := &rest.Kit{
-		Rid:      util.GenerateRID(),
-		Header:   make(http.Header),
-		Ctx:      ctx,
-		CCError:  errors.NewFromCtx(errors.EmptyErrorsSetting).CreateDefaultCCErrorIf("zh-cn"),
-		User:     common.CCSystemOperatorUserName,
-		TenantID: common.BKSuperTenantID,
-	}
-
-	var events []*watch.WatchEventDetail
-	var err error
-	if opts.Cursor == "" {
-		lastEvent, err := w.watchCli.WatchFromNow(kit, w.eventKey, opts)
-		if err != nil {
-			blog.Errorf("watch %s event from now failed, re-watch again, err: %v, rid: %s", opts.Resource, err, kit.Rid)
-			return err
-		}
-		events = []*watch.WatchEventDetail{lastEvent}
-	} else {
-		events, err = w.watchCli.WatchWithCursor(kit, w.eventKey, opts)
-		if err != nil {
-			if ccErr, ok := err.(errors.CCErrorCoder); ok && ccErr.GetCode() == common.CCErrEventChainNodeNotExist {
-				// the cursor does not exist, re-watch from now
-				opts.Cursor = ""
-				if err = w.tokenHandler.ResetWatchToken(types.TimeStamp{Sec: uint32(time.Now().Unix())}); err != nil {
-					blog.Errorf("reset %s watch token failed, err: %v, rid: %s", opts.Resource, err, kit.Rid)
-					return err
-				}
-
-				blog.Errorf("watch event failed, re-watch from now, err: %v, opt: %+v, rid: %s", err, opts, kit.Rid)
-				return ccErr
-			}
-			blog.Errorf("watch event failed, err: %v, opt: %+v, rid: %s", err, opts, kit.Rid)
-			return err
-		}
-	}
-
+func (w *Watcher) handleEvents(kit *rest.Kit, events []*watch.WatchEventDetail) error {
 	if len(events) == 0 {
 		return nil
 	}
 
 	upsertDataArr, delDataArr := w.aggregateEvent(events, kit.Rid)
 
-	if err = w.cache.AddData(ctx, upsertDataArr, kit.Rid); err != nil {
-		blog.Errorf("add %s cache data failed, err: %v, data: %+v, rid: %s", opts.Resource, err, upsertDataArr, kit.Rid)
+	if err := w.cache.AddData(kit, upsertDataArr); err != nil {
+		blog.Errorf("add %s cache data failed, err: %v, data: %+v, rid: %s", w.cache.Key().Resource(), err,
+			upsertDataArr, kit.Rid)
 		return err
 	}
 
-	if err = w.cache.RemoveData(ctx, delDataArr, kit.Rid); err != nil {
-		blog.Errorf("delete %s cache data failed, err: %v, data: %+v, rid: %s", opts.Resource, err, delDataArr, kit.Rid)
-		return err
-	}
-
-	opts.Cursor = events[len(events)-1].Cursor
-	if err = w.tokenHandler.SetLastWatchToken(ctx, opts.Cursor); err != nil {
-		blog.Errorf("set %s watch token to %s failed, err: %v, rid: %s", opts.Resource, opts.Cursor, err, kit.Rid)
+	if err := w.cache.RemoveData(kit, delDataArr); err != nil {
+		blog.Errorf("delete %s cache data failed, err: %v, data: %+v, rid: %s", w.cache.Key().Resource(), err,
+			delDataArr, kit.Rid)
 		return err
 	}
 	return nil
@@ -259,14 +223,4 @@ func (w *Watcher) aggregateEvent(events []*watch.WatchEventDetail, rid string) (
 		delDataArr = append(delDataArr, data)
 	}
 	return upsertDataArr, delDataArr
-}
-
-func retryWrapper(maxRetry int, handler func() error) {
-	for retry := 0; retry < maxRetry; retry++ {
-		err := handler()
-		if err == nil {
-			return
-		}
-		time.Sleep(500 * time.Millisecond * time.Duration(retry))
-	}
 }

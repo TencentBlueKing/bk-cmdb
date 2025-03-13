@@ -120,6 +120,15 @@ const (
 
 	// BKTableNameObjectBaseMapping object base mapping table
 	BKTableNameObjectBaseMapping = "ObjectBaseMapping"
+
+	// BKTableNameWatchDBRelation is the db and watch db relation table
+	BKTableNameWatchDBRelation = "WatchDBRelation"
+
+	// BKTableNameFullSyncCond is the full synchronization cache condition table
+	BKTableNameFullSyncCond = "FullSyncCond"
+
+	// BKTableNameCacheWatchToken is the cache event watch token table
+	BKTableNameCacheWatchToken = "CacheWatchToken"
 )
 
 // AllTables is all table names, not include the sharding tables which is created dynamically,
@@ -284,6 +293,7 @@ var platformTableMap = map[string]struct{}{
 	BKTableNameAPITask:            {},
 	BKTableNameAPITaskSyncHistory: {},
 	BKTableNameWatchDBRelation:    {},
+	BKTableNameFullSyncCond:       {},
 }
 
 // IsPlatformTable returns if the target table is a platform table
@@ -295,6 +305,8 @@ func IsPlatformTable(tableName string) bool {
 var platformTableWithTenantMap = map[string]struct{}{
 	BKTableNameAPITask:            {},
 	BKTableNameAPITaskSyncHistory: {},
+	BKTableNameFullSyncCond:       {},
+	BKTableNameCacheWatchToken:    {},
 }
 
 // IsPlatformTableWithTenant returns if the target table is a platform table with tenant id field

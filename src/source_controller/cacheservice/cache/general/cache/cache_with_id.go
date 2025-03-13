@@ -18,7 +18,6 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -26,6 +25,7 @@ import (
 	"configcenter/pkg/cache/general"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
@@ -49,8 +49,7 @@ func newMapStrCacheWithID(key *general.Key, needCacheAll bool, table, idField st
 				return nil, fmt.Errorf("parse id %+v failed, err: %v", data[idField], err)
 			}
 			return &basicInfo{
-				id:     id,
-				tenant: util.GetStrByInterface(data[common.TenantID]),
+				id: id,
 			}, nil
 		})
 }
@@ -100,10 +99,10 @@ func parseDataWithID[T any](idField string, parser func(data T, idField string) 
 }
 
 func getDataByID[T any](table, idField string) dataGetterByKeys {
-	return func(ctx context.Context, opt *getDataByKeysOpt, rid string) ([]any, error) {
-		ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	return func(kit *rest.Kit, opt *getDataByKeysOpt) ([]any, error) {
+		kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
-		dataArr, err := getDBDataByID[T](ctx, opt, table, idField, rid)
+		dataArr, err := getDBDataByID[T](kit, opt, table, idField)
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +111,7 @@ func getDataByID[T any](table, idField string) dataGetterByKeys {
 	}
 }
 
-func getDBDataByID[T any](ctx context.Context, opt *getDataByKeysOpt, table, idField string, rid string) ([]T, error) {
+func getDBDataByID[T any](kit *rest.Kit, opt *getDataByKeysOpt, table, idField string) ([]T, error) {
 	if len(opt.Keys) == 0 {
 		return make([]T, 0), nil
 	}
@@ -122,7 +121,7 @@ func getDBDataByID[T any](ctx context.Context, opt *getDataByKeysOpt, table, idF
 	for i, key := range opt.Keys {
 		id, err := strconv.ParseInt(key, 10, 64)
 		if err != nil {
-			blog.Errorf("parse id (index: %d, key: %s) failed, err: %v, rid: %s", i, key, err, rid)
+			blog.Errorf("parse id (index: %d, key: %s) failed, err: %v, rid: %s", i, key, err, kit.Rid)
 			return nil, err
 		}
 		ids[i] = id
@@ -133,19 +132,19 @@ func getDBDataByID[T any](ctx context.Context, opt *getDataByKeysOpt, table, idF
 	}
 
 	dataArr := make([]T, 0)
-	if err := mongodb.Client().Table(table).Find(cond).All(ctx, &dataArr); err != nil {
-		blog.Errorf("get %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond).All(kit.Ctx, &dataArr); err != nil {
+		blog.Errorf("get %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, kit.Rid)
 		return nil, err
 	}
 	return dataArr, nil
 }
 
 func listDataWithID[T any](table, idField string) dataLister {
-	return func(ctx context.Context, opt *listDataOpt, rid string) (*listDataRes, error) {
-		ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	return func(kit *rest.Kit, opt *listDataOpt) (*listDataRes, error) {
+		kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
 		if rawErr := opt.Validate(false); rawErr.ErrCode != 0 {
-			blog.Errorf("list general data option is invalid, err: %v, opt: %+v, rid: %s", rawErr, opt, rid)
+			blog.Errorf("list general data option is invalid, err: %v, opt: %+v, rid: %s", rawErr, opt, kit.Rid)
 			return nil, fmt.Errorf("list data option is invalid")
 		}
 
@@ -153,7 +152,7 @@ func listDataWithID[T any](table, idField string) dataLister {
 			opt.Fields = []string{idField}
 		}
 
-		cnt, dataArr, err := listDBDataWithID[T](ctx, opt, table, idField, rid)
+		cnt, dataArr, err := listDBDataWithID[T](kit, opt, table, idField)
 		if err != nil {
 			return nil, err
 		}
@@ -162,18 +161,16 @@ func listDataWithID[T any](table, idField string) dataLister {
 	}
 }
 
-func listDBDataWithID[T any](ctx context.Context, opt *listDataOpt, table, idField string, rid string) (uint64, []T,
-	error) {
-
+func listDBDataWithID[T any](kit *rest.Kit, opt *listDataOpt, table, idField string) (uint64, []T, error) {
 	cond := opt.Cond
 	if cond == nil {
 		cond = make(mapstr.MapStr)
 	}
 
 	if opt.Page.EnableCount {
-		cnt, err := mongodb.Client().Table(table).Find(cond).Count(ctx)
+		cnt, err := mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond).Count(kit.Ctx)
 		if err != nil {
-			blog.Errorf("count %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, rid)
+			blog.Errorf("count %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, kit.Rid)
 			return 0, nil, err
 		}
 
@@ -198,10 +195,10 @@ func listDBDataWithID[T any](ctx context.Context, opt *listDataOpt, table, idFie
 	}
 
 	dataArr := make([]T, 0)
-	err := mongodb.Client().Table(table).Find(cond).Sort(idField).Start(uint64(opt.Page.StartIndex)).
-		Limit(uint64(opt.Page.Limit)).Fields(opt.Fields...).All(ctx, &dataArr)
+	err := mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond).Sort(idField).Start(uint64(opt.Page.StartIndex)).
+		Limit(uint64(opt.Page.Limit)).Fields(opt.Fields...).All(kit.Ctx, &dataArr)
 	if err != nil {
-		blog.Errorf("list %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, rid)
+		blog.Errorf("list %s data by cond(%+v) failed, err: %v, rid: %s", table, cond, err, kit.Rid)
 		return 0, nil, err
 	}
 

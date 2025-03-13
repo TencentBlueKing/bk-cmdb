@@ -18,11 +18,11 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
 	"configcenter/src/storage/driver/redis"
@@ -48,20 +48,19 @@ func parseWatchChainNode(node *watch.ChainNode) (*basicInfo, error) {
 		id:     node.InstanceID,
 		oid:    node.Oid,
 		subRes: node.SubResource,
-		tenant: node.TenantID,
 	}, nil
 }
 
 // isIDListExists check if id list exists
-func isIDListExists(ctx context.Context, key string, rid string) (bool, error) {
-	existRes, err := redis.Client().Exists(ctx, key).Result()
+func isIDListExists(kit *rest.Kit, key string) (bool, error) {
+	existRes, err := redis.Client().Exists(kit.Ctx, key).Result()
 	if err != nil {
-		blog.Errorf("check if id list %s exists failed, err: %v, opt: %+v, rid: %s", key, err, rid)
+		blog.Errorf("check if id list %s exists failed, err: %v, opt: %+v, rid: %s", key, err, kit.Rid)
 		return false, err
 	}
 
 	if existRes != 1 {
-		blog.V(4).Infof("id list %s key not exists. rid: %s", key, rid)
+		blog.V(4).Infof("id list %s key not exists. rid: %s", key, kit.Rid)
 		return false, nil
 	}
 

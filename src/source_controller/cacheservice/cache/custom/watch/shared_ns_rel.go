@@ -19,14 +19,14 @@ package watch
 
 import (
 	"context"
+	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/mapstr"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
-	"configcenter/src/storage/driver/mongodb"
 	streamtypes "configcenter/src/storage/stream/types"
 )
 
@@ -38,12 +38,13 @@ func (w *Watcher) watchSharedNsRel() error {
 
 	opt := &watchOptions{
 		watchType: SharedNsRelWatchType,
-		watchOpts: &streamtypes.WatchOptions{
-			Options: streamtypes.Options{
-				Filter:      make(mapstr.MapStr),
+		watchOpts: &streamtypes.WatchCollOptions{
+			CollectionOptions: streamtypes.CollectionOptions{
 				EventStruct: new(kubetypes.NsSharedClusterRel),
-				Collection:  kubetypes.BKTableNameNsSharedClusterRel,
-				Fields:      []string{kubetypes.BKNamespaceIDField, kubetypes.BKAsstBizIDField},
+				CollectionFilter: &streamtypes.CollectionFilter{
+					Regex: fmt.Sprintf("_%s$", kubetypes.BKTableNameNsSharedClusterRel),
+				},
+				Fields: []string{kubetypes.BKNamespaceIDField, kubetypes.BKAsstBizIDField},
 			},
 		},
 		doBatch: watcher.doBatch,
@@ -55,10 +56,9 @@ func (w *Watcher) watchSharedNsRel() error {
 	}
 
 	if !tokenExists {
-		ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 		rid := util.GenerateRID()
 		blog.Infof("token not exists, start init all shared namespace relation cache task, rid: %s", rid)
-		go w.cacheSet.SharedNsRel.RefreshSharedNsRel(ctx, rid)
+		go w.cacheSet.SharedNsRel.RefreshSharedNsRel(rid)
 	}
 
 	return nil
@@ -69,82 +69,58 @@ type sharedNsRelWatcher struct {
 }
 
 // doBatch batch handle shared namespace relation event for cache
-func (w *sharedNsRelWatcher) doBatch(es []*streamtypes.Event) (retry bool) {
+func (w *sharedNsRelWatcher) doBatch(dbInfo *streamtypes.DBInfo, es []*streamtypes.Event) bool {
 	if len(es) == 0 {
 		return false
 	}
 
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-	rid := es[0].ID()
+	kit := rest.NewKit().WithCtx(util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)).
+		WithRid(es[0].ID())
 
-	nsAsstBizMap := make(map[int64]int64)
-	delOids := make([]string, 0)
+	nsAsstBizMap := make(map[string]map[int64]int64)
+	delNsIDsMap := make(map[string][]int64)
 
 	for idx := range es {
 		one := es[idx]
 
+		tenantID := one.TenantID
+		rel := one.Document.(*kubetypes.NsSharedClusterRel)
+
 		switch one.OperationType {
 		case streamtypes.Insert:
-			rel := one.Document.(*kubetypes.NsSharedClusterRel)
-			nsAsstBizMap[rel.NamespaceID] = rel.AsstBizID
+			_, exists := nsAsstBizMap[tenantID]
+			if !exists {
+				nsAsstBizMap[tenantID] = make(map[int64]int64)
+			}
+			nsAsstBizMap[tenantID][rel.NamespaceID] = rel.AsstBizID
+
 		case streamtypes.Delete:
-			delOids = append(delOids, one.Oid)
+			delNsIDsMap[tenantID] = append(delNsIDsMap[tenantID], rel.NamespaceID)
+
 		default:
 			// shared namespace relation can not be updated, so we only need to handle insert and delete event
 			continue
 		}
 
 		blog.V(5).Infof("watch custom resource cache, received coll: %s, oid: %s, op-time: %s, %s event, rid: %s",
-			one.Collection, one.Oid, one.ClusterTime.String(), one.OperationType, rid)
+			one.Collection, one.Oid, one.ClusterTime.String(), one.OperationType, kit.Rid)
 	}
 
-	err := w.cache.UpdateAsstBiz(ctx, nsAsstBizMap, rid)
-	if err != nil {
-		return true
+	for tenantID, nsAsstBizInfo := range nsAsstBizMap {
+		kit = kit.WithTenant(tenantID)
+		err := w.cache.UpdateAsstBiz(kit, nsAsstBizInfo)
+		if err != nil {
+			return true
+		}
 	}
 
-	delArchives, err := w.getDeletedRelInfo(ctx, delOids, rid)
-	if err != nil {
-		return true
-	}
-
-	delNsIDs := make([]int64, len(delArchives))
-	for i, archive := range delArchives {
-		delNsIDs[i] = archive.Detail.NamespaceID
-	}
-
-	err = w.cache.DeleteAsstBiz(ctx, delNsIDs, rid)
-	if err != nil {
-		return true
+	for tenantID, delNsIDs := range delNsIDsMap {
+		kit = kit.WithTenant(tenantID)
+		err := w.cache.DeleteAsstBiz(kit, delNsIDs)
+		if err != nil {
+			return true
+		}
 	}
 
 	return false
-}
-
-type sharedNsRelDelArchive struct {
-	Detail *kubetypes.NsSharedClusterRel `bson:"detail"`
-}
-
-// getDeletedRelInfo get deleted shared namespace relation info
-func (w *sharedNsRelWatcher) getDeletedRelInfo(ctx context.Context, oids []string, rid string) ([]sharedNsRelDelArchive,
-	error) {
-
-	delArchives := make([]sharedNsRelDelArchive, 0)
-	if len(oids) == 0 {
-		return delArchives, nil
-	}
-
-	cond := mapstr.MapStr{
-		"oid":  mapstr.MapStr{common.BKDBIN: oids},
-		"coll": kubetypes.BKTableNameNsSharedClusterRel,
-	}
-
-	err := mongodb.Client().Table(common.BKTableNameKubeDelArchive).Find(cond).Fields("detail.bk_namespace_id").
-		All(ctx, &delArchives)
-	if err != nil {
-		blog.Errorf("get shared ns relation del archive by cond: %+v failed, err: %v, rid: %s", cond, err, rid)
-		return nil, err
-	}
-
-	return delArchives, nil
 }

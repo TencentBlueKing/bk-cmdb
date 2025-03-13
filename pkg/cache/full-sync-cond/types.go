@@ -31,7 +31,7 @@ import (
 
 const (
 	// BKTableNameFullSyncCond is the full synchronization cache condition table
-	BKTableNameFullSyncCond = "FullSyncCond"
+	BKTableNameFullSyncCond = common.BKTableNameFullSyncCond
 )
 
 // FullSyncCond is the full synchronization cache condition
@@ -42,7 +42,7 @@ type FullSyncCond struct {
 	IsAll       bool               `json:"is_all" bson:"is_all"`
 	Interval    int                `json:"interval" bson:"interval"`
 	Condition   *filter.Expression `json:"condition,omitempty" bson:"condition,omitempty"`
-	TenantID    string             `json:"tenant_id" bson:"tenant_id"`
+	TenantID    string             `json:"-" bson:"tenant_id"`
 }
 
 // full sync cond field names

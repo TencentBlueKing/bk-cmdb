@@ -18,8 +18,7 @@
 package topo
 
 import (
-	"context"
-
+	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/level"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/tree"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
@@ -30,8 +29,16 @@ var kubeTopo = &Topology{
 	TopLevel: level.GetKubeTopLevel(),
 }
 
+var briefTopo = &Topology{
+	Tree:     new(tree.BriefTopoTree),
+	TopLevel: level.GetBriefTopLevel(),
+}
+
 func init() {
-	topoGetterMap[types.KubeType] = func(ctx context.Context, rid string) (*Topology, error) {
+	topoGetterMap[types.KubeType] = func(kit *rest.Kit) (*Topology, error) {
 		return kubeTopo, nil
+	}
+	topoGetterMap[types.BriefType] = func(kit *rest.Kit) (*Topology, error) {
+		return briefTopo, nil
 	}
 }

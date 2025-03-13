@@ -38,11 +38,6 @@ var cursorTypeMap = map[general.ResType]watch.CursorType{
 	general.ObjectInstance:   watch.ObjectBase,
 	general.MainlineInstance: watch.MainlineInstance,
 	general.InstAsst:         watch.InstAsst,
-	general.KubeCluster:      watch.KubeCluster,
-	general.KubeNode:         watch.KubeNode,
-	general.KubeNamespace:    watch.KubeNamespace,
-	general.KubeWorkload:     watch.KubeWorkload,
-	general.KubePod:          watch.KubePod,
 }
 
 // GetCursorTypeByResType get event watch cursor type by resource type

@@ -18,13 +18,13 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"configcenter/pkg/cache/general"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
@@ -32,8 +32,8 @@ import (
 
 // newCacheWithID new general cache whose data uses id as id key
 func newCacheWithIDAndSubRes[T any](key *general.Key, idField string, subResFields []string,
-	getTable func(ctx context.Context, filter *types.BasicFilter, rid string) (string, error),
-	parseData func(data dataWithTable[T]) (*basicInfo, error)) *Cache {
+	getTable func(kit *rest.Kit, filter *types.BasicFilter) (string, error),
+	parseData func(data dataWithTenant[T]) (*basicInfo, error)) *Cache {
 
 	cache := NewCache()
 	cache.key = key
@@ -46,23 +46,23 @@ func newCacheWithIDAndSubRes[T any](key *general.Key, idField string, subResFiel
 	return cache
 }
 
-type dataWithTable[T any] struct {
-	Table string `json:"-" bson:"-"`
-	Data  T      `json:",inline" bson:",inline"`
+type dataWithTenant[T any] struct {
+	TenantID string `json:"-" bson:"-"`
+	Data     T      `json:",inline" bson:",inline"`
 }
 
 // MarshalJSON marshal json
-func (data dataWithTable[T]) MarshalJSON() ([]byte, error) {
+func (data dataWithTenant[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(data.Data)
 }
 
-func parseDataWithIDAndSubRes[T any](parser func(data dataWithTable[T]) (*basicInfo, error)) dataParser {
+func parseDataWithIDAndSubRes[T any](parser func(data dataWithTenant[T]) (*basicInfo, error)) dataParser {
 	return func(data any) (*basicInfo, error) {
 		var info *basicInfo
 		var err error
 
 		switch val := data.(type) {
-		case dataWithTable[T]:
+		case dataWithTenant[T]:
 			info, err = parser(val)
 		case types.WatchEventData:
 			info, err = parseWatchChainNode(val.ChainNode)
@@ -87,25 +87,25 @@ func parseDataWithIDAndSubRes[T any](parser func(data dataWithTable[T]) (*basicI
 }
 
 func getDataByIDAndSubRes[T any](idField string,
-	getTable func(ctx context.Context, filter *types.BasicFilter, rid string) (string, error)) dataGetterByKeys {
+	getTable func(kit *rest.Kit, filter *types.BasicFilter) (string, error)) dataGetterByKeys {
 
-	return func(ctx context.Context, opt *getDataByKeysOpt, rid string) ([]any, error) {
-		table, err := getTable(ctx, opt.BasicFilter, rid)
+	return func(kit *rest.Kit, opt *getDataByKeysOpt) ([]any, error) {
+		table, err := getTable(kit, opt.BasicFilter)
 		if err != nil {
-			blog.Errorf("get table by basic filter(%+v) failed, err: %v, rid: %s", opt.BasicFilter, err, rid)
+			blog.Errorf("get table by basic filter(%+v) failed, err: %v, rid: %s", opt.BasicFilter, err, kit.Rid)
 			return nil, err
 		}
 
-		dataArr, err := getDBDataByID[T](ctx, opt, table, idField, rid)
+		dataArr, err := getDBDataByID[T](kit, opt, table, idField)
 		if err != nil {
 			return nil, err
 		}
 
 		allData := make([]interface{}, 0)
 		for _, data := range dataArr {
-			allData = append(allData, dataWithTable[T]{
-				Table: table,
-				Data:  data,
+			allData = append(allData, dataWithTenant[T]{
+				TenantID: kit.TenantID,
+				Data:     data,
 			})
 		}
 		return allData, nil
@@ -113,19 +113,19 @@ func getDataByIDAndSubRes[T any](idField string,
 }
 
 func listDataWithIDAndSubRes[T any](idField string, subResFields []string,
-	getTable func(ctx context.Context, filter *types.BasicFilter, rid string) (string, error)) dataLister {
+	getTable func(kit *rest.Kit, filter *types.BasicFilter) (string, error)) dataLister {
 
-	return func(ctx context.Context, opt *listDataOpt, rid string) (*listDataRes, error) {
-		ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	return func(kit *rest.Kit, opt *listDataOpt) (*listDataRes, error) {
+		kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
 		if rawErr := opt.Validate(true); rawErr.ErrCode != 0 {
-			blog.Errorf("list general data option is invalid, err: %v, opt: %+v, rid: %s", rawErr, opt, rid)
+			blog.Errorf("list general data option is invalid, err: %v, opt: %+v, rid: %s", rawErr, opt, kit.Rid)
 			return nil, fmt.Errorf("list data option is invalid")
 		}
 
-		table, err := getTable(ctx, opt.BasicFilter, rid)
+		table, err := getTable(kit, opt.BasicFilter)
 		if err != nil {
-			blog.Errorf("get table by basic filter(%+v) failed, err: %v, rid: %s", opt.BasicFilter, err, rid)
+			blog.Errorf("get table by basic filter(%+v) failed, err: %v, rid: %s", opt.BasicFilter, err, kit.Rid)
 			return nil, err
 		}
 
@@ -133,16 +133,16 @@ func listDataWithIDAndSubRes[T any](idField string, subResFields []string,
 			opt.Fields = append(subResFields, idField)
 		}
 
-		cnt, dataArr, err := listDBDataWithID[T](ctx, opt, table, idField, rid)
+		cnt, dataArr, err := listDBDataWithID[T](kit, opt, table, idField)
 		if err != nil {
 			return nil, err
 		}
 
 		allData := make([]interface{}, 0)
 		for _, data := range dataArr {
-			allData = append(allData, dataWithTable[T]{
-				Table: table,
-				Data:  data,
+			allData = append(allData, dataWithTenant[T]{
+				TenantID: kit.TenantID,
+				Data:     data,
 			})
 		}
 

@@ -29,20 +29,20 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
 	tokenhandler "configcenter/src/source_controller/cacheservice/cache/token-handler"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 	"configcenter/src/storage/stream/types"
 )
 
 // Watcher defines mongodb event watcher for custom resource
 type Watcher struct {
-	loopW    stream.LoopInterface
+	task     *task.Task
 	cacheSet *cache.CacheSet
 }
 
 // Init custom resource mongodb event watcher
-func Init(loopW stream.LoopInterface, cacheSet *cache.CacheSet) error {
+func Init(watchTask *task.Task, cacheSet *cache.CacheSet) error {
 	watcher := &Watcher{
-		loopW:    loopW,
+		task:     watchTask,
 		cacheSet: cacheSet,
 	}
 
@@ -59,8 +59,8 @@ func Init(loopW stream.LoopInterface, cacheSet *cache.CacheSet) error {
 
 type watchOptions struct {
 	watchType WatchType
-	watchOpts *types.WatchOptions
-	doBatch   func(es []*types.Event) (retry bool)
+	watchOpts *types.WatchCollOptions
+	doBatch   func(dbInfo *types.DBInfo, es []*types.Event) bool
 }
 
 // WatchType is the custom resource watch type
@@ -78,45 +78,33 @@ func (w *Watcher) watchCustomResource(opt *watchOptions) (bool, error) {
 	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 	name := fmt.Sprintf("%s:%s", cache.Namespace, opt.watchType)
 
-	tokenHandler := tokenhandler.NewSingleTokenHandler(name, mongodb.Client())
+	tokenHandler := tokenhandler.NewSingleTokenHandler(name)
 
-	exists, err := tokenHandler.IsTokenExists(ctx)
+	exists, err := tokenHandler.IsTokenExists(ctx, mongodb.Dal("watch"))
 	if err != nil {
 		blog.Errorf("check if custom resource %s watch token exists failed, err: %v", name, err)
 		return false, err
 	}
 
-	if exists {
-		startAtTime, err := tokenHandler.GetStartWatchTime(ctx)
-		if err != nil {
-			blog.Errorf("get custom resource %s start watch time failed, err: %v", name, err)
-			return false, err
-		}
-		opt.watchOpts.StartAtTime = startAtTime
-	} else {
-		opt.watchOpts.StartAtTime = new(types.TimeStamp)
-	}
-
-	opt.watchOpts.WatchFatalErrorCallback = tokenHandler.ResetWatchToken
-
-	loopOptions := &types.LoopBatchOptions{
-		LoopOptions: types.LoopOptions{
+	opts := &types.LoopBatchTaskOptions{
+		WatchTaskOptions: &types.WatchTaskOptions{
 			Name:         name,
-			WatchOpt:     opt.watchOpts,
+			CollOpts:     opt.watchOpts,
 			TokenHandler: tokenHandler,
 			RetryOptions: &types.RetryOptions{
 				MaxRetryCount: 3,
 				RetryDuration: 1 * time.Second,
 			},
 		},
-		EventHandler: &types.BatchHandler{
+		EventHandler: &types.TaskBatchHandler{
 			DoBatch: opt.doBatch,
 		},
 		BatchSize: 200,
 	}
 
-	if err = w.loopW.WithBatch(loopOptions); err != nil {
-		blog.Errorf("watch custom resource %s failed, err: %v", name, err)
+	err = w.task.AddLoopBatchTask(opts)
+	if err != nil {
+		blog.Errorf("watch custom resource %s, but add loop batch task failed, err: %v", name, err)
 		return false, err
 	}
 

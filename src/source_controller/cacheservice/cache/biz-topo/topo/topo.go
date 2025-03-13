@@ -19,11 +19,11 @@
 package topo
 
 import (
-	"context"
 	"fmt"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -34,40 +34,38 @@ import (
 )
 
 // GenBizTopo generate business topology tree
-func GenBizTopo(ctx context.Context, bizID int64, topoType types.TopoType, byCache bool, rid string) (*types.BizTopo,
-	error) {
-
+func GenBizTopo(kit *rest.Kit, bizID int64, topoType types.TopoType, byCache bool) (any, error) {
 	// read from secondary node in mongodb cluster
-	ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
 	// get biz info
 	filter := mapstr.MapStr{
 		common.BKAppIDField: bizID,
 	}
 	biz := new(metadata.BizInst)
-	if err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(filter).Fields(common.BKAppIDField,
-		common.BKAppNameField).One(ctx, biz); err != nil {
-		blog.Errorf("get biz %d failed, err: %v, rid: %s", biz, err, rid)
+	if err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseApp).Find(filter).Fields(common.BKAppIDField,
+		common.BKAppNameField, common.BKDefaultField).One(kit.Ctx, biz); err != nil {
+		blog.Errorf("get biz %d failed, err: %v, rid: %s", bizID, err, kit.Rid)
 		return nil, err
 	}
 
 	// get topology generator
-	topology, err := GetTopology(ctx, topoType, rid)
+	topology, err := GetTopology(kit, topoType)
 	if err != nil {
-		blog.Errorf("get %s topology generator failed, err: %v, rid: %v", topoType, err, rid)
+		blog.Errorf("get %s topology generator failed, err: %v, rid: %v", topoType, err, kit.Rid)
 		return nil, err
 	}
 
 	// get topology nodes and generate biz topology tree
 	var nodes []types.Node
 	if byCache {
-		nodes, err = topology.TopLevel.GetNodesByCache(ctx, bizID, rid)
+		nodes, err = topology.TopLevel.GetNodesByCache(kit, bizID)
 	} else {
-		nodes, err = topology.TopLevel.GetNodesByDB(ctx, bizID, nil, rid)
+		nodes, err = topology.TopLevel.GetNodesByDB(kit, bizID, nil)
 	}
 	if err != nil {
 		blog.Errorf("get biz %d %s topo nodes failed, by cache: %v, err: %v, rid: %s", biz.BizID, topoType, byCache,
-			err, rid)
+			err, kit.Rid)
 		return nil, err
 	}
 
@@ -79,13 +77,14 @@ func GenBizTopo(ctx context.Context, bizID int64, topoType types.TopoType, byCac
 		Nodes: nodes,
 	}
 
-	bizTopo, err = topology.Tree.RearrangeBizTopo(ctx, bizTopo, rid)
+	topo, err := topology.Tree.RearrangeBizTopo(kit, biz, nodes)
 	if err != nil {
-		blog.Errorf("rearrange biz %d %s topo failed, err: %v, topo: %+v, rid: %s", biz, topoType, err, bizTopo, rid)
+		blog.Errorf("rearrange biz %d %s topo failed, err: %v, topo: %+v, rid: %s", biz, topoType, err, bizTopo,
+			kit.Rid)
 		return nil, err
 	}
 
-	return bizTopo, nil
+	return topo, nil
 }
 
 // Topology defines the topology generator
@@ -97,22 +96,22 @@ type Topology struct {
 }
 
 // TopologyGetter defines the function to get topology generator
-type TopologyGetter func(ctx context.Context, rid string) (*Topology, error)
+type TopologyGetter func(kit *rest.Kit) (*Topology, error)
 
 // topoGetterMap is the mapping of topology type to TopologyGetter
 var topoGetterMap = map[types.TopoType]TopologyGetter{}
 
 // GetTopology get topology generator
-func GetTopology(ctx context.Context, topoType types.TopoType, rid string) (*Topology, error) {
+func GetTopology(kit *rest.Kit, topoType types.TopoType) (*Topology, error) {
 	getter, exists := topoGetterMap[topoType]
 	if !exists {
-		blog.Errorf("%s topology getter not exists, rid: %v", topoType, rid)
+		blog.Errorf("%s topology getter not exists, rid: %v", topoType, kit.Rid)
 		return nil, fmt.Errorf("topology type %s is invalid", topoType)
 	}
 
-	topology, err := getter(ctx, rid)
+	topology, err := getter(kit)
 	if err != nil {
-		blog.Errorf("get %s topology generator failed, rid: %v", topoType, rid)
+		blog.Errorf("get %s topology generator failed, rid: %v", topoType, kit.Rid)
 		return nil, err
 	}
 

@@ -16,7 +16,6 @@ package service
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
@@ -36,8 +35,7 @@ import (
 	"configcenter/src/source_controller/cacheservice/event/flow"
 	"configcenter/src/source_controller/cacheservice/event/identifier"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/reflector"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/task"
 	"configcenter/src/storage/stream/types"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
@@ -98,20 +96,13 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 	watchTaskOpt := &types.NewTaskOptions{
 		StopNotifier: make(<-chan struct{}),
 	}
-
-	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
-	if eventErr != nil {
-		blog.Errorf("new reflector failed, err: %v", eventErr)
-		return eventErr
+	watchTask, taskErr := task.New(mongodb.Dal(), mongodb.Dal("watch"), engine.ServiceManageInterface, watchTaskOpt)
+	if taskErr != nil {
+		blog.Errorf("new watch task instance failed, err: %v", taskErr)
+		return taskErr
 	}
 
-	watchDB, dbErr := local.NewMgo(s.cfg.WatchMongo.GetMongoConf(), time.Minute)
-	if dbErr != nil {
-		blog.Errorf("new watch mongo client failed, err: %v", dbErr)
-		return dbErr
-	}
-
-	c, cacheErr := cacheop.NewCache(event, loopW, engine.ServiceManageInterface, watchDB)
+	c, cacheErr := cacheop.NewCache(watchTask, engine.ServiceManageInterface)
 	if cacheErr != nil {
 		blog.Errorf("new cache instance failed, err: %v", cacheErr)
 		return cacheErr
