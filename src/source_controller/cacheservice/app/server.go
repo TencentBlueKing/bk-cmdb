@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/source_controller/cacheservice/app/options"
 	cachesvr "configcenter/src/source_controller/cacheservice/service"
@@ -85,6 +86,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	cacheSvr.Core = engine
+	errors.SetGlobalCCError(engine.CCErr)
 
 	if err := initResource(cacheSvr); err != nil {
 		return nil
@@ -122,9 +124,19 @@ func initResource(cacheSvr *CacheServer) error {
 		return err
 	}
 
-	dbErr := mongodb.InitClient("", &cacheSvr.Config.Mongo)
-	if dbErr != nil {
-		blog.Errorf("failed to connect the db server, error info is %s", dbErr.Error())
+	cryptoConf, err := cc.Crypto("crypto")
+	if err != nil {
+		blog.Errorf("get crypto config failed, err: %v", err)
+		return err
+	}
+
+	if dbErr := mongodb.SetShardingCli("", &cacheSvr.Config.Mongo, cryptoConf); dbErr != nil {
+		blog.Errorf("failed to connect the db server, err: %v", dbErr)
+		return dbErr
+	}
+
+	if dbErr := mongodb.SetWatchCli("watch", &cacheSvr.Config.WatchMongo, cryptoConf); dbErr != nil {
+		blog.Errorf("new watch db sharding client failed, err: %v", dbErr)
 		return dbErr
 	}
 

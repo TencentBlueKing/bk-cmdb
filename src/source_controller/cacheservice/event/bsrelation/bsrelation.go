@@ -21,9 +21,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/cacheservice/event"
 	mixevent "configcenter/src/source_controller/cacheservice/event/mix-event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
 const (
@@ -32,12 +30,10 @@ const (
 )
 
 // NewBizSetRelation init and run biz set relation event watch
-func NewBizSetRelation(watch stream.LoopInterface, watchDB *local.Mongo, ccDB dal.DB) error {
+func NewBizSetRelation(task *task.Task) error {
 	base := mixevent.MixEventFlowOptions{
 		MixKey:       event.BizSetRelationKey,
-		Watch:        watch,
-		WatchDB:      watchDB,
-		CcDB:         ccDB,
+		Task:         task,
 		EventLockKey: bizSetRelationLockKey,
 		EventLockTTL: bizSetRelationLockTTL,
 	}

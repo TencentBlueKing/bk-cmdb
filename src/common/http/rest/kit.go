@@ -68,6 +68,26 @@ func NewKit() *Kit {
 	return NewKitFromHeader(headerutil.GenDefaultHeader(), errors.GetGlobalCCError())
 }
 
+// WithCtx set kit context
+func (kit *Kit) WithCtx(ctx context.Context) *Kit {
+	kit.Ctx = ctx
+	return kit
+}
+
+// WithTenant set kit tenant
+func (kit *Kit) WithTenant(tenantID string) *Kit {
+	kit.TenantID = tenantID
+	httpheader.SetTenantID(kit.Header, tenantID)
+	return kit
+}
+
+// WithRid set kit rid
+func (kit *Kit) WithRid(rid string) *Kit {
+	kit.Rid = rid
+	httpheader.SetRid(kit.Header, rid)
+	return kit
+}
+
 // ShardOpts returns sharding options
 func (kit *Kit) ShardOpts() sharding.ShardOpts {
 	return sharding.NewShardOpts().WithTenant(kit.TenantID)
