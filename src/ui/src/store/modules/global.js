@@ -46,7 +46,6 @@ const state = {
 const getters = {
   user: state => state.user,
   userName: state => state.user.name,
-  admin: state => state.user.admin === '1',
   isBusinessSelected: (state, getters, rootState, rootGetters) => rootGetters['objectBiz/bizId'] !== null,
   language: state => state.language,
   supplier: state => state.supplier,

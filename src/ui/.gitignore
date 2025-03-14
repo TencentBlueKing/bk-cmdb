@@ -27,3 +27,6 @@ eslint.html
 apipaths.txt
 apivars.txt
 .eslintcache
+
+# cert
+*.pem
