@@ -497,6 +497,8 @@ export function getInitialProperties(properties) {
 }
 
 export function isEmptyCondition(value) {
+  const isObject = typeof value === 'object'
+  if (!isObject) return value === ''
   return isEmpty(value)
 }
 
