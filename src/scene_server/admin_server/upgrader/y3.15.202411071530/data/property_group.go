@@ -43,7 +43,7 @@ func addPropertyGroupData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKObjIDField, common.BKAppIDField, common.BKPropertyGroupNameField},
-		IgnoreKeys:   []string{common.BKFieldID, common.BKPropertyGroupIndexField},
+		IgnoreKeys:   []string{common.BKFieldID, common.BKPropertyGroupIndexField, common.BKFieldDBID},
 		IDField:      []string{common.BKFieldID},
 		AuditDataField: &tools.AuditDataField{
 			BizIDField:   "bk_biz_id",
@@ -161,7 +161,7 @@ var propertyGroupData = []Group{
 	},
 	{
 		ObjectID:   common.BKInnerObjIDBizSet,
-		GroupID:    "default",
+		GroupID:    mCommon.AppRole,
 		GroupName:  "角色",
 		GroupIndex: 2,
 	},

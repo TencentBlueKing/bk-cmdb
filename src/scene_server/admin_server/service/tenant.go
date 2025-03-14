@@ -30,6 +30,7 @@ import (
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/index"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal/mongo/local"
@@ -120,14 +121,21 @@ func addDefaultArea(kit *rest.Kit, db local.DB) error {
 		return nil
 	}
 
-	err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, metadata.CloudArea{
-		Creator:    common.CCSystemOperatorUserName,
-		LastEditor: common.CCSystemOperatorUserName,
-		CloudID:    common.BKDefaultDirSubArea,
-		CloudName:  "Default Area",
-		Default:    int64(common.BuiltIn),
-		CreateTime: time.Now(),
-		LastTime:   time.Now(),
+	err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, mapstr.MapStr{
+		"bk_creator":       common.CCSystemOperatorUserName,
+		"bk_last_editor":   common.CCSystemOperatorUserName,
+		"bk_cloud_id":      common.BKDefaultDirSubArea,
+		"bk_cloud_name":    "Default Area",
+		"default":          int64(common.BuiltIn),
+		"create_time":      time.Now(),
+		"last_time":        time.Now(),
+		"bk_status":        "1",
+		"bk_cloud_vendor":  "",
+		"bk_vpc_id":        "",
+		"bk_vpc_name":      "",
+		"bk_region":        "",
+		"bk_account_id":    "",
+		"bk_status_detail": "",
 	})
 	if err != nil {
 		blog.Errorf("add default area failed, err: %v, rid: %s", err, kit.Rid)

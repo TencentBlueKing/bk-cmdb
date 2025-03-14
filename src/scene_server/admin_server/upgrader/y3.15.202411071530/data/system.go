@@ -34,7 +34,7 @@ func addSystemData(kit *rest.Kit, db local.DB) error {
 	data := map[string]interface{}{common.HostCrossBizField: common.HostCrossBizValue}
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.HostCrossBizField},
-		IgnoreKeys:   make([]string, 0),
+		IgnoreKeys:   []string{"_id"},
 	}
 	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{data}, needField)
 	if err != nil {
@@ -60,8 +60,8 @@ func initConfigAdmin(kit *rest.Kit, db local.DB) error {
 	}
 
 	needField := &tools.InsertOptions{
-		UniqueFields: []string{"_id"},
-		IgnoreKeys:   make([]string, 0),
+		UniqueFields: []string{common.ConfigAdminValueField},
+		IgnoreKeys:   []string{common.BKFieldDBID},
 	}
 	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{configData},
 		needField)

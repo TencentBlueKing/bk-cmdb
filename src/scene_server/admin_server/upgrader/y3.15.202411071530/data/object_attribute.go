@@ -40,11 +40,10 @@ var objAttrMap = map[string][]*attribute{
 }
 
 var objPropertyMap = map[string]string{
-	"set":            "default",
-	"module":         "default",
-	"plat":           "default",
-	"bk_biz_set_obj": "default",
-	"bk_project":     "default",
+	"set":        "default",
+	"module":     "default",
+	"plat":       "default",
+	"bk_project": "default",
 }
 
 func getAttrData() []*attribute {
@@ -87,7 +86,7 @@ func addObjAttrData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKObjIDField, common.BKPropertyIDField, common.BKAppIDField},
-		IgnoreKeys:   []string{"id", "bk_property_index"},
+		IgnoreKeys:   []string{common.BKFieldID, metadata.AttributeFieldPropertyIndex, common.BKFieldDBID},
 		IDField:      []string{common.BKFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,

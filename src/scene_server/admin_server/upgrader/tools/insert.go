@@ -32,7 +32,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-var ignoreKeysArr = []string{"create_time", "last_time", "_id"}
+var ignoreKeysArr = []string{"create_time", "last_time"}
 
 // InsertData insert data for upgrade
 func InsertData(kit *rest.Kit, db local.DB, table string, data []mapstr.MapStr, insertOps *InsertOptions) (

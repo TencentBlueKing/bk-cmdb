@@ -53,15 +53,16 @@ var (
 
 func insertAsstData(kit *rest.Kit, db local.DB) error {
 
+	table := common.BKTableNameAsstDes
 	data, err := getTemplateData[metadata.AssociationKind](kit, tenanttmp.TemplateTypeAssociation)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
 		return err
 	}
 	result := make([]metadata.AssociationKind, 0)
-	if err = db.Table(common.BKTableNameAsstDes).Find(mapstr.MapStr{}).Fields(common.AssociationKindIDField).All(kit.Ctx,
+	if err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.AssociationKindIDField).All(kit.Ctx,
 		&result); err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameAsstDes, err)
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -82,8 +83,7 @@ func insertAsstData(kit *rest.Kit, db local.DB) error {
 	if len(insertData) == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameAsstDes,
-		len(insertData))
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -96,8 +96,8 @@ func insertAsstData(kit *rest.Kit, db local.DB) error {
 		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
 		insertInterface = append(insertInterface, insertData[index])
 	}
-	if err = db.Table(common.BKTableNameAsstDes).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNameAsstDes, err, kit.Rid)
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
@@ -111,15 +111,16 @@ func insertAsstData(kit *rest.Kit, db local.DB) error {
 }
 
 func insertBizSetData(kit *rest.Kit, db local.DB) error {
+	table := common.BKTableNameBaseBizSet
 	data, err := getTemplateData[metadata.BizSetInst](kit, tenanttmp.TemplateTypeBizSet)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
 		return err
 	}
 	result := make([]metadata.BizSetInst, 0)
-	if err := db.Table(common.BKTableNameBaseBizSet).Find(mapstr.MapStr{}).Fields(common.BKBizSetNameField).All(kit.Ctx,
+	if err := db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKBizSetNameField).All(kit.Ctx,
 		&result); err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameBaseBizSet, err)
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -138,7 +139,7 @@ func insertBizSetData(kit *rest.Kit, db local.DB) error {
 	if len(insertData) == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameBaseBizSet,
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table,
 		len(insertData))
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
@@ -154,8 +155,8 @@ func insertBizSetData(kit *rest.Kit, db local.DB) error {
 		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].BizSetID)
 		interfaceArr = append(interfaceArr, insertData[index])
 	}
-	if err = db.Table(common.BKTableNameBaseBizSet).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNameBaseBizSet, err, kit.Rid)
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
@@ -167,16 +168,16 @@ func insertBizSetData(kit *rest.Kit, db local.DB) error {
 }
 
 func insertObjAssociationData(kit *rest.Kit, db local.DB) error {
-
+	table := common.BKTableNameObjAsst
 	data, err := getTemplateData[metadata.Association](kit, tenanttmp.TemplateTypeObjAssociation)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
 		return err
 	}
 	result := make([]metadata.Association, 0)
-	if err := db.Table(common.BKTableNameObjAsst).Find(mapstr.MapStr{}).Fields(common.AssociationObjAsstIDField).All(kit.Ctx,
+	if err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.AssociationObjAsstIDField).All(kit.Ctx,
 		&result); err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameObjAsst, err)
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -195,8 +196,7 @@ func insertObjAssociationData(kit *rest.Kit, db local.DB) error {
 	if len(insertData) == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameObjAsst,
-		len(insertData))
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -209,12 +209,12 @@ func insertObjAssociationData(kit *rest.Kit, db local.DB) error {
 		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
 		interfaceArr = append(interfaceArr, insertData[index])
 	}
-	if err = db.Table(common.BKTableNameObjAsst).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNameObjAsst, err, kit.Rid)
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
-	if err := addAuditLog(kit, db, interfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, interfaceArr, auditLog); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -222,6 +222,7 @@ func insertObjAssociationData(kit *rest.Kit, db local.DB) error {
 }
 
 func insertObjAttrData(kit *rest.Kit, db local.DB) error {
+	table := common.BKTableNameObjAttDes
 	data, err := getTemplateData[metadata.Attribute](kit, tenanttmp.TemplateTypeObjAttribute)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
@@ -229,10 +230,10 @@ func insertObjAttrData(kit *rest.Kit, db local.DB) error {
 	}
 
 	result := make([]metadata.Attribute, 0)
-	err = db.Table(common.BKTableNameObjAttDes).Find(mapstr.MapStr{}).Fields(common.BKObjIDField,
-		common.BKPropertyIDField).All(kit.Ctx, &result)
+	err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKObjIDField, common.BKPropertyIDField).All(kit.Ctx,
+		&result)
 	if err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameObjAttDes, err)
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -252,8 +253,7 @@ func insertObjAttrData(kit *rest.Kit, db local.DB) error {
 	if len(insertData) == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameObjAttDes,
-		len(insertData))
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -269,8 +269,8 @@ func insertObjAttrData(kit *rest.Kit, db local.DB) error {
 		insertData[index].LastTime = &metadata.Time{Time: time.Now()}
 		inerfaceArr = append(inerfaceArr, insertData[index])
 	}
-	if err = db.Table(common.BKTableNameObjAttDes).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNameObjAttDes, err, kit.Rid)
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
@@ -284,16 +284,16 @@ func insertObjAttrData(kit *rest.Kit, db local.DB) error {
 
 func insertObjClassification(kit *rest.Kit, db local.DB) error {
 
+	table := common.BKTableNameObjClassification
 	data, err := getTemplateData[metadata.Classification](kit, tenanttmp.TemplateTypeObjClassification)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
 		return err
 	}
 	result := make([]metadata.Classification, 0)
-	err = db.Table(common.BKTableNameObjClassification).Find(mapstr.MapStr{}).
-		Fields(metadata.ClassFieldClassificationName).All(kit.Ctx, &result)
+	err = db.Table(table).Find(mapstr.MapStr{}).Fields(metadata.ClassFieldClassificationName).All(kit.Ctx, &result)
 	if err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameObjClassification, err)
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -312,8 +312,7 @@ func insertObjClassification(kit *rest.Kit, db local.DB) error {
 	if len(insertData) == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameObjClassification,
-		len(insertData))
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -327,8 +326,8 @@ func insertObjClassification(kit *rest.Kit, db local.DB) error {
 		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
 		inerfaceArr = append(inerfaceArr, insertData[index])
 	}
-	if err = db.Table(common.BKTableNameObjClassification).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNameObjClassification, err,
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err,
 			kit.Rid)
 		return err
 	}
@@ -342,15 +341,16 @@ func insertObjClassification(kit *rest.Kit, db local.DB) error {
 
 func insertPlatData(kit *rest.Kit, db local.DB) error {
 
+	table := common.BKTableNameBasePlat
 	data, err := getTemplateData[metadata.CloudArea](kit, tenanttmp.TemplateTypePlat)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
 		return err
 	}
 	result := make([]metadata.CloudArea, 0)
-	if err = db.Table(common.BKTableNameBasePlat).Find(mapstr.MapStr{}).Fields(common.BKCloudNameField).All(kit.Ctx,
+	if err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKCloudNameField).All(kit.Ctx,
 		&result); err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameBasePlat, err)
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -369,8 +369,7 @@ func insertPlatData(kit *rest.Kit, db local.DB) error {
 	if len(insertData) == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameBasePlat,
-		len(insertData))
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -386,8 +385,8 @@ func insertPlatData(kit *rest.Kit, db local.DB) error {
 		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].CloudID)
 		inerfaceArr = append(inerfaceArr, insertData[index])
 	}
-	if err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNameBasePlat, err, kit.Rid)
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
@@ -400,16 +399,17 @@ func insertPlatData(kit *rest.Kit, db local.DB) error {
 
 func insertPropertyGrp(kit *rest.Kit, db local.DB) error {
 
+	table := common.BKTableNamePropertyGroup
 	data, err := getTemplateData[metadata.Group](kit, tenanttmp.TemplateTypePropertyGroup)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
 		return err
 	}
 	result := make([]metadata.Group, 0)
-	err = db.Table(common.BKTableNamePropertyGroup).Find(mapstr.MapStr{}).Fields(common.BKObjIDField,
+	err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKObjIDField,
 		common.BKPropertyGroupNameField).All(kit.Ctx, &result)
 	if err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNamePropertyGroup, err)
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -428,8 +428,7 @@ func insertPropertyGrp(kit *rest.Kit, db local.DB) error {
 	if len(insertData) == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNamePropertyGroup,
-		len(insertData))
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -443,9 +442,8 @@ func insertPropertyGrp(kit *rest.Kit, db local.DB) error {
 		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
 		inerfaceArr = append(inerfaceArr, insertData[index])
 	}
-	if err = db.Table(common.BKTableNamePropertyGroup).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNamePropertyGroup, err,
-			kit.Rid)
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
@@ -458,6 +456,7 @@ func insertPropertyGrp(kit *rest.Kit, db local.DB) error {
 
 func insertObjData(kit *rest.Kit, db local.DB) error {
 
+	table := common.BKTableNameObjDes
 	data, err := getTemplateData[metadata.Object](kit, tenanttmp.TemplateTypeObject)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
@@ -465,8 +464,8 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 	}
 
 	result := make([]metadata.Object, 0)
-	if err := db.Table(common.BKTableNameObjDes).Find(mapstr.MapStr{}).All(kit.Ctx, &result); err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameObjDes, err)
+	if err := db.Table(table).Find(mapstr.MapStr{}).All(kit.Ctx, &result); err != nil {
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -485,8 +484,7 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 	if len(insertData) == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameObjDes,
-		len(insertData))
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -502,8 +500,8 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 		insertData[index].LastTime = &metadata.Time{Time: time.Now()}
 		inerfaceArr = append(inerfaceArr, insertData[index])
 	}
-	if err = db.Table(common.BKTableNameObjDes).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNameObjDes, err, kit.Rid)
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
@@ -517,16 +515,17 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 
 func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 
+	table := common.BKTableNameObjUnique
 	uniqueData, err := getTemplateData[tenanttmp.UniqueKeyTmp](kit, tenanttmp.TemplateTypeUniqueKeys)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
 		return err
 	}
 	result := make([]metadata.ObjectUnique, 0)
-	err = db.Table(common.BKTableNameObjUnique).Find(mapstr.MapStr{}).Fields(common.BKObjIDField,
-		common.BKObjectUniqueKeys).All(kit.Ctx, &result)
+	err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKObjIDField, common.BKObjectUniqueKeys).All(kit.Ctx,
+		&result)
 	if err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameObjUnique, err)
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -543,7 +542,7 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 	}
 	// get attribute data
 	attrArr := make([]metadata.Attribute, 0)
-	err = db.Table(common.BKTableNameObjAttDes).Find(nil).All(kit.Ctx, &attrArr)
+	err = db.Table(table).Find(nil).All(kit.Ctx, &attrArr)
 	if err != nil {
 		blog.Errorf("get host unique fields failed, err: %v", err)
 		return err
@@ -586,8 +585,7 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 	if len(insertData) == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameObjUnique,
-		len(insertData))
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -600,8 +598,8 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 		auditLog.ResourceID = append(auditLog.ResourceID, int64(insertData[index].ID))
 		interfaceArr[index] = insertData[index]
 	}
-	if err = db.Table(common.BKTableNameObjUnique).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNameObjUnique, err, kit.Rid)
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
@@ -621,16 +619,16 @@ func getUniqueSvrValue(name string, isSubCategory bool) string {
 
 func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 
+	table := common.BKTableNameServiceCategory
 	svrCategoryTmp, err := getTemplateData[tenanttmp.SvrCategoryTmp](kit, tenanttmp.TemplateTypeServiceCategory)
 	if err != nil {
 		blog.Errorf("get template data failed, err: %v", err)
 		return err
 	}
 	result := make([]metadata.ServiceCategory, 0)
-	err = db.Table(common.BKTableNameServiceCategory).Find(mapstr.MapStr{}).Fields(common.BKFieldName,
-		common.BKParentIDField).All(kit.Ctx, &result)
+	err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKFieldName, common.BKParentIDField).All(kit.Ctx, &result)
 	if err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameServiceCategory, err)
+		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
 
@@ -672,8 +670,7 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 	if insertCount == 0 {
 		return nil
 	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameServiceCategory,
-		insertCount)
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, insertCount)
 	if err != nil {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -706,9 +703,8 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 		}
 	}
 
-	if err = db.Table(common.BKTableNameServiceCategory).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", common.BKTableNameServiceCategory, err,
-			kit.Rid)
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 

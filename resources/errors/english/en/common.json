@@ -89,6 +89,7 @@
     "1199090": "Regular expression's type assertion failed",
     "1199091": "at least one of %s and %s must be set",
     "1199092": "current field type status is single choice, please set reasonable data",
+    "1199093": "Failed to add tenant",
 
     "1109001": "save audit log failed",
     "1109002": "take audit log snapshot failed",

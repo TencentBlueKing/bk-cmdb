@@ -43,7 +43,7 @@ func addBizData(kit *rest.Kit, db local.DB) error {
 func addBizModule(kit *rest.Kit, db local.DB, data []interface{}, auditField *tools.AuditResType) error {
 	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKAppNameField},
-		IgnoreKeys:     []string{common.BKAppIDField},
+		IgnoreKeys:     []string{common.BKAppIDField, common.BKFieldDBID},
 		IDField:        []string{common.BKAppIDField},
 		AuditTypeField: auditField,
 		AuditDataField: &tools.AuditDataField{

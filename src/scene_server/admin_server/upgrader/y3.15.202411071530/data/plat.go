@@ -60,7 +60,7 @@ func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKCloudNameField},
-		IgnoreKeys:   []string{common.BKCloudIDField},
+		IgnoreKeys:   []string{common.BKCloudIDField, common.BKFieldDBID},
 		IDField:      []string{common.BKCloudIDField},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,

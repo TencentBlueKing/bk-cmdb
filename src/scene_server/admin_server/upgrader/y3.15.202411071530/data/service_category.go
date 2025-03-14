@@ -73,7 +73,7 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 	// add parent category data
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKFieldName, common.BKParentIDField, common.BKAppIDField},
-		IgnoreKeys:   []string{common.BKFieldID, common.BKRootIDField},
+		IgnoreKeys:   []string{common.BKFieldID, common.BKRootIDField, common.BKFieldDBID},
 		IDField:      []string{common.BKFieldID, common.BKRootIDField},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.PlatformSetting,
@@ -91,9 +91,24 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 		blog.Errorf("insert service category data for table %s failed, err: %v", common.BKTableNameServiceCategory, err)
 		return err
 	}
+
+	fieldMap := map[string]int64{
+		common.BKFieldName:     0,
+		common.BKParentIDField: 1,
+		common.BKAppIDField:    2,
+	}
+	existParentIDs := make(map[string]interface{}, 0)
 	for key, value := range parentIDs {
-		name := strings.Split(key, "*")[0]
-		parentIDs[name] = value
+		name := strings.Split(key, "*")[fieldMap[common.BKFieldName]]
+		parentID, err := strconv.ParseInt(strings.Split(key, "*")[fieldMap[common.BKParentIDField]], 10, 64)
+		if err != nil {
+			blog.Errorf("convert interface to int64 failed, err: %v", err)
+			return err
+		}
+
+		if parentID == 0 {
+			existParentIDs[name] = value
+		}
 	}
 
 	svrTmpData := make([]tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp], 0)
@@ -109,7 +124,7 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
-	if err = addSubSrvCategoryData(kit, db, parentIDs); err != nil {
+	if err = addSubSrvCategoryData(kit, db, existParentIDs); err != nil {
 		blog.Errorf("add sub service category data failed, err: %v", err)
 		return err
 	}
@@ -150,7 +165,7 @@ func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]inte
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKFieldName, common.BKParentIDField, common.BKAppIDField},
-		IgnoreKeys:   []string{common.BKFieldID},
+		IgnoreKeys:   []string{common.BKFieldID, "_id"},
 		IDField:      []string{common.BKFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.PlatformSetting,

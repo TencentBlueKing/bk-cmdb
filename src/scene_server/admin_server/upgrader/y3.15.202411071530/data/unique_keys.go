@@ -109,7 +109,7 @@ func addObjectUniqueData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{"keys"},
-		IgnoreKeys:   []string{common.BKFieldID},
+		IgnoreKeys:   []string{common.BKFieldID, common.BKFieldDBID},
 		IDField:      []string{common.BKFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,

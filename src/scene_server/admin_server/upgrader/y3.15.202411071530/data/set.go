@@ -50,7 +50,7 @@ func addSetBaseData(kit *rest.Kit, db local.DB, bizID int64) (map[string]interfa
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKAppIDField, common.BKSetNameField, common.BKInstParentStr},
-		IgnoreKeys:   []string{common.BKSetIDField},
+		IgnoreKeys:   []string{common.BKSetIDField, common.BKFieldDBID},
 		IDField:      []string{common.BKSetIDField},
 		AuditDataField: &tools.AuditDataField{
 			BizIDField:   common.BKAppIDField,

@@ -57,7 +57,7 @@ func addObjAssociationData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.AssociationObjAsstIDField},
-		IgnoreKeys:   []string{common.BKFieldID},
+		IgnoreKeys:   []string{common.BKFieldID, common.BKFieldDBID},
 		IDField:      []string{common.BKFieldID},
 		AuditDataField: &tools.AuditDataField{
 			ResIDField:   common.BKFieldID,

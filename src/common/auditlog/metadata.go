@@ -71,6 +71,10 @@ func (a *generateAuditCommonParameter) NewBasicContent(data map[string]interface
 func (a *generateAuditCommonParameter) NewTmpBasicContent(data interface{}) *metadata.TenantTmpBasicContent {
 	var basicDetail *metadata.TenantTmpBasicContent
 	switch a.action {
+	case metadata.AuditTenantInit:
+		basicDetail = &metadata.TenantTmpBasicContent{
+			CurData: data,
+		}
 	case metadata.AuditCreate:
 		basicDetail = &metadata.TenantTmpBasicContent{
 			CurData: data,
