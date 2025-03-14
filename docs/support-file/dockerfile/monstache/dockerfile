@@ -1,4 +1,0 @@
-FROM hub.bktencent.com/blueking/centos7-cmdb:base
-ENV container docker
-COPY cmdb_monstache /data/cmdb/monstache
-RUN chmod +x /data/cmdb/monstache/monstache
