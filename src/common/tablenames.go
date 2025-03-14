@@ -347,8 +347,7 @@ func SplitTenantTableName(tenantTableName string) (string, string, error) {
 		return tenantTableName[:sepIdx], tenantTableName[sepIdx+1:], nil
 	}
 
-	// TODO compatible for old table name with cc_ prefix, change this after this prefix is removed
-	sepIdx := strings.LastIndex(tenantTableName, "_cc_")
+	sepIdx := strings.LastIndex(tenantTableName, "_")
 	if sepIdx == -1 {
 		return "", "", errors.New("tenant table name is invalid")
 	}

@@ -260,10 +260,8 @@ func (t *TopologyTree) genCustomParentPaths(kit *rest.Kit, biz int64, prevNode s
 	}
 
 	nameMap := make(map[int64]string, 0)
-
 	paths = make(map[int64][]Node)
 	for {
-
 		nextNode, err := nextNode(prevNode, revTopo)
 		if err != nil {
 			return nil, nil, err
@@ -273,32 +271,24 @@ func (t *TopologyTree) genCustomParentPaths(kit *rest.Kit, biz int64, prevNode s
 		if nextNode == "biz" {
 			// add biz path
 			for _, id := range previousList {
-				paths[id] = append(paths[id], Node{
-					Object:       "biz",
-					InstanceID:   bizDetail.ID,
-					InstanceName: bizDetail.Name,
-					ParentID:     0,
-				})
+				paths[id] = append(paths[id], Node{Object: "biz", InstanceID: bizDetail.ID,
+					InstanceName: bizDetail.Name})
 			}
 			return nameMap, paths, nil
 		}
 
 		customMap, prevList, err := t.searchCustomInstances(kit, nextNode, previousList)
 		if err != nil {
-			blog.Errorf("search supplier account %s custom instance %s/%v failed, err: %v, rid: %v",
-				nextNode, previousList, err, kit.Rid)
+			blog.Errorf("search tenant %s custom instance %s/%v failed, err: %v, rid: %v", kit.TenantID, nextNode,
+				previousList, err, kit.Rid)
 			return nil, nil, err
 		}
 
 		// first paths, as is the bottom topology
 		if len(paths) == 0 {
 			for id, cu := range customMap {
-				paths[id] = append(paths[id], Node{
-					Object:       nextNode,
-					InstanceID:   cu.ID,
-					InstanceName: cu.Name,
-					ParentID:     cu.ParentID,
-				})
+				paths[id] = append(paths[id], Node{Object: nextNode, InstanceID: cu.ID, InstanceName: cu.Name,
+					ParentID: cu.ParentID})
 				// first custom's name id map, it's all we need.
 				nameMap[id] = cu.Name
 			}
@@ -332,18 +322,13 @@ func (t *TopologyTree) genCustomParentPaths(kit *rest.Kit, biz int64, prevNode s
 				return nil, nil, fmt.Errorf("can not find node %v parent", nodes)
 			}
 
-			paths[id] = append(paths[id], Node{
-				Object:       nextNode,
-				InstanceID:   custom.ID,
-				InstanceName: custom.Name,
-				ParentID:     custom.ParentID,
-			})
+			paths[id] = append(paths[id], Node{Object: nextNode, InstanceID: custom.ID, InstanceName: custom.Name,
+				ParentID: custom.ParentID})
 		}
 
 		prevNode = nextNode
 		previousList = prevList
 	}
-
 }
 
 func (t *TopologyTree) searchModules(kit *rest.Kit, biz int64, moduleIDs []int64) (

@@ -75,19 +75,9 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 const dbChainTTLTime = 5 * 24 * 60 * 60
 
 func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
-	// TODO 在upgrader里增加一条master db到master watch db的relation
-
-	// get watch db uuid to db uuids relation
-	relations := make([]sharding.WatchDBRelation, 0)
-	if err := s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchDBRelation).Find(nil).
-		All(kit.Ctx, &relations); err != nil {
-		blog.Errorf("get watch db relation failed, err: %v, rid: %s", err, kit.Rid)
+	watchDBToDBRelation, err := s.getWatchDBToDBRelation(kit)
+	if err != nil {
 		return err
-	}
-
-	watchDBToDBRelation := make(map[string][]string)
-	for _, relation := range relations {
-		watchDBToDBRelation[relation.WatchDB] = append(watchDBToDBRelation[relation.WatchDB], relation.DB)
 	}
 
 	// create watch token table and init the watch token for dbs
@@ -105,7 +95,7 @@ func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 		}
 
 		err = tenant.ExecForAllTenants(func(tenantID string) error {
-			// TODO 在新增租户初始化时同时增加watch相关表
+			// TODO 在新增租户初始化时同时增加watch相关表，并刷新cache的tenant
 			kit = kit.NewKit().WithTenant(tenantID)
 			exists, err := s.watchDB.Shard(kit.ShardOpts()).HasTable(s.ctx, key.ChainCollection())
 			if err != nil {
@@ -134,12 +124,74 @@ func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 			return err
 		}
 
+		// TODO 在新增DB时同时增加db relation和token数据
 		err = s.createWatchTokenForEventKey(kit, key, watchDBToDBRelation)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// getWatchDBToDBRelation get watch db uuid to db uuids relation
+func (s *Service) getWatchDBToDBRelation(kit *rest.Kit) (map[string][]string, error) {
+	// get all db uuids
+	uuidMap := make(map[string]struct{})
+	err := s.db.ExecForAllDB(func(db local.DB) error {
+		dbClient, ok := db.(*local.Mongo)
+		if !ok {
+			return fmt.Errorf("db to be watched is not an instance of local mongo")
+		}
+		uuidMap[dbClient.GetMongoClient().UUID()] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// get watch db relations
+	relations := make([]sharding.WatchDBRelation, 0)
+	if err := s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchDBRelation).Find(nil).
+		All(kit.Ctx, &relations); err != nil {
+		blog.Errorf("get watch db relation failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	watchDBToDBRelation := make(map[string][]string)
+	for _, relation := range relations {
+		watchDBToDBRelation[relation.WatchDB] = append(watchDBToDBRelation[relation.WatchDB], relation.DB)
+		delete(uuidMap, relation.DB)
+	}
+
+	// get default watch db uuid for new db to be watched
+	cond := map[string]any{common.MongoMetaID: common.ShardingDBConfID}
+	conf := new(sharding.ShardingDBConf)
+	err = s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).One(kit.Ctx, &conf)
+	if err != nil {
+		blog.Errorf("get sharding db conf failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	defaultWatchDBUUID := conf.ForNewData
+
+	// create watch db relation for dbs without watch db
+	newRelations := make([]sharding.WatchDBRelation, 0)
+	for uuid := range uuidMap {
+		watchDBToDBRelation[defaultWatchDBUUID] = append(watchDBToDBRelation[defaultWatchDBUUID], uuid)
+		newRelations = append(newRelations, sharding.WatchDBRelation{
+			WatchDB: defaultWatchDBUUID,
+			DB:      uuid,
+		})
+	}
+
+	if len(newRelations) > 0 {
+		err = s.watchDB.Shard(kit.SysShardOpts()).Table(common.BKTableNameWatchDBRelation).Insert(kit.Ctx, newRelations)
+		if err != nil {
+			blog.Errorf("create watch db relations(%+v) failed, err: %v, rid: %s", newRelations, err, kit.Rid)
+			return nil, err
+		}
+	}
+
+	return watchDBToDBRelation, nil
 }
 
 func (s *Service) createWatchToken(kit *rest.Kit, watchDBToDBRelation map[string][]string) error {

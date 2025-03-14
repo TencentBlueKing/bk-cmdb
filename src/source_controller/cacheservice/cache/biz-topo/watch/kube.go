@@ -237,6 +237,13 @@ func (w *kubeWatcher) handleUpsertTopoLevelEvent(ctx context.Context, obj string
 			blog.Errorf("received invalid kube topology events, collection %s, oids: %+v, rid: %s", coll, oids, rid)
 			continue
 		}
+
+		kind, err := getKubeNodeKind(obj, table)
+		if err != nil {
+			blog.Errorf("get %s kube node kind by coll %s failed, err: %v, rid: %s", obj, coll, err, rid)
+			continue
+		}
+
 		kit = kit.WithTenant(tenantID)
 
 		// get upsert data from db
@@ -254,68 +261,72 @@ func (w *kubeWatcher) handleUpsertTopoLevelEvent(ctx context.Context, obj string
 			return nil, err
 		}
 
-		kind, err := getKubeNodeKind(obj, table)
-		if err != nil {
-			blog.Errorf("get %s kube node kind by coll %s failed, err: %v, rid: %s", obj, coll, err, rid)
-			continue
-		}
-
-		bizNodeMap := make(map[int64][]types.Node)
-		nsIDs := make([]int64, 0)
-		nsNodeMap := make(map[int64][]types.Node)
-		nsKeyMap := make(map[int64][]string)
-		for _, doc := range docs {
-			// parse event to biz id and topo level node
-			bizID, node, err := kubeEventDocParserMap[obj](doc)
-			if err != nil {
-				blog.Errorf("parse %s doc %+v failed, err: %v, rid: %s", coll, doc, err, rid)
-				continue
-			}
-
-			var nsID int64
-			switch obj {
-			case kubetypes.KubeNamespace:
-				nsID = node.ID
-			case kubetypes.KubeWorkload:
-				nsID = node.ParentID
-			}
-			nsIDs = append(nsIDs, nsID)
-
-			node.Kind = kind
-			bizNodeMap[bizID] = append(bizNodeMap[bizID], node)
-			nsNodeMap[nsID] = append(nsNodeMap[nsID], node)
-
-			collOidKey := genCollOidKey(coll, doc.Oid.Hex())
-			collOidBizMap[collOidKey] = []int64{bizID}
-			nsKeyMap[nsID] = append(nsKeyMap[nsID], collOidKey)
-		}
-
-		// add shared namespace nodes to asst biz's cache
-		asstBizInfo, err := w.sharedNsCache.GetAsstBiz(kit, nsIDs)
+		collOidBizMap, err = w.handleUpsertTopoNodes(kit, docs, obj, coll, kind, collOidBizMap)
 		if err != nil {
 			return nil, err
 		}
+	}
 
-		for nsID, nodes := range nsNodeMap {
-			asstBizID, exists := asstBizInfo[nsID]
-			if !exists {
-				continue
-			}
-			bizNodeMap[asstBizID] = append(bizNodeMap[asstBizID], nodes...)
-			for _, collOidKey := range nsKeyMap[nsID] {
-				collOidBizMap[collOidKey] = append(collOidBizMap[collOidKey], asstBizID)
-			}
+	return collOidBizMap, nil
+}
+
+func (w *kubeWatcher) handleUpsertTopoNodes(kit *rest.Kit, docs []mapStrWithOid, obj, coll, kind string,
+	collOidBizMap map[string][]int64) (map[string][]int64, error) {
+
+	bizNodeMap := make(map[int64][]types.Node)
+	nsIDs := make([]int64, 0)
+	nsNodeMap := make(map[int64][]types.Node)
+	nsKeyMap := make(map[int64][]string)
+	for _, doc := range docs {
+		// parse event to biz id and topo level node
+		bizID, node, err := kubeEventDocParserMap[obj](doc)
+		if err != nil {
+			blog.Errorf("parse %s doc %+v failed, err: %v, rid: %s", coll, doc, err, kit.Rid)
+			continue
 		}
 
-		for bizID, nodes := range bizNodeMap {
-			// save kube topo level node info to redis
-			err = nodelgc.AddNodeInfoCache(kit, w.cacheKey, bizID, kind, nodes)
-			if err != nil {
-				return nil, err
-			}
+		var nsID int64
+		switch obj {
+		case kubetypes.KubeNamespace:
+			nsID = node.ID
+		case kubetypes.KubeWorkload:
+			nsID = node.ParentID
+		}
+		nsIDs = append(nsIDs, nsID)
+
+		node.Kind = kind
+		bizNodeMap[bizID] = append(bizNodeMap[bizID], node)
+		nsNodeMap[nsID] = append(nsNodeMap[nsID], node)
+
+		collOidKey := genCollOidKey(coll, doc.Oid.Hex())
+		collOidBizMap[collOidKey] = []int64{bizID}
+		nsKeyMap[nsID] = append(nsKeyMap[nsID], collOidKey)
+	}
+
+	// add shared namespace nodes to asst biz's cache
+	asstBizInfo, err := w.sharedNsCache.GetAsstBiz(kit, nsIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	for nsID, nodes := range nsNodeMap {
+		asstBizID, exists := asstBizInfo[nsID]
+		if !exists {
+			continue
+		}
+		bizNodeMap[asstBizID] = append(bizNodeMap[asstBizID], nodes...)
+		for _, collOidKey := range nsKeyMap[nsID] {
+			collOidBizMap[collOidKey] = append(collOidBizMap[collOidKey], asstBizID)
 		}
 	}
 
+	for bizID, nodes := range bizNodeMap {
+		// save kube topo level node info to redis
+		err = nodelgc.AddNodeInfoCache(kit, w.cacheKey, bizID, kind, nodes)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return collOidBizMap, nil
 }
 

@@ -15,6 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package mainline is the mainline association cache
 package mainline
 
 import (

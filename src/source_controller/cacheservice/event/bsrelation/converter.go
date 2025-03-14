@@ -430,64 +430,7 @@ func (b *bizSetRelation) getRelatedBizSets(params convertBizEventParams, bizSets
 				continue
 			}
 
-			var firstEventIndex int
-
-			// update biz event matches all biz sets whose scope contains the updated fields, get all matching fields.
-			matched := bizSet.Scope.Filter.MatchAny(func(r querybuilder.AtomRule) bool {
-				updatedFieldsIndexMap, exists := params.updatedFieldsIndexMap[tenantID]
-				if !exists {
-					return false
-				}
-				if index, exists := updatedFieldsIndexMap[r.Field]; exists {
-					if firstEventIndex == 0 || index < firstEventIndex {
-						firstEventIndex = index
-					}
-					return true
-				}
-				return false
-			})
-
-			// check if biz set scope filter matches the inserted/removed biz
-			for index, biz := range params.insertedAndDeletedBiz[tenantID] {
-				// if the event index already exceeds the event index of matched update fields, stop checking
-				eventIndex := params.insertedAndDeletedBizIndexMap[tenantID][index]
-				if firstEventIndex != 0 && eventIndex >= firstEventIndex {
-					break
-				}
-
-				bizMatched := bizSet.Scope.Filter.Match(func(r querybuilder.AtomRule) bool {
-					// ignores the biz set filter rule that do not contain need care fields
-					propertyType, exists := params.needCareFieldsMap[tenantID][r.Field]
-					if !exists {
-						blog.Errorf("biz set(%+v) filter rule contains ignored field, rid: %s", bizSet, rid)
-						return false
-					}
-
-					// ignores the biz that do not contain the field in filter rule
-					bizVal, exists := biz[r.Field]
-					if !exists {
-						blog.Infof("biz(%+v) do not contain rule field %s, rid: %s", biz, r.Field, rid)
-						return false
-					}
-
-					switch r.Operator {
-					case querybuilder.OperatorEqual:
-						return matchEqualOper(r.Value, bizVal, propertyType, rid)
-					case querybuilder.OperatorIn:
-						return matchInOper(r.Value, bizVal, propertyType, rid)
-					default:
-						blog.Errorf("biz set(%+v) filter rule contains invalid operator, rid: %s", bizSet, rid)
-						return false
-					}
-				})
-
-				if bizMatched {
-					firstEventIndex = eventIndex
-					matched = bizMatched
-					break
-				}
-			}
-
+			firstEventIndex, matched := b.getFirstMatchedEvent(params, bizSet, tenantID, rid)
 			if matched {
 				relatedBizSets[firstEventIndex] = append(relatedBizSets[firstEventIndex], bizSet)
 			}
@@ -495,6 +438,69 @@ func (b *bizSetRelation) getRelatedBizSets(params convertBizEventParams, bizSets
 	}
 
 	return relatedBizSets, containsMatchAllBizSetTenants
+}
+
+func (b *bizSetRelation) getFirstMatchedEvent(params convertBizEventParams, bizSet bizSetWithOid, tenantID string,
+	rid string) (int, bool) {
+
+	var firstEventIndex int
+
+	// update biz event matches all biz sets whose scope contains the updated fields, get all matching fields.
+	matched := bizSet.Scope.Filter.MatchAny(func(r querybuilder.AtomRule) bool {
+		updatedFieldsIndexMap, exists := params.updatedFieldsIndexMap[tenantID]
+		if !exists {
+			return false
+		}
+		if index, exists := updatedFieldsIndexMap[r.Field]; exists {
+			if firstEventIndex == 0 || index < firstEventIndex {
+				firstEventIndex = index
+			}
+			return true
+		}
+		return false
+	})
+
+	// check if biz set scope filter matches the inserted/removed biz
+	for index, biz := range params.insertedAndDeletedBiz[tenantID] {
+		// if the event index already exceeds the event index of matched update fields, stop checking
+		eventIndex := params.insertedAndDeletedBizIndexMap[tenantID][index]
+		if firstEventIndex != 0 && eventIndex >= firstEventIndex {
+			break
+		}
+
+		bizMatched := bizSet.Scope.Filter.Match(func(r querybuilder.AtomRule) bool {
+			// ignores the biz set filter rule that do not contain need care fields
+			propertyType, exists := params.needCareFieldsMap[tenantID][r.Field]
+			if !exists {
+				blog.Errorf("biz set(%+v) filter rule contains ignored field, rid: %s", bizSet, rid)
+				return false
+			}
+
+			// ignores the biz that do not contain the field in filter rule
+			bizVal, exists := biz[r.Field]
+			if !exists {
+				blog.Infof("biz(%+v) do not contain rule field %s, rid: %s", biz, r.Field, rid)
+				return false
+			}
+
+			switch r.Operator {
+			case querybuilder.OperatorEqual:
+				return matchEqualOper(r.Value, bizVal, propertyType, rid)
+			case querybuilder.OperatorIn:
+				return matchInOper(r.Value, bizVal, propertyType, rid)
+			default:
+				blog.Errorf("biz set(%+v) filter rule contains invalid operator, rid: %s", bizSet, rid)
+				return false
+			}
+		})
+
+		if bizMatched {
+			firstEventIndex = eventIndex
+			matched = bizMatched
+			break
+		}
+	}
+	return firstEventIndex, matched
 }
 
 // matchEqualOper check if biz set scope filter rule with equal operator matches biz value

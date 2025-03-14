@@ -79,7 +79,7 @@ func (t *loopWatchTask) startTenantTask(tenantID string, opts *watch.WatchEventO
 	t.tenantCancelFunc[tenantID] = cancel
 
 	go t.loopWatch(kit, opts)
-	blog.Infof("start tenant %s loop watch task %s", tenantID, t.name)
+	blog.Infof("start tenant %s loop watch task %s, rid: %s", tenantID, t.name, kit.Rid)
 }
 
 // stopTenantTask stop loop watch task for removed or disabled tenant

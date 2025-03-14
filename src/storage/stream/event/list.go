@@ -227,13 +227,10 @@ func (e *Event) listOneColl(ctx context.Context, opts *listOneCollOptions) bool 
 
 			rawDoc := bson.Raw{}
 			if err := cursor.Decode(&rawDoc); err != nil {
-				blog.Errorf("list watch operation, but list db: %s, collection: %s with cursor failed, "+
-					"will *retry later*, err: %v", e.database, opts.collection, err)
-
+				blog.Errorf("list db: %s, coll: %s with cursor failed, err: %v", e.database, opts.collection, err)
 				cursor.Close(ctx)
 				if !opts.withRetry {
-					blog.Warnf("list watch operation, but list db: %s, collection: %s with cursor failed, "+
-						"will exit list immediately.", e.database, opts.collection)
+					blog.Warnf("list db: %s, coll: %s failed, will exit list immediately", e.database, opts.collection)
 					close(opts.ch)
 					return true
 				}
@@ -263,12 +260,10 @@ func (e *Event) listOneColl(ctx context.Context, opts *listOneCollOptions) bool 
 		}
 
 		if err := cursor.Err(); err != nil {
-			blog.Errorf("list watch operation, but list db: %s, collection: %s with cursor failed, "+
-				"will *retry later*, err: %v", e.database, opts.collection, err)
+			blog.Errorf("list db: %s, coll: %s with cursor failed, err: %v", e.database, opts.collection, err)
 			cursor.Close(ctx)
 			if !opts.withRetry {
-				blog.Warnf("list watch operation, but list db: %s, collection: %s with cursor failed, "+
-					"will exit list immediately.", e.database, opts.collection)
+				blog.Warnf("list db: %s, coll: %s failed, will exit list immediately", e.database, opts.collection)
 				close(opts.ch)
 				return true
 			}

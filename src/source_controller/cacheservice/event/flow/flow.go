@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal/mongo/sharding"
+	ccredis "configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
 	"configcenter/src/storage/stream/task"
@@ -179,55 +180,11 @@ func (f *Flow) doBatch(dbInfo *types.DBInfo, es []*types.Event) (retry bool) {
 		f.metrics.CollectCycleDuration(time.Since(start))
 	}()
 
-	ids, err := dbInfo.WatchDB.NextSequences(context.Background(), f.key.ChainCollection(), eventLen)
+	chainNodes, oids, pipe, hitConflict, err := f.parseEvents(dbInfo, es, rid)
 	if err != nil {
-		blog.Errorf("get %s event ids failed, err: %v, rid: %s", f.key.ChainCollection(), err, rid)
 		return true
 	}
 
-	chainNodes := make(map[string][]*watch.ChainNode, 0)
-	oids := make([]string, eventLen)
-	// process events into db chain nodes to store in db and details to store in redis
-	pipe := redis.Client().Pipeline()
-	cursorMap := make(map[string]struct{})
-	hitConflict := false
-	for index, e := range es {
-		// collect event's basic metrics
-		f.metrics.CollectBasic(e)
-
-		tenant, chainNode, detail, retry, err := f.parseEvent(dbInfo.CcDB, f.key, e, ids[index], rid)
-		if err != nil {
-			return retry
-		}
-		if chainNode == nil {
-			continue
-		}
-
-		// if hit cursor conflict, the former cursor node's detail will be overwrite by the later one, so it
-		// is not needed to remove the overlapped cursor node's detail again.
-		ttl := time.Duration(f.key.TTLSeconds()) * time.Second
-		pipe.Set(f.key.DetailKey(tenant, chainNode.Cursor), string(detail.eventInfo), ttl)
-		pipe.Set(f.key.GeneralResDetailKey(tenant, chainNode), string(detail.resDetail), ttl)
-
-		// validate if the cursor already exists in the batch, this happens when the concurrency is very high.
-		// which will generate the same operation event with same cluster time, and generate with the same cursor
-		// in the end. if this happens, the last event will be used finally, and the former events with the same
-		// cursor will be dropped, and it's acceptable.
-		exists := false
-		if _, exists = cursorMap[chainNode.Cursor]; exists {
-			hitConflict = true
-		}
-
-		// if the cursor is conflict with another cursor in the former batches, skip it
-		if f.cursorQueue.checkIfConflict(dbInfo.UUID, chainNode.Cursor) && !exists {
-			f.metrics.CollectConflict()
-			continue
-		}
-
-		cursorMap[chainNode.Cursor] = struct{}{}
-		oids[index] = e.ID()
-		chainNodes[tenant] = append(chainNodes[tenant], chainNode)
-	}
 	lastTokenData := map[string]interface{}{
 		common.BKTokenField:       es[eventLen-1].Token.Data,
 		common.BKStartAtTimeField: es[eventLen-1].ClusterTime,
@@ -264,6 +221,68 @@ func (f *Flow) doBatch(dbInfo *types.DBInfo, es []*types.Event) (retry bool) {
 	blog.Infof("insert watch event for %s success, oids: %v, rid: %s", f.key.Collection(), oids, rid)
 	hasError = false
 	return false
+}
+
+func (f *Flow) parseEvents(dbInfo *types.DBInfo, es []*types.Event, rid string) (map[string][]*watch.ChainNode,
+	[]string, ccredis.Pipeliner, bool, error) {
+
+	eventLen := len(es)
+	ids, err := dbInfo.WatchDB.NextSequences(context.Background(), f.key.ChainCollection(), eventLen)
+	if err != nil {
+		blog.Errorf("get %s event ids failed, err: %v, rid: %s", f.key.ChainCollection(), err, rid)
+		return nil, nil, nil, false, err
+	}
+
+	chainNodes := make(map[string][]*watch.ChainNode, 0)
+	oids := make([]string, eventLen)
+	// process events into db chain nodes to store in db and details to store in redis
+	pipe := redis.Client().Pipeline()
+	cursorMap := make(map[string]struct{})
+	hitConflict := false
+
+	for index, e := range es {
+		// collect event's basic metrics
+		f.metrics.CollectBasic(e)
+
+		tenant, chainNode, detail, retry, err := f.parseEvent(dbInfo.CcDB, f.key, e, ids[index], rid)
+		if err != nil {
+			if retry {
+				return nil, nil, nil, false, err
+			}
+			continue
+		}
+
+		if chainNode == nil {
+			continue
+		}
+
+		// if hit cursor conflict, the former cursor node's detail will be overwrite by the later one, so it
+		// is not needed to remove the overlapped cursor node's detail again.
+		ttl := time.Duration(f.key.TTLSeconds()) * time.Second
+		pipe.Set(f.key.DetailKey(tenant, chainNode.Cursor), string(detail.eventInfo), ttl)
+		pipe.Set(f.key.GeneralResDetailKey(tenant, chainNode), string(detail.resDetail), ttl)
+
+		// validate if the cursor already exists in the batch, this happens when the concurrency is very high.
+		// which will generate the same operation event with same cluster time, and generate with the same cursor
+		// in the end. if this happens, the last event will be used finally, and the former events with the same
+		// cursor will be dropped, and it's acceptable.
+		exists := false
+		if _, exists = cursorMap[chainNode.Cursor]; exists {
+			hitConflict = true
+		}
+
+		// if the cursor is conflict with another cursor in the former batches, skip it
+		if f.cursorQueue.checkIfConflict(dbInfo.UUID, chainNode.Cursor) && !exists {
+			f.metrics.CollectConflict()
+			continue
+		}
+
+		cursorMap[chainNode.Cursor] = struct{}{}
+		oids[index] = e.ID()
+		chainNodes[tenant] = append(chainNodes[tenant], chainNode)
+	}
+
+	return chainNodes, oids, pipe, hitConflict, nil
 }
 
 // rearrangeEvents remove the earlier chain nodes with the same cursor with a later one
