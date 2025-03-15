@@ -50,8 +50,8 @@
           <span slot-scope="{ row }">{{getModelName(row)}}</span>
         </bk-table-column>
         <bk-table-column prop="create_user" :label="$t('创建用户')" sortable="custom" show-overflow-tooltip>
-          <template slot-scope="{ row }">
-            <cmdb-form-objuser :value="row.create_user" type="info"></cmdb-form-objuser>
+          <template #default="{ row }">
+            <cmdb-user-value :value="row.create_user" />
           </template>
         </bk-table-column>
         <bk-table-column prop="create_time" :label="$t('创建时间')" sortable="custom">
@@ -60,8 +60,8 @@
           </template>
         </bk-table-column>
         <bk-table-column prop="modify_user" :label="$t('修改人')" sortable="custom" show-overflow-tooltip>
-          <template slot-scope="{ row }">
-            <cmdb-form-objuser :value="row.modify_user" type="info"></cmdb-form-objuser>
+          <template #default="{ row }">
+            <cmdb-user-value :value="row.modify_user" />
           </template>
         </bk-table-column>
         <bk-table-column prop="last_time" :label="$t('修改时间')" sortable="custom">

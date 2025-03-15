@@ -16,6 +16,7 @@
 
 <script>
   export default {
+    name: 'cmdb-user-value',
     props: {
       value: {
         type: String,

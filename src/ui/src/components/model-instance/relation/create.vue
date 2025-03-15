@@ -187,7 +187,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModelClassify', ['models']),
       instId() {
         return this.inst.bk_inst_id

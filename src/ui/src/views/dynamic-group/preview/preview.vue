@@ -88,7 +88,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
       previewFields() {
         return this.previewProperties.map(property => property.bk_property_id)
@@ -122,7 +121,6 @@
         try {
           const properties = await this.$store.dispatch('objectModelProperty/searchObjectAttribute', {
             params: {
-              bk_supplier_account: this.supplierAccount,
               bk_biz_id: this.bizId,
               bk_obj_id: this.details.bk_obj_id
             },

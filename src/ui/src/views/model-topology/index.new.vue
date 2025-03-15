@@ -245,7 +245,7 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount', 'userName', 'mainFullScreen']),
+      ...mapGetters(['userName', 'mainFullScreen']),
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', [

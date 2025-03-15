@@ -36,7 +36,11 @@
       @page-limit-change="handleSizeChange"
       @row-click="handleRowClick">
       <bk-table-column :label="$t('操作描述')" :formatter="getFormatterDesc"></bk-table-column>
-      <bk-table-column prop="user" :label="$t('操作账号')"></bk-table-column>
+      <bk-table-column prop="user" :label="$t('操作账号')">
+        <template #default="{ row }">
+          <cmdb-user-value :value="row.user" />
+        </template>
+      </bk-table-column>
       <bk-table-column prop="operation_time" :label="$t('操作时间')">
         <template slot-scope="{ row }">
           {{$tools.formatTime(row['operation_time'])}}

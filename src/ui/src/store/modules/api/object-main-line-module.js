@@ -41,7 +41,6 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkObjId 对象的模型id
      * @return {promises} promises 对象
      */
@@ -88,31 +87,15 @@ const actions = {
   },
 
   /**
-     * 获取子节点实例
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
-     * @param {String} bkObjId 对象的模型id
-     * @param {String} bkBizId 业务id
-     * @param {String} bkInstId 实例id
-     * @return {promises} promises 对象
-     */
-  searchInstTopo({ commit, state, dispatch }, { bkSupplierAccount, bkObjId, bkBizId, bkInstId }) {
-    return $http.get(`topoinstchild/object/${bkObjId}/biz/${bkBizId}/inst/${bkInstId}`)
-  },
-
-  /**
      * 查询内置模块集
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkBizId 业务id
      * @return {promises} promises 对象
      */
   getInternalTopo({ commit, state, dispatch, rootGetters }, { bizId, config }) {
-    return $http.get(`topo/internal/${rootGetters.supplierAccount}/${bizId}/with_statistics`, config)
+    return $http.get(`topo/internal/0/${bizId}/with_statistics`, config)
   },
 
   getTopoPath(context, { bizId, params, config }) {

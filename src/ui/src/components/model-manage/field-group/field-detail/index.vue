@@ -329,7 +329,7 @@
     },
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
-      ...mapGetters(['supplierAccount', 'userName']),
+      ...mapGetters(['userName']),
       ...mapGetters('objectModel', ['activeModel']),
       isGlobalView() {
         const [topRoute] = this.$route.matched

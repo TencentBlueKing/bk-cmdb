@@ -93,7 +93,7 @@ const getMainLineModels = async () => {
 
 export default async function (app) {
   // 设置全局请求头
-  $http.setHeader('X-Bk-Tenant-Id', store.getters.supplierAccount)
+  $http.setHeader('X-Bk-Tenant-Id', store.getters.tenantId)
 
   if (window.Site.authscheme === 'iam') {
     verifyPlatformManagementAuth()

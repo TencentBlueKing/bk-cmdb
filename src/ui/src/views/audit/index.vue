@@ -72,6 +72,9 @@
       <bk-table-column
         prop="user"
         :label="$t('操作账号')">
+        <template #default="{ row }">
+          <cmdb-user-value :value="row.user" />
+        </template>
       </bk-table-column>
       <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter"></cmdb-table-empty>
     </bk-table>

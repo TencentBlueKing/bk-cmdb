@@ -101,7 +101,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('businessHost', ['selectedNode']),
       searchKey() {

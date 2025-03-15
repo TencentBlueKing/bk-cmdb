@@ -319,7 +319,7 @@
     },
     computed: {
       ...mapState('userCustom', ['globalUsercustom']),
-      ...mapGetters(['supplierAccount', 'userName']),
+      ...mapGetters(['userName']),
       ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('objectModelClassify', ['getModelById']),

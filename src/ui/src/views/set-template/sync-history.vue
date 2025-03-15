@@ -68,8 +68,8 @@
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('同步人')" prop="sync_user">
-        <template slot-scope="{ row }">
-          <span>{{row.creator || '--'}}</span>
+        <template #default="{ row }">
+          <cmdb-user-value :value="row.creator" />
         </template>
       </bk-table-column>
       <cmdb-table-empty slot="empty" :stuff="table.stuff" @clear="handleClearFilter"></cmdb-table-empty>

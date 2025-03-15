@@ -44,43 +44,6 @@ const actions = {
       return data
     })
   },
-
-  /**
-     * 获取主机详情
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
-     * @param {Number} bkHostId 主机id
-     * @return {Promise} promise 对象
-     */
-  getHostBaseInfo({ commit, state, dispatch, rootGetters }, { hostId, config }) {
-    return $http.get(`hosts/${rootGetters.supplierAccount}/${hostId}`)
-  },
-
-  /**
-     * 根据主机id获取主机快照数据
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Number} bkHostId 主机id
-     * @return {Promise} promise 对象
-     */
-  getHostSnapshot({ commit, state, dispatch }, { hostId, config }) {
-    return $http.get(`hosts/snapshot/${hostId}`, config)
-  },
-
-  /**
-     * 根据主机id获取主机快照数据
-     * @param {Function} commit store commit mutation hander
-     * @param {Object} state store state
-     * @param {String} dispatch store dispatch action hander
-     * @param {Object} params 参数
-     * @return {Promise} promise 对象
-     */
-  searchHostByCondition({ commit, state, dispatch }, { params }) {
-    return $http.post('hosts/snapshot/asstdetail', params)
-  }
 }
 
 const mutations = {

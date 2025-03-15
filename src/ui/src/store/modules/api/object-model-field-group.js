@@ -40,7 +40,6 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkObjId 模型id
      * @return {promises} promises 对象
      */
@@ -101,7 +100,6 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} bkObjId 模型id
      * @param {String} bkPropertyId 属性id
      * @param {String} bkGroupId 分组id

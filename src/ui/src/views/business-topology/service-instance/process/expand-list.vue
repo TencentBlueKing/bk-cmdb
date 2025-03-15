@@ -116,7 +116,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapGetters('businessHost', ['selectedNode']),
       bizId() {
         const { objectBiz, bizSet } = this.$store.state

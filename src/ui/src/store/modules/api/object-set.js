@@ -72,13 +72,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {Number} bkBizId 业务id
      * @param {Object} params 参数
      * @return {promises} promises 对象
      */
   searchSet({ commit, state, dispatch, rootGetters }, { bizId, params, config }) {
-    return $http.post(`set/search/${rootGetters.supplierAccount}/${bizId}`, params, config)
+    return $http.post(`set/search/0/${bizId}`, params, config)
   }
 }
 

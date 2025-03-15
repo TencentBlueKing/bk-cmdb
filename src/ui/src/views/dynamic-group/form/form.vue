@@ -231,7 +231,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
       isCreateMode() {
         return !this.id

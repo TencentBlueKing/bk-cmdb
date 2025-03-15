@@ -65,7 +65,7 @@
 </template>
 
 <script>
-  import { mapGetters, mapState } from 'vuex'
+  import { mapState } from 'vuex'
   import Bus from '@/utils/bus'
   import { addResizeListener, removeResizeListener } from '@/utils/resize-events'
   import topologyInstanceService, { requestIds as topologyrequestIds } from '@/service/topology/instance.js'
@@ -116,7 +116,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapState('hostApply', ['ruleDraft']),
       business() {
         return this.$store.state.objectBiz.bizId

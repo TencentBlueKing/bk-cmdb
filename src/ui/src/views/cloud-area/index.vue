@@ -98,7 +98,11 @@
       <bk-table-column :label="$t('最近编辑')" prop="last_time" sortable="custom" show-overflow-tooltip>
         <template slot-scope="{ row }">{{row.last_time | formatter('time')}}</template>
       </bk-table-column>
-      <bk-table-column :label="$t('编辑人')" prop="bk_last_editor" show-overflow-tooltip></bk-table-column>
+      <bk-table-column :label="$t('编辑人')" prop="bk_last_editor" show-overflow-tooltip>
+        <template #default="{ row }">
+          <cmdb-user-value :value="row.bk_last_editor" />
+        </template>
+      </bk-table-column>
       <bk-table-column :label="$t('操作')" fixed="right">
         <template slot-scope="{ row }">
           <loading :loading="!row.hasOwnProperty('host_count')">
@@ -201,7 +205,7 @@
         }
       },
       isRemovable(row) {
-        return row.host_count === 0 && !this.isLimited(row) && row.sync_task_ids.length === 0
+        return row.host_count === 0 && !this.isLimited(row) && row.sync_task_ids?.length === 0
       },
       getRemoveTips(row) {
         if (this.isLimited(row)) {
@@ -210,7 +214,7 @@
         if (row.host_count !== 0) {
           return this.$t('主机不为空，不能删除')
         }
-        if (row.sync_task_ids.length !== 0) {
+        if (row.sync_task_ids?.length !== 0) {
           return this.$t('已关联同步任务，不能删除')
         }
         return null

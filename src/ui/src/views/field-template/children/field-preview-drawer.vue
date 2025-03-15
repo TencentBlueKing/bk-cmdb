@@ -36,7 +36,6 @@
     bk_group_name: 'Default',
     bk_isdefault: true,
     bk_obj_id: '',
-    bk_supplier_account: '0',
   }])
 
   const defaultData = ref([

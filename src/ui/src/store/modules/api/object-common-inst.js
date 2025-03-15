@@ -67,7 +67,6 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} objId 模型id
      * @param {Object} params 参数
      * @return {promises} promises 对象
@@ -98,7 +97,6 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 开发商账号
      * @param {String} objId 模型id
      * @param {String} inst 实例id
      * @param {Object} params 参数

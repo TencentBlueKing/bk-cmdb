@@ -518,8 +518,8 @@
         min-width="170"
         :label="$t('最近更新人')"
         show-overflow-tooltip>
-        <template slot-scope="{ row }">
-          <div>{{ row.modifier }}</div>
+        <template #default="{ row }">
+          <cmdb-user-value :value="row.modifier" />
         </template>
       </bk-table-column>
       <bk-table-column

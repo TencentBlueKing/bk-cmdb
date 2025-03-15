@@ -137,7 +137,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapGetters('objectBiz', ['bizId']),
       templateId() {
         return Number(this.$route.params.template)

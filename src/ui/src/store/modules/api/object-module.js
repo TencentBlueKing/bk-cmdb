@@ -74,13 +74,12 @@ const actions = {
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
      * @param {String} dispatch store dispatch action hander
-     * @param {String} bkSupplierAccount 模块id
      * @param {Number} bkBizId 业务id
      * @param {Number} bkSetId 集群id
      * @return {promises} promises 对象
      */
   searchModule({ commit, state, dispatch, rootGetters }, { bizId, setId, params, config }) {
-    return $http.post(`module/search/${rootGetters.supplierAccount}/${bizId}/${setId}`, params, config)
+    return $http.post(`module/search/0/${bizId}/${setId}`, params, config)
   }
 }
 

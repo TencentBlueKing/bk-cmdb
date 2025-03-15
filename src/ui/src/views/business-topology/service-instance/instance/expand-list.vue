@@ -68,7 +68,6 @@
 <script>
   import { processPropertyRequestId } from '@/components/service/form/symbol'
   import { processTableHeader } from '@/dictionary/table-header'
-  import { mapGetters } from 'vuex'
   import Form from '@/components/service/form/form.js'
   import ProcessBindInfoValue from '@/components/service/process-bind-info-value'
   import Bus from '../common/bus'
@@ -106,7 +105,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       bizId() {
         const  { objectBiz, bizSet } = this.$store.state
         return objectBiz.bizId || bizSet.bizId

@@ -104,7 +104,11 @@
           <cmdb-loading :loading="$loading(request.count)">{{row.module_count}}</cmdb-loading>
         </template>
       </bk-table-column>
-      <bk-table-column prop="modifier" :label="$t('修改人')" sortable="custom"></bk-table-column>
+      <bk-table-column prop="modifier" :label="$t('修改人')" sortable="custom">
+        <template #default="{ row }">
+          <cmdb-user-value :value="row.modifier" />
+        </template>
+      </bk-table-column>
       <bk-table-column prop="last_time" :label="$t('修改时间')" show-overflow-tooltip sortable="custom">
         <template slot-scope="{ row }">
           {{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm')}}

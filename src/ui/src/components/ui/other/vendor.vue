@@ -20,7 +20,6 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
   import { CLOUD_AREA_PROPERTIES } from '@/dictionary/request-symbol'
   export default {
     props: {
@@ -36,7 +35,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       vendor() {
         return this.vendors.find(vendor => vendor.id === this.type)
       },

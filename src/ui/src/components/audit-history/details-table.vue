@@ -48,7 +48,7 @@
       <div class="info-group">
         <label class="info-label">{{$t('操作账号')}}</label>
         <span class="info-content" v-bk-overflow-tips>
-          <cmdb-form-objuser type="info" :value="details.user"></cmdb-form-objuser>
+          <cmdb-user-value :value="details.user" />
         </span>
       </div>
     </div>
