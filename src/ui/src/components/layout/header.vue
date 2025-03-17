@@ -78,7 +78,7 @@
           offset: '0, 10'
         }">
         <span class="info-user">
-          <user-value :value="userName" />
+          <cmdb-user-value :value="userName" />
           <i class="user-icon bk-icon icon-angle-down"></i>
         </span>
         <template slot="content">
@@ -99,7 +99,6 @@
 
 <script>
   import has from 'has'
-  import UserValue from '@/components/ui/other/user-value'
   import menu from '@/dictionary/menu'
   import {
     MENU_BUSINESS,
@@ -121,7 +120,6 @@
   export default {
     components: {
       versionLog,
-      UserValue
     },
     data() {
       return {

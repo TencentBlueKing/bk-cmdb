@@ -73,9 +73,9 @@
             <span>{{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ss') : '--'}}</span>
           </template>
         </bk-table-column>
-        <bk-table-column :label="$t('同步人')" prop="sync_user">
+        <bk-table-column :label="$t('同步人')" prop="bk_updated_by">
           <template slot-scope="{ row }">
-            <span>{{row.creator || '--'}}</span>
+            <span>{{row.bk_updated_by || '--'}}</span>
           </template>
         </bk-table-column>
         <bk-table-column :label="$t('操作')" width="180">

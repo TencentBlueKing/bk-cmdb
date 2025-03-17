@@ -205,7 +205,7 @@
         }
       },
       isRemovable(row) {
-        return row.host_count === 0 && !this.isLimited(row) && row.sync_task_ids?.length === 0
+        return row.host_count === 0 && !this.isLimited(row)
       },
       getRemoveTips(row) {
         if (this.isLimited(row)) {
@@ -213,9 +213,6 @@
         }
         if (row.host_count !== 0) {
           return this.$t('主机不为空，不能删除')
-        }
-        if (row.sync_task_ids?.length !== 0) {
-          return this.$t('已关联同步任务，不能删除')
         }
         return null
       },
@@ -268,7 +265,6 @@
             },
             host_count: true,
             condition: {},
-            sync_task_ids: true
           }
           if (this.filter) {
             params.condition.bk_cloud_name = this.filter
