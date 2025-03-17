@@ -20,8 +20,8 @@ package data
 import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/scene_server/admin_server/upgrader/types"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/driver/mongodb"
 )
 
 var (
@@ -44,21 +44,15 @@ var (
 	}
 )
 
-// InitData add default tenant init data
+// InitData add init data
 func InitData(kit *rest.Kit, db local.DB) error {
-	for _, handler := range commonTableDataArr {
-		if err := handler(kit, db); err != nil {
+	dataArr := append(commonTableDataArr, defaultTableDataArr...)
+
+	for _, handler := range dataArr {
+		if err := handler(types.GetBlueKingKit(), db); err != nil {
 			blog.Errorf("add init data failed, err: %v", err)
 			return err
 		}
 	}
-
-	for _, handler := range defaultTableDataArr {
-		if err := handler(kit, mongodb.Dal().Shard(kit.SysShardOpts())); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
-	}
-
 	return nil
 }

@@ -15,23 +15,23 @@ package common
 import (
 	"configcenter/src/common"
 	httpheader "configcenter/src/common/http/header"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
 // SetProxyHeader TODO
-func SetProxyHeader(c *gin.Context) {
+func SetProxyHeader(c *gin.Context) error {
 	// http request header add user
 	session := sessions.Default(c)
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
-	ownerID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
+	tenantID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
 
 	// 删除 Accept-Encoding 避免返回值被压缩
 	c.Request.Header.Del("Accept-Encoding")
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, GetLanguageByHTTPRequest(c))
-	httpheader.SetTenantID(c.Request.Header, ownerID)
+	httpheader.SetTenantID(c.Request.Header, tenantID)
+	return nil
 }
 
 // GetLanguageByHTTPRequest get language by http request cookie

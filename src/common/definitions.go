@@ -73,8 +73,11 @@ const (
 	// BKInstParentStr the inst parent name
 	BKInstParentStr = "bk_parent_id"
 
-	// BKDefaultTenantID the default tenant value
+	// BKDefaultTenantID the operation tenant value
 	BKDefaultTenantID = "system"
+
+	// BKUnconfiguredTenantID the tenant value while without tenant model
+	BKUnconfiguredTenantID = "default"
 
 	// BKSuperTenantID the super tenant value
 	BKSuperTenantID = "superadmin"

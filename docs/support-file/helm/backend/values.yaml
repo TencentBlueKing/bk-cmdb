@@ -1540,8 +1540,11 @@ apigatewaySync:
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:
 
-## @param tenant.disableVerifyTenant Disable tenant verify
+## @section tenant parameters
+##
 tenant:
+  ## @param tenant.disableVerifyTenant Disable tenant verify
   disableVerifyTenant: true
-
+  ## @param enableMultiTenantEnabledMode indicates whether the multi-tenant mode is enabled
+  enableMultiTenantEnabledMode: true
 

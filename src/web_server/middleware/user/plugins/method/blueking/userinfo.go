@@ -72,6 +72,18 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	if user == nil {
 		return nil, false
 	}
+
+	enableTenantMode, err := cc.Bool("tenant.enableMultiTenantMode")
+	if err != nil {
+		blog.Errorf("get enable tenant mode failed, err: %v", err)
+		return nil, false
+	}
+
+	if !enableTenantMode && user.TenantUin != "" && user.TenantUin != common.BKUnconfiguredTenantID {
+		blog.Infof("tenant mode not enabled, but tenantUin is not empty, rid: %s", rid)
+		return nil, false
+	}
+
 	return user, true
 }
 

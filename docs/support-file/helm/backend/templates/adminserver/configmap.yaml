@@ -265,6 +265,9 @@ data:
         caFile: {{ .Values.common.apiGW.tls.caFile }}
         # 用于解密根据RFC1423加密的证书密钥的PEM块
         password: {{ .Values.common.apiGW.tls.password }}
+    tenant:
+      # 是否开启多租户模式
+      enableMultiTenantEnabledMode: true
 
   extra.yaml: |-
     

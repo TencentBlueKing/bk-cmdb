@@ -502,6 +502,23 @@ func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response,
 func (s *service) TenantVerify() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 
+		if !s.config.EnableMultiTenantMode {
+			if tenant := req.Request.Header.Get(httpheader.TenantHeader); tenant == "" ||
+				tenant == common.BKUnconfiguredTenantID {
+				req.Request.Header.Set(httpheader.TenantHeader, common.BKUnconfiguredTenantID)
+				fchain.ProcessFilter(req, resp)
+				return
+			}
+			blog.Errorf("tenant mode is not enabled but tenant is set, rid: %s", httpheader.GetRid(req.Request.Header))
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrAPICheckTenantInvalid,
+				ErrMsg: "tenant mode is not enabled but tenant is set",
+				Result: false,
+			}
+			_ = resp.WriteAsJson(rsp)
+			return
+		}
+
 		tenantID := httpheader.GetTenantID(req.Request.Header)
 		tenantData, exist := tenant.GetTenant(tenantID)
 		if !exist || tenantData.Status != types.EnabledStatus {

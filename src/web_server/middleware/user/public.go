@@ -17,6 +17,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
@@ -60,6 +61,17 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	}
 
 	session := sessions.Default(c)
+	enableTenantMode, err := cc.Bool("tenant.enableMultiTenantMode")
+	if err != nil {
+		blog.Errorf("get enable tenant mode failed, err: %v", err)
+		return false
+	}
+
+	if !enableTenantMode {
+		session.Set(common.WEBSessionTenantUinKey, common.BKUnconfiguredTenantID)
+	} else {
+		session.Set(common.WEBSessionTenantUinKey, userInfo.TenantUin)
+	}
 
 	session.Set(common.WEBSessionUinKey, userInfo.UserName)
 	session.Set(common.WEBSessionChineseNameKey, userInfo.ChName)
@@ -67,7 +79,6 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	session.Set(common.WEBSessionEmailKey, userInfo.Email)
 	session.Set(common.HTTPCookieBKToken, userInfo.BkToken)
 	session.Set(common.HTTPCookieBKTicket, userInfo.BkTicket)
-	session.Set(common.WEBSessionTenantUinKey, userInfo.TenantUin)
 	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
 	session.Set(common.WEBSessionTenantUinListeKey, string(strOwnerUinList))
 	if userInfo.MultiTenant {

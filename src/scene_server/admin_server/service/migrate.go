@@ -48,7 +48,30 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 
 	rHeader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	// default tenant model
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+	if !s.Config.EnableMultiTenantMode {
+		tenantID := req.Request.Header.Get(httpheader.TenantHeader)
+		if tenantID != "" && tenantID != common.BKUnconfiguredTenantID {
+			result := &metadata.RespError{
+				Msg: defErr.Errorf(common.CCErrCommMigrateFailed, "tenant mode is not enabled, but tenant id is set"),
+			}
+			resp.WriteError(http.StatusInternalServerError, result)
+			return
+		}
+		req.Request.Header.Set(httpheader.TenantHeader, common.BKUnconfiguredTenantID)
+		kit = rest.NewKitFromHeader(rHeader, s.CCErr)
+	} else {
+		if kit.TenantID != common.BKDefaultTenantID {
+			blog.Errorf("only support system tenant, but current tenant id is %s", kit.TenantID)
+			result := &metadata.RespError{
+				Msg: defErr.Errorf(common.CCErrCommMigrateFailed, "only support system tenant"),
+			}
+			resp.WriteError(http.StatusInternalServerError, result)
+			return
+		}
+	}
+
 	if err := s.createWatchDBChainCollections(kit); err != nil {
 		blog.Errorf("create watch db chain collections failed, err: %v", err)
 		result := &metadata.RespError{

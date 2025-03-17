@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
+	"configcenter/src/web_server/middleware/user/plugins/method"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -47,15 +48,9 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
 
-	cookieOwnerID, err := c.Cookie(common.HTTPCookieTenant)
-	if "" == cookieOwnerID || err != nil {
-		c.SetCookie(common.HTTPCookieTenant, common.BKDefaultTenantID, 0, "/", "", false, false)
-		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
-	} else if cookieOwnerID != session.Get(common.WEBSessionTenantUinKey) {
-		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
-	}
-	if err := session.Save(); err != nil {
-		blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
+	if err := method.SetCookie(c, session); err != nil {
+		blog.Errorf("set cookie failed, err: %v, rid: %s", err, rid)
+		return nil, false
 	}
 
 	cookieUser, err := c.Cookie(common.BKUser)
@@ -76,7 +71,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 			Phone:     "",
 			Email:     "blueking",
 			BkToken:   "",
-			TenantUin: "0",
+			TenantUin: session.Get(common.WEBSessionTenantUinKey).(string),
 			IsTenant:  false,
 			Language:  webCommon.GetLanguageByHTTPRequest(c),
 		}, true

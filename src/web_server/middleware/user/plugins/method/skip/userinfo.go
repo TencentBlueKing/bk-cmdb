@@ -18,10 +18,13 @@ import (
 
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
+	"configcenter/src/web_server/middleware/user/plugins/method"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -42,14 +45,10 @@ type user struct{}
 func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo,
 	loginSucc bool) {
 
+	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
-
-	cookieOwnerID, err := c.Cookie(common.HTTPCookieTenant)
-	if "" == cookieOwnerID || nil != err {
-		c.SetCookie(common.HTTPCookieTenant, common.BKDefaultTenantID, 0, "/", "", false, false)
-		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
-	} else if cookieOwnerID != session.Get(common.WEBSessionTenantUinKey) {
-		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
+	if err := method.SetCookie(c, session); err != nil {
+		blog.Errorf("set cookie failed, err: %v, rid: %s,", err, rid)
 	}
 
 	user = &metadata.LoginUserInfo{
@@ -58,7 +57,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		Phone:     "",
 		Email:     "blueking",
 		BkToken:   "",
-		TenantUin: "0",
+		TenantUin: session.Get(common.WEBSessionTenantUinKey).(string),
 		IsTenant:  false,
 		Language:  webCommon.GetLanguageByHTTPRequest(c),
 	}

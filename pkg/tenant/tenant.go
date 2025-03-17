@@ -129,7 +129,8 @@ func refreshTenantInfo() error {
 // GetAllTenants get all tenants
 func GetAllTenants() []types.Tenant {
 	// TODO right now only support default tenant for compatible, use actual tenants later
-	return []types.Tenant{{TenantID: common.BKDefaultTenantID, Status: types.EnabledStatus}}
+	// return []types.Tenant{{TenantID: common.BKDefaultTenantID, Status: types.EnabledStatus}}
+	return allTenants
 }
 
 // GetAllTenantsFromDB get all tenants from db

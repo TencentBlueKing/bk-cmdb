@@ -69,6 +69,7 @@ type Config struct {
 	// 通过何种方式调用gse接口注册dataid
 	DataIdMigrateWay    MigrateWay
 	DisableVerifyTenant bool
+	EnableMultiTenantMode bool
 }
 
 // MigrateWay 通过何种方式调用gse接口注册dataid

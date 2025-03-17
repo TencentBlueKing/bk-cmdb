@@ -38,3 +38,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	s.ServConf.AddFlags(fs, "127.0.0.1:50001")
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }
+
+type Config struct {
+	EnableMultiTenantMode bool
+}

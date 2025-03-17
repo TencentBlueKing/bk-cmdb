@@ -18,8 +18,37 @@
 package types
 
 import (
+	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
+
+// GetBlueKingKit 后续改为从tenant包获取
+func GetBlueKingKit() *rest.Kit {
+	var err error
+	blueKingKit := rest.NewKit()
+	blueKingKit.TenantID, err = GetBlueKing()
+	if err != nil {
+		blog.Errorf("get tenant id failed, err: %v", err)
+		return nil
+	}
+	return blueKingKit
+}
+
+// GetBlueKing 获取蓝鲸租户ID,后续修改为默认租户
+func GetBlueKing() (string, error) {
+	tenantModeEnable, err := cc.Bool("tenant.enableMultiTenantMode")
+	if err != nil {
+		blog.Errorf("get enable multi tenant mode failed, err: %v", err)
+		return "", err
+	}
+	if tenantModeEnable {
+		return common.BKDefaultTenantID, nil
+	}
+	return common.BKUnconfiguredTenantID, nil
+}
 
 // MigrateResp migrate response
 type MigrateResp struct {
