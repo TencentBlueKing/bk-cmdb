@@ -20,6 +20,7 @@ package auditlog
 import (
 	"time"
 
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
@@ -29,35 +30,26 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-type tenantTemplateAuditLog struct {
-	audit
-}
+type tenantTemplateAuditLog struct{}
 
 // GenerateAuditLog generate audit log
-func (t *tenantTemplateAuditLog) GenerateAuditLog(parameter *generateAuditCommonParameter,
-	data []interface{}, auditOpt *AuditOpts) []metadata.AuditLog {
+func (t *tenantTemplateAuditLog) GenerateAuditLog(data []*TenantTmpAuditOpts) []metadata.AuditLog {
 
 	auditLogs := make([]metadata.AuditLog, 0)
 
-	for index, item := range data {
-		resourceName := ""
-		if len(auditOpt.ResourceName) != 0 {
-			resourceName = auditOpt.ResourceName[index]
-		}
+	for _, item := range data {
 		auditLogs = append(auditLogs, metadata.AuditLog{
 			Action:      metadata.AuditTenantInit,
 			OperateFrom: metadata.FromCCSystem,
-			OperationDetail: &metadata.TenantTmpDetail{
-				Type: auditOpt.Type,
-				TenantTmpBasicOpDetail: metadata.TenantTmpBasicOpDetail{
-					Details: parameter.NewTmpBasicContent(item),
-				},
+			OperationDetail: &TenantTmpDetail{
+				Type:    item.Type,
+				CurData: item,
 			},
 			OperationTime: metadata.Time{Time: time.Now()},
-			ResourceName:  resourceName,
+			ResourceName:  item.ResourceName,
 			AuditType:     metadata.PlatformSetting,
 			ResourceType:  metadata.TenantTemplateRes,
-			ResourceID:    auditOpt.ResourceID[index],
+			ResourceID:    item.ResourceID,
 		})
 	}
 	return auditLogs
@@ -69,7 +61,7 @@ func (t *tenantTemplateAuditLog) SaveAuditLog(kit *rest.Kit, db local.DB, auditL
 
 	ids, err := mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameAuditLog, len(auditLogs))
 	if err != nil {
-		blog.Errorf("get next audit log id failed, err: %s", err.Error())
+		blog.Errorf("get next audit log id failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
@@ -88,9 +80,8 @@ func (t *tenantTemplateAuditLog) SaveAuditLog(kit *rest.Kit, db local.DB, auditL
 		if appCode := httpheader.GetAppCode(kit.Header); len(appCode) > 0 {
 			log.AppCode = appCode
 		}
-		if rid := kit.Rid; len(rid) > 0 {
-			log.RequestID = kit.Rid
-		}
+
+		log.RequestID = kit.Rid
 		log.OperationTime = metadata.Now()
 		log.ID = int64(ids[index])
 
@@ -103,14 +94,28 @@ func (t *tenantTemplateAuditLog) SaveAuditLog(kit *rest.Kit, db local.DB, auditL
 	return db.Table(common.BKTableNameAuditLog).Insert(kit.Ctx, logRows)
 }
 
-// AuditOpts audit options
-type AuditOpts struct {
-	Type         string
-	ResourceID   []int64
-	ResourceName []string
-}
-
 // NewTenantTemplateAuditLog new tenant template audit log
 func NewTenantTemplateAuditLog() *tenantTemplateAuditLog {
 	return &tenantTemplateAuditLog{}
+}
+
+// TenantTmpDetail tenant template audit log detail
+type TenantTmpDetail struct {
+	PreData      interface{}                  `json:"pre_data" bson:"pre_data"`
+	CurData      interface{}                  `json:"cur_data" bson:"cur_data"`
+	UpdateFields interface{}                  `json:"update_fields" bson:"update_fields"`
+	Type         tenanttmp.TenantTemplateType `json:"type" bson:"type"`
+}
+
+// WithName tenant template with name
+func (op *TenantTmpDetail) WithName() string {
+	return "TenantTemplateDetail"
+}
+
+// TenantTmpAuditOpts tenant template audit log option
+type TenantTmpAuditOpts struct {
+	Data         interface{}
+	ResourceID   int64
+	ResourceName string
+	Type         tenanttmp.TenantTemplateType
 }

@@ -29,6 +29,7 @@ type AdminServerClientInterface interface {
 	Set(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error)
 	Migrate(ctx context.Context, h http.Header) error
 	RunSyncDBIndex(ctx context.Context, h http.Header) error
+	AddTenant(ctx context.Context, h http.Header) error
 }
 
 // NewAdminServerClientInterface TODO

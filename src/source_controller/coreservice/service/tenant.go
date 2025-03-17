@@ -19,8 +19,13 @@ package service
 
 import (
 	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/types"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
+	"configcenter/src/storage/dal/mongo/sharding"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // GetAllTenants get all tenants from db
@@ -30,4 +35,31 @@ func (s *coreService) GetAllTenants(ctx *rest.Contexts) {
 		blog.Errorf("tenant is empty, rid: %s", ctx.Kit.Rid)
 	}
 	ctx.RespEntity(result)
+}
+
+// RefreshAllTenants refresh all tenants from db
+func (s *coreService) RefreshAllTenants(ctx *rest.Contexts) {
+	tenants := make([]types.Tenant, 0)
+	err := mongodb.Shard(ctx.Kit.SysShardOpts()).Table(common.BKTableNameTenant).Find(mapstr.MapStr{}).All(ctx.Kit.Ctx,
+		&tenants)
+	if err != nil {
+		blog.Errorf("find all tenants failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	tenant.SetTenant(tenants)
+	// refresh tenant db map
+	shardingMongoManager, ok := mongodb.Dal().(*sharding.ShardingMongoManager)
+	if !ok {
+		blog.Errorf("convert to ShardingMongoManager failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	if err = shardingMongoManager.RefreshTenantDBMap(); err != nil {
+		blog.Errorf("refresh tenant db map failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(tenants)
 }

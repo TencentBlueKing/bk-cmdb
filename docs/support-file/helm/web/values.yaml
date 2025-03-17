@@ -275,6 +275,8 @@ web:
       privateKey:
     #是否启用消息通知
     enableNotification: false
+    #是否启用用户管理
+    enableUser: false
 
   ## monitor common config parameters
   ##

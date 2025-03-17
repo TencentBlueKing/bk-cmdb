@@ -33,7 +33,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
@@ -88,13 +87,15 @@ func insertAsstData(kit *rest.Kit, db local.DB) error {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-	auditLog := &auditlog.AuditOpts{}
-	insertInterface := make([]interface{}, 0)
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for index := range insertData {
 		insertData[index].ID = int64(ids[index])
-		auditLog.ResourceName = append(auditLog.ResourceName, insertData[index].AssociationKindName)
-		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
-		insertInterface = append(insertInterface, insertData[index])
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			ResourceName: insertData[index].AssociationKindName,
+			ResourceID:   insertData[index].ID,
+			Data:         insertData[index],
+			Type:         tenanttmp.TemplateTypeAssociation,
+		})
 	}
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
@@ -102,7 +103,7 @@ func insertAsstData(kit *rest.Kit, db local.DB) error {
 	}
 
 	// generate audit log.
-	if err := addAuditLog(kit, db, insertInterface, auditLog); err != nil {
+	if err := addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -145,22 +146,24 @@ func insertBizSetData(kit *rest.Kit, db local.DB) error {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-	auditLog := &auditlog.AuditOpts{}
-	interfaceArr := make([]interface{}, 0)
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for index := range insertData {
 		insertData[index].BizSetID = int64(ids[index])
 		insertData[index].CreateTime = metadata.Time{Time: time.Now()}
 		insertData[index].LastTime = metadata.Time{Time: time.Now()}
-		auditLog.ResourceName = append(auditLog.ResourceName, insertData[index].BizSetName)
-		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].BizSetID)
-		interfaceArr = append(interfaceArr, insertData[index])
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			ResourceName: insertData[index].BizSetName,
+			ResourceID:   insertData[index].BizSetID,
+			Data:         insertData[index],
+			Type:         tenanttmp.TemplateTypeBizSet,
+		})
 	}
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
-	if err := addAuditLog(kit, db, interfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -201,20 +204,22 @@ func insertObjAssociationData(kit *rest.Kit, db local.DB) error {
 		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-	auditLog := &auditlog.AuditOpts{}
-	interfaceArr := make([]interface{}, 0)
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for index := range insertData {
 		insertData[index].ID = int64(ids[index])
-		auditLog.ResourceName = append(auditLog.ResourceName, insertData[index].AssociationName)
-		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
-		interfaceArr = append(interfaceArr, insertData[index])
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			ResourceName: insertData[index].AssociationName,
+			ResourceID:   insertData[index].ID,
+			Data:         insertData[index],
+			Type:         tenanttmp.TemplateTypeObjAssociation,
+		})
 	}
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
-	if err = addAuditLog(kit, db, interfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -259,22 +264,24 @@ func insertObjAttrData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	auditLog := &auditlog.AuditOpts{}
-	inerfaceArr := make([]interface{}, 0)
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for index := range insertData {
 		insertData[index].ID = int64(ids[index])
-		auditLog.ResourceName = append(auditLog.ResourceName, insertData[index].PropertyName)
-		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
 		insertData[index].CreateTime = &metadata.Time{Time: time.Now()}
 		insertData[index].LastTime = &metadata.Time{Time: time.Now()}
-		inerfaceArr = append(inerfaceArr, insertData[index])
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			ResourceName: insertData[index].PropertyName,
+			ResourceID:   insertData[index].ID,
+			Data:         insertData[index],
+			Type:         tenanttmp.TemplateTypeObjAttribute,
+		})
 	}
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
-	if err := addAuditLog(kit, db, inerfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -318,13 +325,15 @@ func insertObjClassification(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	auditLog := &auditlog.AuditOpts{}
-	inerfaceArr := make([]interface{}, 0)
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for index := range insertData {
 		insertData[index].ID = int64(ids[index])
-		auditLog.ResourceName = append(auditLog.ResourceName, insertData[index].ClassificationName)
-		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
-		inerfaceArr = append(inerfaceArr, insertData[index])
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			ResourceName: insertData[index].ClassificationName,
+			ResourceID:   insertData[index].ID,
+			Data:         insertData[index],
+			Type:         tenanttmp.TemplateTypeObjClassification,
+		})
 	}
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err,
@@ -332,7 +341,7 @@ func insertObjClassification(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, inerfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -375,22 +384,24 @@ func insertPlatData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	auditLog := &auditlog.AuditOpts{}
-	inerfaceArr := make([]interface{}, 0)
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for index := range insertData {
 		insertData[index].CloudID = int64(ids[index])
 		insertData[index].CreateTime = time.Now()
 		insertData[index].LastTime = time.Now()
-		auditLog.ResourceName = append(auditLog.ResourceName, insertData[index].CloudName)
-		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].CloudID)
-		inerfaceArr = append(inerfaceArr, insertData[index])
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			ResourceName: insertData[index].CloudName,
+			ResourceID:   insertData[index].CloudID,
+			Data:         insertData[index],
+			Type:         tenanttmp.TemplateTypePlat,
+		})
 	}
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
-	if err := addAuditLog(kit, db, inerfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -406,8 +417,8 @@ func insertPropertyGrp(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 	result := make([]metadata.Group, 0)
-	err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKObjIDField,
-		common.BKPropertyGroupNameField).All(kit.Ctx, &result)
+	err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKObjIDField, common.BKPropertyGroupIDField).All(kit.Ctx,
+		&result)
 	if err != nil {
 		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
@@ -415,11 +426,11 @@ func insertPropertyGrp(kit *rest.Kit, db local.DB) error {
 
 	existData := make(map[string]interface{}, 0)
 	for _, item := range result {
-		existData[item.ObjectID+"*"+util.GetStrByInterface(item.GroupName)] = struct{}{}
+		existData[item.ObjectID+"*"+util.GetStrByInterface(item.GroupID)] = struct{}{}
 	}
 	insertData := make([]metadata.Group, 0)
 	for _, item := range data {
-		if _, ok := existData[item.Data.ObjectID+"*"+item.Data.GroupName]; ok {
+		if _, ok := existData[item.Data.ObjectID+"*"+item.Data.GroupID]; ok {
 			continue
 		}
 		insertData = append(insertData, item.Data)
@@ -434,20 +445,22 @@ func insertPropertyGrp(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	auditLog := &auditlog.AuditOpts{}
-	inerfaceArr := make([]interface{}, 0)
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for index := range insertData {
 		insertData[index].ID = int64(ids[index])
-		auditLog.ResourceName = append(auditLog.ResourceName, insertData[index].GroupName)
-		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
-		inerfaceArr = append(inerfaceArr, insertData[index])
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			ResourceName: insertData[index].GroupName,
+			ResourceID:   insertData[index].ID,
+			Data:         insertData[index],
+			Type:         tenanttmp.TemplateTypePropertyGroup,
+		})
 	}
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
-	if err := addAuditLog(kit, db, inerfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -464,7 +477,7 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 	}
 
 	result := make([]metadata.Object, 0)
-	if err := db.Table(table).Find(mapstr.MapStr{}).All(kit.Ctx, &result); err != nil {
+	if err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKObjIDField).All(kit.Ctx, &result); err != nil {
 		blog.Errorf("get data from table %s failed, err: %v", table, err)
 		return err
 	}
@@ -490,27 +503,41 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	auditLog := &auditlog.AuditOpts{}
-	inerfaceArr := make([]interface{}, 0)
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for index := range insertData {
 		insertData[index].ID = int64(ids[index])
-		auditLog.ResourceName = append(auditLog.ResourceName, insertData[index].ObjectName)
-		auditLog.ResourceID = append(auditLog.ResourceID, insertData[index].ID)
 		insertData[index].CreateTime = &metadata.Time{Time: time.Now()}
 		insertData[index].LastTime = &metadata.Time{Time: time.Now()}
-		inerfaceArr = append(inerfaceArr, insertData[index])
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			ResourceName: insertData[index].ObjectName,
+			ResourceID:   insertData[index].ID,
+			Data:         insertData[index],
+			Type:         tenanttmp.TemplateTypeObject,
+		})
 	}
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
-	if err := addAuditLog(kit, db, inerfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
 	return nil
+}
+
+func getUniqueKeysStr(keys []metadata.UniqueKey, objID string) string {
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i].ID < keys[j].ID
+	})
+	uniqueArr := []string{objID}
+	for _, key := range keys {
+		uniqueArr = append(uniqueArr, fmt.Sprintf("%d", key.ID))
+	}
+
+	return strings.Join(uniqueArr, "*")
 }
 
 func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
@@ -531,14 +558,7 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 
 	existData := make(map[string]interface{}, 0)
 	for index := range result {
-		sort.Slice(result[index].Keys, func(i, j int) bool {
-			return result[index].Keys[i].ID < result[index].Keys[j].ID
-		})
-		uniqueArr := []string{result[index].ObjID}
-		for _, key := range result[index].Keys {
-			uniqueArr = append(uniqueArr, fmt.Sprintf("%d", key.ID))
-		}
-		existData[strings.Join(uniqueArr, "*")] = struct{}{}
+		existData[getUniqueKeysStr(result[index].Keys, result[index].ObjID)] = struct{}{}
 	}
 	// get attribute data
 	attrArr := make([]metadata.Attribute, 0)
@@ -562,14 +582,7 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 			})
 		}
 
-		sort.Slice(keys, func(i, j int) bool {
-			return keys[i].ID < keys[j].ID
-		})
-		uniqueArr := []string{uniqueData[index].Data.ObjectID}
-		for _, key := range keys {
-			uniqueArr = append(uniqueArr, fmt.Sprintf("%d", key.ID))
-		}
-		uniqueStr := strings.Join(uniqueArr, "*")
+		uniqueStr := getUniqueKeysStr(keys, uniqueData[index].Data.ObjectID)
 		if _, ok := existData[uniqueStr]; ok {
 			continue
 		}
@@ -591,26 +604,29 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	auditLog := &auditlog.AuditOpts{}
-	interfaceArr := make([]interface{}, len(insertData))
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for index := range insertData {
 		insertData[index].ID = ids[index]
-		auditLog.ResourceID = append(auditLog.ResourceID, int64(insertData[index].ID))
-		interfaceArr[index] = insertData[index]
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			Data:         insertData[index],
+			ResourceID:   int64(insertData[index].ID),
+			ResourceName: "",
+			Type:         tenanttmp.TemplateTypeUniqueKeys,
+		})
 	}
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 
-	if err := addAuditLog(kit, db, interfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 	return nil
 }
 
-func getUniqueSvrValue(name string, isSubCategory bool) string {
+func getSvrCategoryUniqueStr(name string, isSubCategory bool) string {
 	if isSubCategory {
 		return fmt.Sprintf("%s*1", name)
 	}
@@ -634,20 +650,20 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 
 	existData := make(map[string]int64, 0)
 	for _, item := range result {
-		existData[getUniqueSvrValue(item.Name, item.ParentID != 0)] = item.ID
+		existData[getSvrCategoryUniqueStr(item.Name, item.ParentID != 0)] = item.ID
 	}
 
 	insertData := make([]*metadata.ServiceCategory, 0)
-	exitParent := make(map[string]int64, 0)
+	existParent := make(map[string]int64, 0)
 	insertParent := make(map[string]*metadata.ServiceCategory, 0)
 	insertSubCategory := make(map[string][]*metadata.ServiceCategory, 0)
 	// get insert parent category
 	insertCount := 0
 	for _, item := range svrCategoryTmp {
-		uniqueStr := getUniqueSvrValue(item.Data.Name, item.Data.ParentName != "")
+		uniqueStr := getSvrCategoryUniqueStr(item.Data.Name, item.Data.ParentName != "")
 		if id, ok := existData[uniqueStr]; ok {
 			if item.Data.ParentName != "" {
-				exitParent[item.Data.ParentName] = id
+				existParent[item.Data.ParentName] = id
 			}
 			continue
 		}
@@ -677,29 +693,34 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 	}
 
 	idxCount := 0
-	auditLog := &auditlog.AuditOpts{}
-	interfaceArr := make([]interface{}, 0)
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
 	for key := range insertParent {
 		insertParent[key].ID = int64(ids[idxCount])
 		insertParent[key].RootID = int64(ids[idxCount])
-		exitParent[key] = int64(ids[idxCount])
+		existParent[key] = int64(ids[idxCount])
 		insertData = append(insertData, insertParent[key])
 		idxCount++
-		interfaceArr = append(interfaceArr, insertParent[key])
-		auditLog.ResourceName = append(auditLog.ResourceName, insertParent[key].Name)
-		auditLog.ResourceID = append(auditLog.ResourceID, insertParent[key].ID)
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			ResourceName: insertParent[key].Name,
+			ResourceID:   insertParent[key].ID,
+			Data:         insertData,
+			Type:         tenanttmp.TemplateTypeServiceCategory,
+		})
 	}
 
 	for parentName, subValues := range insertSubCategory {
 		for index := range subValues {
 			subValues[index].ID = int64(ids[idxCount])
-			subValues[index].ParentID = exitParent[parentName]
-			subValues[index].RootID = exitParent[parentName]
+			subValues[index].ParentID = existParent[parentName]
+			subValues[index].RootID = existParent[parentName]
 			insertData = append(insertData, subValues[index])
 			idxCount++
-			interfaceArr = append(interfaceArr, subValues[index])
-			auditLog.ResourceName = append(auditLog.ResourceName, subValues[index].Name)
-			auditLog.ResourceID = append(auditLog.ResourceID, subValues[index].ID)
+			auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+				ResourceName: subValues[index].Name,
+				ResourceID:   subValues[index].ID,
+				Data:         insertData,
+				Type:         tenanttmp.TemplateTypeServiceCategory,
+			})
 		}
 	}
 
@@ -708,7 +729,7 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err := addAuditLog(kit, db, interfaceArr, auditLog); err != nil {
+	if err = addAuditLog(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -720,11 +741,10 @@ func generateUniqueKey(objID, propertyID string) string {
 	return objID + ":" + propertyID
 }
 
-func addAuditLog(kit *rest.Kit, db local.DB, insertData []interface{}, auditOpt *auditlog.AuditOpts) error {
+func addAuditLog(kit *rest.Kit, db local.DB, insertData []*auditlog.TenantTmpAuditOpts) error {
 
 	audit := auditlog.NewTenantTemplateAuditLog()
-	generateAuditParam := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditTenantInit)
-	auditLog := audit.GenerateAuditLog(generateAuditParam, insertData, auditOpt)
+	auditLog := audit.GenerateAuditLog(insertData)
 
 	// save audit log.
 	err := audit.SaveAuditLog(kit, db, auditLog...)
@@ -761,19 +781,4 @@ func getTemplateData[T any](kit *rest.Kit, ty tenanttmp.TenantTemplateType) ([]t
 		}
 	}
 	return tmpData, nil
-}
-
-func structToMap(obj interface{}) (map[string]interface{}, error) {
-	if data, ok := obj.(map[string]interface{}); ok {
-		return data, nil
-	}
-
-	data, err := bson.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make(map[string]interface{})
-	err = bson.Unmarshal(data, &result)
-	return result, err
 }

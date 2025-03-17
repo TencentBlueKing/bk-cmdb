@@ -15,29 +15,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package tenant defines tenant related logics
-package tenant
+package user
 
-import (
-	"context"
-	"net/http"
+import "configcenter/src/thirdparty/apigw/apigwutil"
 
-	"configcenter/pkg/tenant/types"
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/errors"
+// Tenant is the result from bk-user.
+type Tenant struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Status Status `json:"status"`
+}
+
+// Status is the tenant status
+type Status string
+
+const (
+	// DisabledStatus is the disabled status for tenant
+	DisabledStatus Status = "disabled"
+	// EnabledStatus is the enabled status for tenant
+	EnabledStatus Status = "enabled"
 )
 
-// TenantClientInterface tenant client interface
-type TenantClientInterface interface {
-	GetAllTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder)
-	RefreshTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder)
+// BkUserResponse is bk user api gateway response
+type BkUserResponse[T any] struct {
+	apigwutil.ApiGWBaseResponse `json:",inline"`
+	Error                       *BkUserError `json:"error"`
+	Data                        T            `json:"data"`
 }
 
-// New new tenant client interface
-func New(client rest.ClientInterface) TenantClientInterface {
-	return &tenant{client: client}
-}
-
-type tenant struct {
-	client rest.ClientInterface
+// BkUserError is bk user api gateway error
+type BkUserError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }

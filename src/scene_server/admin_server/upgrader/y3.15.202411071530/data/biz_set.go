@@ -49,7 +49,7 @@ func addBizSetData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKBizSetNameField},
-		IgnoreKeys:     []string{common.BKBizSetIDField, common.BKFieldDBID},
+		IgnoreKeys:     []string{common.BKBizSetIDField},
 		IDField:        []string{common.BKBizSetIDField},
 		AuditTypeField: bizSetAudit,
 		AuditDataField: &tools.AuditDataField{

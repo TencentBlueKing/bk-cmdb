@@ -114,7 +114,6 @@ func initTableIndex(kit *rest.Kit, db local.DB, tableIndexMap map[string][]dalty
 			blog.Errorf("create table %s failed, err: %v", table, err)
 			return err
 		}
-
 		if err := logics.CreateIndexes(kit, db, table, index); err != nil {
 			blog.Errorf("create table %s failed, err: %v", table, err)
 			return err

@@ -73,7 +73,7 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 	// add parent category data
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKFieldName, common.BKParentIDField, common.BKAppIDField},
-		IgnoreKeys:   []string{common.BKFieldID, common.BKRootIDField, common.BKFieldDBID},
+		IgnoreKeys:   []string{common.BKFieldID, common.BKRootIDField},
 		IDField:      []string{common.BKFieldID, common.BKRootIDField},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.PlatformSetting,
@@ -165,7 +165,7 @@ func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]inte
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKFieldName, common.BKParentIDField, common.BKAppIDField},
-		IgnoreKeys:   []string{common.BKFieldID, "_id"},
+		IgnoreKeys:   []string{common.BKFieldID},
 		IDField:      []string{common.BKFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.PlatformSetting,

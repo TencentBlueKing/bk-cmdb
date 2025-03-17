@@ -65,6 +65,7 @@ func AddCreateAuditLog(kit *rest.Kit, db dal.RDB, auditData []map[string]interfa
 	return nil
 }
 
+// AddTmpAuditLog add tmp data audit log
 func AddTmpAuditLog(kit *rest.Kit, db dal.RDB, auditData []map[string]interface{}, auditField *AuditStruct) error {
 	if auditField.AuditTypeData == nil {
 		return nil

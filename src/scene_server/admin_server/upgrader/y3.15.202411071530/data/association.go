@@ -82,7 +82,7 @@ func addAssociationData(kit *rest.Kit, db local.DB) error {
 
 	needFields := &tools.InsertOptions{
 		UniqueFields: []string{common.AssociationKindIDField},
-		IgnoreKeys:   []string{common.BKFieldID, common.BKFieldDBID},
+		IgnoreKeys:   []string{common.BKFieldID},
 		IDField:      []string{metadata.AttributeFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,

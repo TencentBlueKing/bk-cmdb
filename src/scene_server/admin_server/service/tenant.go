@@ -30,12 +30,12 @@ import (
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/index"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
-
+	"configcenter/src/thirdparty/apigw/user"
 	"github.com/emicklei/go-restful/v3"
 )
 
@@ -48,6 +48,31 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 	_, exist := tenant.GetTenant(kit.TenantID)
 	if exist {
 		resp.WriteEntity(metadata.NewSuccessResp("tenant exist"))
+		return
+	}
+
+	// get all tenants from bk-user
+	tenants, err := apigwcli.Client().User().GetTenants(kit.Ctx, kit.Header)
+	if err != nil {
+		blog.Errorf("get tenants from bk-user failed, err: %v, rid: %s", err, kit.Rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, fmt.Errorf("get tenants from bk-user failed")),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+	}
+
+	tenantMap := make(map[string]user.Status)
+	for _, tenant := range tenants {
+		tenantMap[tenant.ID] = tenant.Status
+	}
+
+	if status, ok := tenantMap[kit.TenantID]; !ok || status != user.EnabledStatus {
+		blog.Errorf("tenant %s invalid, rid: %s", kit.TenantID, kit.Rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommAddTenantErr,
+				fmt.Errorf("tenant %s invalid", kit.TenantID)),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
 
@@ -105,6 +130,11 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	// refresh tenants, ignore refresh error
+	if err = tenant.Refresh(s.CoreAPI); err != nil {
+		blog.Errorf("refresh tenants failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
 	resp.WriteEntity(metadata.NewSuccessResp("add tenant success"))
 }
 
@@ -121,21 +151,15 @@ func addDefaultArea(kit *rest.Kit, db local.DB) error {
 		return nil
 	}
 
-	err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, mapstr.MapStr{
-		"bk_creator":       common.CCSystemOperatorUserName,
-		"bk_last_editor":   common.CCSystemOperatorUserName,
-		"bk_cloud_id":      common.BKDefaultDirSubArea,
-		"bk_cloud_name":    "Default Area",
-		"default":          int64(common.BuiltIn),
-		"create_time":      time.Now(),
-		"last_time":        time.Now(),
-		"bk_status":        "1",
-		"bk_cloud_vendor":  "",
-		"bk_vpc_id":        "",
-		"bk_vpc_name":      "",
-		"bk_region":        "",
-		"bk_account_id":    "",
-		"bk_status_detail": "",
+	err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, metadata.CloudArea{
+		Creator:    common.CCSystemOperatorUserName,
+		LastEditor: common.CCSystemOperatorUserName,
+		CloudID:    common.BKDefaultDirSubArea,
+		CloudName:  "Default Area",
+		Default:    int64(common.BuiltIn),
+		CreateTime: time.Now(),
+		LastTime:   time.Now(),
+		Status:     "1",
 	})
 	if err != nil {
 		blog.Errorf("add default area failed, err: %v, rid: %s", err, kit.Rid)
@@ -147,7 +171,7 @@ func addDefaultArea(kit *rest.Kit, db local.DB) error {
 // addTableIndexes add table indexes
 func addTableIndexes(kit *rest.Kit, db local.DB) error {
 	tableIndexes := index.TableIndexes()
-	for _, object := range tenanttmp.BKInnerObjects {
+	for _, object := range common.BKInnerObjects {
 		instAsstTable := common.GetObjectInstAsstTableName(object, kit.TenantID)
 		tableIndexes[instAsstTable] = index.InstanceAssociationIndexes()
 	}

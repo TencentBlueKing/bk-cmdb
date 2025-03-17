@@ -91,16 +91,51 @@ func Init(opts *Options) error {
 	return nil
 }
 
-func refreshTenantInfo() error {
+// Refresh refresh tenant info
+func Refresh(apiMachineryCli apimachinery.ClientSetInterface) error {
+	if apiMachineryCli == nil {
+		return fmt.Errorf("api machinery client is nil")
+	}
+
 	var err error
+	lock.Lock()
+	allTenants, err = apiMachineryCli.ApiServer().RefreshTenant(context.Background(), util.GenDefaultHeader())
+	if err != nil {
+		blog.Errorf("refresh tenant info failed, err: %v", err)
+		return err
+	}
+	for _, tenant := range allTenants {
+		tenantMap[tenant.TenantID] = &tenant
+	}
+
+	lock.Unlock()
+	return nil
+}
+
+// SetTenant set tenant
+func SetTenant(tenant []types.Tenant) {
+	lock.Lock()
+	allTenants = tenant
+
+	for _, t := range allTenants {
+		tenantMap[t.TenantID] = &t
+	}
+
+	lock.Unlock()
+}
+
+func refreshTenantInfo() error {
+	var tenants []types.Tenant
+	var err error
+
 	if db != nil {
-		allTenants, err = GetAllTenantsFromDB(context.Background(), db)
+		tenants, err = GetAllTenantsFromDB(context.Background(), db)
 		if err != nil {
 			return err
 		}
 	}
 	if apiMachineryCli != nil {
-		allTenants, err = apiMachineryCli.CoreService().Tenant().GetAllTenants(context.Background(),
+		tenants, err = apiMachineryCli.CoreService().Tenant().GetAllTenants(context.Background(),
 			util.GenDefaultHeader())
 		if err != nil {
 			blog.Errorf("get all tenants from api machinery failed, err: %v", err)
@@ -109,6 +144,7 @@ func refreshTenantInfo() error {
 	}
 
 	lock.Lock()
+	allTenants = tenants
 	for _, tenant := range allTenants {
 		tenantMap[tenant.TenantID] = &tenant
 	}
@@ -119,6 +155,8 @@ func refreshTenantInfo() error {
 // GetAllTenants get all tenants
 func GetAllTenants() []types.Tenant {
 	// TODO right now only support default tenant for compatible, use actual tenants later
+	lock.RLock()
+	defer lock.RUnlock()
 	return []types.Tenant{{TenantID: common.BKDefaultTenantID, Status: types.EnabledStatus}}
 }
 

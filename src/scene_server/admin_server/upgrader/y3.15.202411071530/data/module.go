@@ -72,7 +72,7 @@ func addModuleData(kit *rest.Kit, db local.DB, bizID int64, moduleNames []string
 
 	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleNameField},
-		IgnoreKeys:     []string{common.BKModuleIDField, common.BKFieldDBID},
+		IgnoreKeys:     []string{common.BKModuleIDField},
 		IDField:        []string{common.BKModuleIDField},
 		AuditTypeField: moduleAuditType,
 		AuditDataField: &tools.AuditDataField{

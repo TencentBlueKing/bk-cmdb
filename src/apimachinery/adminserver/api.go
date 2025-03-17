@@ -97,3 +97,26 @@ func (a *adminServer) RunSyncDBIndex(ctx context.Context, h http.Header) error {
 
 	return nil
 }
+
+func (a *adminServer) AddTenant(ctx context.Context, h http.Header) error {
+	resp := new(metadata.Response)
+	subPath := "/add/tenant"
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}

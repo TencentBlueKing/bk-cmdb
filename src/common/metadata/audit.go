@@ -422,26 +422,9 @@ type BasicOpDetail struct {
 	Details *BasicContent `json:"details" bson:"details"`
 }
 
-// TenantTmpBasicOpDetail tenant template audit log detail
-type TenantTmpBasicOpDetail struct {
-	// Details contains all the details information about a user's operation
-	Details *TenantTmpBasicContent `json:"details" bson:"details"`
-}
-
-// TenantTmpDetail tenant template audit log detail
-type TenantTmpDetail struct {
-	TenantTmpBasicOpDetail `bson:",inline"`
-	Type                   string `json:"type" bson:"type"`
-}
-
 // WithName TODO
 func (op *BasicOpDetail) WithName() string {
 	return "BasicDetail"
-}
-
-// WithName tenant template with name
-func (op *TenantTmpBasicOpDetail) WithName() string {
-	return "TenantTemplateDetail"
 }
 
 // ModelAttrOpDetail TODO
@@ -584,16 +567,6 @@ type BasicContent struct {
 	CurData map[string]interface{} `json:"cur_data" bson:"cur_data"`
 	// UpdateFields the data that user uses to update the pre data, might not be the actual changed data
 	UpdateFields map[string]interface{} `json:"update_fields" bson:"update_fields"`
-}
-
-// TenantTmpBasicContent contains the details information with in a user's operation for tenant template type.
-type TenantTmpBasicContent struct {
-	// PreData the previous data before the deletion or updating operation
-	PreData interface{} `json:"pre_data" bson:"pre_data"`
-	// CurData the current date after the creation operation
-	CurData interface{} `json:"cur_data" bson:"cur_data"`
-	// UpdateFields the data that user uses to update the pre data, might not be the actual changed data
-	UpdateFields interface{} `json:"update_fields" bson:"update_fields"`
 }
 
 // GenericOpDetail generic operation detail, including the operated data and the update fields for update operation

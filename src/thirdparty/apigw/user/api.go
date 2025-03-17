@@ -15,29 +15,41 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package tenant defines tenant related logics
-package tenant
+package user
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
-	"configcenter/pkg/tenant/types"
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/errors"
+	"configcenter/src/common"
+	httpheader "configcenter/src/common/http/header"
 )
 
-// TenantClientInterface tenant client interface
-type TenantClientInterface interface {
-	GetAllTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder)
-	RefreshTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder)
-}
+// GetTenants get all tenants from bk user
+func (u *user) GetTenants(ctx context.Context, h http.Header) ([]*Tenant, error) {
+	resp := new(BkUserResponse[[]*Tenant])
 
-// New new tenant client interface
-func New(client rest.ClientInterface) TenantClientInterface {
-	return &tenant{client: client}
-}
+	httpheader.SetTenantID(h, common.BKDefaultTenantID)
 
-type tenant struct {
-	client rest.ClientInterface
+	err := u.service.Client.Get().
+		WithContext(ctx).
+		SubResourcef("/api/v3/open/tenants/").
+		WithHeaders(httpheader.SetBkAuth(h, u.service.Auth)).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	if resp.Error != nil {
+		return nil, fmt.Errorf("code: %s, message: %s", resp.Error.Code, resp.Error.Message)
+	}
+
+	return resp.Data, nil
 }

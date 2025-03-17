@@ -61,7 +61,7 @@ func initConfigAdmin(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.ConfigAdminValueField},
-		IgnoreKeys:   []string{common.BKFieldDBID},
+		IgnoreKeys:   []string{},
 	}
 	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{configData},
 		needField)

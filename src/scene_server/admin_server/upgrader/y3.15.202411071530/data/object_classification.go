@@ -70,7 +70,7 @@ func addObjClassificationData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{metadata.ClassFieldClassificationName},
-		IgnoreKeys:   []string{metadata.ClassificationFieldID, common.BKFieldDBID},
+		IgnoreKeys:   []string{metadata.ClassificationFieldID},
 		IDField:      []string{metadata.ClassificationFieldID},
 		AuditDataField: &tools.AuditDataField{
 			ResIDField:   "id",

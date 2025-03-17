@@ -25,6 +25,7 @@ import (
 	"configcenter/src/thirdparty/apigw/gse"
 	"configcenter/src/thirdparty/apigw/login"
 	"configcenter/src/thirdparty/apigw/notice"
+	"configcenter/src/thirdparty/apigw/user"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -35,6 +36,7 @@ type ClientSet interface {
 	Cmdb() cmdb.ClientI
 	Notice() notice.ClientI
 	Login() login.ClientI
+	User() user.ClientI
 }
 
 type clientSet struct {
@@ -42,6 +44,7 @@ type clientSet struct {
 	cmdb   cmdb.ClientI
 	notice notice.ClientI
 	login  login.ClientI
+	user   user.ClientI
 }
 
 // NewClientSet new api gateway client set
@@ -109,6 +112,13 @@ func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer, n
 		}
 	}
 
+	if _, exists := neededCliMap[User]; exists {
+		cs.user, err = user.NewClient(options)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return cs, nil
 }
 
@@ -132,6 +142,11 @@ func (c *clientSet) Login() login.ClientI {
 	return c.login
 }
 
+// User returns bk-user client
+func (c *clientSet) User() user.ClientI {
+	return c.user
+}
+
 // ClientType is the api gateway client type, used to specify which client is needed
 type ClientType string
 
@@ -144,4 +159,6 @@ const (
 	Notice ClientType = "notice"
 	// Login is the login client type
 	Login ClientType = "login"
+	// User is the user client type
+	User ClientType = "user"
 )

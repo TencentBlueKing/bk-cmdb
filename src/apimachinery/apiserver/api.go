@@ -16,8 +16,11 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/pkg/tenant/types"
 	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common"
 	ccErr "configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
@@ -814,4 +817,29 @@ func (a *apiServer) UpdateBizCustomField(ctx context.Context, bizID, id int64, h
 	}
 
 	return nil
+}
+
+// RefreshTenant refresh tenant info
+func (a *apiServer) RefreshTenant(ctx context.Context, h http.Header) ([]types.Tenant, error) {
+
+	httpheader.SetTenantID(h, common.BKDefaultTenantID)
+
+	resp := new(types.AllTenantsResult)
+	subPath := "/refresh/tenant"
+	err := a.client.Post().
+		WithContext(ctx).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp.Data, nil
 }

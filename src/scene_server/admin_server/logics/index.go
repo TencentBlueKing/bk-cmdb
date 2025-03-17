@@ -781,6 +781,7 @@ func CreateIndexes(kit *rest.Kit, db local.DB, table string, indexes []types.Ind
 		blog.Infof("table %s index is up to date", table)
 		return nil
 	}
+
 	if err = db.Table(table).BatchCreateIndexes(kit.Ctx, insertIndexes); err != nil {
 		blog.Errorf("create %s table index %+v failed, err: %v", table, insertIndexes, err)
 		return err

@@ -89,6 +89,8 @@ data:
         privateKey:  {{ .Values.web.webServer.jwt.privateKey }}
       #是否启用消息通知
       enableNotification: {{ .Values.web.webServer.enableNotification }}
+      #是否启用用户管理
+      enableUser: {{ .Values.web.webServer.enableUser}}}
 
     # cmdb服务tls配置
     tls:

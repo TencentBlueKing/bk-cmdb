@@ -498,6 +498,8 @@ func (s *coreService) initTenant(web *restful.WebService) {
 
 	// get all tenants
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/list/tenants", Handler: s.GetAllTenants})
+	// refresh tenant info
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/refresh/tenants", Handler: s.RefreshAllTenants})
 
 	utility.AddToRestfulWebService(web)
 }

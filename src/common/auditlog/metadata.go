@@ -66,29 +66,3 @@ func (a *generateAuditCommonParameter) NewBasicContent(data map[string]interface
 
 	return basicDetail
 }
-
-// NewTmpBasicContent get basicContent by data and self for tenant template.
-func (a *generateAuditCommonParameter) NewTmpBasicContent(data interface{}) *metadata.TenantTmpBasicContent {
-	var basicDetail *metadata.TenantTmpBasicContent
-	switch a.action {
-	case metadata.AuditTenantInit:
-		basicDetail = &metadata.TenantTmpBasicContent{
-			CurData: data,
-		}
-	case metadata.AuditCreate:
-		basicDetail = &metadata.TenantTmpBasicContent{
-			CurData: data,
-		}
-	case metadata.AuditDelete:
-		basicDetail = &metadata.TenantTmpBasicContent{
-			PreData: data,
-		}
-	case metadata.AuditUpdate:
-		basicDetail = &metadata.TenantTmpBasicContent{
-			PreData:      data,
-			UpdateFields: a.updateFields,
-		}
-	}
-
-	return basicDetail
-}

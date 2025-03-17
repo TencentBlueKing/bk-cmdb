@@ -153,6 +153,9 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 	if webSvr.Config.EnableNotification {
 		apigwClients = append(apigwClients, apigw.Notice)
 	}
+	if webSvr.Config.EnableUser {
+		apigwClients = append(apigwClients, apigw.User)
+	}
 	if len(apigwClients) > 0 {
 		err = apigwcli.Init("apiGW", engine.Metric().Registry(), apigwClients)
 		if err != nil {
@@ -225,6 +228,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.DisableOperationStatistic, _ = cc.Bool("operationServer.disableOperationStatistic")
 
 	w.Config.EnableNotification, _ = cc.Bool("webServer.enableNotification")
+	w.Config.EnableUser, _ = cc.Bool("webServer.enableUser")
 }
 
 // Stop the ccapi server

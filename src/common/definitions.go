@@ -151,6 +151,18 @@ const (
 	BKInnerObjIDApache = "bk_apache"
 )
 
+// BKInnerObjects is inner objects
+var BKInnerObjects = []string{
+	BKInnerObjIDApp,
+	BKInnerObjIDModule,
+	BKInnerObjIDProc,
+	BKInnerObjIDHost,
+	BKInnerObjIDProject,
+	BKInnerObjIDBizSet,
+	BKInnerObjIDPlat,
+	BKInnerObjIDSet,
+}
+
 // Revision
 const (
 	RevisionEnterprise = "enterprise"

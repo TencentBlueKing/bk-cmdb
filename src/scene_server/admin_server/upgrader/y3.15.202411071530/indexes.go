@@ -872,6 +872,7 @@ var (
 		{
 			Name:                    common.CCLogicIndexNamePrefix + "bkCloudID",
 			Keys:                    bson.D{{"bk_cloud_id", 1}},
+			Unique:                  true,
 			Background:              true,
 			PartialFilterExpression: make(map[string]interface{}),
 		},
@@ -955,6 +956,7 @@ var (
 		{
 			Name:                    common.CCLogicIndexNamePrefix + "bkInstID",
 			Keys:                    bson.D{{"bk_inst_id", 1}},
+			Unique:                  true,
 			Background:              true,
 			PartialFilterExpression: make(map[string]interface{}),
 		},
@@ -995,6 +997,13 @@ var (
 		{
 			Name:                    common.CCLogicUniqueIdxNamePrefix + "bkObjID_bkBizID_bkGroupIndex",
 			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_biz_id", 1}, {"bk_group_index", 1}},
+			Unique:                  true,
+			Background:              true,
+			PartialFilterExpression: make(map[string]interface{}),
+		},
+		{
+			Name:                    common.CCLogicUniqueIdxNamePrefix + "bkObjID_bkBizID_bkGroupID",
+			Keys:                    bson.D{{"bk_obj_id", 1}, {"bk_biz_id", 1}, {"bk_group_id", 1}},
 			Unique:                  true,
 			Background:              true,
 			PartialFilterExpression: make(map[string]interface{}),

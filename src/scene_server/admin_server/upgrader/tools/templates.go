@@ -29,10 +29,12 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 )
 
-func InsertTemplateData(kit *rest.Kit, db dal.RDB, data []mapstr.MapStr,
+// InsertTemplateData insert template data
+func InsertTemplateData(kit *rest.Kit, db local.DB, data []mapstr.MapStr,
 	insertOps *InsertOptions, idOption *IDOptions, dataType tenanttmp.TenantTemplateType) error {
 
 	tmpData := make([]tenanttmp.TenantTmpData[mapstr.MapStr], 0)

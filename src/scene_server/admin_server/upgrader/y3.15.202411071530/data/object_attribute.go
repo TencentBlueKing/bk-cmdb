@@ -86,7 +86,7 @@ func addObjAttrData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKObjIDField, common.BKPropertyIDField, common.BKAppIDField},
-		IgnoreKeys:   []string{common.BKFieldID, metadata.AttributeFieldPropertyIndex, common.BKFieldDBID},
+		IgnoreKeys:   []string{common.BKFieldID, metadata.AttributeFieldPropertyIndex},
 		IDField:      []string{common.BKFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,

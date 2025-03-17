@@ -69,7 +69,7 @@ var objectData = []Object{
 		ObjSortNumber: 1,
 	},
 	{
-		ObjCls:        "bk_host_manage",
+		ObjCls:        "bk_uncategorized",
 		ObjectID:      common.BKInnerObjIDProc,
 		ObjectName:    "进程",
 		IsPre:         true,
@@ -80,7 +80,7 @@ var objectData = []Object{
 		ObjSortNumber: 2,
 	},
 	{
-		ObjCls:        "bk_host_manage",
+		ObjCls:        "bk_uncategorized",
 		ObjectID:      common.BKInnerObjIDPlat,
 		ObjectName:    "云区域",
 		IsPre:         true,
@@ -142,7 +142,7 @@ func addObjectData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKObjIDField},
-		IgnoreKeys:   []string{common.BKFieldID, common.ObjSortNumberField, common.BKFieldDBID},
+		IgnoreKeys:   []string{common.BKFieldID, common.ObjSortNumberField},
 		IDField:      []string{common.BKFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,

@@ -15,29 +15,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package tenant defines tenant related logics
-package tenant
+package user
 
 import (
 	"context"
 	"net/http"
 
-	"configcenter/pkg/tenant/types"
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/errors"
+	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
-// TenantClientInterface tenant client interface
-type TenantClientInterface interface {
-	GetAllTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder)
-	RefreshTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder)
+// ClientI is the bk-login api gateway client
+type ClientI interface {
+	GetTenants(ctx context.Context, h http.Header) ([]*Tenant, error)
 }
 
-// New new tenant client interface
-func New(client rest.ClientInterface) TenantClientInterface {
-	return &tenant{client: client}
+type user struct {
+	service *apigwutil.ApiGWSrv
 }
 
-type tenant struct {
-	client rest.ClientInterface
+// NewClient create bk-login api gateway client
+func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
+	service, err := apigwutil.NewApiGW(options, "apiGW.bkUserApiGatewayUrl")
+	if err != nil {
+		return nil, err
+	}
+
+	return &user{
+		service: service,
+	}, nil
 }

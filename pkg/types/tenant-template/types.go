@@ -17,31 +17,6 @@
 
 package tenant_template
 
-import "configcenter/src/common"
-
-// BKInnerObjects is inner objects
-var BKInnerObjects = []string{
-	common.BKInnerObjIDApp,
-	common.BKInnerObjIDModule,
-	common.BKInnerObjIDProc,
-	common.BKInnerObjIDHost,
-	common.BKInnerObjIDProject,
-	common.BKInnerObjIDBizSet,
-	common.BKInnerObjIDPlat,
-	common.BKInnerObjIDSet,
-}
-
-const (
-	// BKTenantTemplateTypeField is type field for tenant template
-	BKTenantTemplateTypeField = "type"
-
-	// BKTenantTemplateIDField is id field for tenant template
-	BKTenantTemplateIDField = "id"
-
-	// BKTenantIsPreField is isPre field for tenant template
-	BKTenantIsPreField = "is_pre"
-)
-
 // TenantTemplateType tenant template type
 type TenantTemplateType string
 
@@ -64,6 +39,17 @@ type UniqueKeyTmp struct {
 	ObjectID string   `bson:"bk_obj_id"`
 	Keys     []string `bson:"keys"`
 }
+
+const (
+	// BKTenantTemplateTypeField is type field for tenant template
+	BKTenantTemplateTypeField = "type"
+
+	// BKTenantTemplateIDField is id field for tenant template
+	BKTenantTemplateIDField = "id"
+
+	// BKTenantIsPreField is isPre field for tenant template
+	BKTenantIsPreField = "is_pre"
+)
 
 // tenant template type
 const (
