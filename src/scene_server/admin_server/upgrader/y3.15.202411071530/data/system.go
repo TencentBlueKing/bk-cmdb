@@ -34,7 +34,7 @@ func addSystemData(kit *rest.Kit, db local.DB) error {
 	data := map[string]interface{}{common.HostCrossBizField: common.HostCrossBizValue}
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.HostCrossBizField},
-		IgnoreKeys:   []string{"_id"},
+		IgnoreKeys:   []string{},
 	}
 	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{data}, needField)
 	if err != nil {

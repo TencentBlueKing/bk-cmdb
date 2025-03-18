@@ -86,7 +86,7 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if err := addTableIndexes(kit, cli); err != nil {
+	if err = addTableIndexes(kit, cli); err != nil {
 		blog.Errorf("create table and indexes for tenant %s failed, err: %v, rid: %s", kit.TenantID, err, kit.Rid)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
@@ -96,7 +96,7 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 	}
 
 	// add default area
-	if err := addDefaultArea(kit, cli); err != nil {
+	if err = addDefaultArea(kit, cli); err != nil {
 		blog.Errorf("add default area failed, err: %v, rid: %s", err, kit.Rid)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
@@ -105,7 +105,7 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if err := addDataFromTemplate(kit, cli); err != nil {
+	if err = addDataFromTemplate(kit, cli); err != nil {
 		blog.Errorf("create init data for tenant %s failed, err: %v", kit.TenantID, err)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),

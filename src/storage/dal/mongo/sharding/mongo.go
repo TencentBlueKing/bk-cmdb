@@ -206,6 +206,11 @@ func (m *ShardingMongoManager) NewTenantCli(tenant string) (local.DB, string, er
 	return db, m.newTenantCli.UUID(), nil
 }
 
+// GetMasterUUID returns the master db uuid
+func (m *ShardingMongoManager) GetMasterUUID() string {
+	return m.masterCli.UUID()
+}
+
 // Tenant returns the db client for tenant
 func (m *ShardingMongoManager) Tenant(tenant string) local.DB {
 	if tenant == "" {

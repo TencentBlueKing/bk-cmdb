@@ -199,8 +199,16 @@ func (s *Service) MonitorHealth(req *restful.Request, resp *restful.Response) {
 
 }
 
-// InitGseClient init gse apiGW client
-func (s *Service) InitGseClient() error {
+// InitClients init gse apiGW client
+func (s *Service) InitClients() error {
+	/*
+		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry(), []apigw.ClientType{apigw.User})
+		if err != nil {
+			blog.Errorf("init user, err: %v", err)
+			return err
+		}
+
+	*/
 	switch s.Config.DataIdMigrateWay {
 	case options.MigrateWayESB, "":
 		s.GseClient = esb.EsbClient().GseSrv()

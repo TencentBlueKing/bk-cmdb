@@ -31,7 +31,6 @@ func (u *user) GetTenants(ctx context.Context, h http.Header) ([]*Tenant, error)
 	resp := new(BkUserResponse[[]*Tenant])
 
 	httpheader.SetTenantID(h, common.BKDefaultTenantID)
-
 	err := u.service.Client.Get().
 		WithContext(ctx).
 		SubResourcef("/api/v3/open/tenants/").

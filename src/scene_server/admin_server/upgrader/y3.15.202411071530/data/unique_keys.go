@@ -43,7 +43,7 @@ var objUniqueKeys = map[string][][]string{
 		{"bk_agent_id"},
 	},
 	"biz":            {{"bk_biz_name"}},
-	"plat":           {{"bk_cloud_name"}, {"bk_vpc_id"}},
+	"plat":           {{"bk_cloud_name"}},
 	"set":            {{"bk_biz_id", "bk_set_name", "bk_parent_id"}},
 	"module":         {{"bk_biz_id", "bk_set_id", "bk_module_name"}},
 	"bk_project":     {{"bk_project_code"}, {"bk_project_id"}, {"bk_project_name"}, {"id"}},

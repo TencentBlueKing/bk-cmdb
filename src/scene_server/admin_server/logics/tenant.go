@@ -29,6 +29,7 @@ import (
 // NewTenantInterface get new tenant cli interface
 type NewTenantInterface interface {
 	NewTenantCli(tenant string) (local.DB, string, error)
+	GetMasterUUID() string
 }
 
 // GetNewTenantCli get new tenant db
@@ -43,6 +44,10 @@ func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string, error) {
 	if err != nil || dbCli == nil {
 		blog.Errorf("get new tenant cli failed, err: %v, tenant: %s, rid: %s", err, kit.TenantID, kit.Rid)
 		return nil, "", fmt.Errorf("get new tenant cli failed, err: %v", err)
+	}
+
+	if kit.TenantID == GetSystemTenant() {
+		dbUUID = newTenantCli.GetMasterUUID()
 	}
 	return dbCli, dbUUID, nil
 }

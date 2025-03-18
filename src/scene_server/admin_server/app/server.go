@@ -98,7 +98,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	// init esb client
 	esb.InitEsbClient(nil)
 
-	if err := service.InitGseClient(); err != nil {
+	if err := service.InitClients(); err != nil {
 		return err
 	}
 

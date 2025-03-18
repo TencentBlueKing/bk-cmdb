@@ -294,6 +294,9 @@ data:
 
     dataid:
       migrateWay: {{ .Values.migrate.dataid.migrateWay }}
+    apiGW:
+      bkUserApiGatewayUrl: {{ .Values.apiGW.bkUserApiGatewayUrl}}
+
 
   mongodb.yaml: |-
     mongodb:

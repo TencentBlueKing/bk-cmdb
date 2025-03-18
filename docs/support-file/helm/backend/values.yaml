@@ -1604,3 +1604,8 @@ apigatewaySync:
 
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:
+
+apiGW:
+  bkUserApiGatewayUrl:
+
+

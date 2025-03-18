@@ -97,13 +97,14 @@ func Refresh(apiMachineryCli apimachinery.ClientSetInterface) error {
 		return fmt.Errorf("api machinery client is nil")
 	}
 
-	var err error
-	lock.Lock()
-	allTenants, err = apiMachineryCli.ApiServer().RefreshTenant(context.Background(), util.GenDefaultHeader())
+	tenants, err := apiMachineryCli.ApiServer().RefreshTenant(context.Background(), util.GenDefaultHeader())
 	if err != nil {
 		blog.Errorf("refresh tenant info failed, err: %v", err)
 		return err
 	}
+	lock.Lock()
+	allTenants = tenants
+	tenantMap = make(map[string]*types.Tenant)
 	for _, tenant := range allTenants {
 		tenantMap[tenant.TenantID] = &tenant
 	}
@@ -116,7 +117,7 @@ func Refresh(apiMachineryCli apimachinery.ClientSetInterface) error {
 func SetTenant(tenant []types.Tenant) {
 	lock.Lock()
 	allTenants = tenant
-
+	tenantMap = make(map[string]*types.Tenant)
 	for _, t := range allTenants {
 		tenantMap[t.TenantID] = &t
 	}
@@ -145,6 +146,7 @@ func refreshTenantInfo() error {
 
 	lock.Lock()
 	allTenants = tenants
+	tenantMap = make(map[string]*types.Tenant)
 	for _, tenant := range allTenants {
 		tenantMap[tenant.TenantID] = &tenant
 	}

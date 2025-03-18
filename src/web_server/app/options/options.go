@@ -91,7 +91,6 @@ type Config struct {
 	DisableOperationStatistic bool
 	DeploymentMethod          common.DeploymentMethod
 	EnableNotification        bool
-	EnableUser                bool
 }
 
 // AppInfo TODO
