@@ -260,37 +260,53 @@ func (a *apiServer) AddHost(ctx context.Context, h http.Header,
 }
 
 // AddHostByExcel TODO
-func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header,
-	params mapstr.MapStr) (resp *metadata.ImportInstResp, err error) {
+func (a *apiServer) AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (*metadata.ImportInstRes,
+	error) {
 
-	resp = new(metadata.ImportInstResp)
+	resp := new(metadata.ImportInstResp)
 	subPath := "hosts/excel/add"
 
-	err = a.client.Post().
+	err := a.client.Post().
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+	return &resp.Data, nil
 }
 
 // UpdateHost TODO
-func (a *apiServer) UpdateHost(ctx context.Context, h http.Header,
-	params mapstr.MapStr) (resp *metadata.ImportInstResp, err error) {
+func (a *apiServer) UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (*metadata.ImportInstRes,
+	error) {
 
-	resp = new(metadata.ImportInstResp)
+	resp := new(metadata.ImportInstResp)
 	subPath := "hosts/update"
 
-	err = a.client.Put().
+	err := a.client.Put().
 		WithContext(ctx).
 		Body(params).
 		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+	return &resp.Data, nil
 }
 
 // GetHostModuleRelation TODO
@@ -328,7 +344,7 @@ func (a *apiServer) AddInst(ctx context.Context, h http.Header, ownerID, objID s
 
 // AddInstByImport add instances by import excel
 func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
-	*metadata.ImportInstResp, error) {
+	*metadata.ImportInstRes, error) {
 
 	resp := new(metadata.ImportInstResp)
 	err := a.client.Post().
@@ -346,7 +362,7 @@ func (a *apiServer) AddInstByImport(ctx context.Context, h http.Header, ownerID,
 	if ccErr := resp.CCError(); ccErr != nil {
 		return nil, ccErr
 	}
-	return resp, nil
+	return &resp.Data, nil
 }
 
 // AddObjectBatch TODO
