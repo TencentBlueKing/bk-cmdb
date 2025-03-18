@@ -457,6 +457,11 @@ input.cmdb-form-input {
             right: 0;
         }
 }
+.no-expand {
+    .g-expand {
+        position: inherit !important;
+    }
+}
 
 .g-cell-link-content {
     color: $primaryColor;

@@ -791,7 +791,8 @@
         ]
       },
       toggleModelList(classification) {
-        this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
+        const val = !this.classificationsCollapseState[classification.id]
+        this.$set(this.classificationsCollapseState, classification.id, val)
       },
       getModelViewAuth(model) {
         return { type: this.$OPERATION.R_MODEL, relation: [model.id] }
