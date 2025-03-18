@@ -56,14 +56,14 @@ type ApiServerClientInterface interface {
 	GetObjectGroup(ctx context.Context, h http.Header, ownerID, objID string,
 		params mapstr.MapStr) (resp *metadata.ObjectAttrGroupResult, err error)
 	AddHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
-	AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ImportInstResp, err error)
-	UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.ImportInstResp, err error)
+	AddHostByExcel(ctx context.Context, h http.Header, params mapstr.MapStr) (*metadata.ImportInstRes, error)
+	UpdateHost(ctx context.Context, h http.Header, params mapstr.MapStr) (*metadata.ImportInstRes, error)
 	GetHostModuleRelation(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.HostModuleResp,
 		err error)
 	AddInst(ctx context.Context, h http.Header, ownerID, objID string,
 		params mapstr.MapStr) (resp *metadata.ResponseDataMapStr, err error)
 	AddInstByImport(ctx context.Context, h http.Header, ownerID, objID string, params mapstr.MapStr) (
-		*metadata.ImportInstResp, error)
+		*metadata.ImportInstRes, error)
 	AddObjectBatch(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error)
 	SearchAssociationInst(ctx context.Context, h http.Header,
 		request *metadata.SearchAssociationInstRequest) (resp *metadata.SearchAssociationInstResult, err error)

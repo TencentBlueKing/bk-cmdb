@@ -46,7 +46,7 @@ func (d *Client) GetInst(kit *rest.Kit, objID string, cond mapstr.MapStr) ([]map
 
 // HandleImportedInst handle imported instance
 func (d *Client) HandleImportedInst(kit *rest.Kit, param *ImportedParam) ([]int64, []string) {
-	var result *metadata.ImportInstResp
+	var result *metadata.ImportInstRes
 	var err error
 
 	switch param.HandleType {
@@ -72,5 +72,5 @@ func (d *Client) HandleImportedInst(kit *rest.Kit, param *ImportedParam) ([]int6
 		return nil, errMsg
 	}
 
-	return result.Data.Success, result.Data.Errors
+	return result.Success, result.Errors
 }
