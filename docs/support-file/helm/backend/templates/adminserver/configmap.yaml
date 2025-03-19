@@ -251,10 +251,7 @@ data:
     # 当主机静态数据采集模式为kafka时，datacollection处理插件bkmonitorbeat采集上来的主机静态数据，选择kafka作为数据导入组件时的相关配置
     kafka:
       snap:
-        brokers:
-    {{- range $broker := .Values.common.kafka.brokers }}
-          - {{ $broker }}
-    {{- end }}
+        brokers: {{- .Values.common.kafka.brokers | toYaml | nindent 10}}
         # groupID为固定值，请勿随便修改，修改后会导致重复消费过去的数据
         groupID: {{ .Values.common.kafka.groupID }}
         # partition数量固定为1，保证消息的顺序性
@@ -281,6 +278,7 @@ data:
       bkGseApiGatewayUrl: {{ .Values.bkGseApiGatewayUrl }}
       bkNoticeApiGatewayUrl: {{ .Values.bkNoticeApiGatewayUrl }}
       bkCmdbApiGatewayUrl: {{ .Values.bkCmdbApiGatewayUrl }}
+      address: {{ .Values.common.apiGW.address }}
       appCode: {{ .Values.common.apiGW.appCode }}
       appSecret: {{ .Values.common.apiGW.appSecret }}
       username: {{ .Values.common.apiGW.username }}
