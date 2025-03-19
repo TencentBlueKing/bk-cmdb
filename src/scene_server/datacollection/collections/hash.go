@@ -113,6 +113,7 @@ func (h *Hash) updateLoop() {
 				blog.Infof("Hash| add new consistent hash node, %s", hashValue)
 				h.consistent.Add(hashValue)
 			}
+			h.nodes[hashValue] = struct{}{}
 		}
 
 		// delete.

@@ -93,6 +93,7 @@
               :collapse="groupCollapseState[group.info.bk_group_id]"
               :title="`${group.info.bk_group_name} ( ${group.properties.length} )`"
               @click.native="toggleGroup(group)"
+              @showOperation="handleShowOperation"
               :commands="[
                 {
                   text: $t('编辑分组'),
@@ -379,6 +380,13 @@
         </template>
       </i18n>
     </div>
+
+    <model-operation-list
+      :show="modelOperationList.show"
+      :commands="modelOperationList.commands"
+      :target="modelOperationList.target"
+      @hide="handleHide">
+    </model-operation-list>
   </div>
 </template>
 
@@ -396,6 +404,7 @@
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   import { v4 as uuidv4 } from 'uuid'
   import CollapseGroupTitle from '@/views/model-manage/children/collapse-group-title.vue'
+  import ModelOperationList from '@/views/model-manage/children/model-operation-list.vue'
   import { PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
   import FieldCard from '@/components/model-manage/field-card.vue'
   import useUnique from '@/views/field-template/children/use-unique.js'
@@ -414,7 +423,8 @@
       CmdbColumnsConfig,
       CollapseGroupTitle,
       FieldCard,
-      MiniTag
+      MiniTag,
+      ModelOperationList
     },
     props: {
       customObjId: String,
@@ -484,6 +494,11 @@
           instance: null,
           template: {},
           requestId: ''
+        },
+        modelOperationList: {
+          show: false,
+          commands: [],
+          target: null
         }
       }
     },
@@ -603,6 +618,16 @@
       ...mapActions('objectUnique', [
         'searchObjectUniqueConstraints',
       ]),
+      handleShowOperation(event, commands) {
+        this.modelOperationList.show = true
+        this.modelOperationList.commands = commands
+        this.modelOperationList.target = event?.target
+      },
+      handleHide() {
+        this.modelOperationList.show = false
+        this.modelOperationList.commands = []
+        this.modelOperationList.target = null
+      },
       toggleGroup(group) {
         this.groupCollapseState[`${group.info.bk_group_id}`] = !this.groupCollapseState[`${group.info.bk_group_id}`]
       },
