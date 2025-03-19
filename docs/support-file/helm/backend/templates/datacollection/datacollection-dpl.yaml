@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.datacollection.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: datacollection
         image: {{ .Values.image.registry }}/{{ .Values.datacollection.image.repository }}:v{{ default .Chart.AppVersion .Values.datacollection.image.tag }}

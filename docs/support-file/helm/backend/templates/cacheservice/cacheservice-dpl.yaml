@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.cacheservice.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: cacheservice
         image: {{ .Values.image.registry }}/{{ .Values.cacheservice.image.repository }}:v{{ default .Chart.AppVersion .Values.cacheservice.image.tag }}

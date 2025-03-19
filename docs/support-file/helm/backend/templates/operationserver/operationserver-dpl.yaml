@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.operationserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: operationserver
         image: {{ .Values.image.registry }}/{{ .Values.operationserver.image.repository }}:v{{ default .Chart.AppVersion .Values.operationserver.image.tag }}

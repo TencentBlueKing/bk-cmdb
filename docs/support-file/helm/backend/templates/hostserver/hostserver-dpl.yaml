@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.hostserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: hostserver
         image: {{ .Values.image.registry }}/{{ .Values.hostserver.image.repository }}:v{{ default .Chart.AppVersion .Values.hostserver.image.tag }}

@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.monstache.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: monstache
         image: {{ .Values.image.registry }}/{{ .Values.monstache.image.repository }}:{{ .Values.monstache.image.tag }}

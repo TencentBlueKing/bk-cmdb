@@ -12,6 +12,8 @@ spec:
   parallelism: 1
   template:
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - command:
         - bash

@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.procserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: procserver
         image: {{ .Values.image.registry }}/{{ .Values.procserver.image.repository }}:v{{ default .Chart.AppVersion .Values.procserver.image.tag }}

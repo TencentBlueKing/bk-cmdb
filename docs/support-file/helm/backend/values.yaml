@@ -24,10 +24,12 @@ global:
 ## bk-cmdb image parameters
 ## @param image.registry bk-cmdb image registry
 ## @param image.pullPolicy bk-cmdb image pull policy
+## @param image.pullSecretName bk-cmdb image pull secret name
 ##
 image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
+  pullSecretName: ""
 
 ## @section bk-cmdb adminserver parameters
 ##
