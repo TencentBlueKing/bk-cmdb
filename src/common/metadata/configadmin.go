@@ -78,6 +78,7 @@ func (s GlobalModule) Validate() error {
 type AdminBackendCfg struct {
 	MaxBizTopoLevel int64 `json:"max_biz_topo_level"`
 	SnapshotBizID   int64 `json:"snapshot_biz_id"`
+	SnapshotBizName string `json:"snapshot_biz_name"`
 }
 
 // Validate validate the fields of BackendCfg.
