@@ -18,6 +18,8 @@ spec:
   parallelism: 1
   template:
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: cmdb-auth-modelregister
         image: {{ template "cmdb.basicImagesAddress" . }}

@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.webserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       {{- if .Values.webserver.hostNetwork }}
       hostNetwork: true
       {{- end }}
