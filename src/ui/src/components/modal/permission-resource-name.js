@@ -29,7 +29,7 @@ const requestConfigBase = key => ({
 })
 
 async function getBusinessList(vm) {
-  // 使用`biz/search/${rootGetters.supplierAccount}`需要鉴权，从而使用biz/simplify
+  // 使用biz/simplify不需要鉴权
   const url = 'biz/simplify'
   const data = await vm.$http.get(`${url}?sort=bk_biz_id`, { ...requestConfigBase(url) })
   return data.info || []

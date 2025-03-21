@@ -40,7 +40,7 @@
   </div>
 </template>
 <script>
-  import { mapGetters, mapActions } from 'vuex'
+  import { mapActions } from 'vuex'
   import has from 'has'
   import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
   import { escapeRegexChar } from '@/utils/util'
@@ -95,7 +95,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       selectedProperty() {
         // eslint-disable-next-line max-len
         return this.filteredProperties.find(({ bk_property_id: bkPropertyId }) => bkPropertyId === this.localSelected.id) || {}

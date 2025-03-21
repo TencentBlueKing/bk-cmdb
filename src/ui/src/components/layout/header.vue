@@ -78,7 +78,7 @@
           offset: '0, 10'
         }">
         <span class="info-user">
-          <span class="user-name">{{userName}}</span>
+          <cmdb-user-value :value="userName" />
           <i class="user-icon bk-icon icon-angle-down"></i>
         </span>
         <template slot="content">
@@ -119,7 +119,7 @@
 
   export default {
     components: {
-      versionLog
+      versionLog,
     },
     data() {
       return {

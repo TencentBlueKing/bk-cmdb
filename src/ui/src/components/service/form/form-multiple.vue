@@ -31,7 +31,6 @@
 </template>
 
 <script>
-  import { mapGetters } from 'vuex'
   import {
     processPropertyRequestId,
     processPropertyGroupsRequestId
@@ -51,9 +50,6 @@
         bindedProperties: ['bind_info'],
         pending: true
       }
-    },
-    computed: {
-      ...mapGetters(['supplierAccount'])
     },
     async created() {
       try {

@@ -91,7 +91,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapState('hostDetails', ['info', 'isBusinessHost']),
       ...mapGetters('hostDetails', ['isBusinessHost']),
       id() {

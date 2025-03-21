@@ -172,7 +172,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModelClassify', ['models', 'getModelById']),
       objId() {
         return 'host'

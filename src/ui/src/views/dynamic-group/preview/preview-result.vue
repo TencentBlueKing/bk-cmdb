@@ -500,7 +500,7 @@
 
     const setParams = getSetParams()
     const { time_condition, conditions } = setParams
-    return rollReqUseCount(`set/search/${store.getters.supplierAccount}/${bizId.value}`, {
+    return rollReqUseCount(`set/search/0/${bizId.value}`, {
       page,
       filter: conditions,
       fields,

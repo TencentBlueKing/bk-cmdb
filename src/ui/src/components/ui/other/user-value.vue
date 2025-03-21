@@ -11,21 +11,12 @@
 -->
 
 <template>
-  <blueking-user-selector ref="userSelector" type="info"
-    v-if="localValue.length"
-    :api="api"
-    :value="localValue"
-    v-bk-overflow-tips>
-  </blueking-user-selector>
-  <span v-else>--</span>
+  <bk-user-display-name ref="userDisplayName" :user-id="value"></bk-user-display-name>
 </template>
 
 <script>
-  import BluekingUserSelector from '@blueking/user-selector'
   export default {
-    components: {
-      BluekingUserSelector
-    },
+    name: 'cmdb-user-value',
     props: {
       value: {
         type: String,
@@ -35,45 +26,10 @@
     data() {
       return {}
     },
-    computed: {
-      api() {
-        const { userManage } = window.ESB
-        if (userManage) {
-          try {
-            const url = new URL(userManage)
-            return `${window.API_HOST}proxy/get/usermanage${url.pathname}`
-          } catch (e) {
-            console.error(e)
-          }
-        }
-        return ''
-      },
-      localValue: {
-        get() {
-          if (this.value) {
-            return this.value.split(',')
-          }
-          return []
-        }
-      }
-    },
     methods: {
       getCopyValue() {
-        return this.$refs?.userSelector?.userInfo || '--'
+        return this.$refs?.userDisplayName?.textContent
       }
     }
   }
 </script>
-
-<style lang="scss" scoped>
-    .bk-table{
-        .user-selector{
-            width: 100%;
-            overflow: hidden;
-            display: block;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-    }
-
-</style>

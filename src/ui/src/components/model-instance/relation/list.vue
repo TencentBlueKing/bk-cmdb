@@ -71,7 +71,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModelClassify', ['models']),
       objId() {
         return this.$parent.objId

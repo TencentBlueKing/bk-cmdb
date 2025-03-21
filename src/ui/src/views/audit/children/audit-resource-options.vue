@@ -122,7 +122,7 @@
     bk_obj_id: '',
     fuzzy_query: false,
     condition: {
-      user: ['in', '']
+      user: ['in', []]
     }
   })
   export default {

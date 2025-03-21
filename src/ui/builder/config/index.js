@@ -39,7 +39,6 @@ const dev = {
     AUTH_SCHEME: JSON.stringify('internal'),
     AUTH_CENTER: JSON.stringify({}),
     BUILD_VERSION: JSON.stringify('dev'),
-    USER_ROLE: JSON.stringify(1),
     USER_NAME: JSON.stringify('admin'),
     FULL_TEXT_SEARCH: JSON.stringify('off'),
     USER_MANAGE: JSON.stringify(''),
@@ -49,7 +48,9 @@ const dev = {
     COMPONENT_API_URL: JSON.stringify(''),
     PUBLIC_PATH: JSON.stringify('/'),
     ENABLE_NOTIFICATION: JSON.stringify(false),
-    BK_REPO_URL: JSON.stringify(''),
+    SHARED_RES_URL: JSON.stringify(''),
+    TENANT_ID: JSON.stringify(''),
+    USER_MANAGE_URL: JSON.stringify(''),
   }),
 
   // Paths
@@ -141,7 +142,6 @@ module.exports = {
       AGENT_URL: '{{.agentAppUrl}}',
       AUTH_SCHEME: '{{.authscheme}}',
       AUTH_CENTER: '{{.authCenter}}',
-      USER_ROLE: '{{.role}}',
       USER_NAME: '{{.userName}}',
       FULL_TEXT_SEARCH: '{{.fullTextSearch}}',
       USER_MANAGE: '{{.userManage}}',
@@ -151,7 +151,9 @@ module.exports = {
       COMPONENT_API_URL: '{{.componentApiUrl}}',
       PUBLIC_PATH: '{{.publicPath}}',
       ENABLE_NOTIFICATION: '{{.enableNotification}}',
-      SHARED_RES_URL: '{{.bkSharedResUrl}}'
+      SHARED_RES_URL: '{{.bkSharedResUrl}}',
+      TENANT_ID: '{{.tenantId}}',
+      USER_MANAGE_URL: '{{.userManageUrl}}',
     }),
 
     // Template for index.html

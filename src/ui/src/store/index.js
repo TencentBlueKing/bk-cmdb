@@ -38,12 +38,9 @@ import objectModelFieldGroup from './modules/api/object-model-field-group.js'
 import objectModelProperty from './modules/api/object-model-property.js'
 import objectModel from './modules/api/object-model.js'
 import objectModule from './modules/api/object-module.js'
-import objectRelation from './modules/api/object-relation.js'
 import objectSet from './modules/api/object-set.js'
 import objectUnique from './modules/api/object-unique.js'
-import procConfig from './modules/api/proc-config.js'
 import userCustom from './modules/api/user-custom.js'
-import userPrivilege from './modules/api/user-privilege.js'
 import globalModels from './modules/api/global-models.js'
 import cloudDiscover from './modules/api/cloud-discover'
 import netCollectDevice from './modules/api/net-collect-device.js'
@@ -112,12 +109,9 @@ const store = new Vuex.Store({
     objectModelProperty,
     objectModel,
     objectModule,
-    objectRelation,
     objectSet,
     objectUnique,
-    procConfig,
     userCustom,
-    userPrivilege,
     globalModels,
     cloudDiscover,
     netCollectDevice,

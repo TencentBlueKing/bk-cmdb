@@ -107,7 +107,7 @@
     category: 'business',
     fuzzy_query: false,
     condition: {
-      user: ['in', '']
+      user: ['in', []]
     }
   })
 

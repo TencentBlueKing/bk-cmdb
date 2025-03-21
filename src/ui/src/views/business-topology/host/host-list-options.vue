@@ -475,12 +475,13 @@
         showImport()
       },
       handleCopy(property) {
-        const copyText = this.selection.map((data, index) => {
+        const copyText = this.selection.map((data) => {
           const modelId = property.bk_obj_id
           const modelData = data[modelId]
 
           if (isUseComplexValueType(property)) {
-            const value = this.$parent?.$refs?.[`table-cell-property-value-${property.bk_property_id}`]?.[index]?.getCopyValue()
+            const rowIndex = this.$parent.table.data.findIndex(row => row[modelId].bk_host_id === modelData.bk_host_id)
+            const value = this.$parent?.$refs?.[`table-cell-property-value-${property.bk_property_id}`]?.[rowIndex]?.getCopyValue()
             return value
           }
 

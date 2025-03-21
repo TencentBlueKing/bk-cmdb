@@ -140,7 +140,7 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount', 'userName']),
+      ...mapGetters(['userName']),
       ...mapGetters('userCustom', ['usercustom']),
       customBusinessColumns() {
         return this.usercustom[this.columnsConfigKey] || []

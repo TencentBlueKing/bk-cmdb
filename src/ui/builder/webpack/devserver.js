@@ -108,5 +108,10 @@ module.exports = config => ({
 
   devMiddleware: {
     stats: 'errors-only', // 'errors-only' | 'minimal' | 'normal' | 'verbose'
+  },
+
+  server: config.dev.https && {
+    type: 'https',
+    options: config.dev.https
   }
 })

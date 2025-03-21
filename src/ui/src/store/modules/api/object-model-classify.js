@@ -123,7 +123,6 @@ const actions = {
           bk_obj_icon: 'icon-cc-default',
           bk_obj_id: objId,
           bk_obj_name: CONTAINER_OBJECT_NAMES[objId].FULL,
-          bk_supplier_account: '0',
           position: ''
         })
       })
@@ -159,7 +158,6 @@ const mutations = {
           bk_classification_name: '',
           bk_classification_type: '',
           bk_objects: [],
-          bk_supplier_account: '',
           id: 0,
           isNewClassify: classification.isNewClassify
         },

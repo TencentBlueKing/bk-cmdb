@@ -489,7 +489,6 @@
     },
     computed: {
       ...mapState('userCustom', ['globalUsercustom']),
-      ...mapGetters(['supplierAccount']),
       ...mapGetters('objectModel', ['activeModel']),
       ...mapGetters('objectMainLineModule', ['isMainLine']),
       isGlobalView() {

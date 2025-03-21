@@ -15,8 +15,8 @@ import $http from '@/api'
 import { changeDocumentTitle } from '@/utils/change-document-title'
 
 const state = {
+  tenantId: window.Site.tenantId,
   user: window.User,
-  supplier: window.Supplier,
   language,
   globalLoading: true,
   nav: {
@@ -44,13 +44,11 @@ const state = {
 }
 
 const getters = {
+  tenantId: state => state.tenantId,
   user: state => state.user,
   userName: state => state.user.name,
-  admin: state => state.user.admin === '1',
   isBusinessSelected: (state, getters, rootState, rootGetters) => rootGetters['objectBiz/bizId'] !== null,
   language: state => state.language,
-  supplier: state => state.supplier,
-  supplierAccount: state => state.supplier.account,
   globalLoading: state => state.globalLoading,
   navStick: state => state.nav.stick,
   navFold: state => state.nav.fold,

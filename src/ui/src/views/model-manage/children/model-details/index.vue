@@ -373,7 +373,6 @@
     },
     computed: {
       ...mapGetters([
-        'supplierAccount',
         'userName'
       ]),
       ...mapGetters('objectMainLineModule', ['isMainLine']),
@@ -489,7 +488,6 @@
       ]),
       ...mapActions('objectBatch', [
         'importObjectAttribute',
-        'exportObjectAttribute'
       ]),
       ...mapActions('objectMainLineModule', [
         'deleteMainlineObject',

@@ -108,7 +108,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapState('bizSet', ['bizSetName', 'bizSetId', 'bizId']),
       ...mapGetters('businessHost', ['selectedNode']),
       searchKey() {

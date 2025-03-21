@@ -12,6 +12,7 @@
 
 import Vue from 'vue'
 import { subEnv } from '@blueking/sub-saas'
+import BkUserDisplayName from '@blueking/bk-user-display-name'
 
 import App from './App.vue'
 import IframeEntry from './IframeEntry.vue'
@@ -49,6 +50,11 @@ Vue.filter('unit', cmdbUnitFilter)
 Vue.prototype.$http = api
 Vue.prototype.$tools = tools
 Vue.prototype.$routerActions = routerActions
+
+BkUserDisplayName.configure({
+  tenantId: window.Site.tenantId,
+  apiBaseUrl: window.ESB.userManage,
+})
 
 api.get(`${window.API_HOST}is_login`).then(() => {
   window.CMDB_APP = new Vue({

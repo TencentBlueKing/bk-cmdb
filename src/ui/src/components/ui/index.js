@@ -60,6 +60,7 @@ import propertyValue from './other/property-value.vue'
 import tagInput from './tag-input/tag-input.vue'
 import innertable from './form/inner-table/index.vue'
 import steps from './other/steps.vue'
+import userValue from './other/user-value.vue'
 const install = (Vue) => {
   const components = [
     businessSelector,
@@ -111,7 +112,8 @@ const install = (Vue) => {
     propertyValue,
     tagInput,
     innertable,
-    steps
+    steps,
+    userValue
   ]
   components.forEach((component) => {
     Vue.component(component.name, component)

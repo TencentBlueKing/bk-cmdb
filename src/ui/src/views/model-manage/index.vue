@@ -528,7 +528,7 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount', 'userName']),
+      ...mapGetters(['userName']),
       ...mapGetters('objectModelClassify', ['classifications']),
       allClassifications() {
         const allClassifications = []

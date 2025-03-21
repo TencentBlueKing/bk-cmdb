@@ -114,7 +114,6 @@
       }
     },
     computed: {
-      ...mapGetters(['supplierAccount']),
       ...mapState('bizSet', ['bizId']),
       ...mapGetters('businessHost', ['selectedNode']),
       showServiceInstance() {

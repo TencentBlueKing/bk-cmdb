@@ -477,7 +477,6 @@ export function definePropertyGroup(definition) {
     bk_group_index: -1,
     bk_group_name: '基础信息',
     bk_isdefault: true,
-    bk_supplier_account: '0',
     is_collapse: false,
     ispre: false
   }, definition)

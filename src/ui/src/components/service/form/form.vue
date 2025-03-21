@@ -57,7 +57,7 @@
 </template>
 
 <script>
-  import { mapGetters, mapState } from 'vuex'
+  import { mapState } from 'vuex'
   import {
     processPropertyRequestId,
     processPropertyGroupsRequestId
@@ -118,7 +118,6 @@
     },
     computed: {
       ...mapState('bizSet', ['bizSetId']),
-      ...mapGetters(['supplierAccount']),
       isBizSet() {
         return router.currentRoute.name === MENU_BUSINESS_SET_TOPOLOGY
       },
