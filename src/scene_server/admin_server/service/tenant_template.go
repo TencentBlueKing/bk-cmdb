@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -103,7 +102,7 @@ func insertAsstData(kit *rest.Kit, db local.DB) error {
 	}
 
 	// generate audit log.
-	if err := addAuditLog(kit, db, auditLogs); err != nil {
+	if err := addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -163,7 +162,7 @@ func insertBizSetData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, auditLogs); err != nil {
+	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -219,7 +218,7 @@ func insertObjAssociationData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, auditLogs); err != nil {
+	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -249,7 +248,7 @@ func insertObjAttrData(kit *rest.Kit, db local.DB) error {
 	insertData := make([]metadata.Attribute, 0)
 	for _, item := range data {
 		value := item.Data.ObjectID + "*" + item.Data.PropertyID
-		if _, ok := existData[util.GetStrByInterface(value)]; ok {
+		if _, ok := existData[value]; ok {
 			continue
 		}
 		insertData = append(insertData, item.Data)
@@ -281,7 +280,7 @@ func insertObjAttrData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, auditLogs); err != nil {
+	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -341,7 +340,7 @@ func insertObjClassification(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, auditLogs); err != nil {
+	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -401,7 +400,7 @@ func insertPlatData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, auditLogs); err != nil {
+	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -426,7 +425,7 @@ func insertPropertyGrp(kit *rest.Kit, db local.DB) error {
 
 	existData := make(map[string]interface{}, 0)
 	for _, item := range result {
-		existData[item.ObjectID+"*"+util.GetStrByInterface(item.GroupID)] = struct{}{}
+		existData[item.ObjectID+"*"+item.GroupID] = struct{}{}
 	}
 	insertData := make([]metadata.Group, 0)
 	for _, item := range data {
@@ -460,7 +459,7 @@ func insertPropertyGrp(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, auditLogs); err != nil {
+	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -520,7 +519,7 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, auditLogs); err != nil {
+	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -569,7 +568,7 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 	}
 	attrIDMap := make(map[string]uint64)
 	for _, attr := range attrArr {
-		attrIDMap[generateUniqueKey(attr.ObjectID, attr.PropertyID)] = uint64(attr.ID)
+		attrIDMap[getObjPropertyUnique(attr.ObjectID, attr.PropertyID)] = uint64(attr.ID)
 	}
 
 	insertData := make([]metadata.ObjectUnique, 0)
@@ -578,7 +577,7 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 		for _, field := range uniqueData[index].Data.Keys {
 			keys = append(keys, metadata.UniqueKey{
 				Kind: metadata.UniqueKeyKindProperty,
-				ID:   attrIDMap[generateUniqueKey(uniqueData[index].Data.ObjectID, field)],
+				ID:   attrIDMap[getObjPropertyUnique(uniqueData[index].Data.ObjectID, field)],
 			})
 		}
 
@@ -619,7 +618,7 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, auditLogs); err != nil {
+	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -729,7 +728,7 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	if err = addAuditLog(kit, db, auditLogs); err != nil {
+	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
@@ -737,11 +736,11 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 	return nil
 }
 
-func generateUniqueKey(objID, propertyID string) string {
+func getObjPropertyUnique(objID, propertyID string) string {
 	return objID + ":" + propertyID
 }
 
-func addAuditLog(kit *rest.Kit, db local.DB, insertData []*auditlog.TenantTmpAuditOpts) error {
+func addTenantTmpAudit(kit *rest.Kit, db local.DB, insertData []*auditlog.TenantTmpAuditOpts) error {
 
 	audit := auditlog.NewTenantTemplateAuditLog()
 	auditLog := audit.GenerateAuditLog(insertData)

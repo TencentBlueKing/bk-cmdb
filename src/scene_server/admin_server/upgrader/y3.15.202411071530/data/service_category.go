@@ -34,14 +34,7 @@ import (
 
 var (
 	defaultServiceCategoryID int64
-	parentCategory           = []string{
-		"数据库",
-		"消息队列",
-		"HTTP 服务",
-		"存储",
-		"Default",
-	}
-	subCategoryMap = map[string][]string{
+	subCategoryMap           = map[string][]string{
 		"数据库":     {"Mysql", "Redis", "Oracle", "SQLServer", "MongoDB", "Etcd", "Zookeeper"},
 		"消息队列":    {"Kafka", "RabbitMQ"},
 		"HTTP 服务": {"Nginx", "Apache", "Tomcat"},
@@ -53,13 +46,13 @@ var (
 func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 	parentServiceCategory := make([]mapstr.MapStr, 0)
 	tmpData := make([]tenanttmp.SvrCategoryTmp, 0)
-	for _, value := range parentCategory {
+	for key := range subCategoryMap {
 		category := ServiceCategory{
-			Name:      value,
+			Name:      key,
 			IsBuiltIn: true,
 		}
 		tmpData = append(tmpData, tenanttmp.SvrCategoryTmp{
-			Name:       value,
+			Name:       key,
 			ParentName: "",
 		})
 		item, err := tools.ConvStructToMap(category)
@@ -92,22 +85,16 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	fieldMap := map[string]int64{
-		common.BKFieldName:     0,
-		common.BKParentIDField: 1,
-		common.BKAppIDField:    2,
-	}
 	existParentIDs := make(map[string]interface{}, 0)
 	for key, value := range parentIDs {
-		name := strings.Split(key, "*")[fieldMap[common.BKFieldName]]
-		parentID, err := strconv.ParseInt(strings.Split(key, "*")[fieldMap[common.BKParentIDField]], 10, 64)
+		fieldMap, err := tools.SplitUniqueStr(key, needField.UniqueFields)
 		if err != nil {
-			blog.Errorf("convert interface to int64 failed, err: %v", err)
+			blog.Errorf("split unique str failed, err: %v", err)
 			return err
 		}
 
-		if parentID == 0 {
-			existParentIDs[name] = value
+		if fieldMap[common.BKParentIDField] == "0" {
+			existParentIDs[fieldMap[common.BKFieldName]] = value
 		}
 	}
 

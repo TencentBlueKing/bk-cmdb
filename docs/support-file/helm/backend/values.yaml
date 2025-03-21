@@ -917,6 +917,9 @@ bkCmdbApiGatewayUrl: "http://bkapi.example.com"
 # 蓝鲸登录 API Gateway url
 bkLoginApiGatewayUrl: "http://bkapi.example.com"
 
+# 蓝鲸用户管理 API Gateway url
+bkUserApiGatewayUrl: "http://bkapi.example.com"
+
 ## @section bk-cmdb common config parameters
 ##
 common:
@@ -1605,7 +1608,8 @@ apigatewaySync:
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:
 
-apiGW:
-  bkUserApiGatewayUrl:
+## @param tenant.disableVerifyTenant Disable tenant verify
+tenant:
+  disableVerifyTenant: true
 
 

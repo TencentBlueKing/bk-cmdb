@@ -109,6 +109,22 @@ func InsertData(kit *rest.Kit, db local.DB, table string, data []mapstr.MapStr, 
 	return idFields, nil
 }
 
+// SplitUniqueStr split unique str by unique fields
+func SplitUniqueStr(uniqueStr string, uniqueFields []string) (map[string]string, error) {
+	valueMap := make(map[string]string, len(uniqueFields))
+
+	arr := strings.Split(uniqueStr, "*")
+	if len(arr) != len(uniqueFields) {
+		return nil, fmt.Errorf("unique str %s is invalid", uniqueStr)
+	}
+
+	for index, uniqueField := range uniqueFields {
+		valueMap[uniqueField] = arr[index]
+	}
+
+	return valueMap, nil
+}
+
 func getUniqueStr(item mapstr.MapStr, uniqueFields []string) string {
 	var strArr []string
 	for _, uniqueValue := range uniqueFields {

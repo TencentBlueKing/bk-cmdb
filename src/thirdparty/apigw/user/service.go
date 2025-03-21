@@ -24,16 +24,16 @@ import (
 	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
-// ClientI is the bk-login api gateway client
+// ClientI is the bk-user api gateway client
 type ClientI interface {
-	GetTenants(ctx context.Context, h http.Header) ([]*Tenant, error)
+	GetTenants(ctx context.Context, h http.Header) ([]Tenant, error)
 }
 
 type user struct {
 	service *apigwutil.ApiGWSrv
 }
 
-// NewClient create bk-login api gateway client
+// NewClient create bk-user api gateway client
 func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
 	service, err := apigwutil.NewApiGW(options, "apiGW.bkUserApiGatewayUrl")
 	if err != nil {

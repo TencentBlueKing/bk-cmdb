@@ -91,28 +91,6 @@ func Init(opts *Options) error {
 	return nil
 }
 
-// Refresh refresh tenant info
-func Refresh(apiMachineryCli apimachinery.ClientSetInterface) error {
-	if apiMachineryCli == nil {
-		return fmt.Errorf("api machinery client is nil")
-	}
-
-	tenants, err := apiMachineryCli.ApiServer().RefreshTenant(context.Background(), util.GenDefaultHeader())
-	if err != nil {
-		blog.Errorf("refresh tenant info failed, err: %v", err)
-		return err
-	}
-	lock.Lock()
-	allTenants = tenants
-	tenantMap = make(map[string]*types.Tenant)
-	for _, tenant := range allTenants {
-		tenantMap[tenant.TenantID] = &tenant
-	}
-
-	lock.Unlock()
-	return nil
-}
-
 // SetTenant set tenant
 func SetTenant(tenant []types.Tenant) {
 	lock.Lock()
@@ -144,21 +122,13 @@ func refreshTenantInfo() error {
 		}
 	}
 
-	lock.Lock()
-	allTenants = tenants
-	tenantMap = make(map[string]*types.Tenant)
-	for _, tenant := range allTenants {
-		tenantMap[tenant.TenantID] = &tenant
-	}
-	lock.Unlock()
+	SetTenant(tenants)
 	return nil
 }
 
 // GetAllTenants get all tenants
 func GetAllTenants() []types.Tenant {
 	// TODO right now only support default tenant for compatible, use actual tenants later
-	lock.RLock()
-	defer lock.RUnlock()
 	return []types.Tenant{{TenantID: common.BKDefaultTenantID, Status: types.EnabledStatus}}
 }
 

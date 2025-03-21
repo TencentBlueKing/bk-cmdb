@@ -98,6 +98,7 @@ func (a *adminServer) RunSyncDBIndex(ctx context.Context, h http.Header) error {
 	return nil
 }
 
+// AddTenant add tenant
 func (a *adminServer) AddTenant(ctx context.Context, h http.Header) error {
 	resp := new(metadata.Response)
 	subPath := "/add/tenant"

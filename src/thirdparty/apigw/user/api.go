@@ -27,8 +27,8 @@ import (
 )
 
 // GetTenants get all tenants from bk user
-func (u *user) GetTenants(ctx context.Context, h http.Header) ([]*Tenant, error) {
-	resp := new(BkUserResponse[[]*Tenant])
+func (u *user) GetTenants(ctx context.Context, h http.Header) ([]Tenant, error) {
+	resp := new(BkUserResponse[[]Tenant])
 
 	httpheader.SetTenantID(h, common.BKDefaultTenantID)
 	err := u.service.Client.Get().

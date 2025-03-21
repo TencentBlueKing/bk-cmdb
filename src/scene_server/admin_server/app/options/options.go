@@ -67,7 +67,8 @@ type Config struct {
 	// SyncIAMPeriodMinutes the period for sync IAM resources
 	SyncIAMPeriodMinutes int
 	// 通过何种方式调用gse接口注册dataid
-	DataIdMigrateWay MigrateWay
+	DataIdMigrateWay    MigrateWay
+	DisableVerifyTenant bool
 }
 
 // MigrateWay 通过何种方式调用gse接口注册dataid

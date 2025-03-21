@@ -294,8 +294,12 @@ data:
 
     dataid:
       migrateWay: {{ .Values.migrate.dataid.migrateWay }}
+
     apiGW:
-      bkUserApiGatewayUrl: {{ .Values.apiGW.bkUserApiGatewayUrl}}
+      bkUserApiGatewayUrl: {{ .Values.bkUserApiGatewayUrl }}}}
+
+    tenant:
+      disableVerifyTenant: {{ .Values.tenant.disableVerifyTenant }}
 
 
   mongodb.yaml: |-

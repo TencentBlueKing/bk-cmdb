@@ -78,7 +78,8 @@ func InsertTemplateData(kit *rest.Kit, db local.DB, data []mapstr.MapStr,
 	return nil
 }
 
-func InsertSvrCategoryTmp(kit *rest.Kit, db dal.RDB, data []tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp]) error {
+// InsertSvrCategoryTmp insert service category template
+func InsertSvrCategoryTmp(kit *rest.Kit, db local.DB, data []tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp]) error {
 
 	result := make([]tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp], 0)
 	cond := mapstr.MapStr{
@@ -113,7 +114,8 @@ func InsertSvrCategoryTmp(kit *rest.Kit, db dal.RDB, data []tenanttmp.TenantTmpD
 	return nil
 }
 
-func InsertUniqueKeyTmp(kit *rest.Kit, db dal.RDB, data []tenanttmp.TenantTmpData[tenanttmp.UniqueKeyTmp]) error {
+// InsertUniqueKeyTmp insert unique key template
+func InsertUniqueKeyTmp(kit *rest.Kit, db local.DB, data []tenanttmp.TenantTmpData[tenanttmp.UniqueKeyTmp]) error {
 
 	result := make([]tenanttmp.TenantTmpData[tenanttmp.UniqueKeyTmp], 0)
 	cond := mapstr.MapStr{
