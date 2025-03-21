@@ -44,7 +44,13 @@ func GetAppCode(header http.Header) string {
 
 // GetUser get username from http header
 func GetUser(header http.Header) string {
-	return header.Get(UserHeader)
+	if user := header.Get(UserHeader); user != "" {
+		return user
+	}
+	if user := header.Get("BK_User"); user != "" {
+		return user
+	}
+	return ""
 }
 
 // GetUserToken get blueking user token from http header
@@ -64,7 +70,19 @@ func GetLanguage(header http.Header) string {
 
 // GetSupplierAccount get supplier account from http header
 func GetSupplierAccount(header http.Header) string {
-	return header.Get(SupplierAccountHeader)
+	if supplier := header.Get(SupplierAccountHeader); supplier != "" {
+		return supplier
+	}
+	if supplier := header.Get("X-Bkapi-Supplier-Account"); supplier != "" {
+		return supplier
+	}
+	if supplier := header.Get("HTTP_BLUEKING_SUPPLIER_ID"); supplier != "" {
+		return supplier
+	}
+	if supplier := header.Get("HTTP_BK_SUPPLIER_ACCOUNT"); supplier != "" {
+		return supplier
+	}
+	return ""
 }
 
 // IsReqFromWeb check if request is from web server
@@ -111,6 +129,7 @@ func SetAppCode(header http.Header, value string) {
 // SetUser set username to http header
 func SetUser(header http.Header, value string) {
 	header.Set(UserHeader, value)
+	header.Set("BK_User", value)
 }
 
 // SetUserToken set blueking user token to http header
@@ -131,6 +150,9 @@ func SetLanguage(header http.Header, value string) {
 // SetSupplierAccount set supplier account to http header
 func SetSupplierAccount(header http.Header, value string) {
 	header.Set(SupplierAccountHeader, value)
+	header.Set("X-Bkapi-Supplier-Account", value)
+	header.Set("HTTP_BLUEKING_SUPPLIER_ID", value)
+	header.Set("HTTP_BK_SUPPLIER_ACCOUNT", value)
 }
 
 // SetReqFromWeb set the request from web server flag to http header

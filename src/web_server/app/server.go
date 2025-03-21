@@ -143,13 +143,23 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 	}
 
 	// init api gateway client
-	switch webSvr.Config.DeploymentMethod {
-	case common.BluekingDeployment:
-		err = apigwcli.Init("apiGW", engine.Metric().Registry(), []apigw.ClientType{apigw.Cmdb, apigw.Notice})
+	apigwClients := make([]apigw.ClientType, 0)
+	if webSvr.Config.DeploymentMethod == common.BluekingDeployment {
+		apigwClients = append(apigwClients, apigw.Cmdb)
+	}
+	if webSvr.Config.EnableNotification {
+		apigwClients = append(apigwClients, apigw.Notice)
+	}
+	if len(apigwClients) > 0 {
+		err = apigwcli.Init("apiGW", engine.Metric().Registry(), apigwClients)
 		if err != nil {
 			return nil, fmt.Errorf("init api gateway client error, err: %v", err)
 		}
+	}
 
+	// init api client
+	switch webSvr.Config.DeploymentMethod {
+	case common.BluekingDeployment:
 		cmdbCli := apigwcli.Client().Cmdb()
 		headerWrapper := rest.HeaderWrapper(cmdbCli.SetApiGWAuthHeader)
 		baseUrlWrapper := rest.BaseUrlWrapper(fmt.Sprintf("/api/%s/", webcomm.API_VERSION))

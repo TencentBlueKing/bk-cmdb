@@ -112,8 +112,9 @@ type DataCollection struct {
 	ctx    context.Context
 	engine *backbone.Engine
 
-	defaultAppID  string
-	snapshotBizID int64
+	defaultAppID    string
+	snapshotBizID   int64
+	snapshotBizName string
 
 	// config for this DataCollection app.
 	config *DataCollectionConfig
@@ -413,7 +414,12 @@ func (c *DataCollection) initModules() error {
 // getDefaultAppID returns default appid of this DataCollection server.
 func (c *DataCollection) getDefaultAppID() (string, error) {
 	// query condition.
-	condition := map[string]interface{}{common.BKAppIDField: c.snapshotBizID}
+	condition := map[string]interface{}{
+		common.BKDBOR: []map[string]interface{}{
+			{common.BKAppIDField: c.snapshotBizID},
+			{common.BKAppNameField: c.snapshotBizName},
+		},
+	}
 
 	// query results.
 	results := []map[string]interface{}{}
@@ -588,10 +594,11 @@ func (c *DataCollection) setSnapshotBizID() error {
 			continue
 		}
 		c.snapshotBizID = res.Data.Backend.SnapshotBizID
+		c.snapshotBizName = res.Data.Backend.SnapshotBizName
 		break
 	}
 
-	if c.snapshotBizID <= 0 {
+	if c.snapshotBizID <= 0 && c.snapshotBizName == "" {
 		blog.Errorf("set snapshotBizID failed, snapshotBizID is empty, check the coreservice and the value " +
 			"in table cc_System")
 		return fmt.Errorf("set snapshotBizID failed")
