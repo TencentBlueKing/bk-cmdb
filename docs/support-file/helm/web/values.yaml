@@ -179,6 +179,9 @@ bkLoginApiGatewayUrl: "http://bkapi.example.com"
 ## 蓝鲸共享资源URL
 bkSharedResUrl:
 
+## 网关API访问地址模板
+bkApiUrlTmpl:
+
 ## @section bk-cmdb common config parameters
 ##
 web:

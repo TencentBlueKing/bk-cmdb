@@ -16,7 +16,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -181,7 +180,6 @@ func (s *Service) UpdateTenant(c *gin.Context) {
 		return
 	}
 	session.Set(common.WEBSessionTenantUinKey, tenant.TenantID)
-	session.Set(common.WEBSessionRoleKey, strconv.FormatInt(tenant.Role, 10))
 	if err := session.Save(); err != nil {
 		blog.Errorf("save session failed, err: %v, rid: %s", err, rid)
 	}

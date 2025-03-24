@@ -1275,7 +1275,7 @@ func TestNextSequence(t *testing.T) {
 	db := dbClient(t)
 
 	// 清理数据
-	err := db.DropTable(ctx, "cc_idgenerator")
+	err := db.DropTable(ctx, common.BKTableNameIDgenerator)
 	require.NoError(t, err)
 
 	id, err := db.NextSequence(ctx, "test")

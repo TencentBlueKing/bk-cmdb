@@ -206,6 +206,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.Site.HelpDocUrl, _ = cc.String("webServer.site.helpDocUrl")
 	w.Config.Site.BkComponentApiUrl, _ = cc.String("webServer.site.bkComponentApiUrl")
 	w.Config.Site.BkSharedResUrl, _ = cc.String("webServer.site.bkSharedResUrl")
+	w.Config.Site.BkApiUrlTmpl, _ = cc.String("webServer.site.bkApiUrlTmpl")
 
 	w.Config.Session.Name, _ = cc.String("webServer.session.name")
 	w.Config.Session.MultipleOwner, _ = cc.String("webServer.session.multipleOwner")

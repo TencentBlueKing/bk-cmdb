@@ -25,8 +25,8 @@ import (
 // Index html file
 func (s *Service) Index(c *gin.Context) {
 	session := sessions.Default(c)
-	role := session.Get("role")
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
+	tenantID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
 
 	pageConf := gin.H{
 		"site":                      s.Config.Site.DomainUrl,
@@ -34,9 +34,9 @@ func (s *Service) Index(c *gin.Context) {
 		"ccversion":                 version.CCVersion,
 		"authscheme":                s.Config.Site.AuthScheme,
 		"fullTextSearch":            s.Config.Site.FullTextSearch,
-		"role":                      role,
 		"curl":                      s.Config.LoginUrl,
 		"userName":                  userName,
+		"tenantId":                  tenantID,
 		"agentAppUrl":               s.Config.AgentAppUrl,
 		"authCenter":                s.Config.AuthCenter,
 		"helpDocUrl":                s.Config.Site.HelpDocUrl,
@@ -51,6 +51,11 @@ func (s *Service) Index(c *gin.Context) {
 	if s.Config.Site.PaasDomainUrl != "" {
 		pageConf["userManage"] = strings.TrimSuffix(s.Config.Site.PaasDomainUrl,
 			"/") + "/api/c/compapi/v2/usermanage/fs_list_users/"
+	}
+
+	if s.Config.Site.BkApiUrlTmpl != "" {
+		pageConf["userManageUrl"] = strings.TrimSuffix(strings.ReplaceAll(s.Config.Site.BkApiUrlTmpl, "{api_name}",
+			"bk-user-web"), "/") + "/prod"
 	}
 
 	c.HTML(200, "index.html", pageConf)
