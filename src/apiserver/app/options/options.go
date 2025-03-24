@@ -39,6 +39,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }
 
+// Config define the config of apiserver
 type Config struct {
 	EnableMultiTenantMode bool
 }

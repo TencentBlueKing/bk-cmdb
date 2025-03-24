@@ -93,6 +93,7 @@ type Config struct {
 	DisableOperationStatistic bool
 	DeploymentMethod          common.DeploymentMethod
 	EnableNotification        bool
+	EnableMultiTenantMode     bool
 }
 
 // AppInfo TODO

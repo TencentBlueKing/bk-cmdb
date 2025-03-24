@@ -20,7 +20,7 @@ import (
 )
 
 // SetProxyHeader TODO
-func SetProxyHeader(c *gin.Context) error {
+func SetProxyHeader(c *gin.Context) {
 	// http request header add user
 	session := sessions.Default(c)
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
@@ -31,7 +31,7 @@ func SetProxyHeader(c *gin.Context) error {
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, GetLanguageByHTTPRequest(c))
 	httpheader.SetTenantID(c.Request.Header, tenantID)
-	return nil
+
 }
 
 // GetLanguageByHTTPRequest get language by http request cookie

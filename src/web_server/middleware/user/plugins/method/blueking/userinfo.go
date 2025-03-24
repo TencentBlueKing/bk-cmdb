@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"strings"
 
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -25,6 +26,7 @@ import (
 	"configcenter/src/common/metadata"
 	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/resource/esb"
+	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
 	"github.com/gin-gonic/gin"
@@ -42,7 +44,7 @@ func init() {
 type user struct{}
 
 // LoginUser user login
-func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo,
+func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner bool) (user *metadata.LoginUserInfo,
 	loginSucc bool) {
 	rid := httpheader.GetRid(c.Request.Header)
 
@@ -73,16 +75,12 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		return nil, false
 	}
 
-	enableTenantMode, err := cc.Bool("tenant.enableMultiTenantMode")
+	tenantID, err := logics.GetTenantWithMode(user.TenantUin, config.EnableMultiTenantMode)
 	if err != nil {
-		blog.Errorf("get enable tenant mode failed, err: %v", err)
-		return nil, false
-	}
-
-	if !enableTenantMode && user.TenantUin != "" && user.TenantUin != common.BKUnconfiguredTenantID {
 		blog.Infof("tenant mode not enabled, but tenantUin is not empty, rid: %s", rid)
 		return nil, false
 	}
+	user.TenantUin = tenantID
 
 	return user, true
 }

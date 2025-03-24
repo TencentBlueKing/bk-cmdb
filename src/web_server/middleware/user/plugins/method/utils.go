@@ -20,43 +20,39 @@ package method
 import (
 	"fmt"
 
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/common"
-	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
-	"github.com/gin-gonic/gin"
+	"configcenter/src/web_server/app/options"
 
 	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
-// SetCookie set tenant cookie
-func SetCookie(c *gin.Context, session sessions.Session) error {
+// SetTenantFromCookie get tenant from cookie, set tenant to session
+func SetTenantFromCookie(c *gin.Context, config options.Config, session sessions.Session) (string, error) {
 	rid := httpheader.GetRid(c.Request.Header)
-	enableTenantMode, err := cc.Bool("tenant.enableMultiTenantMode")
+
+	cookieTenantID, cookieErr := c.Cookie(common.HTTPCookieTenant)
+	tenantID, err := logics.GetTenantWithMode(cookieTenantID, config.EnableMultiTenantMode)
 	if err != nil {
-		blog.Errorf("get enable tenant mode failed, err: %v, rid: %s", err, rid)
-		return err
+		return "", err
 	}
 
-	cookieTenantID, err := c.Cookie(common.HTTPCookieTenant)
-	if cookieTenantID == "" || err != nil {
-		if enableTenantMode {
+	if cookieTenantID == "" || cookieErr != nil {
+		if config.EnableMultiTenantMode {
 			blog.Errorf("tenant mode is enabled but tenant cookie is not set, rid: %s", rid)
-			return fmt.Errorf("tenant mode is enabled but tenant cookie is not set")
-		} else {
-			c.SetCookie(common.HTTPCookieTenant, common.BKUnconfiguredTenantID, 0, "/", "", false, false)
-			session.Set(common.WEBSessionTenantUinKey, common.BKUnconfiguredTenantID)
+			return tenantID, fmt.Errorf("tenant mode is enabled but tenant cookie is not set")
 		}
+		c.SetCookie(common.HTTPCookieTenant, tenantID, 0, "/", "", false, false)
+		session.Set(common.WEBSessionTenantUinKey, tenantID)
 	} else {
-		if enableTenantMode {
-			session.Set(common.WEBSessionTenantUinKey, cookieTenantID)
-		} else {
-			session.Set(common.WEBSessionTenantUinKey, common.BKUnconfiguredTenantID)
-		}
+		session.Set(common.WEBSessionTenantUinKey, tenantID)
 	}
 
 	if err = session.Save(); err != nil {
-		blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
+		blog.Warnf("save session failed, err: %v, rid: %s", err, rid)
 	}
-	return nil
+	return tenantID, nil
 }

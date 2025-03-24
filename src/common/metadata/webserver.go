@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/querybuilder"
+	"configcenter/src/web_server/app/options"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,7 +39,7 @@ type LoginUserInfo struct {
 	Email        string                       `json:"email"`
 	BkToken      string                       `json:"bk_token"`
 	BkTicket     string                       `json:"bk_ticket"`
-	TenantUin    string                       `json:"current_tenant"`
+	TenantUin    string                       `json:"tenant_id"`
 	TenantUinArr []LoginUserInfoTenantUinList `json:"tenant_list"` // user all tenant uin
 	IsTenant     bool                         `json:"-"`           // is master
 	Extra        map[string]interface{}       `json:"extra"`       // custom information
@@ -64,7 +65,7 @@ type LoginUserPluginParams struct {
 
 // LoginUserPluginInerface login user plugin interface
 type LoginUserPluginInerface interface {
-	LoginUser(c *gin.Context, config map[string]string, isMultiTenant bool) (user *LoginUserInfo, loginSucc bool)
+	LoginUser(c *gin.Context, config options.Config, isMultiTenant bool) (user *LoginUserInfo, loginSucc bool)
 	GetLoginUrl(c *gin.Context, config map[string]string, input *LogoutRequestParams) string
 	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, *errors.RawErrorInfo)
 }

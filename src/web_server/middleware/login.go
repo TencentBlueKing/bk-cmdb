@@ -17,10 +17,10 @@ import (
 	"net/http"
 	"strings"
 
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
-	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/httpclient"
@@ -171,25 +171,27 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		return user.LoginUser(c)
 	}
 
-	enableTenantMode, err := cc.Bool("tenant.enableMultiTenantMode")
-	if err != nil {
-		return user.LoginUser(c)
-	}
 	// check default tenant
-	tenantID, ok := session.Get(common.WEBSessionTenantUinKey).(string)
-	if !ok || (enableTenantMode && "" == tenantID) {
+	sessionTenantID, ok := session.Get(common.WEBSessionTenantUinKey).(string)
+	if !ok {
 		return user.LoginUser(c)
 	}
 
-	if !enableTenantMode && tenantID != common.BKUnconfiguredTenantID && tenantID != "" {
+	tenant, err := logics.GetTenantWithMode(sessionTenantID, config.EnableMultiTenantMode)
+	if err != nil {
 		return user.LoginUser(c)
 	}
+
+	session.Set(common.WEBSessionTenantUinKey, tenant)
 
 	bkTokenName := common.HTTPCookieBKToken
 	bkToken, err := c.Cookie(bkTokenName)
 	blog.V(5).Infof("valid user login session token %s, cookie token %s, rid: %s", ccToken, bkToken, rid)
 	if nil != err || bkToken != ccToken {
 		return user.LoginUser(c)
+	}
+	if err = session.Save(); err != nil {
+		blog.Warnf("save session failed, err: %v, rid: %s", err, rid)
 	}
 	return true
 

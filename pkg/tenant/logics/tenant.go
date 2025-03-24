@@ -20,29 +20,18 @@ package logics
 import (
 	"fmt"
 
-	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/common"
 )
 
-// NewTenantInterface get new tenant cli interface
-type NewTenantInterface interface {
-	NewTenantCli(tenant string) (local.DB, string, error)
-}
+// GetTenantWithMode get tenant id with mode which is disabled or enable for tenant
+func GetTenantWithMode(tenantID string, enableTenantMode bool) (string, error) {
+	if !enableTenantMode {
+		if tenantID == "" || tenantID == common.BKNonTenantModeID {
+			return common.BKNonTenantModeID, nil
+		}
 
-// GetNewTenantCli get new tenant db
-func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string, error) {
-	newTenantCli, ok := cli.(NewTenantInterface)
-	if !ok {
-		blog.Errorf("get new tenant cli failed, rid: %s", kit.Rid)
-		return nil, "", fmt.Errorf("get new tenant cli failed")
+		return "", fmt.Errorf("tenant mode is disable, but tenant id %s is set", tenantID)
 	}
 
-	dbCli, dbUUID, err := newTenantCli.NewTenantCli(kit.TenantID)
-	if err != nil || dbCli == nil {
-		blog.Errorf("get new tenant cli failed, err: %v, tenant: %s, rid: %s", err, kit.TenantID, kit.Rid)
-		return nil, "", fmt.Errorf("get new tenant cli failed, err: %v", err)
-	}
-
-	return dbCli, dbUUID, nil
+	return tenantID, nil
 }

@@ -27,8 +27,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/hooks/process"
 	webCommon "configcenter/src/web_server/common"
-	"configcenter/src/web_server/middleware/user"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,11 +52,7 @@ func (s *Service) ListenIPOptions(c *gin.Context) {
 
 	rid := httpheader.GetRid(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
-	if err := webCommon.SetProxyHeader(c); err != nil {
-		user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
-		url := user.GetLoginUrl(c)
-		c.Redirect(302, url)
-	}
+	webCommon.SetProxyHeader(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(c.Request.Header))
 
 	hostIDStr := c.Param("bk_host_id")

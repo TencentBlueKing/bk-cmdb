@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	webCommon "configcenter/src/web_server/common"
-	"configcenter/src/web_server/middleware/user"
 	"configcenter/src/web_server/service/excel"
 
 	"github.com/alexmullins/zip"
@@ -40,11 +39,7 @@ func (s *Service) GetObjectInstanceCount(c *gin.Context) {
 	header := c.Request.Header
 	rid := httpheader.GetRid(header)
 	ctx := util.NewContextFromGinContext(c)
-	if err := webCommon.SetProxyHeader(c); err != nil {
-		user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
-		url := user.GetLoginUrl(c)
-		c.Redirect(302, url)
-	}
+	webCommon.SetProxyHeader(c)
 	cond := &metadata.ObjectCountParams{}
 
 	err := c.BindJSON(&cond)
@@ -71,11 +66,7 @@ func (s *Service) GetObjectInstanceCount(c *gin.Context) {
 func (s *Service) BatchExportObject(c *gin.Context) {
 	header := c.Request.Header
 	rid := httpheader.GetRid(header)
-	if err := webCommon.SetProxyHeader(c); err != nil {
-		user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
-		url := user.GetLoginUrl(c)
-		c.Redirect(302, url)
-	}
+	webCommon.SetProxyHeader(c)
 
 	cond := new(metadata.BatchExportObject)
 	err := c.BindJSON(cond)
@@ -169,11 +160,7 @@ func (s *Service) exportObj(c *gin.Context, cond *metadata.BatchExportObject, di
 // BatchImportObjectAnalysis batch analysis object and asstkind yaml
 func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 	rid := httpheader.GetRid(c.Request.Header)
-	if err := webCommon.SetProxyHeader(c); err != nil {
-		user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
-		url := user.GetLoginUrl(c)
-		c.Redirect(302, url)
-	}
+	webCommon.SetProxyHeader(c)
 
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
@@ -285,11 +272,7 @@ func (s *Service) getAnalysisResult(c *gin.Context, filePath string,
 // BatchImportObject batch import object
 func (s *Service) BatchImportObject(c *gin.Context) {
 	rid := httpheader.GetRid(c.Request.Header)
-	if err := webCommon.SetProxyHeader(c); err != nil {
-		user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
-		url := user.GetLoginUrl(c)
-		c.Redirect(302, url)
-	}
+	webCommon.SetProxyHeader(c)
 	ctx := util.NewContextFromGinContext(c)
 
 	cond := new(metadata.BatchImportObject)

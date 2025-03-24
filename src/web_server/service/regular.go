@@ -21,8 +21,6 @@ import (
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	webCommon "configcenter/src/web_server/common"
-	"configcenter/src/web_server/middleware/user"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -70,11 +68,7 @@ func (s *Service) VerifyRegularExpress(c *gin.Context) {
 // VerifyRegularContentBatch verify regular content batch
 func (s *Service) VerifyRegularContentBatch(c *gin.Context) {
 	rid := httpheader.GetRid(c.Request.Header)
-	if err := webCommon.SetProxyHeader(c); err != nil {
-		user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
-		url := user.GetLoginUrl(c)
-		c.Redirect(302, url)
-	}
+	webCommon.SetProxyHeader(c)
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 

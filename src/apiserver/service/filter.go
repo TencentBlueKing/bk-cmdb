@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/logics"
 	"configcenter/pkg/tenant/types"
 	tenantset "configcenter/pkg/types/tenant-set"
 	"configcenter/src/ac/meta"
@@ -502,24 +503,21 @@ func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response,
 func (s *service) TenantVerify() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 
-		if !s.config.EnableMultiTenantMode {
-			if tenant := req.Request.Header.Get(httpheader.TenantHeader); tenant == "" ||
-				tenant == common.BKUnconfiguredTenantID {
-				req.Request.Header.Set(httpheader.TenantHeader, common.BKUnconfiguredTenantID)
-				fchain.ProcessFilter(req, resp)
-				return
-			}
-			blog.Errorf("tenant mode is not enabled but tenant is set, rid: %s", httpheader.GetRid(req.Request.Header))
+		tenantID, err := logics.GetTenantWithMode(httpheader.GetTenantID(req.Request.Header),
+			s.config.EnableMultiTenantMode)
+		if err != nil {
+			blog.Errorf("get tenant with mode failed, err: %v, rid: %s", err, httpheader.GetRid(req.Request.Header))
 			rsp := metadata.BaseResp{
 				Code:   common.CCErrAPICheckTenantInvalid,
-				ErrMsg: "tenant mode is not enabled but tenant is set",
+				ErrMsg: "invalid tenant",
 				Result: false,
 			}
 			_ = resp.WriteAsJson(rsp)
 			return
 		}
 
-		tenantID := httpheader.GetTenantID(req.Request.Header)
+		req.Request.Header.Set(httpheader.TenantHeader, tenantID)
+
 		tenantData, exist := tenant.GetTenant(tenantID)
 		if !exist || tenantData.Status != types.EnabledStatus {
 			blog.Errorf("invalid tenant: %s, rid: %s", tenantID, httpheader.GetRid(req.Request.Header))

@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/history"
-	
+
 	"github.com/emicklei/go-restful/v3"
 )
 

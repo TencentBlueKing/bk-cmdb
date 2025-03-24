@@ -227,6 +227,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.DisableOperationStatistic, _ = cc.Bool("operationServer.disableOperationStatistic")
 
 	w.Config.EnableNotification, _ = cc.Bool("webServer.enableNotification")
+	w.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
 }
 
 // Stop the ccapi server

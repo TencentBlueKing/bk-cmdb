@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"configcenter/pkg/tenant"
+	tenantlogics "configcenter/pkg/tenant/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
@@ -48,28 +49,27 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 
 	rHeader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	// default tenant model
+
+	// get tenant id
+	tenantID, err := tenantlogics.GetTenantWithMode(req.Request.Header.Get(httpheader.TenantHeader),
+		s.Config.EnableMultiTenantMode)
+	if err != nil {
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, "tenant mode is not enabled, but tenant id is set"),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+	req.Request.Header.Set(httpheader.TenantHeader, tenantID)
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-	if !s.Config.EnableMultiTenantMode {
-		tenantID := req.Request.Header.Get(httpheader.TenantHeader)
-		if tenantID != "" && tenantID != common.BKUnconfiguredTenantID {
-			result := &metadata.RespError{
-				Msg: defErr.Errorf(common.CCErrCommMigrateFailed, "tenant mode is not enabled, but tenant id is set"),
-			}
-			resp.WriteError(http.StatusInternalServerError, result)
-			return
+
+	if s.Config.EnableMultiTenantMode && kit.TenantID != common.BKDefaultTenantID {
+		blog.Errorf("only support system tenant, but current tenant id is %s", kit.TenantID)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, "only support system tenant"),
 		}
-		req.Request.Header.Set(httpheader.TenantHeader, common.BKUnconfiguredTenantID)
-		kit = rest.NewKitFromHeader(rHeader, s.CCErr)
-	} else {
-		if kit.TenantID != common.BKDefaultTenantID {
-			blog.Errorf("only support system tenant, but current tenant id is %s", kit.TenantID)
-			result := &metadata.RespError{
-				Msg: defErr.Errorf(common.CCErrCommMigrateFailed, "only support system tenant"),
-			}
-			resp.WriteError(http.StatusInternalServerError, result)
-			return
-		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
 	}
 
 	if err := s.createWatchDBChainCollections(kit); err != nil {

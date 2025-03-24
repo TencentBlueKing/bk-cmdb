@@ -55,7 +55,7 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if !s.Config.DisableVerifyTenant {
+	if s.Config.EnableMultiTenantMode && !s.Config.DisableVerifyTenant {
 		// get all tenants from bk-user
 		tenants, err := apigwcli.Client().User().GetTenants(kit.Ctx, kit.Header)
 		if err != nil {

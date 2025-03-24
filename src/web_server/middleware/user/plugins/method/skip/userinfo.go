@@ -22,6 +22,7 @@ import (
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 	"configcenter/src/web_server/middleware/user/plugins/method"
@@ -42,13 +43,15 @@ func init() {
 type user struct{}
 
 // LoginUser user login
-func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (user *metadata.LoginUserInfo,
+func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner bool) (user *metadata.LoginUserInfo,
 	loginSucc bool) {
 
 	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
-	if err := method.SetCookie(c, session); err != nil {
+	tenantID, err := method.SetTenantFromCookie(c, config, session)
+	if err != nil {
 		blog.Errorf("set cookie failed, err: %v, rid: %s,", err, rid)
+		return nil, false
 	}
 
 	user = &metadata.LoginUserInfo{
@@ -57,7 +60,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 		Phone:     "",
 		Email:     "blueking",
 		BkToken:   "",
-		TenantUin: session.Get(common.WEBSessionTenantUinKey).(string),
+		TenantUin: tenantID,
 		IsTenant:  false,
 		Language:  webCommon.GetLanguageByHTTPRequest(c),
 	}
