@@ -3,7 +3,6 @@ module configcenter
 go 1.20
 
 require (
-	github.com/BurntSushi/toml v0.3.1
 	github.com/FZambia/sentinel v1.1.0
 	github.com/Shopify/sarama v1.33.0
 	github.com/TencentBlueKing/crypto-golang-sdk v1.0.0
@@ -36,7 +35,6 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.4.0
 	github.com/rs/xid v1.4.0
-	github.com/rwynn/monstache v4.12.3+incompatible
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.11.0
@@ -146,7 +144,5 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/rwynn/monstache v4.12.3+incompatible => github.com/ZQHcode/monstache v1.0.0
 
 replace github.com/tealeg/xlsx/v3 v3.2.4 => github.com/ZQHcode/xlsx/v3 v3.2.5-0.20230413120748-1a1404f2cbfa

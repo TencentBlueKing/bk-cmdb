@@ -327,23 +327,6 @@ $ helm uninstall bkcmdb
 | elasticsearch.coordinating.replicas | 内置es的协调节点数 |     1   |
 | elasticsearch.data.replicas | 内置es的数据节点数 |     1   |
 
-### monstache配置
-monstache是一个用于将mongodb的数据同步到es去创建索引的一个组件
-
-|            参数             |                             描述                             | 默认值 |
-| :-------------------------: | :----------------------------------------------------------: | :----: |
-| monstache.enabled | 是否启动内部部署的monstache，如果需要使用外部monstache组件，设置为`false` | false       |
-| monstache.image.repository | 服务镜像名 |   cmdb_monstache     |
-| monstache.image.tag | 服务镜像版本 |   {TAG_NAME}     |
-|         monstache.replicas         |           pod副本数量           |                1                 |
-|           monstache.port           |            服务端口             |                80                |
-|        monstache.workDir         |       工作路径        | /data/cmdb/monstache |
-|        monstache.configDir         |       需要的配置文件路径        | /data/cmdb/monstache/etc |
-|        monstache.directReadDynamicIncludeRegex         | monstache配置内容 |内容过长请查看原value.yaml文件|
-|        monstache.mapperPluginPath         | monstache配置内容 |/data/cmdb/monstache/monstache-plugin.so|
-|        monstache.elasticsearchShardNum         | monstache配置内容 | 1 |
-|        monstache.elasticsearchReplicaNum         | monstache配置内容 | 1 |
-
 ### bkLogConfig配置
 - bkLogConfig配置用于配置接入蓝鲸日志平台功能
 
@@ -446,57 +429,6 @@ common:
   es:
     fullTextSearch: "on"
 ```
-
-- 在cmdb中使用elasticsearch需要依赖两个组件，一个是elasticsearch本身，一个monstache（用于将mongodb数据同步到elasticsearch）
-
-  （1）使用内置组件
-
-  ​	helm chart中有内置的elasticsearch和monstache，可通过下面操作打开：
-
-  ```yaml
-  elasticsearch:
-    enabled: true
-  
-  ··
-  
-  monstache:
-    enabled: true
-  ```
-
-  ​	将elasticsearch和monstache的enabled变为true即可
-
-  
-
-  （2）使用外接组件
-
-  这里仅需配置连接外置的elasticsearch，这时外置的monstach已经与cmdb没有配置上的联系
-
-  ```yaml
-  common:
-    es: 
-      url: xxx
-      usr: xxx
-      pwd: xxx
-  ```
-
-  配置上外部es的url，账户密码的信息即可
-
-- 当然也可以使用内置的monstache，连接外部的elasticsearch
-
-  ```yaml
-  monstache:
-    enabled: true
-  	
-  ···
-  
-  common:
-    es: 
-      url: xxx
-      usr: xxx
-      pwd: xxx
-  ```
-
-  将monstache.enabled变为true，配置好外部的elasticsearch的配置即可
 
 ### 5. 配置webserver不同的服务暴露方式
 

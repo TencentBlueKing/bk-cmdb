@@ -188,13 +188,6 @@ MongoDB官方资料：
  > db.createUser({user: "cc",pwd: "cc",roles: [ { role: "readWrite", db: "cmdb" } ]})
 ```
 
-- 开启ES情况(用于全文检索, 可选, 控制开关见第9步的full_text_search)
-
-``` json
- > use cmdb
- > db.createUser({user: "cc",pwd: "cc",roles: [ { role: "readWrite", db: "cmdb" },{ role: "readWrite", db: "monstache" } ]})
-```
-
 **注：以上用户名、密码、数据库名仅作示例展示，用户使用中可以根据实际情况自行配置。如果安装的MongoDB的版本大于等于3.6，需要手动修改init.py自动生成的配置文件，详细步骤参看init.py相关小节。**
 
 详细手册请参考官方资料 [MongoDB](https://docs.mongodb.com/manual/reference/method/db.createUser/)
@@ -213,13 +206,6 @@ MongoDB官方资料：
 
 如果想部署高可用可扩展的ES，可参考官方文档[ES-Guide](https://www.elastic.co/guide/index.html)
 
-### 7.  部署Monstache (用于全文检索, 可选, 控制开关见第9步的full_text_search)
-
-蓝鲸CMDB针对需求场景采用定制化的Monstache组件，组件以及其插件SO请从指定的Release Package中获取。
-
-插件基于Monstache v6.0.0+, 需要依赖Elasticsearch v7+和MongoDB v4.2+。
-
-阅读[蓝鲸CMDB全文检索插件文档](../../src/tools/monstache/README.md), 按照指引进行安装部署。
 
 ### 8. 部署CMDB
 
