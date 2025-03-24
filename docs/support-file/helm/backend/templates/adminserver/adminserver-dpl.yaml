@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.adminserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: adminserver
         image: {{ .Values.image.registry }}/{{ .Values.adminserver.image.repository }}:v{{ default .Chart.AppVersion .Values.adminserver.image.tag }}
@@ -97,7 +99,7 @@ spec:
       {{- end }}
       {{- with .Values.adminserver.affinity }}
       affinity:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.adminserver.tolerations }}
       tolerations:

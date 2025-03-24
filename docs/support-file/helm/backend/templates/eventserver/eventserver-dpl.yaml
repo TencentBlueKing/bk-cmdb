@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.eventserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: eventserver
         image: {{ .Values.image.registry }}/{{ .Values.eventserver.image.repository }}:v{{ default .Chart.AppVersion .Values.eventserver.image.tag }}
@@ -107,7 +109,7 @@ spec:
 
       {{- with .Values.eventserver.affinity }}
       affinity:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.eventserver.tolerations }}

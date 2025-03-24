@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.toposerver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: toposerver
         image: {{ .Values.image.registry }}/{{ .Values.toposerver.image.repository }}:v{{ default .Chart.AppVersion .Values.toposerver.image.tag }}
@@ -100,7 +102,7 @@ spec:
 
       {{- with .Values.toposerver.affinity }}
       affinity:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.toposerver.tolerations }}

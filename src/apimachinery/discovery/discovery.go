@@ -37,12 +37,12 @@ type DiscoveryInterface interface {
 	HostServer() Interface
 	ProcServer() Interface
 	TopoServer() Interface
-	DataCollect() Interface
+	DataCollect() ServerDiscoverI
 	GseProcServer() Interface
 	CoreService() Interface
 	OperationServer() Interface
 	TaskServer() Interface
-	CloudServer() Interface
+	CloudServer() ServerDiscoverI
 	AuthServer() Interface
 	Server(name string) Interface
 	CacheService() Interface
@@ -127,7 +127,7 @@ func (d *discover) TopoServer() Interface {
 }
 
 // DataCollect TODO
-func (d *discover) DataCollect() Interface {
+func (d *discover) DataCollect() ServerDiscoverI {
 	return d.servers[types.CC_MODULE_DATACOLLECTION]
 }
 
@@ -152,7 +152,7 @@ func (d *discover) TaskServer() Interface {
 }
 
 // CloudServer TODO
-func (d *discover) CloudServer() Interface {
+func (d *discover) CloudServer() ServerDiscoverI {
 	return d.servers[types.CC_MODULE_CLOUD]
 }
 

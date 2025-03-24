@@ -15,24 +15,17 @@ import $http from '@/api'
 import { CONTAINER_OBJECTS, CONTAINER_OBJECT_NAMES } from '@/dictionary/container.js'
 
 const state = {
-  classifications: []
+  classifications: [],
+  models: [],
+  viewAuthFreeModels: [],
+  viewAuthFreeModelSet: new Set()
 }
 
 const getters = {
   classifications: state => state.classifications,
-  models: (state) => {
-    const models = []
-    state.classifications.forEach((classification) => {
-      (classification.bk_objects || []).forEach((model) => {
-        models.push({
-          ...model,
-          bk_classification_name: classification.bk_classification_name,
-          bk_classification_id: classification.bk_classification_id
-        })
-      })
-    })
-    return models
-  },
+  models: state => state.models,
+  viewAuthFreeModels: state => state.viewAuthFreeModels,
+  viewAuthFreeModelSet: state => state.viewAuthFreeModelSet,
   getModelById: (state, getters) => id => getters.models.find(model => model.bk_obj_id === id),
   presetModels: (state, getters) => getters.models.filter(model => model.ispre)
 }
@@ -143,6 +136,44 @@ const actions = {
 const mutations = {
   setClassificationsObjects(state, classifications) {
     state.classifications = classifications
+    this.commit('objectModelClassify/setModels')
+    this.commit('objectModelClassify/setViewAuthFreeModels')
+    this.commit('objectModelClassify/setViewAuthFreeModelSet')
+  },
+  setViewAuthFreeModelSet(state) {
+    state.viewAuthFreeModels.forEach((item)=> {
+      state.viewAuthFreeModelSet.add(item?.bk_obj_id || item?.id)
+    })
+  },
+  setViewAuthFreeModels(state) {
+    const begin = new Date().valueOf()
+    const presetModels = this.getters['objectModelClassify/presetModels']
+    const allModels = state.models
+    // mainLineModel中默认没有id，在此先补充
+    const mainLineModels = this.getters['objectMainLineModule/mainLineModels'].map(mainItem => ({
+      id: allModels.find(preItem => preItem.bk_obj_id === mainItem.bk_obj_id)?.id,
+      bk_obj_id: mainItem.bk_obj_id,
+      bk_obj_name: mainItem.bk_obj_name
+    }))
+
+    state.viewAuthFreeModels = ([...mainLineModels, ...presetModels]).map(model => ({
+      id: model.id,
+      bk_obj_id: model.bk_obj_id,
+      bk_obj_name: model.bk_obj_name
+    }))
+  },
+  setModels(state) {
+    const models = []
+    state.classifications.forEach((classification) => {
+      (classification.bk_objects || []).forEach((model) => {
+        models.push({
+          ...model,
+          bk_classification_name: classification.bk_classification_name,
+          bk_classification_id: classification.bk_classification_id
+        })
+      })
+    })
+    state.models = models
   },
   updateClassify(state, classification) {
     // eslint-disable-next-line max-len

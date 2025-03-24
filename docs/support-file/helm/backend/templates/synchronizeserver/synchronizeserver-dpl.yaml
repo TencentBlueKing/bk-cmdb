@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.synchronizeserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: synchronizeserver
         image: {{ .Values.image.registry }}/{{ .Values.synchronizeserver.image.repository }}:v{{ default .Chart.AppVersion .Values.synchronizeserver.image.tag }}
@@ -100,7 +102,7 @@ spec:
 
       {{- with .Values.synchronizeserver.affinity }}
       affinity:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.synchronizeserver.tolerations }}

@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.coreservice.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       containers:
       - name: coreservice
         image: {{ .Values.image.registry }}/{{ .Values.coreservice.image.repository }}:v{{ default .Chart.AppVersion .Values.coreservice.image.tag }}
@@ -99,7 +101,7 @@ spec:
 
       {{- with .Values.coreservice.affinity }}
       affinity:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.coreservice.tolerations }}

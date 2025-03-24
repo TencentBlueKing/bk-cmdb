@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/ginservice"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/apigw"
 	noticeCli "configcenter/src/thirdparty/apigw/notice"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 	"configcenter/src/web_server/app/options"
@@ -64,9 +63,12 @@ func (s *Service) WebService() *gin.Engine {
 	ws := gin.New()
 	ws.Use(gin.Logger())
 
+	middleware.Engine = s.Engine
+	middleware.CacheCli = s.CacheCli
+
 	ws.Use(middleware.RequestIDMiddleware)
 	ws.Use(sessions.Sessions(s.Config.Session.Name, s.Session))
-	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery()))
+	ws.Use(middleware.ValidLogin(*s.Config, s.Discovery(), s.ApiCli))
 	ws.Use(func(c *gin.Context) {
 		defer func() {
 			// suppresses logging of a stack when err is ErrAbortHandler, same as net/http
@@ -87,8 +89,6 @@ func (s *Service) WebService() *gin.Engine {
 	})
 
 	opentelemetry.UseOtlpMiddleware(ws)
-
-	middleware.Engine = s.Engine
 
 	s.initService(ws)
 
@@ -229,14 +229,6 @@ func (s *Service) Healthz(c *gin.Context) {
 func (s *Service) InitNotice() error {
 	if !s.Config.EnableNotification {
 		return nil
-	}
-
-	if apigwcli.Client() == nil {
-		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry(), []apigw.ClientType{apigw.Cmdb, apigw.Notice})
-		if err != nil {
-			blog.Errorf("init apigw clientset failed, err: %v", err)
-			return err
-		}
 	}
 
 	s.NoticeCli = apigwcli.Client().Notice()

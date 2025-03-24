@@ -148,9 +148,10 @@
             <collapse-group-title
               :is-new-classify="classification.isNewClassify"
               :dropdown-menu="!isModelSelectable"
-              :collapse=" classificationsCollapseState[classification.id]"
+              :collapse="classificationsCollapseState[classification.id]"
               :title="`${classification.bk_classification_name} ( ${ classification.bk_objects.length} )`"
               @click.native="toggleModelList(classification)"
+              @showOperation="handleShowOperation"
               :commands="groupCommands(classification)"
               v-bk-tooltips="{
                 disabled: !isBuiltinClass(classification),
@@ -171,7 +172,7 @@
               :class="{
                 'is-empty': isGroupEmpty(classification)
               }"
-              v-show="!classificationsCollapseState[classification.id]"
+              v-show="getShow(classification.id)"
               tag="div"
               :sort="false"
               :animation="200"
@@ -422,6 +423,14 @@
       @cancel="doubleCheckCancelImport"
       @done="doneImport">
     </model-import-pane>
+
+    <model-operation-list
+      :show="modelOperationList.show"
+      :commands="modelOperationList.commands"
+      :target="modelOperationList.target"
+      @hide="handleHide">
+    </model-operation-list>
+
   </div>
 </template>
 
@@ -435,6 +444,7 @@
   import Draggable from 'vuedraggable'
   import ModelExportPane from './children/model-import-export/model-export-pane/index.vue'
   import ModelImportPane from './children/model-import-export//model-import-pane/index.vue'
+  import ModelOperationList from './children/model-operation-list.vue'
   import {
     MENU_RESOURCE_INSTANCE,
     MENU_MODEL_DETAILS,
@@ -461,7 +471,8 @@
       CollapseGroupTitle,
       Draggable,
       ModelExportPane,
-      ModelImportPane
+      ModelImportPane,
+      ModelOperationList
     },
     data() {
       return {
@@ -524,7 +535,13 @@
           }
         },
 
-        editAuthResult: {}
+        editAuthResult: {},
+
+        modelOperationList: {
+          show: false,
+          commands: [],
+          target: null
+        }
       }
     },
     computed: {
@@ -700,6 +717,19 @@
         'deleteClassification',
       ]),
       ...mapActions('objectModel', ['createObject', 'updateObject']),
+      getShow(id) {
+        return !this.classificationsCollapseState[id]
+      },
+      handleShowOperation(event, commands) {
+        this.modelOperationList.show = true
+        this.modelOperationList.commands = commands
+        this.modelOperationList.target = event?.target
+      },
+      handleHide() {
+        this.modelOperationList.show = false
+        this.modelOperationList.commands = []
+        this.modelOperationList.target = null
+      },
       inputChange(val) {
         // 在输入过程中如果是中文输入法 不让modelSearchKey变化
         if (this.isComposition) {
@@ -761,7 +791,8 @@
         ]
       },
       toggleModelList(classification) {
-        this.classificationsCollapseState[classification.id] = !this.classificationsCollapseState[classification.id]
+        const val = !this.classificationsCollapseState[classification.id]
+        this.$set(this.classificationsCollapseState, classification.id, val)
       },
       getModelViewAuth(model) {
         return { type: this.$OPERATION.R_MODEL, relation: [model.id] }

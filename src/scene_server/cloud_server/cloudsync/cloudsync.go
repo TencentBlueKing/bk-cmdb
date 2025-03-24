@@ -33,7 +33,7 @@ const (
 type SyncConf struct {
 	ZKClient  *zkclient.ZkClient
 	Logics    *logics.Logics
-	AddrPort  string
+	UUID      string
 	MongoConf local.MongoConf
 }
 
@@ -50,7 +50,7 @@ func CloudSync(conf *SyncConf) error {
 	schedulerConf := &SchedulerConf{
 		ZKClient:  conf.ZKClient,
 		Logics:    conf.Logics,
-		AddrPort:  conf.AddrPort,
+		UUID:      conf.UUID,
 		MongoConf: conf.MongoConf,
 	}
 	scheduler, err := NewTaskScheduler(schedulerConf)

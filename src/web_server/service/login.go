@@ -32,7 +32,7 @@ func (s *Service) LogOutUser(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	c.Request.URL.Path = ""
-	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+	userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli, s.ApiCli)
 	loginURL := userManger.GetLoginUrl(c)
 	ret := metadata.LogoutResult{}
 	ret.BaseResp.Result = true
@@ -43,7 +43,7 @@ func (s *Service) LogOutUser(c *gin.Context) {
 
 // IsLogin user is login
 func (s *Service) IsLogin(c *gin.Context) {
-	user := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+	user := user.NewUser(*s.Config, s.Engine, s.CacheCli, s.ApiCli)
 	isLogin := user.LoginUser(c)
 	if isLogin {
 		c.JSON(200, gin.H{
@@ -103,7 +103,7 @@ func (s *Service) LoginUser(c *gin.Context) {
 			if err := session.Save(); err != nil {
 				blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
 			}
-			userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli)
+			userManger := user.NewUser(*s.Config, s.Engine, s.CacheCli, s.ApiCli)
 			userManger.LoginUser(c)
 			var redirectURL string
 			if c.Query("c_url") != "" {

@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.webserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       {{- if .Values.webserver.hostNetwork }}
       hostNetwork: true
       {{- end }}
@@ -44,6 +46,7 @@ spec:
         {{- if .Values.webserver.command.logDir }}
         - --log-dir={{ .Values.webserver.command.logDir }}
         {{- end }}
+        - --regdiscv={{ .Values.configAndServiceCenter.addr }}
         - --v={{ .Values.webserver.command.logLevel }}
         - --logtostderr={{ .Values.webserver.command.logToStdErr }}
         livenessProbe:

@@ -22,10 +22,12 @@ global:
 ## bk-cmdb image parameters
 ## @param image.registry bk-cmdb image registry
 ## @param image.pullPolicy bk-cmdb image pull policy
+## @param image.pullSecretName bk-cmdb image pull secret name
 ##
 image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
+  pullSecretName: ""
 
 ## @section bk-cmdb webserver parameters
 ##
@@ -381,8 +383,8 @@ web:
 
 ## @section bk-cmdb config and service center parameters
 ##
-# configAndServiceCenter:
-#   addr:
+configAndServiceCenter:
+  addr:
 
 ## @section mongodb parameters
 ##
