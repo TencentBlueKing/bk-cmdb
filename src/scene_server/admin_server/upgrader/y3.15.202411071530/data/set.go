@@ -23,9 +23,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var (
@@ -35,10 +36,11 @@ var (
 		common.BKSetEnvField:        "3",
 		common.BKSetStatusField:     "1",
 		common.BKSetTemplateIDField: 0,
+		common.BKSetCapacityField:   nil,
 	}
 )
 
-func addSetBaseData(kit *rest.Kit, db dal.Dal, bizID int64) (map[string]interface{}, error) {
+func addSetBaseData(kit *rest.Kit, db local.DB, bizID int64) (map[string]interface{}, error) {
 	setData[common.BKAppIDField] = bizID
 	setData[common.BKInstParentStr] = bizID
 	setData[common.CreateTimeField] = time.Now()
@@ -61,7 +63,7 @@ func addSetBaseData(kit *rest.Kit, db dal.Dal, bizID int64) (map[string]interfac
 		},
 	}
 
-	ids, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBaseSet, []interface{}{setData},
+	ids, err := tools.InsertData(kit, db, common.BKTableNameBaseSet, []mapstr.MapStr{setData},
 		needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseApp, err)

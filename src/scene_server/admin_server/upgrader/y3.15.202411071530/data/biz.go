@@ -25,32 +25,22 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/scene_server/admin_server/upgrader/types"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
-func addBizData(kit *rest.Kit, db dal.Dal) error {
-
-	if kit.TenantID == types.GetBlueKing() {
-		if err := addBizModule(kit, db, []interface{}{blueKingBizData, resBizData}, bizAuditType); err != nil {
-			blog.Errorf("add biz module or set data failed, %v", err)
-			return err
-		}
-		return nil
-	}
-	if err := addBizModule(kit, db, []interface{}{resBizData}, bizAuditType); err != nil {
+func addBizData(kit *rest.Kit, db local.DB) error {
+	if err := addBizModule(kit, db, []interface{}{blueKingBizData, resBizData}, bizAuditType); err != nil {
 		blog.Errorf("add biz module or set data failed, %v", err)
 		return err
 	}
 	return nil
-
 }
 
-func addBizModule(kit *rest.Kit, db dal.Dal, data []interface{}, auditField *tools.AuditResType) error {
-
+func addBizModule(kit *rest.Kit, db local.DB, data []interface{}, auditField *tools.AuditResType) error {
 	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKAppNameField},
 		IgnoreKeys:     []string{common.BKAppIDField},
@@ -62,7 +52,19 @@ func addBizModule(kit *rest.Kit, db dal.Dal, data []interface{}, auditField *too
 			ResNameField: "bk_biz_name",
 		},
 	}
-	ids, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBaseApp, data, needField)
+
+	var dataMap []mapstr.MapStr
+	for _, item := range data {
+
+		itemMap, err := tools.ConvStructToMap(item)
+		if err != nil {
+			blog.Errorf("failed to convert struct to map, err: %v", err)
+			return err
+		}
+		dataMap = append(dataMap, itemMap)
+	}
+
+	ids, err := tools.InsertData(kit, db, common.BKTableNameBaseApp, dataMap, needField)
 	if err != nil {
 		blog.Errorf("insert biz data for table %s failed, err: %v, data: %+v", common.BKTableNameBaseApp, err, data)
 		return err
@@ -84,10 +86,6 @@ func addBizModule(kit *rest.Kit, db dal.Dal, data []interface{}, auditField *too
 		return err
 	}
 
-	if kit.TenantID != types.GetBlueKing() {
-		return nil
-	}
-
 	bkBizID, err := util.GetInt64ByInterface(ids[common.BKAppName])
 	if err != nil {
 		blog.Errorf("get biz id failed, %v", err)
@@ -102,7 +100,7 @@ func addBizModule(kit *rest.Kit, db dal.Dal, data []interface{}, auditField *too
 	return nil
 }
 
-func addBizAsstData(kit *rest.Kit, db dal.Dal, bizID int64, moduleNames []string) error {
+func addBizAsstData(kit *rest.Kit, db local.DB, bizID int64, moduleNames []string) error {
 	// add resource business cluster
 	ids, err := addSetBaseData(kit, db, bizID)
 	if err != nil {
@@ -137,6 +135,7 @@ var (
 		Language:      "1",
 		LifeCycle:     common.DefaultAppLifeCycleNormal,
 		Default:       common.DefaultFlagDefaultValue,
+		Time:          tools.NewTime(),
 	}
 	resBizData = bizData{
 		BizName:       common.DefaultAppName,
@@ -146,7 +145,7 @@ var (
 		Language:      "1",
 		LifeCycle:     common.DefaultAppLifeCycleNormal,
 		Default:       common.DefaultAppFlag,
-		BizID:         1,
+		Time:          tools.NewTime(),
 	}
 	bizAuditType = &tools.AuditResType{
 		AuditType:    metadata.BusinessType,
@@ -155,7 +154,6 @@ var (
 )
 
 type bizData struct {
-	ID            int64       `bson:"id"`
 	BizMaintainer string      `bson:"bk_biz_maintainer"`
 	LifeCycle     string      `bson:"life_cycle"`
 	Time          *tools.Time `bson:",inline"`

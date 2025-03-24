@@ -49,3 +49,28 @@ func (t *tenant) GetAllTenants(ctx context.Context, header http.Header) ([]types
 
 	return resp.Data, nil
 }
+
+// RefreshTenants refresh tenants info
+func (t *tenant) RefreshTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder) {
+
+	resp := new(types.AllTenantsResult)
+	subPath := "/refresh/tenants"
+
+	err := t.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp.Data, nil
+}

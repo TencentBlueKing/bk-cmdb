@@ -107,6 +107,7 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/authcenter/register").To(s.RegisterAuthAccount))
 	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
 	api.Route(api.POST("/migrate/database").To(s.migrateDatabase))
+	api.Route(api.POST("/add/tenant").To(s.addTenant))
 	api.Route(api.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
 	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
@@ -195,28 +196,39 @@ func (s *Service) MonitorHealth(req *restful.Request, resp *restful.Response) {
 	monitor.Collect(alam)
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(metadata.NewSuccessResp(alam))
-
 }
 
-// InitGseClient init gse apiGW client
-func (s *Service) InitGseClient() error {
+// InitClients init apiGW client
+func (s *Service) InitClients() error {
+
+	var clients []apigw.ClientType
+	if !s.Config.DisableVerifyTenant {
+		clients = []apigw.ClientType{apigw.User}
+	}
+
 	switch s.Config.DataIdMigrateWay {
 	case options.MigrateWayESB, "":
 		s.GseClient = esb.EsbClient().GseSrv()
-		return nil
 
 	case options.MigrateWayApiGW:
-		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry(), []apigw.ClientType{apigw.Gse})
-		if err != nil {
-			blog.Errorf("init gse api gateway client failed, err: %v", err)
-			return err
-		}
-		s.GseClient = apigwcli.Client().Gse()
-		return nil
+		clients = append(clients, apigw.Gse)
 
 	default:
 		return fmt.Errorf("init gse client failed, unknow migrate dataid way")
 	}
+
+	if len(clients) > 0 {
+		err := apigwcli.Init("apiGW", s.Engine.Metric().Registry(), clients)
+		if err != nil {
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
+			return err
+		}
+		if s.GseClient == nil {
+			s.GseClient = apigwcli.Client().Gse()
+		}
+	}
+
+	return nil
 }
 
 // InitCrypto init crypto

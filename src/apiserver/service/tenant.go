@@ -15,29 +15,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package tenant defines tenant related logics
-package tenant
+package service
 
 import (
-	"context"
 	"net/http"
 
-	"configcenter/pkg/tenant/types"
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/errors"
+	"configcenter/pkg/tenant"
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/metadata"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
-// TenantClientInterface tenant client interface
-type TenantClientInterface interface {
-	GetAllTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder)
-	RefreshTenants(ctx context.Context, header http.Header) ([]types.Tenant, errors.CCErrorCoder)
-}
+// RefreshTenant refresh tenant info
+func (s *service) RefreshTenant(req *restful.Request, resp *restful.Response) {
 
-// New new tenant client interface
-func New(client rest.ClientInterface) TenantClientInterface {
-	return &tenant{client: client}
-}
+	rid := httpheader.GetRid(req.Request.Header)
+	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(req.Request.Header))
+	allTenants, err := s.clientSet.CoreService().Tenant().RefreshTenants(req.Request.Context(), req.Request.Header)
+	if err != nil {
+		blog.Errorf("refresh tenant info failed, rid: %s", rid)
+		resp.WriteError(http.StatusInternalServerError,
+			&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommAddTenantErr, "refresh tenant info failed")})
+		return
+	}
 
-type tenant struct {
-	client rest.ClientInterface
+	tenant.SetTenant(allTenants)
+
+	resp.WriteEntity(metadata.NewSuccessResp(allTenants))
 }

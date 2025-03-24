@@ -18,12 +18,14 @@
 package data
 
 import (
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var associationMap = map[string]string{
@@ -32,9 +34,9 @@ var associationMap = map[string]string{
 	"host":   "module",
 }
 
-func addObjAssociationData(kit *rest.Kit, db dal.Dal) error {
+func addObjAssociationData(kit *rest.Kit, db local.DB) error {
 
-	asstData := make([]interface{}, 0)
+	asstData := make([]mapstr.MapStr, 0)
 	for obj, asstObj := range associationMap {
 		asst := association{
 			AsstKindID:      "bk_mainline",
@@ -45,16 +47,21 @@ func addObjAssociationData(kit *rest.Kit, db dal.Dal) error {
 			OnDelete:        metadata.NoAction,
 			IsPre:           &trueVar,
 		}
-		asstData = append(asstData, asst)
+		item, err := tools.ConvStructToMap(asst)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
+		asstData = append(asstData, item)
 	}
 
 	needField := &tools.InsertOptions{
-		UniqueFields: []string{"bk_obj_asst_id"},
-		IgnoreKeys:   []string{"id"},
+		UniqueFields: []string{common.AssociationObjAsstIDField},
+		IgnoreKeys:   []string{common.BKFieldID},
 		IDField:      []string{common.BKFieldID},
 		AuditDataField: &tools.AuditDataField{
-			ResIDField:   "id",
-			ResNameField: "bk_obj_asst_id",
+			ResIDField:   common.BKFieldID,
+			ResNameField: common.AssociationObjAsstIDField,
 		},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.AssociationKindType,
@@ -62,16 +69,22 @@ func addObjAssociationData(kit *rest.Kit, db dal.Dal) error {
 		},
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjAsst, asstData, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjAsst, asstData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjAsst, err)
+		return err
+	}
+
+	idOptions := &tools.IDOptions{ResNameField: common.AssociationObjAsstIDField, RemoveKeys: []string{"id"}}
+	err = tools.InsertTemplateData(kit, db, asstData, needField, idOptions, tenanttmp.TemplateTypeObjAssociation)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 
 	return nil
 }
 
-// association defines the association between two objects.
 type association struct {
 	ID                   int64                              `bson:"id"`
 	AssociationName      string                             `bson:"bk_obj_asst_id"`

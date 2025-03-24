@@ -23,7 +23,9 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/index"
+	idx "configcenter/src/common/index"
 	"configcenter/src/common/metadata"
 	types2 "configcenter/src/common/types"
 	"configcenter/src/common/util"
@@ -741,4 +743,49 @@ func ErrDropIndexNameNotFound(err error) bool {
 		return true
 	}
 	return false
+}
+
+// CreateIndexes create table index
+func CreateIndexes(kit *rest.Kit, db local.DB, table string, indexes []types.Index) error {
+	existIndexes, err := db.Table(table).Indexes(kit.Ctx)
+	if err != nil {
+		blog.Errorf("get %s table exist index failed, err: %v", table, err)
+		return err
+	}
+
+	existIndexMap := make(map[string]struct{})
+	for _, index := range existIndexes {
+		existIndexMap[index.Name] = struct{}{}
+	}
+
+	insertIndexes := make([]types.Index, 0)
+	for _, index := range indexes {
+		if _, exist := existIndexMap[index.Name]; exist {
+			continue
+		}
+
+		isExist := false
+		for _, existIndex := range existIndexes {
+			if idx.IndexEqual(existIndex, index) {
+				isExist = true
+				break
+			}
+		}
+		if isExist {
+			continue
+		}
+		insertIndexes = append(insertIndexes, index)
+	}
+
+	if len(insertIndexes) == 0 {
+		blog.Infof("table %s index is up to date", table)
+		return nil
+	}
+
+	if err = db.Table(table).BatchCreateIndexes(kit.Ctx, insertIndexes); err != nil {
+		blog.Errorf("create %s table index %+v failed, err: %v", table, insertIndexes, err)
+		return err
+	}
+
+	return nil
 }

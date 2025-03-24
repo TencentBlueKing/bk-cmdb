@@ -18,12 +18,14 @@
 package data
 
 import (
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var objectData = []Object{
@@ -67,7 +69,7 @@ var objectData = []Object{
 		ObjSortNumber: 1,
 	},
 	{
-		ObjCls:        "bk_host_manage",
+		ObjCls:        "bk_uncategorized",
 		ObjectID:      common.BKInnerObjIDProc,
 		ObjectName:    "进程",
 		IsPre:         true,
@@ -78,7 +80,7 @@ var objectData = []Object{
 		ObjSortNumber: 2,
 	},
 	{
-		ObjCls:        "bk_host_manage",
+		ObjCls:        "bk_uncategorized",
 		ObjectID:      common.BKInnerObjIDPlat,
 		ObjectName:    "云区域",
 		IsPre:         true,
@@ -126,16 +128,21 @@ type Object struct {
 	ObjSortNumber int64       `bson:"obj_sort_number"`
 }
 
-func addObjectData(kit *rest.Kit, db dal.Dal) error {
-	objectDataArr := make([]interface{}, 0)
+func addObjectData(kit *rest.Kit, db local.DB) error {
+	objectDataArr := make([]mapstr.MapStr, 0)
 	for _, obj := range objectData {
 		obj.Time = tools.NewTime()
-		objectDataArr = append(objectDataArr, obj)
+		item, err := tools.ConvStructToMap(obj)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
+		objectDataArr = append(objectDataArr, item)
 	}
 
 	needField := &tools.InsertOptions{
-		UniqueFields: []string{"bk_obj_id"},
-		IgnoreKeys:   []string{"id", "obj_sort_number"},
+		UniqueFields: []string{common.BKObjIDField},
+		IgnoreKeys:   []string{common.BKFieldID, common.ObjSortNumberField},
 		IDField:      []string{common.BKFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
@@ -146,9 +153,17 @@ func addObjectData(kit *rest.Kit, db dal.Dal) error {
 			ResNameField: "bk_obj_name",
 		},
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjDes, objectDataArr, needField)
+
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjDes, objectDataArr, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjDes, err)
+		return err
+	}
+
+	idOptions := &tools.IDOptions{ResNameField: "bk_obj_name", RemoveKeys: []string{"id"}}
+	err = tools.InsertTemplateData(kit, db, objectDataArr, needField, idOptions, tenanttmp.TemplateTypeObject)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 	return nil

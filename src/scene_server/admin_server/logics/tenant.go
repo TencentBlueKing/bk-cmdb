@@ -15,50 +15,40 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package data
+package logics
 
 import (
+	"fmt"
+
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/driver/mongodb"
 )
 
-var (
-	commonTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addServiceCategoryData,
-		addBizData,
-		addAssociationData,
-		addBizSetData,
-		addObjAssociationData,
-		addObjClassificationData,
-		addObjectData,
-		addObjAttrData,
-		addCloudAreaData,
-		addPropertyGroupData,
-		addObjectUniqueData,
-	}
-	defaultTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addSystemData,
-		addSelfIncrIDData,
-	}
-)
+// NewTenantInterface get new tenant cli interface
+type NewTenantInterface interface {
+	NewTenantCli(tenant string) (local.DB, string, error)
+}
 
-// InitData add default tenant init data
-func InitData(kit *rest.Kit, db local.DB) error {
-	for _, handler := range commonTableDataArr {
-		if err := handler(kit, db); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
+// GetNewTenantCli get new tenant db
+func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string, error) {
+	newTenantCli, ok := cli.(NewTenantInterface)
+	if !ok {
+		blog.Errorf("get new tenant cli failed, rid: %s", kit.Rid)
+		return nil, "", fmt.Errorf("get new tenant cli failed")
 	}
 
-	for _, handler := range defaultTableDataArr {
-		if err := handler(kit, mongodb.Dal().Shard(kit.SysShardOpts())); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
+	dbCli, dbUUID, err := newTenantCli.NewTenantCli(kit.TenantID)
+	if err != nil || dbCli == nil {
+		blog.Errorf("get new tenant cli failed, err: %v, tenant: %s, rid: %s", err, kit.TenantID, kit.Rid)
+		return nil, "", fmt.Errorf("get new tenant cli failed, err: %v", err)
 	}
 
-	return nil
+	return dbCli, dbUUID, nil
+}
+
+// GetSystemTenant get system tenant # TODO get the default tenant when multi-tenancy is not enabled
+func GetSystemTenant() string {
+	return common.BKDefaultTenantID
 }

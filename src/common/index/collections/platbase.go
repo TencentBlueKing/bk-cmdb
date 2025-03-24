@@ -44,6 +44,7 @@ var commPlatBaseIndexes = []types.Index{
 	{
 		Name:                    common.CCLogicIndexNamePrefix + "bkCloudID",
 		Keys:                    bson.D{{common.BKCloudIDField, 1}},
+		Unique:                  true,
 		Background:              true,
 		PartialFilterExpression: make(map[string]interface{}),
 	},

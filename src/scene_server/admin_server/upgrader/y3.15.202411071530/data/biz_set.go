@@ -18,13 +18,15 @@
 package data
 
 import (
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var (
@@ -43,7 +45,7 @@ var (
 	}
 )
 
-func addBizSetData(kit *rest.Kit, db dal.Dal) error {
+func addBizSetData(kit *rest.Kit, db local.DB) error {
 
 	needField := &tools.InsertOptions{
 		UniqueFields:   []string{common.BKBizSetNameField},
@@ -55,13 +57,25 @@ func addBizSetData(kit *rest.Kit, db dal.Dal) error {
 			ResNameField: "bk_biz_set_name",
 		},
 	}
+	data, err := tools.ConvStructToMap(bizSetData)
+	if err != nil {
+		blog.Errorf("convert struct to map failed, err: %v", err)
+		return err
+	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBaseBizSet, []interface{}{bizSetData},
-		needField)
+	_, err = tools.InsertData(kit, db, common.BKTableNameBaseBizSet, []mapstr.MapStr{data}, needField)
 	if err != nil {
 		blog.Errorf("insert default biz data for table %s failed, err: %v", common.BKTableNameBaseBizSet, err)
 		return err
 	}
+
+	idOptions := &tools.IDOptions{ResNameField: common.BKBizSetNameField, RemoveKeys: []string{"bk_biz_set_id"}}
+	err = tools.InsertTemplateData(kit, db, []mapstr.MapStr{data}, needField, idOptions, tenanttmp.TemplateTypeBizSet)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
+		return err
+	}
+
 	return nil
 }
 

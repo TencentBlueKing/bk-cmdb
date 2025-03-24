@@ -18,33 +18,44 @@
 package data
 
 import (
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
-var cloudAreaData = []CloudArea{
+var cloudAreaData = []cloudArea{
 	{
-		CloudID:   common.BKDefaultDirSubArea,
 		CloudName: "Default Area",
 		Status:    "1",
 		Default:   int64(common.BuiltIn),
 	},
 	{
-		CloudID:   common.UnassignedCloudAreaID,
 		CloudName: common.UnassignedCloudAreaName,
 		Default:   int64(common.BuiltIn),
 	},
 }
 
-func addCloudAreaData(kit *rest.Kit, db dal.Dal) error {
-	cloudData := make([]interface{}, 0)
+func addCloudAreaData(kit *rest.Kit, db local.DB) error {
+	cloudData := make([]mapstr.MapStr, 0)
+	cloudTmpData := make([]mapstr.MapStr, 0)
 	for _, data := range cloudAreaData {
 		data.Time = tools.NewTime()
-		cloudData = append(cloudData, data)
+		data.Creator = "cc_system"
+		data.LastEditor = "cc_system"
+		item, err := tools.ConvStructToMap(data)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
+		cloudData = append(cloudData, item)
+		if data.CloudName != "Default Area" {
+			cloudTmpData = append(cloudTmpData, item)
+		}
 	}
 
 	needField := &tools.InsertOptions{
@@ -61,19 +72,29 @@ func addCloudAreaData(kit *rest.Kit, db dal.Dal) error {
 		},
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameBasePlat, cloudData, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBasePlat, err)
+		return err
+	}
+
+	idOption := &tools.IDOptions{ResNameField: "bk_cloud_name", RemoveKeys: []string{common.BKCloudIDField}}
+	err = tools.InsertTemplateData(kit, db, cloudTmpData, needField, idOption, tenanttmp.TemplateTypePlat)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 	return nil
 }
 
-type CloudArea struct {
+type cloudArea struct {
 	CloudID     int64  ` bson:"bk_cloud_id"`
 	CloudName   string ` bson:"bk_cloud_name"`
+	AccountID   int64  `bson:"bk_account_id"`
 	Status      string ` bson:"bk_status"`
 	CloudVendor string ` bson:"bk_cloud_vendor"`
+	Creator     string `bson:"bk_creator"`
+	LastEditor  string `bson:"bk_last_editor"`
 	VpcID       string ` bson:"bk_vpc_id"`
 	VpcName     string ` bson:"bk_vpc_name"`
 	Region      string ` bson:"bk_region"`

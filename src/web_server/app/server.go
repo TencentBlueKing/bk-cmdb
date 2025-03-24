@@ -153,6 +153,7 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 	if webSvr.Config.EnableNotification {
 		apigwClients = append(apigwClients, apigw.Notice)
 	}
+
 	if len(apigwClients) > 0 {
 		err = apigwcli.Init("apiGW", engine.Metric().Registry(), apigwClients)
 		if err != nil {

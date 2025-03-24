@@ -15,30 +15,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package tools provides some tools for upgrade
-package tools
+package user
 
 import (
-	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/storage/dal"
+	"context"
+	"net/http"
+
+	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
-// CreateTable create table if not exists
-func CreateTable(kit *rest.Kit, db dal.RDB, table string) error {
-	exists, err := db.HasTable(kit.Ctx, table)
+// ClientI is the bk-user api gateway client
+type ClientI interface {
+	GetTenants(ctx context.Context, h http.Header) ([]Tenant, error)
+}
+
+type user struct {
+	service *apigwutil.ApiGWSrv
+}
+
+// NewClient create bk-user api gateway client
+func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
+	service, err := apigwutil.NewApiGW(options, "apiGW.bkUserApiGatewayUrl")
 	if err != nil {
-		blog.Errorf("check if %s exists failed, err: %v", table, err)
-		return err
-	}
-	if exists {
-		return nil
+		return nil, err
 	}
 
-	if err = db.CreateTable(kit.Ctx, table); err != nil {
-		blog.Errorf("create %s table failed, err: %v", table, err)
-		return err
-	}
-
-	return nil
+	return &user{
+		service: service,
+	}, nil
 }

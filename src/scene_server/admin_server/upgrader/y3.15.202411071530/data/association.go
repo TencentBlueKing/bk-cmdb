@@ -18,12 +18,14 @@
 package data
 
 import (
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var asstTypes = []associationKind{
@@ -65,17 +67,22 @@ var asstTypes = []associationKind{
 	},
 }
 
-func addAssociationData(kit *rest.Kit, db dal.Dal) error {
-	dataInterface := make([]interface{}, 0)
+func addAssociationData(kit *rest.Kit, db local.DB) error {
+	dataMap := make([]mapstr.MapStr, 0)
 	for _, asstType := range asstTypes {
 		asstType.IsPre = &trueVar
 		asstType.Direction = metadata.DestinationToSource
-		dataInterface = append(dataInterface, asstType)
+		item, err := tools.ConvStructToMap(asstType)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
+		dataMap = append(dataMap, item)
 	}
 
 	needFields := &tools.InsertOptions{
 		UniqueFields: []string{common.AssociationKindIDField},
-		IgnoreKeys:   []string{"id"},
+		IgnoreKeys:   []string{common.BKFieldID},
 		IDField:      []string{metadata.AttributeFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
@@ -86,11 +93,20 @@ func addAssociationData(kit *rest.Kit, db dal.Dal) error {
 			ResNameField: "bk_asst_name",
 		},
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameAsstDes, dataInterface, needFields)
+
+	_, err := tools.InsertData(kit, db, common.BKTableNameAsstDes, dataMap, needFields)
 	if err != nil {
 		blog.Errorf("insert association data for table %s failed, err: %v", common.BKTableNameAsstDes, err)
 		return err
 	}
+
+	idOption := &tools.IDOptions{ResNameField: common.AssociationKindNameField, RemoveKeys: []string{"id"}}
+	err = tools.InsertTemplateData(kit, db, dataMap, needFields, idOption, tenanttmp.TemplateTypeAssociation)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
+		return err
+	}
+
 	return nil
 }
 

@@ -18,12 +18,14 @@
 package data
 
 import (
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var objAttrMap = map[string][]*attribute{
@@ -38,11 +40,10 @@ var objAttrMap = map[string][]*attribute{
 }
 
 var objPropertyMap = map[string]string{
-	"set":            "default",
-	"module":         "default",
-	"plat":           "default",
-	"bk_biz_set_obj": "default",
-	"bk_project":     "default",
+	"set":        "default",
+	"module":     "default",
+	"plat":       "default",
+	"bk_project": "default",
 }
 
 func getAttrData() []*attribute {
@@ -58,17 +59,16 @@ func getAttrData() []*attribute {
 		}
 		objAttrData = append(objAttrData, value...)
 	}
-
 	return objAttrData
 }
 
-func addObjAttrData(kit *rest.Kit, db dal.Dal) error {
+func addObjAttrData(kit *rest.Kit, db local.DB) error {
 	if len(objAttrData) == 0 {
 		getAttrData()
 	}
 
 	indexMap := make(map[string]int64)
-	attributeData := make([]interface{}, 0)
+	attributeData := make([]mapstr.MapStr, 0)
 	for _, attr := range objAttrData {
 		if _, ok := indexMap[attr.ObjectID+attr.PropertyGroup]; !ok {
 			indexMap[attr.ObjectID+attr.PropertyGroup] = 1
@@ -76,12 +76,17 @@ func addObjAttrData(kit *rest.Kit, db dal.Dal) error {
 			indexMap[attr.ObjectID+attr.PropertyGroup] += 1
 		}
 		attr.PropertyIndex = indexMap[attr.ObjectID+attr.PropertyGroup]
-		attributeData = append(attributeData, attr)
+		item, err := tools.ConvStructToMap(attr)
+		if err != nil {
+			blog.Errorf("convert attribute to mapstr failed, err: %v", err)
+			return err
+		}
+		attributeData = append(attributeData, item)
 	}
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKObjIDField, common.BKPropertyIDField, common.BKAppIDField},
-		IgnoreKeys:   []string{"id", "bk_property_index"},
+		IgnoreKeys:   []string{common.BKFieldID, metadata.AttributeFieldPropertyIndex},
 		IDField:      []string{common.BKFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
@@ -93,10 +98,19 @@ func addObjAttrData(kit *rest.Kit, db dal.Dal) error {
 			ResNameField: "bk_property_name",
 		},
 	}
-	_, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameObjAttDes, attributeData, needField)
+
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjAttDes, attributeData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjAttDes, err)
 		return err
 	}
+
+	idOptions := &tools.IDOptions{ResNameField: "bk_property_name", RemoveKeys: []string{"id"}}
+	err = tools.InsertTemplateData(kit, db, attributeData, needField, idOptions, tenanttmp.TemplateTypeObjAttribute)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
+		return err
+	}
+
 	return nil
 }

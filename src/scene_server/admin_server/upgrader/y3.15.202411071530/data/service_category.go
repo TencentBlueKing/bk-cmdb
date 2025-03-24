@@ -21,25 +21,20 @@ import (
 	"strconv"
 	"strings"
 
+	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 )
 
 var (
 	defaultServiceCategoryID int64
-	parentCategory           = []string{
-		"数据库",
-		"消息队列",
-		"HTTP 服务",
-		"存储",
-		"Default",
-	}
-	subCategoryMap = map[string][]string{
+	subCategoryMap           = map[string][]string{
 		"数据库":     {"Mysql", "Redis", "Oracle", "SQLServer", "MongoDB", "Etcd", "Zookeeper"},
 		"消息队列":    {"Kafka", "RabbitMQ"},
 		"HTTP 服务": {"Nginx", "Apache", "Tomcat"},
@@ -48,14 +43,24 @@ var (
 	}
 )
 
-func addServiceCategoryData(kit *rest.Kit, db dal.Dal) error {
-	parentServiceCategory := make([]interface{}, 0)
-	for _, value := range parentCategory {
+func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
+	parentServiceCategory := make([]mapstr.MapStr, 0)
+	tmpData := make([]tenanttmp.SvrCategoryTmp, 0)
+	for key := range subCategoryMap {
 		category := ServiceCategory{
-			Name:      value,
+			Name:      key,
 			IsBuiltIn: true,
 		}
-		parentServiceCategory = append(parentServiceCategory, category)
+		tmpData = append(tmpData, tenanttmp.SvrCategoryTmp{
+			Name:       key,
+			ParentName: "",
+		})
+		item, err := tools.ConvStructToMap(category)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
+		parentServiceCategory = append(parentServiceCategory, item)
 	}
 
 	// add parent category data
@@ -74,19 +79,50 @@ func addServiceCategoryData(kit *rest.Kit, db dal.Dal) error {
 		},
 	}
 
-	parentIDs, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameServiceCategory,
-		parentServiceCategory, needField)
+	parentIDs, err := tools.InsertData(kit, db, common.BKTableNameServiceCategory, parentServiceCategory, needField)
 	if err != nil {
 		blog.Errorf("insert service category data for table %s failed, err: %v", common.BKTableNameServiceCategory, err)
 		return err
 	}
+
+	existParentIDs := make(map[string]interface{}, 0)
 	for key, value := range parentIDs {
-		name := strings.Split(key, "*")[0]
-		parentIDs[name] = value
+		fieldMap, err := tools.SplitUniqueStr(key, needField.UniqueFields)
+		if err != nil {
+			blog.Errorf("split unique str failed, err: %v", err)
+			return err
+		}
+
+		if fieldMap[common.BKParentIDField] == "0" {
+			existParentIDs[fieldMap[common.BKFieldName]] = value
+		}
 	}
 
+	svrTmpData := make([]tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp], 0)
+	for _, item := range tmpData {
+		svrTmpData = append(svrTmpData, tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp]{
+			Type:  tenanttmp.TemplateTypeServiceCategory,
+			IsPre: true,
+			Data:  item,
+		})
+	}
+	err = tools.InsertSvrCategoryTmp(kit, db, svrTmpData)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
+		return err
+	}
+	if err = addSubSrvCategoryData(kit, db, existParentIDs); err != nil {
+		blog.Errorf("add sub service category data failed, err: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]interface{}) error {
 	// add sub category data
-	subCategoryData := make([]interface{}, 0)
+	subCategoryData := make([]mapstr.MapStr, 0)
+	tmpData := make([]tenanttmp.SvrCategoryTmp, 0)
 	for key, value := range subCategoryMap {
 		parentID, err := util.GetInt64ByInterface(parentIDs[key])
 		if err != nil {
@@ -101,11 +137,20 @@ func addServiceCategoryData(kit *rest.Kit, db dal.Dal) error {
 				IsBuiltIn: true,
 				BizID:     0,
 			}
-			subCategoryData = append(subCategoryData, category)
+			item, err := tools.ConvStructToMap(category)
+			if err != nil {
+				blog.Errorf("convert struct to map failed, err: %v", err)
+				return err
+			}
+			subCategoryData = append(subCategoryData, item)
+			tmpData = append(tmpData, tenanttmp.SvrCategoryTmp{
+				Name:       subValue,
+				ParentName: key,
+			})
 		}
 	}
 
-	needField = &tools.InsertOptions{
+	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKFieldName, common.BKParentIDField, common.BKAppIDField},
 		IgnoreKeys:   []string{common.BKFieldID},
 		IDField:      []string{common.BKFieldID},
@@ -120,10 +165,23 @@ func addServiceCategoryData(kit *rest.Kit, db dal.Dal) error {
 		},
 	}
 
-	subIds, err := tools.InsertData(kit, db.Shard(kit.ShardOpts()), common.BKTableNameServiceCategory, subCategoryData,
-		needField)
+	subIds, err := tools.InsertData(kit, db, common.BKTableNameServiceCategory, subCategoryData, needField)
 	if err != nil {
 		blog.Errorf("insert service category data for table %s failed, err: %v", common.BKTableNameServiceCategory, err)
+		return err
+	}
+
+	svrTmpData := make([]tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp], 0)
+	for _, item := range tmpData {
+		svrTmpData = append(svrTmpData, tenanttmp.TenantTmpData[tenanttmp.SvrCategoryTmp]{
+			Type:  tenanttmp.TemplateTypeServiceCategory,
+			IsPre: true,
+			Data:  item,
+		})
+	}
+	err = tools.InsertSvrCategoryTmp(kit, db, svrTmpData)
+	if err != nil {
+		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 
@@ -135,6 +193,7 @@ func addServiceCategoryData(kit *rest.Kit, db dal.Dal) error {
 	}
 	uniqueFields := []string{"Default", strconv.FormatInt(defaultParentID, 10), "0"}
 	subUniqueStr := strings.Join(uniqueFields, "*")
+	// get default service category id
 	defaultServiceCategoryID, err = util.GetInt64ByInterface(subIds[subUniqueStr])
 	if err != nil {
 		blog.Errorf("get default service category id failed, err: %v", err)

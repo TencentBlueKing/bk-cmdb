@@ -91,16 +91,30 @@ func Init(opts *Options) error {
 	return nil
 }
 
+// SetTenant set tenant
+func SetTenant(tenant []types.Tenant) {
+	lock.Lock()
+	allTenants = tenant
+	tenantMap = make(map[string]*types.Tenant)
+	for _, t := range allTenants {
+		tenantMap[t.TenantID] = &t
+	}
+
+	lock.Unlock()
+}
+
 func refreshTenantInfo() error {
+	var tenants []types.Tenant
 	var err error
+
 	if db != nil {
-		allTenants, err = GetAllTenantsFromDB(context.Background(), db)
+		tenants, err = GetAllTenantsFromDB(context.Background(), db)
 		if err != nil {
 			return err
 		}
 	}
 	if apiMachineryCli != nil {
-		allTenants, err = apiMachineryCli.CoreService().Tenant().GetAllTenants(context.Background(),
+		tenants, err = apiMachineryCli.CoreService().Tenant().GetAllTenants(context.Background(),
 			util.GenDefaultHeader())
 		if err != nil {
 			blog.Errorf("get all tenants from api machinery failed, err: %v", err)
@@ -108,11 +122,7 @@ func refreshTenantInfo() error {
 		}
 	}
 
-	lock.Lock()
-	for _, tenant := range allTenants {
-		tenantMap[tenant.TenantID] = &tenant
-	}
-	lock.Unlock()
+	SetTenant(tenants)
 	return nil
 }
 

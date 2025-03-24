@@ -111,7 +111,7 @@ func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryp
 		return nil, err
 	}
 
-	if err = sharding.refreshTenantDBMap(); err != nil {
+	if err = sharding.RefreshTenantDBMap(); err != nil {
 		return nil, err
 	}
 
@@ -119,7 +119,7 @@ func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryp
 	go func() {
 		for {
 			time.Sleep(time.Minute)
-			if err = sharding.refreshTenantDBMap(); err != nil {
+			if err = sharding.RefreshTenantDBMap(); err != nil {
 				blog.Errorf("refresh tenant to db relation failed, err: %v", err)
 				continue
 			}
@@ -157,7 +157,8 @@ func getShardingDBConfig(ctx context.Context, c *local.Mongo) (*ShardingDBConf, 
 	return conf, nil
 }
 
-func (m *ShardingMongoManager) refreshTenantDBMap() error {
+// RefreshTenantDBMap refresh tenant to db relation
+func (m *ShardingMongoManager) RefreshTenantDBMap() error {
 	tenantDBMap := make(map[string]string)
 	for _, relation := range tenant.GetAllTenants() {
 		tenantDBMap[relation.TenantID] = relation.Database
@@ -188,6 +189,21 @@ func (m *ShardingMongoManager) Shard(opt ShardOpts) local.DB {
 		return m.IgnoreTenant()
 	}
 	return m.Tenant(opt.Tenant())
+}
+
+// NewTenantCli returns the new tenant db client
+func (m *ShardingMongoManager) NewTenantCli(tenant string) (local.DB, string, error) {
+	client := m.newTenantCli
+	txnManager, err := m.tm.DB(client.UUID())
+	if err != nil {
+		return nil, "", err
+	}
+
+	db, err := local.NewMongo(client, txnManager, m.conf, &local.MongoOptions{Tenant: tenant})
+	if err != nil {
+		return nil, "", err
+	}
+	return db, m.newTenantCli.UUID(), nil
 }
 
 // Tenant returns the db client for tenant

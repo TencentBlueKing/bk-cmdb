@@ -295,6 +295,13 @@ data:
     dataid:
       migrateWay: {{ .Values.migrate.dataid.migrateWay }}
 
+    apiGW:
+      bkUserApiGatewayUrl: {{ .Values.bkUserApiGatewayUrl }}}}
+
+    tenant:
+      disableVerifyTenant: {{ .Values.tenant.disableVerifyTenant }}
+
+
   mongodb.yaml: |-
     mongodb:
       host: {{ include "cmdb.mongodb.addr" . | quote }}

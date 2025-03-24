@@ -98,7 +98,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	// init esb client
 	esb.InitEsbClient(nil)
 
-	if err := service.InitGseClient(); err != nil {
+	if err := service.InitClients(); err != nil {
 		return err
 	}
 
@@ -149,6 +149,7 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	process.Config.DataIdMigrateWay = options.MigrateWay(migrateWay)
 	process.Config.SnapDataID = int64(snapDataID)
 	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
+	process.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
 
 	// load mongodb, redis and common config from configure directory
 	mongodbPath := process.Config.Configures.Dir + "/" + types.CCConfigureMongo

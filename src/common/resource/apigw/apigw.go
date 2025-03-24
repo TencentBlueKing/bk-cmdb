@@ -37,6 +37,7 @@ func Client() apigw.ClientSet {
 
 // Init the api-gateway client set
 func Init(path string, metric prometheus.Registerer, neededClients []apigw.ClientType) error {
+
 	config, err := apigwutil.ParseApiGWConfig(path)
 	if err != nil {
 		blog.Errorf("parse %s api gateway config failed, err: %v", path, err)

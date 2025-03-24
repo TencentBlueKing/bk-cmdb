@@ -2128,6 +2128,7 @@ var hostObjAttrs = []*attribute{
 		PropertyType:  "bool",
 		Option:        "",
 		IsMultiple:    &falseVar,
+		IsReadOnly:    true,
 		Description:   "云主机标识",
 	},
 	{
@@ -2307,6 +2308,7 @@ var setObjAttrs = []*attribute{
 		Option:       "",
 		IsMultiple:   nil,
 		Description:  "集群模板ID",
+		IsReadOnly:   true,
 	},
 	{
 		PropertyID:   "set_template_version",
@@ -2314,6 +2316,7 @@ var setObjAttrs = []*attribute{
 		IsEditable:   true,
 		IsSystem:     true,
 		IsAPI:        true,
+		IsReadOnly:   true,
 		PropertyType: "int",
 		Option:       "",
 		IsMultiple:   nil,
@@ -2761,6 +2764,7 @@ var moduleObjAttrs = []*attribute{
 		PropertyType: "int",
 		Option:       "",
 		IsMultiple:   nil,
+		IsReadOnly:   true,
 		Description:  "集群模板ID",
 	},
 	{
@@ -3159,17 +3163,17 @@ var projectObjAttrs = []*attribute{
 		IsRequired:   true,
 		PropertyType: "singlechar",
 		Option:       "",
+		IsOnly:       true,
 		IsMultiple:   &falseVar,
 	},
 	{
 		PropertyID:   "bk_project_code",
 		PropertyName: "项目英文名",
-
-		IsRequired: true,
-
+		IsRequired:   true,
 		PropertyType: "singlechar",
 		Option:       "",
 		IsMultiple:   &falseVar,
+		IsOnly:       true,
 	},
 	{
 		PropertyID:   "bk_created_at",
@@ -3234,6 +3238,7 @@ var bizSetObjAttrData = []*attribute{
 		IsRequired:    true,
 		PropertyType:  "singlechar",
 		Option:        `^[^\\\|\/:\*,<>"\?#\s]+$`,
+		IsOnly:        true,
 	},
 	{
 		PropertyID:    "bk_biz_set_id",
@@ -3242,6 +3247,7 @@ var bizSetObjAttrData = []*attribute{
 		IsAPI:         true,
 		PropertyType:  "int",
 		Option:        nil,
+		IsOnly:        true,
 	},
 	{
 		PropertyID:    "bk_biz_set_desc",
@@ -3287,8 +3293,8 @@ var bizSetObjAttrData = []*attribute{
 
 // attribute attribute metadata definition
 type attribute struct {
-	BizID             int64       `bson:"bk_biz_id"`
 	ID                int64       `bson:"id"`
+	BizID             int64       `bson:"bk_biz_id"`
 	ObjectID          string      `bson:"bk_obj_id"`
 	PropertyID        string      `bson:"bk_property_id"`
 	PropertyName      string      `bson:"bk_property_name"`

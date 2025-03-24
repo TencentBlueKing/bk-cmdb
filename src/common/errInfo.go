@@ -239,6 +239,9 @@ const (
 	// 该状态码只提供给支持可多选字段校验报错时使用，目前用户类型，枚举多选，枚举引用，组织类型校验可多选报错时可以使用
 	CCErrCommParamsNeedSingleChoice = 1199092
 
+	// CCErrCommAddTenantErr add new tenant error
+	CCErrCommAddTenantErr = 1199093
+
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
 

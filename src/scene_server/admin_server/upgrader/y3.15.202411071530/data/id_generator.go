@@ -23,12 +23,14 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader/tools"
-	"configcenter/src/storage/dal"
+	"configcenter/src/common/util"
+	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/driver/mongodb"
 )
 
-func addSelfIncrIDData(kit *rest.Kit, db dal.Dal) error {
+func addSelfIncrIDData(kit *rest.Kit, db local.DB) error {
 
 	objIDs := []string{"host", "set", "module", "bk_project", "biz", "process", "plat", "bk_biz_set_obj"}
 	ids := make([]string, 0)
@@ -37,28 +39,44 @@ func addSelfIncrIDData(kit *rest.Kit, db dal.Dal) error {
 	}
 	ids = append(ids, metadata.GetIDRule(common.GlobalIDRule))
 
-	needAddIDs := make([]interface{}, 0)
-	curTime := time.Now()
+	cond := mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBIN: ids}}
+	data := make([]map[string]interface{}, 0)
+	err := db.Table(common.BKTableNameIDgenerator).Find(cond).Fields(common.BKFieldDBID).All(kit.Ctx, &data)
+	if err != nil {
+		blog.Errorf("find id generator data failed, cond: %+v, err: %v", cond, err)
+		return err
+	}
+
+	dbIDMap := make(map[string]struct{})
+	for _, val := range data {
+		dbIDMap[util.GetStrByInterface(val[common.BKFieldDBID])] = struct{}{}
+	}
+
+	needAddIDs := make([]map[string]interface{}, 0)
+	now := time.Now()
 	for _, id := range ids {
+		if _, ok := dbIDMap[id]; ok {
+			continue
+		}
+
 		addID := map[string]interface{}{
 			common.BKFieldDBID:     id,
 			common.BKFieldSeqID:    0,
-			common.CreateTimeField: curTime,
-			common.LastTimeField:   curTime,
+			common.CreateTimeField: now,
+			common.LastTimeField:   now,
 		}
 		needAddIDs = append(needAddIDs, addID)
 	}
 
-	needField := &tools.InsertOptions{
-		UniqueFields: []string{"_id"},
-		IgnoreKeys:   []string{"_id"},
+	if len(needAddIDs) == 0 {
+		blog.Info("no need add id generator data")
+		return nil
 	}
 
-	_, err := tools.InsertData(kit, db.Shard(kit.SysShardOpts()), common.BKTableNameIDgenerator, needAddIDs, needField)
-	if err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameIDgenerator, err)
+	if err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameIDgenerator).Insert(kit.Ctx,
+		needAddIDs); err != nil {
+		blog.Errorf("add id generator data failed, data: %+v, err: %v", needAddIDs, err)
 		return err
 	}
-
 	return nil
 }

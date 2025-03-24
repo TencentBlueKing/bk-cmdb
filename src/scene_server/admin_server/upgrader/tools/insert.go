@@ -25,7 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 
 	"github.com/google/go-cmp/cmp"
@@ -35,7 +35,7 @@ import (
 var ignoreKeysArr = []string{"create_time", "last_time", "_id"}
 
 // InsertData insert data for upgrade
-func InsertData(kit *rest.Kit, db dal.RDB, table string, data []interface{}, insertOps *InsertOptions) (
+func InsertData(kit *rest.Kit, db local.DB, table string, data []mapstr.MapStr, insertOps *InsertOptions) (
 	map[string]interface{}, error) {
 
 	result := make([]mapstr.MapStr, 0)
@@ -48,7 +48,7 @@ func InsertData(kit *rest.Kit, db dal.RDB, table string, data []interface{}, ins
 	idFields := make(map[string]interface{})
 	if len(insertOps.IDField) > 0 {
 		for _, item := range result {
-			valueStr := getUniqueStr(item, insertOps)
+			valueStr := getUniqueStr(item, insertOps.UniqueFields)
 			if valueStr == "" {
 				continue
 			}
@@ -60,7 +60,7 @@ func InsertData(kit *rest.Kit, db dal.RDB, table string, data []interface{}, ins
 
 	existData := make(map[string]mapstr.MapStr)
 	for _, item := range result {
-		valueStr := getUniqueStr(item, insertOps)
+		valueStr := getUniqueStr(item, insertOps.UniqueFields)
 		existData[valueStr] = item
 	}
 
@@ -84,7 +84,7 @@ func InsertData(kit *rest.Kit, db dal.RDB, table string, data []interface{}, ins
 			for _, idField := range insertOps.IDField {
 				value[idField] = nextIDs[index]
 			}
-			idFields[getUniqueStr(value, insertOps)] = nextIDs[index]
+			idFields[getUniqueStr(value, insertOps.UniqueFields)] = nextIDs[index]
 		}
 	}
 
@@ -101,16 +101,33 @@ func InsertData(kit *rest.Kit, db dal.RDB, table string, data []interface{}, ins
 		AuditDataField: insertOps.AuditDataField,
 		AuditTypeData:  insertOps.AuditTypeField,
 	}
-	if err = AddCreateAuditLog(kit, mongodb.Dal().Shard(kit.ShardOpts()), insertData, auditField); err != nil {
+
+	if err = AddCreateAuditLog(kit, db, insertData, auditField); err != nil {
 		blog.Errorf("add audit log failed, err: %v", err)
 		return nil, err
 	}
 	return idFields, nil
 }
 
-func getUniqueStr(item mapstr.MapStr, compareFiled *InsertOptions) string {
+// SplitUniqueStr split unique str by unique fields
+func SplitUniqueStr(uniqueStr string, uniqueFields []string) (map[string]string, error) {
+	valueMap := make(map[string]string, len(uniqueFields))
+
+	arr := strings.Split(uniqueStr, "*")
+	if len(arr) != len(uniqueFields) {
+		return nil, fmt.Errorf("unique str %s is invalid", uniqueStr)
+	}
+
+	for index, uniqueField := range uniqueFields {
+		valueMap[uniqueField] = arr[index]
+	}
+
+	return valueMap, nil
+}
+
+func getUniqueStr(item mapstr.MapStr, uniqueFields []string) string {
 	var strArr []string
-	for _, uniqueValue := range compareFiled.UniqueFields {
+	for _, uniqueValue := range uniqueFields {
 		if _, ok := item[uniqueValue]; !ok {
 			continue
 		}
@@ -120,7 +137,7 @@ func getUniqueStr(item mapstr.MapStr, compareFiled *InsertOptions) string {
 	return strings.Join(strArr, "*")
 }
 
-func getInsertData(existData map[string]mapstr.MapStr, data []interface{}, compareFiled *InsertOptions) (
+func getInsertData(existData map[string]mapstr.MapStr, data []mapstr.MapStr, compareFiled *InsertOptions) (
 	[]map[string]interface{}, error) {
 
 	insertData := make([]map[string]interface{}, 0)
@@ -130,7 +147,7 @@ func getInsertData(existData map[string]mapstr.MapStr, data []interface{}, compa
 			blog.Errorf("interface to mapStr failed, err: %v, data: %+v", err, item)
 			return nil, err
 		}
-		valueStr := getUniqueStr(mapStrData, compareFiled)
+		valueStr := getUniqueStr(mapStrData, compareFiled.UniqueFields)
 		if _, exist := existData[valueStr]; !exist {
 			insertData = append(insertData, mapStrData)
 			continue
@@ -214,4 +231,26 @@ type InsertOptions struct {
 	IDField        []string
 	AuditDataField *AuditDataField `bson:",inline"`
 	AuditTypeField *AuditResType   `bson:",inline"`
+}
+
+// ConvStructToMap convert struct to map
+func ConvStructToMap(obj interface{}) (map[string]interface{}, error) {
+	if data, isOk := obj.(map[string]interface{}); isOk {
+		return data, nil
+	}
+
+	data, err := bson.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]interface{})
+	err = bson.Unmarshal(data, &result)
+	return result, err
+}
+
+// IDOptions the options of data template id
+type IDOptions struct {
+	ResNameField string
+	RemoveKeys   []string
 }

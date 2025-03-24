@@ -60,4 +60,12 @@ var commPropertyGroupIndexes = []types.Index{
 		Background:              true,
 		PartialFilterExpression: make(map[string]interface{}),
 	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bkObjID_bkBizID_bkGroupID",
+		Keys: bson.D{{common.BKObjIDField, 1}, {common.BKAppIDField, 1},
+			{common.BKPropertyGroupIDField, 1}},
+		Unique:                  true,
+		Background:              true,
+		PartialFilterExpression: make(map[string]interface{}),
+	},
 }

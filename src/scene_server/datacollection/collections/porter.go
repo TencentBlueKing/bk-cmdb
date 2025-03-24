@@ -356,9 +356,10 @@ func (p *SimplePorter) collectLoop() error {
 				p.receiveInvalidTotal.Inc()
 				continue
 			}
+
 			// the outermost "ip" field is GSE's control ip. In the gse2.0 scenario, there is no concept of control ip.
 			// at this time, the "ip" field is empty, so the hashkey needs to be combined in order to be compatible with
-			//different scenarios ip and bk_agent_id
+			// different scenarios ip and bk_agent_id
 			ip := gjson.Get(newMsg.Payload, "ip").String()
 			agentID := gjson.Get(newMsg.Payload, "bk_agent_id").String()
 			// message data sharding hashring check.

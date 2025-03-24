@@ -107,6 +107,8 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.GET("/auth/business_list").To(s.GetAnyAuthorizedAppList))
 	ws.Route(ws.POST("/auth/skip_url").To(s.GetUserNoAuthSkipURL))
 
+	ws.Route(ws.POST("/refresh/tenant").To(s.RefreshTenant))
+
 	ws.Route(ws.POST("/biz/{.*}").Filter(s.BizFilterChan).To(s.Post))
 	ws.Route(ws.POST("/biz/search/{.*}").Filter(s.BizFilterChan).To(s.Post))
 
