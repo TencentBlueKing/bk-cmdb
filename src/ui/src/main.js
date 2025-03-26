@@ -53,7 +53,7 @@ Vue.prototype.$routerActions = routerActions
 
 BkUserDisplayName.configure({
   tenantId: window.Site.tenantId,
-  apiBaseUrl: window.ESB.userManage,
+  apiBaseUrl: window.Site.userManageUrl,
 })
 
 api.get(`${window.API_HOST}is_login`).then(() => {

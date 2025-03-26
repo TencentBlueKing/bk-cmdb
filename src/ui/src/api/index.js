@@ -31,8 +31,10 @@ const axiosInstance = Axios.create({
 // axios实例拦截器
 axiosInstance.interceptors.request.use(
   (config) => {
-    for (const [key, value] of Object.entries(customHeaders())) {
-      config.headers[key] = value
+    if (config.globalHeaders) {
+      for (const [key, value] of Object.entries(customHeaders())) {
+        config.headers[key] = value
+      }
     }
     return config
   },
@@ -242,7 +244,9 @@ function initConfig(method, url, userConfig) {
     // 取消上次请求
     cancelPrevious: false,
     // 是否全局捕获权限异常
-    globalPermission: true
+    globalPermission: true,
+    // 是否使用全局headers
+    globalHeaders: true,
   }
   return Object.assign(defaultConfig, userConfig)
 }
