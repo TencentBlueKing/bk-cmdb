@@ -35,7 +35,7 @@ func SetTenantFromCookie(c *gin.Context, config options.Config, session sessions
 	rid := httpheader.GetRid(c.Request.Header)
 
 	cookieTenantID, cookieErr := c.Cookie(common.HTTPCookieTenant)
-	tenantID, err := logics.GetTenantWithMode(cookieTenantID, config.EnableMultiTenantMode)
+	tenantID, err := logics.ValidateDisableTenantMode(cookieTenantID, config.EnableMultiTenantMode)
 	if err != nil {
 		return "", err
 	}

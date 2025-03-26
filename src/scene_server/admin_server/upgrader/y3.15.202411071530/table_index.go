@@ -136,7 +136,7 @@ func initTableIndex(kit *rest.Kit, db local.DB, tableIndexMap map[string][]dalty
 			return err
 		}
 
-		if index == nil {
+		if len(index) == 0 {
 			continue
 		}
 		if err := logics.CreateIndexes(kit, mongodb.Dal().Shard(kit.SysShardOpts()), table, index); err != nil {

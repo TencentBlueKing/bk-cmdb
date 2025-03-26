@@ -75,7 +75,7 @@ func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner boo
 		return nil, false
 	}
 
-	tenantID, err := logics.GetTenantWithMode(user.TenantUin, config.EnableMultiTenantMode)
+	tenantID, err := logics.ValidateDisableTenantMode(user.TenantUin, config.EnableMultiTenantMode)
 	if err != nil {
 		blog.Infof("tenant mode not enabled, but tenantUin is not empty, rid: %s", rid)
 		return nil, false

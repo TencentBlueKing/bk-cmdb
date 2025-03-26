@@ -177,7 +177,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		return user.LoginUser(c)
 	}
 
-	tenant, err := logics.GetTenantWithMode(sessionTenantID, config.EnableMultiTenantMode)
+	tenant, err := logics.ValidateDisableTenantMode(sessionTenantID, config.EnableMultiTenantMode)
 	if err != nil {
 		return user.LoginUser(c)
 	}

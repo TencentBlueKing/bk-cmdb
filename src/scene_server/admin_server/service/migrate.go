@@ -51,7 +51,7 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 
 	// get tenant id
-	tenantID, err := tenantlogics.GetTenantWithMode(req.Request.Header.Get(httpheader.TenantHeader),
+	tenantID, err := tenantlogics.ValidateDisableTenantMode(req.Request.Header.Get(httpheader.TenantHeader),
 		s.Config.EnableMultiTenantMode)
 	if err != nil {
 		result := &metadata.RespError{
@@ -60,7 +60,7 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
 	}
-	req.Request.Header.Set(httpheader.TenantHeader, tenantID)
+	httpheader.SetTenantID(req.Request.Header, tenantID)
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 
 	if s.Config.EnableMultiTenantMode && kit.TenantID != common.BKDefaultTenantID {

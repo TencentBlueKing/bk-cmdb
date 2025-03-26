@@ -62,7 +62,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 
 	session := sessions.Default(c)
 
-	tenantID, err := logics.GetTenantWithMode(userInfo.TenantUin, m.config.EnableMultiTenantMode)
+	tenantID, err := logics.ValidateDisableTenantMode(userInfo.TenantUin, m.config.EnableMultiTenantMode)
 	if err != nil {
 		blog.Errorf("get tenant id failed, err: %v", err)
 		return false

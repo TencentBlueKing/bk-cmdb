@@ -76,8 +76,8 @@ const (
 	// BKDefaultTenantID the platform operation tenant value
 	BKDefaultTenantID = "system"
 
-	// BKNonTenantModeID the tenant value while tenant model is off
-	BKNonTenantModeID = "default"
+	// BKSingleTenantID the tenant id while tenant model is off
+	BKSingleTenantID = "default"
 
 	// BKSuperTenantID the super tenant value
 	BKSuperTenantID = "superadmin"

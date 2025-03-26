@@ -44,10 +44,19 @@ import (
 )
 
 func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
-
 	rHeader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+
+	if !s.Config.EnableMultiTenantMode {
+		blog.Errorf("multi-tenant mode is not enabled, cannot add tenant, rid: %s", kit.Rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommAddTenantErr,
+				fmt.Errorf("multi-tenant mode is not enabled, cannot add tenant")),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
 
 	_, exist := tenant.GetTenant(kit.TenantID)
 	if exist {
@@ -55,7 +64,7 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
-	if s.Config.EnableMultiTenantMode && !s.Config.DisableVerifyTenant {
+	if !s.Config.DisableVerifyTenant {
 		// get all tenants from bk-user
 		tenants, err := apigwcli.Client().User().GetTenants(kit.Ctx, kit.Header)
 		if err != nil {

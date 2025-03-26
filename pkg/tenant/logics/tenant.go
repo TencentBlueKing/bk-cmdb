@@ -23,11 +23,11 @@ import (
 	"configcenter/src/common"
 )
 
-// GetTenantWithMode get tenant id with mode which is disabled or enable for tenant
-func GetTenantWithMode(tenantID string, enableTenantMode bool) (string, error) {
+// ValidateDisableTenantMode validate disable multi-tenant mode
+func ValidateDisableTenantMode(tenantID string, enableTenantMode bool) (string, error) {
 	if !enableTenantMode {
-		if tenantID == "" || tenantID == common.BKNonTenantModeID {
-			return common.BKNonTenantModeID, nil
+		if tenantID == "" || tenantID == common.BKSingleTenantID {
+			return common.BKSingleTenantID, nil
 		}
 
 		return "", fmt.Errorf("tenant mode is disable, but tenant id %s is set", tenantID)

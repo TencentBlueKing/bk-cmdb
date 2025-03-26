@@ -15,6 +15,7 @@ package common
 import (
 	"configcenter/src/common"
 	httpheader "configcenter/src/common/http/header"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
