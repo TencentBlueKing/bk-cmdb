@@ -29,23 +29,21 @@ func (s *Service) Index(c *gin.Context) {
 	tenantID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
 
 	pageConf := gin.H{
-		"site":                      s.Config.Site.DomainUrl,
-		"version":                   s.Config.Version,
-		"ccversion":                 version.CCVersion,
-		"authscheme":                s.Config.Site.AuthScheme,
-		"fullTextSearch":            s.Config.Site.FullTextSearch,
-		"curl":                      s.Config.LoginUrl,
-		"userName":                  userName,
-		"tenantId":                  tenantID,
-		"agentAppUrl":               s.Config.AgentAppUrl,
-		"authCenter":                s.Config.AuthCenter,
-		"helpDocUrl":                s.Config.Site.HelpDocUrl,
-		"disableOperationStatistic": s.Config.DisableOperationStatistic,
-		"cookieDomain":              s.Config.Site.BkDomain,
-		"componentApiUrl":           s.Config.Site.BkComponentApiUrl,
-		"publicPath":                getPublicPath(s.Config.Site.DomainUrl),
-		"enableNotification":        s.Config.EnableNotification,
-		"bkSharedResUrl":            s.Config.Site.BkSharedResUrl,
+		"site":               s.Config.Site.DomainUrl,
+		"version":            s.Config.Version,
+		"ccversion":          version.CCVersion,
+		"authscheme":         s.Config.Site.AuthScheme,
+		"fullTextSearch":     s.Config.Site.FullTextSearch,
+		"curl":               s.Config.LoginUrl,
+		"userName":           userName,
+		"tenantId":           tenantID,
+		"agentAppUrl":        s.Config.AgentAppUrl,
+		"helpDocUrl":         s.Config.Site.HelpDocUrl,
+		"cookieDomain":       s.Config.Site.BkDomain,
+		"componentApiUrl":    s.Config.Site.BkComponentApiUrl,
+		"publicPath":         getPublicPath(s.Config.Site.DomainUrl),
+		"enableNotification": s.Config.EnableNotification,
+		"bkSharedResUrl":     s.Config.Site.BkSharedResUrl,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {

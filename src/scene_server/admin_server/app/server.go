@@ -145,8 +145,6 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	process.Config.Configures.Dir, _ = cc.String("confs.dir")
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
 	snapDataID, _ := cc.Int("hostsnap.dataID")
-	migrateWay, _ := cc.String("dataid.migrateWay")
-	process.Config.DataIdMigrateWay = options.MigrateWay(migrateWay)
 	process.Config.SnapDataID = int64(snapDataID)
 	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
 	process.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")

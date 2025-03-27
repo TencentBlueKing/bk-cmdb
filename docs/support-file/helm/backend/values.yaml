@@ -870,11 +870,6 @@ migrate:
   ##
   migrateDataId: false
   migrateOldDataId: false
-  ## bk-cmdb migrate dataid parameters
-  ## @param migrate.dataid.migrateWay bk-cmdb migrate dataid way
-  ##
-  dataid:
-    migrateWay: esb
 
 ## @section bk-cmdb iam authentication parameters
 ##

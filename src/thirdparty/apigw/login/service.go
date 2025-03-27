@@ -27,7 +27,7 @@ import (
 
 // ClientI is the bk-login api gateway client
 type ClientI interface {
-	VerifyToken(ctx context.Context, h http.Header, token string) (*VerifyTokenRes, error)
+	VerifyToken(ctx context.Context, h http.Header, token string) (*BkLoginResponse[*VerifyTokenRes], error)
 	GetUserByToken(ctx context.Context, h http.Header, token string) (*UserInfo, error)
 }
 

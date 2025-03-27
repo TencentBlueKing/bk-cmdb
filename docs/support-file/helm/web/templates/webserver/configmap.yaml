@@ -67,8 +67,6 @@ data:
             # 用于解密根据RFC1423加密的证书密钥的PEM块
             password: {{ .Values.web.paas.tls.password }}
       app:
-        authAppCode: {{ .Values.web.webServer.app.authAppCode }}
-        authUrl: {{ .Values.web.webServer.app.authUrl }}
         agentAppUrl: {{ .Values.bkNodemanUrl }}
         #权限模式，web页面使用，可选值: internal, iam
         authscheme: {{ .Values.web.webServer.app.authScheme }}
