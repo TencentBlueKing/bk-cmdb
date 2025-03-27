@@ -44,7 +44,7 @@ var (
 	}
 )
 
-// InitData add default tenant init data
+// InitData add init data
 func InitData(kit *rest.Kit, db local.DB) error {
 	for _, handler := range commonTableDataArr {
 		if err := handler(kit, db); err != nil {
@@ -54,11 +54,10 @@ func InitData(kit *rest.Kit, db local.DB) error {
 	}
 
 	for _, handler := range defaultTableDataArr {
-		if err := handler(kit, mongodb.Dal().Shard(kit.SysShardOpts())); err != nil {
+		if err := handler(kit, mongodb.Shard(kit.SysShardOpts())); err != nil {
 			blog.Errorf("add init data failed, err: %v", err)
 			return err
 		}
 	}
-
 	return nil
 }

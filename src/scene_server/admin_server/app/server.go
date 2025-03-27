@@ -150,6 +150,7 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	process.Config.SnapDataID = int64(snapDataID)
 	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
 	process.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
+	process.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
 
 	// load mongodb, redis and common config from configure directory
 	mongodbPath := process.Config.Configures.Dir + "/" + types.CCConfigureMongo

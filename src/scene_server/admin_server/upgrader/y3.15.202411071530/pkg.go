@@ -36,10 +36,6 @@ func init() {
 }
 
 func upgrade(kit *rest.Kit, db dal.Dal) error {
-	if kit.TenantID != logics.GetSystemTenant() {
-		blog.Errorf("Non-system tenants cannot initialize")
-		return fmt.Errorf("non-system tenants cannot initialize")
-	}
 
 	dbCli, dbUUID, err := logics.GetNewTenantCli(kit, db)
 	if err != nil {
@@ -56,16 +52,27 @@ func upgrade(kit *rest.Kit, db dal.Dal) error {
 		return err
 	}
 
-	// add system tenant
+	cond := map[string]interface{}{
+		common.TenantID: kit.TenantID,
+	}
+	count, err := mongodb.Dal().Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Find(cond).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("get tenant count failed, err: %v", err)
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+
+	// add tenant, system or default
 	err = mongodb.Dal().Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Insert(kit.Ctx, types.Tenant{
-		TenantID: logics.GetSystemTenant(),
+		TenantID: kit.TenantID,
 		Status:   types.EnabledStatus,
 		Database: dbUUID,
 	})
 	if err != nil {
-		blog.Errorf("add system tenant failed, err: %v", err)
+		blog.Errorf("add tenant failed for migrate data, tenantID: %s, err: %v", kit.TenantID, err)
 		return err
 	}
-
 	return nil
 }

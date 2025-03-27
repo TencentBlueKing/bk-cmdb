@@ -148,7 +148,6 @@ func (s *Service) initService(ws *gin.Engine) {
 	ws.GET("/user/language/:language", s.UpdateUserLanguage)
 	// get current login user info
 	ws.GET("/userinfo", s.UserInfo)
-	ws.PUT("/user/current/tenant/:id", s.UpdateTenant)
 
 	ws.GET("/", s.Index)
 

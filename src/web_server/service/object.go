@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
@@ -65,7 +66,6 @@ func (s *Service) GetObjectInstanceCount(c *gin.Context) {
 func (s *Service) BatchExportObject(c *gin.Context) {
 	header := c.Request.Header
 	rid := httpheader.GetRid(header)
-	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)
 
 	cond := new(metadata.BatchExportObject)
@@ -88,6 +88,13 @@ func (s *Service) BatchExportObject(c *gin.Context) {
 			return
 		}
 	}
+	s.exportObj(c, cond, dirFileName)
+}
+
+func (s *Service) exportObj(c *gin.Context, cond *metadata.BatchExportObject, dirFileName string) {
+	header := c.Request.Header
+	rid := httpheader.GetRid(header)
+	ctx := util.NewContextFromGinContext(c)
 
 	if cond.FileName == "" {
 		cond.FileName = fmt.Sprintf("batch_export_object_%d", time.Now().UnixNano())
@@ -209,13 +216,25 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 		}
 	}()
 
+	result, err := s.getAnalysisResult(c, filePath, cond, file)
+	if err != nil {
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Service) getAnalysisResult(c *gin.Context, filePath string,
+	cond metadata.ZipFileAnalysis, file *multipart.FileHeader) (*metadata.AnalysisResult, error) {
+	rid := httpheader.GetRid(c.Request.Header)
+	language := webCommon.GetLanguageByHTTPRequest(c)
+	defErr := s.CCErr.CreateDefaultCCErrorIf(language)
 	zipReader, err := zip.OpenReader(filePath)
 	if err != nil {
 		blog.Errorf("open zip reader failed, err: %v, rid: %s", err, rid)
 		msg := getReturnStr(common.CCErrWebFileSaveFail, defErr.Errorf(common.CCErrWebFileSaveFail,
 			err.Error()).Error(), nil)
 		c.String(http.StatusOK, msg)
-		return
+		return nil, err
 	}
 
 	defer zipReader.Close()
@@ -235,7 +254,7 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 				err, file.Filename, rid)
 			msg := getReturnStr(common.CCErrInvalidFileTypeFail, err.Error(), nil)
 			c.String(http.StatusOK, msg)
-			return
+			return nil, err
 		}
 
 		errCode, err := s.Logics.GetDataFromZipFile(c.Request.Header, item, cond.Password, result)
@@ -243,12 +262,11 @@ func (s *Service) BatchImportObjectAnalysis(c *gin.Context) {
 			blog.Errorf("get data from zip file failed, err: %v, rid: %s", err, rid)
 			msg := getReturnStr(errCode, err.Error(), nil)
 			c.String(http.StatusOK, msg)
-			return
+			return nil, err
 		}
 	}
-
 	result.Result = true
-	c.JSON(http.StatusOK, result)
+	return result, nil
 }
 
 // BatchImportObject batch import object

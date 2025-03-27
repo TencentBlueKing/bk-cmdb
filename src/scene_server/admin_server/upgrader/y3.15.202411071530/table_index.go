@@ -94,8 +94,12 @@ var tableIndexMap = map[string][]daltypes.Index{
 	"cc_ObjectBaseMapping":                       objectBaseMappingIndexes,
 }
 
-var platTableIndexesArr = []string{common.BKTableNameSystem, common.BKTableNameIDgenerator,
-	common.BKTableNameTenantTemplate}
+var platTableIndexesArr = map[string][]daltypes.Index{
+	common.BKTableNameSystem:         nil,
+	common.BKTableNameIDgenerator:    nil,
+	common.BKTableNameTenantTemplate: templateIndexes,
+	common.BKTableNameTenant:         tenantIndexes,
+}
 
 var tableInstAsstArr = []string{
 	common.BKInnerObjIDApp,
@@ -125,18 +129,20 @@ func initTableIndex(kit *rest.Kit, db local.DB, tableIndexMap map[string][]dalty
 		return err
 	}
 
-	for _, table := range platTableIndexesArr {
+	// create plat table and indexes
+	for table, index := range platTableIndexesArr {
 		if err := logics.CreateTable(kit, mongodb.Dal().Shard(kit.SysShardOpts()), table); err != nil {
 			fmt.Errorf("create plat table failed, err: %v", err)
 			return err
 		}
-	}
 
-	err := logics.CreateIndexes(kit, mongodb.Dal().Shard(kit.SysShardOpts()), common.BKTableNameTenantTemplate,
-		templateIndexes)
-	if err != nil {
-		blog.Errorf("create table %s failed, err: %v", common.BKTableNameTenantTemplate, err)
-		return err
+		if len(index) == 0 {
+			continue
+		}
+		if err := logics.CreateIndexes(kit, mongodb.Dal().Shard(kit.SysShardOpts()), table, index); err != nil {
+			blog.Errorf("create table %s failed, err: %v", table, err)
+			return err
+		}
 	}
 
 	return nil

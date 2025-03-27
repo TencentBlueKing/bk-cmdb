@@ -50,6 +50,7 @@ func getReturnStr(code int, message string, data interface{}) string {
 
 // ListenIPOptions TODO
 func (s *Service) ListenIPOptions(c *gin.Context) {
+
 	rid := httpheader.GetRid(c.Request.Header)
 	ctx := util.NewContextFromGinContext(c)
 	webCommon.SetProxyHeader(c)

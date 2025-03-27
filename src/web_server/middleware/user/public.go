@@ -15,6 +15,7 @@ package user
 import (
 	"encoding/json"
 
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -48,7 +49,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	}
 
 	user := plugins.CurrentPlugin(m.config.LoginVersion)
-	userInfo, loginSuccess = user.LoginUser(c, m.config.ConfigMap, isMultiOwner)
+	userInfo, loginSuccess = user.LoginUser(c, m.config, isMultiOwner)
 
 	if !loginSuccess {
 		blog.Infof("login user with plugin failed, rid: %s", rid)
@@ -61,13 +62,19 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 
 	session := sessions.Default(c)
 
+	tenantID, err := logics.ValidateDisableTenantMode(userInfo.TenantUin, m.config.EnableMultiTenantMode)
+	if err != nil {
+		blog.Errorf("get tenant id failed, err: %v", err)
+		return false
+	}
+
+	session.Set(common.WEBSessionTenantUinKey, tenantID)
 	session.Set(common.WEBSessionUinKey, userInfo.UserName)
 	session.Set(common.WEBSessionChineseNameKey, userInfo.ChName)
 	session.Set(common.WEBSessionPhoneKey, userInfo.Phone)
 	session.Set(common.WEBSessionEmailKey, userInfo.Email)
 	session.Set(common.HTTPCookieBKToken, userInfo.BkToken)
 	session.Set(common.HTTPCookieBKTicket, userInfo.BkTicket)
-	session.Set(common.WEBSessionTenantUinKey, userInfo.TenantUin)
 	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
 	session.Set(common.WEBSessionTenantUinListeKey, string(strOwnerUinList))
 	if userInfo.MultiTenant {
@@ -96,7 +103,6 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 
 	user := plugins.CurrentPlugin(m.config.LoginVersion)
 	return user.GetLoginUrl(c, m.config.ConfigMap, params)
-
 }
 
 // GetUserList TODO

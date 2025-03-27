@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"strings"
 
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -90,13 +91,13 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 	// http request header add user
 	session := sessions.Default(c)
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
-	ownerID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
+	tenantID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
 	bkToken, _ := session.Get(common.HTTPCookieBKToken).(string)
 	bkTicket, _ := session.Get(common.HTTPCookieBKTicket).(string)
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, language)
-	httpheader.SetTenantID(c.Request.Header, ownerID)
+	httpheader.SetTenantID(c.Request.Header, tenantID)
 	httpheader.SetUserToken(c.Request.Header, bkToken)
 	httpheader.SetUserTicket(c.Request.Header, bkTicket)
 
@@ -170,17 +171,27 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		return user.LoginUser(c)
 	}
 
-	// check owner_uin
-	ownerID, ok := session.Get(common.WEBSessionTenantUinKey).(string)
-	if !ok || "" == ownerID {
+	// check default tenant
+	sessionTenantID, ok := session.Get(common.WEBSessionTenantUinKey).(string)
+	if !ok {
 		return user.LoginUser(c)
 	}
+
+	tenant, err := logics.ValidateDisableTenantMode(sessionTenantID, config.EnableMultiTenantMode)
+	if err != nil {
+		return user.LoginUser(c)
+	}
+
+	session.Set(common.WEBSessionTenantUinKey, tenant)
 
 	bkTokenName := common.HTTPCookieBKToken
 	bkToken, err := c.Cookie(bkTokenName)
 	blog.V(5).Infof("valid user login session token %s, cookie token %s, rid: %s", ccToken, bkToken, rid)
 	if nil != err || bkToken != ccToken {
 		return user.LoginUser(c)
+	}
+	if err = session.Save(); err != nil {
+		blog.Warnf("save session failed, err: %v, rid: %s", err, rid)
 	}
 	return true
 

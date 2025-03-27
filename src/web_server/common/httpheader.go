@@ -25,13 +25,14 @@ func SetProxyHeader(c *gin.Context) {
 	// http request header add user
 	session := sessions.Default(c)
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
-	ownerID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
+	tenantID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
 
 	// 删除 Accept-Encoding 避免返回值被压缩
 	c.Request.Header.Del("Accept-Encoding")
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, GetLanguageByHTTPRequest(c))
-	httpheader.SetTenantID(c.Request.Header, ownerID)
+	httpheader.SetTenantID(c.Request.Header, tenantID)
+
 }
 
 // GetLanguageByHTTPRequest get language by http request cookie

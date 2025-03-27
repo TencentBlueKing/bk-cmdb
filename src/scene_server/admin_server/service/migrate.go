@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"configcenter/pkg/tenant"
+	tenantlogics "configcenter/pkg/tenant/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
@@ -48,7 +49,29 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 
 	rHeader := req.Request.Header
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+
+	// get tenant id
+	tenantID, err := tenantlogics.ValidateDisableTenantMode(req.Request.Header.Get(httpheader.TenantHeader),
+		s.Config.EnableMultiTenantMode)
+	if err != nil {
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, "tenant mode is not enabled, but tenant id is set"),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+	httpheader.SetTenantID(req.Request.Header, tenantID)
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+
+	if s.Config.EnableMultiTenantMode && kit.TenantID != common.BKDefaultTenantID {
+		blog.Errorf("only support system tenant, but current tenant id is %s", kit.TenantID)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, "only support system tenant"),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+
 	if err := s.createWatchDBChainCollections(kit); err != nil {
 		blog.Errorf("create watch db chain collections failed, err: %v", err)
 		result := &metadata.RespError{

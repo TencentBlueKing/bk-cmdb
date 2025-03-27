@@ -18,8 +18,10 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/apiserver/app/options"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metrics"
 	"configcenter/src/common/rdapi"
@@ -52,6 +54,7 @@ type service struct {
 	limiter    *Limiter
 	// noPermissionRequestTotal is the total number of request without permission
 	noPermissionRequestTotal *prometheus.CounterVec
+	config                   *options.Config
 }
 
 // SetConfig set config
@@ -64,6 +67,20 @@ func (s *service) SetConfig(engine *backbone.Engine, httpClient HTTPClient, disc
 	s.cache = cache
 	s.limiter = limiter
 	s.authorizer = iam.NewAuthorizer(clientSet)
+	s.config = s.parseSeverConfig()
+}
+
+func (s *service) parseSeverConfig() *options.Config {
+	if !cc.IsExist("tenant.enableMultiTenantMode") {
+		return &options.Config{
+			EnableMultiTenantMode: false,
+		}
+	}
+
+	tenantModeEnable, _ := cc.Bool("tenant.enableMultiTenantMode")
+	return &options.Config{
+		EnableMultiTenantMode: tenantModeEnable,
+	}
 }
 
 // WebServices TODO

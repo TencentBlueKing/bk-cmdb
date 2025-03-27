@@ -24,8 +24,10 @@ import (
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
+	"configcenter/src/web_server/app/options"
 	webCommon "configcenter/src/web_server/common"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
+	"configcenter/src/web_server/middleware/user/plugins/method"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -43,19 +45,14 @@ func init() {
 type user struct{}
 
 // LoginUser user login
-func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner bool) (*metadata.LoginUserInfo, bool) {
+func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner bool) (*metadata.LoginUserInfo, bool) {
 	rid := httpheader.GetRid(c.Request.Header)
 	session := sessions.Default(c)
 
-	cookieOwnerID, err := c.Cookie(common.HTTPCookieTenant)
-	if "" == cookieOwnerID || err != nil {
-		c.SetCookie(common.HTTPCookieTenant, common.BKDefaultTenantID, 0, "/", "", false, false)
-		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
-	} else if cookieOwnerID != session.Get(common.WEBSessionTenantUinKey) {
-		session.Set(common.WEBSessionTenantUinKey, cookieOwnerID)
-	}
-	if err := session.Save(); err != nil {
-		blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)
+	tenantID, err := method.SetTenantFromCookie(c, config, session)
+	if err != nil {
+		blog.Errorf("set cookie failed, err: %v, rid: %s", err, rid)
+		return nil, false
 	}
 
 	cookieUser, err := c.Cookie(common.BKUser)
@@ -76,7 +73,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 			Phone:     "",
 			Email:     "blueking",
 			BkToken:   "",
-			TenantUin: "0",
+			TenantUin: tenantID,
 			IsTenant:  false,
 			Language:  webCommon.GetLanguageByHTTPRequest(c),
 		}, true

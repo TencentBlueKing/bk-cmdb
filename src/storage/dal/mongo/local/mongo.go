@@ -89,9 +89,10 @@ func NewMongo(cli *MongoClient, tm *TxnManager, conf *MongoCliConf, opt ...*Mong
 	}
 
 	m := &Mongo{
-		cli:  cli,
-		tm:   tm,
-		conf: conf,
+		cli:            cli,
+		tm:             tm,
+		conf:           conf,
+		enableSharding: true,
 	}
 
 	if len(opt) > 0 {
