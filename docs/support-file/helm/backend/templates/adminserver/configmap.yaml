@@ -267,7 +267,7 @@ data:
         password: {{ .Values.common.apiGW.tls.password }}
     tenant:
       # 是否开启多租户模式
-      enableMultiTenantEnabledMode: true
+      enableMultiTenantMode: {{ .Values.tenant.enableMultiTenantMode }}
 
   extra.yaml: |-
     
@@ -302,6 +302,7 @@ data:
       bkUserApiGatewayUrl: {{ .Values.bkUserApiGatewayUrl }}}}
 
     tenant:
+      enableMultiTenantMode: {{ .Values.tenant.enableMultiTenantMode }}
       disableVerifyTenant: {{ .Values.tenant.disableVerifyTenant }}
 
 

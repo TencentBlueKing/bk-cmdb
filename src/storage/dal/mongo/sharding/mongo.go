@@ -166,12 +166,6 @@ func (m *ShardingMongoManager) RefreshTenantDBMap() error {
 
 	tenantCli := make(map[string]*local.MongoClient)
 	for tenant, db := range tenantDBMap {
-		// TODO add default tenant db client for compatible, remove this later
-		if tenant == common.BKDefaultTenantID {
-			tenantCli[tenant] = m.masterCli
-			continue
-		}
-
 		client, exists := m.dbClientMap[db]
 		if !exists {
 			return fmt.Errorf("tenant %s related db %s config not found", tenant, db)

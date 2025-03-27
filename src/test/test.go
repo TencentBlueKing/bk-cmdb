@@ -149,10 +149,6 @@ func GetHeader() http.Header {
 // ClearDatabase TODO
 func ClearDatabase() {
 	fmt.Println("********Clear Database*************")
-	for _, tableName := range common.PlatformTables() {
-		err := db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).DropTable(context.Background(), tableName)
-		Expect(err).Should(BeNil())
-	}
 
 	err := tenant.ExecForAllTenants(func(tenantID string) error {
 		shardOpts := sharding.NewShardOpts().WithTenant(tenantID)
@@ -161,6 +157,8 @@ func ClearDatabase() {
 			return err
 		}
 		for _, tableName := range tables {
+			_, tableName, err = common.SplitTenantTableName(tableName)
+			Expect(err).Should(BeNil())
 			err = db.Shard(shardOpts).DropTable(context.Background(), tableName)
 			if err != nil {
 				return err
@@ -170,8 +168,21 @@ func ClearDatabase() {
 	})
 	Expect(err).Should(BeNil())
 
+	for _, tableName := range common.PlatformTables() {
+		switch tableName {
+		case common.BKTableNameSystem:
+			err := db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).Table(tableName).Delete(context.Background(),
+				mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBNE: common.ShardingDBConfID}})
+			Expect(err).Should(BeNil())
+		default:
+			err := db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).DropTable(context.Background(), tableName)
+			Expect(err).Should(BeNil())
+		}
+	}
+
 	err = adminClient.Migrate(context.Background(), GetHeader())
 	Expect(err).Should(BeNil())
+	time.Sleep(3 * time.Minute)
 	err = adminClient.RunSyncDBIndex(context.Background(), GetHeader())
 	Expect(err).Should(BeNil())
 }
