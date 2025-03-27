@@ -76,11 +76,6 @@ func (cc *ConfCenter) checkFile(confFilePath string) error {
 			return err
 		}
 
-		// check operation server config
-		if err := cc.isOperationConfigOK(v, file); err != nil {
-			return err
-		}
-
 		// check monitor config
 		if err := cc.isMonitorConfigOK(v, file); err != nil {
 			return err
@@ -190,16 +185,6 @@ func (cc *ConfCenter) isDatacollectionConfigOK(v *viper.Viper, fileName string) 
 		if err := cc.isConfigNotIntVal("datacollection.hostsnap.timeWindow.windowMinutes", fileName, v); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (cc *ConfCenter) isOperationConfigOK(v *viper.Viper, fileName string) error {
-	if !v.IsSet("operationServer.disableOperationStatistic") {
-		return nil
-	}
-	if err := cc.isConfigNotBoolVal("operationServer.disableOperationStatistic", fileName, v); err != nil {
-		return err
 	}
 	return nil
 }

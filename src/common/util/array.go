@@ -254,3 +254,22 @@ func IntArrDeleteElements(target, sub []int64) []int64 {
 	}
 	return result
 }
+
+// SplitArr split arr to arrays with specified length.
+func SplitArr[T any](arr []T, length int) [][]T {
+	arrLen := len(arr)
+
+	results := make([][]T, 0)
+	if length <= 0 || arrLen == 0 {
+		return results
+	}
+
+	for i := 0; i < arrLen; i += length {
+		if (i + length) >= arrLen {
+			results = append(results, arr[i:arrLen])
+		} else {
+			results = append(results, arr[i:i+length])
+		}
+	}
+	return results
+}

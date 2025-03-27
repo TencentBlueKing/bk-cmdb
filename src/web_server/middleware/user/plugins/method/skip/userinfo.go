@@ -98,7 +98,7 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 }
 
 // GetUserList get user list
-func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo,
+func (m *user) GetUserList(c *gin.Context, opts *metadata.GetUserListOptions) ([]*metadata.LoginSystemUserInfo,
 	*errors.RawErrorInfo) {
 	return []*metadata.LoginSystemUserInfo{
 		{

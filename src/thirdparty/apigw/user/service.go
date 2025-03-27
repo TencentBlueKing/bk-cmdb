@@ -27,6 +27,10 @@ import (
 // ClientI is the bk-user api gateway client
 type ClientI interface {
 	GetTenants(ctx context.Context, h http.Header) ([]Tenant, error)
+	ListUsers(ctx context.Context, h http.Header, page *PageOptions) (*ListUserResult, error)
+	BatchQueryUserDisplayInfo(ctx context.Context, h http.Header, opts *QueryUserDisplayInfoOpts) ([]UserDisplayInfo,
+		error)
+	ListDeptByIDs(ctx context.Context, h http.Header, ids []int64) (*ListDeptResult, error)
 }
 
 type user struct {

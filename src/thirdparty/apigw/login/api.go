@@ -27,7 +27,9 @@ import (
 )
 
 // VerifyToken verify user token
-func (l *login) VerifyToken(ctx context.Context, h http.Header, token string) (*VerifyTokenRes, error) {
+func (l *login) VerifyToken(ctx context.Context, h http.Header, token string) (*BkLoginResponse[*VerifyTokenRes],
+	error) {
+
 	resp := new(BkLoginResponse[*VerifyTokenRes])
 
 	httpheader.SetTenantID(h, common.BKDefaultTenantID)
@@ -48,11 +50,7 @@ func (l *login) VerifyToken(ctx context.Context, h http.Header, token string) (*
 		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
 	}
 
-	if resp.Error != nil {
-		return nil, fmt.Errorf("code: %s, message: %s", resp.Error.Code, resp.Error.Message)
-	}
-
-	return resp.Data, nil
+	return resp, nil
 }
 
 // GetUserByToken get user info by token

@@ -66,7 +66,13 @@ type LoginUserPluginParams struct {
 type LoginUserPluginInerface interface {
 	LoginUser(c *gin.Context, config map[string]string, isMultiTenant bool) (user *LoginUserInfo, loginSucc bool)
 	GetLoginUrl(c *gin.Context, config map[string]string, input *LogoutRequestParams) string
-	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, *errors.RawErrorInfo)
+	GetUserList(c *gin.Context, options *GetUserListOptions) ([]*LoginSystemUserInfo, *errors.RawErrorInfo)
+}
+
+// GetUserListOptions is the get user list options
+type GetUserListOptions struct {
+	NeedAll   bool
+	Usernames []string
 }
 
 // LoginSystemUserInfo login system user info
@@ -79,18 +85,6 @@ type LoginSystemUserInfo struct {
 type LonginSystemUserListResult struct {
 	BaseResp `json:",inline"`
 	Data     []*LoginSystemUserInfo `json:"data"`
-}
-
-// DepartmentResult department result
-type DepartmentResult struct {
-	BaseResp `json:",inline"`
-	Data     *DepartmentData `json:"data"`
-}
-
-// DepartmentProfileResult department profile result
-type DepartmentProfileResult struct {
-	BaseResp `json:",inline"`
-	Data     *DepartmentProfileData `json:"data"`
 }
 
 // LoginUserInfoDetail login user info detail
