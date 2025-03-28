@@ -632,6 +632,41 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 		}
 	}
 
+	// Only one of biz_property_filter and condition parameters can take effect, and condition is not recommended to
+	// continue to use it.
+	if searchCond.BizPropertyFilter != nil {
+		option := &querybuilder.RuleOption{
+			NeedSameSliceElementType: true,
+			MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
+			MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
+		}
+
+		if key, err := searchCond.BizPropertyFilter.Validate(option); err != nil {
+			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid:%s", err, ctx.Kit.Rid)
+			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("biz.property.%s", key))
+			ctx.RespAutoError(ccErr)
+			return
+		}
+
+		if searchCond.BizPropertyFilter.GetDeep() > querybuilder.MaxDeep {
+			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid: %s", err, ctx.Kit.Rid, ctx.Kit.Rid)
+			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid,
+				fmt.Sprintf("exceed max query condition deepth: %d", querybuilder.MaxDeep))
+			ctx.RespAutoError(ccErr)
+			return
+		}
+
+		mgoFilter, key, err := searchCond.BizPropertyFilter.ToMgo()
+		if err != nil {
+			blog.Errorf("BizPropertyFilter ToMgo failed: %s, err: %v,  rid:%s", searchCond.BizPropertyFilter,
+				err, ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid,
+				err.Error()+fmt.Sprintf(", biz_property_filter.%s", key)))
+			return
+		}
+		searchCond.Condition = mgoFilter
+	}
+
 	if s.AuthManager.Enabled() {
 		authInput := meta.ListAuthorizedResourcesParam{
 			UserName:     ctx.Kit.User,
@@ -695,41 +730,6 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 				searchCond.Condition[common.BKAppIDField] = mapstr.MapStr{common.BKDBIN: appList}
 			}
 		}
-	}
-
-	// Only one of biz_property_filter and condition parameters can take effect, and condition is not recommended to
-	// continue to use it.
-	if searchCond.BizPropertyFilter != nil {
-		option := &querybuilder.RuleOption{
-			NeedSameSliceElementType: true,
-			MaxSliceElementsCount:    querybuilder.DefaultMaxSliceElementsCount,
-			MaxConditionOrRulesCount: querybuilder.DefaultMaxConditionOrRulesCount,
-		}
-
-		if key, err := searchCond.BizPropertyFilter.Validate(option); err != nil {
-			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid:%s", err, ctx.Kit.Rid)
-			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid, fmt.Sprintf("biz.property.%s", key))
-			ctx.RespAutoError(ccErr)
-			return
-		}
-
-		if searchCond.BizPropertyFilter.GetDeep() > querybuilder.MaxDeep {
-			blog.Errorf("bizPropertyFilter is illegal, err: %v, rid: %s", err, ctx.Kit.Rid, ctx.Kit.Rid)
-			ccErr := defErr.CCErrorf(common.CCErrCommParamsInvalid,
-				fmt.Sprintf("exceed max query condition deepth: %d", querybuilder.MaxDeep))
-			ctx.RespAutoError(ccErr)
-			return
-		}
-
-		mgoFilter, key, err := searchCond.BizPropertyFilter.ToMgo()
-		if err != nil {
-			blog.Errorf("BizPropertyFilter ToMgo failed: %s, err: %v,  rid:%s", searchCond.BizPropertyFilter,
-				err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid,
-				err.Error()+fmt.Sprintf(", biz_property_filter.%s", key)))
-			return
-		}
-		searchCond.Condition = mgoFilter
 	}
 
 	if _, ok := searchCond.Condition[common.BKDataStatusField]; !ok {
