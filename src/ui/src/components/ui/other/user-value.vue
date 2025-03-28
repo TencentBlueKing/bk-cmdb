@@ -19,7 +19,7 @@
     name: 'cmdb-user-value',
     props: {
       value: {
-        type: String,
+        type: [String, Array],
         default: ''
       }
     },

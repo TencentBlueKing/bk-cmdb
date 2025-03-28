@@ -181,7 +181,8 @@
                 <div>
                   <span class="model-property-item-text">
                     <cmdb-loading :loading="$loading(request.instanceCount)">
-                      {{activeModel[item.key] || '--'}}
+                      <span v-if="item.type !== 'user'">{{activeModel[item.key] || '--'}}</span>
+                      <cmdb-user-value v-else :value="activeModel[item.key]" />
                     </cmdb-loading>
                   </span>
                 </div>
@@ -336,13 +337,15 @@
             name: '更新时间'
           }, {
             key: 'modifier',
-            name: '更新人'
+            name: '更新人',
+            type: 'user'
           }, {
             key: 'create_time',
             name: '创建时间'
           }, {
             key: 'creator',
-            name: '创建人'
+            name: '创建人',
+            type: 'user'
           }
         ],
         tab: {

@@ -190,10 +190,12 @@
           _t: Date.now(),
           page: 1
         }
-        // 处理 如果是bk_obj_id 将路由上的中文name 换成 id
         filter.forEach((item) => {
-          const key = item.id === 'bk_obj_id' ? 'id' : 'name'
-          query[item.id] = item.values.map(val => val[key]).join(',')
+          const keys = {
+            bk_obj_id: 'id',
+            modify_user: 'username'
+          }
+          query[item.id] = item.values.map(val => val[keys[item.id] ?? 'name']).join(',')
         })
         RouterQuery.set(query)
       },
