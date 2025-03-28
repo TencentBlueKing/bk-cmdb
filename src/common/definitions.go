@@ -1329,13 +1329,6 @@ const (
 	MinFloat64 = -math.MaxFloat64
 )
 
-// HostCrossBizField TODO
-// flag
-const HostCrossBizField = "hostcrossbiz"
-
-// HostCrossBizValue TODO
-const HostCrossBizValue = "e76fd4d1683d163e4e7e79cef45a74c1"
-
 // config admin
 const (
 	ConfigAdminID         = "configadmin"
