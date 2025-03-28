@@ -22,15 +22,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/common"
 	httpheader "configcenter/src/common/http/header"
 )
 
 // VerifyToken verify user token
-func (l *login) VerifyToken(ctx context.Context, h http.Header, token string) (*VerifyTokenRes, error) {
-	resp := new(BkLoginResponse[*VerifyTokenRes])
+func (l *login) VerifyToken(ctx context.Context, h http.Header, token string) (*BkLoginResponse[*VerifyTokenRes],
+	error) {
 
-	httpheader.SetTenantID(h, common.BKDefaultTenantID)
+	resp := new(BkLoginResponse[*VerifyTokenRes])
 
 	err := l.service.Client.Get().
 		WithContext(ctx).
@@ -48,18 +47,12 @@ func (l *login) VerifyToken(ctx context.Context, h http.Header, token string) (*
 		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
 	}
 
-	if resp.Error != nil {
-		return nil, fmt.Errorf("code: %s, message: %s", resp.Error.Code, resp.Error.Message)
-	}
-
-	return resp.Data, nil
+	return resp, nil
 }
 
 // GetUserByToken get user info by token
 func (l *login) GetUserByToken(ctx context.Context, h http.Header, token string) (*UserInfo, error) {
 	resp := new(BkLoginResponse[*UserInfo])
-
-	httpheader.SetTenantID(h, common.BKDefaultTenantID)
 
 	err := l.service.Client.Get().
 		WithContext(ctx).

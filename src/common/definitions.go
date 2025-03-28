@@ -1407,10 +1407,6 @@ const (
 	WEBSessionUinKey = "username"
 	// WEBSessionChineseNameKey TODO
 	WEBSessionChineseNameKey = "chName"
-	// WEBSessionPhoneKey TODO
-	WEBSessionPhoneKey = "phone"
-	// WEBSessionEmailKey TODO
-	WEBSessionEmailKey = "email"
 	// WEBSessionTenantUinKey is the tenant uin session key
 	WEBSessionTenantUinKey = "tenant_uin"
 	// WEBSessionTenantUinListeKey is the tenant uin list session key

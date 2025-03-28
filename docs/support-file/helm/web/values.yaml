@@ -185,13 +185,6 @@ bkApiUrlTmpl:
 ## @section bk-cmdb common config parameters
 ##
 web:
-  ## bk-cmdb common config esb parameters
-  ## @param common.esb.appCode bk-cmdb app code used in esb
-  ## @param common.esb.appSecret bk-cmdb app secret used in esb
-  ##
-  esb:
-    appCode: bk_cmdb
-    appSecret:
   ## bk-cmdb common config paas parameters
   ## @param common.paas.tls.insecureSkipVerify paas insecureSkipVerify config
   ## @param common.paas.tls.certFile paas certFile
@@ -244,14 +237,10 @@ web:
       multipleOwner: "0"
       userInfo:
     ## webserver common config app parameters
-    ## @param common.webServer.app.authAppCode bk-iam app code
-    ## @param common.webServer.app.authUrl bk-iam url
     ## @param common.webServer.app.agentAppUrl bk-nodeman url
     ## @param common.webServer.app.authScheme bk-cmdb app authentication scheme
     ##
     app:
-      authAppCode:
-      authUrl:
       authScheme:
     ## webserver common config login parameters
     ## @param common.webServer.login.version bk-cmdb login mode

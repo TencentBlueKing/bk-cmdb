@@ -25,7 +25,6 @@ import (
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/resource/apigw"
-	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/resource/jwt"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/web_server/app/options"
@@ -44,7 +43,7 @@ var CacheCli redis.Client
 
 const (
 	message          string = "message"
-	inaccessibleCode int    = 1302403
+	inaccessibleCode string = "NO_ACCESS_PERMISSION"
 )
 
 // ValidLogin valid the user login status
@@ -102,7 +101,7 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 	httpheader.SetUserTicket(c.Request.Header, bkTicket)
 
 	if config.LoginVersion == common.BKBluekingLoginPluginVersion {
-		resp, err := esb.EsbClient().LoginSrv().GetUser(c.Request.Context(), c.Request.Header)
+		resp, err := apigw.Client().Login().VerifyToken(c.Request.Context(), c.Request.Header, bkToken)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				gin.H{"status": fmt.Sprintf("get user from bk-login failed, err: %v", err)})
@@ -110,11 +109,16 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 			return
 		}
 
-		if resp.Code == inaccessibleCode {
-			data := gin.H{
-				message: resp.Message,
+		if resp.Error != nil {
+			if resp.Error.Code == inaccessibleCode {
+				data := gin.H{message: resp.Error.Message}
+				c.HTML(http.StatusOK, webCommon.InaccessibleHtml, data)
+				c.Abort()
+				return
 			}
-			c.HTML(http.StatusOK, webCommon.InaccessibleHtml, data)
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"status": fmt.Sprintf("get user from bk-login failed, err code: %s, err message: %s",
+					resp.Error.Code, resp.Error.Message)})
 			c.Abort()
 			return
 		}

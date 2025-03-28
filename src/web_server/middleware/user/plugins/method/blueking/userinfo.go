@@ -15,7 +15,6 @@ package blueking
 
 import (
 	"fmt"
-	"strings"
 
 	"configcenter/pkg/tenant/logics"
 	"configcenter/src/common"
@@ -23,9 +22,10 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/metadata"
 	apigwcli "configcenter/src/common/resource/apigw"
-	"configcenter/src/common/resource/esb"
+	apigwuser "configcenter/src/thirdparty/apigw/user"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
@@ -46,7 +46,14 @@ type user struct{}
 // LoginUser user login
 func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner bool) (user *metadata.LoginUserInfo,
 	loginSucc bool) {
-	rid := httpheader.GetRid(c.Request.Header)
+
+	header := headerutil.CCHeader(c.Request.Header)
+	if config.EnableMultiTenantMode {
+		httpheader.SetTenantID(header, common.BKDefaultTenantID)
+	} else {
+		httpheader.SetTenantID(header, common.BKSingleTenantID)
+	}
+	rid := httpheader.GetRid(header)
 
 	bkTokens := getBkTokens(c)
 	if len(bkTokens) == 0 {
@@ -55,7 +62,7 @@ func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner boo
 	}
 
 	for _, bkToken := range bkTokens {
-		userInfo, err := apigwcli.Client().Login().GetUserByToken(c.Request.Context(), c.Request.Header, bkToken)
+		userInfo, err := apigwcli.Client().Login().GetUserByToken(c.Request.Context(), header, bkToken)
 		if err != nil {
 			blog.Errorf("get user info by token %s failed, err: %v, rid: %s", bkToken, err, rid)
 			continue
@@ -66,7 +73,6 @@ func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner boo
 			ChName:    userInfo.DisplayName,
 			BkToken:   bkToken,
 			TenantUin: userInfo.TenantID,
-			IsTenant:  false,
 			Language:  userInfo.Language,
 		}
 		break
@@ -134,38 +140,58 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 }
 
 // GetUserList get user list
-func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadata.LoginSystemUserInfo,
+func (m *user) GetUserList(c *gin.Context, opts *metadata.GetUserListOptions) ([]*metadata.LoginSystemUserInfo,
 	*errors.RawErrorInfo) {
+
 	rid := httpheader.GetRid(c.Request.Header)
-	query := c.Request.URL.Query()
-	for key, values := range query {
-		params[key] = strings.Join(values, ";")
-	}
 
-	// try to use esb user list api
-	result, err := esb.EsbClient().User().ListUsers(c.Request.Context(), c.Request.Header, params)
-	if err != nil {
-		blog.Errorf("get users by esb client failed, http failed, err: %+v, rid: %s", err, rid)
-		return nil, &errors.RawErrorInfo{
-			ErrCode: common.CCErrCommHTTPDoRequestFailed,
+	if opts.NeedAll {
+		// get paged user lists from apigw
+		users := make([]*metadata.LoginSystemUserInfo, 0)
+		pageOpts := &apigwuser.PageOptions{
+			Page:     1,
+			PageSize: 1000,
 		}
+		for {
+			result, err := apigwcli.Client().User().ListUsers(c.Request.Context(), c.Request.Header, pageOpts)
+			if err != nil {
+				blog.Errorf("get users by apigw client failed, http failed, err: %+v, rid: %s", err, rid)
+				return nil, &errors.RawErrorInfo{
+					ErrCode: common.CCErrCommHTTPDoRequestFailed,
+				}
+			}
+
+			if len(result.Results) == 0 {
+				break
+			}
+
+			for _, userInfo := range result.Results {
+				users = append(users, &metadata.LoginSystemUserInfo{
+					CnName: userInfo.DisplayName,
+					EnName: userInfo.BkUsername,
+				})
+			}
+			pageOpts.Page += 1
+		}
+		return users, nil
 	}
 
-	if !result.Result {
-		blog.Errorf("request esb, get user list failed, err: %v, rid: %s", result.Message, result.EsbRequestID)
+	// get user info by user names from bk-user
+	displayInfoRes, err := apigwcli.Client().User().BatchQueryUserDisplayInfo(c.Request.Context(), c.Request.Header,
+		&apigwuser.QueryUserDisplayInfoOpts{BkUsernames: opts.Usernames})
+	if err != nil {
+		blog.Errorf("get users by apigw client failed, http failed, err: %+v, rid: %s", err, rid)
 		return nil, &errors.RawErrorInfo{
 			ErrCode: common.CCErrCommHTTPDoRequestFailed,
 		}
 	}
 
 	users := make([]*metadata.LoginSystemUserInfo, 0)
-	for _, userInfo := range result.Data {
-		user := &metadata.LoginSystemUserInfo{
+	for _, userInfo := range displayInfoRes {
+		users = append(users, &metadata.LoginSystemUserInfo{
 			CnName: userInfo.DisplayName,
-			EnName: userInfo.Username,
-		}
-		users = append(users, user)
+			EnName: userInfo.BkUsername,
+		})
 	}
-
 	return users, nil
 }

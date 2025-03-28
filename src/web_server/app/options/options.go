@@ -81,23 +81,15 @@ type Site struct {
 
 // Config TODO
 type Config struct {
-	Site                      Site
-	Session                   Session
-	Redis                     redis.Config
-	Version                   string
-	AgentAppUrl               string
-	LoginUrl                  string
-	LoginVersion              string
-	ConfigMap                 map[string]string
-	AuthCenter                AppInfo
-	DisableOperationStatistic bool
-	DeploymentMethod          common.DeploymentMethod
-	EnableNotification        bool
-	EnableMultiTenantMode     bool
-}
-
-// AppInfo TODO
-type AppInfo struct {
-	AppCode string `json:"appCode"`
-	URL     string `json:"url"`
+	Site                  Site
+	Session               Session
+	Redis                 redis.Config
+	Version               string
+	AgentAppUrl           string
+	LoginUrl              string
+	LoginVersion          string
+	ConfigMap             map[string]string
+	DeploymentMethod      common.DeploymentMethod
+	EnableNotification    bool
+	EnableMultiTenantMode bool
 }

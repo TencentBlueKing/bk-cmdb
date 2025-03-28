@@ -138,12 +138,6 @@ func (s *Service) initService(ws *gin.Engine) {
 	ws.POST("/object/importmany/analysis", s.BatchImportObjectAnalysis)
 	ws.POST("/object/importmany", s.BatchImportObject)
 	ws.GET("/user/list", s.GetUserList)
-	// suggest move to  Organization
-	ws.GET("/user/department", s.GetDepartment)
-	ws.GET("/user/departmentprofile", s.GetDepartmentProfile)
-
-	ws.GET("/organization/department", s.GetDepartment)
-	ws.GET("/organization/departmentprofile", s.GetDepartmentProfile)
 
 	ws.GET("/user/language/:language", s.UpdateUserLanguage)
 	// get current login user info
@@ -155,8 +149,6 @@ func (s *Service) initService(ws *gin.Engine) {
 
 	ws.POST("/regular/verify_regular_express", s.VerifyRegularExpress)
 	ws.POST("/regular/verify_regular_content_batch", s.VerifyRegularContentBatch)
-
-	ws.Any("/proxy/:method/:target/*target_url", s.ProxyRequest)
 
 	// get changelog info
 	ws.POST("findmany/changelog", s.GetVersionList)

@@ -271,7 +271,7 @@ func (e *Exporter) enrichInst(insts []mapstr.MapStr, colProps []core.ColProp) ([
 		return nil, nil, err
 	}
 
-	insts, err = e.GetClient().GetInstWithUserFullName(e.GetKit(), ccLang, e.GetObjID(), insts)
+	insts, err = e.GetClient().GetInstWithUserFullName(e.GetKit(), ccLang, e.GetObjID(), insts, colProps)
 	if err != nil {
 		blog.Errorf("get instance with full user name field failed, err: %v, rid: %s", err, e.GetKit().Rid)
 		return nil, nil, err
