@@ -62,6 +62,8 @@ require (
 	stathat.com/c/consistent v1.0.0
 )
 
+require github.com/mozillazg/go-pinyin v0.20.0
+
 require (
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
