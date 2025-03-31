@@ -24,8 +24,7 @@ import (
 func addSystemData(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	tableName := common.BKTableNameSystem
 	blog.V(3).Infof("add data for  %s table ", tableName)
-	data := map[string]interface{}{
-		common.HostCrossBizField: common.HostCrossBizValue}
+	data := map[string]interface{}{"hostcrossbiz": "e76fd4d1683d163e4e7e79cef45a74c1"}
 	isExist, err := db.Table(tableName).Find(data).Count(ctx)
 	if nil != err {
 		blog.Errorf("add data for  %s table error  %s", tableName, err)

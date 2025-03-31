@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/app"
 	"configcenter/src/scene_server/admin_server/app/options"
-	"configcenter/src/scene_server/admin_server/command"
 )
 
 func main() {
@@ -40,10 +39,6 @@ func main() {
 	op := options.NewServerOption()
 	op.AddFlags(pflag.CommandLine)
 
-	if err := command.Parse(os.Args); err != nil {
-		fmt.Fprintf(os.Stderr, "parse arguments failed, %v\n", err)
-		os.Exit(1)
-	}
 	util.InitFlags()
 
 	ctx, cancel := context.WithCancel(context.Background())

@@ -108,7 +108,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
 	api.Route(api.POST("/migrate/database").To(s.migrateDatabase))
 	api.Route(api.POST("/add/tenant").To(s.addTenant))
-	api.Route(api.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
 	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
 	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
