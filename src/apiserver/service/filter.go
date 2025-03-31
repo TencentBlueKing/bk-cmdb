@@ -70,28 +70,24 @@ func (s *service) URLFilterChan(req *restful.Request, resp *restful.Response, ch
 	kind, err = URLPath(req.Request.RequestURI).FilterChain(req)
 	if err != nil {
 		blog.Errorf("rewrite request url[%s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
-		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+
+		s.RespError(req, resp, http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("rewrite request failed, %s", err.Error()),
 			ErrCode: common.CCErrRewriteRequestUriFailed,
 			Data:    nil,
-		}); err != nil {
-			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
-			return
-		}
+		})
 		return
 	}
 
 	defer func() {
 		if err != nil {
 			blog.Errorf("proxy request url[%s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
-			if rerr := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+
+			s.RespError(req, resp, http.StatusInternalServerError, &metadata.RespError{
 				Msg:     fmt.Errorf("rewrite request failed, %s", err.Error()),
 				ErrCode: common.CCErrRewriteRequestUriFailed,
 				Data:    nil,
-			}); rerr != nil {
-				blog.Errorf("proxy request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, rerr, rid)
-				return
-			}
+			})
 			return
 		}
 	}()
@@ -174,10 +170,9 @@ func (s *service) CacheFilterChan(req *restful.Request, resp *restful.Response, 
 func (s *service) TxnFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	// right now, only allow calling from web-server
 	if !httpheader.IsReqFromWeb(req.Request.Header) {
-		resp.WriteAsJson(&metadata.BaseResp{
-			Result: false,
-			Code:   common.CCErrCommAuthNotHavePermission,
-			ErrMsg: "not allowed to call transaction api",
+		s.RespError(req, resp, http.StatusOK, &metadata.RespError{
+			ErrCode: common.CCErrCommAuthNotHavePermission,
+			Msg:     fmt.Errorf("not allowed to call transaction api"),
 		})
 		return
 	}
@@ -189,10 +184,9 @@ func (s *service) TxnFilterChan(req *restful.Request, resp *restful.Response, ch
 func (s *service) WebCoreFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	// right now, only allow calling from web-server
 	if !httpheader.IsReqFromWeb(req.Request.Header) {
-		resp.WriteAsJson(&metadata.BaseResp{
-			Result: false,
-			Code:   common.CCErrCommAuthNotHavePermission,
-			ErrMsg: "not allowed to call this api",
+		s.RespError(req, resp, http.StatusOK, &metadata.RespError{
+			ErrCode: common.CCErrCommAuthNotHavePermission,
+			Msg:     fmt.Errorf("not allowed to call this api"),
 		})
 		return
 	}
@@ -211,15 +205,11 @@ func (s *service) urlFilterChan(req *restful.Request, resp *restful.Response, ch
 	defer func() {
 		if err != nil {
 			blog.Errorf("proxy request url[%s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
-			respErr := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+			s.RespError(req, resp, http.StatusInternalServerError, &metadata.RespError{
 				Msg:     fmt.Errorf("rewrite request failed, %s", err.Error()),
 				ErrCode: common.CCErrRewriteRequestUriFailed,
 				Data:    nil,
 			})
-			if respErr != nil {
-				blog.Errorf("proxy request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, respErr, rid)
-				return
-			}
 			return
 		}
 	}()
@@ -381,12 +371,11 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 
 		if rule.DenyAll {
 			blog.Errorf("too many requests, matched rule is %#v, rid: %s", *rule, rid)
-			rsp := metadata.BaseResp{
-				Code:   common.CCErrTooManyRequestErr,
-				ErrMsg: "too many requests",
-				Result: false,
-			}
-			resp.WriteAsJson(rsp)
+
+			s.RespError(req, resp, http.StatusOK, &metadata.RespError{
+				Msg:     fmt.Errorf("too many requests"),
+				ErrCode: common.CCErrTooManyRequestErr,
+			})
 			return
 		}
 
@@ -407,12 +396,10 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 
 		if cnt > rule.Limit {
 			blog.Errorf("too many requests, matched rule is %#v, rid: %s", *rule, rid)
-			rsp := metadata.BaseResp{
-				Code:   common.CCErrTooManyRequestErr,
-				ErrMsg: "too many requests",
-				Result: false,
-			}
-			resp.WriteAsJson(rsp)
+			s.RespError(req, resp, http.StatusOK, &metadata.RespError{
+				Msg:     fmt.Errorf("too many requests"),
+				ErrCode: common.CCErrTooManyRequestErr,
+			})
 			return
 		}
 
@@ -426,16 +413,13 @@ func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response,
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		header, err := jwt.GetHandler().Parse(req.Request.Header)
 		if err != nil {
-			rsp := metadata.BaseResp{
-				Code:   common.CCErrAPINoPassSourceCertification,
-				ErrMsg: err.Error(),
-				Result: false,
-			}
-			_ = resp.WriteAsJson(rsp)
+			s.RespError(req, resp, http.StatusOK, &metadata.RespError{
+				Msg:     err,
+				ErrCode: common.CCErrAPINoPassSourceCertification,
+			})
 			return
 		}
 		req.Request.Header = header
-
 		fchain.ProcessFilter(req, resp)
 		return
 	}

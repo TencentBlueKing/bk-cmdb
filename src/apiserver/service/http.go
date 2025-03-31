@@ -52,7 +52,7 @@ func (s *service) Delete(req *restful.Request, resp *restful.Response) {
 	s.Do(req, resp)
 }
 
-const maxToleranceLatencyTime = 10 * time.Second
+const maxToleranceLatencyTime = 5 * time.Second
 
 // Do TODO
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
@@ -63,13 +63,12 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 	proxyReq, err := http.NewRequestWithContext(req.Request.Context(), req.Request.Method, url, req.Request.Body)
 	if err != nil {
 		blog.Errorf("new proxy request[%s] failed, err: %v, rid: %s", url, err, rid)
-		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+		s.RespError(req, resp, http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("proxy request failed, %s", err.Error()),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
-		}); err != nil {
-			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s, rid: %s", req.Request.RequestURI, err, rid)
-		}
+		})
+
 		return
 	}
 
@@ -107,13 +106,11 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 			})
 		}
 
-		if err := resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+		s.RespError(req, resp, http.StatusInternalServerError, &metadata.RespError{
 			Msg:     fmt.Errorf("proxy request failed, %s", err.Error()),
 			ErrCode: common.CCErrProxyRequestFailed,
 			Data:    nil,
-		}); err != nil {
-			blog.Errorf("response request[%s url: %s] failed, err: %v, rid: %s", req.Request.Method, url, err, rid)
-		}
+		})
 		return
 	}
 
