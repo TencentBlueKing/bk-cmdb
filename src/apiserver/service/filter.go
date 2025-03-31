@@ -386,6 +386,7 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 				ErrMsg: "too many requests",
 				Result: false,
 			}
+			s.collectErrorMetric(req)
 			resp.WriteAsJson(rsp)
 			return
 		}
@@ -413,6 +414,7 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 				Result: false,
 			}
 			resp.WriteAsJson(rsp)
+			s.collectErrorMetric(req)
 			return
 		}
 
@@ -431,6 +433,7 @@ func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response,
 				ErrMsg: err.Error(),
 				Result: false,
 			}
+			s.collectErrorMetric(req)
 			_ = resp.WriteAsJson(rsp)
 			return
 		}
