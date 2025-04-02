@@ -12,10 +12,10 @@
 
 <script setup>
   import { computed, ref, watch } from 'vue'
-  import { useHttp, jsonp } from '@/api'
   import { t } from '@/i18n'
   import { useStore } from '@/store'
   import { escapeRegexChar } from '@/utils/util'
+  import useSearchUser from '@/hooks/use-search-user'
 
   const props = defineProps({
     defaultFilter: {
@@ -24,8 +24,10 @@
     }
   })
 
-  const http = useHttp()
   const store = useStore()
+
+  const { search: userSearch, lookup: userLookup } = useSearchUser()
+
   const emit = defineEmits(['search'])
 
   const searchSelectComp = ref(null)
@@ -112,47 +114,10 @@
     return info
   }
   const fetchMember = async (val, menu) => {
-    let query = val
-    if (!isTyeing.value || !query?.length || query === `${menu.name}：`) {
-      query = 'a'
+    if (!isTyeing.value || val?.length < 2 || val === `${menu.name}：`) {
+      return []
     }
-
-    let result = []
-    if (window.ESB.userManage) {
-      const url = new URL(window.ESB.userManage)
-      const params = {
-        app_code: 'bk-magicbox',
-        page: 1,
-        page_size: 100,
-        fuzzy_lookups: query
-      }
-      const api = `${window.API_HOST}proxy/get/usermanage${url.pathname}`
-      const response = await jsonp(api, params)
-      if (response.code !== 0) {
-        console.error(response?.message)
-        return []
-      }
-      result = (response?.data?.results || []).map(item => ({
-        id: item.id,
-        username: item.username,
-        name: item.username
-      }))
-    } else {
-      const data = await http.get(`${window.API_HOST}user/list`, {
-        params: {
-          fuzzy_lookups: val
-        },
-        config: {
-          cancelPrevious: true
-        }
-      })
-      result = (data || []).map(user => ({
-        id: user.english_name,
-        username: user.english_name,
-        name: user.chinese_name
-      }))
-    }
-
+    const result = await userSearch(val)
     return result
   }
   const handleSearchSelectChange = (list) => {
@@ -183,13 +148,25 @@
     isFocus.value = false
   }
 
-  watch(() => props.defaultFilter, (defaultFilter) => {
+  watch(() => props.defaultFilter, async (defaultFilter) => {
     filter.value = defaultFilter.map(item => ({
       id: item.id,
       name: filterMenus.find(menu => menu.id === item.id)?.name,
       values: (getFormatVal(item.value, item.id)?.split(',') || []).map(val => ({ name: val, id: item.value }))
     }))
+
+    // 把用户id回填为名称
+    const modifierFilter = filter.value.find(item => item.id === 'modify_user')
+    if (modifierFilter) {
+      const data = await userLookup(modifierFilter.values.map(item => item.name).join(','))
+      modifierFilter.values = data.map(item => ({
+        id: item.login_name,
+        username: item.bk_username,
+        name: item.display_name
+      }))
+    }
   }, { immediate: true })
+
   watch(displayFilterMenus, () => {
     if (!isFocus.value) {
       return

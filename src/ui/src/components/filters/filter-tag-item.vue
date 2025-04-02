@@ -24,6 +24,9 @@
       :value="value">
       <template slot="info-prepend">{{operatorSymbol}}</template>
     </component>
+    <cmdb-user-value
+      :value="value"
+      v-else-if="['objuser'].includes(property.bk_property_type)" />
     <span class="tag-value" v-else
       v-bk-overflow-tips="tipsConfig">
       {{displayText}}

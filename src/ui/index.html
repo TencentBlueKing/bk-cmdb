@@ -47,13 +47,11 @@
             publicPath: <%= htmlWebpackPlugin.options.config.PUBLIC_PATH %>,
             enableNotification: <%= htmlWebpackPlugin.options.config.ENABLE_NOTIFICATION %>,
             sharedResUrl: <%= htmlWebpackPlugin.options.config.SHARED_RES_URL %>,
+            userManageUrl: <%= htmlWebpackPlugin.options.config.USER_MANAGE_URL %>,
             tenantId: <%= htmlWebpackPlugin.options.config.TENANT_ID %>,
         }
         window.User = {
             name: <%= htmlWebpackPlugin.options.config.USER_NAME %>
-        }
-        window.ESB = {
-          userManage: <%= htmlWebpackPlugin.options.config.USER_MANAGE_URL %>
         }
         window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + window.location.pathname)
         window.API_PREFIX = API_HOST + 'api/' + Site.version
