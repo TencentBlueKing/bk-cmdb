@@ -146,6 +146,11 @@ func GetHeader() http.Header {
 	return headerutil.GenCommonHeader(common.CCSystemOperatorUserName, TestTenantID, "")
 }
 
+// GetTestTenantHeader get header for test tenant
+func GetTestTenantHeader() http.Header {
+	return headerutil.GenCommonHeader(common.CCSystemOperatorUserName, "test", "")
+}
+
 // ClearDatabase TODO
 func ClearDatabase() {
 	fmt.Println("********Clear Database*************")
@@ -157,6 +162,9 @@ func ClearDatabase() {
 			return err
 		}
 		for _, tableName := range tables {
+			if common.IsPlatformTable(tableName) {
+				continue
+			}
 			_, tableName, err = common.SplitTenantTableName(tableName)
 			Expect(err).Should(BeNil())
 			err = db.Shard(shardOpts).DropTable(context.Background(), tableName)
@@ -182,8 +190,15 @@ func ClearDatabase() {
 
 	err = adminClient.Migrate(context.Background(), GetHeader())
 	Expect(err).Should(BeNil())
-	time.Sleep(3 * time.Minute)
 	err = adminClient.RunSyncDBIndex(context.Background(), GetHeader())
+	Expect(err).Should(BeNil())
+}
+
+// AddTenantTest add tenant for test
+func AddTenantTest() {
+	fmt.Println("********Add Tenant*************")
+	err := adminClient.AddTenant(context.Background(), headerutil.GenCommonHeader(common.CCSystemOperatorUserName,
+		"test", ""))
 	Expect(err).Should(BeNil())
 }
 

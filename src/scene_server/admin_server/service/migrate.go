@@ -35,6 +35,7 @@ import (
 	commontype "configcenter/src/common/types"
 	"configcenter/src/common/version"
 	"configcenter/src/common/watch"
+	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/source_controller/cacheservice/event"
 	daltypes "configcenter/src/storage/dal/types"
@@ -72,7 +73,7 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
-	if err := s.createWatchDBChainCollections(kit); err != nil {
+	if err = s.createWatchDBChainCollections(kit); err != nil {
 		blog.Errorf("create watch db chain collections failed, err: %v", err)
 		result := &metadata.RespError{
 			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
@@ -89,6 +90,14 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 		}
 		resp.WriteError(http.StatusInternalServerError, result)
 		return
+	}
+
+	if err = logics.RefreshTenants(s.CoreAPI); err != nil {
+		blog.Errorf("refresh tenant failed, err: %v", err)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(result))

@@ -99,6 +99,12 @@ func (s *service) WebServices() []*restful.WebService {
 	ws.Filter(s.TenantVerify())
 	ws.Produces(restful.MIME_JSON)
 
+	// refresh api to skip filter
+	wsRefresh := &restful.WebService{}
+	wsRefresh.Path("/refresh/v3")
+	wsRefresh.Produces(restful.MIME_JSON)
+	s.refreshAPI(wsRefresh)
+
 	// route skip auth api
 	s.routeSkipAuthAPI(ws)
 
@@ -106,7 +112,7 @@ func (s *service) WebServices() []*restful.WebService {
 	s.routeNeedAuthAPI(ws, getErrFun)
 
 	allWebServices := make([]*restful.WebService, 0)
-	allWebServices = append(allWebServices, ws)
+	allWebServices = append(allWebServices, ws, wsRefresh)
 
 	// common api
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
@@ -117,14 +123,16 @@ func (s *service) WebServices() []*restful.WebService {
 	return allWebServices
 }
 
+func (s *service) refreshAPI(ws *restful.WebService) {
+	ws.Route(ws.POST("/refresh/tenant").To(s.RefreshTenant))
+}
+
 // routeSkipAuthAPI route apis that need skip api server authorization, and authorize in its scene server logics
 // note: this is only temporary, delete the api server authorize logic when all api is updated
 func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
 	ws.Route(ws.GET("/auth/business_list").To(s.GetAnyAuthorizedAppList))
 	ws.Route(ws.POST("/auth/skip_url").To(s.GetUserNoAuthSkipURL))
-
-	ws.Route(ws.POST("/refresh/tenant").To(s.RefreshTenant))
 
 	ws.Route(ws.POST("/biz/{.*}").Filter(s.BizFilterChan).To(s.Post))
 	ws.Route(ws.POST("/biz/search/{.*}").Filter(s.BizFilterChan).To(s.Post))
