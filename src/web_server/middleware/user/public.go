@@ -71,8 +71,6 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	session.Set(common.WEBSessionTenantUinKey, tenantID)
 	session.Set(common.WEBSessionUinKey, userInfo.UserName)
 	session.Set(common.WEBSessionChineseNameKey, userInfo.ChName)
-	session.Set(common.WEBSessionPhoneKey, userInfo.Phone)
-	session.Set(common.WEBSessionEmailKey, userInfo.Email)
 	session.Set(common.HTTPCookieBKToken, userInfo.BkToken)
 	session.Set(common.HTTPCookieBKTicket, userInfo.BkTicket)
 	session.Set(common.WEBSessionAvatarUrlKey, userInfo.AvatarUrl)
@@ -108,5 +106,5 @@ func (m *publicUser) GetLoginUrl(c *gin.Context) string {
 // GetUserList TODO
 func (m *publicUser) GetUserList(c *gin.Context) ([]*metadata.LoginSystemUserInfo, *errors.RawErrorInfo) {
 	user := plugins.CurrentPlugin(m.config.LoginVersion)
-	return user.GetUserList(c, m.config.ConfigMap)
+	return user.GetUserList(c, &metadata.GetUserListOptions{NeedAll: true})
 }

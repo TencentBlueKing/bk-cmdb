@@ -35,13 +35,10 @@ type LoginUserInfoTenantUinList struct {
 type LoginUserInfo struct {
 	UserName     string                       `json:"username"`
 	ChName       string                       `json:"chname"`
-	Phone        string                       `json:"phone"`
-	Email        string                       `json:"email"`
 	BkToken      string                       `json:"bk_token"`
 	BkTicket     string                       `json:"bk_ticket"`
 	TenantUin    string                       `json:"tenant_id"`
 	TenantUinArr []LoginUserInfoTenantUinList `json:"tenant_list"` // user all tenant uin
-	IsTenant     bool                         `json:"-"`           // is master
 	Extra        map[string]interface{}       `json:"extra"`       // custom information
 	Language     string                       `json:"-"`
 	AvatarUrl    string                       `json:"avatar_url"`
@@ -67,7 +64,13 @@ type LoginUserPluginParams struct {
 type LoginUserPluginInerface interface {
 	LoginUser(c *gin.Context, config options.Config, isMultiTenant bool) (user *LoginUserInfo, loginSucc bool)
 	GetLoginUrl(c *gin.Context, config map[string]string, input *LogoutRequestParams) string
-	GetUserList(c *gin.Context, config map[string]string) ([]*LoginSystemUserInfo, *errors.RawErrorInfo)
+	GetUserList(c *gin.Context, options *GetUserListOptions) ([]*LoginSystemUserInfo, *errors.RawErrorInfo)
+}
+
+// GetUserListOptions is the get user list options
+type GetUserListOptions struct {
+	NeedAll   bool
+	Usernames []string
 }
 
 // LoginSystemUserInfo login system user info
@@ -80,18 +83,6 @@ type LoginSystemUserInfo struct {
 type LonginSystemUserListResult struct {
 	BaseResp `json:",inline"`
 	Data     []*LoginSystemUserInfo `json:"data"`
-}
-
-// DepartmentResult department result
-type DepartmentResult struct {
-	BaseResp `json:",inline"`
-	Data     *DepartmentData `json:"data"`
-}
-
-// DepartmentProfileResult department profile result
-type DepartmentProfileResult struct {
-	BaseResp `json:",inline"`
-	Data     *DepartmentProfileData `json:"data"`
 }
 
 // LoginUserInfoDetail login user info detail

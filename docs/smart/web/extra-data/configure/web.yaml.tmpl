@@ -10,16 +10,6 @@ es:
   # 全文检索功能开关(取值：off/on)，默认是off，开启是on
   fullTextSearch: "${BK_CMDB_ES_STATUS}"
 
-esb:
-  addr: ${BK_COMPONENT_API_URL}
-  appCode: ${BK_CMDB_APP_CODE}
-  appSecret: ${BK_CMDB_APP_SECRET}
-  insecureSkipVerify: true
-  certFile:
-  keyFile:
-  caFile:
-  password:
-
 # web_server专属配置
 webServer:
   api:
@@ -69,8 +59,6 @@ webServer:
         # 用于解密根据RFC1423加密的证书密钥的PEM块
         password:
   app:
-    authAppCode: ${BK_IAM_V3_APP_CODE}
-    authUrl: ${BK_HTTP_SCHEMA}://${BKPAAS_BK_DOMAIN}/o/bk_iam/apply-custom-perm
     agentAppUrl: ${BKPAAS_NODEMAN_URL}
     # 权限模式，web页面使用，可选值: internal, iam
     authscheme: ${BK_CMDB_AUTH_SCHENE}
@@ -137,6 +125,7 @@ apiGW:
   bkNoticeApiGatewayUrl: ${BK_APIGW_BK_NOTICE_URL}
   bkCmdbApiGatewayUrl: ${BK_APIGW_BK_CMDB_URL}
   bkLoginApiGatewayUrl: ${BK_APIGW_BK_LOGIN_URL}
+  bkUserApiGatewayUrl: ${BK_APIGW_BK_USER_URL}
   appCode: ${BK_CMDB_APP_CODE}
   appSecret: ${BK_CMDB_APP_SECRET}
   username: admin
@@ -175,3 +164,7 @@ redis:
   maxOpenConns: ${BK_CMDB_REDIS_MAX_OPEN_CONNS}
   maxIDleConns: ${BK_CMDB_REDIS_MAX_IDLE_CONNS}
   masterName: ${BK_CMDB_REDIS_MASTER_NAME}
+
+tenant:
+  # 是否开启多租户模式
+  enableMultiTenantMode: ${BKPAAS_MULTI_TENANT_MODE}

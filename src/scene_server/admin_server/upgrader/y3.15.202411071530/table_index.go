@@ -91,7 +91,7 @@ var tableIndexMap = map[string][]daltypes.Index{
 	types.BKTableNameBaseNode:                    nodeBaseIndexes,
 	types.BKTableNameBasePod:                     podBaseIndexes,
 	types.BKTableNameBaseNamespace:               namespaceBaseIndexes,
-	"cc_ObjectBaseMapping":                       objectBaseMappingIndexes,
+	common.BKTableNameObjectBaseMapping:          objectBaseMappingIndexes,
 }
 
 var platTableIndexesArr = map[string][]daltypes.Index{

@@ -27,7 +27,7 @@ const (
 	// mailPattern     = `^[a-z0-9A-Z]+([\-_\.][a-z0-9A-Z]+)*@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)*\.)+[a-zA-Z]{2,4}$`
 	datePattern             = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}$`
 	dateTimePattern         = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}[\s]{1}[0-9]{2}[\:]{1}[0-9]{2}[\:]{1}[0-9]{2}$`
-	timeWithLocationPattern = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}[T]{1}[0-9]{2}[\:]{1}[0-9]{2}[\:]{1}[0-9]{2}([\.]{1}[0-9]+)?[\+]{1}[0-9]{2}[\:]{1}[0-9]{2}$`
+	timeWithLocationPattern = `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$`
 	// timeZonePattern    = `^[a-zA-Z]+/[a-z\-\_+\-A-Z]+$`
 	timeZonePattern = `^[a-zA-Z0-9\-−_\/\+]+$`
 	// userPattern the user names regex expression
@@ -129,7 +129,7 @@ func Str2Time(timeStr string, timeType DateTimeFieldType) time.Time {
 	case timeWithoutLocationType:
 		layout = "2006-01-02 15:04:05"
 	case timeWithLocationType:
-		layout = "2006-01-02T15:04:05+08:00"
+		layout = "2006-01-02T15:04:05Z07:00"
 	default:
 		return time.Time{}
 	}

@@ -8,16 +8,6 @@ data:
     es:
       # 全文检索功能开关(取值：off/on)，默认是off，开启是on
       fullTextSearch: {{ .Values.web.es.fullTextSearch | quote }}
-    # esb配置
-    esb:
-      addr: {{ .Values.bkComponentApiUrl }}
-      appCode: {{ .Values.web.esb.appCode }}
-      appSecret: {{ .Values.web.esb.appSecret }}
-      insecureSkipVerify: true
-      certFile:
-      keyFile:
-      caFile:
-      password:
     # web_server专属配置
     webServer:
       api:
@@ -67,8 +57,6 @@ data:
             # 用于解密根据RFC1423加密的证书密钥的PEM块
             password: {{ .Values.web.paas.tls.password }}
       app:
-        authAppCode: {{ .Values.web.webServer.app.authAppCode }}
-        authUrl: {{ .Values.web.webServer.app.authUrl }}
         agentAppUrl: {{ .Values.bkNodemanUrl }}
         #权限模式，web页面使用，可选值: internal, iam
         authscheme: {{ .Values.web.webServer.app.authScheme }}

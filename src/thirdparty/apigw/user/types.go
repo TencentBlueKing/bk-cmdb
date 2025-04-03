@@ -48,3 +48,46 @@ type BkUserError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
+
+// PageOptions is the bk-user pagination options
+type PageOptions struct {
+	Page     int
+	PageSize int
+}
+
+// ListUserResult is the list user result
+type ListUserResult struct {
+	Count   int        `json:"count"`
+	Results []UserItem `json:"results"`
+}
+
+// UserItem is the list user result item
+type UserItem struct {
+	BkUsername  string `json:"bk_username"`
+	FullName    string `json:"full_name"`
+	DisplayName string `json:"display_name"`
+}
+
+// QueryUserDisplayInfoOpts is the bk-user query user display info options
+type QueryUserDisplayInfoOpts struct {
+	BkUsernames []string `json:"bk_usernames"`
+}
+
+// UserDisplayInfo is the user display name info
+type UserDisplayInfo struct {
+	BkUsername  string `json:"bk_username"`
+	DisplayName string `json:"display_name"`
+}
+
+// BatchLookupDeptOpts is the batch lookup department options
+type BatchLookupDeptOpts struct {
+	DeptIDs     []int64
+	WithOrgPath bool
+}
+
+// DepartmentItem is the batch lookup department result item
+type DepartmentItem struct {
+	ID               int64  `json:"id"`
+	Name             string `json:"name"`
+	OrganizationPath string `json:"organization_path"`
+}

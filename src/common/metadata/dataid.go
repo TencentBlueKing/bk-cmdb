@@ -104,12 +104,6 @@ type GseConfigStreamToPulsar struct {
 	Token            string                    `json:"token,omitempty"`
 }
 
-// GseConfigAddStreamToResp add gse stream_to config response
-type GseConfigAddStreamToResp struct {
-	EsbBaseResponse `json:",inline"`
-	Data            *GseConfigAddStreamToResult `json:"data"`
-}
-
 // GseConfigAddStreamToResult add gse stream_to config result
 type GseConfigAddStreamToResult struct {
 	StreamToID int64  `json:"stream_to_id"`
@@ -150,12 +144,6 @@ type GseConfigQueryStreamToParams struct {
 type GseConfigQueryStreamToCondition struct {
 	GseConfigStreamToCondition `json:",inline"`
 	Label                      *GseConfigStreamToLabel `json:"label,omitempty"`
-}
-
-// GseConfigQueryStreamToResp query gse stream_to config response
-type GseConfigQueryStreamToResp struct {
-	EsbBaseResponse `json:",inline"`
-	Data            []GseConfigAddStreamToParams `json:"data"`
 }
 
 // GseConfigAddRouteParams add gse route config params
@@ -233,12 +221,6 @@ type GseConfigRouteStreamFilter struct {
 	FieldIn        string `json:"field_in,omitempty"`
 }
 
-// GseConfigAddRouteResp add gse route config response
-type GseConfigAddRouteResp struct {
-	EsbBaseResponse `json:",inline"`
-	Data            *GseConfigAddRouteResult `json:"data"`
-}
-
 // GseConfigAddRouteResult add gse route config result
 type GseConfigAddRouteResult struct {
 	ChannelID  int64 `json:"channel_id"`
@@ -291,10 +273,4 @@ const (
 type GseConfigQueryRouteParams struct {
 	Condition GseConfigRouteCondition `json:"condition"`
 	Operation GseConfigOperation      `json:"operation"`
-}
-
-// GseConfigQueryRouteResp gse query route response
-type GseConfigQueryRouteResp struct {
-	EsbBaseResponse `json:",inline"`
-	Data            []GseConfigChannel `json:"data"`
 }

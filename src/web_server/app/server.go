@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	apigwcli "configcenter/src/common/resource/apigw"
-	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/resource/jwt"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/redis"
@@ -134,9 +133,6 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 	service.Logics = &logics.Logics{Engine: engine}
 	service.Config = &webSvr.Config
 
-	// init esb client
-	esb.InitEsbClient(nil)
-
 	// init jwt handler
 	if err = jwt.Init("webServer"); err != nil {
 		return nil, fmt.Errorf("init jwt failed, err: %v", err)
@@ -148,7 +144,7 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 		apigwClients = append(apigwClients, apigw.Cmdb)
 	}
 	if webSvr.Config.LoginVersion == common.BKBluekingLoginPluginVersion {
-		apigwClients = append(apigwClients, apigw.Login)
+		apigwClients = append(apigwClients, apigw.Login, apigw.User)
 	}
 	if webSvr.Config.EnableNotification {
 		apigwClients = append(apigwClients, apigw.Notice)
@@ -218,14 +214,7 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 
 	w.Config.Version, _ = cc.String("webServer.api.version")
 	w.Config.AgentAppUrl, _ = cc.String("webServer.app.agentAppUrl")
-	w.Config.AuthCenter.AppCode, _ = cc.String("webServer.app.authAppCode")
-	w.Config.AuthCenter.URL, _ = cc.String("webServer.app.authUrl")
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
-	if esbConfig, err := esb.ParseEsbConfig(); err == nil {
-		esb.UpdateEsbConfig(*esbConfig)
-	}
-	w.Config.DisableOperationStatistic, _ = cc.Bool("operationServer.disableOperationStatistic")
-
 	w.Config.EnableNotification, _ = cc.Bool("webServer.enableNotification")
 	w.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
 }

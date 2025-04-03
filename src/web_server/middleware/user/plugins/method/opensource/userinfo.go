@@ -70,11 +70,8 @@ func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner boo
 		return &metadata.LoginUserInfo{
 			UserName:  cookieUser,
 			ChName:    cookieUser,
-			Phone:     "",
-			Email:     "blueking",
 			BkToken:   "",
 			TenantUin: tenantID,
-			IsTenant:  false,
 			Language:  webCommon.GetLanguageByHTTPRequest(c),
 		}, true
 	}
@@ -99,7 +96,7 @@ func (m *user) GetLoginUrl(c *gin.Context, config map[string]string, input *meta
 }
 
 // GetUserList get user list
-func (m *user) GetUserList(c *gin.Context, config map[string]string) ([]*metadata.LoginSystemUserInfo,
+func (m *user) GetUserList(c *gin.Context, opts *metadata.GetUserListOptions) ([]*metadata.LoginSystemUserInfo,
 	*errors.RawErrorInfo) {
 	rid := httpheader.GetRid(c.Request.Header)
 	users := make([]*metadata.LoginSystemUserInfo, 0)
