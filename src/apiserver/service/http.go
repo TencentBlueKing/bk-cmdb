@@ -52,7 +52,7 @@ func (s *service) Delete(req *restful.Request, resp *restful.Response) {
 	s.Do(req, resp)
 }
 
-const maxToleranceLatencyTime = 10 * time.Second
+const maxToleranceLatencyTime = 5 * time.Second
 
 // Do TODO
 func (s *service) Do(req *restful.Request, resp *restful.Response) {
@@ -70,6 +70,7 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		}); err != nil {
 			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s, rid: %s", req.Request.RequestURI, err, rid)
 		}
+		s.collectErrorMetric(req)
 		return
 	}
 
@@ -114,6 +115,7 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 		}); err != nil {
 			blog.Errorf("response request[%s url: %s] failed, err: %v, rid: %s", req.Request.Method, url, err, rid)
 		}
+		s.collectErrorMetric(req)
 		return
 	}
 

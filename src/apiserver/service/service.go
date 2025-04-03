@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metrics"
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/webservice/restfulservice"
@@ -52,6 +53,8 @@ type service struct {
 	limiter    *Limiter
 	// noPermissionRequestTotal is the total number of request without permission
 	noPermissionRequestTotal *prometheus.CounterVec
+	// errorRequestTotal is the total number of request with error response
+	errorRequestTotal *prometheus.CounterVec
 }
 
 // SetConfig set config
@@ -71,6 +74,15 @@ func (s *service) WebServices() []*restful.WebService {
 	getErrFun := func() errors.CCErrorIf {
 		return s.engine.CCErr
 	}
+
+	s.errorRequestTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "cmdb_api_total_response_error_count",
+			Help: "total number of error request for apiServer.",
+		},
+		[]string{metrics.LabelHandler, metrics.LabelAppCode},
+	)
+	s.engine.Metric().Registry().MustRegister(s.errorRequestTotal)
 
 	ws := &restful.WebService{}
 	ws.Path(rootPath)
@@ -155,4 +167,12 @@ func (s *service) routeNeedAuthAPI(ws *restful.WebService, errFunc func() errors
 	ws.Route(ws.POST("{.*}").Filter(s.authFilter(errFunc)).Filter(s.URLFilterChan).To(s.Post))
 	ws.Route(ws.PUT("{.*}").Filter(s.authFilter(errFunc)).Filter(s.URLFilterChan).To(s.Put))
 	ws.Route(ws.DELETE("{.*}").Filter(s.authFilter(errFunc)).Filter(s.URLFilterChan).To(s.Delete))
+}
+
+// collectErrorMetric collect error request metric for apiServer
+func (s *service) collectErrorMetric(request *restful.Request) {
+	s.errorRequestTotal.With(prometheus.Labels{
+		metrics.LabelAppCode: httpheader.GetAppCode(request.Request.Header),
+		metrics.LabelHandler: request.Request.RequestURI,
+	}).Inc()
 }
