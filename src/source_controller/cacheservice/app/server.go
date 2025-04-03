@@ -103,6 +103,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	select {
 	case <-ctx.Done():
+		cacheService.Scheduler().Stop()
 	}
 	return nil
 }

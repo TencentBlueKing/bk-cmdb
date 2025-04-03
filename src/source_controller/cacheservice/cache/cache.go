@@ -29,24 +29,24 @@ import (
 )
 
 // NewCache new cache service
-func NewCache(watchTask *task.Task, isMaster discovery.ServiceManageInterface) (*ClientSet, error) {
+func NewCache(isMaster discovery.ServiceManageInterface) (*ClientSet, error) {
 	if err := mainline.NewMainlineCache(isMaster); err != nil {
 		return nil, fmt.Errorf("new mainline cache failed, err: %v", err)
 	}
 
-	customCache, err := custom.New(isMaster, watchTask)
+	customCache, err := custom.New(isMaster)
 	if err != nil {
 		return nil, fmt.Errorf("new custom resource cache failed, err: %v", err)
 	}
 
 	watchCli := watch.NewClient(mongodb.Dal("watch"), mongodb.Dal(), redis.Client())
 
-	generalCache, err := general.New(isMaster, watchTask, watchCli)
+	generalCache, err := general.New(isMaster, watchCli)
 	if err != nil {
 		return nil, fmt.Errorf("new general resource cache failed, err: %v", err)
 	}
 
-	topoTreeClient, err := biztopo.New(isMaster, watchTask, customCache.CacheSet(), watchCli)
+	topoTreeClient, err := biztopo.New(isMaster, customCache.CacheSet(), watchCli)
 	if err != nil {
 		return nil, fmt.Errorf("new common topo cache failed, err: %v", err)
 	}
@@ -72,4 +72,12 @@ type ClientSet struct {
 	Event    *watch.Client
 	Custom   *custom.Cache
 	General  *general.Cache
+}
+
+// GetWatchTasks returns the event watch tasks
+func (c *ClientSet) GetWatchTasks() []*task.Task {
+	tasks := c.Topo.Watcher().GetWatchTasks()
+	tasks = append(tasks, c.Custom.Watcher().GetWatchTasks()...)
+	tasks = append(tasks, c.General.FullSyncCond().GetWatchTasks()...)
+	return tasks
 }

@@ -37,7 +37,6 @@ import (
 	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
 	watchcli "configcenter/src/source_controller/cacheservice/event/watch"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/stream/task"
 )
 
 // Topo defines the business topology caching logics
@@ -47,14 +46,14 @@ type Topo struct {
 }
 
 // New Topo
-func New(isMaster discovery.ServiceManageInterface, watchTask *task.Task, cacheSet *cache.CacheSet,
-	watchCli *watchcli.Client) (*Topo, error) {
+func New(isMaster discovery.ServiceManageInterface, cacheSet *cache.CacheSet, watchCli *watchcli.Client) (*Topo,
+	error) {
 
 	t := &Topo{
 		isMaster: isMaster,
 	}
 
-	watcher, err := watch.New(isMaster, watchTask, cacheSet, watchCli)
+	watcher, err := watch.New(isMaster, cacheSet, watchCli)
 	if err != nil {
 		return nil, fmt.Errorf("new watcher failed, err: %v", err)
 	}
@@ -65,6 +64,11 @@ func New(isMaster discovery.ServiceManageInterface, watchTask *task.Task, cacheS
 		go t.loopBizTopoCache(topoKey)
 	}
 	return t, nil
+}
+
+// Watcher returns the business topology event watcher
+func (t *Topo) Watcher() *watch.Watcher {
+	return t.watcher
 }
 
 // loopBizTopoCache launch the task to loop business's brief topology every interval minutes.

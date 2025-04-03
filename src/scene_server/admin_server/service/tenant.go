@@ -35,7 +35,9 @@ import (
 	"configcenter/src/common/index"
 	"configcenter/src/common/metadata"
 	apigwcli "configcenter/src/common/resource/apigw"
+	"configcenter/src/common/watch"
 	"configcenter/src/scene_server/admin_server/logics"
+	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/apigw/user"
@@ -60,6 +62,14 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 
 	_, exist := tenant.GetTenant(kit.TenantID)
 	if exist {
+		// add watch token for new tenant
+		// TODO 如果租户已经存在的情况下也调一下，防止之前新增租户了但是这个失败了
+		if err := s.addWatchTokenForNewTenant(kit); err != nil {
+			blog.Errorf("add watch token for new tenant %s failed, err: %v, rid: %s", kit.TenantID, err, kit.Rid)
+			result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error())}
+			resp.WriteError(http.StatusInternalServerError, result)
+			return
+		}
 		resp.WriteEntity(metadata.NewSuccessResp("tenant exist"))
 		return
 	}
@@ -150,7 +160,32 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 		blog.Errorf("refresh tenants failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
+	// add watch token for new tenant
+	// TODO 如果租户已经存在的情况下也调一下，防止之前新增租户了但是这个失败了
+	if err = s.addWatchTokenForNewTenant(kit); err != nil {
+		blog.Errorf("add watch token for new tenant %s failed, err: %v, rid: %s", kit.TenantID, err, kit.Rid)
+		result := &metadata.RespError{Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error())}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+
 	resp.WriteEntity(metadata.NewSuccessResp("add tenant success"))
+}
+
+func (s *Service) addWatchTokenForNewTenant(kit *rest.Kit) error {
+	cursorTypes := watch.ListCursorTypes()
+	for _, cursorType := range cursorTypes {
+		key, err := event.GetResourceKeyWithCursorType(cursorType)
+		if err != nil {
+			blog.Errorf("get resource key with cursor type %s failed, err: %v, rid: %s", cursorType, err, kit.Rid)
+			return err
+		}
+
+		if err = s.addTenantWatchToken(kit, cursorType, key); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func addDefaultArea(kit *rest.Kit, db local.DB) error {

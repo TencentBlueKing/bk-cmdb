@@ -36,6 +36,7 @@ import (
 	tokenhandler "configcenter/src/source_controller/cacheservice/cache/token-handler"
 	dbtypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/stream/task"
 	streamtypes "configcenter/src/storage/stream/types"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -113,11 +114,12 @@ func (w *kubeWatcher) watchTopo(obj string, doBatch func(*streamtypes.DBInfo, []
 			opts.WatchTaskOptions.CollOpts.EventStruct = new(kubetypes.Pod)
 		}
 
-		err = w.watcher.task.AddLoopBatchTask(opts)
+		watchTask, err := task.NewLoopBatchTask(opts)
 		if err != nil {
-			blog.Errorf("watch kube biz topo collection %s failed, err: %v", collection, err)
+			blog.Errorf("generate kube biz topo collection %s watch task failed, err: %v", collection, err)
 			return err
 		}
+		w.watcher.tasks = append(w.watcher.tasks, watchTask)
 	}
 
 	return nil

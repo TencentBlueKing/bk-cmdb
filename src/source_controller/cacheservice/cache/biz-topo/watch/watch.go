@@ -28,20 +28,20 @@ import (
 // Watcher defines mongodb event watcher for biz topology
 type Watcher struct {
 	isMaster discovery.ServiceManageInterface
-	task     *task.Task
 	cacheSet *cache.CacheSet
 	watchCli *watchcli.Client
+	tasks    []*task.Task
 }
 
 // New  biz topology mongodb event watcher
-func New(isMaster discovery.ServiceManageInterface, watchTask *task.Task, cacheSet *cache.CacheSet,
-	watchCli *watchcli.Client) (*Watcher, error) {
+func New(isMaster discovery.ServiceManageInterface, cacheSet *cache.CacheSet, watchCli *watchcli.Client) (*Watcher,
+	error) {
 
 	watcher := &Watcher{
 		isMaster: isMaster,
-		task:     watchTask,
 		cacheSet: cacheSet,
 		watchCli: watchCli,
+		tasks:    make([]*task.Task, 0),
 	}
 
 	if err := watcher.watchKube(); err != nil {
@@ -53,4 +53,9 @@ func New(isMaster discovery.ServiceManageInterface, watchTask *task.Task, cacheS
 	}
 
 	return watcher, nil
+}
+
+// GetWatchTasks returns the event watch tasks
+func (w *Watcher) GetWatchTasks() []*task.Task {
+	return w.tasks
 }

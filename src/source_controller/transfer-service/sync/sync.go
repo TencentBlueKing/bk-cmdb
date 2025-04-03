@@ -48,10 +48,11 @@ type Syncer struct {
 	isMaster     discovery.ServiceManageInterface
 	metadata     *metadata.Metadata
 	resSyncerMap map[types.ResType]*resSyncer
+	tasks        []*task.Task
 }
 
 // NewSyncer new cmdb data syncer
-func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface, task *task.Task,
+func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface,
 	cacheCli cacheservice.CacheServiceClientInterface, reg prometheus.Registerer) (*Syncer, error) {
 
 	if !conf.Sync.EnableSync {
@@ -112,7 +113,7 @@ func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface, 
 		}
 	}
 
-	err = syncer.run(conf, task, transMedium, cacheCli)
+	err = syncer.run(conf, transMedium, cacheCli)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +165,7 @@ func parseDestExConf(conf *options.Config) (map[types.ResType]map[string][]optio
 	return idRuleMap, innerDataIDMap
 }
 
-func (s *Syncer) run(conf *options.Config, task *task.Task, transMedium medium.ClientI,
+func (s *Syncer) run(conf *options.Config, transMedium medium.ClientI,
 	cacheCli cacheservice.CacheServiceClientInterface) error {
 
 	switch conf.Sync.Role {
@@ -175,13 +176,14 @@ func (s *Syncer) run(conf *options.Config, task *task.Task, transMedium medium.C
 			return nil
 		}
 
-		watcher, err := watch.New(conf.Sync.Name, task, s.isMaster, s.metadata, cacheCli, transMedium)
+		watcher, err := watch.New(conf.Sync.Name, s.isMaster, s.metadata, cacheCli, transMedium)
 		if err != nil {
 			blog.Errorf("new watcher failed, err: %v", err)
 			return err
 		}
 
-		if err = watcher.Watch(); err != nil {
+		s.tasks, err = watcher.Watch()
+		if err != nil {
 			blog.Errorf("watch src event failed, err: %v", err)
 			return err
 		}
@@ -206,4 +208,9 @@ type resSyncer struct {
 	transMedium medium.ClientI
 	lgc         logics.Logics
 	metadata    *metadata.Metadata
+}
+
+// GetWatchTasks returns the event watch tasks
+func (s *Syncer) GetWatchTasks() []*task.Task {
+	return s.tasks
 }

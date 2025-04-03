@@ -13,16 +13,16 @@
 package flow
 
 import (
-	"context"
 	"fmt"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/storage/stream/task"
 	"configcenter/src/storage/stream/types"
 )
 
-func newInstAsstFlow(ctx context.Context, opts flowOptions, parseEvent parseEventFunc) error {
+func (e *Event) addInstAsstFlowTask(opts flowOptions, parseEvent parseEventFunc) error {
 	flow, err := NewFlow(opts, parseEvent)
 	if err != nil {
 		return err
@@ -31,7 +31,13 @@ func newInstAsstFlow(ctx context.Context, opts flowOptions, parseEvent parseEven
 		Flow: flow,
 	}
 
-	return instAsstFlow.RunFlow(ctx)
+	flowTask, err := instAsstFlow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	e.tasks = append(e.tasks, flowTask)
+	return nil
 }
 
 // InstAsstFlow instance association event watch flow
@@ -39,9 +45,9 @@ type InstAsstFlow struct {
 	Flow
 }
 
-// RunFlow run instance association event watch flow
-func (f *InstAsstFlow) RunFlow(ctx context.Context) error {
-	blog.Infof("start run flow for key: %s.", f.key.Namespace())
+// GenWatchTask generate instance association event watch flow task
+func (f *InstAsstFlow) GenWatchTask() (*task.Task, error) {
+	blog.Infof("generate flow watch task for key: %s.", f.key.Namespace())
 
 	f.tokenHandler = NewFlowTokenHandler(f.key, f.metrics)
 
@@ -68,11 +74,10 @@ func (f *InstAsstFlow) RunFlow(ctx context.Context) error {
 		BatchSize: batchSize,
 	}
 
-	err := f.task.AddLoopBatchTask(opts)
+	flowTask, err := task.NewLoopBatchTask(opts)
 	if err != nil {
-		blog.Errorf("run %s flow, but add loop batch task failed, err: %v", f.key.Namespace(), err)
-		return err
+		blog.Errorf("run %s flow, but generate loop batch task failed, err: %v", f.key.Namespace(), err)
+		return nil, err
 	}
-
-	return nil
+	return flowTask, nil
 }

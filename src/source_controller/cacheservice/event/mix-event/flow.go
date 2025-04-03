@@ -37,7 +37,6 @@ type MixEventFlowOptions struct {
 	MixKey       event.Key
 	Key          event.Key
 	WatchFields  []string
-	Task         *task.Task
 	EventLockTTL time.Duration
 	EventLockKey string
 }
@@ -81,9 +80,9 @@ func NewMixEventFlow(opts MixEventFlowOptions, rearrangeEvents rearrangeEventsFu
 
 const batchSize = 500
 
-// RunFlow run mix event flow
-func (f *MixEventFlow) RunFlow(ctx context.Context) error {
-	blog.Infof("start run %s event flow for key: %s.", f.MixKey.Namespace(), f.Key.Namespace())
+// GenWatchTask generate event flow watch task
+func (f *MixEventFlow) GenWatchTask() (*task.Task, error) {
+	blog.Infof("generate %s flow watch task for for key: %s.", f.MixKey.Namespace(), f.Key.Namespace())
 
 	es := make(map[string]interface{})
 
@@ -117,12 +116,7 @@ func (f *MixEventFlow) RunFlow(ctx context.Context) error {
 		opts.CollOpts.EventStruct = new(metadata.HostMapStr)
 	}
 
-	err := f.Task.AddLoopBatchTask(opts)
-	if err != nil {
-		blog.Errorf("watch %s events, but add watch batch task failed, err: %v", f.MixKey.Namespace(), err)
-		return err
-	}
-	return nil
+	return task.NewLoopBatchTask(opts)
 }
 
 // doBatch batch handle events

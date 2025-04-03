@@ -54,7 +54,7 @@ func NewTenantEventChan(name string) <-chan TenantEvent {
 		return ch
 	}
 
-	eventChan := make(chan TenantEvent)
+	eventChan := make(chan TenantEvent, 1)
 	tenantEventChannels[name] = eventChan
 	go func() {
 		for _, tenant := range allTenants {

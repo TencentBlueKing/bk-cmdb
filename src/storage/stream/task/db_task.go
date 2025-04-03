@@ -25,66 +25,52 @@ import (
 	"configcenter/src/storage/stream/types"
 )
 
-// watchTask is the resource watch task
-type watchTask struct {
-	// name is the watch task name that uniquely identifies the watch task
-	name string
-	// collOptions is the watch collection options
-	collOptions *types.WatchCollOptions
-	// eventHandler is the batch event handler
-	eventHandler *types.TaskBatchHandler
-	// tokenHandler is the token handler
-	tokenHandler types.TaskTokenHandler
-	// needList defines whether to list all data before watch
-	needList bool
-
-	retryOptions *types.RetryOptions
-	batchSize    int
-}
-
-type dbWatchTask struct {
-	*watchTask
+// DBWatchTask is the resource watch task for one db
+type DBWatchTask struct {
+	*Task
 	dbInfo    *types.DBInfo
-	eventChan chan *types.Event
-	listChan  chan *types.Event
-	lastToken *types.TokenInfo
-	tokenChan chan struct{}
+	EventChan chan *types.Event
+	ListChan  chan *types.Event
+	LastToken *types.TokenInfo
+	// TokenChan is used to notify the token handler that the task token has changed
+	TokenChan chan struct{}
 }
 
 // maxUnhandledEventLimit if the number of unhandled events exceeds this value, block the event watch process
 const maxUnhandledEventLimit = 2000
 
-func newDBWatchTask(task *watchTask, dbInfo *types.DBInfo) (*dbWatchTask, error) {
+// NewDBWatchTask generate a new db watch task
+func NewDBWatchTask(task *Task, dbInfo *types.DBInfo) (*DBWatchTask, error) {
 	lastToken, err := task.tokenHandler.GetStartWatchToken(context.Background(), dbInfo.UUID, dbInfo.WatchDB)
 	if err != nil {
-		blog.Errorf("get task %s db %s last watch token failed, err: %v", task.name, dbInfo.UUID, err)
+		blog.Errorf("get task %s db %s last watch token failed, err: %v", task.Name, dbInfo.UUID, err)
 		return nil, err
 	}
 
-	return &dbWatchTask{
-		watchTask: task,
+	return &DBWatchTask{
+		Task:      task,
 		dbInfo:    dbInfo,
-		eventChan: make(chan *types.Event, maxUnhandledEventLimit+task.batchSize),
-		listChan:  make(chan *types.Event, task.batchSize),
-		lastToken: lastToken,
+		EventChan: make(chan *types.Event, maxUnhandledEventLimit+task.BatchSize),
+		ListChan:  make(chan *types.Event, task.BatchSize),
+		LastToken: lastToken,
 	}, nil
 }
 
-// start execute watch task
-func (t *dbWatchTask) start(stopNotifier <-chan struct{}) {
+// Start execute watch task
+func (t *DBWatchTask) Start(stopNotifier <-chan struct{}) {
 	go func() {
 		// list all data before watch if this task is a list watch task
-		if t.needList {
-			t.lastToken = &types.TokenInfo{
+		if t.NeedList {
+			t.LastToken = &types.TokenInfo{
 				StartAtTime: &types.TimeStamp{
 					Sec: uint32(time.Now().Unix()),
 				},
 			}
 
 			events := make([]*types.Event, 0)
-			for event := range t.listChan {
+			for event := range t.ListChan {
 				events = append(events, event)
-				if len(events) == t.batchSize {
+				if len(events) == t.BatchSize {
 					t.eventHandler.DoBatch(t.dbInfo, events)
 				}
 				if event.OperationType == types.ListDone {
@@ -102,14 +88,14 @@ func (t *dbWatchTask) start(stopNotifier <-chan struct{}) {
 			events := make([]*types.Event, 0)
 			for {
 				select {
-				case one := <-t.eventChan:
+				case one := <-t.EventChan:
 					// skip previous event with smaller token
-					if !compareToken(one, t.lastToken) {
-						blog.V(4).Infof("%s-%s job, skip previous event(%s)", t.name, t.dbInfo.UUID, one.String())
+					if !compareToken(one, t.LastToken) {
+						blog.V(4).Infof("%s-%s job, skip previous event(%s)", t.Name, t.dbInfo.UUID, one.String())
 						continue
 					}
 					events = append(events, one)
-					if len(events) < t.batchSize {
+					if len(events) < t.BatchSize {
 						continue
 					}
 				case <-ticker.C:
@@ -129,11 +115,11 @@ func (t *dbWatchTask) start(stopNotifier <-chan struct{}) {
 	}()
 }
 
-func (t *dbWatchTask) handleEvents(events []*types.Event) {
+func (t *DBWatchTask) handleEvents(events []*types.Event) {
 	ctx := context.Background()
 	first, last := events[0], events[len(events)-1]
 	rid := first.ID()
-	blog.Infof("%s-%s job, received %d events, first op-time: %s, fist token: %s, rid: %s", t.name, t.dbInfo.UUID,
+	blog.Infof("%s-%s job, received %d events, first op-time: %s, fist token: %s, rid: %s", t.Name, t.dbInfo.UUID,
 		len(events), first.ClusterTime.String(), first.Token.Data, rid)
 
 	needRetry := false
@@ -144,11 +130,11 @@ func (t *dbWatchTask) handleEvents(events []*types.Event) {
 			time.Sleep(t.retryOptions.RetryDuration)
 			lastToken, err := t.tokenHandler.GetStartWatchToken(ctx, t.dbInfo.UUID, t.dbInfo.WatchDB)
 			if err != nil {
-				blog.Errorf("get task %s db %s token failed, err: %v, rid: %s", t.name, t.dbInfo.UUID, err, rid)
+				blog.Errorf("get task %s db %s token failed, err: %v, rid: %s", t.Name, t.dbInfo.UUID, err, rid)
 				time.Sleep(t.retryOptions.RetryDuration)
 				continue
 			}
-			t.lastToken = lastToken
+			t.LastToken = lastToken
 
 			// if current token is greater than last token, return
 			if !compareToken(last, lastToken) {
@@ -183,14 +169,14 @@ func (t *dbWatchTask) handleEvents(events []*types.Event) {
 			StartAtTime: &last.ClusterTime,
 		}
 		if err := t.tokenHandler.SetLastWatchToken(ctx, t.dbInfo.UUID, t.dbInfo.WatchDB, lastToken); err != nil {
-			blog.Errorf("set task %s db %s last watch token(%+v) failed, err: %v, rid: %s", t.name, t.dbInfo.UUID,
+			blog.Errorf("set task %s db %s last watch token(%+v) failed, err: %v, rid: %s", t.Name, t.dbInfo.UUID,
 				*lastToken, err, rid)
 			needRetry = true
 			continue
 		}
-		t.lastToken = lastToken
+		t.LastToken = lastToken
 		select {
-		case t.tokenChan <- struct{}{}:
+		case t.TokenChan <- struct{}{}:
 		default:
 		}
 		return

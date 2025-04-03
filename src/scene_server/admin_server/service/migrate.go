@@ -121,29 +121,7 @@ func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 
 		err = tenant.ExecForAllTenants(func(tenantID string) error {
 			// TODO 在新增租户初始化时同时增加watch相关表，并刷新cache的tenant
-			kit = kit.NewKit().WithTenant(tenantID)
-			exists, err := s.watchDB.Shard(kit.ShardOpts()).HasTable(s.ctx, key.ChainCollection())
-			if err != nil {
-				blog.Errorf("check if table %s exists failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
-				return err
-			}
-
-			if !exists {
-				err = s.watchDB.Shard(kit.ShardOpts()).CreateTable(s.ctx, key.ChainCollection())
-				if err != nil && !mongodb.IsDuplicatedError(err) {
-					blog.Errorf("create table %s failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
-					return err
-				}
-			}
-
-			if err = s.createWatchIndexes(kit, cursorType, key); err != nil {
-				return err
-			}
-
-			if err = s.createLastWatchEvent(kit, key); err != nil {
-				return err
-			}
-			return nil
+			return s.addTenantWatchToken(kit.NewKit().WithTenant(tenantID), cursorType, key)
 		})
 		if err != nil {
 			return err
@@ -282,6 +260,33 @@ func (s *Service) createWatchToken(kit *rest.Kit, watchDBToDBRelation map[string
 		}
 		return nil
 	})
+}
+
+// getWatchDBToDBRelation get watch db uuid to db uuids relation
+func (s *Service) addTenantWatchToken(kit *rest.Kit, cursorType watch.CursorType, key event.Key) error {
+	exists, err := s.watchDB.Shard(kit.ShardOpts()).HasTable(s.ctx, key.ChainCollection())
+	if err != nil {
+		blog.Errorf("check if table %s exists failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
+		return err
+	}
+
+	if !exists {
+		err = s.watchDB.Shard(kit.ShardOpts()).CreateTable(s.ctx, key.ChainCollection())
+		if err != nil && !mongodb.IsDuplicatedError(err) {
+			blog.Errorf("create table %s failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
+			return err
+		}
+	}
+
+	if err = s.createWatchIndexes(kit, cursorType, key); err != nil {
+		return err
+	}
+
+	if err = s.createLastWatchEvent(kit, key); err != nil {
+		return err
+	}
+	return nil
+
 }
 
 func (s *Service) createWatchIndexes(kit *rest.Kit, cursorType watch.CursorType, key event.Key) error {

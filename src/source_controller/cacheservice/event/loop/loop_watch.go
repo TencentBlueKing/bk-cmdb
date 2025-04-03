@@ -19,7 +19,7 @@
 package loop
 
 import (
-	"context"
+	"sync"
 
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common/blog"
@@ -76,7 +76,7 @@ func (w *LoopWatcher) AddLoopWatchTask(opts *LoopWatchTaskOptions) error {
 		tokenHandler:     opts.TokenHandler,
 		eventHandler:     opts.EventHandler,
 		tenantChan:       opts.TenantChan,
-		tenantCancelFunc: make(map[string]context.CancelFunc),
+		tenantCancelFunc: sync.Map{},
 	}
 	go task.run()
 

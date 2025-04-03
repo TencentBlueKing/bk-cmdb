@@ -63,7 +63,7 @@ func (w *Watcher) watchBrief() error {
 }
 
 func (w *briefWatcher) watchEvents(cursorType watch.CursorType) error {
-	loopEventChan := make(chan loop.TenantEvent)
+	loopEventChan := make(chan loop.TenantEvent, 1)
 
 	name := fmt.Sprintf("biz topo %s %s", w.cacheKey.Type(), cursorType)
 	tenantChan := tenant.NewTenantEventChan(name)

@@ -35,26 +35,31 @@ import (
 
 // Watcher defines mongodb event watcher for custom resource
 type Watcher struct {
-	task     *task.Task
 	cacheSet *cache.CacheSet
+	tasks    []*task.Task
 }
 
 // Init custom resource mongodb event watcher
-func Init(watchTask *task.Task, cacheSet *cache.CacheSet) error {
+func Init(cacheSet *cache.CacheSet) (*Watcher, error) {
 	watcher := &Watcher{
-		task:     watchTask,
 		cacheSet: cacheSet,
+		tasks:    make([]*task.Task, 0),
 	}
 
 	if err := watcher.watchPodLabel(); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := watcher.watchSharedNsRel(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return watcher, nil
+}
+
+// GetWatchTasks returns the event watch tasks
+func (w *Watcher) GetWatchTasks() []*task.Task {
+	return w.tasks
 }
 
 type watchOptions struct {
@@ -102,11 +107,12 @@ func (w *Watcher) watchCustomResource(opt *watchOptions) (bool, error) {
 		BatchSize: 200,
 	}
 
-	err = w.task.AddLoopBatchTask(opts)
+	watchTask, err := task.NewLoopBatchTask(opts)
 	if err != nil {
-		blog.Errorf("watch custom resource %s, but add loop batch task failed, err: %v", name, err)
+		blog.Errorf("watch custom resource %s, but generate loop batch task failed, err: %v", name, err)
 		return false, err
 	}
+	w.tasks = append(w.tasks, watchTask)
 
 	return exists, nil
 }

@@ -33,8 +33,8 @@ import (
 	"configcenter/src/storage/stream/types"
 )
 
-// newBizSetRelation init and run biz set relation event watch with sub event key
-func newBizSetRelation(ctx context.Context, opts mixevent.MixEventFlowOptions) error {
+// addWatchTask add biz set relation event watch task with sub event key
+func (b *BizSetRelation) addWatchTask(opts mixevent.MixEventFlowOptions) error {
 	relation := bizSetRelation{
 		mixKey: opts.MixKey,
 		key:    opts.Key,
@@ -66,7 +66,13 @@ func newBizSetRelation(ctx context.Context, opts mixevent.MixEventFlowOptions) e
 		return err
 	}
 
-	return flow.RunFlow(ctx)
+	flowTask, err := flow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	b.tasks = append(b.tasks, flowTask)
+	return nil
 }
 
 // bizSetRelation biz set relation event watch logic struct

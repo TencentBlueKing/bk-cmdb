@@ -22,193 +22,186 @@ import (
 )
 
 // NewEvent new event flow
-func NewEvent(watchTask *task.Task) error {
-	e := Event{
-		task: watchTask,
+func NewEvent() (*Event, error) {
+	e := &Event{
+		tasks: make([]*task.Task, 0),
 	}
 
-	if err := e.runHost(context.Background()); err != nil {
-		blog.Errorf("run host event flow failed, err: %v", err)
-		return err
+	if err := e.addHostTask(); err != nil {
+		blog.Errorf("add host event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runModuleHostRelation(context.Background()); err != nil {
-		blog.Errorf("run module host config event flow failed, err: %v", err)
-		return err
+	if err := e.addModuleHostRelationTask(); err != nil {
+		blog.Errorf("add module host config event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runBizSet(context.Background()); err != nil {
-		blog.Errorf("run biz set event flow failed, err: %v", err)
-		return err
+	if err := e.addBizSetTask(); err != nil {
+		blog.Errorf("add biz set event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runBiz(context.Background()); err != nil {
-		blog.Errorf("run biz event flow failed, err: %v", err)
-		return err
+	if err := e.addBizTask(); err != nil {
+		blog.Errorf("add biz event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runSet(context.Background()); err != nil {
-		blog.Errorf("run set event flow failed, err: %v", err)
-		return err
+	if err := e.addSetTask(); err != nil {
+		blog.Errorf("add set event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runModule(context.Background()); err != nil {
-		blog.Errorf("run module event flow failed, err: %v", err)
-		return err
+	if err := e.addModuleTask(); err != nil {
+		blog.Errorf("add module event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runObjectBase(context.Background()); err != nil {
-		blog.Errorf("run object base event flow failed, err: %v", err)
-		return err
+	if err := e.addObjectBaseTask(context.Background()); err != nil {
+		blog.Errorf("add object base event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runProcess(context.Background()); err != nil {
-		blog.Errorf("run process event flow failed, err: %v", err)
-		return err
+	if err := e.addProcessTask(); err != nil {
+		blog.Errorf("add process event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runProcessInstanceRelation(context.Background()); err != nil {
-		blog.Errorf("run process instance relation event flow failed, err: %v", err)
-		return err
+	if err := e.addProcessInstanceRelationTask(); err != nil {
+		blog.Errorf("add process instance relation event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runInstAsst(context.Background()); err != nil {
-		blog.Errorf("run instance association event flow failed, err: %v", err)
-		return err
+	if err := e.addInstAsstTask(); err != nil {
+		blog.Errorf("add instance association event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runPlat(context.Background()); err != nil {
-		blog.Errorf("run plat event flow failed, err: %v", err)
+	if err := e.addPlatTask(); err != nil {
+		blog.Errorf("add plat event flow task failed, err: %v", err)
 	}
 
-	if err := e.runProject(context.Background()); err != nil {
-		blog.Errorf("run project event flow failed, err: %v", err)
+	if err := e.addProjectTask(); err != nil {
+		blog.Errorf("add project event flow task failed, err: %v", err)
 	}
 
-	return nil
+	return e, nil
 }
 
 // Event is the event flow struct
 type Event struct {
-	task *task.Task
+	tasks []*task.Task
 }
 
-func (e *Event) runHost(ctx context.Context) error {
+// GetWatchTasks returns the event flow tasks
+func (e *Event) GetWatchTasks() []*task.Task {
+	return e.tasks
+}
+
+func (e *Event) addHostTask() error {
 	opts := flowOptions{
 		key:         event.HostKey,
-		task:        e.task,
 		EventStruct: new(metadata.HostMapStr),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runModuleHostRelation(ctx context.Context) error {
+func (e *Event) addModuleHostRelationTask() error {
 	opts := flowOptions{
 		key:         event.ModuleHostRelationKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runBiz(ctx context.Context) error {
+func (e *Event) addBizTask() error {
 	opts := flowOptions{
 		key:         event.BizKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runSet(ctx context.Context) error {
+func (e *Event) addSetTask() error {
 	opts := flowOptions{
 		key:         event.SetKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runModule(ctx context.Context) error {
+func (e *Event) addModuleTask() error {
 	opts := flowOptions{
 		key:         event.ModuleKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runObjectBase(ctx context.Context) error {
+func (e *Event) addObjectBaseTask(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.ObjectBaseKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newInstanceFlow(ctx, opts, parseEvent)
+	return e.addInstanceFlowTask(ctx, opts, parseEvent)
 }
 
-func (e *Event) runProcess(ctx context.Context) error {
+func (e *Event) addProcessTask() error {
 	opts := flowOptions{
 		key:         event.ProcessKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
+func (e *Event) addProcessInstanceRelationTask() error {
 	opts := flowOptions{
 		key:         event.ProcessInstanceRelationKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runInstAsst(ctx context.Context) error {
+func (e *Event) addInstAsstTask() error {
 	opts := flowOptions{
 		key:         event.InstAsstKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newInstAsstFlow(ctx, opts, parseInstAsstEvent)
+	return e.addInstAsstFlowTask(opts, parseInstAsstEvent)
 }
 
-func (e *Event) runBizSet(ctx context.Context) error {
+func (e *Event) addBizSetTask() error {
 	opts := flowOptions{
 		key:         event.BizSetKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runPlat(ctx context.Context) error {
+func (e *Event) addPlatTask() error {
 	opts := flowOptions{
 		key:         event.PlatKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runProject(ctx context.Context) error {
+func (e *Event) addProjectTask() error {
 	opts := flowOptions{
 		key:         event.ProjectKey,
-		task:        e.task,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }

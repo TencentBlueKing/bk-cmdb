@@ -45,8 +45,7 @@ type loopWatchTask struct {
 	eventHandler EventHandler
 	tenantChan   <-chan TenantEvent
 
-	mu               sync.Mutex
-	tenantCancelFunc map[string]context.CancelFunc
+	tenantCancelFunc sync.Map
 }
 
 // run loop watch task
@@ -66,17 +65,14 @@ func (t *loopWatchTask) run() {
 
 // startTenantTask start loop watch task for new tenant
 func (t *loopWatchTask) startTenantTask(tenantID string, opts *watch.WatchEventOptions) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	if _, exists := t.tenantCancelFunc[tenantID]; exists {
+	if _, exists := t.tenantCancelFunc.Load(tenantID); exists {
 		return
 	}
 
 	ctx, cancel := context.WithCancel(util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode))
 	kit := rest.NewKit().WithCtx(ctx).WithTenant(tenantID)
 
-	t.tenantCancelFunc[tenantID] = cancel
+	t.tenantCancelFunc.Store(tenantID, cancel)
 
 	go t.loopWatch(kit, opts)
 	blog.Infof("start tenant %s loop watch task %s, rid: %s", tenantID, t.name, kit.Rid)
@@ -84,23 +80,30 @@ func (t *loopWatchTask) startTenantTask(tenantID string, opts *watch.WatchEventO
 
 // stopTenantTask stop loop watch task for removed or disabled tenant
 func (t *loopWatchTask) stopTenantTask(tenantID string, isAllTenant bool) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
 	if isAllTenant {
-		for id, cancel := range t.tenantCancelFunc {
-			cancel()
-			blog.Infof("stop tenant %s loop watch task %s", id, t.name)
-		}
-		t.tenantCancelFunc = make(map[string]context.CancelFunc)
+		t.tenantCancelFunc.Range(func(id, cancel any) bool {
+			t.cancelTenantTask(tenantID, cancel)
+			return true
+		})
 		return
 	}
 
-	if cancel, exists := t.tenantCancelFunc[tenantID]; exists {
-		cancel()
-		delete(t.tenantCancelFunc, tenantID)
-		blog.Infof("stop tenant %s loop watch task %s", tenantID, t.name)
+	if cancel, exists := t.tenantCancelFunc.Load(tenantID); exists {
+		t.cancelTenantTask(tenantID, cancel)
 	}
+}
+
+func (t *loopWatchTask) cancelTenantTask(tenantID, cancel any) {
+	cancelFunc, ok := cancel.(context.CancelFunc)
+	if !ok {
+		blog.Errorf("tenant %s loop watch task %s cancel func is invalid", tenantID, t.name)
+		t.tenantCancelFunc.Delete(tenantID)
+		return
+	}
+
+	cancelFunc()
+	t.tenantCancelFunc.Delete(tenantID)
+	blog.Infof("stop tenant %s loop watch task %s", tenantID, t.name)
 }
 
 // LoopWatch loop watch event flow

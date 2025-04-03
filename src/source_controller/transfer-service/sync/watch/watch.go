@@ -39,7 +39,6 @@ import (
 // Watcher is cmdb data syncer event watcher
 type Watcher struct {
 	name          string
-	task          *task.Task
 	isMaster      discovery.ServiceManageInterface
 	metadata      *syncmeta.Metadata
 	cacheCli      cacheservice.CacheServiceClientInterface
@@ -48,7 +47,7 @@ type Watcher struct {
 }
 
 // New new cmdb data syncer event watcher
-func New(name string, task *task.Task, isMaster discovery.ServiceManageInterface, meta *syncmeta.Metadata,
+func New(name string, isMaster discovery.ServiceManageInterface, meta *syncmeta.Metadata,
 	cacheCli cacheservice.CacheServiceClientInterface, transMedium medium.ClientI) (*Watcher, error) {
 
 	// create cmdb data syncer event watch token table
@@ -83,7 +82,6 @@ func New(name string, task *task.Task, isMaster discovery.ServiceManageInterface
 	// generate cmdb data syncer event watcher
 	watcher := &Watcher{
 		name:          name,
-		task:          task,
 		isMaster:      isMaster,
 		metadata:      meta,
 		cacheCli:      cacheCli,
@@ -99,7 +97,8 @@ func New(name string, task *task.Task, isMaster discovery.ServiceManageInterface
 }
 
 // Watch cmdb data syncer events and push the events to transfer medium
-func (w *Watcher) Watch() error {
+func (w *Watcher) Watch() ([]*task.Task, error) {
+	tasks := make([]*task.Task, 0)
 	for _, resType := range types.ListAllResTypeForIncrSync() {
 		cursorTypes, exists := resTypeCursorMap[resType]
 		if exists {
@@ -115,11 +114,13 @@ func (w *Watcher) Watch() error {
 			continue
 		}
 
-		if err := w.watchDB(resType); err != nil {
-			blog.Errorf("watch %s events from db failed, err: %v", resType, err)
-			return err
+		watchTask, err := w.watchDB(resType)
+		if err != nil {
+			blog.Errorf("new watch %s events task failed, err: %v", resType, err)
+			return nil, err
 		}
+		tasks = append(tasks, watchTask)
 	}
 
-	return nil
+	return tasks, nil
 }

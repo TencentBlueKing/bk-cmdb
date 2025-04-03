@@ -36,8 +36,8 @@ import (
 	"configcenter/src/source_controller/cacheservice/event/identifier"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/stream/scheduler"
 	"configcenter/src/storage/stream/task"
-	"configcenter/src/storage/stream/types"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
@@ -47,6 +47,7 @@ import (
 type CacheServiceInterface interface {
 	WebService() *restful.Container
 	SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error
+	Scheduler() *scheduler.Scheduler
 }
 
 // New create cache service instance
@@ -64,17 +65,18 @@ type cacheService struct {
 	core        core.Core
 	cacheSet    *cache.ClientSet
 	authManager *extensions.AuthManager
+	scheduler   *scheduler.Scheduler
 }
 
 // SetConfig TODO
-func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf,
+func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, errf errors.CCErrorIf,
 	lang language.CCLanguageIf) error {
 
 	s.cfg = cfg
 	s.engine = engine
 
-	if nil != err {
-		s.err = err
+	if errf != nil {
+		s.err = errf
 	}
 
 	if nil != lang {
@@ -93,41 +95,51 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 	}
 	s.authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
-	watchTaskOpt := &types.NewTaskOptions{
-		StopNotifier: make(<-chan struct{}),
+	taskScheduler, err := scheduler.New(mongodb.Dal(), mongodb.Dal("watch"), engine.ServiceManageInterface)
+	if err != nil {
+		blog.Errorf("new watch task scheduler instance failed, err: %v", err)
+		return err
 	}
-	watchTask, taskErr := task.New(mongodb.Dal(), mongodb.Dal("watch"), engine.ServiceManageInterface, watchTaskOpt)
-	if taskErr != nil {
-		blog.Errorf("new watch task instance failed, err: %v", taskErr)
-		return taskErr
-	}
+	s.scheduler = taskScheduler
+	watchTasks := make([]*task.Task, 0)
 
-	c, cacheErr := cacheop.NewCache(watchTask, engine.ServiceManageInterface)
+	c, cacheErr := cacheop.NewCache(engine.ServiceManageInterface)
 	if cacheErr != nil {
 		blog.Errorf("new cache instance failed, err: %v", cacheErr)
 		return cacheErr
 	}
 	s.cacheSet = c
+	watchTasks = append(watchTasks, c.GetWatchTasks()...)
 
-	flowErr := flow.NewEvent(watchTask)
+	flowEvent, flowErr := flow.NewEvent()
 	if flowErr != nil {
 		blog.Errorf("new watch event failed, err: %v", flowErr)
 		return flowErr
 	}
+	watchTasks = append(watchTasks, flowEvent.GetWatchTasks()...)
 
-	if err := identifier.NewIdentity(watchTask); err != nil {
+	hostIdentity, err := identifier.NewIdentity()
+	if err != nil {
 		blog.Errorf("new host identity event failed, err: %v", err)
 		return err
 	}
+	watchTasks = append(watchTasks, hostIdentity.GetWatchTasks()...)
 
-	if err := bsrelation.NewBizSetRelation(watchTask); err != nil {
+	bsRelation, err := bsrelation.NewBizSetRelation()
+	if err != nil {
 		blog.Errorf("new biz set relation event failed, err: %v", err)
 		return err
 	}
+	watchTasks = append(watchTasks, bsRelation.GetWatchTasks()...)
 
-	taskErr = watchTask.Start()
-	if taskErr != nil {
-		return taskErr
+	if err = taskScheduler.AddTasks(watchTasks...); err != nil {
+		blog.Errorf("add event watch tasks failed, err: %v", err)
+		return err
+	}
+
+	if err = taskScheduler.Start(); err != nil {
+		blog.Errorf("start event watch task scheduler failed, err: %v", err)
+		return err
 	}
 
 	return nil
@@ -157,6 +169,11 @@ func (s *cacheService) WebService() *restful.Container {
 	container.Add(commonAPI)
 
 	return container
+}
+
+// Scheduler returns the watch task scheduler
+func (s *cacheService) Scheduler() *scheduler.Scheduler {
+	return s.scheduler
 }
 
 // Language TODO

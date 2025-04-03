@@ -28,14 +28,13 @@ import (
 
 // FullSyncCond defines the full sync cond related logics
 type FullSyncCond struct {
-	task  *task.Task
 	chMap map[general.ResType]chan<- types.FullSyncCondEvent
+	tasks []*task.Task
 }
 
 // New FullSyncCond
-func New(watchTask *task.Task, chMap map[general.ResType]chan<- types.FullSyncCondEvent) (*FullSyncCond, error) {
+func New(chMap map[general.ResType]chan<- types.FullSyncCondEvent) (*FullSyncCond, error) {
 	f := &FullSyncCond{
-		task:  watchTask,
 		chMap: chMap,
 	}
 
@@ -44,4 +43,9 @@ func New(watchTask *task.Task, chMap map[general.ResType]chan<- types.FullSyncCo
 	}
 
 	return f, nil
+}
+
+// GetWatchTasks returns the event watch tasks
+func (f *FullSyncCond) GetWatchTasks() []*task.Task {
+	return f.tasks
 }

@@ -35,17 +35,22 @@ import (
 
 type flowOptions struct {
 	key         event.Key
-	task        *task.Task
 	EventStruct interface{}
 }
 
-func newFlow(ctx context.Context, opts flowOptions, parseEvent parseEventFunc) error {
+func (e *Event) addFlowTask(opts flowOptions, parseEvent parseEventFunc) error {
 	flow, err := NewFlow(opts, parseEvent)
 	if err != nil {
 		return err
 	}
 
-	return flow.RunFlow(ctx)
+	flowTask, err := flow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	e.tasks = append(e.tasks, flowTask)
+	return nil
 }
 
 // NewFlow create a new event watch flow
@@ -122,9 +127,9 @@ const (
 	cursorQueueSize = 50000
 )
 
-// RunFlow run event flow
-func (f *Flow) RunFlow(ctx context.Context) error {
-	blog.Infof("start run flow for key: %s.", f.key.Namespace())
+// GenWatchTask generate event flow watch task
+func (f *Flow) GenWatchTask() (*task.Task, error) {
+	blog.Infof("generate flow watch task for key: %s.", f.key.Namespace())
 
 	f.tokenHandler = NewFlowTokenHandler(f.key, f.metrics)
 
@@ -151,12 +156,12 @@ func (f *Flow) RunFlow(ctx context.Context) error {
 		BatchSize: batchSize,
 	}
 
-	err := f.task.AddLoopBatchTask(opts)
+	flowTask, err := task.NewLoopBatchTask(opts)
 	if err != nil {
-		blog.Errorf("run %s flow, but add loop batch task failed, err: %v", f.key.Namespace(), err)
-		return err
+		blog.Errorf("run %s flow, but generate loop batch task failed, err: %v", f.key.Namespace(), err)
+		return nil, err
 	}
-	return nil
+	return flowTask, nil
 }
 
 func (f *Flow) doBatch(dbInfo *types.DBInfo, es []*types.Event) (retry bool) {

@@ -18,10 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream/event"
-	"configcenter/src/storage/stream/loop"
 	"configcenter/src/storage/stream/types"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -72,25 +70,4 @@ func newEvent(conf local.MongoConf) (*event.Event, error) {
 		return nil, fmt.Errorf("new event failed, err: %v", err)
 	}
 	return event, nil
-}
-
-// LoopInterface is the interface for event loop stream.
-type LoopInterface interface {
-	WithOne(opts *types.LoopOneOptions) error
-	WithBatch(opts *types.LoopBatchOptions) error
-}
-
-// NewLoopStream create a new event loop stream.
-func NewLoopStream(conf local.MongoConf, isMaster discovery.ServiceManageInterface) (LoopInterface, error) {
-	event, err := newEvent(conf)
-	if err != nil {
-		return nil, err
-	}
-
-	loop, err := loop.NewLoopWatch(event, isMaster)
-	if err != nil {
-		return nil, err
-	}
-
-	return loop, nil
 }

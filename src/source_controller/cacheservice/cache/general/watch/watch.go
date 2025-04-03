@@ -71,7 +71,7 @@ func (w *Watcher) watch() error {
 
 	name := fmt.Sprintf("%s%s:%s", common.BKCacheKeyV3Prefix, "common_res", resType)
 
-	loopEventChan := make(chan loop.TenantEvent)
+	loopEventChan := make(chan loop.TenantEvent, 1)
 
 	go w.watchCacheChange(cursorType, name, loopEventChan)
 

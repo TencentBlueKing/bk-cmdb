@@ -13,7 +13,6 @@
 package identifier
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -22,7 +21,6 @@ import (
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
 	mixevent "configcenter/src/source_controller/cacheservice/event/mix-event"
-	"configcenter/src/storage/stream/task"
 	"configcenter/src/storage/stream/types"
 )
 
@@ -34,10 +32,9 @@ const (
 type identityOptions struct {
 	key         event.Key
 	watchFields []string
-	task        *task.Task
 }
 
-func newIdentity(ctx context.Context, opts identityOptions) error {
+func (i *Identity) addWatchTask(opts identityOptions) error {
 	identity := hostIdentity{
 		identityOptions: opts,
 		metrics:         event.InitialMetrics(opts.key.Collection(), "host_identifier"),
@@ -47,7 +44,6 @@ func newIdentity(ctx context.Context, opts identityOptions) error {
 		MixKey:       event.HostIdentityKey,
 		Key:          opts.key,
 		WatchFields:  opts.watchFields,
-		Task:         opts.task,
 		EventLockTTL: hostIdentityLockTTL,
 		EventLockKey: hostIdentityLockKey,
 	}
@@ -57,7 +53,13 @@ func newIdentity(ctx context.Context, opts identityOptions) error {
 		return err
 	}
 
-	return flow.RunFlow(ctx)
+	flowTask, err := flow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	i.tasks = append(i.tasks, flowTask)
+	return nil
 }
 
 type hostIdentity struct {

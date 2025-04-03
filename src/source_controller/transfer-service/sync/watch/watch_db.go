@@ -23,10 +23,10 @@ import (
 
 	synctypes "configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/watch"
+	"configcenter/src/storage/stream/task"
 	"configcenter/src/storage/stream/types"
 )
 
@@ -43,7 +43,7 @@ var resTypeWatchOptMap = map[synctypes.ResType]*types.WatchCollOptions{
 }
 
 // watchDB watch db events for resource that are not watched by flow
-func (w *Watcher) watchDB(resType synctypes.ResType) error {
+func (w *Watcher) watchDB(resType synctypes.ResType) (*task.Task, error) {
 	handler := w.tokenHandlers[resType]
 
 	opts := &types.LoopBatchTaskOptions{
@@ -64,13 +64,7 @@ func (w *Watcher) watchDB(resType synctypes.ResType) error {
 		BatchSize: common.BKMaxLimitSize,
 	}
 
-	err := w.task.AddLoopBatchTask(opts)
-	if err != nil {
-		blog.Errorf("watch %s events from db failed, err: %v", resType, err)
-		return err
-	}
-
-	return nil
+	return task.NewLoopBatchTask(opts)
 }
 
 // handleDBEvents handle db events

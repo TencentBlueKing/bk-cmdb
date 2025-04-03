@@ -18,31 +18,8 @@
 package task
 
 import (
-	"context"
-	"fmt"
-
-	"configcenter/src/common"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/stream/types"
 )
-
-// genWatchDBRelationMap generate db uuid to watch db uuid map
-func genWatchDBRelationMap(db dal.Dal) (map[string]string, error) {
-	ctx := context.Background()
-	masterDB := db.Shard(sharding.NewShardOpts().WithIgnoreTenant())
-
-	relations := make([]sharding.WatchDBRelation, 0)
-	if err := masterDB.Table(common.BKTableNameWatchDBRelation).Find(nil).All(ctx, &relations); err != nil {
-		return nil, fmt.Errorf("get db and watch db relation failed, err: %v", err)
-	}
-
-	watchDBRelation := make(map[string]string)
-	for _, relation := range relations {
-		watchDBRelation[relation.DB] = relation.WatchDB
-	}
-	return watchDBRelation, nil
-}
 
 // compareToken compare event with token, returns if event is greater than the token
 func compareToken(event *types.Event, token *types.TokenInfo) bool {

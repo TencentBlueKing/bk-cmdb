@@ -25,20 +25,6 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 )
 
-// NewTaskOptions is the new task options
-type NewTaskOptions struct {
-	StopNotifier <-chan struct{}
-}
-
-// Validate NewTaskOptions
-func (o *NewTaskOptions) Validate() error {
-	if o.StopNotifier == nil {
-		// if not set, then set never stop loop as default
-		o.StopNotifier = make(<-chan struct{})
-	}
-	return nil
-}
-
 // TaskTokenHandler is the token handler for db watch task
 type TaskTokenHandler interface {
 	SetLastWatchToken(ctx context.Context, uuid string, watchDB local.DB, token *TokenInfo) error

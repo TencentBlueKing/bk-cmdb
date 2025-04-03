@@ -14,7 +14,6 @@
 package types
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -457,13 +456,6 @@ func GetEventDetail(detailStr *string) *string {
 	return &detail
 }
 
-// TokenHandler is the token handler interface
-type TokenHandler interface {
-	SetLastWatchToken(ctx context.Context, token *TokenInfo) error
-	GetStartWatchToken(ctx context.Context) (token *TokenInfo, err error)
-	ResetWatchToken(startAtTime TimeStamp) error
-}
-
 // TokenInfo is the watch token info
 type TokenInfo struct {
 	Token       string     `bson:"token"`
@@ -472,138 +464,10 @@ type TokenInfo struct {
 	TenantID string `bson:"tenant_id"`
 }
 
-// LoopOptions TODO
-type LoopOptions struct {
-	// name of this loop watch
-	Name         string
-	WatchOpt     *WatchOptions
-	TokenHandler TokenHandler
-	RetryOptions *RetryOptions
-
-	// StopNotifier is used when user need to stop loop events and release related resources.
-	// It's a optional option. when it's not set(as is nil), then the loop will not exit forever.
-	// Otherwise, user can use it to stop loop events.
-	// When a user want to stop the loop, the only thing that a user need to do is to just
-	// **close** this stop notifier channel.
-	// Attention:
-	// Close this notifier channel is the only way to stop loop correctly.
-	// Do not send data to this channel.
-	StopNotifier <-chan struct{}
-}
-
-// LoopOneOptions TODO
-type LoopOneOptions struct {
-	LoopOptions
-	EventHandler *OneHandler
-}
-
-// Validate TODO
-func (lo *LoopOneOptions) Validate() error {
-	if len(lo.Name) == 0 {
-		return errors.New("loop watch should have a name")
-	}
-
-	if lo.TokenHandler == nil {
-		return errors.New("token handler is nil")
-	}
-
-	if lo.EventHandler == nil {
-		return errors.New("event handler is nil")
-	}
-
-	if lo.EventHandler.DoAdd == nil || lo.EventHandler.DoUpdate == nil || lo.EventHandler.DoDelete == nil {
-		return errors.New("invalid event handler options with add, update or delete is nil")
-	}
-
-	if lo.RetryOptions != nil {
-		if lo.RetryOptions.MaxRetryCount <= 0 {
-			lo.RetryOptions.MaxRetryCount = DefaultRetryCount
-		}
-
-		if lo.RetryOptions.RetryDuration == 0 {
-			lo.RetryOptions.RetryDuration = DefaultRetryDuration
-		}
-
-		if lo.RetryOptions.RetryDuration < 500*time.Millisecond {
-			return errors.New("invalid retry duration, can not less than 500ms")
-		}
-	} else {
-		lo.RetryOptions = &RetryOptions{
-			MaxRetryCount: DefaultRetryCount,
-			RetryDuration: DefaultRetryDuration,
-		}
-	}
-
-	if lo.LoopOptions.StopNotifier == nil {
-		// if not set, then set never stop loop as default
-		lo.LoopOptions.StopNotifier = make(<-chan struct{})
-	}
-
-	return nil
-}
-
-// LoopBatchOptions TODO
-type LoopBatchOptions struct {
-	LoopOptions
-	EventHandler *BatchHandler
-	// describe how many events in a batch.
-	BatchSize int
-}
-
 const (
-	defaultBatchSize     = 200
 	DefaultRetryCount    = 10
 	DefaultRetryDuration = 1 * time.Second
 )
-
-// Validate TODO
-func (lo *LoopBatchOptions) Validate() error {
-	if len(lo.Name) == 0 {
-		return errors.New("loop watch should have a name")
-	}
-
-	if lo.TokenHandler == nil {
-		return errors.New("token handler is nil")
-	}
-
-	if lo.EventHandler == nil {
-		return errors.New("event handler is nil")
-	}
-
-	if lo.EventHandler.DoBatch == nil {
-		return errors.New("batch handler is nil")
-	}
-
-	if lo.BatchSize == 0 {
-		lo.BatchSize = defaultBatchSize
-	}
-
-	if lo.RetryOptions != nil {
-		if lo.RetryOptions.MaxRetryCount <= 0 {
-			lo.RetryOptions.MaxRetryCount = DefaultRetryCount
-		}
-
-		if lo.RetryOptions.RetryDuration == 0 {
-			lo.RetryOptions.RetryDuration = DefaultRetryDuration
-		}
-
-		if lo.RetryOptions.RetryDuration < 200*time.Millisecond {
-			return errors.New("invalid retry duration, can not less than 200ms")
-		}
-	} else {
-		lo.RetryOptions = &RetryOptions{
-			MaxRetryCount: DefaultRetryCount,
-			RetryDuration: DefaultRetryDuration,
-		}
-	}
-
-	if lo.LoopOptions.StopNotifier == nil {
-		// if not set, then set never stop loop as default
-		lo.LoopOptions.StopNotifier = make(<-chan struct{})
-	}
-
-	return nil
-}
 
 // RetryOptions TODO
 type RetryOptions struct {
@@ -613,20 +477,4 @@ type RetryOptions struct {
 	// the duration between each retry.
 	// default
 	RetryDuration time.Duration
-}
-
-// OneHandler TODO
-type OneHandler struct {
-	// retry decide whether event(s) is required to retry after
-	// a event is handled failed
-	DoAdd    func(event *Event) (retry bool)
-	DoUpdate func(event *Event) (retry bool)
-	DoDelete func(event *Event) (retry bool)
-}
-
-// BatchHandler TODO
-type BatchHandler struct {
-	// DoBatch means handle the event with batch,
-	// when this is enabled, then DoAdd, DoUpdate, DoDelete will be ignored
-	DoBatch func(es []*Event) (retry bool)
 }

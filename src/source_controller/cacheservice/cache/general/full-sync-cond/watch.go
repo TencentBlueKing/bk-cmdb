@@ -33,6 +33,7 @@ import (
 	tokenhandler "configcenter/src/source_controller/cacheservice/cache/token-handler"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/stream/task"
 	"configcenter/src/storage/stream/types"
 )
 
@@ -67,11 +68,12 @@ func (f *FullSyncCond) Watch() error {
 		BatchSize: 200,
 	}
 
-	err := f.task.AddLoopBatchTask(opts)
+	watchTask, err := task.NewLoopBatchTask(opts)
 	if err != nil {
-		blog.Errorf("add watch full sync cond task failed, err: %v", err)
+		blog.Errorf("generate watch full sync cond task failed, err: %v", err)
 		return err
 	}
+	f.tasks = append(f.tasks, watchTask)
 
 	return nil
 }
