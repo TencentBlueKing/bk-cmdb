@@ -214,3 +214,13 @@ func (cs *ClientSet) CacheService() cacheservice.CacheServiceClientInterface {
 	}
 	return cacheservice.NewCacheServiceClient(c, cs.version)
 }
+
+// GetRefreshCapability get refresh capability
+func GetRefreshCapability(cs *ClientSet) (*util.Capability, string) {
+	return &util.Capability{
+		Client:   cs.client,
+		Discover: cs.discover.ApiServer(),
+		Throttle: cs.throttle,
+		Mock:     cs.Mock,
+	}, cs.version
+}

@@ -18,9 +18,14 @@
 package logics
 
 import (
+	"context"
 	"fmt"
 
+	"configcenter/pkg/tenant"
+	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/refresh"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -45,4 +50,23 @@ func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string, error) {
 	}
 
 	return dbCli, dbUUID, nil
+}
+
+// RefreshTenants refresh tenant info, skip tenant verify for apiserver
+func RefreshTenants(coreAPI apimachinery.ClientSetInterface) error {
+	clientSet, isOK := coreAPI.(*apimachinery.ClientSet)
+	if !isOK {
+		blog.Errorf("get client set from coreAPI failed")
+		return fmt.Errorf("get client set from coreAPI failed")
+	}
+
+	refreshApiCli := refresh.NewRefreshClientInterface(apimachinery.GetRefreshCapability(clientSet))
+	tenants, err := refreshApiCli.RefreshTenant(context.Background(), util.GenDefaultHeader())
+	if err != nil {
+		blog.Errorf("refresh tenant info failed, err: %v", err)
+		return err
+	}
+
+	tenant.SetTenant(tenants)
+	return nil
 }

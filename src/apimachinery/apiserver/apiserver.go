@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/pkg/tenant/types"
 	fieldtmpl "configcenter/src/apimachinery/apiserver/field_template"
 	modelquote "configcenter/src/apimachinery/apiserver/model_quote"
 	"configcenter/src/apimachinery/rest"
@@ -125,7 +124,6 @@ type ApiServerClientInterface interface {
 		err error)
 	TransferHostToResPool(ctx context.Context, bizID int64, h http.Header,
 		data *metadata.TransferHostWithAutoClearServiceInstanceOption) error
-	RefreshTenant(ctx context.Context, h http.Header) ([]types.Tenant, error)
 }
 
 // NewApiServerClientInterface TODO

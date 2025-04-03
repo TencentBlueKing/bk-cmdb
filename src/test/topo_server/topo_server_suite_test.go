@@ -36,4 +36,5 @@ func TestTopoServer(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	test.ClearDatabase()
+	test.AddTenantTest()
 })
