@@ -31,7 +31,7 @@ type APIMachineryConfig struct {
 	QPS int64
 	// request's burst value
 	Burst     int64
-	TLSConfig *TLSClientConfig
+	TLSConfig *ssl.TLSClientConfig
 	ExtraConf *ExtraClientConfig
 }
 
@@ -62,23 +62,9 @@ type MockInfo struct {
 	MockData    interface{}
 }
 
-// TLSClientConfig TODO
-type TLSClientConfig struct {
-	// Server should be accessed without verifying the TLS certificate. For testing only.
-	InsecureSkipVerify bool
-	// Server requires TLS client certificate authentication
-	CertFile string
-	// Server requires TLS client certificate authentication
-	KeyFile string
-	// Trusted root certificates for server
-	CAFile string
-	// the password to decrypt the certificate
-	Password string
-}
-
 // NewTLSClientConfigFromConfig new config about tls client config
-func NewTLSClientConfigFromConfig(prefix string) (TLSClientConfig, error) {
-	tlsConfig := TLSClientConfig{}
+func NewTLSClientConfigFromConfig(prefix string) (ssl.TLSClientConfig, error) {
+	tlsConfig := ssl.TLSClientConfig{}
 
 	skipVerifyKey := fmt.Sprintf("%s.insecureSkipVerify", prefix)
 	if val, err := cc.String(skipVerifyKey); err == nil {

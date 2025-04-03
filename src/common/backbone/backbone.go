@@ -31,6 +31,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
+	"configcenter/src/common/ssl"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
@@ -406,12 +407,12 @@ func (e *Engine) GetSrvInfo() *types.ServerInfo {
 	return e.srvInfo
 }
 
-func getTLSConf() (*util.TLSClientConfig, error) {
+func getTLSConf() (*ssl.TLSClientConfig, error) {
 	config, err := util.NewTLSClientConfigFromConfig("tls")
 	return &config, err
 }
 
-func isTLS(config *util.TLSClientConfig) bool {
+func isTLS(config *ssl.TLSClientConfig) bool {
 	if config == nil || len(config.CertFile) == 0 || len(config.KeyFile) == 0 {
 		return false
 	}

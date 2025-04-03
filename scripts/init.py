@@ -21,7 +21,8 @@ def mkdir_p(path):
 
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v,
-        redis_pass_v, sentinel_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
+        redis_pass_v, sentinel_pass_v, redis_certfile_v, redis_keyfile_v, redis_cafile_v, redis_skipverify_v,
+        mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip,
         enable_cryptor_v, secret_key_url_v, secrets_addrs_v, secrets_token_v, secrets_project_v, secrets_env_v
@@ -37,6 +38,10 @@ def generate_config_file(
         redis_pass=redis_pass_v,
         sentinel_pass=sentinel_pass_v,
         redis_port=redis_port_v,
+        redis_certfile=redis_certfile_v,
+        redis_keyfile=redis_keyfile_v,
+        redis_cafile=redis_cafile_v,
+        redis_skipverify=redis_skipverify_v,
         cc_url=cc_url_v,
         paas_url=paas_url_v,
         es_url=es_url_v,
@@ -98,6 +103,16 @@ redis:
   database: "0"
   maxOpenConns: 3000
   maxIDleConns: 1000
+  #TLS配置信息
+  tls:
+    #证书文件路径
+    certFile: "$redis_certfile"
+    #密钥文件路径
+    keyFile: "$redis_keyfile"
+    #CA证书文件路径
+    caFile: "$redis_cafile"
+    #是否跳过证书验证
+    insecureSkipVerify: $redis_skipverify
   #以下几个redis配置为datacollection模块所需的配置,用于接收第三方提供的数据
   #接收主机信息数据的redis
   snap:
@@ -105,18 +120,33 @@ redis:
     pwd: "$redis_pass"
     sentinelPwd: "$sentinel_pass"
     database: "0"
+    tls:
+      certFile: "$redis_certfile"
+      keyFile: "$redis_keyfile"
+      caFile: "$redis_cafile"
+      insecureSkipVerify: $redis_skipverify
   #接收模型实例数据的redis
   discover:
     host: $redis_host:$redis_port
     pwd: "$redis_pass"
     sentinelPwd: "$sentinel_pass"
     database: "0"
+    tls:
+      certFile: "$redis_certfile"
+      keyFile: "$redis_keyfile"
+      caFile: "$redis_cafile"
+      insecureSkipVerify: $redis_skipverify
   #接受硬件数据的redis
   netcollect:
     host: $redis_host:$redis_port
     pwd: "$redis_pass"
     sentinelPwd: "$sentinel_pass"
     database: "0"
+    tls:
+      certFile: "$redis_certfile"
+      keyFile: "$redis_keyfile"
+      caFile: "$redis_cafile"
+      insecureSkipVerify: $redis_skipverify
     '''
 
     template = FileTemplate(redis_file_template_str)
@@ -656,6 +686,16 @@ redis:
   database: "0"
   maxOpenConns: 3000
   maxIDleConns: 1000
+  #TLS配置信息
+  tls:
+    #证书文件路径
+    certFile: "$redis_certfile"
+    #密钥文件路径
+    keyFile: "$redis_keyfile"
+    #CA证书文件路径
+    caFile: "$redis_cafile"
+    #是否跳过证书验证
+    insecureSkipVerify: $redis_skipverify
 
 mongodb:
   host: $mongo_host
@@ -806,6 +846,10 @@ def main(argv):
     redis_port = 6379
     redis_pass = ''
     sentinel_pass = ''
+    redis_certfile = ''
+    redis_keyfile = ''
+    redis_cafile = ''
+    redis_skipverify = 'true'
     mongo_ip = ''
     mongo_port = 27017
     mongo_user = ''
@@ -859,7 +903,8 @@ def main(argv):
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
-        "redis_pass=", "sentinel_pass=", "mongo_ip=", "mongo_port=", "rs_name=",
+        "redis_pass=", "sentinel_pass=", "redis_certfile=", "redis_keyfile=", "redis_cafile=", "redis_skipverify=",
+        "mongo_ip=", "mongo_port=", "rs_name=",
         "mongo_user=", "mongo_pass=", "blueking_cmdb_url=", "user_info=",
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=","auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
@@ -874,6 +919,10 @@ def main(argv):
       --redis_port         <redis_port>           the redis port, default:6379
       --redis_pass         <redis_pass>           the redis user password
       --sentinel_pass      <sentinel_pass>        the redis sentinel password
+      --redis_certfile     <redis_certfile>       the redis cert file path
+      --redis_keyfile      <redis_keyfile>        the redis key file path
+      --redis_cafile       <redis_cafile>         the redis ca cert file path
+      --redis_skipverify   <redis_skipverify>     the redis skip verify
       --mongo_ip           <mongo_ip>             the mongo ip ,eg:127.0.0.1
       --mongo_port         <mongo_port>           the mongo port, eg:27017
       --mongo_user         <mongo_user>           the mongo user name, default:cc
@@ -911,6 +960,10 @@ def main(argv):
       --redis_port         6379 \\
       --redis_pass         1111 \\
       --sentinel_pass      2222 \\
+      --redis_certfile     ./redis.cert \\
+      --redis_keyfile      ./redis.key \\
+      --redis_cafile       ./redis-ca.crt \\
+      --redis_skipverify   true \\
       --mongo_ip           127.0.0.1 \\
       --mongo_port         27017 \\
       --mongo_user         cc \\
@@ -970,6 +1023,18 @@ def main(argv):
         elif opt in ("-s", "--sentinel_pass"):
             sentinel_pass = arg
             print('sentinel_pass:', sentinel_pass)
+        elif opt in ("--redis_certfile",):
+            redis_certfile = arg
+            print('redis_certfile:', redis_certfile)
+        elif opt in ("--redis_keyfile",):
+            redis_keyfile = arg
+            print('redis_keyfile:', redis_keyfile)
+        elif opt in ("--redis_cafile",):
+            redis_cafile = arg
+            print('redis_cafile:', redis_cafile)
+        elif opt in ("--redis_skipverify",):
+            redis_skipverify = arg
+            print('redis_skipverify:', redis_skipverify)
         elif opt in ("-m", "--mongo_ip"):
             mongo_ip = arg
             print('mongo_ip:', mongo_ip)
@@ -1144,6 +1209,10 @@ def main(argv):
         redis_port_v=redis_port,
         redis_pass_v=redis_pass,
         sentinel_pass_v=sentinel_pass,
+        redis_certfile_v=redis_certfile,
+        redis_keyfile_v=redis_keyfile,
+        redis_cafile_v=redis_cafile,
+        redis_skipverify_v=redis_skipverify,
         mongo_ip_v=mongo_ip,
         mongo_port_v=mongo_port,
         mongo_user_v=mongo_user,

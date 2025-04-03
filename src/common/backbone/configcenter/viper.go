@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/cryptor"
 	ccerr "configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/ssl"
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
@@ -281,6 +282,12 @@ func Redis(prefix string) (redis.Config, error) {
 		SentinelPassword: parser.getString(prefix + ".sentinelPwd"),
 		Enable:           parser.getString(prefix + ".enable"),
 		MaxOpenConns:     parser.getInt(prefix + ".maxOpenConns"),
+		TLSConfig: ssl.TLSClientConfig{
+			InsecureSkipVerify: parser.getBool(prefix + ".tls.insecureSkipVerify"),
+			CertFile:           parser.getString(prefix + ".tls.certFile"),
+			KeyFile:            parser.getString(prefix + ".tls.keyFile"),
+			CAFile:             parser.getString(prefix + ".tls.caFile"),
+		},
 	}, nil
 }
 

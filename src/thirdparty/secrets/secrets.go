@@ -21,6 +21,7 @@ import (
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/ssl"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -32,7 +33,7 @@ type SecretsClient interface {
 }
 
 // NewSecretsClient new a secrets client
-func NewSecretsClient(tls *util.TLSClientConfig, config SecretsConfig, reg prometheus.Registerer) (SecretsClient,
+func NewSecretsClient(tls *ssl.TLSClientConfig, config SecretsConfig, reg prometheus.Registerer) (SecretsClient,
 	error) {
 	if err := config.Validate(); err != nil {
 		return nil, err

@@ -20,6 +20,8 @@ package redis
 import (
 	"time"
 
+	commonSSL "configcenter/src/common/ssl"
+
 	"github.com/FZambia/sentinel"
 	"github.com/boj/redistore"
 	"github.com/gin-contrib/sessions"
@@ -46,8 +48,38 @@ type RedisStore interface {
 //
 // It is recommended to use an authentication key with 32 or 64 bytes. The encryption key,
 // if set, must be either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256 modes.
-func NewRedisStore(size int, network, address, password string, keyPairs ...[]byte) (RedisStore, error) {
-	store, err := redistore.NewRediStore(size, network, address, password, keyPairs...)
+func NewRedisStore(size int, network, address, password string, tlsConf commonSSL.TLSClientConfig,
+	keyPairs ...[]byte) (RedisStore, error) {
+	tls, err := commonSSL.NewTLSConfigFromConf(tlsConf)
+	if err != nil {
+		return nil, err
+	}
+
+	pool := &redis.Pool{
+		MaxIdle:     size,
+		IdleTimeout: 240 * time.Second,
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial(network, address,
+				redis.DialUseTLS(tls != nil),
+				redis.DialTLSConfig(tls))
+			if err != nil {
+				return nil, err
+			}
+			if password != "" {
+				if _, err := c.Do("AUTH", password); err != nil {
+					c.Close()
+					return nil, err
+				}
+			}
+			return c, nil
+		},
+	}
+
+	store, err := redistore.NewRediStoreWithPool(pool, keyPairs...)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +118,11 @@ func (c *redisStore) Options(options sessions.Options) {
 // It is recommended to use an authentication key with 32 or 64 bytes. The encryption key,
 // if set, must be either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256 modes.
 func NewRedisStoreWithSentinel(address []string, size int, masterName, network, password string, sentinelPwd string,
-	keyPairs ...[]byte) (RedisStore, error) {
+	tlsConf commonSSL.TLSClientConfig, keyPairs ...[]byte) (RedisStore, error) {
+	tls, err := commonSSL.NewTLSConfigFromConf(tlsConf)
+	if err != nil {
+		return nil, err
+	}
 
 	sntnl := &sentinel.Sentinel{
 		Addrs:      address,
@@ -98,6 +134,8 @@ func NewRedisStoreWithSentinel(address []string, size int, masterName, network, 
 				redis.DialReadTimeout(timeout),
 				redis.DialWriteTimeout(timeout),
 				redis.DialPassword(sentinelPwd),
+				redis.DialUseTLS(tls != nil),
+				redis.DialTLSConfig(tls),
 			)
 		},
 	}

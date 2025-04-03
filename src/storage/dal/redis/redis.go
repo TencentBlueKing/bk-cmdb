@@ -18,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 
+	commonSSL "configcenter/src/common/ssl"
+
 	"github.com/go-redis/redis/v7"
 )
 
@@ -31,25 +33,33 @@ type Config struct {
 	// for datacollection, notify if the snapshot redis is in use
 	Enable       string
 	MaxOpenConns int
+	// tls config
+	TLSConfig commonSSL.TLSClientConfig
 }
 
 // NewFromConfig returns new redis client from config
 func NewFromConfig(cfg Config) (Client, error) {
 	dbNum, err := strconv.Atoi(cfg.Database)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 	if cfg.MaxOpenConns == 0 {
 		cfg.MaxOpenConns = 3000
 	}
 
+	tlsConf, err := commonSSL.NewTLSConfigFromConf(cfg.TLSConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	var client Client
 	if cfg.MasterName == "" {
 		option := &redis.Options{
-			Addr:     cfg.Address,
-			Password: cfg.Password,
-			DB:       dbNum,
-			PoolSize: cfg.MaxOpenConns,
+			Addr:      cfg.Address,
+			Password:  cfg.Password,
+			DB:        dbNum,
+			PoolSize:  cfg.MaxOpenConns,
+			TLSConfig: tlsConf,
 		}
 		client = NewClient(option)
 	} else {
@@ -61,6 +71,7 @@ func NewFromConfig(cfg Config) (Client, error) {
 			DB:               dbNum,
 			PoolSize:         cfg.MaxOpenConns,
 			SentinelPassword: cfg.SentinelPassword,
+			TLSConfig:        tlsConf,
 		}
 		client = NewFailoverClient(option)
 	}

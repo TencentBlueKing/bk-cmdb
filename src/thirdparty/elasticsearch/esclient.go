@@ -129,7 +129,7 @@ type EsConfig struct {
 	EsUrl           string
 	EsUser          string
 	EsPassword      string
-	TLSClientConfig apiutil.TLSClientConfig
+	TLSClientConfig ssl.TLSClientConfig
 }
 
 // ParseConfigFromKV returns a new config

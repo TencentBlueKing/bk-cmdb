@@ -19,6 +19,7 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/ssl"
 	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
@@ -29,7 +30,7 @@ var (
 
 	lastInitErr   errors.CCErrorCoder
 	lastConfigErr errors.CCErrorCoder
-	tlsConfig     util.TLSClientConfig
+	tlsConfig     ssl.TLSClientConfig
 )
 
 // EsbClient TODO

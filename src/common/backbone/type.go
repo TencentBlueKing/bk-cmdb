@@ -16,7 +16,7 @@ import (
 	"net/http"
 
 	"configcenter/src/apimachinery"
-	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/ssl"
 	"configcenter/src/common/types"
 )
 
@@ -32,6 +32,6 @@ type Server struct {
 	ListenAddr   string
 	ListenPort   uint
 	Handler      http.Handler
-	TLS          *util.TLSClientConfig
+	TLS          *ssl.TLSClientConfig
 	PProfEnabled bool
 }

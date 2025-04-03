@@ -13,15 +13,15 @@
 package client
 
 import (
-	"configcenter/src/apimachinery/util"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/ssl"
 )
 
 // GseConnConfig connect to gse config
 type GseConnConfig struct {
 	Endpoints []string
-	TLSConf   *util.TLSClientConfig
+	TLSConf   *ssl.TLSClientConfig
 }
 
 // NewGseConnConfig new GseConnConfig struct
@@ -31,7 +31,7 @@ func NewGseConnConfig(prefix string) (*GseConnConfig, error) {
 		return nil, err
 	}
 
-	tlsConfig := new(util.TLSClientConfig)
+	tlsConfig := new(ssl.TLSClientConfig)
 	if tlsConfig.InsecureSkipVerify, err = cc.Bool(prefix + ".insecureSkipVerify"); err != nil {
 		blog.Errorf("get gse %v insecureSkipVerify config error, err: %v", prefix, err)
 		return nil, err

@@ -16,7 +16,6 @@ import (
 	"context"
 	"sync"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/ssl"
 	apiserver "configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
 	taskserver "configcenter/src/thirdparty/gse/push_file_forsyncdata"
@@ -27,13 +26,13 @@ import (
 // GseApiServerClient TODO
 type GseApiServerClient struct {
 	endpoints []string
-	tlsConf   *util.TLSClientConfig
+	tlsConf   *ssl.TLSClientConfig
 	index     int
 	sync.Mutex
 }
 
 // NewGseApiServerClient new gse api server client
-func NewGseApiServerClient(endpoints []string, conf *util.TLSClientConfig) (*GseApiServerClient, error) {
+func NewGseApiServerClient(endpoints []string, conf *ssl.TLSClientConfig) (*GseApiServerClient, error) {
 	return &GseApiServerClient{
 		endpoints: endpoints,
 		tlsConf:   conf,
@@ -69,13 +68,13 @@ func (g *GseApiServerClient) getClient() (*apiClient, error) {
 // GseTaskServerClient TODO
 type GseTaskServerClient struct {
 	endpoints []string
-	tlsConf   *util.TLSClientConfig
+	tlsConf   *ssl.TLSClientConfig
 	index     int
 	sync.Mutex
 }
 
 // NewGseTaskServerClient new gse task server client
-func NewGseTaskServerClient(endpoints []string, conf *util.TLSClientConfig) (*GseTaskServerClient, error) {
+func NewGseTaskServerClient(endpoints []string, conf *ssl.TLSClientConfig) (*GseTaskServerClient, error) {
 	return &GseTaskServerClient{
 		endpoints: endpoints,
 		tlsConf:   conf,
@@ -118,7 +117,7 @@ func (g *GseTaskServerClient) getClient() (*taskClient, error) {
 }
 
 // createGseApiServerClient create thrift client for gse apiServer
-func createGseApiServerClient(endpoint string, conf *util.TLSClientConfig) (*apiClient, error) {
+func createGseApiServerClient(endpoint string, conf *ssl.TLSClientConfig) (*apiClient, error) {
 	var trans thrift.TTransport
 	cfg, err := ssl.ClientTLSConfVerity(conf.CAFile, conf.CertFile, conf.KeyFile, conf.Password)
 	if err != nil {
@@ -145,7 +144,7 @@ func createGseApiServerClient(endpoint string, conf *util.TLSClientConfig) (*api
 }
 
 // createGseTaskServerClient create thrift client for gse taskServer
-func createGseTaskServerClient(endpoint string, conf *util.TLSClientConfig) (*taskClient, error) {
+func createGseTaskServerClient(endpoint string, conf *ssl.TLSClientConfig) (*taskClient, error) {
 	cfg, err := ssl.ClientTLSConfVerity(conf.CAFile, conf.CertFile, conf.KeyFile, conf.Password)
 	if err != nil {
 		return nil, err

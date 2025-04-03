@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/http/httpclient"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/esb"
+	"configcenter/src/common/ssl"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
 	"github.com/gin-gonic/gin"
@@ -230,7 +231,7 @@ func (m *user) GetUserList(c *gin.Context, params map[string]string) ([]*metadat
 	return users, nil
 }
 
-func (m *user) setTLSConf(tlsConf *apiutil.TLSClientConfig, httpCli *httpclient.HttpClient, rid string) error {
+func (m *user) setTLSConf(tlsConf *ssl.TLSClientConfig, httpCli *httpclient.HttpClient, rid string) error {
 	if tlsConf != nil && !tlsConf.InsecureSkipVerify {
 		if err := httpCli.SetTLSVerify(tlsConf); err != nil {
 			return err

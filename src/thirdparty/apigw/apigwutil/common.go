@@ -24,6 +24,7 @@ import (
 	"configcenter/src/apimachinery/util"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/ssl"
 )
 
 // ApiGWBaseResponse api gateway base response
@@ -38,7 +39,7 @@ type ApiGWConfig struct {
 	AppCode   string
 	AppSecret string
 	Username  string
-	TLSConfig *util.TLSClientConfig
+	TLSConfig *ssl.TLSClientConfig
 }
 
 // ApiGWDiscovery api gateway discovery struct

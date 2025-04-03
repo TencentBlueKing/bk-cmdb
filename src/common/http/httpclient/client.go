@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"time"
 
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/ssl"
 )
 
@@ -74,7 +73,7 @@ func (client *HttpClient) SetTlsVerityServer(caFile string) error {
 }
 
 // SetTLSVerify set tls verify config
-func (client *HttpClient) SetTLSVerify(c *util.TLSClientConfig) error {
+func (client *HttpClient) SetTLSVerify(c *ssl.TLSClientConfig) error {
 	// load cert
 	tlsConf, err := ssl.ClientTLSConfVerity(c.CAFile, c.CertFile, c.KeyFile, c.Password)
 	if err != nil {
