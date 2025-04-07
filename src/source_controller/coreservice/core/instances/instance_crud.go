@@ -15,6 +15,7 @@ package instances
 import (
 	"time"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -27,7 +28,12 @@ import (
 )
 
 func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr.MapStr) ([]uint64, error) {
-	instTableName := common.GetInstTableName(objID, kit.TenantID)
+
+	instTableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
 	instIDFieldName := common.GetInstIDField(objID)
 	ids, err := getSequences(kit, instTableName, len(params))
 	if err != nil {
@@ -99,7 +105,12 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 		}
 	}
 
-	instTableName := common.GetInstTableName(objID, kit.TenantID)
+	instTableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return 0, err
+	}
+
 	ids, err := getSequences(kit, instTableName, 1)
 	if err != nil {
 		return 0, err
@@ -167,7 +178,12 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 			return err
 		}
 	}
-	tableName := common.GetInstTableName(objID, kit.TenantID)
+
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
 	if !valid.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
@@ -177,7 +193,7 @@ func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr
 	data.Set(common.BKUpdatedAt, ts)
 
 	data.Remove(common.BKObjIDField)
-	err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Update(kit.Ctx, cond, data)
+	err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Update(kit.Ctx, cond, data)
 	if err != nil {
 		blog.Errorf("update instance error. err: %v, objID: %s, instance: %+v, cond: %+v, rid: %s", err, objID,
 			data, cond, kit.Rid)
@@ -193,7 +209,11 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 	exists bool, err error) {
 
 	origins = make([]mapstr.MapStr, 0)
-	tableName := common.GetInstTableName(objID, kit.TenantID)
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return origins, !mongodb.IsNotFoundError(err), err
+	}
 	if !valid.IsInnerObject(objID) {
 		cond.Set(common.BKObjIDField, objID)
 	}
@@ -211,12 +231,16 @@ func (m *instanceManager) getInsts(kit *rest.Kit, objID string, cond mapstr.MapS
 
 func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID int64) (origin mapstr.MapStr,
 	err error) {
-	tableName := common.GetInstTableName(objID, kit.TenantID)
 
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
 	cond := mongo.NewCondition()
 	cond.Element(&mongo.Eq{Key: common.GetInstIDField(objID), Val: instID})
 
-	if common.IsObjectInstShardingTable(common.GetInstTableName(objID, kit.TenantID)) {
+	if common.IsObjectInstShardingTable(tableName) {
 		cond.Element(&mongo.Eq{Key: common.BKObjIDField, Val: objID})
 	}
 
@@ -234,8 +258,11 @@ func (m *instanceManager) getInstDataByID(kit *rest.Kit, objID string, instID in
 }
 
 func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr.MapStr) (count uint64, err error) {
-	tableName := common.GetInstTableName(objID, kit.TenantID)
-
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return 0, err
+	}
 	if cond == nil {
 		cond = make(map[string]interface{})
 	}

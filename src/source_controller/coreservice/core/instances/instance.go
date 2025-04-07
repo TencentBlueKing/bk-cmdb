@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -51,7 +52,11 @@ func New(dependent OperationDependences, language language.CCLanguageIf,
 
 func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapStr) (cnt uint64, exists bool,
 	err error) {
-	tableName := common.GetInstTableName(objID, kit.TenantID)
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return 0, false, err
+	}
 	cnt, err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond).Count(kit.Ctx)
 	exists = 0 != cnt
 	return cnt, exists, err
@@ -471,7 +476,12 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 
 	blog.V(9).Infof("search instance with parameter: %+v, rid: %s", inputParam, kit.Rid)
 
-	tableName := common.GetInstTableName(objID, kit.TenantID)
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
+
 	if common.IsObjectInstShardingTable(tableName) {
 		if inputParam.Condition == nil {
 			inputParam.Condition = mapstr.MapStr{}
@@ -503,7 +513,12 @@ func (m *instanceManager) SearchModelInstance(kit *rest.Kit, objID string, input
 func (m *instanceManager) searchModelInstance(kit *rest.Kit, objID string, inputParam metadata.QueryCondition,
 	fields []string, vipFields []string) (*metadata.QueryResult, error) {
 
-	tableName := common.GetInstTableName(objID, kit.TenantID)
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
+
 	instItems := make([]mapstr.MapStr, 0)
 	query := mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(inputParam.Condition).
 		Start(uint64(inputParam.Page.Start)).Limit(uint64(inputParam.Page.Limit)).Sort(inputParam.Page.Sort)
@@ -571,7 +586,12 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 	*metadata.DeletedCount, error) {
 
 	instIDs := make([]int64, 0)
-	tableName := common.GetInstTableName(objID, kit.TenantID)
+
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
 	instIDFieldName := common.GetInstIDField(objID)
 
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)
@@ -626,7 +646,12 @@ func (m *instanceManager) DeleteModelInstance(kit *rest.Kit, objID string, input
 func (m *instanceManager) CascadeDeleteModelInstance(kit *rest.Kit, objID string,
 	inputParam metadata.DeleteOption) (*metadata.DeletedCount, error) {
 	instIDs := make([]int64, 0)
-	tableName := common.GetInstTableName(objID, kit.TenantID)
+
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return nil, err
+	}
 	instIDFieldName := common.GetInstIDField(objID)
 
 	origins, _, err := m.getInsts(kit, objID, inputParam.Condition)

@@ -17,11 +17,16 @@ import (
 	"fmt"
 	"os"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
+	"configcenter/src/common/blog"
+	commuitl "configcenter/src/common/http/header/util"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
@@ -234,8 +239,12 @@ func (s *topoCheckService) searchMainlineInstance() error {
 			common.BKAppIDField: s.bizID,
 		}
 
-		err = s.db.Table(common.GetInstTableName(objectID, s.tenantID)).Find(cond).
-			All(context.Background(), &mainlineInstances)
+		instTable, err := getObjInstTable(s.db, objectID, s.tenantID)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v", objectID, err)
+			return err
+		}
+		err = s.db.Table(instTable).Find(cond).All(context.Background(), &mainlineInstances)
 		if err != nil {
 			return fmt.Errorf("get mainline instances by business id: %d failed, err: %+v", s.bizID, err)
 		}
@@ -280,14 +289,7 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 		if instance.ParentInstanceID == 0 {
 			continue
 		}
-		var parentKey string
-		if instance.ObjectID == common.BKInnerObjIDSet && instance.Default == 1 {
-			// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
-			parentKey = fmt.Sprintf("%s:%d", common.BKInnerObjIDApp, instance.ParentInstanceID)
-		} else {
-			parentObjectID := s.objectParentMap[instance.ObjectID]
-			parentKey = fmt.Sprintf("%s:%d", parentObjectID, instance.ParentInstanceID)
-		}
+		parentKey := s.getParentKey(instance)
 		// check whether parent instance exist, if not, try to get it at best.
 		_, exist := s.instanceMap[parentKey]
 		if exist {
@@ -298,9 +300,14 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 		parentIDField := common.GetInstIDField(parentObjectID)
 		mongoCondition.Element(&mongo.Eq{Key: parentIDField, Val: instance.ParentInstanceID})
 		missedInstances := make([]map[string]interface{}, 0)
-		parentTable := common.GetInstTableName(parentObjectID, s.tenantID)
-		err := s.db.Table(parentTable).Find(mongoCondition.ToMapStr()).
-			All(context.Background(), &missedInstances)
+
+		parentTable, err := getObjInstTable(s.db, parentObjectID, s.tenantID)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v", parentObjectID, err)
+			return
+		}
+
+		err = s.db.Table(parentTable).Find(mongoCondition.ToMapStr()).All(context.Background(), &missedInstances)
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "find missing parent instance for object %s and instance: %d failed, "+
 				"err: %+v, parentObjectID: %s, ParentInstanceID: %d\n",
@@ -347,4 +354,30 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 			Default:          defaultFieldValue,
 		}
 	}
+}
+
+func (s *topoCheckService) getParentKey(instance *topoInstance) string {
+	if instance.ObjectID == common.BKInnerObjIDSet && instance.Default == 1 {
+		// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
+		parentKey := fmt.Sprintf("%s:%d", common.BKInnerObjIDApp, instance.ParentInstanceID)
+		return parentKey
+	}
+
+	parentObjectID := s.objectParentMap[instance.ObjectID]
+	parentKey := fmt.Sprintf("%s:%d", parentObjectID, instance.ParentInstanceID)
+	return parentKey
+}
+
+func getObjInstTable(db local.DB, objectID, tenantID string) (string, error) {
+	kit := &rest.Kit{
+		Ctx:      context.Background(),
+		Header:   commuitl.GenCommonHeader("", tenantID, ""),
+		TenantID: tenantID,
+	}
+	instTable, err := logics.GetObjInstTableFromDB(kit, db, objectID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v", objectID, err)
+		return "", err
+	}
+	return instTable, nil
 }

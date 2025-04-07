@@ -23,8 +23,8 @@ import (
 )
 
 // CreateMainlineAssociation create mainline object association
-func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.MainlineAssociation) (
-	*metadata.Object, error) {
+func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadata.MainlineAssociation,
+	objectUUID string) (*metadata.Object, error) {
 
 	if data.AsstObjID == "" {
 		blog.Errorf("bk_asst_obj_id empty, input: %#v, rid: %s", data, kit.Rid)
@@ -69,6 +69,7 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		common.BKObjNameField:          data.ObjectName,
 		common.BKObjIconField:          data.ObjectIcon,
 		common.BKClassificationIDField: data.ClassificationID,
+		metadata.ModelFieldObjUUID:     objectUUID,
 	}
 	currentObj, err := assoc.obj.CreateObject(kit, true, objData)
 	if err != nil {

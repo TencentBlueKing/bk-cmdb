@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"configcenter/pkg/filter"
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -1006,9 +1007,17 @@ func (s *Service) CountBizSetTopoHostAndSrvInst(ctx *rest.Contexts) {
 
 	bizIDs := make([]interface{}, 0)
 	bizIDMap := make(map[interface{}]struct{})
+
 	for objID, instIDs := range objInstMap {
+
+		tableName, err := logics.GetObjInstTableFromCache(ctx.Kit, s.Engine.CoreAPI, objID)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
 		distinctOpt := &metadata.DistinctFieldOption{
-			TableName: common.GetInstTableName(objID, ctx.Kit.TenantID),
+			TableName: tableName,
 			Field:     common.BKAppIDField,
 			Filter:    map[string]interface{}{common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: instIDs}},
 		}

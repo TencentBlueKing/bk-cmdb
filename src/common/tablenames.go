@@ -191,14 +191,29 @@ const (
 	BKObjectInstAsstShardingTablePrefix = BKTableNameInstAsst + "_"
 )
 
-// GetObjectInstTableName return the object instance table name in sharding mode base on
-// the object ID. Format: ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'ObjectBase_0_pub_switch'.
+// GetObjectInstAsstTableName return the object instance association table name. TODO remove after cache-service and iam
+func GetObjectInstAsstTableName(objID, tenantID string) string {
+	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstAsstShardingTablePrefix, tenantID, TableSpecifierPublic, objID)
+}
+
+// GetObjectInstTableName return the object instance table name. TODO remove after cache-service and iam
 func GetObjectInstTableName(objID, tenantID string) string {
 	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstShardingTablePrefix, tenantID, TableSpecifierPublic, objID)
 }
 
-// GetObjectInstObjIDByTableName return the object id
-// example: ObjectBase_{supplierAccount}_{Specifier}_{ObjectID}, such as 'ObjectBase_0_pub_switch',return switch.
+// GetObjInstTableName return the object instance table name.
+// example: ObjectBase_{uuid}, such as 'ObjectBase_d0hcqvfk9a52rli3fuq0'
+func GetObjInstTableName(uuid string) string {
+	return fmt.Sprintf("%s%s", BKObjectInstShardingTablePrefix, uuid)
+}
+
+// GetObjInstAsstTableName return the object instance association table name.
+// example: InstAsst_{uuid}, such as 'InstAsst_d0hcqvfk9a52rli3fuq0'
+func GetObjInstAsstTableName(uuid string) string {
+	return fmt.Sprintf("%s%s", BKObjectInstAsstShardingTablePrefix, uuid)
+}
+
+// GetObjectInstObjIDByTableName get objID by table name. TODO remove after cache-service and iam
 func GetObjectInstObjIDByTableName(collectionName, tenantID string) (string, error) {
 	prefix := fmt.Sprintf("%s%s_", BKObjectInstShardingTablePrefix, tenantID)
 	suffix := strings.TrimPrefix(collectionName, prefix)
@@ -207,12 +222,6 @@ func GetObjectInstObjIDByTableName(collectionName, tenantID string) (string, err
 		return "", fmt.Errorf("collection name is error, collection name: %s", collectionName)
 	}
 	return strings.Join(suffixSlice[1:], "_"), nil
-}
-
-// GetObjectInstAsstTableName return the object instance association table name in sharding mode base on
-// the object ID. Format: InstAsst_{supplierAccount}_{Specifier}_{ObjectID}, such as 'InstAsst_0_pub_switch'.
-func GetObjectInstAsstTableName(objID, tenantID string) string {
-	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstAsstShardingTablePrefix, tenantID, TableSpecifierPublic, objID)
 }
 
 // IsObjectShardingTable returns if the target table is an object sharding table, include
@@ -226,18 +235,27 @@ func IsObjectShardingTable(tableName string) bool {
 
 // IsObjectInstShardingTable returns if the target table is an object instance sharding table.
 func IsObjectInstShardingTable(tableName string) bool {
-	// check object instance table, ObjectBase_{Specifier}_{ObjectID}
+	// check object instance table, ObjectBase_{uuid}
 	return strings.HasPrefix(tableName, BKObjectInstShardingTablePrefix)
 }
 
 // IsObjectInstAsstShardingTable returns if the target table is an object instance association sharding table.
 func IsObjectInstAsstShardingTable(tableName string) bool {
-	// check object instance association table, InstAsst_{Specifier}_{ObjectID}
+	// check object instance association table, InstAsst_{uuid}
 	return strings.HasPrefix(tableName, BKObjectInstAsstShardingTablePrefix)
 }
 
 // GetInstTableName returns inst data table name
-func GetInstTableName(objID, tenantID string) string {
+func GetInstTableName(objID string, uuid string) string {
+	if IsInnerModel(objID) {
+		return GetInnerInstTableName(objID)
+	}
+
+	return GetObjInstTableName(uuid)
+}
+
+// GetInnerInstTableName returns inner object instance table name
+func GetInnerInstTableName(objID string) string {
 	switch objID {
 	case BKInnerObjIDApp:
 		return BKTableNameBaseApp
@@ -253,14 +271,12 @@ func GetInstTableName(objID, tenantID string) string {
 		return BKTableNameBaseHost
 	case BKInnerObjIDProc:
 		return BKTableNameBaseProcess
-	case BKInnerObjIDPlat:
-		return BKTableNameBasePlat
 	default:
-		return GetObjectInstTableName(objID, tenantID)
+		return BKTableNameBasePlat
 	}
 }
 
-// GetInstObjIDByTableName get objID by table name
+// GetInstObjIDByTableName get objID by table name. TODO remove after cache-service and iam
 func GetInstObjIDByTableName(collectionName, tenantID string) (string, error) {
 	switch collectionName {
 	case BKTableNameBaseApp:

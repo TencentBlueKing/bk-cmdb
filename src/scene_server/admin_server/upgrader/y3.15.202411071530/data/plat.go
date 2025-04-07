@@ -21,7 +21,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
@@ -42,7 +41,7 @@ var cloudAreaData = []cloudArea{
 }
 
 func addCloudAreaData(kit *rest.Kit, db local.DB) error {
-	cloudData := make([]mapstr.MapStr, 0)
+	cloudData := make([]interface{}, 0)
 	for _, data := range cloudAreaData {
 		data.Time = tools.NewTime()
 		data.Creator = common.CCSystemOperatorUserName

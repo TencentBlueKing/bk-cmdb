@@ -483,10 +483,10 @@ func (k Key) ChainCollection() string {
 }
 
 // ShardingCollection returns the sharding collection name. ** Can only be used for common and mainline instance **
-func (k Key) ShardingCollection(objID, supplierAccount string) string {
+func (k Key) ShardingCollection(objID, tenantID string) string {
 	if k.Collection() != common.BKTableNameBaseInst && k.Collection() != common.BKTableNameMainlineInstance {
 		return ""
 	}
 
-	return common.GetObjectInstTableName(objID, supplierAccount)
+	return common.GetObjectInstTableName(objID, tenantID)
 }

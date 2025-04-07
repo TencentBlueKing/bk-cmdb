@@ -35,7 +35,7 @@ func (m *topoManager) SearchMainlineInstanceTopo(kit *rest.Kit, bkBizID int64,
 	blog.V(9).Infof("model mainline: %+v, rid: %s", bizTopoNode, kit.Rid)
 
 	im, err := NewInstanceMainline(m.lang.CreateDefaultCCLanguageIf(httpheader.GetLanguage(kit.Header)), mongodb.Shard(
-		kit.ShardOpts()), bkBizID)
+		kit.ShardOpts()), bkBizID, m.clientSet)
 	if err != nil {
 		blog.Errorf("new instance mainline failed, bizID: %d, err: %v, rid: %s", bkBizID, err, kit.Rid)
 		return nil, fmt.Errorf("new mainline instance by business:%d failed, %+v", bkBizID, err)

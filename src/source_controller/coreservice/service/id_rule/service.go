@@ -20,19 +20,22 @@ package idrule
 import (
 	"net/http"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/source_controller/coreservice/service/capability"
 )
 
 type service struct {
-	core core.Core
+	core      core.Core
+	clientSet apimachinery.ClientSetInterface
 }
 
 // InitIDRule init id rule service
-func InitIDRule(c *capability.Capability) {
+func InitIDRule(c *capability.Capability, clientSet apimachinery.ClientSetInterface) {
 	s := &service{
-		core: c.Core,
+		core:      c.Core,
+		clientSet: clientSet,
 	}
 
 	c.Utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/inst/id_rule",

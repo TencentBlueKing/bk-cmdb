@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"configcenter/pkg/filter"
@@ -37,16 +36,15 @@ import (
 )
 
 // AddHost TODO
-func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, ownerID string,
-	hostInfos map[int64]map[string]interface{}, importType metadata.HostInputType) ([]int64, []string, []string,
-	[]string, error) {
+func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, hostInfos map[int64]map[string]interface{},
+	importType metadata.HostInputType) ([]int64, []string, []string, []string, error) {
 
 	toInternalModule, err := lgc.toInternalModule(kit, appID, moduleIDs)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 
-	instance := NewImportInstance(kit, ownerID, lgc)
+	instance := NewImportInstance(kit, lgc)
 	hostIDMap, existsHostMap, err := instance.ExtractAlreadyExistHosts(kit.Ctx, hostInfos)
 	if err != nil {
 		blog.Errorf("get hosts failed, err:%s, rid:%s", err.Error(), kit.Rid)
@@ -218,8 +216,7 @@ func (i *importInstance) updateHostInst(kit *rest.Kit, existsHostInfo mapstr.Map
 
 // addHostInst 新增主机
 func (i *importInstance) addHostInst(kit *rest.Kit, ccLang language.DefaultCCLanguageIf, moduleIDs []int64,
-	cloudID int64,
-	innerIP string, index int64, hostInfo map[string]interface{}, appID int64, toInternalModule bool) (
+	cloudID int64, innerIP string, index int64, hostInfo map[string]interface{}, appID int64, toInternalModule bool) (
 	int64, []metadata.AuditLog, string) {
 
 	intHostID, err := i.addHostInstance(cloudID, index, appID, moduleIDs, toInternalModule, hostInfo)
@@ -356,7 +353,7 @@ func (lgc *Logics) UpdateHostByExcel(kit *rest.Kit, hosts map[int64]map[string]i
 
 // AddHostByExcel add host by import excel
 // NOCC:golint/fnsize(后续重构，和实例的合成一个函数)
-func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ownerID string,
+func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64,
 	hostInfos map[int64]map[string]interface{}) (hostIDs []int64, successMsg []int64, errMsg []string, err error) {
 
 	_, toInternalModule, err := lgc.GetModuleIDAndIsInternal(kit, appID, moduleID)
@@ -366,7 +363,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64, ow
 		return nil, nil, nil, err
 	}
 
-	instance := NewImportInstance(kit, ownerID, lgc)
+	instance := NewImportInstance(kit, lgc)
 
 	relRes, err := lgc.getHostRelationDestMsg(kit)
 	if err != nil {
@@ -594,7 +591,7 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 
 	hostIDs := make([]int64, 0)
 	res := new(metadata.AddHostToResourcePoolResult)
-	instance := NewImportInstance(kit, kit.TenantID, lgc)
+	instance := NewImportInstance(kit, lgc)
 	logContents := make([]metadata.AuditLog, 0)
 	audit := auditlog.NewHostAudit(lgc.CoreAPI.CoreService())
 
@@ -722,34 +719,24 @@ func generateHostCloudKey(ip, cloudID interface{}) string {
 
 type importInstance struct {
 	*backbone.Engine
-	pheader   http.Header
 	inputType metadata.HostInputType
-	ownerID   string
 	// cloudID       int64
 	// hostInfos     map[int64]map[string]interface{}
 	defaultFields map[string]*metadata.ObjAttDes
 	rowErr        map[int64]error
-	ctx           context.Context
-	ccErr         ccErr.DefaultCCErrorIf
 	ccLang        language.DefaultCCLanguageIf
-	rid           string
 	lgc           *Logics
 	kit           *rest.Kit
 }
 
 // NewImportInstance TODO
-func NewImportInstance(kit *rest.Kit, ownerID string, lgc *Logics) *importInstance {
+func NewImportInstance(kit *rest.Kit, lgc *Logics) *importInstance {
 	lang := httpheader.GetLanguage(kit.Header)
 	return &importInstance{
-		pheader: kit.Header,
-		Engine:  lgc.Engine,
-		ownerID: ownerID,
-		ctx:     kit.Ctx,
-		ccErr:   kit.CCError,
-		ccLang:  lgc.Engine.Language.CreateDefaultCCLanguageIf(lang),
-		rid:     kit.Rid,
-		lgc:     lgc,
-		kit:     kit,
+		Engine: lgc.Engine,
+		ccLang: lgc.Engine.Language.CreateDefaultCCLanguageIf(lang),
+		lgc:    lgc,
+		kit:    kit,
 	}
 }
 
@@ -761,10 +748,10 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 	input := &metadata.UpdateOption{}
 	input.Condition = map[string]interface{}{common.BKHostIDField: hostID}
 	input.Data = host
-	_, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input)
+	_, err := h.CoreAPI.CoreService().Instance().UpdateInstance(h.kit.Ctx, h.kit.Header, common.BKInnerObjIDHost, input)
 	if err != nil {
 		ip, _ := host[common.BKHostInnerIPField].(string)
-		blog.Errorf("updateHostInstance http do error,  err:%s,input:%+v,rid:%s", err.Error(), input, h.rid)
+		blog.Errorf("updateHostInstance http do error,  err:%s,input:%+v,rid:%s", err.Error(), input, h.kit.Rid)
 		return fmt.Errorf(h.ccLang.Languagef("host_import_update_fail", index, ip, err.Error()))
 	}
 
@@ -791,7 +778,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 		}
 		if !isExist {
 			return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip,
-				h.ccErr.Errorf(common.CCErrTopoCloudNotFound).Error()))
+				h.kit.CCError.Errorf(common.CCErrTopoCloudNotFound).Error()))
 
 		}
 	}
@@ -802,9 +789,10 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 	}
 
 	var err error
-	result, err := h.CoreAPI.CoreService().Instance().CreateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input)
+	result, err := h.CoreAPI.CoreService().Instance().CreateInstance(h.kit.Ctx, h.kit.Header, common.BKInnerObjIDHost,
+		input)
 	if err != nil {
-		blog.Errorf("addHostInstance http do error,err:%s, input:%+v,rid:%s", err.Error(), host, h.rid)
+		blog.Errorf("addHostInstance http do error,err:%s, input:%+v,rid:%s", err.Error(), host, h.kit.Rid)
 		return 0, err
 	}
 
@@ -813,7 +801,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 	var option interface{}
 	if toInternalModule == true {
 		if len(moduleIDs) == 0 {
-			err := h.ccErr.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
+			err := h.kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKModuleIDField)
 			return 0, err
 		}
 		opt := &metadata.TransferHostToInnerModule{
@@ -822,7 +810,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 			HostID:        []int64{hostID},
 		}
 		option = opt
-		hResult, err = h.CoreAPI.CoreService().Host().TransferToInnerModule(h.ctx, h.pheader, opt)
+		hResult, err = h.CoreAPI.CoreService().Host().TransferToInnerModule(h.kit.Ctx, h.kit.Header, opt)
 	} else {
 		opt := &metadata.HostsModuleRelation{
 			ApplicationID: appID,
@@ -830,11 +818,11 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 			HostID:        []int64{hostID},
 		}
 		option = opt
-		hResult, err = h.CoreAPI.CoreService().Host().TransferToNormalModule(h.ctx, h.pheader, opt)
+		hResult, err = h.CoreAPI.CoreService().Host().TransferToNormalModule(h.kit.Ctx, h.kit.Header, opt)
 
 	}
 	if err != nil {
-		blog.Errorf("transfer host failed, err: %v, result: %#v, input: %#v, rid: %s", err, hResult, option, h.rid)
+		blog.Errorf("transfer host failed, err: %v, result: %#v, input: %#v, rid: %s", err, hResult, option, h.kit.Rid)
 		return 0, err
 	}
 
@@ -848,13 +836,13 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 
 	filter, err := h.getQueryHostsFilter(hostInfos)
 	if err != nil {
-		blog.Errorf("get query host filter failed, err: %v, input: %#v, rid:%s", err, hostInfos, h.rid)
+		blog.Errorf("get query host filter failed, err: %v, input: %#v, rid:%s", err, hostInfos, h.kit.Rid)
 		return nil, nil, err
 	}
 
 	hResult, err := h.getAlreadyExistHosts(ctx, filter)
 	if err != nil {
-		blog.Errorf("get host failed, err: %v, input: %#v, rid:%s", err, hostInfos, h.rid)
+		blog.Errorf("get host failed, err: %v, input: %#v, rid:%s", err, hostInfos, h.kit.Rid)
 		return nil, nil, err
 	}
 
@@ -874,9 +862,10 @@ func (h *importInstance) ExtractAlreadyExistHosts(ctx context.Context, hostInfos
 		key := generateHostCloudKey(ip, host[common.BKCloudIDField])
 		hostID, err := host.Int64(common.BKHostIDField)
 		if err != nil {
-			blog.Errorf("get hostID failed, err: %v, hostInfo: %#v, rid: %s", err, host, h.rid)
+			blog.Errorf("get hostID failed, err: %v, hostInfo: %#v, rid: %s", err, host, h.kit.Rid)
 			// message format: `convert %s  field %s to %s error %s`
-			return hostMap, hostIDMap, h.ccErr.Errorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDHost,
+			return hostMap, hostIDMap, h.kit.CCError.Errorf(common.CCErrCommInstFieldConvertFail,
+				common.BKInnerObjIDHost,
 				common.BKHostIDField, "int", err.Error())
 		}
 		hostMap[key] = hostID
@@ -899,9 +888,9 @@ func (h *importInstance) getAlreadyExistHosts(ctx context.Context, filter map[st
 		Fields: []string{common.BKHostInnerIPField, common.BKCloudIDField, common.BKHostIDField,
 			common.BKHostInnerIPv6Field},
 	}
-	hResult, err := h.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.pheader, common.BKInnerObjIDHost, query)
+	hResult, err := h.CoreAPI.CoreService().Instance().ReadInstance(ctx, h.kit.Header, common.BKInnerObjIDHost, query)
 	if err != nil {
-		blog.Errorf("get host failed, err: %v, input: %#v, rid:%s", err, query, h.rid)
+		blog.Errorf("get host failed, err: %v, input: %#v, rid:%s", err, query, h.kit.Rid)
 		return nil, err
 	}
 
@@ -920,7 +909,7 @@ func (h *importInstance) getQueryHostsFilter(hostInfos map[int64]map[string]inte
 		if exists {
 			intHostID, err := util.GetInt64ByInterface(hostID)
 			if err != nil {
-				blog.Errorf("parse hostID failed, err: %v, hostInfo: %#v, rid: %s", err, host, h.rid)
+				blog.Errorf("parse hostID failed, err: %v, hostInfo: %#v, rid: %s", err, host, h.kit.Rid)
 				return nil, err
 			}
 			hostIDs = append(hostIDs, intHostID)
@@ -934,7 +923,7 @@ func (h *importInstance) getQueryHostsFilter(hostInfos map[int64]map[string]inte
 		} else {
 			intCloudID, err = util.GetInt64ByInterface(cloudID)
 			if err != nil {
-				blog.Errorf("parse cloudID failed, err: %v, hostInfo: %#v, rid: %s", err, host, h.rid)
+				blog.Errorf("parse cloudID failed, err: %v, hostInfo: %#v, rid: %s", err, host, h.kit.Rid)
 				return nil, err
 			}
 		}

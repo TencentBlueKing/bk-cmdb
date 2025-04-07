@@ -19,6 +19,7 @@ import (
 	"configcenter/src/apimachinery/cacheservice/cache/event"
 	"configcenter/src/apimachinery/cacheservice/cache/general"
 	"configcenter/src/apimachinery/cacheservice/cache/host"
+	"configcenter/src/apimachinery/cacheservice/cache/object"
 	"configcenter/src/apimachinery/cacheservice/cache/topology"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
@@ -30,6 +31,7 @@ type Cache interface {
 	Topology() topology.Interface
 	Event() event.Interface
 	GeneralRes() general.Interface
+	Object() object.Interface
 }
 
 // CacheServiceClientInterface TODO
@@ -51,6 +53,11 @@ type cacheService struct {
 
 type cache struct {
 	restCli rest.ClientInterface
+}
+
+// Object is the object resource cache client
+func (c *cache) Object() object.Interface {
+	return object.NewCacheClient(c.restCli)
 }
 
 // Cache TODO

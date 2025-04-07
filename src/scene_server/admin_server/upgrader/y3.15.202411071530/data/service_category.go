@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
@@ -44,7 +43,7 @@ var (
 )
 
 func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
-	parentServiceCategory := make([]mapstr.MapStr, 0)
+	parentServiceCategory := make([]interface{}, 0)
 	tmpData := make([]tenanttmp.SvrCategoryTmp, 0)
 	for key := range subCategoryMap {
 		category := ServiceCategory{
@@ -55,12 +54,7 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 			Name:       key,
 			ParentName: "",
 		})
-		item, err := tools.ConvStructToMap(category)
-		if err != nil {
-			blog.Errorf("convert struct to map failed, err: %v", err)
-			return err
-		}
-		parentServiceCategory = append(parentServiceCategory, item)
+		parentServiceCategory = append(parentServiceCategory, category)
 	}
 
 	// add parent category data
@@ -121,7 +115,7 @@ func addServiceCategoryData(kit *rest.Kit, db local.DB) error {
 
 func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]interface{}) error {
 	// add sub category data
-	subCategoryData := make([]mapstr.MapStr, 0)
+	subCategoryData := make([]interface{}, 0)
 	tmpData := make([]tenanttmp.SvrCategoryTmp, 0)
 	for key, value := range subCategoryMap {
 		parentID, err := util.GetInt64ByInterface(parentIDs[key])
@@ -137,12 +131,7 @@ func addSubSrvCategoryData(kit *rest.Kit, db local.DB, parentIDs map[string]inte
 				IsBuiltIn: true,
 				BizID:     0,
 			}
-			item, err := tools.ConvStructToMap(category)
-			if err != nil {
-				blog.Errorf("convert struct to map failed, err: %v", err)
-				return err
-			}
-			subCategoryData = append(subCategoryData, item)
+			subCategoryData = append(subCategoryData, category)
 			tmpData = append(tmpData, tenanttmp.SvrCategoryTmp{
 				Name:       subValue,
 				ParentName: key,

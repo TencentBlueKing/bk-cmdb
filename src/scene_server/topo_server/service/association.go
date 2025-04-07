@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
@@ -27,6 +28,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/rs/xid"
 )
 
 // CreateMainLineObject create a new model in the main line topo
@@ -41,7 +44,8 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 	// Collection minimum is Timestamp(1616747878, 5)
-	if err := s.createObjectTableByObjectID(ctx.Kit, data.ObjectID, true); err != nil {
+	objectUUid := xid.New().String()
+	if err := s.createObjectTableByObjectID(ctx.Kit, data.ObjectID, objectUUid, true); err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "mainline object"))
 		return
 	}
@@ -50,8 +54,7 @@ func (s *Service) CreateMainLineObject(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 
 		var err error
-
-		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, data)
+		ret, err = s.Logics.AssociationOperation().CreateMainlineAssociation(ctx.Kit, data, objectUUid)
 		if err != nil {
 			blog.Errorf("create mainline object: %s failed, err: %v, rid: %s", data.ObjectID, err, ctx.Kit.Rid)
 			return err
@@ -216,8 +219,15 @@ func (s *Service) GetTopoNodeHostAndSerInstCount(ctx *rest.Contexts) {
 			common.GetInstIDField(objID): mapstr.MapStr{common.BKDBIN: instIDs},
 			common.BKAppIDField:          bizID,
 		}}
-		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header,
-			common.GetInstTableName(objID, ctx.Kit.TenantID), filter)
+
+		instTable, err := logics.GetObjInstTableFromCache(ctx.Kit, s.Engine.CoreAPI, objID)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+		counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(ctx.Kit.Ctx, ctx.Kit.Header, instTable,
+			filter)
 		if err != nil {
 			blog.Errorf("count topo nodes failed, err: %v, filter: %#v, rid: %s", err, filter, ctx.Kit.Rid)
 			ctx.RespAutoError(err)

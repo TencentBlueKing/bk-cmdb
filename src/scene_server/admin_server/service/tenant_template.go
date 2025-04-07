@@ -32,6 +32,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
+
+	"github.com/rs/xid"
 )
 
 var (
@@ -430,6 +432,7 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 		if _, ok := existData[item.Data.ObjectID]; ok {
 			continue
 		}
+		item.Data.UUID = xid.New().String()
 		insertData = append(insertData, item.Data)
 	}
 

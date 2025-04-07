@@ -14,6 +14,7 @@
 package mainline
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/common/language"
 	"configcenter/src/source_controller/coreservice/core"
 )
@@ -21,13 +22,15 @@ import (
 var _ core.TopoOperation = (*topoManager)(nil)
 
 type topoManager struct {
-	lang language.CCLanguageIf
+	lang      language.CCLanguageIf
+	clientSet apimachinery.ClientSetInterface
 }
 
 // New create a new model manager instance
-func New(lang language.CCLanguageIf) core.TopoOperation {
+func New(lang language.CCLanguageIf, clientSet apimachinery.ClientSetInterface) core.TopoOperation {
 
 	return &topoManager{
-		lang: lang,
+		lang:      lang,
+		clientSet: clientSet,
 	}
 }

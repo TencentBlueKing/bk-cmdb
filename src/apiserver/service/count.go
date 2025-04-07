@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
@@ -53,7 +54,12 @@ func (s *service) CountInstance(req *restful.Request, resp *restful.Response) {
 
 	objID := req.PathParameter("bk_obj_id")
 
-	tableName := common.GetInstTableName(objID, common.BKDefaultTenantID)
+	tableName, err := logics.GetObjInstTableFromCache(kit, s.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v", objID, err)
+		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
+	}
 	count, err := s.engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName, input)
 	if err != nil {
 		blog.Errorf("get %s instance count failed, err: %v, rid: %s", objID, err, kit.Rid)

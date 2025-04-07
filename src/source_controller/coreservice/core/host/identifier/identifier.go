@@ -16,6 +16,8 @@ package identifier
 import (
 	"strconv"
 
+	"configcenter/pkg/inst/logics"
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -35,10 +37,11 @@ type Identifier struct {
 	modulehosts      map[int64][]metadata.ModuleHost
 	asstMap          map[string]string
 	layers           map[string]map[int64]metadata.MainlineInstInfo
+	clientSet        apimachinery.ClientSetInterface
 }
 
 // NewIdentifier TODO
-func NewIdentifier() *Identifier {
+func NewIdentifier(clientSet apimachinery.ClientSetInterface) *Identifier {
 	dbQuery := hostutil.NewDBExecQuery()
 	return &Identifier{
 		dbQuery:          dbQuery,
@@ -47,6 +50,7 @@ func NewIdentifier() *Identifier {
 		modulehosts:      make(map[int64][]metadata.ModuleHost),
 		asstMap:          make(map[string]string),
 		layers:           make(map[string]map[int64]metadata.MainlineInstInfo),
+		clientSet:        clientSet,
 	}
 }
 
@@ -271,8 +275,12 @@ func (i *Identifier) findHostLayerInfo(kit *rest.Kit) error {
 		layers := make([]metadata.MainlineInstInfo, 0)
 		cond := condition.CreateCondition().Field(common.BKInstIDField).In(parentIDs)
 		cond.Field(common.BKObjIDField).Eq(curObj)
-		tableName := common.GetObjectInstTableName(curObj, kit.TenantID)
-		err := i.dbQuery.ExecQuery(kit, tableName, nil, cond.ToMapStr(), &layers)
+		tableName, err := logics.GetObjInstTableFromCache(kit, i.clientSet, curObj)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", curObj, err, kit.Rid)
+			return err
+		}
+		err = i.dbQuery.ExecQuery(kit, tableName, nil, cond.ToMapStr(), &layers)
 		if err != nil {
 			blog.Errorf("query layer info error, err: %v, condition: %#v, rid: %s", err, cond.ToMapStr(), kit.Rid)
 			return err

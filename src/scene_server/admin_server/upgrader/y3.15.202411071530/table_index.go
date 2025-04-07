@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/kube/types"
 	"configcenter/src/scene_server/admin_server/logics"
+	"configcenter/src/scene_server/admin_server/upgrader/y3.15.202411071530/data"
 	"configcenter/src/storage/dal/mongo/local"
 	daltypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
@@ -132,7 +133,7 @@ func initTableIndex(kit *rest.Kit, db local.DB, tableIndexMap map[string][]dalty
 	// create plat table and indexes
 	for table, index := range platTableIndexesArr {
 		if err := logics.CreateTable(kit, mongodb.Dal().Shard(kit.SysShardOpts()), table); err != nil {
-			fmt.Errorf("create plat table failed, err: %v", err)
+			fmt.Errorf("create platfrom table failed, err: %v", err)
 			return err
 		}
 
@@ -148,15 +149,27 @@ func initTableIndex(kit *rest.Kit, db local.DB, tableIndexMap map[string][]dalty
 	return nil
 }
 
+// createInstAsstTable add object data and create instance association table indexes
 func createInstAsstTable(kit *rest.Kit, db local.DB) error {
+	objUUIDMap, err := data.AddObjectData(kit, db)
+	if err != nil {
+		blog.Errorf("add object data failed, err: %v", err)
+		return err
+	}
+
 	for _, obj := range tableInstAsstArr {
-		tableName := common.GetObjectInstAsstTableName(obj, kit.TenantID)
-		if err := logics.CreateTable(kit, db, tableName); err != nil {
+		uuid, exist := objUUIDMap[obj]
+		if !exist {
+			blog.Errorf("object uuid not exist, obj: %s", obj)
+			return fmt.Errorf("object uuid not exist")
+		}
+		tableName := fmt.Sprintf("InstAsst_%s", uuid)
+		if err = logics.CreateTable(kit, db, tableName); err != nil {
 			blog.Errorf("create table %s failed, err: %v", tableName, err)
 			return err
 		}
 
-		if err := logics.CreateIndexes(kit, db, tableName, instAsstCommonIndexes); err != nil {
+		if err = logics.CreateIndexes(kit, db, tableName, instAsstCommonIndexes); err != nil {
 			return err
 		}
 	}

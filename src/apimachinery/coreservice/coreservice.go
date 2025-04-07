@@ -31,6 +31,7 @@ import (
 	"configcenter/src/apimachinery/coreservice/mainline"
 	"configcenter/src/apimachinery/coreservice/model"
 	modelquote "configcenter/src/apimachinery/coreservice/model_quote"
+	"configcenter/src/apimachinery/coreservice/object"
 	"configcenter/src/apimachinery/coreservice/process"
 	"configcenter/src/apimachinery/coreservice/project"
 	"configcenter/src/apimachinery/coreservice/settemplate"
@@ -66,6 +67,8 @@ type CoreServiceClientInterface interface {
 	FieldTemplate() fieldtmpl.Interface
 	IDRule() idrule.Interface
 	Tenant() tenant.TenantClientInterface
+	// Object ToDo: it's for test, can be remove after cache service ready
+	Object() object.ObjectClientInterface
 }
 
 // NewCoreServiceClient TODO
@@ -188,4 +191,9 @@ func (c *coreService) IDRule() idrule.Interface {
 
 func (c *coreService) Tenant() tenant.TenantClientInterface {
 	return tenant.New(c.restCli)
+}
+
+// Object return the object client
+func (c *coreService) Object() object.ObjectClientInterface {
+	return object.NewObjectClientInterface(c.restCli)
 }

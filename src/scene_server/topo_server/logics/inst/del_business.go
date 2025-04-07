@@ -15,6 +15,7 @@ package inst
 import (
 	"strconv"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -693,7 +694,11 @@ func (b *business) cleanTopo(kit *rest.Kit, bizID int64) error {
 }
 
 func (b *business) cleanTopoInstAndAsst(kit *rest.Kit, bizID int64, obj string) error {
-	tableName := common.GetInstTableName(obj, kit.TenantID)
+	tableName, err := logics.GetObjInstTableFromCache(kit, b.clientSet, obj)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", obj, err, kit.Rid)
+		return err
+	}
 	idField := common.GetInstIDField(obj)
 	distinctOpt := &metadata.DistinctFieldOption{
 		TableName: tableName,

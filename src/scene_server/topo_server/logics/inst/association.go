@@ -1,6 +1,7 @@
 package inst
 
 import (
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -199,7 +200,11 @@ func (assoc *association) SearchInstAssociationUIList(kit *rest.Kit, objID strin
 func (assoc *association) CheckInstAsstMapping(kit *rest.Kit, objID string, mapping metadata.AssociationMapping,
 	input *metadata.CreateAssociationInstRequest) error {
 
-	tableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
+	tableName, err := logics.GetObjInstAsstTableFromCache(kit, assoc.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) association instance table name failed, err: %v", objID, err)
+		return err
+	}
 	switch mapping {
 	case metadata.OneToOneMapping:
 		// search instances belongs to this association.

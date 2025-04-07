@@ -21,6 +21,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
@@ -122,7 +123,6 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 
 	attribute.PropertyIndex = index
 	attribute.ID = int64(id)
-
 	if attribute.CreateTime == nil {
 		attribute.CreateTime = &metadata.Time{}
 		attribute.CreateTime.Time = time.Now()
@@ -168,12 +168,16 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 				attribute.PropertyID: map[string]string{common.BKDBType: "string", common.BKDBGT: ""},
 			},
 		}
-		table := common.GetInstTableName(attribute.ObjectID, kit.TenantID)
+
+		table, err := logics.GetObjInstTableFromCache(kit, m.clientSet, attribute.ObjectID)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", attribute.ObjectID, err, kit.Rid)
+			return 0, err
+		}
 		if err = mongodb.Shard(kit.ShardOpts()).Table(table).CreateIndex(kit.Ctx, idx); err != nil {
 			blog.Errorf("create index failed, index: %+v, err: %v, rid: %s", idx, err, kit.Rid)
 			return 0, kit.CCError.Error(common.CCErrObjectDBOpErrno)
 		}
-
 		unique := metadata.ObjectUnique{
 			ID:       id,
 			ObjID:    attribute.ObjectID,
@@ -915,7 +919,11 @@ func (m *modelAttribute) cleanAttributeFieldInInstances(kit *rest.Kit, attrs []m
 				}
 			}
 
-			collectionName := common.GetInstTableName(object, kit.TenantID)
+			collectionName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, object)
+			if err != nil {
+				blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", object, err, kit.Rid)
+				return err
+			}
 			wg.Add(1)
 			go func(collName string, filter types.Filter, fields []string) {
 				defer wg.Done()

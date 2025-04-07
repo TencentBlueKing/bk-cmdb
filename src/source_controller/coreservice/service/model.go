@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"time"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -419,8 +420,12 @@ func (s *coreService) GetModelStatistics(ctx *rest.Contexts) {
 		data := []metadata.ObjectIDCount{}
 
 		// sharding table name.
-		tableName := common.GetObjectInstTableName(object.ObjID, ctx.Kit.TenantID)
-
+		tableName, err := logics.GetObjInstTableFromCache(ctx.Kit, s.engine.CoreAPI, object.ObjID)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", object.ObjID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
 		if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(tableName).AggregateAll(ctx.Kit.Ctx, objectFilter,
 			&data); err != nil {
 			blog.Errorf("get object %s instances count failed, err: %+v, rid: %s", object.ObjID, err, ctx.Kit.Rid)

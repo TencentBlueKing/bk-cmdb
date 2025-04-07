@@ -15,6 +15,7 @@ package service
 import (
 	"fmt"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -180,7 +181,12 @@ func (s *coreService) DeleteQuotedInst(kit *rest.Kit, objID string, instIDs []in
 	}
 
 	for _, rel := range quoteRelations {
-		tableName := common.GetInstTableName(rel.DestModel, kit.TenantID)
+
+		tableName, err := logics.GetObjInstTableFromCache(kit, s.engine.CoreAPI, rel.DestModel)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", rel.DestModel, err, kit.Rid)
+			return err
+		}
 		delCond := mapstr.MapStr{common.BKInstIDField: mapstr.MapStr{common.BKDBIN: instIDs}}
 
 		err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Delete(kit.Ctx, delCond)
@@ -210,7 +216,11 @@ func (s *coreService) AttachQuotedInst(kit *rest.Kit, objID string, instID uint6
 	}
 
 	for _, rel := range quoteRelations {
-		tableName := common.GetInstTableName(rel.DestModel, kit.TenantID)
+		tableName, err := logics.GetObjInstTableFromCache(kit, s.engine.CoreAPI, rel.DestModel)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", rel.DestModel, err, kit.Rid)
+			return err
+		}
 
 		val, exists := data[rel.PropertyID]
 		if !exists {

@@ -640,6 +640,10 @@ func (o *object) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*met
 			fmt.Sprintf("'%s' the built-in object id, please use a new one", obj.ObjectID))
 	}
 
+	if !isUpdate && obj.UUID == "" {
+		return nil, kit.CCError.New(common.CCErrCommParamsIsInvalid, "object uuid is not set")
+	}
+
 	return obj, nil
 }
 
@@ -785,16 +789,14 @@ func (o *object) createDefaultAttrs(kit *rest.Kit, isMainline bool, obj *metadat
 
 // CreateObjectByImport create object by import yaml
 func (o *object) CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject) ([]metadata.Object, error) {
-
 	assts := make([]metadata.AsstWithAsstObjInfo, 0)
 	objs := make([]metadata.Object, 0)
-	for _, objInfo := range data {
 
+	for _, objInfo := range data {
 		if err := objInfo.Validate(); err.ErrCode != 0 {
 			blog.Errorf("validate object info failed, objectinfo: %+v, rid: %s", objInfo, kit.Rid)
 			return nil, err.ToCCError(kit.CCError)
 		}
-
 		object := mapstr.MapStr{
 			common.BKObjIDField:            objInfo.ObjectID,
 			common.BKObjNameField:          objInfo.ObjectName,
@@ -802,6 +804,7 @@ func (o *object) CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject)
 			common.BKClassificationIDField: objInfo.ClsID,
 			common.CreatorField:            kit.User,
 			common.ObjSortNumberField:      objInfo.ObjSortNumber,
+			metadata.ModelFieldObjUUID:     objInfo.UUID,
 		}
 
 		obj, err := o.isValid(kit, false, object)
@@ -863,7 +866,6 @@ func (o *object) CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject)
 		blog.Errorf("create object associations failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
-
 	return objs, nil
 }
 

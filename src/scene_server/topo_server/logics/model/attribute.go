@@ -33,13 +33,15 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	attrvalid "configcenter/src/common/valid/attribute"
+	"github.com/rs/xid"
 )
 
 // AttributeOperationInterface attribute operation methods
 type AttributeOperationInterface interface {
 	CreateObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
 	BatchCreateObjectAttr(kit *rest.Kit, objID string, attrs []*metadata.Attribute, fromTemplate bool) error
-	CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error)
+	CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute, tableObjUUID string) (*metadata.Attribute,
+		error)
 	DeleteObjectAttribute(kit *rest.Kit, attrItems []metadata.Attribute) error
 	UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, attID int64, modelBizID int64, isSync bool) error
 	// CreateObjectBatch upsert object attributes
@@ -613,7 +615,8 @@ func (a *attribute) validCreateTableAttribute(kit *rest.Kit, data *metadata.Attr
 	return nil
 }
 
-func (a *attribute) createTableModelAndAttributeGroup(kit *rest.Kit, data *metadata.Attribute) error {
+func (a *attribute) createTableModelAndAttributeGroup(kit *rest.Kit, data *metadata.Attribute,
+	tableObjUUID string) error {
 
 	t := metadata.Now()
 	obj := metadata.Object{
@@ -626,6 +629,7 @@ func (a *attribute) createTableModelAndAttributeGroup(kit *rest.Kit, data *metad
 		Modifier:   string(metadata.FromCCSystem),
 		CreateTime: &t,
 		LastTime:   &t,
+		UUID:       tableObjUUID,
 	}
 
 	objRsp, err := a.clientSet.CoreService().Model().CreateTableModel(kit.Ctx, kit.Header,
@@ -671,7 +675,9 @@ func (a *attribute) createTableModelAndAttributeGroup(kit *rest.Kit, data *metad
 }
 
 // CreateTableObjectAttribute create internal form fields in a separate process
-func (a *attribute) CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute) (*metadata.Attribute, error) {
+func (a *attribute) CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Attribute, tableObjUUID string) (
+	*metadata.Attribute, error) {
+
 	if data.IsOnly {
 		data.IsRequired = true
 	}
@@ -688,7 +694,7 @@ func (a *attribute) CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Att
 		return nil, err
 	}
 
-	if err := a.createTableModelAndAttributeGroup(kit, data); err != nil {
+	if err := a.createTableModelAndAttributeGroup(kit, data, tableObjUUID); err != nil {
 		return nil, err
 	}
 
@@ -1743,7 +1749,12 @@ func (a *attribute) upsertObjectAttr(kit *rest.Kit, objID string, attr *metadata
 	if len(result.Info) == 0 {
 		// create attribute
 		if attr.PropertyType == common.FieldTypeInnerTable {
-			if _, err := a.CreateTableObjectAttribute(kit, attr); err != nil {
+			objTableUUID := xid.New().String()
+			if err != nil {
+				blog.Errorf("get object uuid failed, err: %v, rid: %s", err, kit.Rid)
+				return undefinedFail, err
+			}
+			if _, err := a.CreateTableObjectAttribute(kit, attr, objTableUUID); err != nil {
 				blog.Errorf("create attribute(%#v) failed, ObjID: %s, err: %v, rid: %s", attr, objID, err, kit.Rid)
 				return insertFail, err
 			}

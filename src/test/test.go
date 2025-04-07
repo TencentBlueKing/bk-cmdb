@@ -313,8 +313,8 @@ func DeleteAllObjects() {
 
 	err := tenant.ExecForAllTenants(func(tenantID string) error {
 		shardOpts := sharding.NewShardOpts().WithTenant(tenantID)
-		err := db.Shard(shardOpts).Table(common.BKTableNameObjDes).Find(delCond).
-			Fields(common.BKObjIDField).All(ctx, &objects)
+		err := db.Shard(shardOpts).Table(common.BKTableNameObjDes).Find(delCond).Fields(common.BKObjIDField,
+			metadata.ModelFieldObjUUID).All(ctx, &objects)
 		if err != nil {
 			return err
 		}
@@ -325,11 +325,15 @@ func DeleteAllObjects() {
 
 		objIDs := make([]string, len(objects))
 		for i, obj := range objects {
-			err = db.Shard(shardOpts).DropTable(ctx, common.GetInstTableName(obj.ObjectID, tenantID))
+
+			instTable := common.GetObjInstTableName(obj.UUID)
+			instAsstTable := common.GetObjInstAsstTableName(obj.UUID)
+
+			err = db.Shard(shardOpts).DropTable(ctx, instTable)
 			if err != nil {
 				return err
 			}
-			err = db.Shard(shardOpts).DropTable(ctx, common.GetObjectInstAsstTableName(obj.ObjectID, tenantID))
+			err = db.Shard(shardOpts).DropTable(ctx, instAsstTable)
 			if err != nil {
 				return err
 			}

@@ -106,7 +106,7 @@ type ModelClientInterface interface {
 		*metadata.QueryUniqueResult, error)
 	CreateTableModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
 
-	CreateModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) (err error)
+	CreateModelTables(ctx context.Context, h http.Header, input *metadata.CreateModelTable) error
 
 	UpdateIDGenerator(ctx context.Context, h http.Header, input *metadata.UpdateIDGenOption) (err error)
 }

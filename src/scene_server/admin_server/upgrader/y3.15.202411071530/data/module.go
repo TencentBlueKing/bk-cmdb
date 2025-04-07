@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
@@ -47,7 +46,7 @@ var moduleMap = map[string]map[string]interface{}{
 func addModuleData(kit *rest.Kit, db local.DB, bizID int64, moduleNames []string, setID int64) error {
 
 	categoryID := defaultServiceCategoryID
-	moduleAdd := make([]mapstr.MapStr, 0)
+	moduleAdd := make([]interface{}, 0)
 	for _, moduleName := range moduleNames {
 		moduleData := moduleMap[moduleName]
 		moduleData[common.BKModuleNameField] = moduleName

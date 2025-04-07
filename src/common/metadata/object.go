@@ -51,6 +51,8 @@ const (
 	ModelFieldLastTime = "last_time"
 	// ModelFieldObjSortNumber the sort number field
 	ModelFieldObjSortNumber = "obj_sort_number"
+	// ModelFieldObjUUID uuid field
+	ModelFieldObjUUID = "uuid"
 )
 
 // Object object metadata definition
@@ -72,6 +74,7 @@ type Object struct {
 	CreateTime    *Time  `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
 	LastTime      *Time  `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`
 	ObjSortNumber int64  `field:"obj_sort_number" json:"obj_sort_number" bson:"obj_sort_number" mapstructure:"obj_sort_number"`
+	UUID          string `field:"uuid" json:"uuid" bson:"uuid" mapstructure:"uuid"`
 }
 
 // GetDefaultInstPropertyName get default inst
@@ -338,6 +341,7 @@ type YamlObject struct {
 	ObjectAsst       []AsstWithAsstObjInfo `json:"object_asst" yaml:"object_asst"`
 	ObjectAttr       []Attribute           `json:"object_attr" yaml:"object_attr"`
 	ObjectAttrUnique [][]string            `json:"object_attr_unique" yaml:"object_attr_unique"`
+	UUID             string                `json:"uuid" yaml:"uuid"`
 }
 
 // Validate validate object yaml
@@ -481,4 +485,10 @@ func (o *AsstWithAsstObjInfo) Validate(objID string) errors.RawErrorInfo {
 type TotalObjectInfo struct {
 	Object map[string]interface{} `json:"object"`
 	Asst   []mapstr.MapStr        `json:"asst_kind"`
+}
+
+// ObjetUUIDResp object uuid info
+type ObjetUUIDResp struct {
+	Data     string `json:"data"`
+	BaseResp `json:",inline"`
 }

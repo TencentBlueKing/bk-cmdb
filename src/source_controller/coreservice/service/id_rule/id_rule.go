@@ -19,6 +19,9 @@
 package idrule
 
 import (
+	"fmt"
+
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -65,14 +68,31 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 		return
 	}
 
-	idField := common.GetInstIDField(opt.ObjID)
-	cond = mapstr.MapStr{common.BKObjIDField: opt.ObjID, idField: mapstr.MapStr{common.BKDBIN: opt.IDs}}
-	table := common.GetInstTableName(opt.ObjID, ctx.Kit.TenantID)
-	insts := make([]mapstr.MapStr, 0)
-	if err := mongodb.Shard(ctx.Kit.ShardOpts()).Table(table).Find(cond).All(ctx.Kit.Ctx, &insts); err != nil {
-		blog.Errorf("find instances failed, cond: %+v, err: %v, rid: %s", cond, err, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+	if err := s.updateInsts(ctx.Kit, opt, attr, attrTypeMap); err != nil {
+		blog.Errorf("update instance %s id rule failed, err: %v, rid: %s", opt.PropertyID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(fmt.Errorf("update instance %s id rule failed", opt.PropertyID))
 		return
+	}
+
+	ctx.RespEntity(nil)
+}
+
+func (s *service) updateInsts(kit *rest.Kit, opt *metadata.UpdateInstIDRuleOption, attr metadata.Attribute,
+	attrTypeMap map[string]string) error {
+
+	idField := common.GetInstIDField(opt.ObjID)
+	cond := mapstr.MapStr{common.BKObjIDField: opt.ObjID, idField: mapstr.MapStr{common.BKDBIN: opt.IDs}}
+
+	table, err := logics.GetObjInstTableFromCache(kit, s.clientSet, opt.ObjID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", opt.ObjID, err, kit.Rid)
+		return err
+	}
+
+	insts := make([]mapstr.MapStr, 0)
+	if err = mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond).All(kit.Ctx, &insts); err != nil {
+		blog.Errorf("find instances failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
+		return err
 	}
 
 	for _, inst := range insts {
@@ -81,33 +101,29 @@ func (s *service) UpdateInstIDRule(ctx *rest.Contexts) {
 			continue
 		}
 
-		val, err := instances.GetIDRuleVal(ctx.Kit, inst, attr, attrTypeMap)
+		val, err := instances.GetIDRuleVal(kit, inst, attr, attrTypeMap)
 		if err != nil {
-			blog.Errorf("get id rule val failed, inst: %+v, attr: %+v, err: %v, rid: %s", inst, attr, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, err.Error()))
-			return
+			blog.Errorf("get id rule val failed, inst: %+v, attr: %+v, err: %v, rid: %s", inst, attr, err, kit.Rid)
+			return err
 		}
 
 		id, exist := inst.Get(idField)
 		if !exist {
-			blog.Errorf("get instance %s value failed, inst: %+v, rid: %s", idField, inst, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
-			return
+			blog.Errorf("get instance %s value failed, inst: %+v, rid: %s", idField, inst, kit.Rid)
+			return err
 		}
 		idInt64, err := util.GetInt64ByInterface(id)
 		if err != nil {
-			blog.Errorf("get instance %s value failed, inst: %+v, err: %v, rid: %s", idField, inst, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
-			return
+			blog.Errorf("get instance %s value failed, inst: %+v, err: %v, rid: %s", idField, inst, err, kit.Rid)
+			return err
 		}
 
 		cond = mapstr.MapStr{common.BKObjIDField: opt.ObjID, idField: idInt64}
 		data := mapstr.MapStr{opt.PropertyID: val}
-		if err = mongodb.Shard(ctx.Kit.ShardOpts()).Table(table).Update(ctx.Kit.Ctx, cond, data); err != nil {
-			blog.Errorf("update instance failed, cond: %+v, data: %+v, err: %v, rid: %s", cond, data, err, ctx.Kit.Rid)
-			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBUpdateFailed))
-			return
+		if err = mongodb.Shard(kit.ShardOpts()).Table(table).Update(kit.Ctx, cond, data); err != nil {
+			blog.Errorf("update instance failed, cond: %+v, data: %+v, err: %v, rid: %s", cond, data, err, kit.Rid)
+			return err
 		}
 	}
-	ctx.RespEntity(nil)
+	return nil
 }

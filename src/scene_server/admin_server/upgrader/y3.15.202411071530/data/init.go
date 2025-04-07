@@ -31,7 +31,6 @@ var (
 		addBizSetData,
 		addObjAssociationData,
 		addObjClassificationData,
-		addObjectData,
 		addObjAttrData,
 		addCloudAreaData,
 		addPropertyGroupData,

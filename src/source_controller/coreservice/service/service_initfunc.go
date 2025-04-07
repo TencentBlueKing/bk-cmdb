@@ -445,6 +445,10 @@ func (s *coreService) initCommon(web *restful.WebService) {
 		Handler: s.GetDistinctCount})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/group/related/{kind}/resource/by_ids",
 		Handler: s.GroupRelResByIDs})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/core/uuid/{bk_obj_id}",
+		Handler: s.SearchUUIDByObj})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/core/obj/{uuid}",
+		Handler: s.SearchObjByUUID})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -457,33 +461,6 @@ func (s *coreService) initProject(web *restful.WebService) {
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/project/bk_project_id",
 		Handler: s.UpdateProjectID})
-
-	utility.AddToRestfulWebService(web)
-}
-
-func (s *coreService) initModelQuote(web *restful.WebService) {
-	utility := rest.NewRestUtility(rest.Config{
-		ErrorIf:  s.engine.CCErr,
-		Language: s.engine.Language,
-	})
-
-	// model quote relation
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/list/model/quote/relation",
-		Handler: s.ListModelQuoteRelation})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/model/quote/relation",
-		Handler: s.CreateModelQuoteRelation})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/model/quote/relation",
-		Handler: s.DeleteModelQuoteRelation})
-
-	// quoted instance
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/quoted/model/{bk_obj_id}/instance",
-		Handler: modelquote.BatchCreateQuotedInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/quoted/model/{bk_obj_id}/instance",
-		Handler: modelquote.ListQuotedInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/quoted/model/{bk_obj_id}/instance",
-		Handler: modelquote.BatchUpdateQuotedInstance})
-	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/deletemany/quoted/model/{bk_obj_id}/instance",
-		Handler: modelquote.BatchDeleteQuotedInstance})
 
 	utility.AddToRestfulWebService(web)
 }
@@ -530,10 +507,10 @@ func (s *coreService) initService(web *restful.WebService) {
 	s.initCommon(web)
 	kube.InitKube(c)
 	s.initProject(web)
-	s.initModelQuote(web)
 	s.initTenant(web)
 	fieldtmpl.InitFieldTemplate(c)
-	idrule.InitIDRule(c)
+	idrule.InitIDRule(c, s.engine.CoreAPI)
+	modelquote.InitModelQuote(c, s.engine.CoreAPI)
 
 	c.Utility.AddToRestfulWebService(web)
 }

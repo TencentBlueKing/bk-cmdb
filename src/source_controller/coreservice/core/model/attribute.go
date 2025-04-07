@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/pkg/inst/logics"
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -35,8 +37,9 @@ import (
 )
 
 type modelAttribute struct {
-	model    *modelManager
-	language language.CCLanguageIf
+	model     *modelManager
+	language  language.CCLanguageIf
+	clientSet apimachinery.ClientSetInterface
 }
 
 var forbiddenCreateAttrObjList = []string{
@@ -553,8 +556,11 @@ func (m *modelAttribute) unsetTableInstAttr(kit *rest.Kit, data mapstr.MapStr, a
 	}
 
 	// drop instance columns
-	instTable := common.GetInstTableName(quoteRel.DestModel, kit.TenantID)
-
+	instTable, err := logics.GetObjInstTableFromCache(kit, m.clientSet, quoteRel.DestModel)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", quoteRel.DestModel, err, kit.Rid)
+		return err
+	}
 	existCond := make([]map[string]interface{}, len(deletedAttr))
 	for index, field := range deletedAttr {
 		existCond[index] = map[string]interface{}{

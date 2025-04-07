@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"strings"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -97,7 +98,12 @@ func (m *modelAttrUnique) createModelAttrUnique(kit *rest.Kit, objID string,
 		return 0, ccErr
 	}
 
-	objInstTable := common.GetInstTableName(objID, kit.TenantID)
+	objInstTable, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return 0, err
+	}
+
 	_, dbIndexes, ccErr := m.getTableIndexes(kit, objInstTable)
 	if ccErr != nil {
 		return 0, ccErr
@@ -241,7 +247,11 @@ func (m *modelAttrUnique) deleteModelAttrUnique(kit *rest.Kit, objID string, id 
 
 	indexName := index.GetUniqueIndexNameByID(id)
 	// TODO: 分表后获取的是分表后的表名, 测试的时候先写一个特定的表名
-	objInstTable := common.GetInstTableName(objID, kit.TenantID)
+	objInstTable, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
 	// 删除失败，忽略即可以,后需会有任务补偿
 	if err := mongodb.Shard(kit.ShardOpts()).Table(objInstTable).DropIndex(context.Background(),
 		indexName); err != nil {
@@ -340,8 +350,13 @@ func (m *modelAttrUnique) recheckUniqueForExistsInstances(kit *rest.Kit, objID s
 	result := struct {
 		UniqueCount uint64 `bson:"unique_count"`
 	}{}
-	tableName := common.GetInstTableName(objID, kit.TenantID)
-	err := mongodb.Shard(kit.ShardOpts()).Table(tableName).AggregateOne(kit.Ctx, pipeline, &result)
+
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
+	err = mongodb.Shard(kit.ShardOpts()).Table(tableName).AggregateOne(kit.Ctx, pipeline, &result)
 	if err != nil && !mongodb.IsNotFoundError(err) {
 		blog.Errorf("count unique failed, err: %v, tableName: %s, pipeline: %v, rid: %s", err, tableName, pipeline,
 			kit.Rid)
@@ -496,7 +511,13 @@ func (m *modelAttrUnique) updateDBUnique(kit *rest.Kit, oldUnique metadata.Objec
 			oldUnique.ObjID, ccErr.Error(), kit.Rid)
 		return ccErr
 	}
-	objInstTable := common.GetInstTableName(oldUnique.ObjID, kit.TenantID)
+
+	objInstTable, err := logics.GetObjInstTableFromCache(kit, m.clientSet, oldUnique.ObjID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", oldUnique.ObjID, err, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error())
+
+	}
 
 	if ccErr := m.checkDuplicateInstances(kit, objInstTable, dbIndex); ccErr != nil {
 		return ccErr

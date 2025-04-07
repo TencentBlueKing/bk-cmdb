@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
@@ -58,14 +57,9 @@ var objClassificationDataData = []Classification{
 }
 
 func addObjClassificationData(kit *rest.Kit, db local.DB) error {
-	objClassification := make([]mapstr.MapStr, 0)
+	objClassification := make([]interface{}, 0)
 	for _, asst := range objClassificationDataData {
-		item, err := tools.ConvStructToMap(asst)
-		if err != nil {
-			blog.Errorf("convert struct to map failed, err: %v", err)
-			return err
-		}
-		objClassification = append(objClassification, item)
+		objClassification = append(objClassification, asst)
 	}
 
 	needField := &tools.InsertOptions{
@@ -82,8 +76,7 @@ func addObjClassificationData(kit *rest.Kit, db local.DB) error {
 		},
 	}
 
-	_, err := tools.InsertData(kit, db, common.BKTableNameObjClassification, objClassification,
-		needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameObjClassification, objClassification, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjClassification, err)
 		return err

@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/pkg/inst/logics"
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -31,6 +33,7 @@ type associationInstance struct {
 	*associationKind
 	*associationModel
 	dependent OperationDependencies
+	clientSet apimachinery.ClientSetInterface
 }
 
 func (m *associationInstance) isExists(kit *rest.Kit, instID, asstInstID int64, objAsstID, objID string, bizID int64) (
@@ -58,16 +61,26 @@ func (m *associationInstance) searchInstanceAssociation(kit *rest.Kit, objID str
 	[]metadata.InstAsst, error) {
 
 	results := make([]metadata.InstAsst, 0)
-	asstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
+
+	asstTableName, err := logics.GetObjInstAsstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) association instance table name failed, err: %v", objID, err)
+		return nil, err
+	}
 	instHandler := mongodb.Shard(kit.ShardOpts()).Table(asstTableName).Find(param.Condition).Fields(param.Fields...)
-	err := instHandler.Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).
+	err = instHandler.Start(uint64(param.Page.Start)).Limit(uint64(param.Page.Limit)).
 		Sort(param.Page.Sort).All(kit.Ctx, &results)
 	return results, err
 }
 
 func (m *associationInstance) countInstanceAssociation(kit *rest.Kit, objID string, cond mapstr.MapStr) (uint64,
 	error) {
-	asstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
+
+	asstTableName, err := logics.GetObjInstAsstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) association instance table name failed, err: %v", objID, err)
+		return 0, err
+	}
 	return mongodb.Shard(kit.ShardOpts()).Table(asstTableName).Find(cond).Count(kit.Ctx)
 }
 
@@ -146,7 +159,11 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 
 	asstInst.ID = int64(id)
 
-	objInstAsstTableName := common.GetObjectInstAsstTableName(asstInst.ObjectID, kit.TenantID)
+	objInstAsstTableName, err := logics.GetObjInstAsstTableFromCache(kit, m.clientSet, asstInst.ObjectID)
+	if err != nil {
+		blog.Errorf("get object(%s) association instance table name failed, err: %v", asstInst.ObjectID, err)
+		return 0, err
+	}
 	err = mongodb.Shard(kit.ShardOpts()).Table(objInstAsstTableName).Insert(kit.Ctx, asstInst)
 	if err != nil {
 		return id, err
@@ -157,14 +174,25 @@ func (m *associationInstance) save(kit *rest.Kit, asstInst metadata.InstAsst) (i
 		return id, nil
 	}
 
-	asstObjInstAsstTableName := common.GetObjectInstAsstTableName(asstInst.AsstObjectID, kit.TenantID)
+	asstObjInstAsstTableName, err := logics.GetObjInstAsstTableFromCache(kit, m.clientSet, asstInst.AsstObjectID)
+	if err != nil {
+		blog.Errorf("get object(%s) association instance table name failed, err: %v", asstInst.AsstObjectID, err)
+		return 0, err
+	}
+
 	err = mongodb.Shard(kit.ShardOpts()).Table(asstObjInstAsstTableName).Insert(kit.Ctx, asstInst)
 	return id, err
 }
 
 func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID string,
 	cond mapstr.MapStr) (uint64, error) {
-	asstInstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
+
+	asstInstTableName, err := logics.GetObjInstAsstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) association instance table name failed, err: %v", objID, err)
+		return 0, err
+	}
+
 	associations := make([]metadata.InstAsst, 0)
 	if err := mongodb.Shard(kit.ShardOpts()).Table(asstInstTableName).Find(cond).Fields(common.BKObjIDField,
 		common.BKAsstObjIDField).All(kit.Ctx, &associations); err != nil {
@@ -190,8 +218,12 @@ func (m *associationInstance) deleteInstanceAssociation(kit *rest.Kit, objID str
 		}
 		objIDMap[asstObjID] = struct{}{}
 
-		asstTableName := common.GetObjectInstAsstTableName(asstObjID, kit.TenantID)
-		err := mongodb.Shard(kit.ShardOpts()).Table(asstTableName).Delete(kit.Ctx, cond)
+		asstTableName, err := logics.GetObjInstAsstTableFromCache(kit, m.clientSet, asstObjID)
+		if err != nil {
+			blog.Errorf("get object(%s) association instance table name failed, err: %v", asstObjID, err)
+			return 0, err
+		}
+		err = mongodb.Shard(kit.ShardOpts()).Table(asstTableName).Delete(kit.Ctx, cond)
 		if err != nil {
 			blog.Errorf("delete instance association error. objID: %s, cond: %v, err: %v, rid: %s",
 				asstObjID, cond, err, kit.Rid)

@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	instlogics "configcenter/pkg/inst/logics"
 	"configcenter/pkg/tenant"
 	"configcenter/pkg/tenant/types"
 	tenanttmp "configcenter/pkg/types/tenant-template"
@@ -38,6 +39,7 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	daltypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
+
 	"github.com/emicklei/go-restful/v3"
 )
 
@@ -120,6 +122,12 @@ func (s *Service) addTenantData(kit *rest.Kit) error {
 
 	if err = addResPool(kit, cli); err != nil {
 		blog.Errorf("add default resource pool failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	// add object inst and asst table and indexes
+	if err = addInstAsstTableIndexes(kit, cli); err != nil {
+		blog.Errorf("add inst association table and indexes for tenant %s failed, err: %v", kit.TenantID, err)
 		return err
 	}
 
@@ -331,14 +339,6 @@ func addTableIndexes(kit *rest.Kit, db local.DB) error {
 			return err
 		}
 	}
-
-	for _, object := range common.BKInnerObjects {
-		instAsstTable := common.GetObjectInstAsstTableName(object, kit.TenantID)
-		if err := addOneTableIndexes(kit, db, instAsstTable, index.InstanceAssociationIndexes()); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -367,6 +367,28 @@ func addDataFromTemplate(kit *rest.Kit, db local.DB) error {
 	for _, ty := range tenanttmp.AllTemplateTypes {
 		if err := typeHandlerMap[ty](kit, db); err != nil {
 			blog.Errorf("add template data failed for type %s, err: %v, rid: %s", ty, err, kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func addInstAsstTableIndexes(kit *rest.Kit, db local.DB) error {
+	for _, object := range common.BKInnerObjects {
+		instAsstTable, err := instlogics.GetObjInstAsstTableFromDB(kit, db, object)
+		if err != nil {
+			blog.Errorf("get object(%s) association instance table name failed, err: %v", object, err)
+			return err
+		}
+
+		if err = logics.CreateTable(kit, db, instAsstTable); err != nil {
+			blog.Errorf("create table %s failed, err: %v, rid: %s", instAsstTable, err, kit.Rid)
+			return err
+		}
+
+		if err = logics.CreateIndexes(kit, db, instAsstTable, index.InstanceAssociationIndexes()); err != nil {
+			blog.Errorf("create table %s failed, err: %v, rid: %s", instAsstTable, err, kit.Rid)
 			return err
 		}
 	}

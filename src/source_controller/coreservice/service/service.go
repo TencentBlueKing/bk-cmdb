@@ -67,7 +67,8 @@ type coreService struct {
 }
 
 // SetConfig TODO
-func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, lang language.CCLanguageIf) error {
+func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf,
+	lang language.CCLanguageIf) error {
 
 	s.cfg = cfg
 	s.engine = engine
@@ -86,12 +87,12 @@ func (s *coreService) SetConfig(cfg options.Config, engine *backbone.Engine, err
 	instance := instances.New(s, lang, engine.CoreAPI)
 	hostApplyRuleCore := hostapplyrule.New(instance, engine.CoreAPI)
 	s.core = core.New(
-		model.New(s, lang),
+		model.New(s, lang, engine.CoreAPI),
 		instance,
 		kube.New(),
-		association.New(s),
-		mainline.New(lang),
-		host.New(s, hostApplyRuleCore, engine.CoreAPI.CacheService().Cache().Host()),
+		association.New(s, engine.CoreAPI),
+		mainline.New(lang, engine.CoreAPI),
+		host.New(s, hostApplyRuleCore, engine.CoreAPI.CacheService().Cache().Host(), engine.CoreAPI),
 		auditlog.New(),
 		process.New(s),
 		label.New(),

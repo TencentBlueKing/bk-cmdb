@@ -286,7 +286,8 @@ func (c *Client) getHostIdentityEventDetailWithNodes(kit *rest.Kit, hitNodes []*
 	hostIDs = util.IntArrayUnique(hostIDs)
 	// read from secondary, but this may get host identity may not same with master.
 	// kit.Ctx, kit.Header = util.SetReadPreference(kit.Ctx, kit.Header, common.SecondaryPreferredMode)
-	list, err := identifier.NewIdentifier().Identifier(kit, hostIDs)
+	// ToDo: give the clientSet while cache ready
+	list, err := identifier.NewIdentifier(nil).Identifier(kit, hostIDs)
 	if err != nil {
 		blog.Errorf("get host identity from db failed, host id: %v, err: %v, rid: %s", hostIDs, err, kit.Rid)
 		return nil, err

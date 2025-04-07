@@ -98,7 +98,7 @@ func runUniqueCheck() error {
 
 	err = tenant.ExecForAllTenants(func(tenantID string) error {
 		srv := newMigrateCheckService(service.DbProxy, tenantID)
-		return srv.checkUnique()
+		return srv.checkUnique(tenantID)
 	})
 	return err
 }
@@ -119,7 +119,7 @@ func runProcCheck(clearProc bool) error {
 	return err
 }
 
-func (s *migrateCheckService) checkUnique() error {
+func (s *migrateCheckService) checkUnique(tenantID string) error {
 	fmt.Println("=================================")
 	printInfo("start checking unique constraints\n")
 
@@ -173,7 +173,7 @@ func (s *migrateCheckService) checkUnique() error {
 				fmt.Printf("WARNING: not must check object(%s) unique(%d) will not be supported\n", objID, unique.ID)
 			}
 
-			if err := s.checkObjectUnique(ctx, objID, unique.TenantID, unique, attrMap); err != nil {
+			if err := s.checkObjectUnique(ctx, objID, tenantID, unique, attrMap); err != nil {
 				return err
 			}
 		}
@@ -327,7 +327,7 @@ func (s *migrateCheckService) checkObjectUnique(ctx context.Context, objID, tena
 
 	var tableName string
 	if common.IsInnerModel(objID) {
-		tableName = common.GetInstTableName(objID, tenantID)
+		tableName = common.GetInnerInstTableName(objID)
 	} else {
 		tableName = common.BKTableNameBaseInst
 	}

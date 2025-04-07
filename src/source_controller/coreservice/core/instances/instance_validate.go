@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -715,7 +716,6 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 			blog.Errorf("get valEnumID failed, valID type is %T, err: %v, rid: %s", valID, err, kit.Rid)
 			return err
 		}
-
 		if valEnumID == 0 {
 			return fmt.Errorf("enum quote instID is %d, it is illegal", valEnumID)
 		}
@@ -743,7 +743,12 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 	for valEnumID := range valEnumIDMap {
 		valEnumIDs = append(valEnumIDs, valEnumID)
 	}
-	tableName := common.GetInstTableName(quoteObjID, kit.TenantID)
+
+	tableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, quoteObjID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", quoteObjID, err, kit.Rid)
+		return err
+	}
 	cond := map[string]interface{}{
 		common.GetInstIDField(quoteObjID): map[string]interface{}{
 			common.BKDBIN: valEnumIDs,
@@ -757,6 +762,5 @@ func (m *instanceManager) validInstIDs(kit *rest.Kit, property metadata.Attribut
 	if len(valEnumIDs) != int(cnt) {
 		return fmt.Errorf("inst not exist, rid: %s", kit.Rid)
 	}
-
 	return nil
 }

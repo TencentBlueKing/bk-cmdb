@@ -17,6 +17,7 @@ import (
 	"reflect"
 	"time"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -410,8 +411,12 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 	obj := metadata.GenerateModelQuoteObjID(input.ObjID, input.PropertyID)
 
 	// delete quoted instance table
-	instTable := common.GetInstTableName(obj, kit.TenantID)
-	err := mongodb.Shard(kit.ShardOpts()).DropTable(kit.Ctx, instTable)
+	instTable, err := logics.GetObjInstTableFromCache(kit, m.clientSet, obj)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", obj, err, kit.Rid)
+		return err
+	}
+	err = mongodb.Shard(kit.ShardOpts()).DropTable(kit.Ctx, instTable)
 	if err != nil {
 		blog.Errorf("drop instance table failed, err: %v, table: %s, rid: %s", err, instTable, kit.Rid)
 		return kit.CCError.Error(common.CCErrCommDBDeleteFailed)
@@ -463,9 +468,9 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 
 // createTableObjectShardingTables creates new collections for new table model,
 // which create new object instance and association collections, and fix missing indexes.
-func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID string) error {
+func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID, objUUID string) error {
 	// table collection names.
-	instTableName := common.GetObjectInstTableName(objID, kit.TenantID)
+	instTableName := common.GetInstTableName(objID, objUUID)
 	// table collections indexes.
 	instTableIndexes := dbindex.TableInstanceIndexes()
 	// create table object instance collection.
@@ -478,10 +483,11 @@ func (m *modelManager) createTableObjectShardingTables(kit *rest.Kit, objID stri
 
 // createObjectShardingTables creates new collections for new model,
 // which create new object instance and association collections, and fix missing indexes.
-func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, isMainLine bool) error {
+func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID, objUUID string, isMainLine bool) error {
+
 	// collection names.
-	instTableName := common.GetObjectInstTableName(objID, kit.TenantID)
-	instAsstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
+	instTableName := common.GetInstTableName(objID, objUUID)
+	instAsstTableName := common.GetObjInstAsstTableName(objUUID)
 
 	// collections indexes.
 	instTableIndexes := dbindex.InstanceIndexes()
@@ -496,13 +502,13 @@ func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, i
 	// create object instance table.
 	err := m.createShardingTable(kit, instTableName, instTableIndexes)
 	if err != nil {
-		return fmt.Errorf("create object instance sharding table, %+v", err)
+		return fmt.Errorf("create object instance sharding table, %v", err)
 	}
 
 	// create object instance association table.
 	err = m.createShardingTable(kit, instAsstTableName, instAsstTableIndexes)
 	if err != nil {
-		return fmt.Errorf("create object instance association sharding table, %+v", err)
+		return fmt.Errorf("create object instance association sharding table, %v", err)
 	}
 
 	return nil
@@ -511,11 +517,18 @@ func (m *modelManager) createObjectShardingTables(kit *rest.Kit, objID string, i
 // dropObjectShardingTables drops the collections of target model.
 func (m *modelManager) dropObjectShardingTables(kit *rest.Kit, objID string) error {
 	// collection names.
-	instTableName := common.GetObjectInstTableName(objID, kit.TenantID)
-	instAsstTableName := common.GetObjectInstAsstTableName(objID, kit.TenantID)
-
+	instTableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v", objID, err)
+		return err
+	}
+	instAsstTableName, err := logics.GetObjInstAsstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) association instance table name failed, err: %v", objID, err)
+		return err
+	}
 	// drop object instance table.
-	err := m.dropShardingTable(kit, instTableName)
+	err = m.dropShardingTable(kit, instTableName)
 	if err != nil {
 		return fmt.Errorf("drop object instance sharding table, %+v", err)
 	}

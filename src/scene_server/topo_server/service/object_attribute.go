@@ -25,6 +25,8 @@ import (
 	"configcenter/src/common/mapstruct"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
+
+	"github.com/rs/xid"
 )
 
 // CreateObjectAttribute create a new object attribute
@@ -123,14 +125,15 @@ func (s *Service) createTableAttribute(ctx *rest.Contexts, attr *metadata.Attrib
 		isBizCustomField = true
 	}
 
-	if err := s.createTableObjectTable(ctx.Kit, attr.ObjectID, attr.PropertyID); err != nil {
+	tableObjUUID := xid.New().String()
+	if err = s.createTableObjectTable(ctx.Kit, attr.ObjectID, attr.PropertyID, tableObjUUID); err != nil {
 		blog.Errorf("create table object table failed, attr: %+v, err: %v, rid: %s", *attr, err, ctx.Kit.Rid)
 		return nil, err
 	}
 
 	attrInfo := new(metadata.ObjAttDes)
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		attribute, err := s.Logics.AttributeOperation().CreateTableObjectAttribute(ctx.Kit, attr)
+		attribute, err := s.Logics.AttributeOperation().CreateTableObjectAttribute(ctx.Kit, attr, tableObjUUID)
 		if err != nil {
 			return err
 		}

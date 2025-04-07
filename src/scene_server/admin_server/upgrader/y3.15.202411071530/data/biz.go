@@ -25,7 +25,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
@@ -53,15 +52,9 @@ func addBizModule(kit *rest.Kit, db local.DB, data []interface{}, auditField *to
 		},
 	}
 
-	var dataMap []mapstr.MapStr
+	var dataMap []interface{}
 	for _, item := range data {
-
-		itemMap, err := tools.ConvStructToMap(item)
-		if err != nil {
-			blog.Errorf("failed to convert struct to map, err: %v", err)
-			return err
-		}
-		dataMap = append(dataMap, itemMap)
+		dataMap = append(dataMap, item)
 	}
 
 	ids, err := tools.InsertData(kit, db, common.BKTableNameBaseApp, dataMap, needField)

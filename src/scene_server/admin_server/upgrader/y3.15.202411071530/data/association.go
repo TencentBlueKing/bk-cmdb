@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
@@ -68,16 +67,11 @@ var asstTypes = []associationKind{
 }
 
 func addAssociationData(kit *rest.Kit, db local.DB) error {
-	dataMap := make([]mapstr.MapStr, 0)
+	dataMap := make([]interface{}, 0)
 	for _, asstType := range asstTypes {
 		asstType.IsPre = &trueVar
 		asstType.Direction = metadata.DestinationToSource
-		item, err := tools.ConvStructToMap(asstType)
-		if err != nil {
-			blog.Errorf("convert struct to map failed, err: %v", err)
-			return err
-		}
-		dataMap = append(dataMap, item)
+		dataMap = append(dataMap, asstType)
 	}
 
 	needFields := &tools.InsertOptions{

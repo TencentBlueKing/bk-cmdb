@@ -14,6 +14,7 @@
 package association
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/source_controller/coreservice/core"
 )
 
@@ -23,10 +24,11 @@ type associationManager struct {
 	*associationKind
 	*associationInstance
 	*associationModel
+	clientSet apimachinery.ClientSetInterface
 }
 
 // New create a new association manager instance
-func New(dependent OperationDependencies) core.AssociationOperation {
+func New(dependent OperationDependencies, clientSet apimachinery.ClientSetInterface) core.AssociationOperation {
 	asstModel := &associationModel{}
 	asstKind := &associationKind{
 		associationModel: asstModel,
@@ -37,7 +39,9 @@ func New(dependent OperationDependencies) core.AssociationOperation {
 			associationKind:  asstKind,
 			associationModel: asstModel,
 			dependent:        dependent,
+			clientSet:        clientSet,
 		},
 		associationModel: &associationModel{},
+		clientSet:        clientSet,
 	}
 }

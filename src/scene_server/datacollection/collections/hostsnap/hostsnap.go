@@ -425,7 +425,7 @@ func (h *HostSnap) updateHostWithColletorMsg(header http.Header, rid string, hos
 			Ctx:      h.ctx,
 			CCError:  h.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header)),
 			User:     common.CCSystemCollectorUserName,
-			TenantID: common.BKDefaultTenantID,
+			TenantID: httpheader.GetTenantID(header),
 		}
 
 		// generate audit log for update host.

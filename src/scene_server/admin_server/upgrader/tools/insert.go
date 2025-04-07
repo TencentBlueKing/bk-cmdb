@@ -35,7 +35,7 @@ import (
 var ignoreKeysArr = []string{"create_time", "last_time", "_id"}
 
 // InsertData insert data for upgrade
-func InsertData(kit *rest.Kit, db local.DB, table string, data []mapstr.MapStr, insertOps *InsertOptions) (
+func InsertData(kit *rest.Kit, db local.DB, table string, data []interface{}, insertOps *InsertOptions) (
 	map[string]interface{}, error) {
 
 	result := make([]mapstr.MapStr, 0)
@@ -137,7 +137,7 @@ func getUniqueStr(item mapstr.MapStr, uniqueFields []string) string {
 	return strings.Join(strArr, "*")
 }
 
-func getInsertData(existData map[string]mapstr.MapStr, data []mapstr.MapStr, compareFiled *InsertOptions) (
+func getInsertData(existData map[string]mapstr.MapStr, data []interface{}, compareFiled *InsertOptions) (
 	[]map[string]interface{}, error) {
 
 	insertData := make([]map[string]interface{}, 0)
@@ -153,14 +153,15 @@ func getInsertData(existData map[string]mapstr.MapStr, data []mapstr.MapStr, com
 			continue
 		}
 
-		if err = cmpData(mapStrData, existData[valueStr], compareFiled.IgnoreKeys); err != nil {
+		if err = CmpData(mapStrData, existData[valueStr], compareFiled.IgnoreKeys); err != nil {
 			return nil, err
 		}
 	}
 	return insertData, nil
 }
 
-func cmpData(data mapstr.MapStr, existData mapstr.MapStr, ignoreKeys []string) error {
+// CmpData compare data
+func CmpData(data mapstr.MapStr, existData mapstr.MapStr, ignoreKeys []string) error {
 	ignoreKeys = append(ignoreKeys, ignoreKeysArr...)
 	for _, key := range ignoreKeys {
 		delete(existData, key)

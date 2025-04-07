@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	mCommon "configcenter/src/scene_server/admin_server/common"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
@@ -30,15 +29,10 @@ import (
 )
 
 func addPropertyGroupData(kit *rest.Kit, db local.DB) error {
-	propertyGroupArr := make([]mapstr.MapStr, 0)
+	propertyGroupArr := make([]interface{}, 0)
 	for _, group := range propertyGroupData {
 		group.IsDefault = true
-		item, err := tools.ConvStructToMap(group)
-		if err != nil {
-			blog.Errorf("convert struct to map failed, err: %v", err)
-			return err
-		}
-		propertyGroupArr = append(propertyGroupArr, item)
+		propertyGroupArr = append(propertyGroupArr, group)
 	}
 
 	needField := &tools.InsertOptions{

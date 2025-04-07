@@ -699,8 +699,8 @@ func (d *DistinctFieldOption) Validate() (rawError errors.RawErrorInfo) {
 
 // CreateModelTable create model table params
 type CreateModelTable struct {
-	ObjectIDs  []string `json:"bk_object_ids"`
-	IsMainLine bool     `json:"is_main_line"`
+	ObjectUUIDMap map[string]string `json:"object_uuid_map"`
+	IsMainLine    bool              `json:"is_main_line"`
 }
 
 // ServiceTemplateAttributeResult service template attribute result

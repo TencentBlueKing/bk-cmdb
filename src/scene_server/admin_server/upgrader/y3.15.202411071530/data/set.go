@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
@@ -63,8 +62,7 @@ func addSetBaseData(kit *rest.Kit, db local.DB, bizID int64) (map[string]interfa
 		},
 	}
 
-	ids, err := tools.InsertData(kit, db, common.BKTableNameBaseSet, []mapstr.MapStr{setData},
-		needField)
+	ids, err := tools.InsertData(kit, db, common.BKTableNameBaseSet, []interface{}{setData}, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBaseApp, err)
 		return nil, err

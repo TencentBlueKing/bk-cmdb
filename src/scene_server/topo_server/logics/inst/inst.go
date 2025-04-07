@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"configcenter/pkg/filter"
+	"configcenter/pkg/inst/logics"
 	filtertools "configcenter/pkg/tools/filter"
 	"configcenter/src/ac/extensions"
 	"configcenter/src/apimachinery"
@@ -1029,7 +1030,11 @@ func (c *commonInst) findInstTopo(kit *rest.Kit, objID string, instID int64, nee
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, instIDField)
 	}
 
-	tableName := common.GetInstTableName(objID, kit.TenantID)
+	tableName, err := logics.GetObjInstTableFromCache(kit, c.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return 0, nil, err
+	}
 	filter := []map[string]interface{}{{metadata.GetInstIDFieldByObjID(objID): instID}}
 	cnt, ccErr := c.clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header, tableName, filter)
 	if ccErr != nil {

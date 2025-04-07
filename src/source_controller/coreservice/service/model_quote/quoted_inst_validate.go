@@ -20,6 +20,7 @@ package modelquote
 import (
 	"strings"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -29,7 +30,7 @@ import (
 	"configcenter/src/storage/driver/mongodb"
 )
 
-func getQuoteAttributes(kit *rest.Kit, objID string) (string, map[string]metadata.Attribute, error) {
+func (s *service) getQuoteAttributes(kit *rest.Kit, objID string) (string, map[string]metadata.Attribute, error) {
 	quoteRelCond := mapstr.MapStr{common.BKDestModelField: objID}
 	quoteRelation := new(metadata.ModelQuoteRelation)
 
@@ -66,9 +67,9 @@ func getQuoteAttributes(kit *rest.Kit, objID string) (string, map[string]metadat
 	return quoteRelation.SrcModel, attrMap, nil
 }
 
-func validateCreateQuotedInstances(kit *rest.Kit, objID string, instances []mapstr.MapStr) error {
+func (s *service) validateCreateQuotedInstances(kit *rest.Kit, objID string, instances []mapstr.MapStr) error {
 	// get source model info and quote attributes
-	srcObj, attrMap, err := getQuoteAttributes(kit, objID)
+	srcObj, attrMap, err := s.getQuoteAttributes(kit, objID)
 	if err != nil {
 		return err
 	}
@@ -76,7 +77,7 @@ func validateCreateQuotedInstances(kit *rest.Kit, objID string, instances []maps
 	// validate instances
 	srcInstIDs := make([]int64, 0)
 	for _, instance := range instances {
-		srcInstID, err := validateCreateQuotedInst(kit, objID, instance, attrMap)
+		srcInstID, err := s.validateCreateQuotedInst(kit, objID, instance, attrMap)
 		if err != nil {
 			return err
 		}
@@ -92,7 +93,13 @@ func validateCreateQuotedInstances(kit *rest.Kit, objID string, instances []maps
 	}
 
 	srcInstIDs = util.IntArrayUnique(srcInstIDs)
-	srcTable := common.GetInstTableName(srcObj, kit.TenantID)
+
+	srcTable, err := logics.GetObjInstTableFromCache(kit, s.clientSet, srcObj)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return err
+	}
+
 	srcCond := mapstr.MapStr{common.GetInstIDField(srcObj): mapstr.MapStr{common.BKDBIN: srcInstIDs}}
 
 	cnt, err := mongodb.Shard(kit.ShardOpts()).Table(srcTable).Find(srcCond).Count(kit.Ctx)
@@ -109,7 +116,7 @@ func validateCreateQuotedInstances(kit *rest.Kit, objID string, instances []maps
 	return nil
 }
 
-func validateCreateQuotedInst(kit *rest.Kit, objID string, instance mapstr.MapStr,
+func (s *service) validateCreateQuotedInst(kit *rest.Kit, objID string, instance mapstr.MapStr,
 	attrMap map[string]metadata.Attribute) (int64, error) {
 
 	var srcInstID int64
@@ -156,7 +163,7 @@ func validateCreateQuotedInst(kit *rest.Kit, objID string, instance mapstr.MapSt
 			return 0, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, attrID)
 		}
 
-		instance[attrID] = getLostFieldDefaultValue(kit, attribute)
+		instance[attrID] = s.getLostFieldDefaultValue(kit, attribute)
 	}
 
 	if _, exists := instance[common.BKInstIDField]; !exists {
@@ -167,7 +174,7 @@ func validateCreateQuotedInst(kit *rest.Kit, objID string, instance mapstr.MapSt
 }
 
 // getLostFieldDefaultValue fill lost field with zero value, right now quoted attribute default value is only for ui
-func getLostFieldDefaultValue(kit *rest.Kit, attr metadata.Attribute) interface{} {
+func (s *service) getLostFieldDefaultValue(kit *rest.Kit, attr metadata.Attribute) interface{} {
 	switch attr.PropertyType {
 	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
 		return ""
@@ -182,8 +189,8 @@ func getLostFieldDefaultValue(kit *rest.Kit, attr metadata.Attribute) interface{
 	return nil
 }
 
-func validateUpdateQuotedInst(kit *rest.Kit, objID string, instance mapstr.MapStr) error {
-	_, attrMap, err := getQuoteAttributes(kit, objID)
+func (s *service) validateUpdateQuotedInst(kit *rest.Kit, objID string, instance mapstr.MapStr) error {
+	_, attrMap, err := s.getQuoteAttributes(kit, objID)
 	if err != nil {
 		return err
 	}

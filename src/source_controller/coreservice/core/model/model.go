@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -40,16 +41,18 @@ type modelManager struct {
 	*modelAttrUnique
 	language  language.CCLanguageIf
 	dependent OperationDependences
+	clientSet apimachinery.ClientSetInterface
 }
 
 // New create a new model manager instance
-func New(dependent OperationDependences, language language.CCLanguageIf) core.ModelOperation {
+func New(dependent OperationDependences, language language.CCLanguageIf,
+	clientSet apimachinery.ClientSetInterface) core.ModelOperation {
 
-	coreMgr := &modelManager{dependent: dependent, language: language}
-	coreMgr.modelAttribute = &modelAttribute{model: coreMgr, language: language}
+	coreMgr := &modelManager{dependent: dependent, language: language, clientSet: clientSet}
+	coreMgr.modelAttribute = &modelAttribute{model: coreMgr, language: language, clientSet: clientSet}
 	coreMgr.modelClassification = &modelClassification{model: coreMgr}
 	coreMgr.modelAttributeGroup = &modelAttributeGroup{model: coreMgr}
-	coreMgr.modelAttrUnique = &modelAttrUnique{}
+	coreMgr.modelAttrUnique = &modelAttrUnique{clientSet: clientSet}
 
 	return coreMgr
 }
@@ -176,9 +179,11 @@ func (m *modelManager) CreateModel(kit *rest.Kit, inputParam metadata.CreateMode
 		return nil, err
 	}
 
+	instTable := common.GetInstTableName(inputParam.Spec.ObjectID, inputParam.Spec.UUID)
+	instAsstTable := common.GetObjInstAsstTableName(inputParam.Spec.UUID)
+
 	// 因为模型名称会用于生成实例和实例关联的mongodb表名，所以需要校验模型对应的实例表和实例关联表名均不超过mongodb的长度限制
-	if !SatisfyMongoCollLimit(common.GetObjectInstTableName(inputParam.Spec.ObjectID, kit.TenantID)) ||
-		!SatisfyMongoCollLimit(common.GetObjectInstAsstTableName(inputParam.Spec.ObjectID, kit.TenantID)) {
+	if !SatisfyMongoCollLimit(instTable) || !SatisfyMongoCollLimit(instAsstTable) {
 		blog.Errorf("inputParam.Spec.ObjectID: %s not SatisfyMongoCollLimit", inputParam.Spec.ObjectID)
 		return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldObjectID)
 	}

@@ -20,9 +20,10 @@ import (
 
 // CreateModelTables TODO
 func (m *modelManager) CreateModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error {
-	for _, objID := range inputParam.ObjectIDs {
-		if err := m.createObjectShardingTables(kit, objID, inputParam.IsMainLine); err != nil {
-			blog.ErrorJSON("create module table error. err: %s, objID: %s, rid: %s", err.Error(), objID, kit.Rid)
+
+	for objID, objUUID := range inputParam.ObjectUUIDMap {
+		if err := m.createObjectShardingTables(kit, objID, objUUID, inputParam.IsMainLine); err != nil {
+			blog.Errorf("create module table error. err: %v, objID: %s, rid: %s", err, objID, kit.Rid)
 			return err
 		}
 	}
@@ -32,8 +33,9 @@ func (m *modelManager) CreateModelTables(kit *rest.Kit, inputParam metadata.Crea
 
 // CreateTableModelTables create table instance table
 func (m *modelManager) CreateTableModelTables(kit *rest.Kit, inputParam metadata.CreateModelTable) error {
-	for _, objID := range inputParam.ObjectIDs {
-		if err := m.createTableObjectShardingTables(kit, objID); err != nil {
+
+	for objID, objUUID := range inputParam.ObjectUUIDMap {
+		if err := m.createTableObjectShardingTables(kit, objID, objUUID); err != nil {
 			blog.Errorf("create table module error, err: %v, objID: %s, rid: %s", err, objID, kit.Rid)
 			return err
 		}

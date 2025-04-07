@@ -18,6 +18,8 @@
 package data
 
 import (
+	"time"
+
 	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -26,6 +28,9 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/driver/mongodb"
+
+	"github.com/rs/xid"
 )
 
 var objectData = []Object{
@@ -112,37 +117,79 @@ var objectData = []Object{
 
 // Object object metadata definition
 type Object struct {
-	ID            int64       `bson:"id"`
-	ObjCls        string      `bson:"bk_classification_id"`
-	ObjIcon       string      `bson:"bk_obj_icon"`
-	ObjectID      string      `bson:"bk_obj_id"`
-	ObjectName    string      `bson:"bk_obj_name"`
-	IsHidden      bool        `bson:"bk_ishidden"`
-	IsPre         bool        `bson:"ispre"`
-	IsPaused      bool        `bson:"bk_ispaused"`
-	Position      string      `bson:"position"`
-	Description   string      `bson:"description"`
-	Creator       string      `bson:"creator"`
-	Modifier      string      `bson:"modifier"`
-	Time          *tools.Time `bson:",inline"`
-	ObjSortNumber int64       `bson:"obj_sort_number"`
+	ID            int64     `bson:"id"`
+	ObjCls        string    `bson:"bk_classification_id"`
+	ObjIcon       string    `bson:"bk_obj_icon"`
+	ObjectID      string    `bson:"bk_obj_id"`
+	ObjectName    string    `bson:"bk_obj_name"`
+	IsHidden      bool      `bson:"bk_ishidden"`
+	IsPre         bool      `bson:"ispre"`
+	IsPaused      bool      `bson:"bk_ispaused"`
+	Position      string    `bson:"position"`
+	Description   string    `bson:"description"`
+	Creator       string    `bson:"creator"`
+	Modifier      string    `bson:"modifier"`
+	CreateTime    time.Time `bson:"create_time"`
+	LastTime      time.Time `bson:"last_time"`
+	ObjSortNumber int64     `bson:"obj_sort_number"`
+	UUID          string    `bson:"uuid"`
 }
 
-func addObjectData(kit *rest.Kit, db local.DB) error {
-	objectDataArr := make([]mapstr.MapStr, 0)
+// AddObjectData add object data
+func AddObjectData(kit *rest.Kit, db local.DB) (map[string]string, error) {
+	existObjectData := make([]Object, 0)
+	err := db.Table(common.BKTableNameObjDes).Find(mapstr.MapStr{}).All(kit.Ctx, &existObjectData)
+	if err != nil {
+		blog.Errorf("find object data failed, err: %v", err)
+		return nil, err
+	}
+	existObject := make(map[string]Object)
+	for _, obj := range existObjectData {
+		existObject[obj.ObjectID] = obj
+	}
+
+	insertData := make([]map[string]interface{}, 0)
+	insertTemplateData := make([]interface{}, 0)
+	objUUIDMap := map[string]string{}
+	ignoreKeys := []string{common.BKFieldID, common.ObjSortNumberField, metadata.ModelFieldObjUUID}
 	for _, obj := range objectData {
-		obj.Time = tools.NewTime()
-		item, err := tools.ConvStructToMap(obj)
+		insertTemplateData = append(insertTemplateData, obj)
+		objMapData, err := tools.ConvStructToMap(obj)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
-			return err
+			return nil, err
 		}
-		objectDataArr = append(objectDataArr, item)
+		if _, ok := existObject[obj.ObjectID]; ok {
+			existMapData, err := tools.ConvStructToMap(existObject[obj.ObjectID])
+			if err != nil {
+				blog.Errorf("convert struct to map failed, err: %v", err)
+				return nil, err
+			}
+			if err = tools.CmpData(objMapData, existMapData, ignoreKeys); err != nil {
+				blog.Errorf("compare data failed, err: %v", err)
+				return nil, err
+			}
+			objUUIDMap[obj.ObjectID] = existObject[obj.ObjectID].UUID
+			continue
+		}
+		id, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameObjDes)
+		if err != nil {
+			blog.Errorf("get next sequence failed, err: %v", err)
+			return nil, err
+		}
+		objMapData[common.BKFieldID] = id
+		objMapData[common.CreateTimeField] = time.Now()
+		objMapData[common.LastTimeField] = time.Now()
+
+		objUUID := xid.New().String()
+		objMapData[metadata.ModelFieldObjUUID] = objUUID
+		objUUIDMap[obj.ObjectID] = objUUID
+		insertData = append(insertData, objMapData)
 	}
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKObjIDField},
-		IgnoreKeys:   []string{common.BKFieldID, common.ObjSortNumberField},
+		IgnoreKeys:   []string{common.BKFieldID, common.ObjSortNumberField, metadata.ModelFieldObjUUID},
 		IDField:      []string{common.BKFieldID},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
@@ -154,17 +201,38 @@ func addObjectData(kit *rest.Kit, db local.DB) error {
 		},
 	}
 
-	_, err := tools.InsertData(kit, db, common.BKTableNameObjDes, objectDataArr, needField)
-	if err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjDes, err)
-		return err
-	}
-
 	idOptions := &tools.IDOptions{ResNameField: "bk_obj_name", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, objectDataArr, needField, idOptions, tenanttmp.TemplateTypeObject)
+	err = tools.InsertTemplateData(kit, db, insertTemplateData, needField, idOptions, tenanttmp.TemplateTypeObject)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
-		return err
+		return nil, err
 	}
-	return nil
+
+	if len(insertData) == 0 {
+		return objUUIDMap, nil
+	}
+
+	err = db.Table(common.BKTableNameObjDes).Insert(kit.Ctx, insertData)
+	if err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjDes, err)
+		return nil, err
+	}
+
+	auditField := &tools.AuditStruct{
+		AuditDataField: &tools.AuditDataField{
+			ResIDField:   "id",
+			ResNameField: "bk_obj_name",
+		},
+		AuditTypeData: &tools.AuditResType{
+			AuditType:    metadata.ModelType,
+			ResourceType: metadata.ModuleRes,
+		},
+	}
+
+	if err = tools.AddCreateAuditLog(kit, db, insertData, auditField); err != nil {
+		blog.Errorf("add audit log failed, err: %v", err)
+		return nil, err
+	}
+
+	return objUUIDMap, nil
 }

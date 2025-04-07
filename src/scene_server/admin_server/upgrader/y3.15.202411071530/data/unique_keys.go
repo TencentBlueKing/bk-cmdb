@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
@@ -97,14 +96,9 @@ func addObjectUniqueData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	objUniqueData := make([]mapstr.MapStr, 0)
+	objUniqueData := make([]interface{}, 0)
 	for _, key := range uniqueKeysArr {
-		item, err := tools.ConvStructToMap(key)
-		if err != nil {
-			blog.Errorf("convert struct to map failed, err: %v", err)
-			continue
-		}
-		objUniqueData = append(objUniqueData, item)
+		objUniqueData = append(objUniqueData, key)
 	}
 
 	needField := &tools.InsertOptions{

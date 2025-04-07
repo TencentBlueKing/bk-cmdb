@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"configcenter/pkg/inst/logics"
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -47,11 +49,14 @@ type InstanceMainline struct {
 	instanceMap      map[string]*metadata.TopoInstance
 	allTopoInstances []*metadata.TopoInstance
 
-	root *metadata.TopoInstanceNode
+	root      *metadata.TopoInstanceNode
+	clientSet apimachinery.ClientSetInterface
 }
 
 // NewInstanceMainline TODO
-func NewInstanceMainline(lang language.DefaultCCLanguageIf, proxy dal.DB, bkBizID int64) (*InstanceMainline, error) {
+func NewInstanceMainline(lang language.DefaultCCLanguageIf, proxy dal.DB, bkBizID int64,
+	clientSet apimachinery.ClientSetInterface) (*InstanceMainline, error) {
+
 	im := &InstanceMainline{
 		lang:              lang,
 		bkBizID:           bkBizID,
@@ -61,6 +66,7 @@ func NewInstanceMainline(lang language.DefaultCCLanguageIf, proxy dal.DB, bkBizI
 		mainlineInstances: make([]mapstr.MapStr, 0),
 		allTopoInstances:  make([]*metadata.TopoInstance, 0),
 		instanceMap:       map[string]*metadata.TopoInstance{},
+		clientSet:         clientSet,
 	}
 	return im, nil
 }
@@ -138,9 +144,14 @@ func (im *InstanceMainline) LoadMainlineInstances(kit *rest.Kit) error {
 		}
 
 		mainlineInstances := []mapstr.MapStr{}
+		tableName, err := logics.GetObjInstTableFromCache(kit, im.clientSet, objectID)
+		if err != nil {
+			blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objectID, err, kit.Rid)
+			return err
+		}
 
-		err := mongodb.Shard(kit.ShardOpts()).
-			Table(common.GetObjectInstTableName(objectID, kit.TenantID)).
+		err = mongodb.Shard(kit.ShardOpts()).
+			Table(tableName).
 			Find(filter).
 			All(kit.Ctx, &mainlineInstances)
 
@@ -355,8 +366,13 @@ func (im *InstanceMainline) getMissingModelInstance(kit *rest.Kit, topoInstance 
 	filter := map[string]interface{}{common.BKInstIDField: topoInstance.ParentInstanceID}
 
 	missedInstances := make([]mapstr.MapStr, 0)
-	err := mongodb.Shard(kit.ShardOpts()).Table(common.GetObjectInstTableName(topoInstance.ObjectID, kit.TenantID)).
-		Find(filter).All(kit.Ctx, &missedInstances)
+	tableName, err := logics.GetObjInstTableFromCache(kit, im.clientSet, topoInstance.ObjectID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", topoInstance.ObjectID, err, kit.Rid)
+		return topoInstance, false, err
+	}
+
+	err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(filter).All(kit.Ctx, &missedInstances)
 	if err != nil {
 		blog.Errorf("get common instances failed, err: %v, rid: %s", topoInstance.ParentInstanceID, err, kit.Rid)
 		return topoInstance, false, err
@@ -502,10 +518,12 @@ func (im *InstanceMainline) getParentInstance(kit *rest.Kit, parentObjectID stri
 			}
 
 			inst := mapstr.MapStr{}
-			err := mongodb.Shard(kit.ShardOpts()).
-				Table(common.GetObjectInstTableName(parentObjectID, kit.TenantID)).
-				Find(cond).
-				One(context.Background(), &inst)
+			instTable, err := logics.GetObjInstTableFromCache(kit, im.clientSet, parentObjectID)
+			if err != nil {
+				blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", parentObjectID, err, kit.Rid)
+				return parentInstance, false, err
+			}
+			err = mongodb.Shard(kit.ShardOpts()).Table(instTable).Find(cond).One(context.Background(), &inst)
 
 			if err != nil {
 				if isNotFound := mongodb.IsNotFoundError(err); !isNotFound {

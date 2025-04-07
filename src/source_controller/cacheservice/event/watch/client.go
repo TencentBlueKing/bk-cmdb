@@ -516,7 +516,7 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 					common.BKInstIDField: map[string]interface{}{common.BKDBIN: instIDs},
 				}
 
-				objColl := common.GetInstTableName(objID, ownerID)
+				objColl := common.GetObjectInstTableName(objID, ownerID)
 				if err := c.db.Shard(kit.ShardOpts()).Table(objColl).Find(filter, findOpts).Fields(fields...).
 					All(kit.Ctx, &detailArr); err != nil {
 					blog.Errorf("get details from db failed, err: %v, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)

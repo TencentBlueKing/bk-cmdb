@@ -338,8 +338,8 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 
 	retData := make(map[string]interface{})
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		_, success, updateErrRow, errRow, err := s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
-			ctx.Kit.TenantID, hostList.HostInfo, hostList.InputType)
+		_, success, updateErrRow, errRow, err := s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID}, hostList.HostInfo,
+			hostList.InputType)
 		if err != nil {
 			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v,input:%+v,rid:%s",
 				success, updateErrRow, err, errRow, hostList, ctx.Kit.Rid)
@@ -400,8 +400,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, ctx.Kit.TenantID,
-		hostList.HostInfo)
+	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, hostList.HostInfo)
 	retData["success"] = success
 	retData["error"] = errRow
 	if err != nil {
@@ -489,8 +488,7 @@ func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
 	retData := make(map[string]interface{})
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID},
-			common.BKDefaultTenantID, addHost, "")
+		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID}, addHost, "")
 		if err != nil {
 			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v,input:%+v,rid:%s",
 				success, updateErrRow, err, errRow, agents, ctx.Kit.Rid)
@@ -879,8 +877,8 @@ func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
 	var success, updateErrRow, errRow []string
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, hostList.ApplicationID,
-			hostList.ModuleID, ctx.Kit.TenantID, hostList.HostInfo, common.InputTypeApiNewHostSync)
+		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, hostList.ApplicationID, hostList.ModuleID,
+			hostList.HostInfo, common.InputTypeApiNewHostSync)
 		if err != nil {
 			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v, rid: %s",
 				success, updateErrRow, err, errRow, ctx.Kit.Rid)

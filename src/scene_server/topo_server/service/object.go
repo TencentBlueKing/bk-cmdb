@@ -26,6 +26,8 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/driver/redis"
+
+	"github.com/rs/xid"
 )
 
 // CreateObjectBatch batch to create some objects
@@ -117,17 +119,19 @@ func (s *Service) SearchObjectBatch(ctx *rest.Contexts) {
 
 // CreateObject create a new object
 func (s *Service) CreateObject(ctx *rest.Contexts) {
-	data := new(mapstr.MapStr)
+	data := make(mapstr.MapStr)
 	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
+	objUUID := xid.New().String()
+	data[metadata.ModelFieldObjUUID] = objUUID
 	// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
 	// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 	// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 	// Collection minimum is Timestamp(1616747878, 5)
-	if err := s.createObjectTable(ctx, *data); err != nil {
+	if err := s.createObjectTable(ctx, data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
@@ -135,7 +139,7 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 	var rsp *metadata.Object
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		rsp, err = s.Logics.ObjectOperation().CreateObject(ctx.Kit, false, *data)
+		rsp, err = s.Logics.ObjectOperation().CreateObject(ctx.Kit, false, data)
 		if nil != err {
 			return err
 		}
@@ -381,38 +385,41 @@ func (s *Service) createObjectTable(ctx *rest.Contexts, object map[string]interf
 	input := &metadata.CreateModelTable{
 		IsMainLine: false,
 	}
+
+	objectUUID, isExist := object[metadata.ModelFieldObjUUID]
+	if !isExist {
+		blog.Errorf("create model tables failed, object has no uuid, rid: %s", ctx.Kit.Rid)
+		return fmt.Errorf("create model tables failed, object has no uuid")
+	}
 	if objID := object[common.BKObjIDField]; objID != nil {
 		strObjID := fmt.Sprintf("%v", objID)
-		input.ObjectIDs = []string{strObjID}
+		input.ObjectUUIDMap = map[string]string{strObjID: fmt.Sprintf("%v", objectUUID)}
 		return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(ctx.Kit.Ctx, ctx.Kit.Header, input)
-
 	}
 	return nil
 }
 
-func (s *Service) createTableObjectTable(kit *rest.Kit, objectID, propertyID string) error {
+func (s *Service) createTableObjectTable(kit *rest.Kit, objectID, propertyID, objUUID string) error {
 
 	input := &metadata.CreateModelTable{
-		IsMainLine: false,
-		ObjectIDs:  []string{metadata.GenerateModelQuoteObjID(objectID, propertyID)},
+		IsMainLine:    false,
+		ObjectUUIDMap: map[string]string{metadata.GenerateModelQuoteObjID(objectID, propertyID): objUUID},
 	}
 	return s.Engine.CoreAPI.CoreService().Model().CreateTableModelTables(kit.Ctx, kit.Header, input)
-
 }
 
 // createObjectTableByObjectID 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
 // (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 // please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 // Collection minimum is Timestamp(1616747878, 5)
-func (s *Service) createObjectTableByObjectID(kit *rest.Kit, objectID string, isMainline bool) error {
+func (s *Service) createObjectTableByObjectID(kit *rest.Kit, objectID, objectUUID string, isMainline bool) error {
 	input := &metadata.CreateModelTable{
 		IsMainLine: isMainline,
 	}
 
 	if objectID != "" {
-		input.ObjectIDs = []string{objectID}
+		input.ObjectUUIDMap = map[string]string{objectID: objectUUID}
 		return s.Engine.CoreAPI.CoreService().Model().CreateModelTables(kit.Ctx, kit.Header, input)
-
 	}
 	return nil
 }
@@ -425,12 +432,16 @@ func (s *Service) CreateManyObject(ctx *rest.Contexts) {
 		return
 	}
 
-	for _, item := range data.Objects {
+	for index := range data.Objects {
+		objUUID := xid.New().String()
+		data.Objects[index].UUID = objUUID
 		// 创建模型前，先创建表，避免模型创建后，对模型数据查询出现下面的错误，
 		// (SnapshotUnavailable) Unable to read from a snapshot due to pending collection catalog changes;
 		// please retry the operation. Snapshot timestamp is Timestamp(1616747877, 51).
 		// Collection minimum is Timestamp(1616747878, 5)
-		if err := s.createObjectTable(ctx, mapstr.MapStr{common.BKObjIDField: item.ObjectID}); err != nil {
+		if err := s.createObjectTable(ctx,
+			mapstr.MapStr{common.BKObjIDField: data.Objects[index].ObjectID,
+				metadata.ModelFieldObjUUID: objUUID}); err != nil {
 			ctx.RespAutoError(err)
 			return
 		}

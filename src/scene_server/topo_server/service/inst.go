@@ -15,6 +15,7 @@ package service
 import (
 	"strconv"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -801,9 +802,14 @@ func (s *Service) SearchInstsNames(ctx *rest.Contexts) {
 		ctx.RespAutoError(defErr.CCErrorf(common.CCErrCommParamsInvalid, "bk_obj_id"))
 		return
 	}
-
+	tableName, err := logics.GetObjInstTableFromCache(ctx.Kit, s.Engine.CoreAPI, option.ObjID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", option.ObjID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
 	distinctOpt := &metadata.DistinctFieldOption{
-		TableName: common.GetInstTableName(option.ObjID, ctx.Kit.TenantID),
+		TableName: tableName,
 		Field:     metadata.GetInstNameFieldName(option.ObjID),
 		Filter:    filter,
 	}

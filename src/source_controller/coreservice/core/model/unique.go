@@ -13,6 +13,7 @@
 package model
 
 import (
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -20,6 +21,7 @@ import (
 )
 
 type modelAttrUnique struct {
+	clientSet apimachinery.ClientSetInterface
 }
 
 var forbiddenCreateUniqueObjList = []string{
@@ -42,7 +44,8 @@ func (m *modelAttrUnique) CreateModelAttrUnique(kit *rest.Kit, objID string, dat
 }
 
 // UpdateModelAttrUnique TODO
-func (m *modelAttrUnique) UpdateModelAttrUnique(kit *rest.Kit, objID string, id uint64, data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error) {
+func (m *modelAttrUnique) UpdateModelAttrUnique(kit *rest.Kit, objID string, id uint64,
+	data metadata.UpdateModelAttrUnique) (*metadata.UpdatedCount, error) {
 	err := m.updateModelAttrUnique(kit, objID, id, data)
 	if err != nil {
 		return nil, err
@@ -51,7 +54,8 @@ func (m *modelAttrUnique) UpdateModelAttrUnique(kit *rest.Kit, objID string, id 
 }
 
 // DeleteModelAttrUnique TODO
-func (m *modelAttrUnique) DeleteModelAttrUnique(kit *rest.Kit, objID string, id uint64) (*metadata.DeletedCount, error) {
+func (m *modelAttrUnique) DeleteModelAttrUnique(kit *rest.Kit, objID string, id uint64) (*metadata.DeletedCount,
+	error) {
 	err := m.deleteModelAttrUnique(kit, objID, id)
 	if err != nil {
 		return nil, err
@@ -60,7 +64,8 @@ func (m *modelAttrUnique) DeleteModelAttrUnique(kit *rest.Kit, objID string, id 
 }
 
 // SearchModelAttrUnique TODO
-func (m *modelAttrUnique) SearchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (*metadata.QueryUniqueResult, error) {
+func (m *modelAttrUnique) SearchModelAttrUnique(kit *rest.Kit, inputParam metadata.QueryCondition) (
+	*metadata.QueryUniqueResult, error) {
 
 	uniqueItems, err := m.searchModelAttrUnique(kit, inputParam)
 	if nil != err {

@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
@@ -68,7 +67,7 @@ func addObjAttrData(kit *rest.Kit, db local.DB) error {
 	}
 
 	indexMap := make(map[string]int64)
-	attributeData := make([]mapstr.MapStr, 0)
+	attributeData := make([]interface{}, 0)
 	for _, attr := range objAttrData {
 		if _, ok := indexMap[attr.ObjectID+attr.PropertyGroup]; !ok {
 			indexMap[attr.ObjectID+attr.PropertyGroup] = 1
@@ -76,12 +75,7 @@ func addObjAttrData(kit *rest.Kit, db local.DB) error {
 			indexMap[attr.ObjectID+attr.PropertyGroup] += 1
 		}
 		attr.PropertyIndex = indexMap[attr.ObjectID+attr.PropertyGroup]
-		item, err := tools.ConvStructToMap(attr)
-		if err != nil {
-			blog.Errorf("convert attribute to mapstr failed, err: %v", err)
-			return err
-		}
-		attributeData = append(attributeData, item)
+		attributeData = append(attributeData, attr)
 	}
 
 	needField := &tools.InsertOptions{

@@ -33,18 +33,23 @@ import (
 )
 
 // InsertTemplateData insert template data
-func InsertTemplateData(kit *rest.Kit, db local.DB, data []mapstr.MapStr, insertOps *InsertOptions, idOption *IDOptions,
+func InsertTemplateData(kit *rest.Kit, db local.DB, data []interface{}, insertOps *InsertOptions, idOption *IDOptions,
 	dataType tenanttmp.TenantTemplateType) error {
 
 	tmpData := make([]tenanttmp.TenantTmpData[mapstr.MapStr], 0)
 	for _, item := range data {
+		itemMap, err := ConvStructToMap(item)
+		if err != nil {
+			blog.Errorf("convert struct to map failed, err: %v", err)
+			return err
+		}
 		for _, idField := range idOption.RemoveKeys {
-			delete(item, idField)
+			delete(itemMap, idField)
 		}
 		tmpData = append(tmpData, tenanttmp.TenantTmpData[mapstr.MapStr]{
 			Type:  dataType,
 			IsPre: true,
-			Data:  item,
+			Data:  itemMap,
 		})
 	}
 
@@ -232,7 +237,7 @@ func cmpTenantTmp(existData, data []tenanttmp.TenantTmpData[mapstr.MapStr],
 			insertData = append(insertData, item)
 			continue
 		}
-		if err := cmpData(item.Data, existMap[valueStr].Data, ignoreFields); err != nil {
+		if err := CmpData(item.Data, existMap[valueStr].Data, ignoreFields); err != nil {
 			return nil, err
 		}
 	}

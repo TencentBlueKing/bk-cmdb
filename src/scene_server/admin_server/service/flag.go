@@ -19,8 +19,6 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 
@@ -81,11 +79,4 @@ func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response)
 	}
 	resp.WriteEntity(metadata.NewSuccessResp("modify system user config success"))
 
-}
-
-func (s *Service) getCommObject(header http.Header) (ownerID, rid string, defErr errors.DefaultCCErrorIf) {
-	rid = httpheader.GetRid(header)
-	defErr = s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(header))
-	ownerID = common.BKDefaultTenantID
-	return
 }

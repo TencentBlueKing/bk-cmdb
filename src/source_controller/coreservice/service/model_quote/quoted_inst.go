@@ -20,6 +20,7 @@ package modelquote
 import (
 	"time"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -29,7 +30,7 @@ import (
 )
 
 // BatchCreateQuotedInstance batch create quoted instances.
-func BatchCreateQuotedInstance(cts *rest.Contexts) {
+func (s *service) BatchCreateQuotedInstance(cts *rest.Contexts) {
 	instances := make([]mapstr.MapStr, 0)
 	if err := cts.DecodeInto(&instances); err != nil {
 		cts.RespAutoError(err)
@@ -47,12 +48,17 @@ func BatchCreateQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	if err := validateCreateQuotedInstances(cts.Kit, objID, instances); err != nil {
+	if err := s.validateCreateQuotedInstances(cts.Kit, objID, instances); err != nil {
 		cts.RespAutoError(err)
 		return
 	}
 
-	table := common.GetInstTableName(objID, cts.Kit.TenantID)
+	table, err := logics.GetObjInstTableFromCache(cts.Kit, s.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, cts.Kit.Rid)
+		cts.RespAutoError(err)
+		return
+	}
 	ids, err := mongodb.Shard(cts.Kit.SysShardOpts()).NextSequences(cts.Kit.Ctx, table, len(instances))
 	if err != nil {
 		cts.RespAutoError(err)
@@ -81,7 +87,7 @@ func BatchCreateQuotedInstance(cts *rest.Contexts) {
 }
 
 // ListQuotedInstance list quoted instances.
-func ListQuotedInstance(cts *rest.Contexts) {
+func (s *service) ListQuotedInstance(cts *rest.Contexts) {
 	opt := new(metadata.CommonQueryOption)
 	if err := cts.DecodeInto(opt); err != nil {
 		cts.RespAutoError(err)
@@ -98,7 +104,13 @@ func ListQuotedInstance(cts *rest.Contexts) {
 		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
 		return
 	}
-	table := common.GetInstTableName(objID, cts.Kit.TenantID)
+
+	table, err := logics.GetObjInstTableFromCache(cts.Kit, s.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, cts.Kit.Rid)
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
 
 	filter, err := opt.ToMgo()
 	if err != nil {
@@ -131,7 +143,7 @@ func ListQuotedInstance(cts *rest.Contexts) {
 }
 
 // BatchUpdateQuotedInstance batch update quoted instances.
-func BatchUpdateQuotedInstance(cts *rest.Contexts) {
+func (s *service) BatchUpdateQuotedInstance(cts *rest.Contexts) {
 	opt := new(metadata.CommonUpdateOption)
 	if err := cts.DecodeInto(opt); err != nil {
 		cts.RespAutoError(err)
@@ -149,12 +161,17 @@ func BatchUpdateQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	if err := validateUpdateQuotedInst(cts.Kit, objID, opt.Data); err != nil {
+	if err := s.validateUpdateQuotedInst(cts.Kit, objID, opt.Data); err != nil {
 		cts.RespAutoError(err)
 		return
 	}
 
-	table := common.GetInstTableName(objID, cts.Kit.TenantID)
+	table, err := logics.GetObjInstTableFromCache(cts.Kit, s.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, cts.Kit.Rid)
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
 
 	filter, err := opt.ToMgo()
 	if err != nil {
@@ -178,7 +195,7 @@ func BatchUpdateQuotedInstance(cts *rest.Contexts) {
 }
 
 // BatchDeleteQuotedInstance batch delete quoted instances.
-func BatchDeleteQuotedInstance(cts *rest.Contexts) {
+func (s *service) BatchDeleteQuotedInstance(cts *rest.Contexts) {
 	opt := new(metadata.CommonFilterOption)
 	if err := cts.DecodeInto(opt); err != nil {
 		cts.RespAutoError(err)
@@ -195,8 +212,13 @@ func BatchDeleteQuotedInstance(cts *rest.Contexts) {
 		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
 		return
 	}
-	table := common.GetInstTableName(objID, cts.Kit.TenantID)
 
+	table, err := logics.GetObjInstTableFromCache(cts.Kit, s.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, cts.Kit.Rid)
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
+		return
+	}
 	filter, err := opt.ToMgo()
 	if err != nil {
 		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
