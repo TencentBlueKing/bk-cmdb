@@ -241,3 +241,63 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{ .Values.image.registry }}/{{ .Values.migrate.image.repository }}:v{{ default .Chart.AppVersion .Values.migrate.image.tag }}
 {{- end -}}
 
+{{- define "cmdb.redis.certVolumeMount" -}}
+{{- if or .Values.redisCert.redis.ca .Values.redisCert.redis.key .Values.redisCert.redis.cert }}
+- name: redis-certs
+  mountPath: {{ .Values.certPath }}/redis
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.redis.certVolume" -}}
+{{- if or .Values.redisCert.redis.ca .Values.redisCert.redis.key .Values.redisCert.redis.cert }}
+- name: redis-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" . }}-redis-certs
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.redis.snapshotCertVolumeMount" -}}
+{{- if or .Values.redisCert.snapshotRedis.ca .Values.redisCert.snapshotRedis.key .Values.redisCert.snapshotRedis.cert }}
+- name: snapshot-redis-certs
+  mountPath: {{ .Values.certPath }}/snapshot-redis
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.redis.snapshotCertVolume" -}}
+{{- if or .Values.redisCert.snapshotRedis.ca .Values.redisCert.snapshotRedis.key .Values.redisCert.snapshotRedis.cert }}
+- name: snapshot-redis-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" . }}-snapshot-redis-certs
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.redis.discoverCertVolumeMount" -}}
+{{- if or .Values.redisCert.discoverRedis.ca .Values.redisCert.discoverRedis.key .Values.redisCert.discoverRedis.cert }}
+- name: discover-redis-certs
+  mountPath: {{ .Values.certPath }}/discover-redis
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.redis.discoverCertVolume" -}}
+{{- if or .Values.redisCert.discoverRedis.ca .Values.redisCert.discoverRedis.key .Values.redisCert.discoverRedis.cert }}
+- name: discover-redis-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" . }}-discover-redis-certs
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.redis.netCollectCertVolumeMount" -}}
+{{- if or .Values.redisCert.netCollectRedis.ca .Values.redisCert.netCollectRedis.key .Values.redisCert.netCollectRedis.cert }}
+- name: netcollect-redis-certs
+  mountPath: {{ .Values.certPath }}/netcollect-redis
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.redis.netCollectCertVolume" -}}
+{{- if or .Values.redisCert.netCollectRedis.ca .Values.redisCert.netCollectRedis.key .Values.redisCert.netCollectRedis.cert }}
+- name: netcollect-redis-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" . }}-netcollect-redis-certs
+{{- end }}
+{{- end -}}
+

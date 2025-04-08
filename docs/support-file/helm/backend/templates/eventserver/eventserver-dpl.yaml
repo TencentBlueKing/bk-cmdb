@@ -87,20 +87,22 @@ spec:
         volumeMounts:
           - name: cert
             mountPath: {{ .Values.certPath }}
-        {{- if .Values.eventserver.configDir }}
+          {{- if .Values.eventserver.configDir }}
           - name: configures
             mountPath: {{ .Values.eventserver.configDir }}
-        {{- end }}
+          {{- end }}
+          {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
 
       volumes:
         - name: cert
           configMap:
             name: {{ template "bk-cmdb.fullname" . }}-certs
-      {{- if .Values.eventserver.configDir }}
+        {{- if .Values.eventserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-eventserver-configures
-      {{- end }}
+        {{- end }}
+        {{- include "cmdb.redis.certVolume" . | nindent 8 }}
 
       {{- with .Values.eventserver.nodeSelector }}
       nodeSelector:

@@ -454,6 +454,24 @@ mongodb:
     ##
     socketTimeoutSeconds: 10
 
+## @section redis certificates parameters
+##
+redisCert:
+  ## redis main instance certificates
+  redis:
+    ## @param redisCert.redis.ca CA certificate for redis connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param redisCert.redis.cert client certificate for redis connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param redisCert.redis.key client key for redis connection
+    ## key content encoded in base64
+    ##
+    key: ""
+
 ## @section redis parameters
 ##
 redis:
@@ -497,6 +515,21 @@ redis:
     ## @param redis.redis.masterName external redis master name
     ##
     masterName:
+    ## @param redis.redis.tls external redis TLS config
+    ## 
+    tls:
+      ## @param redis.redis.tls.caFile redis TLS CA file
+      ##
+      caFile: "/data/cmdb/cert/redis/redis.ca"
+      ## @param redis.redis.tls.certFile redis TLS cert file
+      ##
+      certFile: "/data/cmdb/cert/redis/redis.cert"
+      ## @param redis.redis.tls.keyFile redis TLS key file
+      ##
+      keyFile: "/data/cmdb/cert/redis/redis.key"
+      ## @param redis.redis.tls.insecureSkipVerify redis TLS insecure skip verify
+      ## 
+      insecureSkipVerify: true
 
 ## @section ServiceMonitor parameters
 ##

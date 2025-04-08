@@ -88,12 +88,14 @@ spec:
           - name: configures
             mountPath: {{ .Values.hostserver.configDir }}
           {{- end }}
+          {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.hostserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-hostserver-configures
         {{- end }}
+        {{- include "cmdb.redis.certVolume" . | nindent 6 }}
 
       {{- with .Values.hostserver.nodeSelector }}
       nodeSelector:

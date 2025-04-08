@@ -88,12 +88,14 @@ spec:
           - name: configures
             mountPath: {{ .Values.synchronizeserver.configDir }}
           {{- end }}
+          {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.synchronizeserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-synchronizeserver-configures
         {{- end }}
+        {{- include "cmdb.redis.certVolume" . | nindent 6 }}
 
       {{- with .Values.synchronizeserver.nodeSelector }}
       nodeSelector:

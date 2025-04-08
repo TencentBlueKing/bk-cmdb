@@ -88,12 +88,14 @@ spec:
           - name: configures
             mountPath: {{ .Values.toposerver.configDir }}
           {{- end }}
+          {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.toposerver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-toposerver-configures
         {{- end }}
+        {{- include "cmdb.redis.certVolume" . | nindent 6 }}
 
       {{- with .Values.toposerver.nodeSelector }}
       nodeSelector:

@@ -84,6 +84,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- end }}
+        {{- include "cmdb.redis.certVolumeMount" . | nindent 8 }}
       volumes:
       - name: configures
         configMap:
@@ -93,6 +94,7 @@ spec:
       {{- toYaml . | nindent 6 }}
       {{- end }}
       {{- end }}
+      {{- include "cmdb.redis.certVolume" . | nindent 6 }}
       {{- with .Values.adminserver.nodeSelector }}
       nodeSelector:
       {{ toYaml . | nindent 8 }}

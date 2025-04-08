@@ -1574,6 +1574,24 @@ redis:
     ## @param redis.redis.masterName external redis master name
     ##
     masterName:
+    ## @param redis.redis.tls external redis TLS config
+    ## 
+    tls:
+      ## @param redis.redis.tls.caFile redis TLS CA file
+      ## Certificate file name, will be combined with certPath
+      ##
+      caFile: "/data/cmdb/cert/redis/redis.ca"
+      ## @param redis.redis.tls.certFile redis TLS cert file
+      ## Certificate file name, will be combined with certPath
+      ##
+      certFile: "/data/cmdb/cert/redis/redis.cert"
+      ## @param redis.redis.tls.keyFile redis TLS key file
+      ## Key file name, will be combined with certPath
+      ##
+      keyFile: "/data/cmdb/cert/redis/redis.key"
+      ## @param redis.redis.tls.insecureSkipVerify redis TLS insecure skip verify
+      ## 
+      insecureSkipVerify: true
   ## external redis for host snapshot parameters
   ##
   snapshotRedis:
@@ -1592,12 +1610,27 @@ redis:
     ## @param redis.snapshotRedis.maxIdleConns external redis max idle connections
     ##
     maxIdleConns: 100
-    ## @param redis.redis.sentinelPwd external redis sentinel password
+    ## @param redis.snapshotRedis.sentinelPwd external redis sentinel password
     ##
     sentinelPwd:
-    ## @param redis.redis.masterName external redis master name
+    ## @param redis.snapshotRedis.masterName external redis master name
     ##
     masterName:
+    ## @param redis.snapshotRedis.tls external redis TLS config
+    ## 
+    tls:
+      ## @param redis.snapshotRedis.tls.caFile external redis TLS CA file
+      ##
+      caFile: "/data/cmdb/cert/snapshot-redis/snapshot-redis.ca"
+      ## @param redis.snapshotRedis.tls.certFile external redis TLS cert file
+      ##
+      certFile: "/data/cmdb/cert/snapshot-redis/snapshot-redis.cert"
+      ## @param redis.snapshotRedis.tls.keyFile external redis TLS key file
+      ##
+      keyFile: "/data/cmdb/cert/snapshot-redis/snapshot-redis.key"
+      ## @param redis.snapshotRedis.tls.insecureSkipVerify redis TLS insecure skip verify
+      ## 
+      insecureSkipVerify: true
   ## external redis for discover parameters
   ##
   discoverRedis:
@@ -1616,12 +1649,27 @@ redis:
     ## @param redis.discoverRedis.maxIdleConns external redis max idle connections
     ##
     maxIdleConns: 100
-    ## @param redis.redis.sentinelPwd external redis sentinel password
+    ## @param redis.discoverRedis.sentinelPwd external redis sentinel password
     ##
     sentinelPwd:
-    ## @param redis.redis.masterName external redis master name
+    ## @param redis.discoverRedis.masterName external redis master name
     ##
     masterName:
+    ## @param redis.discoverRedis.tls external redis TLS config
+    ## 
+    tls:
+      ## @param redis.discoverRedis.tls.caFile discover redis TLS CA file
+      ##
+      caFile: "/data/cmdb/cert/discover-redis/discover-redis.ca"
+      ## @param redis.discoverRedis.tls.certFile discover redis TLS cert file
+      ##
+      certFile: "/data/cmdb/cert/discover-redis/discover-redis.cert"
+      ## @param redis.discoverRedis.tls.keyFile discover redis TLS key file
+      ##
+      keyFile: "/data/cmdb/cert/discover-redis/discover-redis.key"
+      ## @param redis.discoverRedis.tls.insecureSkipVerify redis TLS insecure skip verify
+      ## 
+      insecureSkipVerify: true
   ## external redis for network device collecting parameters
   ##
   netCollectRedis:
@@ -1640,13 +1688,27 @@ redis:
     ## @param redis.netCollectRedis.maxIdleConns external redis max idle connections
     ##
     maxIdleConns: 100
-    ## @param redis.redis.sentinelPwd external redis sentinel password
+    ## @param redis.netCollectRedis.sentinelPwd external redis sentinel password
     ##
     sentinelPwd:
-    ## @param redis.redis.masterName external redis master name
+    ## @param redis.netCollectRedis.masterName external redis master name
     ##
     masterName:
-
+    ## @param redis.netCollectRedis.tls external redis TLS config
+    ## 
+    tls:
+      ## @param redis.netCollectRedis.tls.caFile netcollect redis TLS CA file
+      ##
+      caFile: "/data/cmdb/cert/netcollect-redis/netcollect-redis.ca"
+      ## @param redis.netCollectRedis.tls.certFile netcollect redis TLS cert file
+      ##
+      certFile: "/data/cmdb/cert/netcollect-redis/netcollect-redis.cert"
+      ## @param redis.netCollectRedis.tls.keyFile netcollect redis TLS key file
+      ##
+      keyFile: "/data/cmdb/cert/netcollect-redis/netcollect-redis.key"
+      ## @param redis.netCollectRedis.tls.insecureSkipVerify redis TLS insecure skip verify
+      ## 
+      insecureSkipVerify: true
 ## @section elasticsearch parameters
 ##
 elasticsearch:
@@ -1829,3 +1891,62 @@ topologySpreadConstraints:
   ## - "ScheduleAnyway": Schedule new Pods as usual but still try to achieve even distribution over time.
   whenUnsatisfiable: ScheduleAnyway
 
+## @section redis certificates parameters
+##
+redisCert:
+  ## redis main instance certificates
+  redis:
+    ## @param redisCert.redis.ca CA certificate for redis connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param redisCert.redis.cert client certificate for redis connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param redisCert.redis.key client key for redis connection
+    ## key content encoded in base64
+    ##
+    key: ""
+  ## snapshot redis instance certificates
+  snapshotRedis:
+    ## @param redisCert.snapshotRedis.ca CA certificate for snapshot redis connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param redisCert.snapshotRedis.cert client certificate for snapshot redis connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param redisCert.snapshotRedis.key client key for snapshot redis connection
+    ## key content encoded in base64
+    ##
+    key: ""
+  ## discover redis instance certificates
+  discoverRedis:
+    ## @param redisCert.discoverRedis.ca CA certificate for discover redis connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param redisCert.discoverRedis.cert client certificate for discover redis connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param redisCert.discoverRedis.key client key for discover redis connection
+    ## key content encoded in base64
+    ##
+    key: ""
+  ## network collect redis instance certificates
+  netCollectRedis:
+    ## @param redisCert.netCollectRedis.ca CA certificate for network collect redis connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param redisCert.netCollectRedis.cert client certificate for network collect redis connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param redisCert.netCollectRedis.key client key for network collect redis connection
+    ## key content encoded in base64
+    ##
+    key: ""

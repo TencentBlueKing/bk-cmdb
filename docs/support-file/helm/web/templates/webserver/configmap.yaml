@@ -196,3 +196,12 @@ data:
       maxIdleConns: {{ .Values.redis.redis.maxIdleConns }}
       sentinelPwd: {{ .Values.redis.redis.sentinelPwd }}
       masterName: {{ .Values.redis.redis.masterName }}
+      tls:
+        insecureSkipVerify: {{ .Values.redis.redis.insecureSkipVerify }}
+        {{- if and .Values.redisCert.redis.ca }}
+        caFile: {{ .Values.redis.redis.tls.caFile }}
+        {{- end }}
+        {{- if and .Values.redisCert.redis.cert .Values.redisCert.redis.key }}
+        certFile: {{ .Values.redis.redis.tls.certFile }}
+        keyFile: {{ .Values.redis.redis.tls.keyFile }}
+        {{- end }}
