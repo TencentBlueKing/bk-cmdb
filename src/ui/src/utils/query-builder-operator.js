@@ -103,11 +103,20 @@ export const TRANSFORM_SPECIAL_HANDLE_OPERATOR = {
   [QUERY_OPERATOR_SYMBOL[QUERY_OPERATOR.CONTAINS]]: QUERY_OPERATOR.LIKE,
   [QUERY_OPERATOR.LIKE]: mapping[QUERY_OPERATOR.CONTAINS_CS]
 }
+// 动态分组集群新建/编辑接口特殊处理
+export const TRANSFORM_DYNAMIC_SET_OPERATOR = {
+  [QUERY_OPERATOR.LIKE]: mapping[QUERY_OPERATOR.CONTAINS]
+}
 
-// 动态分组详情接口回显操作符处理
+// 动态分组详情接口回显操作符处理(查询对象为集群，对象为主机的主机字段属性)
 export const OPERATOR_ECHO = {
   [mapping[QUERY_OPERATOR.CONTAINS_CS]]: QUERY_OPERATOR.CONTAINS_CS,
   [mapping[QUERY_OPERATOR.CONTAINS]]: QUERY_OPERATOR.CONTAINS
+}
+// 动态分组详情接口回显操作符处理(查询对象为主机的非主机字段属性)
+export const OPERATOR_SPECIAL_ECHO = {
+  [QUERY_OPERATOR.LIKE]: QUERY_OPERATOR.CONTAINS,
+  [mapping[QUERY_OPERATOR.CONTAINS_CS]]: QUERY_OPERATOR.LIKE
 }
 
 export default operator => mapping[operator]
