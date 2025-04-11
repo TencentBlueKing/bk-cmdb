@@ -282,7 +282,7 @@ func Redis(prefix string) (redis.Config, error) {
 		SentinelPassword: parser.getString(prefix + ".sentinelPwd"),
 		Enable:           parser.getString(prefix + ".enable"),
 		MaxOpenConns:     parser.getInt(prefix + ".maxOpenConns"),
-		TLSConfig: ssl.TLSClientConfig{
+		TLSConfig: &ssl.TLSClientConfig{
 			InsecureSkipVerify: parser.getBool(prefix + ".tls.insecureSkipVerify"),
 			CertFile:           parser.getString(prefix + ".tls.certFile"),
 			KeyFile:            parser.getString(prefix + ".tls.keyFile"),

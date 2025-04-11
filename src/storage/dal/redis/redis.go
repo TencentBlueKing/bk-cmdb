@@ -15,6 +15,7 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
 	"strconv"
 	"strings"
 
@@ -47,19 +48,26 @@ func NewFromConfig(cfg Config) (Client, error) {
 		cfg.MaxOpenConns = 3000
 	}
 
-	tlsConf, err := ssl.NewTLSConfigFromConf(cfg.TLSConfig)
-	if err != nil {
-		return nil, err
+	useTLS := cfg.TLSConfig.Verify()
+	var tlsConf *tls.Config
+	if useTLS {
+		var err error
+		tlsConf, err = ssl.NewTLSConfigFromConf(cfg.TLSConfig)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var client Client
 	if cfg.MasterName == "" {
 		option := &redis.Options{
-			Addr:      cfg.Address,
-			Password:  cfg.Password,
-			DB:        dbNum,
-			PoolSize:  cfg.MaxOpenConns,
-			TLSConfig: tlsConf,
+			Addr:     cfg.Address,
+			Password: cfg.Password,
+			DB:       dbNum,
+			PoolSize: cfg.MaxOpenConns,
+		}
+		if useTLS {
+			option.TLSConfig = tlsConf
 		}
 		client = NewClient(option)
 	} else {
@@ -71,7 +79,9 @@ func NewFromConfig(cfg Config) (Client, error) {
 			DB:               dbNum,
 			PoolSize:         cfg.MaxOpenConns,
 			SentinelPassword: cfg.SentinelPassword,
-			TLSConfig:        tlsConf,
+		}
+		if useTLS {
+			option.TLSConfig = tlsConf
 		}
 		client = NewFailoverClient(option)
 	}

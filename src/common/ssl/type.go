@@ -16,18 +16,36 @@ type TLSClientConfig struct {
 	Password string
 }
 
+// Verify checks if the TLS client configuration is valid
+func (cfg *TLSClientConfig) Verify() bool {
+	if cfg == nil {
+		return false
+	}
+
+	// If CAFile is configured, it's considered valid
+	if len(cfg.CAFile) > 0 {
+		return true
+	}
+
+	// If both CertFile and KeyFile are configured, it's considered valid
+	if len(cfg.CertFile) > 0 && len(cfg.KeyFile) > 0 {
+		return true
+	}
+
+	return false
+}
+
 // NewTLSConfigFromConf creates a new TLS configuration from TLSClientConfig
 func NewTLSConfigFromConf(cfg *TLSClientConfig) (*tls.Config, error) {
 	// createTLSConfig creates tls.Config based on TLSConfig.
 	// It handles one-way and mutual TLS authentication, and TLS disabling.
-	var tlsConf *tls.Config = nil // initialize tlsConf to nil, which means TLS is disabled by default
+	tlsConf := &tls.Config{}
 
-	if len(cfg.CAFile) != 0 { // if CAFile is configured, then enable TLS
+	if cfg != nil && len(cfg.CAFile) != 0 { // if CAFile is configured, then enable TLS
 		var err error
-		if cfg.CertFile != "" && cfg.KeyFile != "" {
+		if len(cfg.CertFile) != 0 && len(cfg.KeyFile) != 0 {
 			// if CertFile and KeyFile are both configured, then use mutual TLS authentication
-			tlsConf, err = ClientTLSConfVerity(cfg.CAFile, cfg.CertFile,
-				cfg.KeyFile, "")
+			tlsConf, err = ClientTLSConfVerity(cfg.CAFile, cfg.CertFile, cfg.KeyFile, "")
 		} else {
 			// otherwise, only CAFile is configured, use one-way TLS authentication, only verify server certificate
 			tlsConf, err = ClientTslConfVerityServer(cfg.CAFile)
@@ -35,10 +53,7 @@ func NewTLSConfigFromConf(cfg *TLSClientConfig) (*tls.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		if tlsConf != nil {
-			tlsConf.InsecureSkipVerify = cfg.InsecureSkipVerify
-		}
 	}
-	// if cfg.TLSConfig.CAFile is empty, then tlsConf remains nil, which means TLS is disabled
+	tlsConf.InsecureSkipVerify = cfg.InsecureSkipVerify
 	return tlsConf, nil
 }
