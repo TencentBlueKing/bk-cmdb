@@ -454,6 +454,10 @@ mongodb:
     ##
     socketTimeoutSeconds: 10
 
+## @param certPath cert path.
+##
+certPath: "/data/cmdb/cert"
+
 ## @section redis certificates parameters
 ##
 redisCert:
@@ -520,13 +524,13 @@ redis:
     tls:
       ## @param redis.redis.tls.caFile redis TLS CA file
       ##
-      caFile: "/data/cmdb/cert/redis/redis.ca"
+      caFile: "redis/redis.ca"
       ## @param redis.redis.tls.certFile redis TLS cert file
       ##
-      certFile: "/data/cmdb/cert/redis/redis.cert"
+      certFile: "redis/redis.cert"
       ## @param redis.redis.tls.keyFile redis TLS key file
       ##
-      keyFile: "/data/cmdb/cert/redis/redis.key"
+      keyFile: "redis/redis.key"
       ## @param redis.redis.tls.insecureSkipVerify redis TLS insecure skip verify
       ## 
       insecureSkipVerify: true

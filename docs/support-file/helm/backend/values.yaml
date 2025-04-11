@@ -1580,15 +1580,15 @@ redis:
       ## @param redis.redis.tls.caFile redis TLS CA file
       ## Certificate file name, will be combined with certPath
       ##
-      caFile: "/data/cmdb/cert/redis/redis.ca"
+      caFile: "redis/redis.ca"
       ## @param redis.redis.tls.certFile redis TLS cert file
       ## Certificate file name, will be combined with certPath
       ##
-      certFile: "/data/cmdb/cert/redis/redis.cert"
+      certFile: "redis/redis.cert"
       ## @param redis.redis.tls.keyFile redis TLS key file
       ## Key file name, will be combined with certPath
       ##
-      keyFile: "/data/cmdb/cert/redis/redis.key"
+      keyFile: "redis/redis.key"
       ## @param redis.redis.tls.insecureSkipVerify redis TLS insecure skip verify
       ## 
       insecureSkipVerify: true
@@ -1621,13 +1621,13 @@ redis:
     tls:
       ## @param redis.snapshotRedis.tls.caFile external redis TLS CA file
       ##
-      caFile: "/data/cmdb/cert/snapshot-redis/snapshot-redis.ca"
+      caFile: "snapshot-redis/snapshot-redis.ca"
       ## @param redis.snapshotRedis.tls.certFile external redis TLS cert file
       ##
-      certFile: "/data/cmdb/cert/snapshot-redis/snapshot-redis.cert"
+      certFile: "snapshot-redis/snapshot-redis.cert"
       ## @param redis.snapshotRedis.tls.keyFile external redis TLS key file
       ##
-      keyFile: "/data/cmdb/cert/snapshot-redis/snapshot-redis.key"
+      keyFile: "snapshot-redis/snapshot-redis.key"
       ## @param redis.snapshotRedis.tls.insecureSkipVerify redis TLS insecure skip verify
       ## 
       insecureSkipVerify: true
@@ -1660,13 +1660,13 @@ redis:
     tls:
       ## @param redis.discoverRedis.tls.caFile discover redis TLS CA file
       ##
-      caFile: "/data/cmdb/cert/discover-redis/discover-redis.ca"
+      caFile: "discover-redis/discover-redis.ca"
       ## @param redis.discoverRedis.tls.certFile discover redis TLS cert file
       ##
-      certFile: "/data/cmdb/cert/discover-redis/discover-redis.cert"
+      certFile: "discover-redis/discover-redis.cert"
       ## @param redis.discoverRedis.tls.keyFile discover redis TLS key file
       ##
-      keyFile: "/data/cmdb/cert/discover-redis/discover-redis.key"
+      keyFile: "discover-redis/discover-redis.key"
       ## @param redis.discoverRedis.tls.insecureSkipVerify redis TLS insecure skip verify
       ## 
       insecureSkipVerify: true
@@ -1699,13 +1699,13 @@ redis:
     tls:
       ## @param redis.netCollectRedis.tls.caFile netcollect redis TLS CA file
       ##
-      caFile: "/data/cmdb/cert/netcollect-redis/netcollect-redis.ca"
+      caFile: "netcollect-redis/netcollect-redis.ca"
       ## @param redis.netCollectRedis.tls.certFile netcollect redis TLS cert file
       ##
-      certFile: "/data/cmdb/cert/netcollect-redis/netcollect-redis.cert"
+      certFile: "netcollect-redis/netcollect-redis.cert"
       ## @param redis.netCollectRedis.tls.keyFile netcollect redis TLS key file
       ##
-      keyFile: "/data/cmdb/cert/netcollect-redis/netcollect-redis.key"
+      keyFile: "netcollect-redis/netcollect-redis.key"
       ## @param redis.netCollectRedis.tls.insecureSkipVerify redis TLS insecure skip verify
       ## 
       insecureSkipVerify: true

@@ -199,9 +199,9 @@ data:
       tls:
         insecureSkipVerify: {{ .Values.redis.redis.insecureSkipVerify }}
         {{- if and .Values.redisCert.redis.ca }}
-        caFile: {{ .Values.redis.redis.tls.caFile }}
+        caFile: {{ .Values.certPath }}/{{ .Values.redis.redis.tls.caFile }}
         {{- end }}
         {{- if and .Values.redisCert.redis.cert .Values.redisCert.redis.key }}
-        certFile: {{ .Values.redis.redis.tls.certFile }}
-        keyFile: {{ .Values.redis.redis.tls.keyFile }}
+        certFile: {{ .Values.certPath }}/{{ .Values.redis.redis.tls.certFile }}
+        keyFile: {{ .Values.certPath }}/{{ .Values.redis.redis.tls.keyFile }}
         {{- end }}

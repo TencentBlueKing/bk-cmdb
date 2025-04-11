@@ -91,7 +91,7 @@ spec:
           {{- end }}
           {{- if or .Values.redisCert.redis.ca .Values.redisCert.redis.cert .Values.redisCert.redis.key }}
           - name: redis-cert
-            mountPath: "/data/cmdb/cert/redis"
+            mountPath: {{ .Values.certPath}}/redis
           {{- end }}
       volumes:
         {{- if .Values.webserver.configDir }}
@@ -99,7 +99,7 @@ spec:
           configMap:
             name: {{ .Release.Name }}-webserver-configures
         {{- end }}
-        {{- if or .Value.redidsCert.redis.tls.ca .Value.redidsCert.redis.tls.cert .Value.redidsCert.redis.tls.key }}
+        {{- if or .Values.redisCert.redis.ca .Values.redisCert.redis.cert .Values.redisCert.redis.key }}
         - name: redis-cert
           configMap:
             name: "{{ template "bk-cmdb.fullname" $ }}-web-redis-certs"
