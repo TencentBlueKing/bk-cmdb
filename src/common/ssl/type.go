@@ -2,7 +2,7 @@ package ssl
 
 import "crypto/tls"
 
-// TLSClientConfig TODO
+// TLSClientConfig Common TLS client configuration
 type TLSClientConfig struct {
 	// Server should be accessed without verifying the TLS certificate. For testing only.
 	InsecureSkipVerify bool
@@ -16,8 +16,8 @@ type TLSClientConfig struct {
 	Password string
 }
 
-// NewTLSConfigFromConf TODO
-func NewTLSConfigFromConf(cfg TLSClientConfig) (*tls.Config, error) {
+// NewTLSConfigFromConf creates a new TLS configuration from TLSClientConfig
+func NewTLSConfigFromConf(cfg *TLSClientConfig) (*tls.Config, error) {
 	// createTLSConfig creates tls.Config based on TLSConfig.
 	// It handles one-way and mutual TLS authentication, and TLS disabling.
 	var tlsConf *tls.Config = nil // initialize tlsConf to nil, which means TLS is disabled by default

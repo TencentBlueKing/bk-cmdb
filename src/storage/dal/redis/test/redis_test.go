@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package redis_test
 
 import (
@@ -5,32 +17,32 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"configcenter/src/common/ssl"
-	localRedis "configcenter/src/storage/dal/redis"
+	"configcenter/src/storage/dal/redis"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewFromConfig(t *testing.T) {
-	// 使用真实Redis服务器地址和认证信息
-	redisAddr := "127.0.0.1:6379" // 默认地址，可以根据实际环境修改
-	redisPassword := "cmdb"       // 用户提供的密码
+	redisAddr := ""     // 默认地址，可以根据实际环境修改
+	redisPassword := "" // 用户提供的密码
+	caFile := ""        // ca 证书路径
 
 	// 测试普通客户端配置
 	t.Run("基本功能测试", func(t *testing.T) {
-		cfg := localRedis.Config{
+		cfg := redis.Config{
 			Address:      redisAddr,
 			Password:     redisPassword,
 			Database:     "0",
 			MaxOpenConns: 10,
-			TLSConfig: ssl.TLSClientConfig{
-				CAFile:             "/Users/yuyudeqiu/Desktop/canway/cmdb/redis_cert/ca-cert.pem",
+			TLSConfig: &ssl.TLSClientConfig{
+				CAFile:             caFile,
 				InsecureSkipVerify: true,
 			},
 		}
 
 		// 连接Redis
-		client, err := localRedis.NewFromConfig(cfg)
+		client, err := redis.NewFromConfig(cfg)
 		if err != nil {
 			t.Fatalf("连接Redis失败: %v", err)
 		}
@@ -57,6 +69,6 @@ func TestNewFromConfig(t *testing.T) {
 
 		// 4. 验证删除结果
 		_, err = client.Get(ctx, testKey).Result()
-		assert.True(t, localRedis.IsNilErr(err), "键应该已被删除")
+		assert.True(t, redis.IsNilErr(err), "键应该已被删除")
 	})
 }

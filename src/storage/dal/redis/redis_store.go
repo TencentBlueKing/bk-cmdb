@@ -20,7 +20,7 @@ package redis
 import (
 	"time"
 
-	commonSSL "configcenter/src/common/ssl"
+	"configcenter/src/common/ssl"
 
 	"github.com/FZambia/sentinel"
 	"github.com/boj/redistore"
@@ -48,42 +48,30 @@ type RedisStore interface {
 //
 // It is recommended to use an authentication key with 32 or 64 bytes. The encryption key,
 // if set, must be either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256 modes.
-func NewRedisStore(size int, network, address, password string, tlsConf commonSSL.TLSClientConfig,
+func NewRedisStore(size int, network, address, password string, tlsConf *ssl.TLSClientConfig,
 	keyPairs ...[]byte) (RedisStore, error) {
-	tls, err := commonSSL.NewTLSConfigFromConf(tlsConf)
+	tls, err := ssl.NewTLSConfigFromConf(tlsConf)
 	if err != nil {
 		return nil, err
 	}
 
-	pool := &redis.Pool{
-		MaxIdle:     size,
-		IdleTimeout: 240 * time.Second,
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial(network, address,
-				redis.DialUseTLS(tls != nil),
-				redis.DialTLSConfig(tls))
-			if err != nil {
+	dialFunc := func() (redis.Conn, error) {
+		c, err := redis.Dial(network, address,
+			redis.DialUseTLS(tls != nil),
+			redis.DialTLSConfig(tls))
+		if err != nil {
+			return nil, err
+		}
+		if password != "" {
+			if _, err := c.Do("AUTH", password); err != nil {
+				c.Close()
 				return nil, err
 			}
-			if password != "" {
-				if _, err := c.Do("AUTH", password); err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-			return c, nil
-		},
+		}
+		return c, nil
 	}
 
-	store, err := redistore.NewRediStoreWithPool(pool, keyPairs...)
-	if err != nil {
-		return nil, err
-	}
-	return &redisStore{store}, nil
+	return createRedisStoreWithPool(size, dialFunc, false, keyPairs...)
 }
 
 type redisStore struct {
@@ -118,8 +106,8 @@ func (c *redisStore) Options(options sessions.Options) {
 // It is recommended to use an authentication key with 32 or 64 bytes. The encryption key,
 // if set, must be either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256 modes.
 func NewRedisStoreWithSentinel(address []string, size int, masterName, network, password string, sentinelPwd string,
-	tlsConf commonSSL.TLSClientConfig, keyPairs ...[]byte) (RedisStore, error) {
-	tls, err := commonSSL.NewTLSConfigFromConf(tlsConf)
+	tlsConf *ssl.TLSClientConfig, keyPairs ...[]byte) (RedisStore, error) {
+	tls, err := ssl.NewTLSConfigFromConf(tlsConf)
 	if err != nil {
 		return nil, err
 	}
@@ -140,27 +128,15 @@ func NewRedisStoreWithSentinel(address []string, size int, masterName, network, 
 		},
 	}
 
-	pool := &redis.Pool{
-		MaxIdle:     size,
-		IdleTimeout: 240 * time.Second,
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-		Dial: func() (redis.Conn, error) {
-			masterAddr, err := sntnl.MasterAddr()
-			if err != nil {
-				return nil, err
-			}
-			return dial(network, masterAddr, password)
-		},
+	dialFunc := func() (redis.Conn, error) {
+		masterAddr, err := sntnl.MasterAddr()
+		if err != nil {
+			return nil, err
+		}
+		return dial(network, masterAddr, password)
 	}
 
-	store, err := redistore.NewRediStoreWithPool(pool, keyPairs...)
-	if err != nil {
-		return nil, err
-	}
-	return &redisSentinelStore{store}, nil
+	return createRedisStoreWithPool(size, dialFunc, true, keyPairs...)
 }
 
 func dial(network, address, password string) (redis.Conn, error) {
@@ -190,4 +166,26 @@ func (c *redisSentinelStore) Options(options sessions.Options) {
 		Secure:   options.Secure,
 		HttpOnly: options.HttpOnly,
 	}
+}
+
+// createRedisStoreWithPool creates a Redis store with connection pool
+func createRedisStoreWithPool(size int, dialFunc func() (redis.Conn, error), isSentinel bool, keyPairs ...[]byte) (RedisStore, error) {
+	pool := &redis.Pool{
+		MaxIdle:     size,
+		IdleTimeout: 240 * time.Second,
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+		Dial: dialFunc,
+	}
+
+	store, err := redistore.NewRediStoreWithPool(pool, keyPairs...)
+	if err != nil {
+		return nil, err
+	}
+	if isSentinel {
+		return &redisSentinelStore{store}, nil
+	}
+	return &redisStore{store}, nil
 }

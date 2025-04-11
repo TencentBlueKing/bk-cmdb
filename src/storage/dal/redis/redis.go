@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"strings"
 
-	commonSSL "configcenter/src/common/ssl"
+	"configcenter/src/common/ssl"
 
 	"github.com/go-redis/redis/v7"
 )
@@ -34,7 +34,7 @@ type Config struct {
 	Enable       string
 	MaxOpenConns int
 	// tls config
-	TLSConfig commonSSL.TLSClientConfig
+	TLSConfig *ssl.TLSClientConfig
 }
 
 // NewFromConfig returns new redis client from config
@@ -47,7 +47,7 @@ func NewFromConfig(cfg Config) (Client, error) {
 		cfg.MaxOpenConns = 3000
 	}
 
-	tlsConf, err := commonSSL.NewTLSConfigFromConf(cfg.TLSConfig)
+	tlsConf, err := ssl.NewTLSConfigFromConf(cfg.TLSConfig)
 	if err != nil {
 		return nil, err
 	}
