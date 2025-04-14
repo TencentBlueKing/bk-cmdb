@@ -147,7 +147,7 @@
         </div>
         <cmdb-property-value
           class="property-value"
-          v-if="['organization','enumquote'].includes(field.bk_property_type)"
+          v-if="['organization','enumquote', 'objuser'].includes(field.bk_property_type)"
           :value="defaultValue"
           :property="field">
         </cmdb-property-value>
