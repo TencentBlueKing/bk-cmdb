@@ -173,3 +173,8 @@ redis:
   maxOpenConns: ${BK_CMDB_REDIS_MAX_OPEN_CONNS}
   maxIDleConns: ${BK_CMDB_REDIS_MAX_IDLE_CONNS}
   masterName: ${BK_CMDB_REDIS_MASTER_NAME}
+  tls:
+    certFile: ${BK_CMDB_REDIS_SSL_CERT_PATH}
+    keyFile: ${BK_CMDB_REDIS_SSL_KEY_PATH}
+    caFile: ${BK_CMDB_REDIS_SSL_CA_CERT_PATH}
+    insecureSkipVerify: ${BK_CMDB_REDIS_SSL_SKIP_VERIFY}
