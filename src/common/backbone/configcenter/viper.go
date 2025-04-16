@@ -283,7 +283,7 @@ func Redis(prefix string) (redis.Config, error) {
 		Enable:           parser.getString(prefix + ".enable"),
 		MaxOpenConns:     parser.getInt(prefix + ".maxOpenConns"),
 		TLSConfig: &ssl.TLSClientConfig{
-			InsecureSkipVerify: parser.getBool(prefix + ".tls.insecureSkipVerify"),
+			InsecureSkipVerify: parser.getBoolOrDefault(prefix+".tls.insecureSkipVerify", true),
 			CertFile:           parser.getString(prefix + ".tls.certFile"),
 			KeyFile:            parser.getString(prefix + ".tls.keyFile"),
 			CAFile:             parser.getString(prefix + ".tls.caFile"),
@@ -659,4 +659,11 @@ func (vp *viperParser) isConfigBoolType(path string) bool {
 
 func (vp *viperParser) unmarshalKey(key string, val interface{}) error {
 	return vp.parser.UnmarshalKey(key, val)
+}
+
+func (vp *viperParser) getBoolOrDefault(path string, defaultValue bool) bool {
+	if vp.parser.IsSet(path) {
+		return vp.parser.GetBool(path)
+	}
+	return defaultValue
 }
