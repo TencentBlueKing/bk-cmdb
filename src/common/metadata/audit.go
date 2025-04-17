@@ -1101,6 +1101,15 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditDelete],
 		},
 	},
+	{
+		ID:   TenantTemplateRes,
+		Name: "租户模版",
+		Operations: []actionTypeInfo{
+			actionInfoMap[AuditCreate],
+			actionInfoMap[AuditUpdate],
+			actionInfoMap[AuditDelete],
+		},
+	},
 }
 
 // 注意：记得在actionInfoEnMap中添加对应的英文
@@ -1340,6 +1349,15 @@ var auditEnDict = []resourceTypeInfo{
 	{
 		ID:   FieldTemplateUniqueRes,
 		Name: "Field Grouping Template Unique",
+		Operations: []actionTypeInfo{
+			actionInfoEnMap[AuditCreate],
+			actionInfoEnMap[AuditUpdate],
+			actionInfoEnMap[AuditDelete],
+		},
+	},
+	{
+		ID:   TenantTemplateRes,
+		Name: "tenant template",
 		Operations: []actionTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],
