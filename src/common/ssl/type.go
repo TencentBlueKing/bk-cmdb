@@ -1,3 +1,15 @@
+/*
+ * Tencent is pleased to support the open source community by making 蓝鲸 available.
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ * http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ssl
 
 import "crypto/tls"
@@ -36,10 +48,18 @@ func (cfg *TLSClientConfig) Verify() bool {
 }
 
 // NewTLSConfigFromConf creates a new TLS configuration from TLSClientConfig
-func NewTLSConfigFromConf(cfg *TLSClientConfig) (*tls.Config, error) {
+// Returns:
+// - *tls.Config: TLS configuration
+// - bool: whether TLS is enabled
+// - error: any error occurred during configuration
+func NewTLSConfigFromConf(cfg *TLSClientConfig) (*tls.Config, bool, error) {
 	// createTLSConfig creates tls.Config based on TLSConfig.
 	// It handles one-way and mutual TLS authentication, and TLS disabling.
 	tlsConf := &tls.Config{}
+
+	if cfg == nil {
+		return tlsConf, false, nil
+	}
 
 	if cfg != nil && len(cfg.CAFile) != 0 { // if CAFile is configured, then enable TLS
 		var err error
@@ -51,9 +71,11 @@ func NewTLSConfigFromConf(cfg *TLSClientConfig) (*tls.Config, error) {
 			tlsConf, err = ClientTslConfVerityServer(cfg.CAFile)
 		}
 		if err != nil {
-			return nil, err
+			return tlsConf, false, err
 		}
+		tlsConf.InsecureSkipVerify = cfg.InsecureSkipVerify
+		return tlsConf, true, nil
 	}
-	tlsConf.InsecureSkipVerify = cfg.InsecureSkipVerify
-	return tlsConf, nil
+
+	return tlsConf, false, nil
 }

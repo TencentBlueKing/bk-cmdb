@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"configcenter/src/ac/iam"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -133,7 +132,7 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 			blog.Warnf("parse auth center config failed: %v", err)
 		}
 
-		a.Config.TLS, err = util.NewTLSClientConfigFromConfig("authServer")
+		a.Config.TLS, err = cc.NewTLSClientConfigFromConfig("authServer")
 		if err != nil {
 			blog.Warnf("parse auth center tls config failed: %v", err)
 		}

@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	webCommon "configcenter/src/web_server/common"
@@ -64,7 +64,7 @@ func (s *Service) ProxyRequest(c *gin.Context) {
 		return
 	}
 
-	tlsConf, err := apiutil.GetClientTLSConfig("webServer.site.paas.tls")
+	tlsConf, err := cc.GetClientTLSConfig("webServer.site.paas.tls")
 	if err != nil {
 		c.Writer.Write([]byte(err.Error()))
 		blog.Errorf("get webServer.site.paas.tls config error, err: %v", err)

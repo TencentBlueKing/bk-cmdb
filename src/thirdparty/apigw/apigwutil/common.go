@@ -21,7 +21,6 @@ import (
 	"errors"
 	"sync"
 
-	"configcenter/src/apimachinery/util"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/ssl"
@@ -93,7 +92,7 @@ func ParseApiGWConfig(path string) (*ApiGWConfig, error) {
 		return nil, err
 	}
 
-	tlsConfig, err := util.NewTLSClientConfigFromConfig(path + ".tls")
+	tlsConfig, err := cc.NewTLSClientConfigFromConfig(path + ".tls")
 	if err != nil {
 		blog.Errorf("get api gateway tls config error, err: %v", err)
 		return nil, err

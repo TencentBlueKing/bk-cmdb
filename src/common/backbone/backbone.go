@@ -408,7 +408,7 @@ func (e *Engine) GetSrvInfo() *types.ServerInfo {
 }
 
 func getTLSConf() (*ssl.TLSClientConfig, error) {
-	config, err := util.NewTLSClientConfigFromConfig("tls")
+	config, err := cc.NewTLSClientConfigFromConfig("tls")
 	return &config, err
 }
 

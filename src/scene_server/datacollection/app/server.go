@@ -308,7 +308,7 @@ func (c *DataCollection) initModules() error {
 	blog.Info("DataCollection| init modules, create mongo client success[%+v]", c.config.MongoDB.GetMongoConf())
 
 	// create blueking ESB client.
-	tlsConfig, err := apiutil.NewTLSClientConfigFromConfig("esb")
+	tlsConfig, err := cc.NewTLSClientConfigFromConfig("esb")
 	if err != nil {
 		return err
 	}

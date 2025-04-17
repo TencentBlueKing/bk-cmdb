@@ -22,8 +22,6 @@ import (
 
 	"configcenter/src/common/ssl"
 
-	"crypto/tls"
-
 	"github.com/FZambia/sentinel"
 	"github.com/boj/redistore"
 	"github.com/gin-contrib/sessions"
@@ -52,14 +50,9 @@ type RedisStore interface {
 // if set, must be either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256 modes.
 func NewRedisStore(size int, network, address, password string, tlsConf *ssl.TLSClientConfig,
 	keyPairs ...[]byte) (RedisStore, error) {
-	useTLS := tlsConf.Verify()
-	var tls *tls.Config
-	if useTLS {
-		var err error
-		tls, err = ssl.NewTLSConfigFromConf(tlsConf)
-		if err != nil {
-			return nil, err
-		}
+	tls, useTLS, err := ssl.NewTLSConfigFromConf(tlsConf)
+	if err != nil {
+		return nil, err
 	}
 
 	dialFunc := func() (redis.Conn, error) {
@@ -114,14 +107,9 @@ func (c *redisStore) Options(options sessions.Options) {
 // if set, must be either 16, 24, or 32 bytes to select AES-128, AES-192, or AES-256 modes.
 func NewRedisStoreWithSentinel(address []string, size int, masterName, network, password string, sentinelPwd string,
 	tlsConf *ssl.TLSClientConfig, keyPairs ...[]byte) (RedisStore, error) {
-	useTLS := tlsConf.Verify()
-	var tls *tls.Config
-	if useTLS {
-		var err error
-		tls, err = ssl.NewTLSConfigFromConf(tlsConf)
-		if err != nil {
-			return nil, err
-		}
+	tls, useTLS, err := ssl.NewTLSConfigFromConf(tlsConf)
+	if err != nil {
+		return nil, err
 	}
 
 	sntnl := &sentinel.Sentinel{

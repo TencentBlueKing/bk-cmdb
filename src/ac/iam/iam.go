@@ -28,6 +28,7 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/auth"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/lock"
@@ -53,7 +54,7 @@ func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 	}
 
 	var tls *ssl.TLSClientConfig
-	config, err := util.NewTLSClientConfigFromConfig("authServer.authCenter.tls")
+	config, err := cc.NewTLSClientConfigFromConfig("authServer.authCenter.tls")
 	if err != nil {
 		blog.Infof("get authCenter.tls config error, err: %v", err)
 		return nil, err

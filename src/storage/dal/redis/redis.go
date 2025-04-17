@@ -15,7 +15,6 @@ package redis
 
 import (
 	"context"
-	"crypto/tls"
 	"strconv"
 	"strings"
 
@@ -48,14 +47,9 @@ func NewFromConfig(cfg Config) (Client, error) {
 		cfg.MaxOpenConns = 3000
 	}
 
-	useTLS := cfg.TLSConfig.Verify()
-	var tlsConf *tls.Config
-	if useTLS {
-		var err error
-		tlsConf, err = ssl.NewTLSConfigFromConf(cfg.TLSConfig)
-		if err != nil {
-			return nil, err
-		}
+	tlsConf, useTLS, err := ssl.NewTLSConfigFromConf(cfg.TLSConfig)
+	if err != nil {
+		return nil, err
 	}
 
 	var client Client

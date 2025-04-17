@@ -19,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -83,7 +82,7 @@ func (m *user) LoginUser(c *gin.Context, config map[string]string, isMultiOwner 
 	httpCli := httpclient.NewHttpClient()
 	httpCli.SetTimeOut(30 * time.Second)
 
-	tlsConf, err := apiutil.NewTLSClientConfigFromConfig("webServer.site.paas.tls")
+	tlsConf, err := cc.NewTLSClientConfigFromConfig("webServer.site.paas.tls")
 	if err != nil {
 		blog.Errorf("get tls config error, err: %v, rid: %s", err, rid)
 		return nil, false

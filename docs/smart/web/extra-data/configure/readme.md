@@ -36,3 +36,7 @@
 | BK_CMDB_REDIS_MAX_OPEN_CONNS           | cmdb redis最大连接数                  | 3000        |
 | BK_CMDB_REDIS_MAX_IDLE_CONNS           | cmdb redis最大空闲连接数                | 1000        |
 | BK_CMDB_REDIS_MASTER_NAME              | cmdb redis master 名称             |             |
+| BK_CMDB_REDIS_SSL_CERT_PATH            | cmdb redis ssl 客户端证书的路径          |             | 
+| BK_CMDB_REDIS_SSL_KEY_PATH             | cmdb redis ssl 私钥的路径             |             | 
+| BK_CMDB_REDIS_SSL_CA_CERT_PATH         | cmdb redis ssl CA 证书的路径          |             | 
+| BK_CMDB_REDIS_SSL_SKIP_VERIFY          | cmdb redis ssl 是否跳过证书验证, 默认false | true        | 
