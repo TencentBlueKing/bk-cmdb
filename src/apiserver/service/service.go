@@ -112,6 +112,7 @@ func (s *service) WebServices() []*restful.WebService {
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
 	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	commonAPI.Route(commonAPI.POST("/refresh/tenants").To(s.RefreshTenant))
 	allWebServices = append(allWebServices, commonAPI)
 
 	return allWebServices
@@ -123,8 +124,6 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
 	ws.Route(ws.GET("/auth/business_list").To(s.GetAnyAuthorizedAppList))
 	ws.Route(ws.POST("/auth/skip_url").To(s.GetUserNoAuthSkipURL))
-
-	ws.Route(ws.POST("/refresh/tenant").To(s.RefreshTenant))
 
 	ws.Route(ws.POST("/biz/{.*}").Filter(s.BizFilterChan).To(s.Post))
 	ws.Route(ws.POST("/biz/search/{.*}").Filter(s.BizFilterChan).To(s.Post))

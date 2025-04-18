@@ -26,42 +26,59 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 var cloudAreaData = []cloudArea{
-	{
-		CloudName: "Default Area",
-		Status:    "1",
-		Default:   int64(common.BuiltIn),
-	},
 	{
 		CloudName: common.UnassignedCloudAreaName,
 		Default:   int64(common.BuiltIn),
 	},
 }
 
+var defaultAreaData = cloudArea{
+	CloudName: "Default Area",
+	Status:    "1",
+	Default:   int64(common.BuiltIn),
+	CloudID:   0,
+}
+
 func addCloudAreaData(kit *rest.Kit, db local.DB) error {
+	// default area cloud id is 0
+	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameBasePlat,
+		len(cloudAreaData))
+	if err != nil {
+		blog.Errorf("get next sequence failed, err: %v", err)
+		return err
+	}
+	cloudAreas := make([]cloudArea, 0)
+	cloudAreas = append(cloudAreas, cloudAreaData...)
+	for idx := range cloudAreas {
+		cloudAreas[idx].CloudID = int64(ids[idx])
+	}
+	cloudAreas = append(cloudAreas, defaultAreaData)
+
 	cloudData := make([]mapstr.MapStr, 0)
 	cloudTmpData := make([]mapstr.MapStr, 0)
-	for _, data := range cloudAreaData {
+	for _, data := range cloudAreas {
 		data.Time = tools.NewTime()
-		data.Creator = "cc_system"
-		data.LastEditor = "cc_system"
+		data.Creator = common.CCSystemOperatorUserName
+		data.LastEditor = common.CCSystemOperatorUserName
 		item, err := tools.ConvStructToMap(data)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			return err
 		}
-		cloudData = append(cloudData, item)
 		if data.CloudName != "Default Area" {
 			cloudTmpData = append(cloudTmpData, item)
 		}
+		cloudData = append(cloudData, item)
 	}
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKCloudNameField},
 		IgnoreKeys:   []string{common.BKCloudIDField},
-		IDField:      []string{common.BKCloudIDField},
+		IDField:      []string{},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModuleRes,
@@ -72,7 +89,7 @@ func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 		},
 	}
 
-	_, err := tools.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
+	_, err = tools.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBasePlat, err)
 		return err

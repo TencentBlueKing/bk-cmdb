@@ -242,6 +242,9 @@ const (
 	// CCErrCommAddTenantErr add new tenant error
 	CCErrCommAddTenantErr = 1199093
 
+	// CCErrCommRefreshTenantErr refresh tenant error
+	CCErrCommRefreshTenantErr = 1199094
+
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
 

@@ -15,34 +15,50 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package refresh
 
 import (
-	"net/http"
+	"context"
+	"fmt"
 
-	"configcenter/pkg/tenant"
-	"configcenter/src/common"
-	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
-	"configcenter/src/common/metadata"
-
-	"github.com/emicklei/go-restful/v3"
+	"configcenter/pkg/tenant/types"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/http/header/util"
+	commontypes "configcenter/src/common/types"
 )
 
 // RefreshTenant refresh tenant info
-func (s *service) RefreshTenant(req *restful.Request, resp *restful.Response) {
+func (r *refresh) RefreshTenant(moduleName string) ([]types.Tenant, error) {
 
-	rid := httpheader.GetRid(req.Request.Header)
-	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(req.Request.Header))
-	allTenants, err := s.clientSet.CoreService().Tenant().RefreshTenants(req.Request.Context(), req.Request.Header)
-	if err != nil {
-		blog.Errorf("refresh tenant info failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusInternalServerError,
-			&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommAddTenantErr, "refresh tenant info failed")})
-		return
+	switch moduleName {
+
+	case commontypes.CC_MODULE_APISERVER:
+		r.capability.Discover = r.disc.ApiServer()
+
+	case commontypes.CC_MODULE_TASK:
+		r.capability.Discover = r.disc.TaskServer()
+
+	default:
+		return nil, fmt.Errorf("unsupported refresh module: %s", moduleName)
 	}
 
-	tenant.SetTenant(allTenants)
+	resp := new(types.AllTenantsResult)
+	client := rest.NewRESTClient(r.capability, "/")
+	err := client.Post().
+		WithContext(context.Background()).
+		SubResourcef("/refresh/tenants").
+		Body(nil).
+		WithHeaders(util.GenDefaultHeader()).
+		Do().
+		Into(resp)
 
-	resp.WriteEntity(metadata.NewSuccessResp(allTenants))
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp.Data, nil
 }

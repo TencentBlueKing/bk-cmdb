@@ -18,7 +18,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -26,11 +25,9 @@ import (
 	"configcenter/pkg/tenant"
 	"configcenter/pkg/tenant/types"
 	tenanttmp "configcenter/pkg/types/tenant-template"
-	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
-	"configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/index"
 	"configcenter/src/common/metadata"
@@ -146,7 +143,7 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 	}
 
 	// refresh tenants, ignore refresh tenants error
-	if err = refreshTenants(s.CoreAPI); err != nil {
+	if err = logics.RefreshTenants(s.CoreAPI); err != nil {
 		blog.Errorf("refresh tenants failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
@@ -219,21 +216,5 @@ func addDataFromTemplate(kit *rest.Kit, db local.DB) error {
 		}
 	}
 
-	return nil
-}
-
-// refreshTenants tenant info
-func refreshTenants(apiMachineryCli apimachinery.ClientSetInterface) error {
-	if apiMachineryCli == nil {
-		return fmt.Errorf("api machinery client is nil")
-	}
-
-	tenants, err := apiMachineryCli.ApiServer().RefreshTenant(context.Background(), util.GenDefaultHeader())
-	if err != nil {
-		blog.Errorf("refresh tenant info failed, err: %v", err)
-		return err
-	}
-
-	tenant.SetTenant(tenants)
 	return nil
 }

@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/pkg/tenant/types"
 	"configcenter/src/apimachinery/rest"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -815,27 +814,4 @@ func (a *apiServer) UpdateBizCustomField(ctx context.Context, bizID, id int64, h
 	}
 
 	return nil
-}
-
-// RefreshTenant refresh tenant info
-func (a *apiServer) RefreshTenant(ctx context.Context, h http.Header) ([]types.Tenant, error) {
-
-	resp := new(types.AllTenantsResult)
-	subPath := "/refresh/tenant"
-	err := a.client.Post().
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if ccErr := resp.CCError(); ccErr != nil {
-		return nil, ccErr
-	}
-
-	return resp.Data, nil
 }

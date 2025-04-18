@@ -15,13 +15,19 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
+	"configcenter/pkg/tenant"
+	tenanttype "configcenter/pkg/tenant/types"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
@@ -29,6 +35,7 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/task_server/app/options"
 	"configcenter/src/scene_server/task_server/logics"
+	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
@@ -65,6 +72,7 @@ func (s *Service) WebService() *restful.Container {
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
 	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	commonAPI.Route(commonAPI.POST("/refresh/tenants").To(s.RefreshTenants))
 	container.Add(commonAPI)
 
 	return container
@@ -147,4 +155,44 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 	answer.SetCommonResponse()
 	resp.Header().Set("Content-Type", "application/json")
 	_ = resp.WriteEntity(answer)
+}
+
+// RefreshTenants refresh tenants
+func (s *Service) RefreshTenants(req *restful.Request, resp *restful.Response) {
+	rHeader := req.Request.Header
+	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+
+	tenants := make([]tenanttype.Tenant, 0)
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Find(mapstr.MapStr{}).All(kit.Ctx,
+		&tenants)
+	if err != nil {
+		blog.Errorf("find all tenants failed, err: %v, rid: %s", err, kit.Rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrObjectDBOpErrno, fmt.Errorf("find all tenants failed")),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+	}
+
+	tenant.SetTenant(tenants)
+	// refresh tenant db map
+	shardingMongoManager, ok := mongodb.Dal().(*sharding.ShardingMongoManager)
+	if !ok {
+		blog.Errorf("convert to ShardingMongoManager failed, err: %v, rid: %s", err, kit.Rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommRefreshTenantErr, fmt.Errorf("get sharding mongo manager failed")),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+	}
+
+	if err = shardingMongoManager.RefreshTenantDBMap(); err != nil {
+		blog.Errorf("refresh tenant db map failed, err: %v, rid: %s", err, kit.Rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommRefreshTenantErr, fmt.Errorf("get sharding mongo manager failed")),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp(tenants))
 }

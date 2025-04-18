@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/types"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/adminserver"
 	"configcenter/src/apimachinery/discovery"
@@ -146,6 +147,11 @@ func GetHeader() http.Header {
 	return headerutil.GenCommonHeader(common.CCSystemOperatorUserName, TestTenantID, "")
 }
 
+// GetTestTenantHeader get header for test tenant
+func GetTestTenantHeader() http.Header {
+	return headerutil.GenCommonHeader(common.CCSystemOperatorUserName, "test", "")
+}
+
 // ClearDatabase TODO
 func ClearDatabase() {
 	fmt.Println("********Clear Database*************")
@@ -157,8 +163,13 @@ func ClearDatabase() {
 			return err
 		}
 		for _, tableName := range tables {
-			_, tableName, err = common.SplitTenantTableName(tableName)
-			Expect(err).Should(BeNil())
+			if common.IsPlatformTable(tableName) {
+				continue
+			}
+			hasPrefix := strings.HasPrefix(tableName, tenantID)
+			Expect(hasPrefix).Should(BeTrue())
+
+			tableName = strings.TrimPrefix(tableName, tenantID+"_")
 			err = db.Shard(shardOpts).DropTable(context.Background(), tableName)
 			if err != nil {
 				return err
@@ -182,9 +193,19 @@ func ClearDatabase() {
 
 	err = adminClient.Migrate(context.Background(), GetHeader())
 	Expect(err).Should(BeNil())
-	time.Sleep(3 * time.Minute)
+	refreshTenant()
 	err = adminClient.RunSyncDBIndex(context.Background(), GetHeader())
 	Expect(err).Should(BeNil())
+}
+
+// AddTenantTest add tenant for test
+func AddTenantTest() {
+	fmt.Println("********Add Tenant*************")
+	err := adminClient.AddTenant(context.Background(), headerutil.GenCommonHeader(common.CCSystemOperatorUserName,
+		"test", ""))
+	Expect(err).Should(BeNil())
+
+	refreshTenant()
 }
 
 // GetReportUrl TODO
@@ -431,4 +452,17 @@ func getDefaultModule(bizID int64, defaultModuleFlag int) (int64, error) {
 	Expect(err).NotTo(HaveOccurred())
 
 	return module.ModuleID, nil
+}
+
+func refreshTenant() {
+	allTenants := make([]types.Tenant, 0)
+	err := db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).Table(common.BKTableNameTenant).Find(
+		mapstr.MapStr{}).All(context.Background(), &allTenants)
+	Expect(err).Should(BeNil())
+
+	tenant.SetTenant(allTenants)
+	shardingMongoManager, ok := db.(*sharding.ShardingMongoManager)
+	Expect(ok).Should(Equal(true))
+	err = shardingMongoManager.RefreshTenantDBMap()
+	Expect(err).Should(BeNil())
 }
