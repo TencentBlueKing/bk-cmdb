@@ -22,7 +22,7 @@
     :strink="false"
     v-model.trim="searchValue"
     :placeholder="$t('关键字/字段值')"
-    :remote-method="fetchUserOptions"
+    :remote-method="fetchRemoteOptions"
     @input-change="handleInputChange"
     @change="handleChange"
     @menu-select="handleMenuSelect"
@@ -91,17 +91,23 @@
     },
     created() {
       this.initOptions()
+      this.userSearch = useSearchUser().search
     },
     mounted() {
       Bus.$on('host-apply-clear-search', (value) => {
         this.searchValue = value
         this.clearInputAll()
       })
-      this.userSearch = useSearchUser()?.search
     },
     methods: {
-      async fetchUserOptions(val, menu) {
-        // 用户类型字段的options通过接口获取
+      async fetchRemoteOptions(val, menu) {
+        // 根据具体类型走具体的远程方法拉取options
+        const fetchs = {
+          [PROPERTY_TYPES.OBJUSER]: this.fetchMember
+        }
+        return fetchs[menu.type](val, menu)
+      },
+      async fetchMember(val, menu) {
         if (!this.isTyeing || val?.length < 2 || val === `${menu.name}：`) {
           return []
         }
