@@ -55,23 +55,23 @@ func NewRedisStore(size int, network, address, password string, tlsConf *ssl.TLS
 		return nil, err
 	}
 
-	dialFunc := func() (redis.Conn, error) {
-		c, err := redis.Dial(network, address,
-			redis.DialUseTLS(useTLS),
-			redis.DialTLSConfig(tls))
-		if err != nil {
-			return nil, err
-		}
-		if password != "" {
-			if _, err := c.Do("AUTH", password); err != nil {
-				c.Close()
-				return nil, err
-			}
-		}
-		return c, nil
+	// 准备连接选项
+	options := []redis.DialOption{}
+	if useTLS {
+		options = append(options, redis.DialUseTLS(true))
+		options = append(options, redis.DialTLSConfig(tls))
 	}
 
-	return createRedisStoreWithPool(size, dialFunc, false, keyPairs...)
+	dialFunc := func() (redis.Conn, error) {
+		return dial(network, address, password, options...)
+	}
+
+	store, err := createRedisStoreWithPool(size, dialFunc, keyPairs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &redisStore{store}, nil
 }
 
 type redisStore struct {
@@ -112,19 +112,23 @@ func NewRedisStoreWithSentinel(address []string, size int, masterName, network, 
 		return nil, err
 	}
 
+	tlsOptions := []redis.DialOption{}
+	if useTLS {
+		tlsOptions = append(tlsOptions, redis.DialUseTLS(true))
+		tlsOptions = append(tlsOptions, redis.DialTLSConfig(tls))
+	}
+
 	sntnl := &sentinel.Sentinel{
 		Addrs:      address,
 		MasterName: masterName,
 		Dial: func(addr string) (redis.Conn, error) {
 			timeout := time.Second
-			return redis.Dial(network, addr,
+			sentinelOptions := append(tlsOptions,
 				redis.DialConnectTimeout(timeout),
 				redis.DialReadTimeout(timeout),
-				redis.DialWriteTimeout(timeout),
-				redis.DialPassword(sentinelPwd),
-				redis.DialUseTLS(useTLS),
-				redis.DialTLSConfig(tls),
-			)
+				redis.DialWriteTimeout(timeout))
+
+			return dial(network, addr, sentinelPwd, sentinelOptions...)
 		},
 	}
 
@@ -133,14 +137,19 @@ func NewRedisStoreWithSentinel(address []string, size int, masterName, network, 
 		if err != nil {
 			return nil, err
 		}
-		return dial(network, masterAddr, password)
+		return dial(network, masterAddr, password, tlsOptions...)
 	}
 
-	return createRedisStoreWithPool(size, dialFunc, true, keyPairs...)
+	store, err := createRedisStoreWithPool(size, dialFunc, keyPairs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &redisSentinelStore{store}, nil
 }
 
-func dial(network, address, password string) (redis.Conn, error) {
-	c, err := redis.Dial(network, address)
+func dial(network, address, password string, options ...redis.DialOption) (redis.Conn, error) {
+	c, err := redis.Dial(network, address, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +178,7 @@ func (c *redisSentinelStore) Options(options sessions.Options) {
 }
 
 // createRedisStoreWithPool creates a Redis store with connection pool
-func createRedisStoreWithPool(size int, dialFunc func() (redis.Conn, error), isSentinel bool, keyPairs ...[]byte) (RedisStore, error) {
+func createRedisStoreWithPool(size int, dialFunc func() (redis.Conn, error), keyPairs ...[]byte) (*redistore.RediStore, error) {
 	pool := &redis.Pool{
 		MaxIdle:     size,
 		IdleTimeout: 240 * time.Second,
@@ -184,8 +193,6 @@ func createRedisStoreWithPool(size int, dialFunc func() (redis.Conn, error), isS
 	if err != nil {
 		return nil, err
 	}
-	if isSentinel {
-		return &redisSentinelStore{store}, nil
-	}
-	return &redisStore{store}, nil
+
+	return store, nil
 }
