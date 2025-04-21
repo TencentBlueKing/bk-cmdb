@@ -57,6 +57,7 @@ type service struct {
 	noPermissionRequestTotal *prometheus.CounterVec
 	// errorRequestTotal is the total number of request with error response
 	errorRequestTotal *prometheus.CounterVec
+	errorLimiterTotal *prometheus.CounterVec
 }
 
 // SetConfig set config
@@ -77,15 +78,7 @@ func (s *service) WebServices() []*restful.WebService {
 		return s.engine.CCErr
 	}
 
-	s.errorRequestTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "cmdb_api_total_response_error_count",
-			Help: "total number of error request for apiServer.",
-		},
-		[]string{metrics.LabelHandler, metrics.LabelAppCode},
-	)
-	s.engine.Metric().Registry().MustRegister(s.errorRequestTotal)
-
+	s.metricsRegister()
 	ws := &restful.WebService{}
 	ws.Path(rootPath)
 	ws.Filter(s.JwtFilter())
@@ -189,4 +182,24 @@ func (s *service) RespError(request *restful.Request, resp *restful.Response, ht
 	}
 
 	return
+}
+
+func (s *service) metricsRegister() {
+	s.errorRequestTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "cmdb_api_total_response_error_count",
+			Help: "total number of error request for apiServer.",
+		},
+		[]string{metrics.LabelHandler, metrics.LabelAppCode},
+	)
+	s.engine.Metric().Registry().MustRegister(s.errorRequestTotal)
+
+	s.errorLimiterTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "cmdb_api_total_limiter_error_count",
+			Help: "total number of rate limiting errors for apiServer.",
+		},
+		[]string{metrics.LabelHandler, metrics.LabelAppCode},
+	)
+	s.engine.Metric().Registry().MustRegister(s.errorLimiterTotal)
 }

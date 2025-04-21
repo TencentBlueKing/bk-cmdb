@@ -372,10 +372,17 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 		if rule.DenyAll {
 			blog.Errorf("too many requests, matched rule is %#v, rid: %s", *rule, rid)
 
-			s.RespError(req, resp, http.StatusOK, &metadata.RespError{
-				Msg:     fmt.Errorf("too many requests"),
-				ErrCode: common.CCErrTooManyRequestErr,
-			})
+			s.errorLimiterTotal.With(prometheus.Labels{
+				metrics.LabelAppCode: httpheader.GetAppCode(req.Request.Header),
+				metrics.LabelHandler: req.Request.RequestURI,
+			}).Inc()
+
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrTooManyRequestErr,
+				ErrMsg: "too many requests",
+				Result: false,
+			}
+			resp.WriteAsJson(rsp)
 			return
 		}
 
@@ -396,10 +403,18 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 
 		if cnt > rule.Limit {
 			blog.Errorf("too many requests, matched rule is %#v, rid: %s", *rule, rid)
-			s.RespError(req, resp, http.StatusOK, &metadata.RespError{
-				Msg:     fmt.Errorf("too many requests"),
-				ErrCode: common.CCErrTooManyRequestErr,
-			})
+
+			s.errorLimiterTotal.With(prometheus.Labels{
+				metrics.LabelAppCode: httpheader.GetAppCode(req.Request.Header),
+				metrics.LabelHandler: req.Request.RequestURI,
+			}).Inc()
+
+			rsp := metadata.BaseResp{
+				Code:   common.CCErrTooManyRequestErr,
+				ErrMsg: "too many requests",
+				Result: false,
+			}
+			resp.WriteAsJson(rsp)
 			return
 		}
 
