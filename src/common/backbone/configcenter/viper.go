@@ -667,13 +667,6 @@ func (vp *viperParser) unmarshalKey(key string, val interface{}) error {
 	return vp.parser.UnmarshalKey(key, val)
 }
 
-func (vp *viperParser) getBoolOrDefault(path string, defaultValue bool) bool {
-	if vp.parser.IsSet(path) {
-		return vp.parser.GetBool(path)
-	}
-	return defaultValue
-}
-
 // NewTLSClientConfigFromConfig new config about tls client config
 func NewTLSClientConfigFromConfig(prefix string) (ssl.TLSClientConfig, error) {
 	tlsConfig := ssl.TLSClientConfig{}

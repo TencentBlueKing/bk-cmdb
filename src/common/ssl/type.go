@@ -28,25 +28,6 @@ type TLSClientConfig struct {
 	Password string
 }
 
-// Verify checks if the TLS client configuration is valid
-func (cfg *TLSClientConfig) Verify() bool {
-	if cfg == nil {
-		return false
-	}
-
-	// If CAFile is configured, it's considered valid
-	if len(cfg.CAFile) > 0 {
-		return true
-	}
-
-	// If both CertFile and KeyFile are configured, it's considered valid
-	if len(cfg.CertFile) > 0 && len(cfg.KeyFile) > 0 {
-		return true
-	}
-
-	return false
-}
-
 // NewTLSConfigFromConf creates a new TLS configuration from TLSClientConfig
 // Returns:
 // - *tls.Config: TLS configuration
