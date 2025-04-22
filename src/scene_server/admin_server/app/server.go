@@ -106,7 +106,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	if err := service.BackgroundTask(*process.Config); err != nil {
+	if err = service.BackgroundTask(*process.Config); err != nil {
 		return err
 	}
 	err = backbone.StartServer(ctx, cancel, process.Core, service.WebService(), true)

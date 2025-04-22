@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/thirdparty/apigw/apigwutil/user"
 )
 
 // VerifyToken verify user token
@@ -31,11 +31,16 @@ func (l *login) VerifyToken(ctx context.Context, h http.Header, token string) (*
 
 	resp := new(BkLoginResponse[*VerifyTokenRes])
 
-	err := l.service.Client.Get().
+	h, err := user.SetBKAuthHeader(ctx, l.service.Config, h, l.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	err = l.service.Client.Get().
 		WithContext(ctx).
 		WithParam("bk_token", token).
 		SubResourcef("/login/api/v3/open/bk-tokens/verify/").
-		WithHeaders(httpheader.SetBkAuth(h, l.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -54,11 +59,16 @@ func (l *login) VerifyToken(ctx context.Context, h http.Header, token string) (*
 func (l *login) GetUserByToken(ctx context.Context, h http.Header, token string) (*UserInfo, error) {
 	resp := new(BkLoginResponse[*UserInfo])
 
-	err := l.service.Client.Get().
+	h, err := user.SetBKAuthHeader(ctx, l.service.Config, h, l.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	err = l.service.Client.Get().
 		WithContext(ctx).
 		WithParam("bk_token", token).
 		SubResourcef("/login/api/v3/open/bk-tokens/userinfo/").
-		WithHeaders(httpheader.SetBkAuth(h, l.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 

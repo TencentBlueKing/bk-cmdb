@@ -1357,7 +1357,7 @@ var auditEnDict = []resourceTypeInfo{
 	},
 	{
 		ID:   TenantTemplateRes,
-		Name: "tenant template",
+		Name: "Tenant Template",
 		Operations: []actionTypeInfo{
 			actionInfoEnMap[AuditCreate],
 			actionInfoEnMap[AuditUpdate],

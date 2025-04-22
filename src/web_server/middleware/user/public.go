@@ -15,7 +15,7 @@ package user
 import (
 	"encoding/json"
 
-	"configcenter/pkg/tenant/logics"
+	"configcenter/pkg/tenant/tools"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -62,7 +62,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 
 	session := sessions.Default(c)
 
-	tenantID, err := logics.ValidateDisableTenantMode(userInfo.TenantUin, m.config.EnableMultiTenantMode)
+	tenantID, err := tools.ValidateDisableTenantMode(userInfo.TenantUin, m.config.EnableMultiTenantMode)
 	if err != nil {
 		blog.Errorf("get tenant id failed, err: %v", err)
 		return false

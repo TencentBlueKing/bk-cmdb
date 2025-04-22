@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"net/http"
 
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw/apigwutil/user"
 )
 
 // ListAgentState list gse agent state
@@ -34,11 +34,16 @@ func (p *gse) ListAgentState(ctx context.Context, h http.Header, data *ListAgent
 	resp := new(ListAgentStateResp)
 	subPath := "/api/v2/cluster/list_agent_state"
 
-	err := p.service.Client.Post().
+	h, err := user.SetBKAuthHeader(ctx, p.service.Config, h, p.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -60,11 +65,16 @@ func (p *gse) AsyncPushFile(ctx context.Context, h http.Header, data *AsyncPushF
 	resp := new(AsyncPushFileResp)
 	subPath := "/api/v2/task/async_push_file"
 
-	err := p.service.Client.Post().
+	h, err := user.SetBKAuthHeader(ctx, p.service.Config, h, p.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -86,11 +96,16 @@ func (p *gse) GetTransferFileResult(ctx context.Context, h http.Header, data *Ge
 	resp := new(GetTransferFileResultResp)
 	subPath := "/api/v2/task/async/get_transfer_file_result"
 
-	err := p.service.Client.Post().
+	h, err := user.SetBKAuthHeader(ctx, p.service.Config, h, p.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -112,11 +127,15 @@ func (p *gse) ConfigAddStreamTo(ctx context.Context, h http.Header, data *metada
 	resp := new(AddStreamToResp)
 	subPath := "/api/v2/data/add_streamto/"
 
-	err := p.service.Client.Post().
+	h, err := user.SetBKAuthHeader(ctx, p.service.Config, h, p.userCli)
+	if err != nil {
+		return nil, err
+	}
+	err = p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -138,11 +157,16 @@ func (p *gse) ConfigUpdateStreamTo(ctx context.Context, h http.Header,
 	resp := new(apigwutil.ApiGWBaseResponse)
 	subPath := "/api/v2/data/update_streamto/"
 
-	err := p.service.Client.Post().
+	h, err := user.SetBKAuthHeader(ctx, p.service.Config, h, p.userCli)
+	if err != nil {
+		return err
+	}
+
+	err = p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -164,11 +188,16 @@ func (p *gse) ConfigQueryStreamTo(ctx context.Context, h http.Header, data *meta
 	resp := new(QueryStreamToResp)
 	subPath := "/api/v2/data/query_streamto/"
 
-	err := p.service.Client.Post().
+	h, err := user.SetBKAuthHeader(ctx, p.service.Config, h, p.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -195,11 +224,16 @@ func (p *gse) ConfigAddRoute(ctx context.Context, h http.Header, data *metadata.
 	resp := new(AddRouteResp)
 	subPath := "/api/v2/data/add_route/"
 
-	err := p.service.Client.Post().
+	h, err := user.SetBKAuthHeader(ctx, p.service.Config, h, p.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	err = p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -220,11 +254,16 @@ func (p *gse) ConfigUpdateRoute(ctx context.Context, h http.Header, data *metada
 	resp := new(apigwutil.ApiGWBaseResponse)
 	subPath := "/api/v2/data/update_route/"
 
-	err := p.service.Client.Post().
+	h, err := user.SetBKAuthHeader(ctx, p.service.Config, h, p.userCli)
+	if err != nil {
+		return err
+	}
+
+	err = p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -246,11 +285,16 @@ func (p *gse) ConfigQueryRoute(ctx context.Context, h http.Header, data *metadat
 	resp := new(QueryRouteResp)
 	subPath := "/api/v2/data/query_route/"
 
-	err := p.service.Client.Post().
+	h, err := user.SetBKAuthHeader(ctx, p.service.Config, h, p.userCli)
+	if err != nil {
+		return nil, false, err
+	}
+
+	err = p.service.Client.Post().
 		WithContext(ctx).
 		Body(data).
 		SubResourcef(subPath).
-		WithHeaders(httpheader.SetBkAuth(h, p.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 

@@ -84,8 +84,13 @@ func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer, n
 		neededCliMap[neededClient] = struct{}{}
 	}
 
+	cs.user, err = user.NewClient(options)
+	if err != nil {
+		return nil, err
+	}
+
 	if _, exists := neededCliMap[Gse]; exists {
-		cs.gse, err = gse.NewClient(options)
+		cs.gse, err = gse.NewClient(options, cs.user)
 		if err != nil {
 			return nil, err
 		}
@@ -99,21 +104,14 @@ func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer, n
 	}
 
 	if _, exists := neededCliMap[Notice]; exists {
-		cs.notice, err = notice.NewClient(options)
+		cs.notice, err = notice.NewClient(options, cs.user)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if _, exists := neededCliMap[Login]; exists {
-		cs.login, err = login.NewClient(options)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if _, exists := neededCliMap[User]; exists {
-		cs.user, err = user.NewClient(options)
+		cs.login, err = login.NewClient(options, cs.user)
 		if err != nil {
 			return nil, err
 		}

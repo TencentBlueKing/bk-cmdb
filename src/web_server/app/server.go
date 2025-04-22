@@ -83,7 +83,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	if err := service.InitNotice(); err != nil {
+	if err = service.InitNotice(); err != nil {
 		return err
 	}
 

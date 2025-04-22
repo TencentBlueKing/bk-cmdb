@@ -20,7 +20,7 @@ package method
 import (
 	"fmt"
 
-	"configcenter/pkg/tenant/logics"
+	"configcenter/pkg/tenant/tools"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
@@ -35,7 +35,7 @@ func SetTenantFromCookie(c *gin.Context, config options.Config, session sessions
 	rid := httpheader.GetRid(c.Request.Header)
 
 	cookieTenantID, cookieErr := c.Cookie(common.HTTPCookieTenant)
-	tenantID, err := logics.ValidateDisableTenantMode(cookieTenantID, config.EnableMultiTenantMode)
+	tenantID, err := tools.ValidateDisableTenantMode(cookieTenantID, config.EnableMultiTenantMode)
 	if err != nil {
 		return "", err
 	}

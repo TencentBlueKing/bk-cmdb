@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/header/util"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	apigwcli "configcenter/src/common/resource/apigw"
@@ -222,7 +223,7 @@ func (s *Service) InitNotice() error {
 	}
 
 	s.NoticeCli = apigwcli.Client().Notice()
-	if _, err := s.NoticeCli.RegApp(context.Background(), http.Header{}); err != nil {
+	if _, err := s.NoticeCli.RegApp(context.Background(), util.GenDefaultHeader()); err != nil {
 		blog.Errorf("register to the notification center failed, err: %v", err)
 		return err
 	}

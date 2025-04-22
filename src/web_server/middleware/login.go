@@ -17,7 +17,7 @@ import (
 	"net/http"
 	"strings"
 
-	"configcenter/pkg/tenant/logics"
+	"configcenter/pkg/tenant/tools"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -181,7 +181,7 @@ func isAuthed(c *gin.Context, config options.Config) bool {
 		return user.LoginUser(c)
 	}
 
-	tenant, err := logics.ValidateDisableTenantMode(sessionTenantID, config.EnableMultiTenantMode)
+	tenant, err := tools.ValidateDisableTenantMode(sessionTenantID, config.EnableMultiTenantMode)
 	if err != nil {
 		return user.LoginUser(c)
 	}

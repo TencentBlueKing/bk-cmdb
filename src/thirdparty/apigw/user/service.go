@@ -22,15 +22,17 @@ import (
 	"net/http"
 
 	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw/user/types"
 )
 
 // ClientI is the bk-user api gateway client
 type ClientI interface {
-	GetTenants(ctx context.Context, h http.Header) ([]Tenant, error)
-	ListUsers(ctx context.Context, h http.Header, page *PageOptions) (*ListUserResult, error)
-	BatchQueryUserDisplayInfo(ctx context.Context, h http.Header, opts *QueryUserDisplayInfoOpts) ([]UserDisplayInfo,
-		error)
-	BatchLookupDept(ctx context.Context, h http.Header, opts *BatchLookupDeptOpts) ([]DepartmentItem, error)
+	GetTenants(ctx context.Context, h http.Header) ([]types.Tenant, error)
+	ListUsers(ctx context.Context, h http.Header, page *types.PageOptions) (*types.ListUserResult, error)
+	BatchQueryUserDisplayInfo(ctx context.Context, h http.Header, opts *types.QueryUserDisplayInfoOpts) (
+		[]types.UserDisplayInfo, error)
+	BatchLookupDept(ctx context.Context, h http.Header, opts *types.BatchLookupDeptOpts) ([]types.DepartmentItem, error)
+	BatchSearchVirtualUser(ctx context.Context, h http.Header, loginNames []string) ([]types.VirtualUserItem, error)
 }
 
 type user struct {

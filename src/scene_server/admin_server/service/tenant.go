@@ -37,8 +37,6 @@ import (
 	"configcenter/src/storage/dal/mongo/local"
 	daltypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/thirdparty/apigw/user"
-
 	"github.com/emicklei/go-restful/v3"
 )
 
@@ -74,12 +72,12 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 			resp.WriteError(http.StatusInternalServerError, result)
 		}
 
-		tenantMap := make(map[string]user.Status)
+		tenantMap := make(map[string]types.Status)
 		for _, tenant := range tenants {
 			tenantMap[tenant.ID] = tenant.Status
 		}
 
-		if status, ok := tenantMap[kit.TenantID]; !ok || status != user.EnabledStatus {
+		if status, ok := tenantMap[kit.TenantID]; !ok || status != types.EnabledStatus {
 			blog.Errorf("tenant %s invalid, rid: %s", kit.TenantID, kit.Rid)
 			result := &metadata.RespError{
 				Msg: defErr.Errorf(common.CCErrCommAddTenantErr,

@@ -15,10 +15,8 @@ package app
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"configcenter/pkg/tenant"
-	"configcenter/src/apimachinery"
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/apiserver/app/options"
 	"configcenter/src/apiserver/service"
@@ -95,7 +93,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		ctnr.Add(item)
 	}
 	apiSvr.Core = engine
-	if err = initTenant(engine.CoreAPI); err != nil {
+	if err = logics.InitTenant(engine.CoreAPI); err != nil {
 		return err
 	}
 	err = backbone.StartServer(ctx, cancel, engine, ctnr, false)
@@ -105,28 +103,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	select {
 	case <-ctx.Done():
-	}
-	return nil
-}
-
-func initTenant(apiMachineryCli apimachinery.ClientSetInterface) error {
-	coreExist := false
-	for retry := 0; retry < 10; retry++ {
-		if _, err := apiMachineryCli.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
-			blog.Errorf("connect core server failed: %v", err)
-			time.Sleep(time.Second * 2)
-			continue
-		}
-		coreExist = true
-		break
-	}
-	if !coreExist {
-		blog.Errorf("core server not exist")
-		return fmt.Errorf("core server not exist")
-	}
-	err := tenant.Init(&tenant.Options{ApiMachineryCli: apiMachineryCli})
-	if err != nil {
-		return err
 	}
 	return nil
 }

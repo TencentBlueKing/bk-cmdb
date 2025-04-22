@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw/apigwutil/user"
 )
 
 // ClientI is the bk-login api gateway client
@@ -33,10 +34,11 @@ type ClientI interface {
 
 type login struct {
 	service *apigwutil.ApiGWSrv
+	userCli user.VirtualUserClientI
 }
 
 // NewClient create bk-login api gateway client
-func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
+func NewClient(options *apigwutil.ApiGWOptions, userCli user.VirtualUserClientI) (ClientI, error) {
 	service, err := apigwutil.NewApiGW(options, "apiGW.bkLoginApiGatewayUrl")
 	if err != nil {
 		return nil, err
@@ -44,5 +46,6 @@ func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
 
 	return &login{
 		service: service,
+		userCli: userCli,
 	}, nil
 }

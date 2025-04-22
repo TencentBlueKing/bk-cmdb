@@ -19,19 +19,33 @@ package logics
 
 import (
 	"fmt"
+	"time"
 
-	"configcenter/src/common"
+	"configcenter/pkg/tenant"
+	"configcenter/src/apimachinery"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/types"
 )
 
-// ValidateDisableTenantMode validate disable multi-tenant mode
-func ValidateDisableTenantMode(tenantID string, enableTenantMode bool) (string, error) {
-	if !enableTenantMode {
-		if tenantID == "" || tenantID == common.BKSingleTenantID {
-			return common.BKSingleTenantID, nil
+// InitTenant init tenant, refresh tenants info while server is starting
+func InitTenant(apiMachineryCli apimachinery.ClientSetInterface) error {
+	coreExist := false
+	for retry := 0; retry < 10; retry++ {
+		if _, err := apiMachineryCli.Healthz().HealthCheck(types.CC_MODULE_CORESERVICE); err != nil {
+			blog.Errorf("connect core server failed: %v", err)
+			time.Sleep(time.Second * 2)
+			continue
 		}
-
-		return "", fmt.Errorf("tenant mode is disable, but tenant id %s is set", tenantID)
+		coreExist = true
+		break
 	}
-
-	return tenantID, nil
+	if !coreExist {
+		blog.Errorf("core server not exist")
+		return fmt.Errorf("core server not exist")
+	}
+	err := tenant.Init(&tenant.Options{ApiMachineryCli: apiMachineryCli})
+	if err != nil {
+		return err
+	}
+	return nil
 }

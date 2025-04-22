@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/src/thirdparty/apigw/apigwutil/user"
 	"configcenter/src/thirdparty/dataid"
 )
 
@@ -36,10 +37,11 @@ type ClientI interface {
 
 type gse struct {
 	service *apigwutil.ApiGWSrv
+	userCli user.VirtualUserClientI
 }
 
 // NewClient create gse api gateway client
-func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
+func NewClient(options *apigwutil.ApiGWOptions, userCli user.VirtualUserClientI) (ClientI, error) {
 	service, err := apigwutil.NewApiGW(options, "apiGW.bkGseApiGatewayUrl")
 	if err != nil {
 		return nil, err
@@ -47,5 +49,6 @@ func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
 
 	return &gse{
 		service: service,
+		userCli: userCli,
 	}, nil
 }

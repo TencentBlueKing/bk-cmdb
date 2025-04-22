@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"configcenter/pkg/tenant"
-	tenantlogics "configcenter/pkg/tenant/logics"
+	"configcenter/pkg/tenant/tools"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
@@ -52,7 +52,7 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 
 	// get tenant id
-	tenantID, err := tenantlogics.ValidateDisableTenantMode(req.Request.Header.Get(httpheader.TenantHeader),
+	tenantID, err := tools.ValidateDisableTenantMode(req.Request.Header.Get(httpheader.TenantHeader),
 		s.Config.EnableMultiTenantMode)
 	if err != nil {
 		result := &metadata.RespError{

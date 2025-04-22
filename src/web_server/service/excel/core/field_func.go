@@ -34,7 +34,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/apigw"
 	"configcenter/src/common/util"
-	"configcenter/src/thirdparty/apigw/user"
+	"configcenter/src/thirdparty/apigw/user/types"
 	"configcenter/src/web_server/middleware/user/plugins"
 )
 
@@ -271,14 +271,14 @@ func (d *Client) GetInstWithOrgName(kit *rest.Kit, ccLang language.DefaultCCLang
 }
 
 // getAllOrganization get organization info from paas
-func getAllOrganization(kit *rest.Kit, orgIDs []int64) ([]user.DepartmentItem, errors.CCErrorCoder) {
+func getAllOrganization(kit *rest.Kit, orgIDs []int64) ([]types.DepartmentItem, errors.CCErrorCoder) {
 	loginVersion, _ := cc.String("webServer.login.version")
 	if loginVersion == common.BKOpenSourceLoginPluginVersion || loginVersion == common.BKSkipLoginPluginVersion {
-		return make([]user.DepartmentItem, 0), nil
+		return make([]types.DepartmentItem, 0), nil
 	}
 
 	orgIDList := util.SplitArr(orgIDs, 100)
-	departments := make([]user.DepartmentItem, 0)
+	departments := make([]types.DepartmentItem, 0)
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
 	var firstErr error
@@ -293,7 +293,7 @@ func getAllOrganization(kit *rest.Kit, orgIDs []int64) ([]user.DepartmentItem, e
 				<-pipeline
 			}()
 
-			deptOpts := &user.BatchLookupDeptOpts{
+			deptOpts := &types.BatchLookupDeptOpts{
 				DeptIDs: ids,
 			}
 			result, err := apigw.Client().User().BatchLookupDept(kit.Ctx, kit.Header, deptOpts)

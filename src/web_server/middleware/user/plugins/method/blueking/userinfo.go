@@ -16,7 +16,7 @@ package blueking
 import (
 	"fmt"
 
-	"configcenter/pkg/tenant/logics"
+	"configcenter/pkg/tenant/tools"
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
@@ -25,7 +25,7 @@ import (
 	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/metadata"
 	apigwcli "configcenter/src/common/resource/apigw"
-	apigwuser "configcenter/src/thirdparty/apigw/user"
+	usertypes "configcenter/src/thirdparty/apigw/user/types"
 	"configcenter/src/web_server/app/options"
 	"configcenter/src/web_server/middleware/user/plugins/manager"
 
@@ -81,7 +81,7 @@ func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner boo
 		return nil, false
 	}
 
-	tenantID, err := logics.ValidateDisableTenantMode(user.TenantUin, config.EnableMultiTenantMode)
+	tenantID, err := tools.ValidateDisableTenantMode(user.TenantUin, config.EnableMultiTenantMode)
 	if err != nil {
 		blog.Infof("tenant mode not enabled, but tenantUin is not empty, rid: %s", rid)
 		return nil, false
@@ -148,7 +148,7 @@ func (m *user) GetUserList(c *gin.Context, opts *metadata.GetUserListOptions) ([
 	if opts.NeedAll {
 		// get paged user lists from apigw
 		users := make([]*metadata.LoginSystemUserInfo, 0)
-		pageOpts := &apigwuser.PageOptions{
+		pageOpts := &usertypes.PageOptions{
 			Page:     1,
 			PageSize: 1000,
 		}
@@ -178,7 +178,7 @@ func (m *user) GetUserList(c *gin.Context, opts *metadata.GetUserListOptions) ([
 
 	// get user info by user names from bk-user
 	displayInfoRes, err := apigwcli.Client().User().BatchQueryUserDisplayInfo(c.Request.Context(), c.Request.Header,
-		&apigwuser.QueryUserDisplayInfoOpts{BkUsernames: opts.Usernames})
+		&usertypes.QueryUserDisplayInfoOpts{BkUsernames: opts.Usernames})
 	if err != nil {
 		blog.Errorf("get users by apigw client failed, http failed, err: %+v, rid: %s", err, rid)
 		return nil, &errors.RawErrorInfo{

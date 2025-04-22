@@ -26,17 +26,24 @@ import (
 
 	"configcenter/src/common"
 	httpheader "configcenter/src/common/http/header"
+	utiluser "configcenter/src/thirdparty/apigw/apigwutil/user"
+	"configcenter/src/thirdparty/apigw/user/types"
 )
 
 // GetTenants get all tenants from bk user
-func (u *user) GetTenants(ctx context.Context, h http.Header) ([]Tenant, error) {
-	resp := new(BkUserResponse[[]Tenant])
-
+func (u *user) GetTenants(ctx context.Context, h http.Header) ([]types.Tenant, error) {
+	resp := new(types.BkUserResponse[[]types.Tenant])
 	httpheader.SetTenantID(h, common.BKDefaultTenantID)
-	err := u.service.Client.Get().
+
+	h, err := utiluser.SetBKAuthHeader(ctx, u.service.Config, h, u)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.service.Client.Get().
 		WithContext(ctx).
 		SubResourcef("/api/v3/open/tenants/").
-		WithHeaders(httpheader.SetBkAuth(h, u.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -56,8 +63,9 @@ func (u *user) GetTenants(ctx context.Context, h http.Header) ([]Tenant, error) 
 }
 
 // ListUsers list users
-func (u *user) ListUsers(ctx context.Context, h http.Header, page *PageOptions) (*ListUserResult, error) {
-	resp := new(BkUserResponse[*ListUserResult])
+func (u *user) ListUsers(ctx context.Context, h http.Header, page *types.PageOptions) (*types.ListUserResult,
+	error) {
+	resp := new(types.BkUserResponse[*types.ListUserResult])
 
 	params := make(map[string]string)
 	if page != nil {
@@ -69,11 +77,16 @@ func (u *user) ListUsers(ctx context.Context, h http.Header, page *PageOptions) 
 		}
 	}
 
-	err := u.service.Client.Get().
+	h, err := utiluser.SetBKAuthHeader(ctx, u.service.Config, h, u)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.service.Client.Get().
 		WithContext(ctx).
 		WithParams(params).
 		SubResourcef("/api/v3/open/tenant/users/").
-		WithHeaders(httpheader.SetBkAuth(h, u.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -93,16 +106,21 @@ func (u *user) ListUsers(ctx context.Context, h http.Header, page *PageOptions) 
 }
 
 // BatchQueryUserDisplayInfo batch query user display name info
-func (u *user) BatchQueryUserDisplayInfo(ctx context.Context, h http.Header, opts *QueryUserDisplayInfoOpts) (
-	[]UserDisplayInfo, error) {
+func (u *user) BatchQueryUserDisplayInfo(ctx context.Context, h http.Header, opts *types.QueryUserDisplayInfoOpts) (
+	[]types.UserDisplayInfo, error) {
 
-	resp := new(BkUserResponse[[]UserDisplayInfo])
+	resp := new(types.BkUserResponse[[]types.UserDisplayInfo])
 
-	err := u.service.Client.Get().
+	h, err := utiluser.SetBKAuthHeader(ctx, u.service.Config, h, u)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.service.Client.Get().
 		WithContext(ctx).
 		WithParam("bk_usernames", strings.Join(opts.BkUsernames, ",")).
 		SubResourcef("/api/v3/open/tenant/users/-/display_info/").
-		WithHeaders(httpheader.SetBkAuth(h, u.service.Auth)).
+		WithHeaders(h).
 		Do().
 		Into(resp)
 
@@ -122,7 +140,8 @@ func (u *user) BatchQueryUserDisplayInfo(ctx context.Context, h http.Header, opt
 }
 
 // BatchLookupDept batch lookup department
-func (u *user) BatchLookupDept(ctx context.Context, h http.Header, opts *BatchLookupDeptOpts) ([]DepartmentItem,
+func (u *user) BatchLookupDept(ctx context.Context, h http.Header,
+	opts *types.BatchLookupDeptOpts) ([]types.DepartmentItem,
 	error) {
 
 	strDeptIDs := make([]string, len(opts.DeptIDs))
@@ -137,12 +156,47 @@ func (u *user) BatchLookupDept(ctx context.Context, h http.Header, opts *BatchLo
 		params["with_organization_path"] = "true"
 	}
 
-	resp := new(BkUserResponse[[]DepartmentItem])
+	h, err := utiluser.SetBKAuthHeader(ctx, u.service.Config, h, u)
+	if err != nil {
+		return nil, err
+	}
 
-	err := u.service.Client.Get().
+	resp := new(types.BkUserResponse[[]types.DepartmentItem])
+
+	err = u.service.Client.Get().
 		WithContext(ctx).
 		WithParams(params).
 		SubResourcef("/api/v3/open/tenant/departments/-/lookup/").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	if resp.Error != nil {
+		return nil, fmt.Errorf("code: %s, message: %s", resp.Error.Code, resp.Error.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// BatchSearchVirtualUser query user virtual name info
+func (u *user) BatchSearchVirtualUser(ctx context.Context, h http.Header, loginNames []string) (
+	[]types.VirtualUserItem, error) {
+
+	resp := new(types.BkUserResponse[[]types.VirtualUserItem])
+
+	err := u.service.Client.Get().
+		WithContext(ctx).
+		WithParam("lookup_field", "login_name").
+		WithParam("lookups", strings.Join(loginNames, ",")).
+		SubResourcef("/api/v3/open/tenant/virtual-users/-/lookup/").
 		WithHeaders(httpheader.SetBkAuth(h, u.service.Auth)).
 		Do().
 		Into(resp)

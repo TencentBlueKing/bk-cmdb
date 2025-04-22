@@ -15,36 +15,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package notice
+package tools
 
 import (
-	"context"
-	"net/http"
+	"fmt"
 
-	"configcenter/src/thirdparty/apigw/apigwutil"
-	"configcenter/src/thirdparty/apigw/apigwutil/user"
+	"configcenter/src/common"
+	cc "configcenter/src/common/backbone/configcenter"
 )
 
-// ClientI is the bk-notice api gateway client
-type ClientI interface {
-	GetCurAnn(ctx context.Context, h http.Header, params map[string]string) ([]CurAnnData, error)
-	RegApp(ctx context.Context, h http.Header) (*RegAppData, error)
-}
-
-type notice struct {
-	service *apigwutil.ApiGWSrv
-	userCli user.VirtualUserClientI
-}
-
-// NewClient create bk-notice api gateway client
-func NewClient(options *apigwutil.ApiGWOptions, userCli user.VirtualUserClientI) (ClientI, error) {
-	service, err := apigwutil.NewApiGW(options, "apiGW.bkNoticeApiGatewayUrl")
-	if err != nil {
-		return nil, err
+// GetDefaultTenant get default tenant
+func GetDefaultTenant() string {
+	enableMultiTenant, _ := cc.Bool("tenant.enableMultiTenantMode")
+	if enableMultiTenant {
+		return common.BKDefaultTenantID
 	}
 
-	return &notice{
-		service: service,
-		userCli: userCli,
-	}, nil
+	return common.BKSingleTenantID
+}
+
+// ValidateDisableTenantMode validate disable multi-tenant mode
+func ValidateDisableTenantMode(tenantID string, enableTenantMode bool) (string, error) {
+	if !enableTenantMode {
+		if tenantID == "" || tenantID == common.BKSingleTenantID {
+			return common.BKSingleTenantID, nil
+		}
+
+		return "", fmt.Errorf("tenant mode is disable, but tenant id %s is set", tenantID)
+	}
+
+	return tenantID, nil
 }

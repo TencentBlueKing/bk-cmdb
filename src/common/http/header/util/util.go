@@ -22,6 +22,7 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/pkg/tenant/tools"
 	"configcenter/src/common"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/util"
@@ -56,7 +57,7 @@ func GenCommonHeader(user, tenantID, rid string) http.Header {
 	}
 
 	if tenantID == "" {
-		tenantID = common.BKDefaultTenantID
+		tenantID = tools.GetDefaultTenant()
 	}
 
 	if rid == "" {

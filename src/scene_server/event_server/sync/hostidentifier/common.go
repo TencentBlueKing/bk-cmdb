@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/pkg/tenant/tools"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	headerutil "configcenter/src/common/http/header/util"
@@ -49,7 +50,8 @@ func sleepForFail(failCount int) {
 
 func newHeaderWithRid() (http.Header, string) {
 	rid := util.GenerateRID()
-	header := headerutil.GenCommonHeader(common.CCSystemOperatorUserName, common.BKDefaultTenantID, rid)
+	tenantID := tools.GetDefaultTenant()
+	header := headerutil.GenCommonHeader(common.CCSystemOperatorUserName, tenantID, rid)
 	return header, rid
 }
 

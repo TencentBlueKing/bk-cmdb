@@ -15,26 +15,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package user
+package types
 
-import "configcenter/src/thirdparty/apigw/apigwutil"
+import (
+	"configcenter/pkg/tenant/types"
+	"configcenter/src/thirdparty/apigw/apigwutil"
+)
 
 // Tenant is the result from bk-user.
 type Tenant struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Status Status `json:"status"`
+	ID     string       `json:"id"`
+	Name   string       `json:"name"`
+	Status types.Status `json:"status"`
 }
-
-// Status is the tenant status
-type Status string
-
-const (
-	// DisabledStatus is the disabled status for tenant
-	DisabledStatus Status = "disabled"
-	// EnabledStatus is the enabled status for tenant
-	EnabledStatus Status = "enabled"
-)
 
 // BkUserResponse is bk user api gateway response
 type BkUserResponse[T any] struct {
@@ -90,4 +83,11 @@ type DepartmentItem struct {
 	ID               int64  `json:"id"`
 	Name             string `json:"name"`
 	OrganizationPath string `json:"organization_path"`
+}
+
+// VirtualUserItem is the batch lookup virtual user info result
+type VirtualUserItem struct {
+	DisplayName     string `json:"display_name"`
+	LoginName       string `json:"login_name"`
+	VirtualUserName string `json:"bk_username"`
 }
