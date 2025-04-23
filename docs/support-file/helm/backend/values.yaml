@@ -1874,7 +1874,7 @@ apigatewaySync:
   ## 此变量在运维维护的变量中，没有对应的变量
   bcsSyncAppCode: "bk-bcs-cmdb-sync"
   ## 此变量在运维维护的变量中，没有对应的变量
-  hcmAppCode: "bk-hcm"
+  hcmAppCode: "bk_hcm"
   ## 此变量在运维维护的变量中，没有对应的变量
   monitorAppCode: "bk_monitorv3"
 
