@@ -12,8 +12,7 @@ spec:
   parallelism: 1
   template:
     spec:
-      imagePullSecrets:
-        - name: {{ .Values.image.pullSecretName }}
+      {{- include "cmdb.imagePullSecrets" . | nindent 6 }}
       containers:
       - command:
         - bash

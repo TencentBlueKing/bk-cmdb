@@ -17,8 +17,7 @@ spec:
   parallelism: 1
   template:
     spec:
-      imagePullSecrets:
-        - name: {{ .Values.image.pullSecretName }}
+      {{- include "cmdb.imagePullSecrets" . | nindent 6 }}
       containers:
       - name: cmdb-migrate
         image: {{ template "cmdb.basicImagesAddress" . }}

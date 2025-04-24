@@ -326,6 +326,12 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end }}
 {{- end -}}
 
+{{- define "cmdb.imagePullSecrets" -}}
+{{- if .Values.image.pullSecretName }}
+imagePullSecrets:
+- name: {{ .Values.image.pullSecretName }}
+{{- end }}
+{{- end -}}
 
 {{- define "cmdb.mongodb.certVolumeMount" -}}
 {{- if or .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.ca }}

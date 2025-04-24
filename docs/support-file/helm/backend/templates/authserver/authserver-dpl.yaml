@@ -26,8 +26,7 @@ spec:
         {{ toYaml .Values.authserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
-      imagePullSecrets:
-        - name: {{ .Values.image.pullSecretName }}
+      {{- include "cmdb.imagePullSecrets" . | nindent 6 }}
       containers:
       - name: authserver
         image: {{ .Values.image.registry }}/{{ .Values.authserver.image.repository }}:v{{ default .Chart.AppVersion .Values.authserver.image.tag }}

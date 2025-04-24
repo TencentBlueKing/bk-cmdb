@@ -26,8 +26,7 @@ spec:
         {{ toYaml .Values.synchronizeserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
-      imagePullSecrets:
-        - name: {{ .Values.image.pullSecretName }}
+      {{- include "cmdb.imagePullSecrets" . | nindent 6 }}
       containers:
       - name: synchronizeserver
         image: {{ .Values.image.registry }}/{{ .Values.synchronizeserver.image.repository }}:v{{ default .Chart.AppVersion .Values.synchronizeserver.image.tag }}
