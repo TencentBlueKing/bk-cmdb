@@ -30,12 +30,14 @@ import (
 	"configcenter/src/storage/dal"
 )
 
+const unassignedCloudAreaID = 90000001
+
 func addUnassignedCloudArea(ctx context.Context, db dal.RDB, conf *history.Config) error {
 	cond := mapstr.MapStr{
 		common.BKDBAND: []mapstr.MapStr{
-			{common.BKCloudIDField: mapstr.MapStr{common.BKDBGTE: common.ReservedCloudAreaStartID}},
-			{common.BKCloudIDField: mapstr.MapStr{common.BKDBLTE: common.ReservedCloudAreaEndID}},
-			{common.BKCloudIDField: mapstr.MapStr{common.BKDBNIN: common.ReservedCloudAreaIDs}},
+			{common.BKCloudIDField: mapstr.MapStr{common.BKDBGTE: 90000000}},
+			{common.BKCloudIDField: mapstr.MapStr{common.BKDBLTE: 99999999}},
+			{common.BKCloudIDField: mapstr.MapStr{common.BKDBNE: unassignedCloudAreaID}},
 		},
 	}
 
@@ -45,13 +47,12 @@ func addUnassignedCloudArea(ctx context.Context, db dal.RDB, conf *history.Confi
 		return err
 	}
 	if count > 0 {
-		msg := fmt.Sprintf("reserved cloud area data exists in db, range: [%d:%d]", common.ReservedCloudAreaStartID,
-			common.ReservedCloudAreaEndID)
+		msg := "reserved cloud area data exists in db, range: [90000000:99999999]"
 		blog.Errorf(msg)
 		return errors.New(msg)
 	}
 
-	cond = mapstr.MapStr{common.BKCloudIDField: common.UnassignedCloudAreaID}
+	cond = mapstr.MapStr{common.BKCloudIDField: unassignedCloudAreaID}
 	result := make([]CloudArea, 0)
 	if err = db.Table(common.BKTableNameBasePlat).Find(cond).All(ctx, &result); err != nil {
 		blog.Errorf("find cloud area failed, cond: %+v, err: %v", cond, err)
@@ -71,13 +72,13 @@ func addUnassignedCloudArea(ctx context.Context, db dal.RDB, conf *history.Confi
 			return nil
 		}
 
-		msg := fmt.Sprintf("cloud area[%d] already exists, data: %+v", common.UnassignedCloudAreaID, data)
+		msg := fmt.Sprintf("cloud area[%d] already exists, data: %+v", unassignedCloudAreaID, data)
 		blog.Errorf(msg)
 		return errors.New(msg)
 	}
 
 	cloudArea := &CloudArea{
-		CloudID:    common.UnassignedCloudAreaID,
+		CloudID:    unassignedCloudAreaID,
 		CloudName:  common.UnassignedCloudAreaName,
 		OwnerID:    "0",
 		Creator:    conf.User,

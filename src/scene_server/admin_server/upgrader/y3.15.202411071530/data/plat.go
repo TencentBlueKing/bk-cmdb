@@ -18,7 +18,6 @@
 package data
 
 import (
-	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -26,41 +25,25 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/driver/mongodb"
 )
 
 var cloudAreaData = []cloudArea{
 	{
+		CloudName: "Default Area",
+		Status:    "1",
+		Default:   int64(common.BuiltIn),
+		CloudID:   0,
+	},
+	{
 		CloudName: common.UnassignedCloudAreaName,
 		Default:   int64(common.BuiltIn),
+		CloudID:   -1,
 	},
 }
 
-var defaultAreaData = cloudArea{
-	CloudName: "Default Area",
-	Status:    "1",
-	Default:   int64(common.BuiltIn),
-	CloudID:   0,
-}
-
 func addCloudAreaData(kit *rest.Kit, db local.DB) error {
-	// default area cloud id is 0
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, common.BKTableNameBasePlat,
-		len(cloudAreaData))
-	if err != nil {
-		blog.Errorf("get next sequence failed, err: %v", err)
-		return err
-	}
-	cloudAreas := make([]cloudArea, 0)
-	cloudAreas = append(cloudAreas, cloudAreaData...)
-	for idx := range cloudAreas {
-		cloudAreas[idx].CloudID = int64(ids[idx])
-	}
-	cloudAreas = append(cloudAreas, defaultAreaData)
-
 	cloudData := make([]mapstr.MapStr, 0)
-	cloudTmpData := make([]mapstr.MapStr, 0)
-	for _, data := range cloudAreas {
+	for _, data := range cloudAreaData {
 		data.Time = tools.NewTime()
 		data.Creator = common.CCSystemOperatorUserName
 		data.LastEditor = common.CCSystemOperatorUserName
@@ -68,9 +51,6 @@ func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			return err
-		}
-		if data.CloudName != "Default Area" {
-			cloudTmpData = append(cloudTmpData, item)
 		}
 		cloudData = append(cloudData, item)
 	}
@@ -89,16 +69,9 @@ func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 		},
 	}
 
-	_, err = tools.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
+	_, err := tools.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBasePlat, err)
-		return err
-	}
-
-	idOption := &tools.IDOptions{ResNameField: "bk_cloud_name", RemoveKeys: []string{common.BKCloudIDField}}
-	err = tools.InsertTemplateData(kit, db, cloudTmpData, needField, idOption, tenanttmp.TemplateTypePlat)
-	if err != nil {
-		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 	return nil

@@ -1670,21 +1670,12 @@ const (
 	TopoModuleName = "topo_module_name"
 )
 
-// ReservedCloudAreaIDs 在管控区域保留段中，系统已经使用的id, 后续如果有其他新增的id，需要添加到这个数组里
-var ReservedCloudAreaIDs = []int64{UnassignedCloudAreaID}
-
 // BuiltInCloudAreaIDs 内置管控区域, 后续如果有其他新增的id，需要添加到这个数组里
 var BuiltInCloudAreaIDs = []int64{BKDefaultDirSubArea, UnassignedCloudAreaID}
 
 const (
-	// ReservedCloudAreaStartID 保留的管控区域开始的id
-	ReservedCloudAreaStartID = 90000000
-
-	// ReservedCloudAreaEndID 保留的管控区域结束的id
-	ReservedCloudAreaEndID = 99999999
-
 	// UnassignedCloudAreaID 未分配的管控区域id
-	UnassignedCloudAreaID = 90000001
+	UnassignedCloudAreaID = -1
 
 	// UnassignedCloudAreaName 未分配的管控区域名称
 	UnassignedCloudAreaName = "未分配"

@@ -1935,15 +1935,6 @@ var templateIndexes = []types.Index{
 		},
 	},
 	{
-		Name:       common.CCLogicUniqueIdxNamePrefix + string(tenanttmp.TemplateTypePlat) + "_bkCloudName",
-		Keys:       bson.D{{"data.bk_cloud_name", 1}},
-		Unique:     true,
-		Background: true,
-		PartialFilterExpression: map[string]interface{}{
-			tenanttmp.BKTenantTemplateTypeField: tenanttmp.TemplateTypePlat,
-			"data.bk_cloud_name":                map[string]string{common.BKDBType: "string"}},
-	},
-	{
 		Name: common.CCLogicUniqueIdxNamePrefix + string(tenanttmp.TemplateTypeObjClassification) +
 			"_bkClassificationID",
 		Keys:       bson.D{{"data.bk_classification_id", 1}},

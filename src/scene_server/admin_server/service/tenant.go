@@ -150,30 +150,55 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 	resp.WriteEntity(metadata.NewSuccessResp("add tenant success"))
 }
 
+var defaultCloudAreas = []metadata.CloudArea{
+	{
+		CloudID:   common.BKDefaultDirSubArea,
+		CloudName: common.DefaultCloudName,
+		Status:    "1",
+		Default:   int64(common.BuiltIn),
+	},
+	{
+		CloudID:   common.UnassignedCloudAreaID,
+		CloudName: common.UnassignedCloudAreaName,
+		Default:   int64(common.BuiltIn),
+	},
+}
+
+// addDefaultArea add default cloud areas
 func addDefaultArea(kit *rest.Kit, db local.DB) error {
-	// add default area
-	cond := map[string]interface{}{"bk_cloud_name": "Default Area"}
-	cnt, err := db.Table(common.BKTableNameBasePlat).Find(cond).Count(kit.Ctx)
+	cond := map[string]interface{}{common.BKDefaultField: common.BuiltIn}
+	existCloudAreas := make([]metadata.CloudArea, 0)
+	err := db.Table(common.BKTableNameBasePlat).Find(cond).Fields(common.BKCloudIDField).All(kit.Ctx, &existCloudAreas)
 	if err != nil {
 		blog.Errorf("get default area count failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
-	if cnt == 1 {
+	if len(existCloudAreas) == len(defaultCloudAreas) {
 		return nil
 	}
 
-	err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, metadata.CloudArea{
-		Creator:    common.CCSystemOperatorUserName,
-		LastEditor: common.CCSystemOperatorUserName,
-		CloudID:    common.BKDefaultDirSubArea,
-		CloudName:  "Default Area",
-		Default:    int64(common.BuiltIn),
-		CreateTime: time.Now(),
-		LastTime:   time.Now(),
-		Status:     "1",
-	})
-	if err != nil {
+	existCloudAreaMap := make(map[int64]struct{})
+	for _, area := range existCloudAreas {
+		existCloudAreaMap[area.CloudID] = struct{}{}
+	}
+
+	now := time.Now()
+	createCloudAreas := make([]metadata.CloudArea, 0)
+	for _, cloudArea := range defaultCloudAreas {
+		_, exists := existCloudAreaMap[cloudArea.CloudID]
+		if exists {
+			continue
+		}
+		cloudArea.Default = int64(common.BuiltIn)
+		cloudArea.Creator = common.CCSystemOperatorUserName
+		cloudArea.LastEditor = common.CCSystemOperatorUserName
+		cloudArea.CreateTime = now
+		cloudArea.LastTime = now
+		createCloudAreas = append(createCloudAreas, cloudArea)
+	}
+
+	if err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, createCloudAreas); err != nil {
 		blog.Errorf("add default area failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}

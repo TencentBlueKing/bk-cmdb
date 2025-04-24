@@ -92,12 +92,9 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
+	// refresh tenants, ignore refresh tenants error
 	if err = logics.RefreshTenants(s.CoreAPI); err != nil {
 		blog.Errorf("refresh tenant failed, err: %v", err)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommMigrateFailed, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(result))

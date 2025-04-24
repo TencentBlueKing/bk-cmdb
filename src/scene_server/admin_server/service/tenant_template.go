@@ -41,7 +41,6 @@ var (
 		tenanttmp.TemplateTypeObjAttribute:      insertObjAttrData,
 		tenanttmp.TemplateTypeObjAssociation:    insertObjAssociationData,
 		tenanttmp.TemplateTypeObjClassification: insertObjClassification,
-		tenanttmp.TemplateTypePlat:              insertPlatData,
 		tenanttmp.TemplateTypePropertyGroup:     insertPropertyGrp,
 		tenanttmp.TemplateTypeBizSet:            insertBizSetData,
 		tenanttmp.TemplateTypeServiceCategory:   insertSvrCategoryData,
@@ -337,66 +336,6 @@ func insertObjClassification(kit *rest.Kit, db local.DB) error {
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err,
 			kit.Rid)
-		return err
-	}
-
-	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
-		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-	return nil
-}
-
-func insertPlatData(kit *rest.Kit, db local.DB) error {
-
-	table := common.BKTableNameBasePlat
-	data, err := getTemplateData[metadata.CloudArea](kit, tenanttmp.TemplateTypePlat)
-	if err != nil {
-		blog.Errorf("get template data failed, err: %v", err)
-		return err
-	}
-	result := make([]metadata.CloudArea, 0)
-	if err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKCloudNameField).All(kit.Ctx,
-		&result); err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", table, err)
-		return err
-	}
-
-	existData := make(map[string]interface{}, 0)
-	for _, item := range result {
-		existData[item.CloudName] = struct{}{}
-	}
-	insertData := make([]metadata.CloudArea, 0)
-	for _, item := range data {
-		if _, ok := existData[item.Data.CloudName]; ok {
-			continue
-		}
-		insertData = append(insertData, item.Data)
-	}
-
-	if len(insertData) == 0 {
-		return nil
-	}
-	ids, err := mongodb.Dal().Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, len(insertData))
-	if err != nil {
-		blog.Errorf("get next sequence failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
-	for index := range insertData {
-		insertData[index].CloudID = int64(ids[index])
-		insertData[index].CreateTime = time.Now()
-		insertData[index].LastTime = time.Now()
-		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
-			ResourceName: insertData[index].CloudName,
-			ResourceID:   insertData[index].CloudID,
-			Data:         insertData[index],
-			Type:         tenanttmp.TemplateTypePlat,
-		})
-	}
-	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
 

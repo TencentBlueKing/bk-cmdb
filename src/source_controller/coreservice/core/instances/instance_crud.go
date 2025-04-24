@@ -13,7 +13,6 @@
 package instances
 
 import (
-	"sort"
 	"time"
 
 	"configcenter/src/common"
@@ -23,7 +22,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/universalsql/mongo"
-	"configcenter/src/common/util"
 	"configcenter/src/common/valid"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -154,32 +152,6 @@ func getSequences(kit *rest.Kit, table string, count int) ([]uint64, error) {
 	}
 
 	ids, err := mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, count)
-	if err != nil {
-		return nil, err
-	}
-
-	if table != common.BKTableNameBasePlat {
-		return ids, nil
-	}
-
-	sort.Sort(util.Uint64Slice(ids))
-
-	if ids[0] > common.ReservedCloudAreaEndID {
-		return ids, nil
-	}
-
-	if ids[len(ids)-1] < common.ReservedCloudAreaStartID {
-		return ids, nil
-	}
-
-	// 此处不要求那么准确，直接跳过保留的管控区域长度，然后再获取id即可
-	_, err = mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table,
-		common.ReservedCloudAreaEndID-common.ReservedCloudAreaStartID)
-	if err != nil {
-		return nil, err
-	}
-
-	ids, err = mongodb.Shard(kit.SysShardOpts()).NextSequences(kit.Ctx, table, count)
 	if err != nil {
 		return nil, err
 	}
