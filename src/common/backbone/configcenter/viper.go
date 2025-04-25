@@ -312,6 +312,11 @@ func Mongo(prefix string) (mongo.Config, error) {
 		return mongo.Config{}, errors.New("can't find mongo configuration")
 	}
 
+	tlsClientConfig, err := NewTLSClientConfigFromConfig(prefix + ".tls")
+	if err != nil {
+		return mongo.Config{}, err
+	}
+
 	c := mongo.Config{
 		Address:   parser.getString(prefix + ".host"),
 		Port:      parser.getString(prefix + ".port"),
@@ -320,6 +325,7 @@ func Mongo(prefix string) (mongo.Config, error) {
 		Database:  parser.getString(prefix + ".database"),
 		Mechanism: parser.getString(prefix + ".mechanism"),
 		RsName:    parser.getString(prefix + ".rsName"),
+		TLSConf:   &tlsClientConfig,
 	}
 
 	if c.RsName == "" {
@@ -582,6 +588,10 @@ func getKeyValueParser(key string) (*viperParser, error) {
 
 	if redisParser != nil && redisParser.isSet(key) {
 		return redisParser, nil
+	}
+
+	if mongodbParser != nil && mongodbParser.isSet(key) {
+		return mongodbParser, nil
 	}
 
 	return nil, fmt.Errorf("%s key's config not found", key)

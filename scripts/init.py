@@ -22,7 +22,7 @@ def mkdir_p(path):
 def generate_config_file(
         rd_server_v, db_name_v, redis_ip_v, redis_port_v,
         redis_pass_v, sentinel_pass_v, redis_certfile_v, redis_keyfile_v, redis_cafile_v, redis_skipverify_v,
-        mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
+        mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, mongo_certfile_v, mongo_keyfile_v, mongo_cafile_v, mongo_skipverify_v, rs_name, user_info,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip,
         enable_cryptor_v, secret_key_url_v, secrets_addrs_v, secrets_token_v, secrets_project_v, secrets_env_v
@@ -34,6 +34,10 @@ def generate_config_file(
         mongo_host=mongo_ip_v,
         mongo_pass=mongo_pass_v,
         mongo_port=mongo_port_v,
+        mongo_certfile=mongo_certfile_v,
+        mongo_keyfile=mongo_keyfile_v,
+        mongo_cafile=mongo_cafile_v,
+        mongo_skipverify=mongo_skipverify_v,
         redis_host=redis_ip_v,
         redis_pass=redis_pass_v,
         sentinel_pass=sentinel_pass_v,
@@ -180,6 +184,16 @@ mongodb:
   rsName: $rs_name
   #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
   socketTimeoutSeconds: 10
+  #TLS配置信息
+  tls:
+    #证书文件路径
+    certFile: "$mongo_certfile"
+    #密钥文件路径
+    keyFile: "$mongo_keyfile"
+    #CA证书文件路径
+    caFile: "$mongo_cafile"
+    #是否跳过证书验证
+    insecureSkipVerify: $mongo_skipverify
   # mongodb事件监听存储事件链的mongodb配置
 watch:
   host: $mongo_host
@@ -192,6 +206,11 @@ watch:
   mechanism: SCRAM-SHA-1
   rsName: $rs_name
   socketTimeoutSeconds: 10
+  tls:
+    certFile: "$mongo_certfile"
+    keyFile: "$mongo_keyfile"
+    caFile: "$mongo_cafile"
+    insecureSkipVerify: $mongo_skipverify
     '''
     template = FileTemplate(mongodb_file_template_str)
     result = template.substitute(**context)
@@ -202,9 +221,18 @@ watch:
     if not os.path.exists(outputMonstache):
         mkdir_p(outputMonstache)
     # monstache.so config.toml
+    mongo_tls_params = ""
+    if mongo_certfile_v or mongo_keyfile_v or mongo_cafile_v:
+        mongo_tls_params = "?tls=true"
+        if mongo_cafile_v:
+            mongo_tls_params += "&tlsCAFile=" + mongo_cafile_v
+        if mongo_skipverify_v:
+            mongo_tls_params += "&tlsInsecure=" + mongo_skipverify_v
+    context['mongo_tls_params'] = mongo_tls_params
+    
     monstachesoconfig_file_template_str = '''
 # mongodb settings
-mongo-url = "mongodb://$mongo_user:$mongo_pass@$mongo_host:$mongo_port/$db"
+mongo-url = "mongodb://$mongo_user:$mongo_pass@$mongo_host:$mongo_port/$db$mongo_tls_params"
 
 # elasticsearch settings
 elasticsearch-urls = ["$es_url"]
@@ -709,6 +737,15 @@ mongodb:
   rsName: $rs_name
   #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
   socketTimeoutSeconds: 10
+  tls:
+    #证书文件路径
+    certFile: "$mongo_certfile"
+    #密钥文件路径
+    keyFile: "$mongo_keyfile"
+    #CA证书文件路径
+    caFile: "$mongo_cafile"
+    #是否跳过证书验证
+    insecureSkipVerify: $mongo_skipverify
     '''
 
     template = FileTemplate(web_file_template_str)
@@ -854,6 +891,10 @@ def main(argv):
     mongo_port = 27017
     mongo_user = ''
     mongo_pass = ''
+    mongo_certfile = ''
+    mongo_keyfile = ''
+    mongo_cafile = ''
+    mongo_skipverify = 'true'
     cc_url = ''
     paas_url = 'http://127.0.0.1'
     auth = {
@@ -905,7 +946,8 @@ def main(argv):
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
         "redis_pass=", "sentinel_pass=", "redis_certfile=", "redis_keyfile=", "redis_cafile=", "redis_skipverify=",
         "mongo_ip=", "mongo_port=", "rs_name=",
-        "mongo_user=", "mongo_pass=", "blueking_cmdb_url=", "user_info=",
+        "mongo_user=", "mongo_pass=", "mongo_certfile=", "mongo_keyfile=", "mongo_cafile=", "mongo_skipverify=",
+        "blueking_cmdb_url=", "user_info=",
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=","auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip=",
@@ -927,6 +969,10 @@ def main(argv):
       --mongo_port         <mongo_port>           the mongo port, eg:27017
       --mongo_user         <mongo_user>           the mongo user name, default:cc
       --mongo_pass         <mongo_pass>           the mongo password
+      --mongo_certfile     <mongo_certfile>       the mongo cert file path
+      --mongo_keyfile      <mongo_keyfile>        the mongo key file path
+      --mongo_cafile       <mongo_cafile>         the mongo ca cert file path
+      --mongo_skipverify   <mongo_skipverify>     the mongo skip verify
       --rs_name            <rs_name>              the mongo replica set name, default: rs0
       --blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
       --blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
@@ -968,6 +1014,10 @@ def main(argv):
       --mongo_port         27017 \\
       --mongo_user         cc \\
       --mongo_pass         cc \\
+      --mongo_certfile     ./mongo.cert \\
+      --mongo_keyfile      ./mongo.key \\
+      --mongo_cafile       ./mongo-ca.crt \\
+      --mongo_skipverify   true \\
       --rs_name            rs0 \\
       --blueking_cmdb_url  http://127.0.0.1:8080/ \\
       --blueking_paas_url  http://paas.domain.com \\
@@ -1047,6 +1097,18 @@ def main(argv):
         elif opt in ("-S", "--mongo_pass"):
             mongo_pass = arg
             print('mongo_pass:', mongo_pass)
+        elif opt in ("--mongo_certfile",):
+            mongo_certfile = arg
+            print('mongo_certfile:', mongo_certfile)
+        elif opt in ("--mongo_keyfile",):
+            mongo_keyfile = arg
+            print('mongo_keyfile:', mongo_keyfile)
+        elif opt in ("--mongo_cafile",):
+            mongo_cafile = arg
+            print('mongo_cafile:', mongo_cafile)
+        elif opt in ("--mongo_skipverify",):
+            mongo_skipverify = arg
+            print('mongo_skipverify:', mongo_skipverify)
         elif opt in ("--rs_name",):
             rs_name = arg
             print('rs_name:', rs_name)
@@ -1217,6 +1279,10 @@ def main(argv):
         mongo_port_v=mongo_port,
         mongo_user_v=mongo_user,
         mongo_pass_v=mongo_pass,
+        mongo_certfile_v=mongo_certfile,
+        mongo_keyfile_v=mongo_keyfile,
+        mongo_cafile_v=mongo_cafile,
+        mongo_skipverify_v=mongo_skipverify,
         rs_name=rs_name,
         cc_url_v=cc_url,
         paas_url_v=paas_url,

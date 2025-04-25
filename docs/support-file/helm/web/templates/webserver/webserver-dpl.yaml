@@ -93,6 +93,7 @@ spec:
           - name: redis-cert
             mountPath: {{ .Values.certPath}}/redis
           {{- end }}
+          {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.webserver.configDir }}
         - name: configures
@@ -104,6 +105,7 @@ spec:
           configMap:
             name: "{{ template "bk-cmdb.fullname" $ }}-web-redis-certs"
         {{- end }}
+        {{- include "cmdb.mongodb.certVolume" . | nindent 8 }}
 
       {{- with .Values.webserver.nodeSelector }}
       nodeSelector:

@@ -1462,6 +1462,27 @@ mongodb:
     username: cc
     password:
     database: cmdb
+  tls:
+    ## @param mongodb.tls.caFile redis TLS CA file
+    ## Certificate file name, will be combined with certPath
+    ##
+    caFile: "mongodb/mongodb.ca"
+    ## @param mongodb.tls.certFile redis TLS cert file
+    ## Certificate file name, will be combined with certPath
+    ##
+    certFile: "mongodb/mongodb.cert"
+    ## @param mongodb.tls.keyFile redis TLS key file
+    ## Key file name, will be combined with certPath
+    ##
+    keyFile: "mongodb/mongodb.key"
+    ## @param mongodb.tls.pemFile redis TLS pem file
+    ## Combined certificate and key file name, will be combined with certPath
+    ##
+    pemFile: "mongodb/mongodb.pem"
+    ## @param mongodb.tls.insecureSkipVerify mongodb TLS insecure skip verify
+    ##
+    insecureSkipVerify: true
+
   ## @param mongodb.host mongodb host
   ##
   host: mongodb-headless.default.svc.cluster.local
@@ -1530,6 +1551,22 @@ mongodb:
     ## mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
     ##
     socketTimeoutSeconds: 10
+    tls:
+      ## @param mongodb.watch.tls.caFile redis TLS CA file
+      ## Certificate file name, will be combined with certPath
+      ##
+      caFile: "mongodb-watch/mongodb-watch.ca"
+      ## @param mongodb.watch.tls.certFile redis TLS cert file
+      ## Certificate file name, will be combined with certPath
+      ##
+      certFile: "mongodb-watch/mongodb-watch.cert"
+      ## @param mongodb.watch.tls.keyFile redis TLS key file
+      ## Key file name, will be combined with certPath
+      ##
+      keyFile: "mongodb-watch/mongodb-watch.key"
+      ## @param mongodb.watch.tls.insecureSkipVerify mongodb TLS insecure skip verify
+      ##
+      insecureSkipVerify: true
 
 ## @section redis parameters
 ##
@@ -1949,6 +1986,33 @@ redisCert:
     ##
     cert: ""
     ## @param redisCert.netCollectRedis.key client key for network collect redis connection
+    ## key content encoded in base64
+    ##
+    key: ""
+mongodbCert:
+  mongodb:
+    ## @param mongodbCert.ca CA certificate for mongodb connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param mongodbCert.cert client certificate mongodb connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param mongodbCert.key client key for network collect mongodb connection
+    ## key content encoded in base64
+    ##
+    key: ""
+  watch:
+    ## @param mongodbCert.ca CA certificate for mongodb connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param mongodbCert.cert client certificate mongodb connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param mongodbCert.key client key for network collect mongodb connection
     ## key content encoded in base64
     ##
     key: ""

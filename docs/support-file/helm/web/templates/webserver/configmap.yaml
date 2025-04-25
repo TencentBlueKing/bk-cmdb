@@ -187,6 +187,15 @@ data:
       #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
       socketTimeoutSeconds: {{ .Values.mongodb.externalMongodb.socketTimeoutSeconds }}
       enable: {{ .Values.mongodb.externalMongodb.enabled }}
+      tls:
+        insecureSkipVerify: {{ .Values.mongodb.externalMongodb.tls.insecureSkipVerify }}
+        {{- if .Values.mongodb.externalMongodb.tls.caFile }}
+        caFile: {{ .Values.mongodb.externalMongodb.tls.caFile }}
+        {{- end }}
+        {{- if and .Values.mongodb.externalMongodb.tls.certFile .Values.mongodb.externalMongodb.tls.keyFile }}
+        certFile: {{ .Values.mongodb.externalMongodb.tls.certFile }}
+        keyFile: {{ .Values.mongodb.externalMongodb.tls.keyFile }}
+        {{- end }}
 
     redis:
       host: {{ include "cmdb.redis.host" . | quote }}

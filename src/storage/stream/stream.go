@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/common/ssl"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream/event"
 	"configcenter/src/storage/stream/loop"
@@ -53,6 +54,13 @@ func NewStream(conf local.MongoConf) (Interface, error) {
 		MinPoolSize:    &conf.MaxIdleConns,
 		ConnectTimeout: &timeout,
 		ReplicaSet:     &conf.RsName,
+	}
+	tlsConf, useTLS, err := ssl.NewTLSConfigFromConf(conf.TLS)
+	if err != nil {
+		return nil, err
+	}
+	if useTLS {
+		conOpt.TLSConfig = tlsConf
 	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(conf.URI), &conOpt)
@@ -92,6 +100,13 @@ func NewLoopStream(conf local.MongoConf, isMaster discovery.ServiceManageInterfa
 		MinPoolSize:    &conf.MaxIdleConns,
 		ConnectTimeout: &timeout,
 		ReplicaSet:     &conf.RsName,
+	}
+	tlsConf, useTLS, err := ssl.NewTLSConfigFromConf(conf.TLS)
+	if nil != err {
+		return nil, err
+	}
+	if useTLS {
+		conOpt.TLSConfig = tlsConf
 	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(conf.URI), &conOpt)

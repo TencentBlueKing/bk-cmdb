@@ -92,6 +92,7 @@ spec:
             mountPath: {{ .Values.eventserver.configDir }}
           {{- end }}
           {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
 
       volumes:
         - name: cert
@@ -103,6 +104,7 @@ spec:
             name: {{ .Release.Name }}-eventserver-configures
         {{- end }}
         {{- include "cmdb.redis.certVolume" . | nindent 8 }}
+        {{- include "cmdb.mongodb.certVolume" . | nindent 8 }}
 
       {{- with .Values.eventserver.nodeSelector }}
       nodeSelector:

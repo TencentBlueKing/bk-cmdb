@@ -225,7 +225,32 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.mongodb.mongo-url" -}}
-    mongodb://{{ include "cmdb.mongodb.usr" . }}:{{ include "cmdb.mongodb.pwd" . }}@{{- template "cmdb.mongodb.addr" . -}}/cmdb
+  {{- $base := printf "mongodb://%s:%s@%s/cmdb"
+      (include "cmdb.mongodb.usr" . | trim)
+      (include "cmdb.mongodb.pwd" . | trim)
+      (include "cmdb.mongodb.addr" . | trim)
+  -}}
+  {{- /* Check if CA certificate is provided, indicating TLS is enabled */ -}}
+  {{- if .Values.mongodbCert.mongodb.ca -}}
+    {{- $tlsParams := printf "?tls=true&tlsInsecure=%v&tlsCAFile=%s/%s"
+        .Values.mongodb.tls.insecureSkipVerify
+        .Values.certPath
+        .Values.mongodb.tls.caFile
+    -}}
+    {{- /* Check if both client certificate and key are provided for mutual TLS */ -}}
+    {{- if and .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key -}}
+      {{- $tlsParams = printf "%s&tlsCertificateKeyFile=%s/%s"
+          $tlsParams
+          .Values.certPath
+          .Values.mongodb.tls.pemFile
+      -}}
+    {{- end -}}
+    {{- /* Append TLS parameters to the base URL */ -}}
+    {{- printf "%s%s" $base $tlsParams -}}
+  {{- else -}}
+    {{- /* No CA provided, use non-TLS base URL */ -}}
+    {{- $base -}}
+  {{- end -}}
 {{- end -}}
 
 {{- define "cmdb.elasticsearch.urlAndPort" -}}
@@ -301,3 +326,33 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end }}
 {{- end -}}
 
+
+{{- define "cmdb.mongodb.certVolumeMount" -}}
+{{- if or .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.ca }}
+- name: mongodb-certs
+  mountPath: {{ .Values.certPath }}/mongodb
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.mongodb.certVolume" -}}
+{{- if or .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.ca }}
+- name: mongodb-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" . }}-mongodb-certs
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.mongodb.watch.certVolumeMount" -}}
+{{- if or .Values.mongodbCert.watch.cert .Values.mongodbCert.watch.key .Values.mongodbCert.watch.ca }}
+- name: mongodb-watch-certs
+  mountPath: {{ .Values.certPath }}/mongodb-watch
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.mongodb.watch.certVolume" -}}
+{{- if or .Values.mongodbCert.watch.cert .Values.mongodbCert.watch.key .Values.mongodbCert.watch.ca }}
+- name: mongodb-watch-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" . }}-mongodb-watch-certs
+{{- end }}
+{{- end -}}

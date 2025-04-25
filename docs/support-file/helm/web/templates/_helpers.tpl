@@ -127,3 +127,18 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- printf "%s" .Values.bkComponentApiUrl -}}
   {{- end -}}
 {{- end -}}
+
+{{- define "cmdb.mongodb.certVolumeMount" -}}
+{{- if or .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.ca }}
+- name: mongodb-certs
+  mountPath: {{ .Values.certPath }}/mongodb
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.mongodb.certVolume" -}}
+{{- if or .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.ca }}
+- name: mongodb-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" . }}-mongodb-certs
+{{- end }}
+{{- end -}}

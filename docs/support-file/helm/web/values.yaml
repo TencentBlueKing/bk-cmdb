@@ -386,6 +386,23 @@ web:
 configAndServiceCenter:
   addr:
 
+## @section mongodbCert parameters
+##
+mongodbCert:
+  mongodb:
+    ## @param mongodbCert.ca CA certificate for mongodb connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param mongodbCert.cert client certificate mongodb connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param mongodbCert.key client key for network collect mongodb connection
+    ## key content encoded in base64
+    ##
+    key: ""
+
 ## @section mongodb parameters
 ##
 mongodb:
@@ -453,6 +470,27 @@ mongodb:
     ## mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
     ##
     socketTimeoutSeconds: 10
+    ## @param mongodb.externalMongodb.tls mongodb tls config
+    tls:
+      ## @param mongodb.externalMongodb.tls.caFile redis TLS CA file
+      ## Certificate file name, will be combined with certPath
+      ##
+      caFile: "mongodb/mongodb.ca"
+      ## @param mongodb.externalMongodb.tls.certFile redis TLS cert file
+      ## Certificate file name, will be combined with certPath
+      ##
+      certFile: "mongodb/mongodb.cert"
+      ## @param mongodb.externalMongodb.tls.keyFile redis TLS key file
+      ## Key file name, will be combined with certPath
+      ##
+      keyFile: "mongodb/mongodb.key"
+      ## @param mongodb.externalMongodb.tls.pemFile redis TLS pem file
+      ## Combined certificate and key file name, will be combined with certPath
+      ##
+      pemFile: "mongodb/mongodb.pem"
+      ## @param mongodb.externalMongodb.tls.insecureSkipVerify mongodb TLS insecure skip verify
+      ##
+      insecureSkipVerify: true
 
 ## @param certPath cert path.
 ##

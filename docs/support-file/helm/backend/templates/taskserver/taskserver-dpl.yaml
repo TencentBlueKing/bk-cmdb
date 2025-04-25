@@ -87,6 +87,7 @@ spec:
             mountPath: {{ .Values.taskserver.configDir }}
           {{- end }}
           {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.taskserver.configDir }}
         - name: configures
@@ -94,6 +95,7 @@ spec:
             name: {{ .Release.Name }}-taskserver-configures
         {{- end }}
         {{- include "cmdb.redis.certVolume" . | nindent 6 }}
+        {{- include "cmdb.mongodb.certVolume" . | nindent 6 }}
 
       {{- with .Values.taskserver.nodeSelector }}
       nodeSelector:

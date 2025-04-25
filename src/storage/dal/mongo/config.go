@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/src/common/ssl"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 )
@@ -57,6 +58,7 @@ type Config struct {
 	RsName        string
 	SocketTimeout int
 	DisableInsert bool
+	TLSConf       *ssl.TLSClientConfig
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -85,6 +87,7 @@ func (c Config) GetMongoConf() local.MongoConf {
 		RsName:        c.RsName,
 		SocketTimeout: c.SocketTimeout,
 		DisableInsert: c.DisableInsert,
+		TLS:           c.TLSConf,
 	}
 }
 
@@ -96,6 +99,7 @@ func (c Config) GetMongoClient() (db dal.RDB, err error) {
 		URI:           c.BuildURI(),
 		RsName:        c.RsName,
 		SocketTimeout: c.SocketTimeout,
+		TLS:           c.TLSConf,
 	}
 	db, err = local.NewMgo(mongoConf, time.Minute)
 	if err != nil {

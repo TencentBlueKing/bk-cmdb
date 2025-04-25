@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/ssl"
 	"configcenter/src/common/util"
 	"configcenter/src/common/util/table"
 	"configcenter/src/storage/dal"
@@ -70,6 +71,7 @@ type MongoConf struct {
 	RsName         string
 	SocketTimeout  int
 	DisableInsert  bool
+	TLS            *ssl.TLSClientConfig
 }
 
 // NewMgo returns new RDB
@@ -96,6 +98,13 @@ func NewMgo(config MongoConf, timeout time.Duration) (*Mongo, error) {
 		RetryWrites:     &disableWriteRetry,
 		MaxConnIdleTime: &maxConnIdleTime,
 		AppName:         &appName,
+	}
+	tlsConf, useTLS, err := ssl.NewTLSConfigFromConf(config.TLS)
+	if err != nil {
+		return nil, fmt.Errorf("new tls config failed: %v", err)
+	}
+	if useTLS {
+		conOpt.TLSConfig = tlsConf
 	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(config.URI), &conOpt)
