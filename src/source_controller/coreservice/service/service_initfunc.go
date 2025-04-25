@@ -385,15 +385,13 @@ func (s *coreService) ccSystem(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/system/user_config",
 		Handler: s.GetSystemUserConfig})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/find/system/config_admin",
-		Handler: s.SearchConfigAdmin})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet,
-		Path:    "/find/system_config/platform_setting",
-		Handler: s.SearchPlatformSettingConfig})
+		Path:    "/find/global_config",
+		Handler: s.SearchGlobalConfig})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPut,
-		Path:    "/update/system_config/platform_setting",
-		Handler: s.UpdatePlatformSetting})
+		Path:    "/update/global_config/{type}",
+		Handler: s.UpdateGlobalConfig})
 
 	utility.AddToRestfulWebService(web)
 }

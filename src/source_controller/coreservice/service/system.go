@@ -14,6 +14,7 @@ package service
 
 import (
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -22,39 +23,35 @@ func (s *coreService) GetSystemUserConfig(ctx *rest.Contexts) {
 	ctx.RespEntityWithError(s.core.SystemOperation().GetSystemUserConfig(ctx.Kit))
 }
 
-// SearchConfigAdmin TODO
-func (s *coreService) SearchConfigAdmin(ctx *rest.Contexts) {
-	conf, err := s.core.SystemOperation().SearchConfigAdmin(ctx.Kit)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(conf)
-}
-
-// SearchPlatformSettingConfig search platform setting.
-func (s *coreService) SearchPlatformSettingConfig(ctx *rest.Contexts) {
-	conf, err := s.core.SystemOperation().SearchPlatformSettingConfig(ctx.Kit)
-	if err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-	ctx.RespEntity(conf)
-}
-
-// UpdatePlatformSetting update platform setting.
-func (s *coreService) UpdatePlatformSetting(ctx *rest.Contexts) {
-
-	input := new(metadata.PlatformSettingConfig)
+// UpdateGlobalConfig update global setting config.
+func (s *coreService) UpdateGlobalConfig(ctx *rest.Contexts) {
+	typeId := ctx.Request.PathParameter("type")
+	input := make(mapstr.MapStr)
 	if jsErr := ctx.DecodeInto(&input); nil != jsErr {
 		ctx.RespAutoError(jsErr)
 		return
 	}
 
-	err := s.core.SystemOperation().UpdatePlatformSettingConfig(ctx.Kit, input)
+	err := s.core.SystemOperation().UpdatePlatformSettingConfig(ctx.Kit, input, typeId)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 	ctx.RespEntity(nil)
+}
+
+// SearchGlobalConfig search global setting config.
+func (s *coreService) SearchGlobalConfig(ctx *rest.Contexts) {
+	options := new(metadata.GlobalConfOptions)
+	if err := ctx.DecodeInto(options); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	conf, err := s.core.SystemOperation().SearchGlobalSettingConfig(ctx.Kit, options)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(conf)
 }

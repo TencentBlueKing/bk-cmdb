@@ -45,6 +45,7 @@ var (
 		tenanttmp.TemplateTypeBizSet:            insertBizSetData,
 		tenanttmp.TemplateTypeServiceCategory:   insertSvrCategoryData,
 		tenanttmp.TemplateTypeUniqueKeys:        insertUniqueKeyData,
+		tenanttmp.TemplateTypeGlobalConfig:      insertGlobalConfigData,
 	}
 )
 
@@ -719,4 +720,47 @@ func getTemplateData[T any](kit *rest.Kit, ty tenanttmp.TenantTemplateType) ([]t
 		}
 	}
 	return tmpData, nil
+}
+
+func insertGlobalConfigData(kit *rest.Kit, db local.DB) error {
+
+	table := common.BKTableNameGlobalConfig
+	data, err := getTemplateData[metadata.GlobalSettingConfig](kit, tenanttmp.TemplateTypeGlobalConfig)
+	if err != nil {
+		blog.Errorf("get template data failed, err: %v", err)
+		return err
+	}
+
+	// check exist data
+	count, err := db.Table(table).Find(mapstr.MapStr{}).Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count data from table %s failed, err: %v", table, err)
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+
+	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
+	insertData := make([]metadata.GlobalSettingConfig, 0)
+	for index := range data {
+		data[index].Data.LastTime = metadata.Time{Time: time.Now()}
+		auditLogs = append(auditLogs, &auditlog.TenantTmpAuditOpts{
+			Data: data[index],
+			Type: tenanttmp.TemplateTypeGlobalConfig,
+		})
+		insertData = append(insertData, data[index].Data)
+	}
+	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
+		return err
+	}
+
+	// generate audit log.
+	if err := addTenantTmpAudit(kit, db, auditLogs); err != nil {
+		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
 }

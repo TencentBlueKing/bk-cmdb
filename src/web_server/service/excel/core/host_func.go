@@ -218,7 +218,7 @@ func handleData(kit *rest.Kit, host mapstr.MapStr, objID string) (mapstr.MapStr,
 }
 
 func (d *Client) getHostSetInfo(kit *rest.Kit, hosts []mapstr.MapStr) (*hostSetInfo, error) {
-	res, err := d.ApiClient.SearchPlatformSetting(kit.Ctx, kit.Header, "current")
+	res, err := d.ApiClient.SearchGlobalSetting(kit.Ctx, kit.Header)
 	if err != nil {
 		return nil, err
 	}

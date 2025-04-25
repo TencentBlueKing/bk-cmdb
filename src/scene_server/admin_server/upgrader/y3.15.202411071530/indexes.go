@@ -1866,6 +1866,16 @@ var (
 			Background: true,
 		},
 	}
+	globalConfigIndexes = []types.Index{
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "tenantID",
+			Keys: bson.D{
+				{common.TenantID, 1},
+			},
+			Unique:     true,
+			Background: true,
+		},
+	}
 )
 
 var templateIndexes = []types.Index{

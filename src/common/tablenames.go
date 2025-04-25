@@ -70,6 +70,7 @@ const (
 	BKTableNameTopoGraphics     = "TopoGraphics"
 	BKTableNameTransaction      = "Transaction"
 	BKTableNameIDgenerator      = "idgenerator"
+	BKTableNameGlobalConfig     = "GlobalConfig"
 
 	BKTableNameHostLock = "HostLock"
 
@@ -147,6 +148,7 @@ var AllTables = []string{
 	BKTableNameBaseProcess,
 	BKTableNameModuleHostConfig,
 	BKTableNameSystem,
+	BKTableNameGlobalConfig,
 	BKTableNameHistory,
 	BKTableNameHostFavorite,
 	BKTableNameAuditLog,
@@ -295,6 +297,7 @@ var platformTableMap = map[string]struct{}{
 	BKTableNameCacheWatchToken:    {},
 	"SrcSyncDataToken":            {},
 	"SrcSyncDataCursor":           {},
+	BKTableNameGlobalConfig:       {},
 }
 
 // IsPlatformTable returns if the target table is a platform table
@@ -310,6 +313,7 @@ var platformTableWithTenantMap = map[string]struct{}{
 	BKTableNameCacheWatchToken:    {},
 	"SrcSyncDataToken":            {},
 	"SrcSyncDataCursor":           {},
+	BKTableNameGlobalConfig:       {},
 }
 
 // IsPlatformTableWithTenant returns if the target table is a platform table with tenant id field

@@ -15,44 +15,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package data
+package collections
 
 import (
-	"configcenter/src/common/blog"
-	"configcenter/src/common/http/rest"
-	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/common"
+	"configcenter/src/storage/dal/types"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-var (
-	commonTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addServiceCategoryData,
-		addBizData,
-		addAssociationData,
-		addBizSetData,
-		addObjAssociationData,
-		addObjClassificationData,
-		addObjectData,
-		addObjAttrData,
-		addCloudAreaData,
-		addPropertyGroupData,
-		addObjectUniqueData,
-	}
-	platformTableDataArr = []func(kit *rest.Kit, db local.DB) error{
-		addSystemData,
-		addSelfIncrIDData,
-		addGlobalConfigData,
-	}
-)
+func init() {
+	registerIndexes(common.BKTableNameGlobalConfig, commGlobalConfigIndexes)
+}
 
-// InitData add init data
-func InitData(kit *rest.Kit, db local.DB) error {
-	tables := append(commonTableDataArr, platformTableDataArr...)
-
-	for _, handler := range tables {
-		if err := handler(kit, db); err != nil {
-			blog.Errorf("add init data failed, err: %v", err)
-			return err
-		}
-	}
-	return nil
+var commGlobalConfigIndexes = []types.Index{
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "tenantID",
+		Keys: bson.D{
+			{common.TenantID, 1},
+		},
+		Unique:     true,
+		Background: true,
+	},
 }

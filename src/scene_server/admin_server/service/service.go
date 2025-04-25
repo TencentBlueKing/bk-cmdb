@@ -108,11 +108,11 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/database").To(s.migrateDatabase))
 	api.Route(api.POST("/add/tenant").To(s.addTenant))
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
-	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
-	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
 
-	api.Route(api.PUT("/update/system_config/platform_setting").To(s.UpdatePlatformSettingConfig))
-	api.Route(api.GET("/find/system_config/platform_setting/{type}").To(s.SearchPlatformSettingConfig))
+	api.Route(api.PUT("/update/config/platform_config/{type}").To(s.UpdatePlatformConfig))
+	api.Route(api.GET("/find/config/platform_config/{type}").To(s.SearchPlatformConfig))
+	api.Route(api.GET("/find/config/global_config").To(s.SearchGlobalConfig))
+	api.Route(api.PUT("/update/config/global_config/{type}").To(s.UpdateGlobalConfig))
 
 	api.Route(api.POST("/migrate/specify/version/{distribution}/{ownerID}").To(s.migrateSpecifyVersion))
 	api.Route(api.POST("/migrate/config/refresh").To(s.refreshConfig))

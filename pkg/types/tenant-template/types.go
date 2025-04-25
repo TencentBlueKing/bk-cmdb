@@ -62,6 +62,7 @@ const (
 	TemplateTypeServiceCategory   TenantTemplateType = "service_category"
 	TemplateTypeUniqueKeys        TenantTemplateType = "unique_keys"
 	TemplateTypeBizSet            TenantTemplateType = "biz_set"
+	TemplateTypeGlobalConfig      TenantTemplateType = "global_config"
 )
 
 // AllTemplateTypes variables for all template types
@@ -75,6 +76,7 @@ var AllTemplateTypes = []TenantTemplateType{
 	TemplateTypeBizSet,
 	TemplateTypeServiceCategory,
 	TemplateTypeUniqueKeys,
+	TemplateTypeGlobalConfig,
 }
 
 // GetTemplateTypes get all tenant template types

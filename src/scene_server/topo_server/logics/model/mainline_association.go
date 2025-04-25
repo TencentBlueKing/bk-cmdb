@@ -106,19 +106,16 @@ func (assoc *association) checkMaxBizTopoLevel(kit *rest.Kit) error {
 		return err
 	}
 
-	res, err := assoc.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	options := &metadata.GlobalConfOptions{Fields: []string{metadata.BackendConfig}}
+	res, err := assoc.clientSet.CoreService().System().SearchGlobalConfig(kit.Ctx, kit.Header, options)
 	if err != nil {
 		blog.Errorf("get business topo level max failed, err: %v, rid: %s", err, kit.Rid)
 		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
 	}
-	if res.Result == false {
-		blog.Errorf("get business topo level max failed, search config admin err: %s, rid: %s", res.ErrMsg, kit.Rid)
-		return kit.CCError.Errorf(common.CCErrCommParamsNeedSet, common.CCErrTopoObjectSelectFailed)
-	}
 
-	if len(items) >= int(res.Data.Backend.MaxBizTopoLevel) {
+	if len(items) >= int(res.Backend.MaxBizTopoLevel) {
 		blog.Errorf("[operation-asst] the mainline topo level is %d, the max limit is %d, rid: %s", len(items),
-			res.Data.Backend.MaxBizTopoLevel, kit.Rid)
+			res.Backend.MaxBizTopoLevel, kit.Rid)
 		return kit.CCError.Error(common.CCErrTopoBizTopoLevelOverLimit)
 	}
 	return nil

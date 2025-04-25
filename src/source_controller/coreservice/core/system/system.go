@@ -14,13 +14,13 @@
 package system
 
 import (
-	"encoding/json"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
@@ -49,86 +49,37 @@ func (sm *systemManager) GetSystemUserConfig(kit *rest.Kit) (map[string]interfac
 	return result, nil
 }
 
-// SearchConfigAdmin TODO
-func (sm *systemManager) SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin, errors.CCErrorCoder) {
-	cond := map[string]interface{}{
-		"_id": common.ConfigAdminID,
-	}
+// SearchGlobalSettingConfig search global setting.
+func (sm *systemManager) SearchGlobalSettingConfig(kit *rest.Kit, options *metadata.GlobalConfOptions) (
+	*metadata.GlobalSettingConfig, errors.CCErrorCoder) {
 
-	ret := struct {
-		Config string `json:"config"`
-	}{}
-	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).Fields(
-		common.ConfigAdminValueField).One(kit.Ctx, &ret)
-	if err != nil {
-		blog.Errorf("search config admin failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	conf := new(metadata.ConfigAdmin)
-	if err := json.Unmarshal([]byte(ret.Config), conf); err != nil {
-		blog.Errorf("unmarshal failed, err: %v, config: %s, rid: %s", err, ret.Config, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-	}
-
-	return conf, nil
-}
-
-// SearchPlatformSettingConfig search platform setting.
-func (sm *systemManager) SearchPlatformSettingConfig(kit *rest.Kit) (*metadata.PlatformSettingConfig,
-	errors.CCErrorCoder) {
-
-	cond := map[string]interface{}{
-		"_id": common.ConfigAdminID,
-	}
-
-	ret := make(map[string]interface{})
-
-	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).Fields(
-		common.ConfigAdminValueField).One(kit.Ctx, &ret)
+	ret := new(metadata.GlobalSettingConfig)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameGlobalConfig).Find(mapstr.MapStr{}).Fields(
+		options.Fields...).One(kit.Ctx, ret)
 	if err != nil {
 		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
-	if ret[common.ConfigAdminValueField] == nil {
-		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
-	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
-		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
-	}
 
-	conf := new(metadata.PlatformSettingConfig)
-	if err := json.Unmarshal([]byte(ret[common.ConfigAdminValueField].(string)), conf); err != nil {
-		blog.Errorf("platform setting unmarshal err: %v, config: %v,rid: %s", err,
-			ret[common.ConfigAdminValueField].(string), kit.Rid)
-		return nil, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-	}
-
-	return conf, nil
+	return ret, nil
 }
 
 // UpdatePlatformSettingConfig update platform setting.
-func (sm *systemManager) UpdatePlatformSettingConfig(kit *rest.Kit,
-	input *metadata.PlatformSettingConfig) errors.CCErrorCoder {
+func (sm *systemManager) UpdatePlatformSettingConfig(kit *rest.Kit, input mapstr.MapStr,
+	typeId string) errors.CCErrorCoder {
 
-	bytes, err := json.Marshal(input)
-	if err != nil {
-		blog.Errorf("update config admin failed, Marshal err: %v, input: %v, rid: %s", err, *input, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed)
-	}
-
-	cond := map[string]interface{}{
-		"_id": common.ConfigAdminID,
+	if _, ok := input[typeId]; !ok {
+		blog.Errorf("type %s is not exist, typeId: %s, rid: %s", typeId, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "type %s is not exist", typeId)
 	}
 	data := map[string]interface{}{
-		common.ConfigAdminValueField: string(bytes),
-		common.LastTimeField:         time.Now(),
+		typeId:               input[typeId],
+		common.LastTimeField: time.Now(),
 	}
-	err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(kit.Ctx, cond, data)
+	err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameGlobalConfig).Update(kit.Ctx, mapstr.MapStr{},
+		data)
 	if err != nil {
-		blog.Errorf("update config admin failed, update err: %v, rid: %s", err, kit.Rid)
-
+		blog.Errorf("update global config %s failed, update: %v, err: %v, rid: %s", typeId, data, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed, err)
 	}
 

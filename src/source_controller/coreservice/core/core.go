@@ -16,6 +16,7 @@ package core
 import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/selector"
 	"configcenter/src/kube/types"
@@ -377,9 +378,9 @@ type HostApplyRuleOperation interface {
 // SystemOperation TODO
 type SystemOperation interface {
 	GetSystemUserConfig(kit *rest.Kit) (map[string]interface{}, errors.CCErrorCoder)
-	SearchConfigAdmin(kit *rest.Kit) (*metadata.ConfigAdmin, errors.CCErrorCoder)
-	SearchPlatformSettingConfig(kit *rest.Kit) (*metadata.PlatformSettingConfig, errors.CCErrorCoder)
-	UpdatePlatformSettingConfig(kit *rest.Kit, input *metadata.PlatformSettingConfig) errors.CCErrorCoder
+	SearchGlobalSettingConfig(kit *rest.Kit, options *metadata.GlobalConfOptions) (*metadata.GlobalSettingConfig,
+		errors.CCErrorCoder)
+	UpdatePlatformSettingConfig(kit *rest.Kit, input mapstr.MapStr, typeId string) errors.CCErrorCoder
 }
 
 // AuthOperation TODO

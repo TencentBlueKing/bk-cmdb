@@ -41,7 +41,8 @@ func addSelfIncrIDData(kit *rest.Kit, db local.DB) error {
 
 	cond := mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBIN: ids}}
 	data := make([]map[string]interface{}, 0)
-	err := db.Table(common.BKTableNameIDgenerator).Find(cond).Fields(common.BKFieldDBID).All(kit.Ctx, &data)
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameIDgenerator).Find(cond).Fields(common.BKFieldDBID).All(kit.Ctx,
+		&data)
 	if err != nil {
 		blog.Errorf("find id generator data failed, cond: %+v, err: %v", cond, err)
 		return err

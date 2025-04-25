@@ -49,3 +49,16 @@ func InitTenant(apiMachineryCli apimachinery.ClientSetInterface) error {
 	}
 	return nil
 }
+
+// ValidatePlatformTenantMode validate platform multi-tenant mode
+func ValidatePlatformTenantMode(tenantID string, enableTenantMode bool) bool {
+	if enableTenantMode && tenantID == common.BKDefaultTenantID {
+		return true
+	}
+
+	if !enableTenantMode && tenantID == common.BKSingleTenantID {
+		return true
+	}
+
+	return false
+}

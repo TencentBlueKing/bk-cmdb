@@ -15,6 +15,7 @@ package auditlog
 import (
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 )
 
@@ -31,19 +32,15 @@ func NewPlatFormSettingAuditLog(clientSet coreservice.CoreServiceClientInterface
 
 // GenerateAuditLog generates an audit log for platform operations.
 func (l *PlatFormSettingAuditLog) GenerateAuditLog(param *generateAuditCommonParameter,
-	oldConf *metadata.PlatformSettingConfig) ([]metadata.AuditLog, error) {
+	oldConf interface{}, operationType string) ([]metadata.AuditLog, error) {
+
 	if oldConf == nil {
 		return make([]metadata.AuditLog, 0), nil
 	}
 
-	content := make(map[string]interface{})
-
-	content[common.SystemSetName] = oldConf.BuiltInSetName
-	content[common.SystemIdleModuleKey] = oldConf.BuiltInModuleConfig.IdleName
-	content[common.SystemFaultModuleKey] = oldConf.BuiltInModuleConfig.FaultName
-	content[common.SystemRecycleModuleKey] = oldConf.BuiltInModuleConfig.RecycleName
-	content[common.UserDefinedModules] = oldConf.BuiltInModuleConfig.UserModules
-
+	content := mapstr.MapStr{
+		operationType: oldConf,
+	}
 	content[common.LastTimeField] = metadata.Now()
 	logs := []metadata.AuditLog{{
 		AuditType:       metadata.PlatFormSettingType,

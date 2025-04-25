@@ -599,16 +599,16 @@ func (a *apiServer) SearchCloudArea(ctx context.Context, h http.Header, params m
 	return &resp.Data, nil
 }
 
-// SearchPlatformSetting find platform config.
-func (a *apiServer) SearchPlatformSetting(ctx context.Context, h http.Header, status string) (
-	resp *metadata.PlatformSettingResult, err error) {
+// SearchGlobalSetting find global config.
+func (a *apiServer) SearchGlobalSetting(ctx context.Context, h http.Header) (
+	resp *metadata.GlobalSettingResult, err error) {
 
-	resp = new(metadata.PlatformSettingResult)
-	subPath := "/admin/find/system_config/platform_setting/%s"
+	resp = new(metadata.GlobalSettingResult)
+	subPath := "/admin/find/config/global_config"
 
 	err = a.client.Get().
 		WithContext(ctx).
-		SubResourcef(subPath, status).
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		IntoCmdbResp(resp)

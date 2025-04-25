@@ -108,8 +108,7 @@ type ApiServerClientInterface interface {
 	SearchCloudArea(ctx context.Context, h http.Header, params metadata.CloudAreaSearchParam) (
 		*metadata.SearchDataResult, error)
 
-	SearchPlatformSetting(ctx context.Context, h http.Header, status string) (resp *metadata.PlatformSettingResult,
-		err error)
+	SearchGlobalSetting(ctx context.Context, h http.Header) (resp *metadata.GlobalSettingResult, err error)
 
 	CountObjectInstances(ctx context.Context, h http.Header, objID string, input *metadata.CommonCountFilter) (
 		*metadata.CommonCountResult, errors.CCErrorCoder)

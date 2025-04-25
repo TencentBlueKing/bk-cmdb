@@ -19,36 +19,15 @@ import (
 	"configcenter/src/ac/meta"
 )
 
-var findSystemConfigRegexp = regexp.MustCompile(`^/api/v3/admin/find/system_config/platform_setting/[^\s/]+/?$`)
+var updateGlobalConfigRegexp = regexp.MustCompile(`^/api/v3/admin/update/global_config/[^\s/]+/?$`)
 
 func (ps *parseStream) adminRelated() *parseStream {
 	if ps.shouldReturn() {
 		return ps
 	}
 
-	ps.ConfigAdmin()
 	ps.PlatformSettingConfigAuth()
-
 	return ps
-}
-
-// ConfigAdminConfigs TODO
-var ConfigAdminConfigs = []AuthConfig{
-	{
-		Name:           "findConfigAdmin",
-		Description:    "查询配置管理",
-		Pattern:        "/api/v3/admin/find/system/config_admin",
-		HTTPMethod:     http.MethodGet,
-		ResourceType:   meta.ConfigAdmin,
-		ResourceAction: meta.Find,
-	}, {
-		Name:           "updateConfigAdmin",
-		Description:    "更新配置管理",
-		Pattern:        "/api/v3/admin/update/system/config_admin",
-		HTTPMethod:     http.MethodPut,
-		ResourceType:   meta.ConfigAdmin,
-		ResourceAction: meta.Update,
-	},
 }
 
 // PlatformSettingConfig TODO
@@ -56,23 +35,18 @@ var PlatformSettingConfig = []AuthConfig{
 	{
 		Name:           "findPlatformSettingConfig",
 		Description:    "查询平台配置管理",
-		Regex:          findSystemConfigRegexp,
+		Pattern:        "/api/v3/admin/find/config/global_config",
 		HTTPMethod:     http.MethodGet,
 		ResourceType:   meta.ConfigAdmin,
 		ResourceAction: meta.Find,
 	}, {
 		Name:           "UpdatePlatformSettingConfig",
 		Description:    "更新平台配置管理",
-		Pattern:        "/api/v3/admin/update/system_config/platform_setting",
+		Regex:          updateGlobalConfigRegexp,
 		HTTPMethod:     http.MethodPut,
 		ResourceType:   meta.ConfigAdmin,
 		ResourceAction: meta.Update,
 	},
-}
-
-// ConfigAdmin TODO
-func (ps *parseStream) ConfigAdmin() *parseStream {
-	return ParseStreamWithFramework(ps, ConfigAdminConfigs)
 }
 
 // PlatformSettingConfigAuth platform auth

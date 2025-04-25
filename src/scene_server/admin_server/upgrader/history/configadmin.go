@@ -14,11 +14,14 @@ package history
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
+	idgen "configcenter/pkg/id-gen"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -187,11 +190,11 @@ func UpgradeConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 		blog.Errorf("upgradeConfigAdmin failed, getConfigs err: %v", err)
 		return err
 	}
-	dbCfg := new(metadata.ConfigAdmin)
+	dbCfg := new(ConfigAdmin)
 
 	if dbCfgStr != "" {
-		// dbNewCfg 用来保存新的 PlatformSettingConfig 结构数据
-		dbNewCfg := new(metadata.PlatformSettingConfig)
+		// dbNewCfg 用来保存新的 GlobalSettingConfig 结构数据
+		dbNewCfg := new(PlatformSettingConfig)
 		if err := json.Unmarshal([]byte(dbCfgStr), dbNewCfg); err != nil {
 			blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, dbCfgStr)
 			return err
@@ -259,8 +262,8 @@ func UpgradePlatConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 		return err
 	}
 
-	// dbNewCfg 用来保存新的 PlatformSettingConfig 结构数据，对于此场景dbCfgStr 必然不为空如果为空直接报错就好
-	dbNewCfg := new(metadata.PlatformSettingConfig)
+	// dbNewCfg 用来保存新的 GlobalSettingConfig 结构数据，对于此场景dbCfgStr 必然不为空如果为空直接报错就好
+	dbNewCfg := new(PlatformSettingConfig)
 
 	if err := json.Unmarshal([]byte(dbCfgStr), dbNewCfg); err != nil {
 		blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, dbCfgStr)
@@ -273,7 +276,7 @@ func UpgradePlatConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 	}
 
 	// dbCfg 用来保存老的ConfigAdmin结构数据
-	dbCfg := new(metadata.ConfigAdmin)
+	dbCfg := new(ConfigAdmin)
 	if err := json.Unmarshal([]byte(dbCfgStr), dbCfg); err != nil {
 		blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, dbCfgStr)
 		return err
@@ -322,13 +325,13 @@ func UpgradePlatConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 }
 
 // getConfigs 获取preCfg, curCfg
-func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg *metadata.ConfigAdmin, dbCfg string,
+func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg *ConfigAdmin, dbCfg string,
 	err error) {
 	var pre string
 	for index, config := range configChangeHistory {
 		if config.dir == dir {
 			cur := config.config
-			curCfg = new(metadata.ConfigAdmin)
+			curCfg = new(ConfigAdmin)
 			if err := json.Unmarshal([]byte(cur), curCfg); err != nil {
 				blog.Errorf("get all config failed, Unmarshal err: %v, config: %v", err, cur)
 				return nil, nil, "", err
@@ -362,7 +365,7 @@ func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg *me
 		blog.Errorf("get db config type is error")
 		return nil, nil, "", err
 	}
-	preCfg = new(metadata.ConfigAdmin)
+	preCfg = new(ConfigAdmin)
 	if err = json.Unmarshal([]byte(pre), preCfg); err != nil {
 		blog.Errorf("get all config failed, Unmarshal err: %v, config: %v", err, pre)
 		return nil, nil, "", err
@@ -372,14 +375,14 @@ func getConfigs(ctx context.Context, db dal.RDB, dir string) (preCfg, curCfg *me
 }
 
 // getAllConfigs get preCfg, curCfg.
-func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadata.OldPlatformSettingConfig,
-	preCfg *metadata.ConfigAdmin, dbCfg string, err error) {
+func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *OldPlatformSettingConfig,
+	preCfg *ConfigAdmin, dbCfg string, err error) {
 	var pre string
 
 	for index, config := range configChangeHistory {
 		if config.dir == dir {
 			cur := config.config
-			curCfg = new(metadata.OldPlatformSettingConfig)
+			curCfg = new(OldPlatformSettingConfig)
 			if err := json.Unmarshal([]byte(cur), curCfg); err != nil {
 				blog.Errorf("get all config failed, unmarshal err: %v, config: %v", err, cur)
 				return nil, nil, "", err
@@ -415,7 +418,7 @@ func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadat
 		return nil, nil, "", nil
 	}
 
-	preCfg = new(metadata.ConfigAdmin)
+	preCfg = new(ConfigAdmin)
 	if err = json.Unmarshal([]byte(pre), preCfg); err != nil {
 		blog.Errorf("get all config failed, unmarshal err: %v, config: %v", err, pre)
 		return nil, nil, "", err
@@ -426,7 +429,7 @@ func getAllConfigs(ctx context.Context, db dal.RDB, dir string) (curCfg *metadat
 
 // getFinalConfig 获取最终需要保存的配置
 // 将preCfg和db存在的配置dbCfg进行对比，对于不一致的（说明有用户调过配置管理接口做过更改）,curCfg里对应的配置不做覆盖，仍为db里的数据
-func getFinalConfig(preCfg, curCfg, dbCfg *metadata.ConfigAdmin) *metadata.ConfigAdmin {
+func getFinalConfig(preCfg, curCfg, dbCfg *ConfigAdmin) *ConfigAdmin {
 	if preCfg.Backend.SnapshotBizName != dbCfg.Backend.SnapshotBizName {
 		curCfg.Backend.SnapshotBizName = dbCfg.Backend.SnapshotBizName
 	}
@@ -454,8 +457,8 @@ func getFinalConfig(preCfg, curCfg, dbCfg *metadata.ConfigAdmin) *metadata.Confi
 // getFinalPlatformConfig 获取最终需要保存的配置
 // 1、将preCfg和db存在的配置dbCfg进行对比，对于不一致的（说明有用户调过配置管理接口做过更改）,curCfg里对应的配置不做覆盖，仍为db里的数据
 // 2、如果preCfg和dbCfg如果一样的话，那么如果本次curCfg不一样，则需要升级覆盖.
-func getFinalPlatformConfig(preCfg, dbCfg *metadata.ConfigAdmin,
-	curCfg *metadata.OldPlatformSettingConfig) *metadata.OldPlatformSettingConfig {
+func getFinalPlatformConfig(preCfg, dbCfg *ConfigAdmin,
+	curCfg *OldPlatformSettingConfig) *OldPlatformSettingConfig {
 
 	if preCfg.Backend.SnapshotBizName != dbCfg.Backend.SnapshotBizName {
 		curCfg.Backend.SnapshotBizName = dbCfg.Backend.SnapshotBizName
@@ -483,7 +486,7 @@ func getFinalPlatformConfig(preCfg, dbCfg *metadata.ConfigAdmin,
 }
 
 // updateConfig 将配置更新到db里
-func updateConfig(ctx context.Context, db dal.RDB, config *metadata.ConfigAdmin) error {
+func updateConfig(ctx context.Context, db dal.RDB, config *ConfigAdmin) error {
 	bytes, err := json.Marshal(config)
 	if err != nil {
 		blog.Errorf("update config failed, Marshal err: %v, config:%+v", err, config)
@@ -508,7 +511,7 @@ func updateConfig(ctx context.Context, db dal.RDB, config *metadata.ConfigAdmin)
 }
 
 // updatePlatformConfig update configuration to database.
-func updatePlatformConfig(ctx context.Context, db dal.RDB, config *metadata.OldPlatformSettingConfig) error {
+func updatePlatformConfig(ctx context.Context, db dal.RDB, config *OldPlatformSettingConfig) error {
 	bytes, err := json.Marshal(config)
 	if err != nil {
 		return err
@@ -527,5 +530,169 @@ func updatePlatformConfig(ctx context.Context, db dal.RDB, config *metadata.OldP
 		return err
 	}
 
+	return nil
+}
+
+type PlatformSettingConfig struct {
+	Backend             AdminBackendCfg    `json:"backend"`
+	ValidationRules     ValidationRulesCfg `json:"validation_rules"`
+	BuiltInSetName      ObjectString       `json:"set"`
+	BuiltInModuleConfig GlobalModule       `json:"idle_pool"`
+	IDGenerator         IDGeneratorConf    `json:"id_generator"`
+}
+
+// BackendCfg used to admin backend Config
+type BackendCfg struct {
+	SnapshotBizName string `json:"snapshotBizName"`
+	MaxBizTopoLevel int64  `json:"maxBizTopoLevel"`
+}
+
+// AdminBackendCfg TODO
+type AdminBackendCfg struct {
+	MaxBizTopoLevel int64 `json:"max_biz_topo_level"`
+}
+
+// ValidationRulesCfg used to admin valiedation rules Config
+type ValidationRulesCfg struct {
+	Number                metadata.NumberItem                `json:"number"`
+	Float                 metadata.FloatItem                 `json:"float"`
+	Singlechar            metadata.SinglecharItem            `json:"singlechar"`
+	Longchar              metadata.LongcharItem              `json:"longchar"`
+	AssociationId         metadata.AssociationIdItem         `json:"associationId"`
+	ClassifyId            metadata.ClassifyIdItem            `json:"classifyId"`
+	ModelId               metadata.ModelIdItem               `json:"modelId"`
+	EnumId                metadata.EnumIdItem                `json:"enumId"`
+	EnumName              metadata.EnumNameItem              `json:"enumName"`
+	FieldId               metadata.FieldIdItem               `json:"fieldId"`
+	NamedCharacter        metadata.NamedCharacterItem        `json:"namedCharacter"`
+	InstanceTagKey        metadata.InstanceTagKeyItem        `json:"instanceTagKey"`
+	InstanceTagValue      metadata.InstanceTagValueItem      `json:"instanceTagValue"`
+	BusinessTopoInstNames metadata.BusinessTopoInstNamesItem `json:"businessTopoInstNames"`
+}
+
+// ObjectString used to admin object string Config
+type ObjectString string
+
+// GlobalModule Conifg, idleName, FaultName and RecycleName cannot be deleted.
+type GlobalModule struct {
+	IdleName    string                    `json:"idle"`
+	FaultName   string                    `json:"fault"`
+	RecycleName string                    `json:"recycle"`
+	UserModules []metadata.UserModuleList `json:"user_modules"`
+}
+
+// IDGeneratorConf is id generator config
+type IDGeneratorConf struct {
+	Enabled bool                       `json:"enabled"`
+	Step    int                        `json:"step"`
+	InitID  map[idgen.IDGenType]uint64 `json:"init_id,omitempty"`
+	// CurrentID is the current id of each resource, this is only used for ui display
+	CurrentID map[idgen.IDGenType]uint64 `json:"current_id,omitempty"`
+}
+
+// ConfigAdmin used to admin the cmdb config
+type ConfigAdmin struct {
+	Backend         BackendCfg         `json:"backend"`
+	ValidationRules ValidationRulesCfg `json:"validationRules"`
+}
+
+// EncodeWithBase64 encode the value of ValidationRules to base64
+func (c *ConfigAdmin) EncodeWithBase64() error {
+	vr := reflect.ValueOf(&c.ValidationRules).Elem()
+	vrt := reflect.TypeOf(c.ValidationRules)
+	for i := 0; i < vr.NumField(); i++ {
+		field := vr.Field(i)
+		bc := field.FieldByName("BaseCfgItem")
+		value := bc.Interface().(metadata.BaseCfgItem).Value
+		if strings.TrimSpace(value) == "" {
+			return fmt.Errorf("%s can't be empty", vrt.Field(i).Name)
+		}
+		base64Val := base64.StdEncoding.EncodeToString([]byte(value))
+		bc.FieldByName("Value").SetString(base64Val)
+	}
+	return nil
+}
+
+// Validate validate the fields of BackendCfg.
+func (b AdminBackendCfg) Validate() error {
+	if b.MaxBizTopoLevel < minBizTopoLevel || b.MaxBizTopoLevel > maxBizTopoLevel {
+		return fmt.Errorf("max biz topo level value must in range [%d-%d]", minBizTopoLevel, maxBizTopoLevel)
+	}
+	return nil
+}
+
+const (
+	maxBizTopoLevel = 10
+	minBizTopoLevel = 3
+)
+
+// Validate validate the fields of ConfigAdmin
+func (c *ConfigAdmin) Validate() error {
+	vr := reflect.ValueOf(*c)
+	vrt := reflect.TypeOf(*c)
+	for i := 0; i < vr.NumField(); i++ {
+		field := vr.Field(i)
+		funcName := []string{"Validate"}
+		for _, fn := range funcName {
+			vf := field.MethodByName(fn)
+			errVal := vf.Call(make([]reflect.Value, 0))
+			if errVal[0].Interface() != nil {
+				return fmt.Errorf("%s %s failed, error:%s", vrt.Field(i).Name, fn,
+					errVal[0].Interface().(error).Error())
+			}
+		}
+	}
+	return nil
+}
+
+// OldPlatformSettingConfig old platform setting config
+type OldPlatformSettingConfig struct {
+	Backend             OldAdminBackendCfg `json:"backend"`
+	ValidationRules     ValidationRulesCfg `json:"validation_rules"`
+	BuiltInSetName      ObjectString       `json:"set"`
+	BuiltInModuleConfig GlobalModule       `json:"idle_pool"`
+}
+
+// OldAdminBackendCfg old admin backend config
+type OldAdminBackendCfg struct {
+	MaxBizTopoLevel int64  `json:"max_biz_topo_level"`
+	SnapshotBizName string `json:"snapshot_biz_name"`
+	SnapshotBizID   int64  `json:"snapshot_biz_id"`
+}
+
+// Validate validate the fields of OldPlatformSettingConfig is illegal .
+func (c *OldPlatformSettingConfig) Validate() error {
+	vr := reflect.ValueOf(*c)
+	vrt := reflect.TypeOf(*c)
+	for i := 0; i < vr.NumField(); i++ {
+		field := vr.Field(i)
+		funcName := []string{"Validate"}
+		for _, fn := range funcName {
+			vf := field.MethodByName(fn)
+			errVal := vf.Call(make([]reflect.Value, 0))
+			if errVal[0].Interface() != nil {
+				return fmt.Errorf("%s %s failed, error: %s", vrt.Field(i).Name, fn,
+					errVal[0].Interface().(error).Error())
+			}
+		}
+	}
+
+	return nil
+}
+
+// EncodeWithBase64 encode the value of ValidationRules to base64.
+func (c *OldPlatformSettingConfig) EncodeWithBase64() error {
+	vr := reflect.ValueOf(&c.ValidationRules).Elem()
+	vrt := reflect.TypeOf(c.ValidationRules)
+	for i := 0; i < vr.NumField(); i++ {
+		field := vr.Field(i)
+		bc := field.FieldByName("BaseCfgItem")
+		value := bc.Interface().(metadata.BaseCfgItem).Value
+		if strings.TrimSpace(value) == "" {
+			return fmt.Errorf("%s can't be empty", vrt.Field(i).Name)
+		}
+		base64Val := base64.StdEncoding.EncodeToString([]byte(value))
+		bc.FieldByName("Value").SetString(base64Val)
+	}
 	return nil
 }

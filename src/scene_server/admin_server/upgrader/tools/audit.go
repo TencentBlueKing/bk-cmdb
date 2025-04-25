@@ -26,12 +26,12 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 )
 
 // AddCreateAuditLog add create data audit log
-func AddCreateAuditLog(kit *rest.Kit, db dal.RDB, auditData []map[string]interface{}, auditField *AuditStruct) error {
+func AddCreateAuditLog(kit *rest.Kit, db local.DB, auditData []map[string]interface{}, auditField *AuditStruct) error {
 	if auditField.AuditTypeData == nil {
 		return nil
 	}
@@ -66,7 +66,7 @@ func AddCreateAuditLog(kit *rest.Kit, db dal.RDB, auditData []map[string]interfa
 }
 
 // AddTmpAuditLog add tmp data audit log
-func AddTmpAuditLog(kit *rest.Kit, db dal.RDB, auditData []map[string]interface{}, auditField *AuditStruct) error {
+func AddTmpAuditLog(kit *rest.Kit, db local.DB, auditData []map[string]interface{}, auditField *AuditStruct) error {
 	if auditField.AuditTypeData == nil {
 		return nil
 	}

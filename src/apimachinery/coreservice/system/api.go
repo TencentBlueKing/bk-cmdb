@@ -49,50 +49,52 @@ func (s *system) GetUserConfig(ctx context.Context, h http.Header) (*metadata.Re
 	return &resp.Data, nil
 }
 
-// SearchConfigAdmin TODO
-func (s *system) SearchConfigAdmin(ctx context.Context, h http.Header) (resp *metadata.ConfigAdminResult, err error) {
-	resp = new(metadata.ConfigAdminResult)
-	subPath := "/find/system/config_admin"
+// UpdateGlobalConfig update global config
+func (s *system) UpdateGlobalConfig(ctx context.Context, h http.Header, typeId string,
+	input interface{}) error {
 
-	err = s.client.Get().
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	return
-}
-
-// SearchPlatformSetting find platform config.
-func (s *system) SearchPlatformSetting(ctx context.Context, h http.Header) (resp *metadata.PlatformSettingResult,
-	err error) {
-	resp = new(metadata.PlatformSettingResult)
-	subPath := "/find/system_config/platform_setting"
-
-	err = s.client.Get().
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	return
-}
-
-// UpdatePlatformSetting update platform config.
-func (s *system) UpdatePlatformSetting(ctx context.Context, h http.Header, input *metadata.PlatformSettingConfig) (
-	resp *metadata.BaseResp, err error) {
-
-	resp = new(metadata.BaseResp)
-	subPath := "/update/system_config/platform_setting"
-	err = s.client.Put().
+	resp := new(metadata.BaseResp)
+	subPath := "/update/global_config/%s"
+	err := s.client.Put().
 		WithContext(ctx).
 		Body(input).
-		SubResourcef(subPath).
+		SubResourcef(subPath, typeId).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 
-	return
+	if err != nil {
+		return errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return err
+	}
+	return err
+}
+
+// SearchGlobalConfig search global config.
+func (s *system) SearchGlobalConfig(ctx context.Context, h http.Header,
+	options *metadata.GlobalConfOptions) (*metadata.GlobalSettingConfig, error) {
+
+	resp := new(metadata.GlobalSettingResult)
+	subPath := "/find/global_config"
+
+	err := s.client.Get().
+		WithContext(ctx).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Body(options).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
 }

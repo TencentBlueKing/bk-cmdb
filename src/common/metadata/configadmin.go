@@ -29,10 +29,15 @@ type ConfigAdminResult struct {
 	Data     ConfigAdmin `json:"data"`
 }
 
-// PlatformSettingResult the result of platform setting.
-type PlatformSettingResult struct {
+// GlobalConfOptions the options of global config
+type GlobalConfOptions struct {
+	Fields []string `json:"fields" bson:"fields"`
+}
+
+// GlobalSettingResult the result of global setting.
+type GlobalSettingResult struct {
 	BaseResp `json:",inline"`
-	Data     PlatformSettingConfig `json:"data"`
+	Data     GlobalSettingConfig `json:"data"`
 }
 
 // ConfigAdminParmams used to admin the cmdb config
@@ -42,22 +47,22 @@ type ConfigAdminParmams struct {
 
 // ConfigAdmin used to admin the cmdb config
 type ConfigAdmin struct {
-	Backend         BackendCfg         `json:"backend"`
-	ValidationRules ValidationRulesCfg `json:"validationRules"`
+	Backend         BackendCfg         `json:"backend" bson:"backend"`
+	ValidationRules ValidationRulesCfg `json:"validationRules" bson:"validationRules"`
 }
 
 // UserModuleList custom section.
 type UserModuleList struct {
-	Key   string `json:"module_key"`
-	Value string `json:"module_name"`
+	Key   string `json:"module_key" bson:"module_key"`
+	Value string `json:"module_name" bson:"module_name"`
 }
 
 // GlobalModule Conifg, idleName, FaultName and RecycleName cannot be deleted.
 type GlobalModule struct {
-	IdleName    string           `json:"idle"`
-	FaultName   string           `json:"fault"`
-	RecycleName string           `json:"recycle"`
-	UserModules []UserModuleList `json:"user_modules"`
+	IdleName    string           `json:"idle" bson:"idle"`
+	FaultName   string           `json:"fault" bson:"fault"`
+	RecycleName string           `json:"recycle" bson:"recycle"`
+	UserModules []UserModuleList `json:"user_modules" bson:"user_modules"`
 }
 
 // Validate validate the fields of IdleModule.
@@ -76,7 +81,7 @@ func (s GlobalModule) Validate() error {
 
 // AdminBackendCfg TODO
 type AdminBackendCfg struct {
-	MaxBizTopoLevel int64 `json:"max_biz_topo_level"`
+	MaxBizTopoLevel int64 `json:"max_biz_topo_level" bson:"max_biz_topo_level"`
 }
 
 // Validate validate the fields of BackendCfg.
@@ -100,11 +105,22 @@ func (s ObjectString) Validate() error {
 
 // IDGeneratorConf is id generator config
 type IDGeneratorConf struct {
-	Enabled bool                       `json:"enabled"`
-	Step    int                        `json:"step"`
-	InitID  map[idgen.IDGenType]uint64 `json:"init_id,omitempty"`
+	Enabled bool                       `json:"enabled" bson:"enabled"`
+	Step    int                        `json:"step" bson:"step"`
+	InitID  map[idgen.IDGenType]uint64 `json:"init_id,omitempty" bson:"init_id,omitempty"`
 	// CurrentID is the current id of each resource, this is only used for ui display
-	CurrentID map[idgen.IDGenType]uint64 `json:"current_id,omitempty"`
+	CurrentID map[idgen.IDGenType]uint64 `json:"current_id,omitempty" bson:"current_id,omitempty"`
+}
+
+// platform setting config
+const (
+	// IDGeneratorConfig is id generator config for platform config
+	IDGeneratorConfig = "id_generator"
+)
+
+// PlatformConfig platform config
+type PlatformConfig struct {
+	IDGenerator IDGeneratorConf `bson:"id_generator" json:"id_generator"`
 }
 
 // Validate id generator config
@@ -126,18 +142,30 @@ func (c IDGeneratorConf) Validate() error {
 	return nil
 }
 
-// PlatformSettingConfig  used to admin the platform config. 结构体PlatformSettingConfig 每个成员对象都必须有"Validate"校验
+// GlobalSettingConfig  used to admin the global config. GlobalSettingConfig 每个成员对象都必须有"Validate"校验
 // 函数，如果没有会panic.
-type PlatformSettingConfig struct {
-	Backend             AdminBackendCfg    `json:"backend"`
-	ValidationRules     ValidationRulesCfg `json:"validation_rules"`
-	BuiltInSetName      ObjectString       `json:"set"`
-	BuiltInModuleConfig GlobalModule       `json:"idle_pool"`
-	IDGenerator         IDGeneratorConf    `json:"id_generator"`
+type GlobalSettingConfig struct {
+	TenantID            ObjectString       `json:"-" bson:"tenant_id"`
+	Backend             AdminBackendCfg    `json:"backend" bson:"backend"`
+	ValidationRules     ValidationRulesCfg `json:"validation_rules" bson:"validation_rules"`
+	BuiltInSetName      ObjectString       `json:"set" bson:"set"`
+	BuiltInModuleConfig GlobalModule       `json:"idle_pool" bson:"idle_pool"`
+	CreateTime          Time               `json:"create_time" bson:"create_time"`
+	LastTime            Time               `json:"last_time" bson:"last_time"`
 }
 
-// Validate validate the fields of PlatformSettingReqOption is illegal .
-func (c *PlatformSettingConfig) Validate() error {
+// global configs
+const (
+	// BuiltInSetNameConfig is built-in set name config for platform config
+	BuiltInSetNameConfig = "set"
+	// BuiltInModuleConfig is built-in module config for platform config
+	BuiltInModuleConfig = "idle_pool"
+	// BackendConfig is backend config for platform config
+	BackendConfig = "backend"
+)
+
+// Validate validate the fields of GlobalSettingReqOption is illegal .
+func (c *GlobalSettingConfig) Validate() error {
 	vr := reflect.ValueOf(*c)
 	vrt := reflect.TypeOf(*c)
 	for i := 0; i < vr.NumField(); i++ {
@@ -160,169 +188,6 @@ const (
 	maxBizTopoLevel = 10
 	minBizTopoLevel = 3
 )
-
-// InitAdminConfig factory configuration.
-var InitAdminConfig = `
-{
-    "backend":{
-        "max_biz_topo_level":7,
-        "snapshot_biz_name":"蓝鲸"
-    },
-    "site":{
-         "name":{
-            "value":"配置平台 | 蓝鲸",
-            "description":"网站标题",
-            "i18n":{
-                "cn":"配置平台 | 蓝鲸",
-                "en":"CMDB | BlueKing"
-            }
-        },
-        "separator":"|"
-    },
-    "footer":{
-         "contact":{
-            "value":"http://127.0.0.1",
-            "description":"联系BK助手",
-            "i18n":{
-                "cn":"http://127.0.0.1",
-                "en":"http://127.0.0.1"
-            }
-        },
-         "copyright":{
-            "value":"Copyright © 2012-{{current_year}} Tencent BlueKing. All Rights Reserved.",
-            "description":"版权信息",
-            "i18n":{
-                "cn":"Copyright © 2012-{{current_year}} Tencent BlueKing. All Rights Reserved.",
-                "en":"Copyright © 2012-{{current_year}} Tencent BlueKing. All Rights Reserved."
-            }
-        }
-    },
-  "validation_rules": {
-        "number": {
-            "value": "^(\\-|\\+)?\\d+$",
-            "description": "字段类型“数字”的验证规则",
-            "i18n": {
-                "cn": "请输入整数数字",
-                "en": "Please enter integer number"
-            }
-        },
-        "float": {
-            "value": "^[+-]?([0-9]*[.]?[0-9]+|[0-9]+[.]?[0-9]*)([eE][+-]?[0-9]+)?$",
-            "description": "字段类型“浮点”的验证规则",
-            "i18n": {
-                "cn": "请输入浮点型数字",
-                "en": "Please enter float data"
-            }
-        },
-        "singlechar": {
-            "value": "\\S*",
-            "description": "字段类型“短字符”的验证规则",
-            "i18n": {
-                "cn": "请输入256长度以内的字符串",
-                "en": "Please enter the string within 256 length"
-            }
-        },
-        "longchar": {
-            "value": "\\S*",
-            "description": "字段类型“长字符”的验证规则",
-            "i18n": {
-                "cn": "请输入2000长度以内的字符串",
-                "en": "Please enter the string within 2000 length"
-            }
-        },
-        "associationId": {
-            "value": "^[a-zA-Z][\\w]*$",
-            "description": "关联类型唯一标识验证规则",
-            "i18n": {
-                "cn": "由英文字符开头，和下划线、数字或英文组合的字符",
-"en": "Start with lowercase or uppercase letter, followed by lowercase / uppercase / underscore / numbers characters"
-            }
-        },
-        "classifyId": {
-            "value": "^[a-zA-Z][\\w]*$",
-            "description": "模型分组唯一标识验证规则",
-            "i18n": {
-                "cn": "由英文字符开头，和下划线、数字或英文组合的字符",
-"en": "Start with lowercase or uppercase letter, followed by lowercase / uppercase / underscore / numbers characters"
-            }
-        },
-        "modelId": {
-            "value": "^[a-zA-Z][\\w]*$",
-            "description": "模型唯一标识验证规则",
-            "i18n": {
-                "cn": "由英文字符开头，和下划线、数字或英文组合的字符",
-"en": "Start with lowercase or uppercase letter, followed by lowercase / uppercase / underscore / numbers characters"
-            }
-        },
-        "enumId": {
-            "value": "^[a-zA-Z0-9_-]*$",
-            "description": "字段类型“枚举”ID的验证规则",
-            "i18n": {
-                "cn": "由大小写英文字母，数字，_ 或 - 组成的字符",
-                "en": "Composed of uppercase / lowercase / numbers / - or _ characters"
-            }
-        },
-        "enumName": {
-            "value": "^([a-zA-Z0-9_]|[\\u4e00-\\u9fa5]|[()+-《》,，；;“”‘’。\\.\\\"\\' \\/:])*$",
-            "description": "字段类型“枚举”值的验证规则",
-            "i18n": {
-                "cn": "请输入枚举值",
-                "en": "Please enter the enum value"
-            }
-        },
-        "fieldId": {
-            "value": "^[a-zA-Z][\\w]*$",
-            "description": "模型字段唯一标识的验证规则",
-            "i18n": {
-                "cn": "由英文字符开头，和下划线、数字或英文组合的字符",
-"en": "Start with lowercase or uppercase letter, followed by lowercase / uppercase / underscore / numbers characters"
-            }
-        },
-        "namedCharacter": {
-            "value": "^[a-zA-Z0-9\\u4e00-\\u9fa5_\\-:\\(\\)]+$",
-            "description": "服务分类名称的验证规则",
-            "i18n": {
-                "cn": "请输入中英文或特殊字符 :_- 组成的名称",
-                "en": "Special symbols only support(:_-)"
-            }
-        },
-        "instanceTagKey": {
-            "value": "^[a-zA-Z]([a-z0-9A-Z\\-_.]*[a-z0-9A-Z])?$",
-            "description": "服务实例标签键的验证规则",
-            "i18n": {
-                "cn": "请输入以英文开头的英文+数字组合",
-                "en": "Please enter letter / number starts with letter"
-            }
-        },
-        "instanceTagValue": {
-            "value": "^[a-z0-9A-Z]([a-z0-9A-Z\\-_.]*[a-z0-9A-Z])?$",
-            "description": "服务实例标签值的验证规则",
-            "i18n": {
-                "cn": "请输入英文 / 数字",
-                "en": "Please enter letter / number"
-            }
-        },
-        "businessTopoInstNames": {
-            "value": "^[^\\#\\/,\\>\\<\\|]+$",
-            "description": "集群/模块/实例名称的验证规则",
-            "i18n": {
-                "cn": "请输入除 #/,><| 以外的字符",
-                "en": "Please enter characters other than #/,><|"
-            }
-        }
-    },
-    "set":"空闲机池",
-    "idle_pool":{
-        "idle":"空闲机",
-        "fault":"故障机",
-        "recycle":"待回收"
-    },
-    "id_generator": {
-        "enabled": false,
-        "step": 1
-    }
-}
-`
 
 // BuiltInModuleDeleteOption  used to admin the idle module config
 type BuiltInModuleDeleteOption struct {
@@ -439,7 +304,7 @@ func (c *ConfigAdmin) EncodeWithBase64() error {
 }
 
 // EncodeWithBase64 encode the value of ValidationRules to base64.
-func (c *PlatformSettingConfig) EncodeWithBase64() error {
+func (c *GlobalSettingConfig) EncodeWithBase64() error {
 	vr := reflect.ValueOf(&c.ValidationRules).Elem()
 	vrt := reflect.TypeOf(c.ValidationRules)
 	for i := 0; i < vr.NumField(); i++ {
@@ -474,15 +339,11 @@ func (c *ConfigAdmin) DecodeWithBase64() error {
 
 // BackendCfg used to admin backend Config
 type BackendCfg struct {
-	SnapshotBizName string `json:"snapshotBizName"`
-	MaxBizTopoLevel int64  `json:"maxBizTopoLevel"`
+	MaxBizTopoLevel int64 `json:"max_biz_topo_level" bson:"max_biz_topo_level"`
 }
 
 // Validate validate the fields of BackendCfg
 func (b BackendCfg) Validate() error {
-	if strings.TrimSpace(b.SnapshotBizName) == "" {
-		return fmt.Errorf("snapshotBizName value can't be empty")
-	}
 	if b.MaxBizTopoLevel < 3 || b.MaxBizTopoLevel > 10 {
 		return fmt.Errorf("maxBizTopoLevel value must in range [3-10]")
 	}
@@ -491,9 +352,9 @@ func (b BackendCfg) Validate() error {
 
 // BaseCfgItem the common base config item
 type BaseCfgItem struct {
-	Value       string `json:"value"`
-	Description string `json:"description"`
-	I18N        I18N   `json:"i18n"`
+	Value       string `json:"value" bson:"value"`
+	Description string `json:"description" bson:"description"`
+	I18N        I18N   `json:"i18n" bson:"i18n"`
 }
 
 // ValidateValueFormat validate the value format
@@ -540,26 +401,26 @@ func (b *BaseCfgItem) ValidateRegex() error {
 
 // I18N TODO
 type I18N struct {
-	CN string `json:"cn"`
-	EN string `json:"en"`
+	CN string `json:"cn" bson:"cn"`
+	EN string `json:"en" bson:"en"`
 }
 
 // ValidationRulesCfg used to admin valiedation rules Config
 type ValidationRulesCfg struct {
-	Number                NumberItem                `json:"number"`
-	Float                 FloatItem                 `json:"float"`
-	Singlechar            SinglecharItem            `json:"singlechar"`
-	Longchar              LongcharItem              `json:"longchar"`
-	AssociationId         AssociationIdItem         `json:"associationId"`
-	ClassifyId            ClassifyIdItem            `json:"classifyId"`
-	ModelId               ModelIdItem               `json:"modelId"`
-	EnumId                EnumIdItem                `json:"enumId"`
-	EnumName              EnumNameItem              `json:"enumName"`
-	FieldId               FieldIdItem               `json:"fieldId"`
-	NamedCharacter        NamedCharacterItem        `json:"namedCharacter"`
-	InstanceTagKey        InstanceTagKeyItem        `json:"instanceTagKey"`
-	InstanceTagValue      InstanceTagValueItem      `json:"instanceTagValue"`
-	BusinessTopoInstNames BusinessTopoInstNamesItem `json:"businessTopoInstNames"`
+	Number                NumberItem                `json:"number" bson:"number"`
+	Float                 FloatItem                 `json:"float" bson:"float"`
+	Singlechar            SinglecharItem            `json:"singlechar" bson:"singlechar"`
+	Longchar              LongcharItem              `json:"longchar" bson:"longchar"`
+	AssociationId         AssociationIdItem         `json:"associationId" bson:"associationId"`
+	ClassifyId            ClassifyIdItem            `json:"classifyId" bson:"classifyId"`
+	ModelId               ModelIdItem               `json:"modelId" bson:"modelId"`
+	EnumId                EnumIdItem                `json:"enumId" bson:"enumId"`
+	EnumName              EnumNameItem              `json:"enumName" bson:"enumName"`
+	FieldId               FieldIdItem               `json:"fieldId" bson:"fieldId"`
+	NamedCharacter        NamedCharacterItem        `json:"namedCharacter" bson:"namedCharacter"`
+	InstanceTagKey        InstanceTagKeyItem        `json:"instanceTagKey" bson:"instanceTagKey"`
+	InstanceTagValue      InstanceTagValueItem      `json:"instanceTagValue" bson:"instanceTagValue"`
+	BusinessTopoInstNames BusinessTopoInstNamesItem `json:"businessTopoInstNames" bson:"businessTopoInstNames"`
 }
 
 // Validate validate the fields of ValidationRulesCfg
@@ -585,72 +446,72 @@ func (v ValidationRulesCfg) Validate() error {
 
 // NumberItem TODO
 type NumberItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // FloatItem TODO
 type FloatItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // SinglecharItem TODO
 type SinglecharItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // LongcharItem TODO
 type LongcharItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // AssociationIdItem TODO
 type AssociationIdItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // ClassifyIdItem TODO
 type ClassifyIdItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // ModelIdItem TODO
 type ModelIdItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // EnumIdItem TODO
 type EnumIdItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // EnumNameItem TODO
 type EnumNameItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // FieldIdItem TODO
 type FieldIdItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // NamedCharacterItem TODO
 type NamedCharacterItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // InstanceTagKeyItem TODO
 type InstanceTagKeyItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // InstanceTagValueItem TODO
 type InstanceTagValueItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // BusinessTopoInstNamesItem TODO
 type BusinessTopoInstNamesItem struct {
-	BaseCfgItem `json:",inline"`
+	BaseCfgItem `json:",inline" bson:",inline"`
 }
 
 // OldAdminBackendCfg old admin backend config

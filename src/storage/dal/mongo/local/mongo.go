@@ -24,12 +24,10 @@ import (
 	idgen "configcenter/pkg/id-gen"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util/table"
 	"configcenter/src/storage/dal/types"
 
-	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -218,10 +216,10 @@ func (c *Mongo) convColl(collection string) (string, error) {
 
 // InitIDGenerator init id generator by config admin, returns id generator step
 func (c *Mongo) InitIDGenerator(ctx context.Context) (int, error) {
-	cond := map[string]interface{}{"_id": common.ConfigAdminID}
+	cond := map[string]interface{}{common.BKFieldDBID: common.PlatformConfig}
 
-	confData := make(map[string]string)
-	err := c.Table(common.BKTableNameSystem).Find(cond).Fields(common.ConfigAdminValueField).One(ctx, &confData)
+	idGenConf := metadata.PlatformConfig{}
+	err := c.Table(common.BKTableNameSystem).Find(cond).Fields(metadata.IDGeneratorConfig).One(ctx, &idGenConf)
 	if err != nil {
 		// watch database & low version has no config admin field, so we use default step 1
 		if c.IsNotFoundError(err) {
@@ -230,50 +228,34 @@ func (c *Mongo) InitIDGenerator(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("init id generator but get config admin failed, err: %v", err)
 	}
 
-	// id generator config is not set, use default step 1
-	confStr := confData[common.ConfigAdminValueField]
-	if !gjson.Get(confStr, "id_generator").Exists() {
-		return 1, nil
-	}
-
-	conf := new(metadata.PlatformSettingConfig)
-	if err = json.Unmarshal([]byte(confStr), conf); err != nil {
-		return 0, fmt.Errorf("unmarshal config admin failed, err: %v, config: %s", err, confStr)
-	}
-
-	idGenConf := conf.IDGenerator
-	if err = idGenConf.Validate(); err != nil {
+	if err = idGenConf.IDGenerator.Validate(); err != nil {
 		return 0, fmt.Errorf("config admin id gen config is invalid, err: %v, config: %+v", err, idGenConf)
 	}
 
-	if len(idGenConf.InitID) == 0 {
-		return idGenConf.Step, nil
+	if len(idGenConf.IDGenerator.InitID) == 0 {
+		return idGenConf.IDGenerator.Step, nil
 	}
 
 	// update id generator sequence id by config admin
-	for typ, id := range idGenConf.InitID {
+	for typ, id := range idGenConf.IDGenerator.InitID {
 		if err = c.updateIDGenSeqID(ctx, typ, id); err != nil {
 			return 0, err
 		}
 	}
 
 	// delete config admin id generator init id config to avoid updating again
-	conf.IDGenerator.InitID = nil
-	updateVal, err := json.Marshal(conf)
-	if err != nil {
-		return 0, fmt.Errorf("marshal config admin failed, err: %v, config: %+v", err, conf)
-	}
+	idGenConf.IDGenerator.InitID = nil
 
 	data := map[string]interface{}{
-		common.ConfigAdminValueField: string(updateVal),
-		common.LastTimeField:         time.Now(),
+		metadata.IDGeneratorConfig: idGenConf,
+		common.LastTimeField:       time.Now(),
 	}
 
 	if err = c.Table(common.BKTableNameSystem).Update(ctx, cond, data); err != nil {
 		return 0, fmt.Errorf("update config admin failed, err: %v, data: %+v", err, data)
 	}
 
-	return idGenConf.Step, nil
+	return idGenConf.IDGenerator.Step, nil
 }
 
 func (c *Mongo) updateIDGenSeqID(ctx context.Context, typ idgen.IDGenType, id uint64) error {

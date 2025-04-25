@@ -1336,6 +1336,11 @@ const (
 )
 
 const (
+	// PlatformConfig platform config
+	PlatformConfig = "platform_config"
+)
+
+const (
 	// APPConfigWaitTime application wait config from zookeeper time (unit sencend)
 	APPConfigWaitTime = 15
 )

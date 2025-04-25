@@ -16,163 +16,222 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	idgen "configcenter/pkg/id-gen"
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/mongo/local"
 
 	"github.com/emicklei/go-restful/v3"
 )
 
-// SearchConfigAdmin search the config
-func (s *Service) SearchConfigAdmin(req *restful.Request, resp *restful.Response) {
-	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+// SearchPlatformConfig search platform id generator setting config
+func (s *Service) SearchPlatformConfig(req *restful.Request, resp *restful.Response) {
+	typeId := req.PathParameter("type")
+	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)
 
-	cond := map[string]interface{}{
-		"_id": common.ConfigAdminID,
-	}
-
-	ret := struct {
-		Config string `json:"config"`
-	}{}
-	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).
-		Fields(common.ConfigAdminValueField).One(s.ctx, &ret)
-	if err != nil {
-		blog.Errorf("SearchConfigAdmin failed, err: %+v, rid: %s", err, rid)
+	if !logics.ValidatePlatformTenantMode(kit.TenantID, s.Config.EnableMultiTenantMode) {
+		blog.Errorf("non-system tenant cannot view this configuration, rid: %s", kit.Rid)
 		result := &metadata.RespError{
-			Msg: defErr.Error(common.CCErrCommDBSelectFailed),
+			Msg:     fmt.Errorf("non-system tenant cannot view this configuration"),
+			ErrCode: common.CCErrAPICheckTenantInvalid,
 		}
 		_ = resp.WriteError(http.StatusOK, result)
 		return
 	}
-	conf := metadata.ConfigAdmin{}
-	if err := json.Unmarshal([]byte(ret.Config), &conf); err != nil {
-		blog.Errorf("SearchConfigAdmin failed, Unmarshal err: %v, config:%+v,rid:%s", err, ret.Config, rid)
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-
-	_ = resp.WriteEntity(metadata.NewSuccessResp(conf))
-}
-
-// UpdateConfigAdmin udpate the config
-func (s *Service) UpdateConfigAdmin(req *restful.Request, resp *restful.Response) {
-	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-
-	config := new(metadata.ConfigAdmin)
-	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
-		blog.Errorf("UpdateConfigAdmin failed, decode body err: %v, body:%+v,rid:%s", err, req.Request.Body, rid)
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-		return
-	}
-
-	if err := config.Validate(); err != nil {
-		blog.Errorf("UpdateConfigAdmin failed, Validate err: %v, input:%+v,rid:%s", err, config, rid)
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
-		return
-	}
-
-	bytes, err := json.Marshal(config)
-	if err != nil {
-		blog.Errorf("UpdateConfigAdmin failed, Marshal err: %v, input:%+v,rid:%s", err, config, rid)
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONMarshalFailed)})
-		return
-	}
 
 	cond := map[string]interface{}{
-		"_id": common.ConfigAdminID,
+		common.BKFieldDBID: common.PlatformConfig,
 	}
-	data := map[string]interface{}{
-		common.ConfigAdminValueField: string(bytes),
-		common.LastTimeField:         time.Now(),
-	}
-
-	err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
+	platformConfig := new(metadata.PlatformConfig)
+	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).Fields(typeId).One(kit.Ctx,
+		platformConfig)
 	if err != nil {
-		blog.Errorf("UpdateConfigAdmin failed, update err: %+v, rid: %s", err, rid)
+		blog.Errorf("get platform %s config failed, err: %v, rid: %s", typeId, err, kit.Rid)
 		result := &metadata.RespError{
-			Msg: defErr.Error(common.CCErrCommDBUpdateFailed),
+			Msg: kit.CCError.Error(common.CCErrCommDBSelectFailed),
 		}
 		_ = resp.WriteError(http.StatusOK, result)
 		return
 	}
-	_ = resp.WriteEntity(metadata.NewSuccessResp("update config admin success"))
+
+	switch typeId {
+	case metadata.IDGeneratorConfig:
+		conf, err := s.addIDGenInfoToConf(kit, &platformConfig.IDGenerator)
+		if err != nil {
+			blog.Errorf("get current id config failed, err: %v, rid: %s", err, kit.Rid)
+			result := &metadata.RespError{
+				Msg: kit.CCError.Error(common.CCErrCommDBSelectFailed),
+			}
+			_ = resp.WriteError(http.StatusOK, result)
+		}
+		_ = resp.WriteEntity(metadata.NewSuccessResp(conf))
+	default:
+		blog.Errorf("invalid type, type: %s, rid: %s", typeId, kit.Rid)
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: fmt.Errorf("invalid type")})
+	}
+
 }
 
-// UpdatePlatformSettingConfig update platform_setting.
-func (s *Service) UpdatePlatformSettingConfig(req *restful.Request, resp *restful.Response) {
-	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+// UpdatePlatformConfig update platform setting config
+func (s *Service) UpdatePlatformConfig(req *restful.Request, resp *restful.Response) {
+	typeId := req.PathParameter("type")
+	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)
 
-	config := new(metadata.PlatformSettingConfig)
+	if !logics.ValidatePlatformTenantMode(kit.TenantID, s.Config.EnableMultiTenantMode) {
+		blog.Errorf("non-system tenant cannot view this configuration, rid: %s", kit.Rid)
+		result := &metadata.RespError{
+			Msg:     fmt.Errorf("non-system tenant cannot view this configuration"),
+			ErrCode: common.CCErrAPICheckTenantInvalid,
+		}
+		_ = resp.WriteError(http.StatusOK, result)
+		return
+	}
+
+	config := new(metadata.PlatformConfig)
 	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
-		blog.Errorf("decode param failed, err: %v, body: %v, rid: %s", err, req.Request.Body, rid)
+		blog.Errorf("decode param failed, err: %v, body: %v, rid: %s", err, req.Request.Body, kit.Rid)
 		rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
-			Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed),
+			Msg: kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed),
 		})
 		if rErr != nil {
-			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, kit.Rid)
 			return
 		}
 		return
 	}
 
-	if err := config.Validate(); err != nil {
-		blog.Errorf("validate param failed, err: %v, input: %v, rid: %s", err, config, rid)
-		rErr := resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
-		if rErr != nil {
-			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+	updateData := make(map[string]interface{})
+	switch typeId {
+	case metadata.IDGeneratorConfig:
+		if err := config.IDGenerator.Validate(); err != nil {
+			blog.Errorf("validate param failed, err: %v, input: %v, rid: %s", err, config, kit.Rid)
+			rErr := resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+			if rErr != nil {
+				blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, kit.Rid)
+				return
+			}
 			return
 		}
+
+		if err := s.validateIDGenConf(kit, &config.IDGenerator); err != nil {
+			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+			return
+		}
+		updateData[typeId] = config.IDGenerator
+	default:
+		blog.Errorf("invalid type, type: %s, rid: %s", typeId, kit.Rid)
+		_ = resp.WriteError(http.StatusOK, fmt.Errorf("invalid type"))
 		return
 	}
 
-	if err := s.validateIDGenConf(kit, &config.IDGenerator); err != nil {
-		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
-		return
-	}
-
-	preConf, err := s.searchCurrentConfig(kit)
+	cond := map[string]interface{}{common.BKFieldDBID: common.PlatformConfig}
+	preConf := make(mapstr.MapStr)
+	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).Fields(typeId).One(kit.Ctx,
+		&preConf)
 	if err != nil {
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return
 	}
 
-	err = s.updatePlatformSetting(kit, config)
+	err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(kit.Ctx, cond, updateData)
 	if err != nil {
-		blog.Errorf("update config admin failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("update platform config %s failed, err: %v, rid: %s", typeId, err, kit.Rid)
 		result := &metadata.RespError{
-			Msg: defErr.Error(common.CCErrCommDBUpdateFailed),
+			Msg: kit.CCError.Error(common.CCErrCommDBUpdateFailed),
 		}
 		rErr := resp.WriteError(http.StatusOK, result)
 		if rErr != nil {
-			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, kit.Rid)
 			return
 		}
 		return
 	}
 
-	if err = s.savePlatformSettingUpdateAudit(kit, preConf, config); err != nil {
+	if err = s.savePlatformSettingUpdateAudit(kit, preConf, updateData); err != nil {
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return
 	}
 
-	err = resp.WriteEntity(metadata.NewSuccessResp("udpate config admin success"))
+	err = resp.WriteEntity(metadata.NewSuccessResp(fmt.Sprintf("update platform config %s success", typeId)))
 	if err != nil {
-		blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
+		blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, kit.Rid)
+		return
+	}
+}
+
+// UpdateGlobalConfig update global general config, like topo level
+func (s *Service) UpdateGlobalConfig(req *restful.Request, resp *restful.Response) {
+	typeId := req.PathParameter("type")
+	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)
+
+	config := new(metadata.GlobalSettingConfig)
+	if err := json.NewDecoder(req.Request.Body).Decode(config); err != nil {
+		blog.Errorf("decode param failed, err: %v, body: %v, rid: %s", err, req.Request.Body, kit.Rid)
+		rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
+			Msg: kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed),
+		})
+		if rErr != nil {
+			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, kit.Rid)
+			return
+		}
+		return
+	}
+
+	preConf := make(mapstr.MapStr)
+	err := s.db.Shard(kit.ShardOpts()).Table(common.BKTableNameGlobalConfig).Find(mapstr.MapStr{}).Fields(typeId).One(kit.Ctx,
+		&preConf)
+	if err != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
+	}
+
+	updateData := make(map[string]interface{})
+	switch typeId {
+	case metadata.BackendConfig:
+		if err = config.Backend.Validate(); err != nil {
+			blog.Errorf("validate param failed, err: %v, input: %v, rid: %s", err, config, kit.Rid)
+			rErr := resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+			if rErr != nil {
+				blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, kit.Rid)
+				return
+			}
+			return
+		}
+		updateData[typeId] = config.Backend
+	default:
+		blog.Errorf("invalid type, type: %s, rid: %s", typeId, kit.Rid)
+		_ = resp.WriteError(http.StatusOK, fmt.Errorf("invalid type"))
+		return
+	}
+
+	err = s.db.Shard(kit.ShardOpts()).Table(common.BKTableNameGlobalConfig).Update(kit.Ctx, mapstr.MapStr{}, updateData)
+	if err != nil {
+		blog.Errorf("update general config %s failed, err: %v, rid: %s", typeId, err, kit.Rid)
+		result := &metadata.RespError{
+			Msg: kit.CCError.Error(common.CCErrCommDBUpdateFailed),
+		}
+		rErr := resp.WriteError(http.StatusOK, result)
+		if rErr != nil {
+			blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, kit.Rid)
+			return
+		}
+		return
+	}
+
+	if err = s.savePlatformSettingUpdateAudit(kit, preConf, updateData); err != nil {
+		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
+	}
+
+	err = resp.WriteEntity(metadata.NewSuccessResp(fmt.Sprintf("update general %s config success", typeId)))
+	if err != nil {
+		blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, kit.Rid)
 		return
 	}
 }
@@ -224,8 +283,7 @@ func (s *Service) validateIDGenConf(kit *rest.Kit, conf *metadata.IDGeneratorCon
 	return nil
 }
 
-func (s *Service) savePlatformSettingUpdateAudit(kit *rest.Kit,
-	preConf, curConf *metadata.PlatformSettingConfig) error {
+func (s *Service) savePlatformSettingUpdateAudit(kit *rest.Kit, preConf, curConf interface{}) error {
 
 	id, err := s.db.Shard(kit.SysShardOpts()).NextSequence(s.ctx, common.BKTableNameAuditLog)
 	if err != nil {
@@ -246,7 +304,7 @@ func (s *Service) savePlatformSettingUpdateAudit(kit *rest.Kit,
 		RequestID:       kit.Rid,
 	}
 
-	if err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameAuditLog).Insert(s.ctx, audit); err != nil {
+	if err = s.db.Shard(kit.ShardOpts()).Table(common.BKTableNameAuditLog).Insert(s.ctx, audit); err != nil {
 		blog.Errorf("save audit log failed, err: %v, audit: %+v, rid: %s", err, audit, kit.Rid)
 		return err
 	}
@@ -254,71 +312,9 @@ func (s *Service) savePlatformSettingUpdateAudit(kit *rest.Kit,
 	return nil
 }
 
-// updatePlatformSetting update current configuration to database.
-func (s *Service) updatePlatformSetting(kit *rest.Kit, config *metadata.PlatformSettingConfig) error {
-	config.IDGenerator.CurrentID = nil
-
-	bytes, err := json.Marshal(config)
-	if err != nil {
-		return err
-	}
-
-	updateCond := map[string]interface{}{
-		"_id": common.ConfigAdminID,
-	}
-
-	data := map[string]interface{}{
-		common.ConfigAdminValueField: string(bytes),
-		common.LastTimeField:         time.Now(),
-	}
-
-	err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(s.ctx, updateCond, data)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// searchCurrentConfig get the current configuration in the database.
-func (s *Service) searchCurrentConfig(kit *rest.Kit) (*metadata.PlatformSettingConfig, error) {
-
-	cond := map[string]interface{}{"_id": common.ConfigAdminID}
-	ret := make(map[string]interface{})
-
-	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).
-		Fields(common.ConfigAdminValueField).One(s.ctx, &ret)
-	if err != nil {
-		blog.Errorf("search platform db config failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-	if ret[common.ConfigAdminValueField] == nil {
-		blog.Errorf("get config failed, rid: %s", kit.Rid)
-		return nil, err
-	}
-
-	if _, ok := ret[common.ConfigAdminValueField].(string); !ok {
-		blog.Errorf("db config type is error,rid: %s", kit.Rid)
-		return nil, err
-	}
-
-	conf := new(metadata.PlatformSettingConfig)
-	if err := json.Unmarshal([]byte(ret[common.ConfigAdminValueField].(string)), conf); err != nil {
-		blog.Errorf("search platform config fail, unmarshal err: %v, config: %+v,rid: %s", err, ret, kit.Rid)
-		return nil, err
-	}
-
-	conf, err = s.addIDGenInfoToConf(kit, conf)
-	if err != nil {
-		return nil, err
-	}
-
-	return conf, nil
-}
-
 // addIDGenInfoToConf add current id generator info to current config
-func (s *Service) addIDGenInfoToConf(kit *rest.Kit, conf *metadata.PlatformSettingConfig) (
-	*metadata.PlatformSettingConfig, error) {
+func (s *Service) addIDGenInfoToConf(kit *rest.Kit, conf *metadata.IDGeneratorConf) (
+	*metadata.IDGeneratorConf, error) {
 
 	idGenCond := map[string]interface{}{
 		"_id": map[string]interface{}{common.BKDBIN: idgen.GetAllIDGenSeqNames()},
@@ -337,74 +333,26 @@ func (s *Service) addIDGenInfoToConf(kit *rest.Kit, conf *metadata.PlatformSetti
 		seqNameIDMap[idGen.ID] = idGen.SequenceID
 	}
 
-	conf.IDGenerator.CurrentID = make(map[idgen.IDGenType]uint64)
+	conf.CurrentID = make(map[idgen.IDGenType]uint64)
 	for _, typ := range idgen.GetAllIDGenTypes() {
 		seqName, _ := idgen.GetIDGenSequenceName(typ)
-		conf.IDGenerator.CurrentID[typ] = seqNameIDMap[seqName]
+		conf.CurrentID[typ] = seqNameIDMap[seqName]
 	}
 
 	return conf, nil
 }
 
-// searchInitConfig get init config.
-func (s *Service) searchInitConfig(rid string) (*metadata.PlatformSettingConfig, error) {
-	conf := new(metadata.PlatformSettingConfig)
+// SearchGlobalConfig search current global config, include maxTopoLevel, set, idle_pool, etc.
+func (s *Service) SearchGlobalConfig(req *restful.Request, resp *restful.Response) {
+	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)
 
-	if err := json.Unmarshal([]byte(metadata.InitAdminConfig), conf); err != nil {
-		blog.Errorf("search initial config unmarshal fail, err: %v, rid: %s", err, rid)
-		return nil, err
-	}
-
-	if err := conf.EncodeWithBase64(); err != nil {
-		blog.Errorf("initial config  encode bases64 fail,err: %v, rid: %s", err, rid)
-		return nil, err
-	}
-	return conf, nil
-}
-
-// SearchPlatformSettingConfig search the platform config.typeId:current db's config ,typeId:initial initial config.
-func (s *Service) SearchPlatformSettingConfig(req *restful.Request, resp *restful.Response) {
-	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	typeId := req.PathParameter("type")
-	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-
-	conf := new(metadata.PlatformSettingConfig)
-	var err error
-	switch typeId {
-
-	case "current":
-		conf, err = s.searchCurrentConfig(kit)
-		if err != nil {
-			rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
-				Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
-			if rErr != nil {
-				blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
-				return
-			}
-			return
-		}
-	case "initial":
-		conf, err = s.searchInitConfig(rid)
-		if err != nil {
-			rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
-				Msg: defErr.Error(common.CCErrCommParamsInvalid),
-			})
-			if rErr != nil {
-				blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
-				return
-			}
-			return
-		}
-
-	default:
+	conf := make(mapstr.MapStr)
+	err := s.db.Shard(kit.ShardOpts()).Table(common.BKTableNameGlobalConfig).Find(mapstr.MapStr{}).One(kit.Ctx, &conf)
+	if err != nil {
 		rErr := resp.WriteError(http.StatusOK, &metadata.RespError{
-			Msg: defErr.CCErrorf(common.CCErrCommParamsInvalid, "type"),
-		})
-
+			Msg: kit.CCError.Error(common.CCErrCommJSONUnmarshalFailed)})
 		if rErr != nil {
-			blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, rid)
+			blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, rErr, kit.Rid)
 			return
 		}
 		return
@@ -412,7 +360,21 @@ func (s *Service) SearchPlatformSettingConfig(req *restful.Request, resp *restfu
 
 	err = resp.WriteEntity(metadata.NewSuccessResp(conf))
 	if err != nil {
-		blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)
+		blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, kit.Rid)
 		return
 	}
+}
+
+// SearchConfig search config
+func (s *Service) SearchConfig(kit *rest.Kit, db local.DB, table string, cond mapstr.MapStr,
+	fields ...string) (mapstr.MapStr, error) {
+
+	conf := mapstr.MapStr{}
+	err := db.Table(table).Find(cond).Fields(fields...).One(kit.Ctx, &conf)
+	if err != nil {
+		blog.Errorf("search platform db config failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	return conf, nil
 }

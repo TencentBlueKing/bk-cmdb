@@ -104,13 +104,16 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 		return nil, err
 	}
 
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	options := &metadata.GlobalConfOptions{
+		Fields: []string{metadata.BuiltInSetNameConfig, metadata.BuiltInModuleConfig},
+	}
+	res, err := b.clientSet.CoreService().System().SearchGlobalConfig(kit.Ctx, kit.Header, options)
 	if err != nil {
 		blog.Errorf("search platform setting failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, kit.CCError.New(common.CCErrTopoAppCreateFailed, err.Error())
 	}
 
-	conf := res.Data
+	conf := res
 	// create set
 	setData := mapstr.MapStr{
 		common.BKAppIDField:    bizID,
@@ -175,7 +178,7 @@ func (b *business) CreateBusiness(kit *rest.Kit, data mapstr.MapStr) (mapstr.Map
 	return bizInst, nil
 }
 
-func (b *business) createUserDefinedModules(kit *rest.Kit, conf metadata.PlatformSettingConfig, bizID, setID,
+func (b *business) createUserDefinedModules(kit *rest.Kit, conf *metadata.GlobalSettingConfig, bizID, setID,
 	defaultCategoryID int64) error {
 	for _, module := range conf.BuiltInModuleConfig.UserModules {
 		// create user module
@@ -528,32 +531,37 @@ func (b *business) GetResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 
 // updateIdleModuleConfig update admin module config.
 func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleOption,
-	config metadata.PlatformSettingConfig) error {
+	config *metadata.GlobalModule) error {
 
-	conf, oldConf := config, config
+	oldConf := &metadata.GlobalModule{}
+	*oldConf = *config
+	oldConf.UserModules = make([]metadata.UserModuleList, len(config.UserModules))
+	for idx := range config.UserModules {
+		oldConf.UserModules[idx] = config.UserModules[idx]
+	}
 	flag := false
 	updateFields := mapstr.New()
 
 	switch option.Key {
 	case common.SystemIdleModuleKey:
-		conf.BuiltInModuleConfig.IdleName = option.Name
+		config.IdleName = option.Name
 		updateFields.Set(common.SystemIdleModuleKey, option.Name)
 		flag = true
 
 	case common.SystemFaultModuleKey:
-		conf.BuiltInModuleConfig.FaultName = option.Name
+		config.FaultName = option.Name
 		updateFields.Set(common.SystemFaultModuleKey, option.Name)
 		flag = true
 
 	case common.SystemRecycleModuleKey:
-		conf.BuiltInModuleConfig.RecycleName = option.Name
+		config.RecycleName = option.Name
 		updateFields.Set(common.SystemRecycleModuleKey, option.Name)
 		flag = true
 
 	default:
-		for index, module := range conf.BuiltInModuleConfig.UserModules {
+		for index, module := range config.UserModules {
 			if module.Key == option.Key {
-				conf.BuiltInModuleConfig.UserModules[index].Value = option.Name
+				config.UserModules[index].Value = option.Name
 				updateFields.Set("module_name", option.Name)
 				updateFields.Set("module_key", option.Key)
 				flag = true
@@ -561,9 +569,10 @@ func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleO
 			}
 		}
 	}
+
 	// flag: false 用户新增模块场景
 	if !flag {
-		conf.BuiltInModuleConfig.UserModules = append(conf.BuiltInModuleConfig.UserModules, metadata.UserModuleList{
+		config.UserModules = append(config.UserModules, metadata.UserModuleList{
 			Key:   option.Key,
 			Value: option.Name,
 		})
@@ -573,12 +582,17 @@ func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleO
 		})
 	}
 
-	_, err := b.clientSet.CoreService().System().UpdatePlatformSetting(kit.Ctx, kit.Header, &conf)
+	input := mapstr.MapStr{
+		metadata.BuiltInModuleConfig: config,
+	}
+	err := b.clientSet.CoreService().System().UpdateGlobalConfig(kit.Ctx, kit.Header, metadata.BuiltInModuleConfig,
+		input)
 	if err != nil {
+		blog.Errorf("update idle module config failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
-	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
+	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields, metadata.BuiltInModuleConfig)
 	if err != nil {
 		blog.Errorf("generate audit log failed config: %v, updateFields: %v, err: %v, rid: %s", oldConf, updateFields,
 			err, kit.Rid)
@@ -588,13 +602,13 @@ func (b *business) updateIdleModuleConfig(kit *rest.Kit, option metadata.ModuleO
 }
 
 // savePlatformLog 平台管理的审计日志，无论是新建模块，修改模块或者集群名字还是删除用户自定义场景都是对空闲机池的修改，统一走update
-func (b *business) savePlatformLog(kit *rest.Kit, auditLog metadata.ActionType, oldConf *metadata.PlatformSettingConfig,
-	updateFields mapstr.MapStr) error {
+func (b *business) savePlatformLog(kit *rest.Kit, auditLog metadata.ActionType, oldConf interface{},
+	updateFields mapstr.MapStr, operationType string) error {
 
 	audit := auditlog.NewPlatFormSettingAuditLog(b.clientSet.CoreService())
 	auditParam := auditlog.NewGenerateAuditCommonParameter(kit, auditLog).WithUpdateFields(updateFields)
 
-	auditLogs, err := audit.GenerateAuditLog(auditParam, oldConf)
+	auditLogs, err := audit.GenerateAuditLog(auditParam, oldConf, operationType)
 
 	if err != nil {
 		return err
@@ -607,22 +621,22 @@ func (b *business) savePlatformLog(kit *rest.Kit, auditLog metadata.ActionType, 
 
 func (b *business) updateBuiltInSetConfig(kit *rest.Kit, setName string) error {
 
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	options := &metadata.GlobalConfOptions{Fields: []string{metadata.BuiltInSetNameConfig}}
+	res, err := b.clientSet.CoreService().System().SearchGlobalConfig(kit.Ctx, kit.Header, options)
 	if err != nil {
 		return err
 	}
 
-	conf, oldConf := res.Data, res.Data
-	conf.BuiltInSetName = metadata.ObjectString(setName)
-
-	_, err = b.clientSet.CoreService().System().UpdatePlatformSetting(kit.Ctx, kit.Header, &conf)
+	oldConf := mapstr.MapStr{common.SystemSetName: res.BuiltInSetName}
+	err = b.clientSet.CoreService().System().UpdateGlobalConfig(kit.Ctx, kit.Header, metadata.BuiltInSetNameConfig,
+		mapstr.MapStr{metadata.BuiltInSetNameConfig: setName})
 	if err != nil {
 		return err
 	}
 	updateFields := mapstr.New()
 	updateFields.Set(common.SystemSetName, setName)
 
-	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
+	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields, metadata.BuiltInSetNameConfig)
 	if err != nil {
 		blog.Errorf("generate audit log failed, config: %v, updateFields: %v, err: %v, rid: %s", oldConf,
 			updateFields, err, kit.Rid)
@@ -632,15 +646,20 @@ func (b *business) updateBuiltInSetConfig(kit *rest.Kit, setName string) error {
 
 // deleteUserModuleConfig 更新删除用户自定义场景下的配置
 func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption,
-	config metadata.PlatformSettingConfig) error {
+	config metadata.GlobalModule) error {
 
-	conf, oldConf := config, config
+	oldConf := metadata.GlobalModule{}
+	oldConf = config
+	oldConf.UserModules = make([]metadata.UserModuleList, len(config.UserModules))
+	for idx := range config.UserModules {
+		oldConf.UserModules[idx] = config.UserModules[idx]
+	}
+
 	updateFields := mapstr.New()
-
-	for index, module := range conf.BuiltInModuleConfig.UserModules {
+	for index, module := range config.UserModules {
 		if module.Key == option.ModuleKey {
-			conf.BuiltInModuleConfig.UserModules = append(conf.BuiltInModuleConfig.UserModules[:index],
-				conf.BuiltInModuleConfig.UserModules[index+1:]...)
+			config.UserModules = append(config.UserModules[:index],
+				config.UserModules[index+1:]...)
 			updateFields.Set(common.UserDefinedModules, metadata.UserModuleList{
 				Key:   option.ModuleKey,
 				Value: option.ModuleName,
@@ -649,12 +668,14 @@ func (b *business) deleteUserModuleConfig(kit *rest.Kit, option *metadata.BuiltI
 		}
 	}
 
-	_, err := b.clientSet.CoreService().System().UpdatePlatformSetting(kit.Ctx, kit.Header, &conf)
+	input := mapstr.MapStr{metadata.BuiltInModuleConfig: config}
+	err := b.clientSet.CoreService().System().UpdateGlobalConfig(kit.Ctx, kit.Header, metadata.BuiltInModuleConfig,
+		input)
 	if err != nil {
 		return err
 	}
 
-	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields)
+	err = b.savePlatformLog(kit, metadata.AuditUpdate, &oldConf, updateFields, metadata.BuiltInModuleConfig)
 	if err != nil {
 		blog.Errorf("generate audit log failed config :%v, updateFields: %v err: %v, rid: %s", oldConf, updateFields,
 			err, kit.Rid)
@@ -693,34 +714,34 @@ func (b *business) checkModuleNameValid(kit *rest.Kit, input metadata.ModuleOpti
 // 3、true是更新场景，false是新增场景
 // 4、目前系统出厂的idle 、fault、recycle只支持改名字不支持删除
 func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.ModuleOption) (bool, string,
-	metadata.PlatformSettingConfig, error) {
+	*metadata.GlobalModule, error) {
 
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(ctx.Ctx, ctx.Header)
+	options := &metadata.GlobalConfOptions{Fields: []string{metadata.BuiltInModuleConfig}}
+	conf, err := b.clientSet.CoreService().System().SearchGlobalConfig(ctx.Ctx, ctx.Header, options)
 	if err != nil {
-		return false, "", metadata.PlatformSettingConfig{}, err
+		return false, "", nil, err
 	}
 
-	conf := res.Data
 	flag := false
 	var oldName string
 	switch input.Key {
 	case common.SystemIdleModuleKey:
 		if input.Name == conf.BuiltInModuleConfig.IdleName {
-			return false, "", metadata.PlatformSettingConfig{}, fmt.Errorf("idle name cannot be the same")
+			return false, "", nil, fmt.Errorf("idle name cannot be the same")
 		}
 		oldName = conf.BuiltInModuleConfig.IdleName
 		flag = true
 
 	case common.SystemFaultModuleKey:
 		if input.Name == conf.BuiltInModuleConfig.FaultName {
-			return false, "", metadata.PlatformSettingConfig{}, fmt.Errorf("fault name cannot be the same")
+			return false, "", nil, fmt.Errorf("fault name cannot be the same")
 		}
 		oldName = conf.BuiltInModuleConfig.FaultName
 		flag = true
 
 	case common.SystemRecycleModuleKey:
 		if input.Name == conf.BuiltInModuleConfig.RecycleName {
-			return false, "", metadata.PlatformSettingConfig{}, fmt.Errorf("recycle name cannot be the same")
+			return false, "", nil, fmt.Errorf("recycle name cannot be the same")
 		}
 		oldName = conf.BuiltInModuleConfig.RecycleName
 		flag = true
@@ -729,7 +750,7 @@ func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.Mo
 		for _, m := range conf.BuiltInModuleConfig.UserModules {
 			if m.Key == input.Key {
 				if m.Value == input.Name {
-					return false, "", metadata.PlatformSettingConfig{},
+					return false, "", nil,
 						fmt.Errorf("user defined module name cannot be the same")
 				} else {
 					oldName = m.Value
@@ -739,24 +760,24 @@ func (b *business) validateIdleModuleConfigName(ctx *rest.Kit, input metadata.Mo
 			}
 		}
 	}
-	return flag, oldName, conf, nil
+	return flag, oldName, &conf.BuiltInModuleConfig, nil
 }
 
 func (b *business) validateDeleteModuleName(kit *rest.Kit, option *metadata.BuiltInModuleDeleteOption) (
-	metadata.PlatformSettingConfig, error) {
+	metadata.GlobalModule, error) {
 
-	res, err := b.clientSet.CoreService().System().SearchPlatformSetting(kit.Ctx, kit.Header)
+	options := &metadata.GlobalConfOptions{Fields: []string{metadata.BuiltInModuleConfig}}
+	res, err := b.clientSet.CoreService().System().SearchGlobalConfig(kit.Ctx, kit.Header, options)
 	if err != nil {
-		return metadata.PlatformSettingConfig{}, err
+		return metadata.GlobalModule{}, err
 	}
-	conf := res.Data
 
-	for _, userModule := range conf.BuiltInModuleConfig.UserModules {
+	for _, userModule := range res.BuiltInModuleConfig.UserModules {
 		if userModule.Key == option.ModuleKey {
-			return conf, nil
+			return res.BuiltInModuleConfig, nil
 		}
 	}
-	return metadata.PlatformSettingConfig{}, fmt.Errorf("no key founded")
+	return metadata.GlobalModule{}, fmt.Errorf("no key founded")
 }
 
 // addUserDefinedModule 增加用户的自定义模块操作
@@ -948,12 +969,12 @@ func (b *business) UpdateBusinessIdleSetOrModule(kit *rest.Kit, option *metadata
 
 	switch option.Type {
 	case metadata.ConfigUpdateTypeSet:
-		err := b.updateBusinessSet(kit, option.Set, bizID)
+		err = b.updateBusinessSet(kit, option.Set, bizID)
 		if err != nil {
 			return err
 		}
 	case metadata.ConfigUpdateTypeModule:
-		err := b.updateBusinessModule(kit, option.Module, bizID)
+		err = b.updateBusinessModule(kit, option.Module, bizID)
 		if err != nil {
 			return err
 		}
@@ -1007,7 +1028,7 @@ func (b *business) updateBusinessModule(kit *rest.Kit, module metadata.ModuleOpt
 
 	if flag {
 		// add normal module or rename normal module.
-		err := b.updateModuleName(kit, module, oldname, bizID)
+		err = b.updateModuleName(kit, module, oldname, bizID)
 		if err != nil {
 			return err
 		}

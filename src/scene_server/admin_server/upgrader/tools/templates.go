@@ -28,14 +28,13 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 )
 
 // InsertTemplateData insert template data
-func InsertTemplateData(kit *rest.Kit, db local.DB, data []mapstr.MapStr,
-	insertOps *InsertOptions, idOption *IDOptions, dataType tenanttmp.TenantTemplateType) error {
+func InsertTemplateData(kit *rest.Kit, db local.DB, data []mapstr.MapStr, insertOps *InsertOptions, idOption *IDOptions,
+	dataType tenanttmp.TenantTemplateType) error {
 
 	tmpData := make([]tenanttmp.TenantTmpData[mapstr.MapStr], 0)
 	for _, item := range data {
@@ -58,6 +57,7 @@ func InsertTemplateData(kit *rest.Kit, db local.DB, data []mapstr.MapStr,
 		blog.Errorf("find exist data failed, table: %s, err: %v", common.BKTableNameTenantTemplate, err)
 		return err
 	}
+
 	insertData, err := cmpTenantTmp(result, tmpData, insertOps.UniqueFields, insertOps.IgnoreKeys)
 	if err != nil {
 		blog.Errorf("compare data failed, err: %v", err)
@@ -150,7 +150,7 @@ func InsertUniqueKeyTmp(kit *rest.Kit, db local.DB, data []tenanttmp.TenantTmpDa
 	return nil
 }
 
-func insertTmpData[T tenanttmp.UniqueKeyTmp | tenanttmp.SvrCategoryTmp | mapstr.MapStr](kit *rest.Kit, db dal.RDB,
+func insertTmpData[T tenanttmp.UniqueKeyTmp | tenanttmp.SvrCategoryTmp | mapstr.MapStr](kit *rest.Kit, db local.DB,
 	table string, insertData []tenanttmp.TenantTmpData[T], resNames []string) error {
 
 	if len(insertData) == 0 {
@@ -203,6 +203,17 @@ func insertTmpData[T tenanttmp.UniqueKeyTmp | tenanttmp.SvrCategoryTmp | mapstr.
 func cmpTenantTmp(existData, data []tenanttmp.TenantTmpData[mapstr.MapStr],
 	uniqueFields, ignoreFields []string) ([]tenanttmp.TenantTmpData[mapstr.MapStr], error) {
 
+	insertData := make([]tenanttmp.TenantTmpData[mapstr.MapStr], 0)
+	if len(uniqueFields) == 0 {
+		if len(existData) == len(data) {
+			return insertData, nil
+		}
+		if len(existData) == 0 {
+			return data, nil
+		}
+		return nil, fmt.Errorf("can not find unique field")
+	}
+
 	existMap := make(map[string]tenanttmp.TenantTmpData[mapstr.MapStr])
 	for _, item := range existData {
 		valueStr := getUniqueStr(item.Data, uniqueFields)
@@ -212,7 +223,6 @@ func cmpTenantTmp(existData, data []tenanttmp.TenantTmpData[mapstr.MapStr],
 		existMap[valueStr] = item
 	}
 
-	insertData := make([]tenanttmp.TenantTmpData[mapstr.MapStr], 0)
 	for _, item := range data {
 		valueStr := getUniqueStr(item.Data, uniqueFields)
 		if valueStr == "" {

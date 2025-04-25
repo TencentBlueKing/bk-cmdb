@@ -18,21 +18,22 @@
 package data
 
 import (
-	"time"
+	"fmt"
 
+	idgen "configcenter/pkg/id-gen"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 func addSystemData(kit *rest.Kit, db local.DB) error {
 	blog.Infof("start add init data for table: %s", common.BKTableNameSystem)
 
-	if err := initConfigAdmin(kit, db); err != nil {
-		blog.Errorf("add config admin failed, error: %v", err)
+	if err := initPlatformSetting(kit, mongodb.Shard(kit.SysShardOpts())); err != nil {
+		blog.Errorf("add id generator failed, error: %v", err)
 		return err
 	}
 
@@ -40,27 +41,78 @@ func addSystemData(kit *rest.Kit, db local.DB) error {
 	return nil
 }
 
-func initConfigAdmin(kit *rest.Kit, db local.DB) error {
-	configData := map[string]interface{}{
-		common.BKFieldDBID:           common.ConfigAdminID,
-		common.CreateTimeField:       time.Now(),
-		common.LastTimeField:         time.Now(),
-		common.ConfigAdminValueField: initConfig,
+func initPlatformSetting(kit *rest.Kit, db local.DB) error {
+
+	count, err := db.Table(common.BKTableNameSystem).Find(mapstr.MapStr{common.BKFieldDBID: common.PlatformConfig}).
+		Count(kit.Ctx)
+	if err != nil {
+		blog.Errorf("count data for table %s failed, err: %v", common.BKTableNameSystem, err)
+		return err
 	}
 
-	needField := &tools.InsertOptions{
-		UniqueFields: []string{common.ConfigAdminValueField},
-		IgnoreKeys:   []string{},
+	var insertConfig IDGeneratorConf
+	if count == 0 {
+		insertConfig = InitIDGeneratorConfig
+	} else {
+
+		existConfig := new(PlatformConfig)
+		err = db.Table(common.BKTableNameSystem).Find(mapstr.MapStr{common.BKFieldDBID: common.PlatformConfig}).Fields(
+			"id_generator").One(kit.Ctx, existConfig)
+		if err != nil {
+			blog.Errorf("get config id generator failed, error: %v", err)
+			return err
+		}
+		if !cmpSame(&existConfig.IDGenerator, &InitIDGeneratorConfig) {
+			blog.Errorf("config id generator is not same, exist: %v, insert: %v", existConfig, insertConfig)
+			return fmt.Errorf("config id generator is not same")
+		}
+		return nil
 	}
-	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{configData},
-		needField)
+
+	insertData := idGeneratorConf{
+		BID:         common.PlatformConfig,
+		IDGenerator: &insertConfig,
+	}
+	cond := mapstr.MapStr{common.BKFieldDBID: common.PlatformConfig}
+	err = db.Table(common.BKTableNameSystem).Upsert(kit.Ctx, cond, insertData)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameSystem, err)
 		return err
 	}
 
 	return nil
-
 }
 
-var initConfig = "{\"backend\":{\"max_biz_topo_level\":7,\"snapshot_biz_id\":2},\"validation_rules\":{\"number\":{\"value\":\"XihcLXxcKyk/XGQrJA==\",\"description\":\"字段类型“数字”的验证规则\",\"i18n\":{\"cn\":\"请输入整数数字\",\"en\":\"Please enter integer number\"}},\"float\":{\"value\":\"XlsrLV0/KFswLTldKlsuXT9bMC05XSt8WzAtOV0rWy5dP1swLTldKikoW2VFXVsrLV0/WzAtOV0rKT8k\",\"description\":\"字段类型“浮点”的验证规则\",\"i18n\":{\"cn\":\"请输入浮点型数字\",\"en\":\"Please enter float bizSetData\"}},\"singlechar\":{\"value\":\"XFMq\",\"description\":\"字段类型“短字符”的验证规则\",\"i18n\":{\"cn\":\"请输入256长度以内的字符串\",\"en\":\"Please enter the string within 256 length\"}},\"longchar\":{\"value\":\"XFMq\",\"description\":\"字段类型“长字符”的验证规则\",\"i18n\":{\"cn\":\"请输入2000长度以内的字符串\",\"en\":\"Please enter the string within 2000 length\"}},\"associationId\":{\"value\":\"XlthLXpBLVpdW1x3XSok\",\"description\":\"关联类型唯一标识验证规则\",\"i18n\":{\"cn\":\"由英文字符开头，和下划线、数字或英文组合的字符\",\"en\":\"Start with lowercase or uppercase letter, followed by lowercase / uppercase / underscore / numbers characters\"}},\"classifyId\":{\"value\":\"XlthLXpBLVpdW1x3XSok\",\"description\":\"模型分组唯一标识验证规则\",\"i18n\":{\"cn\":\"由英文字符开头，和下划线、数字或英文组合的字符\",\"en\":\"Start with lowercase or uppercase letter, followed by lowercase / uppercase / underscore / numbers characters\"}},\"modelId\":{\"value\":\"XlthLXpBLVpdW1x3XSok\",\"description\":\"模型唯一标识验证规则\",\"i18n\":{\"cn\":\"由英文字符开头，和下划线、数字或英文组合的字符\",\"en\":\"Start with lowercase or uppercase letter, followed by lowercase / uppercase / underscore / numbers characters\"}},\"enumId\":{\"value\":\"XlthLXpBLVowLTlfLV0qJA==\",\"description\":\"字段类型“枚举”ID的验证规则\",\"i18n\":{\"cn\":\"由大小写英文字母，数字，_ 或 - 组成的字符\",\"en\":\"Composed of uppercase / lowercase / numbers / - or _ characters\"}},\"enumName\":{\"value\":\"XihbYS16QS1aMC05X118W1x1NGUwMC1cdTlmYTVdfFsoKSst44CK44CLLO+8jO+8mzvigJzigJ3igJjigJnjgIJcLlwiXCcgXC86XSkqJA==\",\"description\":\"字段类型“枚举”值的验证规则\",\"i18n\":{\"cn\":\"请输入枚举值\",\"en\":\"Please enter the enum value\"}},\"fieldId\":{\"value\":\"XlthLXpBLVpdW1x3XSok\",\"description\":\"模型字段唯一标识的验证规则\",\"i18n\":{\"cn\":\"由英文字符开头，和下划线、数字或英文组合的字符\",\"en\":\"Start with lowercase or uppercase letter, followed by lowercase / uppercase / underscore / numbers characters\"}},\"namedCharacter\":{\"value\":\"XlthLXpBLVowLTlcdTRlMDAtXHU5ZmE1X1wtOlwoXCldKyQ=\",\"description\":\"服务分类名称的验证规则\",\"i18n\":{\"cn\":\"请输入中英文或特殊字符 :_- 组成的名称\",\"en\":\"Special symbols only support(:_-)\"}},\"instanceTagKey\":{\"value\":\"XlthLXpBLVpdKFthLXowLTlBLVpcLV8uXSpbYS16MC05QS1aXSk/JA==\",\"description\":\"服务实例标签键的验证规则\",\"i18n\":{\"cn\":\"请输入以英文开头的英文+数字组合\",\"en\":\"Please enter letter / number starts with letter\"}},\"instanceTagValue\":{\"value\":\"XlthLXowLTlBLVpdKFthLXowLTlBLVpcLV8uXSpbYS16MC05QS1aXSk/JA==\",\"description\":\"服务实例标签值的验证规则\",\"i18n\":{\"cn\":\"请输入英文 / 数字\",\"en\":\"Please enter letter / number\"}},\"businessTopoInstNames\":{\"value\":\"XlteXCNcLyxcPlw8XHxdKyQ=\",\"description\":\"集群/模块/实例名称的验证规则\",\"i18n\":{\"cn\":\"请输入除 #/,\\u003e\\u003c| 以外的字符\",\"en\":\"Please enter characters other than #/,\\u003e\\u003c|\"}}},\"set\":\"空闲机池\",\"idle_pool\":{\"idle\":\"空闲机\",\"fault\":\"故障机\",\"recycle\":\"待回收\",\"user_modules\":null},\"id_generator\":{\"enabled\":false,\"step\":1}}"
+// InitIDGeneratorConfig id generator init config
+var InitIDGeneratorConfig = IDGeneratorConf{
+	Enabled:   false,
+	Step:      1,
+	InitID:    nil,
+	CurrentID: nil,
+}
+
+type idGeneratorConf struct {
+	BID         string           `json:"_id" bson:"_id"`
+	IDGenerator *IDGeneratorConf `json:"id_generator" bson:"id_generator"`
+}
+
+func cmpSame(existData, insertData *IDGeneratorConf) bool {
+	if existData.Enabled != insertData.Enabled || existData.Step != insertData.Step {
+		return false
+	}
+	return true
+}
+
+// IDGeneratorConf is id generator config
+type IDGeneratorConf struct {
+	Enabled bool                       `json:"enabled" bson:"enabled"`
+	Step    int                        `json:"step" bson:"step"`
+	InitID  map[idgen.IDGenType]uint64 `json:"init_id,omitempty" bson:"init_id,omitempty"`
+	// CurrentID is the current id of each resource, this is only used for ui display
+	CurrentID map[idgen.IDGenType]uint64 `json:"current_id,omitempty" bson:"current_id,omitempty"`
+}
+
+// PlatformConfig platform config
+type PlatformConfig struct {
+	IDGenerator IDGeneratorConf `bson:"id_generator" json:"id_generator"`
+}
