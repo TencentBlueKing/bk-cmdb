@@ -20,7 +20,8 @@ def mkdir_p(path):
         else: raise
 
 def generate_config_file(
-        rd_server_v, db_name_v, redis_ip_v, redis_port_v,
+        rd_server_v, rd_cafile_v, rd_certfile_v, rd_keyfile_v, rd_skipverify_v, rd_certpassword_v,
+        db_name_v, redis_ip_v, redis_port_v,
         redis_pass_v, sentinel_pass_v, redis_certfile_v, redis_keyfile_v, redis_cafile_v, redis_skipverify_v,
         mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, mongo_certfile_v, mongo_keyfile_v, mongo_cafile_v, mongo_skipverify_v, rs_name, user_info,
         cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v, auth_address, auth_app_code,
@@ -57,6 +58,11 @@ def generate_config_file(
         agent_url=paas_url_v,
         configures_dir=output,
         rd_server=rd_server_v,
+        rd_cafile=rd_cafile_v,
+        rd_certfile=rd_certfile_v,
+        rd_keyfile=rd_keyfile_v,
+        rd_skipverify=rd_skipverify_v,
+        rd_certpassword=rd_certpassword_v,
         auth_address=auth_address,
         auth_app_code=auth_app_code,
         auth_app_secret=auth_app_secret,
@@ -801,11 +807,35 @@ configServer:
   addrs: $rd_server
   usr:
   pwd:
+  # ZooKeeper tls配置信息
+  tls:
+    # CA证书文件路径
+    caFile: "$rd_cafile"
+    # 证书文件路径
+    certFile: "$rd_certfile"
+    # 密钥文件路径
+    keyFile: "$rd_keyfile"
+    # 是否跳过证书验证
+    insecureSkipVerify: $rd_skipverify
+    # 证书密码
+    password: $rd_certpassword
 # 注册中心
 registerServer:
   addrs: $rd_server
   usr:
   pwd:
+  # ZooKeeper tls配置信息
+  tls:
+    # CA证书文件路径
+    caFile: "$rd_cafile"
+    # 证书文件路径
+    certFile: "$rd_certfile"
+    # 密钥文件路径
+    keyFile: "$rd_keyfile"
+    # 是否跳过证书验证
+    insecureSkipVerify: $rd_skipverify
+    # 证书密码
+    password: $rd_certpassword
 # 指定configures的路径，通过这个路径找到其他的配置文件
 confs:
   dir: $configures_dir
@@ -829,7 +859,7 @@ dataid:
     with open(output + "migrate.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip, enable_cryptor):
+def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip, enable_cryptor, rd_cafile, rd_certfile, rd_keyfile, rd_skipverify, rd_certpassword):
     list_dirs = os.walk(os.getcwd()+"/")
     for root, dirs, _ in list_dirs:
         for d in dirs:
@@ -867,6 +897,19 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                      extend_flag += ' --enable_cryptor=%s ' % enable_cryptor
                 if register_ip != '':
                     extend_flag += ' --register-ip=%s ' % register_ip
+
+                if d != "cmdb_adminserver":
+                    if rd_cafile != '':
+                        extend_flag += ' --regdiscv-cafile=%s ' % rd_cafile
+                    if rd_certfile != '':
+                        extend_flag += ' --regdiscv-certfile=%s ' % rd_certfile
+                    if rd_keyfile != '':
+                        extend_flag += ' --regdiscv-keyfile=%s ' % rd_keyfile
+                    if rd_skipverify != '':
+                        extend_flag += ' --regdiscv-skipverify=%s ' % rd_skipverify
+                    if rd_certpassword != '':
+                        extend_flag += " --regdiscv-certpassword=%s " % rd_certpassword
+
                 filedata = filedata.replace('extend_flag_placeholder', extend_flag)
 
                 filedata = filedata.replace('log_level_placeholder', log_level)
@@ -923,6 +966,11 @@ def main(argv):
     secrets_token = ''
     secrets_project = ''
     secrets_env = ''
+    rd_cafile = ''
+    rd_certfile = ''
+    rd_keyfile = ''
+    rd_skipverify = 'true'
+    rd_certpassword = ''
 
     server_ports = {
         "cmdb_adminserver": 60004,
@@ -951,93 +999,104 @@ def main(argv):
         "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=","auth_address=",
         "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip=",
-        "enable_cryptor=", "secret_key_url=", "secrets_addrs=", "secrets_token=", "secrets_project=", "secrets_env="
+        "enable_cryptor=", "secret_key_url=", "secrets_addrs=", "secrets_token=", "secrets_project=", "secrets_env=",
+        "discovery_cafile=", "discovery_certfile=", "discovery_keyfile=", "discovery_skipverify=", "discovery_certpassword="
     ]
     usage = '''
     usage:
-      --discovery          <discovery>            the ZooKeeper server address, eg:127.0.0.1:2181
-      --database           <database>             the database name, default cmdb
-      --redis_ip           <redis_ip>             the redis ip, eg:127.0.0.1
-      --redis_port         <redis_port>           the redis port, default:6379
-      --redis_pass         <redis_pass>           the redis user password
-      --sentinel_pass      <sentinel_pass>        the redis sentinel password
-      --redis_certfile     <redis_certfile>       the redis cert file path
-      --redis_keyfile      <redis_keyfile>        the redis key file path
-      --redis_cafile       <redis_cafile>         the redis ca cert file path
-      --redis_skipverify   <redis_skipverify>     the redis skip verify
-      --mongo_ip           <mongo_ip>             the mongo ip ,eg:127.0.0.1
-      --mongo_port         <mongo_port>           the mongo port, eg:27017
-      --mongo_user         <mongo_user>           the mongo user name, default:cc
-      --mongo_pass         <mongo_pass>           the mongo password
-      --mongo_certfile     <mongo_certfile>       the mongo cert file path
-      --mongo_keyfile      <mongo_keyfile>        the mongo key file path
-      --mongo_cafile       <mongo_cafile>         the mongo ca cert file path
-      --mongo_skipverify   <mongo_skipverify>     the mongo skip verify
-      --rs_name            <rs_name>              the mongo replica set name, default: rs0
-      --blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
-      --blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
-      --listen_port        <listen_port>          the cmdb_webserver listen port, should be the port as same as -c <blueking_cmdb_url> specified, default:8083
-      --auth_scheme        <auth_scheme>          auth scheme, ex: internal, iam
-      --auth_enabled       <auth_enabled>         iam auth enabled, true or false
-      --auth_address       <auth_address>         iam address
-      --auth_app_code      <auth_app_code>        app code for iam, default bk_cmdb
-      --auth_app_secret    <auth_app_secret>      app code for iam
-      --full_text_search   <full_text_search>     full text search on or off
-      --es_url             <es_url>               the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
-      --es_user            <es_user>              the es user name
-      --es_pass            <es_pass>              the es password
-      --es_shard_num       <es_shard_num>         the es sharding num
-      --es_replica_num     <es_replica_num>       the es es_replica_num
-      --log_level          <log_level>            log level to start cmdb process, default: 3
-      --register_ip        <register_ip>          the ip address registered on zookeeper, it can be domain
-      --user_info          <user_info>            the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
-      --enable_cryptor     <enable_cryptor>       enable cryptor,true or false, default is false
-      --secret_key_url     <secret_key_url>       the url to get secret_key which used to encrypt and decrypt cloud account
-      --secrets_addrs      <secrets_addrs>        secrets_addrs, the addrs of bk-secrets service, start with http:// or https://
-      --secrets_token      <secrets_token>        secrets_token , as a header param for sending the api request to bk-secrets service
-      --secrets_project    <secrets_project>      secrets_project, as a header param for sending the api request to bk-secrets service
-      --secrets_env        <secrets_env>          secrets_env, as a header param for sending the api request to bk-secrets service
+      --discovery               <discovery>               the ZooKeeper server address, eg:127.0.0.1:2181
+      --database                <database>                the database name, default cmdb
+      --redis_ip                <redis_ip>                the redis ip, eg:127.0.0.1
+      --redis_port              <redis_port>              the redis port, default:6379
+      --redis_pass              <redis_pass>              the redis user password
+      --sentinel_pass           <sentinel_pass>           the redis sentinel password
+      --redis_certfile          <redis_certfile>          the redis cert file path
+      --redis_keyfile           <redis_keyfile>           the redis key file path
+      --redis_cafile            <redis_cafile>            the redis ca cert file path
+      --redis_skipverify        <redis_skipverify>        the redis skip verify
+      --mongo_ip                <mongo_ip>                the mongo ip ,eg:127.0.0.1
+      --mongo_port              <mongo_port>              the mongo port, eg:27017
+      --mongo_user              <mongo_user>              the mongo user name, default:cc
+      --mongo_pass              <mongo_pass>              the mongo password
+      --mongo_certfile          <mongo_certfile>          the mongo cert file path
+      --mongo_keyfile           <mongo_keyfile>           the mongo key file path
+      --mongo_cafile            <mongo_cafile>            the mongo ca cert file path
+      --mongo_skipverify        <mongo_skipverify>        the mongo skip verify
+      --rs_name                 <rs_name>                 the mongo replica set name, default: rs0
+      --blueking_cmdb_url       <blueking_cmdb_url>       the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
+      --blueking_paas_url       <blueking_paas_url>       the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
+      --listen_port             <listen_port>             the cmdb_webserver listen port, should be the port as same as -c <blueking_cmdb_url> specified, default:8083
+      --auth_scheme             <auth_scheme>             auth scheme, ex: internal, iam
+      --auth_enabled            <auth_enabled>            iam auth enabled, true or false
+      --auth_address            <auth_address>            iam address
+      --auth_app_code           <auth_app_code>           app code for iam, default bk_cmdb
+      --auth_app_secret         <auth_app_secret>         app code for iam
+      --full_text_search        <full_text_search>        full text search on or off
+      --es_url                  <es_url>                  the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
+      --es_user                 <es_user>                 the es user name
+      --es_pass                 <es_pass>                 the es password
+      --es_shard_num            <es_shard_num>            the es sharding num
+      --es_replica_num          <es_replica_num>          the es es_replica_num
+      --log_level               <log_level>               log level to start cmdb process, default: 3
+      --register_ip             <register_ip>             the ip address registered on zookeeper, it can be domain
+      --user_info               <user_info>               the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
+      --enable_cryptor          <enable_cryptor>          enable cryptor,true or false, default is false
+      --secret_key_url          <secret_key_url>          the url to get secret_key which used to encrypt and decrypt cloud account
+      --secrets_addrs           <secrets_addrs>           secrets_addrs, the addrs of bk-secrets service, start with http:// or https://
+      --secrets_token           <secrets_token>           secrets_token , as a header param for sending the api request to bk-secrets service
+      --secrets_project         <secrets_project>         secrets_project, as a header param for sending the api request to bk-secrets service
+      --secrets_env             <secrets_env>             secrets_env, as a header param for sending the api request to bk-secrets service
+      --discovery_cafile        <discovery_cafile>        CA file for ZooKeeper TLS connection
+      --discovery_certfile      <discovery_certfile>      cert file for ZooKeeper TLS connection
+      --discovery_keyfile       <discovery_keyfile>       key file for ZooKeeper TLS connection
+      --discovery_skipverify    <discovery_skipverify>    whether to skip verify ZooKeeper TLS connection, true or false, default true
+      --discovery_certpassword  <discovery_certpassword>  password for ZooKeeper TLS connection
 
     demo:
     python init.py  \\
-      --discovery          127.0.0.1:2181 \\
-      --database           cmdb \\
-      --redis_ip           127.0.0.1 \\
-      --redis_port         6379 \\
-      --redis_pass         1111 \\
-      --sentinel_pass      2222 \\
-      --redis_certfile     ./redis.cert \\
-      --redis_keyfile      ./redis.key \\
-      --redis_cafile       ./redis-ca.crt \\
-      --redis_skipverify   true \\
-      --mongo_ip           127.0.0.1 \\
-      --mongo_port         27017 \\
-      --mongo_user         cc \\
-      --mongo_pass         cc \\
-      --mongo_certfile     ./mongo.cert \\
-      --mongo_keyfile      ./mongo.key \\
-      --mongo_cafile       ./mongo-ca.crt \\
-      --mongo_skipverify   true \\
-      --rs_name            rs0 \\
-      --blueking_cmdb_url  http://127.0.0.1:8080/ \\
-      --blueking_paas_url  http://paas.domain.com \\
-      --listen_port        8080 \\
-      --auth_scheme        internal \\
-      --auth_enabled       false \\
-      --auth_address       https://iam.domain.com/ \\
-      --auth_app_code      bk_cmdb \\
-      --auth_app_secret    xxxxxxx \\
-      --auth_sync_workers  1 \\
-      --auth_sync_interval_minutes  45 \\
-      --full_text_search   off \\
-      --es_url             http://127.0.0.1:9200 \\
-      --es_user            cc \\
-      --es_pass            cc \\
-      --es_shard_num       1 \\
-      --es_replica_num     1 \\
-      --log_level          3 \\
-      --register_ip        cmdb.domain.com \\
-      --user_info          user1:password1,user2:password2
+      --discovery               127.0.0.1:2181 \\
+      --discovery_cafile        ./zk-ca.crt \\
+      --discovery_certfile      ./zk.cert \\
+      --discovery_keyfile       ./zk.key \\
+      --discovery_skipverify    true \\
+      --discovery_certpassword  password \\
+      --database                cmdb \\
+      --redis_ip                127.0.0.1 \\
+      --redis_port              6379 \\
+      --redis_pass              1111 \\
+      --sentinel_pass           2222 \\
+      --redis_certfile          ./redis.cert \\
+      --redis_keyfile           ./redis.key \\
+      --redis_cafile            ./redis-ca.crt \\
+      --redis_skipverify        true \\
+      --mongo_ip                127.0.0.1 \\
+      --mongo_port              27017 \\
+      --mongo_user              cc \\
+      --mongo_pass              cc \\
+      --mongo_certfile          ./mongo.cert \\
+      --mongo_keyfile           ./mongo.key \\
+      --mongo_cafile            ./mongo-ca.crt \\
+      --mongo_skipverify        true \\
+      --rs_name                 rs0 \\
+      --blueking_cmdb_url       http://127.0.0.1:8080/ \\
+      --blueking_paas_url       http://paas.domain.com \\
+      --listen_port             8080 \\
+      --auth_scheme             internal \\
+      --auth_enabled            false \\
+      --auth_address            https://iam.domain.com/ \\
+      --auth_app_code           bk_cmdb \\
+      --auth_app_secret         xxxxxxx \\
+      --auth_sync_workers       1 \\
+      --auth_sync_interval_     minutes  45 \\
+      --full_text_search        off \\
+      --es_url                  http://127.0.0.1:9200 \\
+      --es_user                 cc \\
+      --es_pass                 cc \\
+      --es_shard_num            1 \\
+      --es_replica_num          1 \\
+      --log_level               3 \\
+      --register_ip             cmdb.domain.com \\
+      --user_info               user1:password1,user2:password2
     '''
     try:
         opts, _ = getopt.getopt(argv, "hd:D:r:p:x:s:m:P:X:S:u:U:a:l:es:v", arr)
@@ -1058,6 +1117,21 @@ def main(argv):
         elif opt in ("-d", "--discovery"):
             rd_server = arg
             print('rd_server:', rd_server)
+        elif opt in("--discovery_cafile",):
+            rd_cafile = arg
+            print('rd_cafile:', rd_cafile)
+        elif opt in("--discovery_certfile",):
+            rd_certfile = arg
+            print('rd_certfile:', rd_certfile)
+        elif opt in("--discovery_keyfile",):
+            rd_keyfile = arg
+            print('rd_keyfile:', rd_keyfile)
+        elif opt in("--discovery_skipverify",):
+            rd_skipverify = arg
+            print('rd_skipverify:', rd_skipverify)
+        elif opt in("--discovery_certpassword"):
+            rd_certpassword = arg
+            print('rd_certpassword:', rd_certpassword)
         elif opt in ("-D", "--database"):
             db_name = arg
             print('database:', db_name)
@@ -1301,9 +1375,15 @@ def main(argv):
         secrets_token_v = secrets_token,
         secrets_project_v = secrets_project,
         secrets_env_v = secrets_env,
+        rd_cafile_v=rd_cafile,
+        rd_certfile_v=rd_certfile,
+        rd_keyfile_v=rd_keyfile,
+        rd_skipverify_v=rd_skipverify,
+        rd_certpassword_v=rd_certpassword,
         **auth
     )
-    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor)
+    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor, 
+                       rd_cafile, rd_certfile, rd_keyfile, rd_skipverify, rd_certpassword)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
     print('initial monstache config success, configs could be found at monstache/etc')
 

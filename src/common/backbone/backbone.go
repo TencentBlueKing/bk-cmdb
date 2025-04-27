@@ -57,10 +57,11 @@ type BackboneParameter struct {
 	SrvRegdiscv
 }
 
-func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
+func newSvcManagerClient(ctx context.Context, svcManagerAddr string,
+	tlsConfig *ssl.TLSClientConfig) (*zk.ZkClient, error) {
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(svcManagerAddr, 40*time.Second)
+		client := zk.NewZkClient(svcManagerAddr, 40*time.Second, tlsConfig)
 		if err = client.Start(); err != nil {
 			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 			time.Sleep(time.Second * 2)
@@ -162,7 +163,7 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	}
 
 	if !input.Disable {
-		client, err := newSvcManagerClient(ctx, input.Regdiscv)
+		client, err := newSvcManagerClient(ctx, input.Regdiscv, input.TLSConfig)
 		if err != nil {
 			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
 		}
@@ -289,6 +290,8 @@ type SrvRegdiscv struct {
 	Regdiscv string
 	// Disable disable service registration discovery
 	Disable bool
+	// TLS config
+	TLSConfig *ssl.TLSClientConfig
 }
 
 // Discovery return discovery

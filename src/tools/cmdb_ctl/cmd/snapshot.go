@@ -20,6 +20,7 @@ import (
 
 	"configcenter/src/common"
 	cc "configcenter/src/common/backbone/configcenter"
+	"configcenter/src/common/ssl"
 	"configcenter/src/common/types"
 	ccRedis "configcenter/src/storage/dal/redis"
 	"configcenter/src/tools/cmdb_ctl/app/config"
@@ -63,8 +64,8 @@ type snapshotCheckService struct {
 	config  map[string]string
 }
 
-func newSnapshotCheckService(zkaddr string, bizID int) (*snapshotCheckService, error) {
-	service, err := config.NewZkService(zkaddr)
+func newSnapshotCheckService(zkaddr string, tlsConfig *ssl.TLSClientConfig, bizID int) (*snapshotCheckService, error) {
+	service, err := config.NewZkService(zkaddr, tlsConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +76,7 @@ func newSnapshotCheckService(zkaddr string, bizID int) (*snapshotCheckService, e
 }
 
 func runSnapshotCheck(c *snapshotCheckConf) error {
-	srv, err := newSnapshotCheckService(config.Conf.ZkAddr, c.bizID)
+	srv, err := newSnapshotCheckService(config.Conf.ZkAddr, &config.Conf.ZkTLS, c.bizID)
 	if err != nil {
 		return err
 	}

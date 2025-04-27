@@ -17,6 +17,7 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/common/ssl"
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
@@ -96,6 +97,7 @@ type ConfConfig struct {
 // RegisterConfig TODO
 type RegisterConfig struct {
 	Address string
+	TLS     ssl.TLSClientConfig
 }
 
 // ShardingTableConfig TODO

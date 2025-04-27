@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/common/ssl"
 	"configcenter/src/common/types"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
@@ -64,11 +65,11 @@ type logService struct {
 	addrport []string
 }
 
-func newLogService(zkaddr string, addrport string) (*logService, error) {
+func newLogService(zkaddr string, zkTLS *ssl.TLSClientConfig, addrport string) (*logService, error) {
 	if addrport == "" {
 		return nil, errors.New("addrport must set via flag or environment variable")
 	}
-	service, err := config.NewZkService(zkaddr)
+	service, err := config.NewZkService(zkaddr, zkTLS)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func runLog(c *logConf) error {
 		return fmt.Errorf("can't set log level to v and default at the same time")
 	}
 
-	srv, err := newLogService(config.Conf.ZkAddr, c.addrPort)
+	srv, err := newLogService(config.Conf.ZkAddr, &config.Conf.ZkTLS, c.addrPort)
 	if err != nil {
 		return err
 	}

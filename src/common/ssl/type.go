@@ -46,7 +46,7 @@ func NewTLSConfigFromConf(cfg *TLSClientConfig) (*tls.Config, bool, error) {
 		var err error
 		if len(cfg.CertFile) != 0 && len(cfg.KeyFile) != 0 {
 			// if CertFile and KeyFile are both configured, then use mutual TLS authentication
-			tlsConf, err = ClientTLSConfVerity(cfg.CAFile, cfg.CertFile, cfg.KeyFile, "")
+			tlsConf, err = ClientTLSConfVerity(cfg.CAFile, cfg.CertFile, cfg.KeyFile, cfg.Password)
 		} else {
 			// otherwise, only CAFile is configured, use one-way TLS authentication, only verify server certificate
 			tlsConf, err = ClientTslConfVerityServer(cfg.CAFile)
