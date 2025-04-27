@@ -304,11 +304,31 @@ data:
       addrs: {{ include "cmdb.configAndServiceCenter.addr" . | quote }}
       usr:
       pwd:
+      tls:
+        insecureSkipVerify: {{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}
+        password: {{ .Values.configAndServiceCenter.tls.password }}
+        {{- if .Values.zookeeperCert.ca }}
+        caFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.caFile }}
+        {{- end }}
+        {{- if and .Values.zookeeperCert.cert .Values.zookeeperCert.cert }}
+        certFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.certFile }}
+        keyFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.keyFile }}
+        {{- end }}
 
     registerServer:
       addrs: {{ include "cmdb.configAndServiceCenter.addr" . | quote }}
       usr:
       pwd:
+      tls:
+        insecureSkipVerify: {{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}
+        password: {{ .Values.configAndServiceCenter.tls.password }}
+        {{- if .Values.zookeeperCert.ca }}
+        caFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.caFile }}
+        {{- end }}
+        {{- if and .Values.zookeeperCert.cert .Values.zookeeperCert.cert }}
+        certFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.certFile }}
+        keyFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.keyFile }}
+        {{- end }}
 
     confs:
       dir: {{ .Values.adminserver.configDir }}

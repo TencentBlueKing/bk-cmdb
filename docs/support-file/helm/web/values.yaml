@@ -385,6 +385,12 @@ web:
 ##
 configAndServiceCenter:
   addr:
+  tls:
+    insecureSkipVerify: true
+    caFile: "zookeeper/zk.ca"
+    certFile: "zookeeper/zk.cert"
+    keyFile: "zookeeper/zk.key"
+    password:
 
 ## @section mongodbCert parameters
 ##
@@ -603,3 +609,8 @@ bkLogConfig:
   std:
     enabled: false
     dataId: 1
+
+zookeeperCert:
+  ca: ""
+  cert: ""
+  key: ""

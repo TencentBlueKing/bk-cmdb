@@ -1,0 +1,16 @@
+{{- if or .Values.zookeeperCert.cert .Values.zookeeperCert.key .Values.zookeeperCert.ca -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "bk-cmdb.fullname" $ }}-zookeeper-certs
+data:
+  {{- if .Values.zookeeperCert.ca }}
+  zk.ca: {{ .Values.zookeeperCert.ca | b64dec | quote }}
+  {{- end }}
+  {{- if .Values.zookeeperCert.cert }}
+  zk.cert: {{ .Values.zookeeperCert.cert | b64dec | quote }}
+  {{- end }}
+  {{- if .Values.zookeeperCert.key }}
+  zk.key: {{ .Values.zookeeperCert.key | b64dec | quote }}
+  {{- end }}
+{{- end -}}

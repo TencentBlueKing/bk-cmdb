@@ -48,6 +48,7 @@ spec:
         - --logtostderr={{ .Values.synchronizeserver.command.logToStdErr }}
         - "--enable-auth"
         - {{ .Values.iam.auth.enabled | quote }}
+        {{- include "cmdb.configAndServiceCenter.certCommand" . | nindent 8 }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -89,6 +90,7 @@ spec:
             mountPath: {{ .Values.synchronizeserver.configDir }}
           {{- end }}
           {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.synchronizeserver.configDir }}
         - name: configures
@@ -96,6 +98,7 @@ spec:
             name: {{ .Release.Name }}-synchronizeserver-configures
         {{- end }}
         {{- include "cmdb.redis.certVolume" . | nindent 6 }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
 
       {{- with .Values.synchronizeserver.nodeSelector }}
       nodeSelector:

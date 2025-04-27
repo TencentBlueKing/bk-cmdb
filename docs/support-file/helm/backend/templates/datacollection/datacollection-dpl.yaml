@@ -48,6 +48,7 @@ spec:
         - --logtostderr={{ .Values.datacollection.command.logToStdErr }}
         - "--enable-auth"
         - {{ .Values.iam.auth.enabled | quote }}
+        {{- include "cmdb.configAndServiceCenter.certCommand" . | nindent 8 }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -92,6 +93,7 @@ spec:
           {{- include "cmdb.redis.discoverCertVolumeMount" . | nindent 10 }}
           {{- include "cmdb.redis.netCollectCertVolumeMount" . | nindent 10 }}
           {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.datacollection.configDir }}
         - name: configures
@@ -103,6 +105,7 @@ spec:
         {{- include "cmdb.redis.discoverCertVolume" . | nindent 6 }}
         {{- include "cmdb.redis.netCollectCertVolume" . | nindent 6 }}
         {{- include "cmdb.mongodb.certVolume" . | nindent 6 }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
 
       {{- with .Values.datacollection.nodeSelector }}
       nodeSelector:

@@ -47,6 +47,7 @@ spec:
         - --v={{ .Values.coreservice.command.logLevel }}
         - --logtostderr={{ .Values.coreservice.command.logToStdErr }}
         - --disable-insertion={{ .Values.coreservice.command.disableInsertion }}
+        {{- include "cmdb.configAndServiceCenter.certCommand" . | nindent 8 }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -89,6 +90,7 @@ spec:
           {{- end }}
           {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
           {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.coreservice.configDir }}
         - name: configures
@@ -97,6 +99,7 @@ spec:
         {{- end }}
         {{- include "cmdb.redis.certVolume" . | nindent 6 }}
         {{- include "cmdb.mongodb.certVolume" . | nindent 6 }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
 
       {{- with .Values.coreservice.nodeSelector }}
       nodeSelector:

@@ -49,6 +49,7 @@ spec:
         - --logtostderr={{ .Values.cloudserver.command.logToStdErr }}
         - "--enable-auth"
         - {{ .Values.iam.auth.enabled | quote }}
+        {{- include "cmdb.configAndServiceCenter.certCommand" . | nindent 8 }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -90,6 +91,7 @@ spec:
             mountPath: {{ .Values.cloudserver.configDir }}
           {{- end }}
           {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.cloudserver.configDir }}
         - name: configures
@@ -97,6 +99,7 @@ spec:
             name: {{ .Release.Name }}-cloudserver-configures
         {{- end }}
         {{- include "cmdb.mongodb.certVolume" . | nindent 6 }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
 
       {{- with .Values.cloudserver.nodeSelector }}
       nodeSelector:

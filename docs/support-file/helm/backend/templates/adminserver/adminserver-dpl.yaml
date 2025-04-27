@@ -87,6 +87,7 @@ spec:
         {{- include "cmdb.redis.certVolumeMount" . | nindent 8 }}
         {{- include "cmdb.mongodb.certVolumeMount" . | nindent 8 }}
         {{- include "cmdb.mongodb.watch.certVolumeMount" . | nindent 8 }}
+        {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 8 }}
       volumes:
       - name: configures
         configMap:
@@ -98,7 +99,8 @@ spec:
       {{- end }}
       {{- include "cmdb.redis.certVolume" . | nindent 6 }}
       {{- include "cmdb.mongodb.certVolume" . | nindent 6 }}
-      {{- include "cmdb.mongodb.watch.certVolume" . | nindent 6}}
+      {{- include "cmdb.mongodb.watch.certVolume" . | nindent 6 }}
+      {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
       {{- with .Values.adminserver.nodeSelector }}
       nodeSelector:
       {{ toYaml . | nindent 8 }}

@@ -48,6 +48,7 @@ spec:
         - --logtostderr={{ .Values.operationserver.command.logToStdErr }}
         - "--enable-auth"
         - {{ .Values.iam.auth.enabled | quote }}
+        {{- include "cmdb.configAndServiceCenter.certCommand" . | nindent 8 }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -88,12 +89,14 @@ spec:
           - name: configures
             mountPath: {{ .Values.operationserver.configDir }}
           {{- end }}
+          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.operationserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-operationserver-configures
         {{- end }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 8 }}
 
       {{- with .Values.operationserver.nodeSelector }}
       nodeSelector:

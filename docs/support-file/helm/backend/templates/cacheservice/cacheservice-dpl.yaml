@@ -48,6 +48,8 @@ spec:
         - --logtostderr={{ .Values.cacheservice.command.logToStdErr }}
         - "--enable-auth"
         - {{ .Values.iam.auth.enabled | quote }}
+        {{- include "cmdb.configAndServiceCenter.certCommand" . | nindent 8 }}
+
         livenessProbe:
           httpGet:
             path: /healthz
@@ -91,6 +93,7 @@ spec:
           {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
           {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
           {{- include "cmdb.mongodb.watch.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.cacheservice.configDir }}
         - name: configures
@@ -100,6 +103,7 @@ spec:
         {{- include "cmdb.redis.certVolume" . | nindent 6 }}
         {{- include "cmdb.mongodb.certVolume" . | nindent 6 }}
         {{- include "cmdb.mongodb.watch.certVolume" . | nindent 6 }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
 
       {{- with .Values.cacheservice.nodeSelector }}
       nodeSelector:

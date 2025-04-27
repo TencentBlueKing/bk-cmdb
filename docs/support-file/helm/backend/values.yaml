@@ -1429,8 +1429,14 @@ zookeeper:
 
 ## @section bk-cmdb config and service center parameters
 ##
-# configAndServiceCenter:
-#   addr:
+configAndServiceCenter:
+  addr:
+  tls:
+    insecureSkipVerify: true
+    caFile: "zookeeper/zk.ca"
+    certFile: "zookeeper/zk.cert"
+    keyFile: "zookeeper/zk.key"
+    password:
 
 ## @section mongodb parameters
 ##
@@ -2016,3 +2022,7 @@ mongodbCert:
     ## key content encoded in base64
     ##
     key: ""
+zookeeperCert:
+  ca: ""
+  cert: ""
+  key: ""
