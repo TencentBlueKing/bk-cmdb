@@ -37,8 +37,6 @@ type InstanceInterface interface {
 		resp *metadata.SearchInstResult, err error)
 	GetAppBasicInfo(ctx context.Context, h http.Header, bizID int64) (resp *metadata.AppBasicInfoResult, err error)
 	GetDefaultApp(ctx context.Context, h http.Header) (resp *metadata.SearchInstResult, err error)
-	CreateDefaultApp(ctx context.Context, h http.Header,
-		data map[string]interface{}) (resp *metadata.CreateInstResult, err error)
 	SearchAuditDict(ctx context.Context, h http.Header) (resp *metadata.Response, err error)
 	SearchAuditList(ctx context.Context, h http.Header, input *metadata.AuditQueryInput) (*metadata.Response, error)
 	SearchAuditDetail(ctx context.Context, h http.Header, input *metadata.AuditDetailQueryInput) (*metadata.Response,

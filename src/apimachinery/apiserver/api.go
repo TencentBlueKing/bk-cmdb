@@ -28,24 +28,6 @@ func (a *apiServer) Client() rest.ClientInterface {
 	return a.client
 }
 
-// AddDefaultApp TODO
-func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response,
-	err error) {
-
-	resp = new(metadata.Response)
-	subPath := "biz/default/%s"
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(params).
-		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
-		SubResourcef(subPath, "0").
-		WithHeaders(h).
-		Do().
-		IntoCmdbResp(resp)
-	return
-}
-
 // SearchDefaultApp TODO
 func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header) (resp *metadata.QueryInstResult, err error) {
 	resp = new(metadata.QueryInstResult)

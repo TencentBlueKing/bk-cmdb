@@ -201,3 +201,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{ .Values.image.registry }}/{{ .Values.migrate.image.repository }}:v{{ default .Chart.AppVersion .Values.migrate.image.tag }}
 {{- end -}}
 
+{{- define "bk-cmdb.tenantID" -}}
+    {{- if eq .Values.tenant.enableMultiTenantMode true -}}
+      system
+    {{- else -}}
+      default
+    {{- end -}}
+{{- end -}}

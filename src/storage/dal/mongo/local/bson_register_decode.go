@@ -290,6 +290,15 @@ func EmptyInterfaceDecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader
 		}
 	}
 
+	if rtype == tDateTime {
+		dateTime, err := vr.ReadDateTime()
+		if err != nil {
+			return err
+		}
+		val.Set(reflect.ValueOf(primitive.DateTime(dateTime).Time()))
+		return nil
+	}
+
 	decoder, err := dc.LookupDecoder(rtype)
 	if err != nil {
 		return err

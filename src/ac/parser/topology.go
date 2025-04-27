@@ -48,9 +48,8 @@ func (ps *parseStream) topology() *parseStream {
 var (
 	updateBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
 	// deleteBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
-	findResourcePoolBusinessRegexp   = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/search/?$`)
-	createResourcePoolBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/?$`)
-	updateBusinessStatusRegexp       = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	findResourcePoolBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/search/?$`)
+	updateBusinessStatusRegexp     = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 )
 
 const (
@@ -70,19 +69,6 @@ func (ps *parseStream) business() *parseStream {
 
 	ps = ps.findBiz()
 	if ps.shouldReturn() {
-		return ps
-	}
-
-	// 创建主机池业务
-	if ps.hitRegexp(createResourcePoolBusinessRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.Create,
-				},
-			},
-		}
 		return ps
 	}
 

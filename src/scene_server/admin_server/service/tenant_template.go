@@ -500,7 +500,7 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 	}
 	// get attribute data
 	attrArr := make([]metadata.Attribute, 0)
-	err = db.Table(table).Find(nil).All(kit.Ctx, &attrArr)
+	err = db.Table(common.BKTableNameObjAttDes).Find(nil).All(kit.Ctx, &attrArr)
 	if err != nil {
 		blog.Errorf("get host unique fields failed, err: %v", err)
 		return err

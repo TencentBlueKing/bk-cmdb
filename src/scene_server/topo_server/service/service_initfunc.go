@@ -78,8 +78,6 @@ func (s *Service) initBusiness(web *restful.WebService) {
 		Handler: s.GetBusinessBasicInfo})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/app/default/{owner_id}/search",
 		Handler: s.SearchOwnerResourcePoolBusiness})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/app/default/{owner_id}",
-		Handler: s.CreateDefaultBusiness})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/internal/{owner_id}/{app_id}",
 		Handler: s.GetInternalModule})
 	utility.AddHandler(rest.Action{Verb: http.MethodGet, Path: "/topo/internal/{owner_id}/{app_id}/with_statistics",
