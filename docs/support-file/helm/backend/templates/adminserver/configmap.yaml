@@ -63,7 +63,7 @@ data:
     crypto:
       # 是否开启加密
       enabled: {{ .Values.common.crypto.enabled }}
-      # 加密算法类型，枚举值：CLASSIC（国际算法）
+      # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
       algorithm: {{ .Values.global.bkCryptoType }}
       # 使用AES-GCM算法时所需的配置
       aesGcm:

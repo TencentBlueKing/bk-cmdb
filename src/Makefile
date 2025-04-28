@@ -8,7 +8,7 @@ include ../scripts/Makefile
 .PHONY:default
 default:
 	@echo ""
-	@cd  $(SCRIPT_DIR) && DISABLE_CRYPTO=$(DISABLE_CRYPTO) bash ./tongsuo.sh
+	@cd  $(SCRIPT_DIR) && DISABLE_CRYPTO=$(DISABLE_CRYPTO) TONGSUO_PATH=$(TONGSUO_PATH) bash ./tongsuo.sh
 	@echo -e "\033[34mbuilding server... \033[0m"
 	@rm -rf "./ui/node_modules"
 	@cd  $(SCRIPT_DIR) && bash ./build.sh
@@ -21,7 +21,7 @@ default:
 .PHONY:linux
 linux:
 	@echo ""
-	@cd  $(SCRIPT_DIR) && DISABLE_CRYPTO=$(DISABLE_CRYPTO) bash ./tongsuo.sh
+	@cd  $(SCRIPT_DIR) && DISABLE_CRYPTO=$(DISABLE_CRYPTO) TONGSUO_PATH=$(TONGSUO_PATH) bash ./tongsuo.sh
 	@echo -e "\033[34mbuilding server... \033[0m"
 	@rm -rf "./ui/node_modules"
 	@cd  $(SCRIPT_DIR) && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 bash ./build.sh
@@ -34,7 +34,7 @@ linux:
 .PHONY:server
 server:
 	@echo ""
-	@cd  $(SCRIPT_DIR) && DISABLE_CRYPTO=$(DISABLE_CRYPTO) bash ./tongsuo.sh
+	@cd  $(SCRIPT_DIR) && DISABLE_CRYPTO=$(DISABLE_CRYPTO) TONGSUO_PATH=$(TONGSUO_PATH) bash ./tongsuo.sh
 	@echo -e "\033[34mbuilding server... \033[0m"
 	@rm -rf "./ui/node_modules"
 	@cd  $(SCRIPT_DIR) &&  bash ./build.sh
@@ -54,7 +54,7 @@ debug:
 	@echo ""
 	@echo -e "\033[34mbuilding debug... \033[0m"
 	@rm -rf "./ui/node_modules"
-	@cd  $(SCRIPT_DIR) && DISABLE_CRYPTO=$(DISABLE_CRYPTO) bash ./tongsuo.sh
+	@cd  $(SCRIPT_DIR) && DISABLE_CRYPTO=$(DISABLE_CRYPTO) TONGSUO_PATH=$(TONGSUO_PATH) bash ./tongsuo.sh
 	@cd $(SCRIPT_DIR) && bash ./build.sh debug
 	@cd $(SCRIPT_DIR) && python ./generate.py -t '$(BIN_PATH)' -i '${IMAGE}' -o '$(BIN_PATH)/docker'
 

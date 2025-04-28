@@ -118,6 +118,8 @@ func newBkCrypto(conf *Config, randVal []byte) (bkcrypto.Crypto, error) {
 	switch conf.Algorithm {
 	case AesGcm:
 		bkCrypto, err = bkcrypto.NewAesGcm([]byte(conf.AesGcm.Key), randVal)
+	case Sm4:
+		bkCrypto, err = bkcrypto.NewSm4([]byte(conf.Sm4.Key), randVal)
 	default:
 		return nil, fmt.Errorf("crypto algorithm %s is invalid", conf.Algorithm)
 	}
