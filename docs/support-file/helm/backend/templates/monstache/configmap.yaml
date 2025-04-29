@@ -29,6 +29,16 @@ data:
     # resume mode
     resume = false
 
+    elasticsearch-validate-pem-file = {{ not .Values.common.es.tls.insecureSkipVerify }}
+    {{- if .Values.esCert.ca }}
+    elasticsearch-pem-file = "{{ .Values.certPath }}/{{ .Values.common.es.tls.caFile }}"
+    {{- end }}
+    {{- if and .Values.esCert.cert .Values.esCert.key }}
+    [elasticsearch-pki-auth]
+    cert-file = "{{ .Values.certPath }}/{{ .Values.common.es.tls.certFile }}"
+    key-file = "{{ .Values.certPath }}/{{ .Values.common.es.tls.keyFile }}"
+    {{- end }}
+
   extra.toml: |-
     elasticsearch-shard-num = {{ .Values.monstache.elasticsearchShardNum | quote }}
     elasticsearch-replica-num = {{ .Values.monstache.elasticsearchReplicaNum | quote }}

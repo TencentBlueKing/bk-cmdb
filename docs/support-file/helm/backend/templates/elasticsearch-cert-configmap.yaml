@@ -1,0 +1,16 @@
+{{- if or .Values.esCert.ca .Values.esCert.cert .Values.esCert.key }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "bk-cmdb.fullname" $ }}-elasticsearch-certs
+data:
+  {{- if .Values.esCert.ca }}
+  es.ca: {{ .Values.esCert.ca | b64dec | quote }}
+  {{- end }}
+  {{- if .Values.esCert.cert }}
+  es.cert: {{ .Values.esCert.cert | b64dec | quote }}
+  {{- end }}
+  {{- if .Values.esCert.key }}
+  es.key: {{ .Values.esCert.key | b64dec | quote }}
+  {{- end}}
+{{- end }}

@@ -22,6 +22,16 @@ data:
       usr: {{ .Values.common.es.usr }}
       #密码
       pwd: {{ .Values.common.es.pwd }}
+      #tls
+      tls:
+        {{- if and .Values.esCert.cert .Values.esCert.key }}
+        certFile: {{ .Values.certPath }}/{{ .Values.common.es.tls.certFile }}
+        keyFile: {{ .Values.certPath }}/{{ .Values.common.es.tls.keyFile }}
+        {{- end }}
+        {{- if and .Values.esCert.ca }}
+        caFile: {{ .Values.certPath }}/{{ .Values.common.es.tls.caFile }}
+        {{- end }}
+        insecureSkipVerify: {{ .Values.common.es.tls.insecureSkipVerify }}
     # esb配置
     esb:
       addr: {{ .Values.bkComponentApiUrl }}

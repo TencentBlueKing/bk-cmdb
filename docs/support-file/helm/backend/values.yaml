@@ -1108,6 +1108,11 @@ common:
     url:
     usr:
     pwd:
+    tls:
+      certFile: "elasticsearch/es.cert"
+      keyFile: "elasticsearch/es.key"
+      caFile: "elasticsearch/es.ca"
+      insecureSkipVerify: true
   #auth_server专属配置
   authServer:
     #开发商ID
@@ -2023,6 +2028,10 @@ mongodbCert:
     ##
     key: ""
 zookeeperCert:
+  ca: ""
+  cert: ""
+  key: ""
+esCert:
   ca: ""
   cert: ""
   key: ""

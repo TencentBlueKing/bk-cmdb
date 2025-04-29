@@ -24,7 +24,8 @@ def generate_config_file(
         db_name_v, redis_ip_v, redis_port_v,
         redis_pass_v, sentinel_pass_v, redis_certfile_v, redis_keyfile_v, redis_cafile_v, redis_skipverify_v,
         mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, mongo_certfile_v, mongo_keyfile_v, mongo_cafile_v, mongo_skipverify_v, rs_name, user_info,
-        cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v, auth_address, auth_app_code,
+        cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v,
+        es_tls_cafile_v, es_tls_certfile_v, es_tls_keyfile_v, es_tls_skipverify_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip,
         enable_cryptor_v, secret_key_url_v, secrets_addrs_v, secrets_token_v, secrets_project_v, secrets_env_v
 ):
@@ -54,6 +55,10 @@ def generate_config_file(
         es_pass=es_pass_v,
         es_shard_num=es_shard_num_v,
         es_replica_num=es_replica_num_v,
+        es_tls_cafile = es_tls_cafile_v,
+        es_tls_certfile = es_tls_certfile_v,
+        es_tls_keyfile = es_tls_keyfile_v,
+        es_tls_skipverify = es_tls_skipverify_v,
         ui_root="../web",
         agent_url=paas_url_v,
         configures_dir=output,
@@ -332,6 +337,11 @@ es:
   usr: $es_user
   #密码
   pwd: $es_pass
+  tls:
+    caFile: $es_tls_cafile
+    certFile: $es_tls_certfile
+    keyFile: $es_tls_keyfile
+    insecureSkipVerify: $es_tls_skipverify
 # adminServer专属配置
 adminServer:
   #同步IAM动态模型的周期,单位为分钟，最小为1分钟,默认为5分钟
@@ -956,6 +966,10 @@ def main(argv):
     es_pass = ''
     es_shard_num = 1
     es_replica_num = 1
+    es_tls_cafile = ''
+    es_tls_certfile = ''
+    es_tls_keyfile = ''
+    es_tls_skipverify = 'true'
     log_level = '3'
     register_ip = ''
     rs_name = 'rs0'
@@ -994,10 +1008,11 @@ def main(argv):
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
         "redis_pass=", "sentinel_pass=", "redis_certfile=", "redis_keyfile=", "redis_cafile=", "redis_skipverify=",
         "mongo_ip=", "mongo_port=", "rs_name=",
-        "mongo_user=", "mongo_pass=", "mongo_certfile=", "mongo_keyfile=", "mongo_cafile=", "mongo_skipverify=",
-        "blueking_cmdb_url=", "user_info=",
-        "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=","auth_address=",
-        "auth_app_code=", "auth_app_secret=", "auth_enabled=",
+        "mongo_user=", "mongo_pass=", "mongo_certfile=", "mongo_keyfile=", "mongo_cafile=", "mongo_skipverify=", "blueking_cmdb_url=", "user_info=",
+        "blueking_paas_url=", "listen_port=",
+        "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=",
+        "es_tls_cafile=", "es_tls_certfile=", "es_tls_keyfile=", "es_tls_skipverify=",
+        "auth_address=", "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip=",
         "enable_cryptor=", "secret_key_url=", "secrets_addrs=", "secrets_token=", "secrets_project=", "secrets_env=",
         "discovery_cafile=", "discovery_certfile=", "discovery_keyfile=", "discovery_skipverify=", "discovery_certpassword="
@@ -1037,6 +1052,10 @@ def main(argv):
       --es_pass                 <es_pass>                 the es password
       --es_shard_num            <es_shard_num>            the es sharding num
       --es_replica_num          <es_replica_num>          the es es_replica_num
+      --es_tls_cafile           <es_tls_cafile>           the es tls ca file path
+      --es_tls_certfile         <es_tls_certfile>         the es tls cert file path
+      --es_tls_keyfile          <es_tls_keyfile>          the es tls key file path
+      --es_tls_skipverify       <es_tls_skipverify>       the es tls skip verify
       --log_level               <log_level>               log level to start cmdb process, default: 3
       --register_ip             <register_ip>             the ip address registered on zookeeper, it can be domain
       --user_info               <user_info>               the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
@@ -1094,6 +1113,10 @@ def main(argv):
       --es_pass                 cc \\
       --es_shard_num            1 \\
       --es_replica_num          1 \\
+      --es_tls_cafile           ./es-ca.crt \\
+      --es_tls_certfile         ./es.cert \\
+      --es_tls_keyfile          ./es.key \\
+      --es_tls_skipverify       true \\
       --log_level               3 \\
       --register_ip             cmdb.domain.com \\
       --user_info               user1:password1,user2:password2
@@ -1237,6 +1260,18 @@ def main(argv):
         elif opt in("-v","--log_level",):
             log_level = arg
             print('log_level:', log_level)
+        elif opt in("--es_tls_cafile",):
+            es_tls_cafile = arg
+            print('es_tls_cafile:', es_tls_cafile)
+        elif opt in("--es_tls_certfile",):
+            es_tls_certfile = arg
+            print('es_tls_certfile:', es_tls_certfile)
+        elif opt in("--es_tls_keyfile",):
+            es_tls_keyfile = arg
+            print('es_tls_keyfile:', es_tls_keyfile)
+        elif opt in("--es_tls_skipverify",):
+            es_tls_skipverify = arg
+            print('es_tls_skipverify:', es_tls_skipverify)
         elif opt in("--register_ip",):
             register_ip = arg
             print('register_ip:', register_ip)
@@ -1366,6 +1401,10 @@ def main(argv):
         es_pass_v=es_pass,
         es_shard_num_v=es_shard_num,
         es_replica_num_v=es_replica_num,
+        es_tls_cafile_v=es_tls_cafile,
+        es_tls_certfile_v=es_tls_certfile,
+        es_tls_keyfile_v=es_tls_keyfile,
+        es_tls_skipverify_v=es_tls_skipverify,
         log_level=log_level,
         register_ip=register_ip,
         user_info=user_info,
@@ -1382,7 +1421,7 @@ def main(argv):
         rd_certpassword_v=rd_certpassword,
         **auth
     )
-    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor, 
+    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor,
                        rd_cafile, rd_certfile, rd_keyfile, rd_skipverify, rd_certpassword)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
     print('initial monstache config success, configs could be found at monstache/etc')

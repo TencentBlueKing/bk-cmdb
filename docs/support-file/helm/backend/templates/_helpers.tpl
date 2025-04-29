@@ -385,3 +385,18 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 - --regdiscv-certpassword={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.password }}
 {{- end }}
 {{- end -}}
+
+{{- define "cmdb.es.certVolumeMount" -}}
+{{- if or .Values.esCert.ca .Values.esCert.cert .Values.esCert.key }}
+- name: es-certs
+  mountPath: {{ .Values.certPath }}/elasticsearch
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.es.certVolume" -}}
+{{- if or .Values.esCert.ca .Values.esCert.cert .Values.esCert.key }}
+- name: es-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" . }}-elasticsearch-certs
+{{- end }}
+{{- end -}}
