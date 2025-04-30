@@ -156,8 +156,6 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	}
 
 	var c *zk.Conn
-	var err error
-
 	tlsConfig, useTLS, err := ssl.NewTLSConfigFromConf(z.zkTLS)
 	if err != nil {
 		return fmt.Errorf("failed to create TLS config: %v", err)
@@ -170,7 +168,6 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	} else {
 		c, _, err = zk.Connect(z.ZkHost, sessionTimeOut)
 	}
-
 	if err != nil {
 		return err
 	}

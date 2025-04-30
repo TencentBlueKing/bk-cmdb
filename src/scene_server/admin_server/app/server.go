@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/resource/esb"
-	"configcenter/src/common/ssl"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
@@ -140,11 +139,7 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	process.Config.Language.Res, _ = cc.String("language.res")
 	process.Config.Configures.Dir, _ = cc.String("confs.dir")
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
-	process.Config.Register.TLS.CAFile, _ = cc.String("registerServer.tls.caFile")
-	process.Config.Register.TLS.InsecureSkipVerify, _ = cc.Bool("registerServer.tls.insecureSkipVerify")
-	process.Config.Register.TLS.Password, _ = cc.String("registerServer.tls.password")
-	process.Config.Register.TLS.CertFile, _ = cc.String("registerServer.tls.certFile")
-	process.Config.Register.TLS.KeyFile, _ = cc.String("registerServer.tls.keyFile")
+	process.Config.Register.TLS, _ = cc.NewTLSClientConfigFromConfig("registerServer.tls")
 	snapDataID, _ := cc.Int("hostsnap.dataID")
 	migrateWay, _ := cc.String("dataid.migrateWay")
 	process.Config.DataIdMigrateWay = options.MigrateWay(migrateWay)
@@ -211,13 +206,10 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: process.onMigrateConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv: backbone.SrvRegdiscv{Regdiscv: process.Config.Register.Address, TLSConfig: &ssl.TLSClientConfig{
-			InsecureSkipVerify: process.Config.Register.TLS.InsecureSkipVerify,
-			CertFile:           process.Config.Register.TLS.CertFile,
-			KeyFile:            process.Config.Register.TLS.KeyFile,
-			CAFile:             process.Config.Register.TLS.CAFile,
-			Password:           process.Config.Register.TLS.Password,
-		}},
+		SrvRegdiscv: backbone.SrvRegdiscv{
+			Regdiscv:  process.Config.Register.Address,
+			TLSConfig: &process.Config.Register.TLS,
+		},
 		SrvInfo: svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)
