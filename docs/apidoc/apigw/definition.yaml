@@ -168,6 +168,7 @@ grant_permissions:
       - find_host_topo_relation
       - search_module
       - get_biz_brief_cache_topo
+      - list_hosts_without_biz
       - find_host_biz_relations
       - resource_watch
   - bk_app_code: {{ environ.BK_MONITOR_APP_CODE }}
