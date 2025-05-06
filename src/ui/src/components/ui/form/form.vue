@@ -36,7 +36,8 @@
                       v-if="property['placeholder']"
                       v-bk-tooltips="{
                         trigger: 'mouseenter',
-                        content: htmlEncode(property['placeholder'])
+                        content: htmlEncode(property['placeholder']),
+                        disabledHtmlStrAsQuery: true
                       }">
                     </i>
                     <form-tips :type="type" :property="property" :render="renderTips"></form-tips>

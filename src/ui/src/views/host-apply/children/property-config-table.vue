@@ -28,7 +28,8 @@
           v-bk-tooltips.top="{
             theme: 'light',
             trigger: 'mouseenter',
-            content: row.placeholder
+            content: row.placeholder,
+            disabledHtmlStrAsQuery: true
           }">
         </i>
       </div>

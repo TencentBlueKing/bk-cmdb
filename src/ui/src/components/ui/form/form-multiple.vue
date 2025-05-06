@@ -43,7 +43,8 @@
                         v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
                         v-bk-tooltips="{
                           trigger: 'mouseenter',
-                          content: property.placeholder
+                          content: property.placeholder,
+                          disabledHtmlStrAsQuery: true
                         }">
                       </i>
                     </bk-checkbox>

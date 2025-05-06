@@ -32,7 +32,8 @@
                     <i class="property-name-tooltips icon-cc-tips"
                       v-if="property['placeholder']"
                       v-bk-tooltips="{
-                        content: htmlEncode(property['placeholder'])
+                        content: htmlEncode(property['placeholder']),
+                        disabledHtmlStrAsQuery: true
                       }">
                     </i>
                   </div>
