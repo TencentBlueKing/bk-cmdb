@@ -76,10 +76,11 @@ func GetSupplierAccount(header http.Header) string {
 	if supplier := header.Get("X-Bkapi-Supplier-Account"); supplier != "" {
 		return supplier
 	}
-	if supplier := header.Get("HTTP_BLUEKING_SUPPLIER_ID"); supplier != "" {
+	if supplier := header.Get("HTTP_BK_SUPPLIER_ACCOUNT"); supplier != "" {
+		header.Set("HTTP_BLUEKING_SUPPLIER_ID", supplier)
 		return supplier
 	}
-	if supplier := header.Get("HTTP_BK_SUPPLIER_ACCOUNT"); supplier != "" {
+	if supplier := header.Get("HTTP_BLUEKING_SUPPLIER_ID"); supplier != "" {
 		return supplier
 	}
 	return ""
