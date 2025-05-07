@@ -22,6 +22,8 @@
     :strink="false"
     v-model.trim="searchValue"
     :placeholder="$t('关键字/字段值')"
+    :remote-method="fetchRemoteOptions"
+    @input-change="handleInputChange"
     @change="handleChange"
     @menu-select="handleMenuSelect"
     @key-enter="handleKeyEnter"
@@ -39,6 +41,7 @@
   import has from 'has'
   import { CONFIG_MODE } from '@/service/service-template/index.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import useSearchUser from '@/hooks/use-search-user'
 
   export default {
     props: {
@@ -46,6 +49,7 @@
     },
     data() {
       return {
+        isTyeing: false,
         showClear: false,
         searchOptions: [],
         fullOptions: [],
@@ -87,6 +91,7 @@
     },
     created() {
       this.initOptions()
+      this.userSearch = useSearchUser().search
     },
     mounted() {
       Bus.$on('host-apply-clear-search', (value) => {
@@ -95,29 +100,48 @@
       })
     },
     methods: {
+      async fetchRemoteOptions(val, menu) {
+        // 根据具体类型走具体的远程方法拉取options
+        const fetchs = {
+          [PROPERTY_TYPES.OBJUSER]: this.fetchMember
+        }
+        return fetchs[menu.type](val, menu)
+      },
+      async fetchMember(val, menu) {
+        if (!this.isTyeing || val?.length < 2 || val === `${menu.name}：`) {
+          return []
+        }
+        const result = await this.userSearch(val)
+        return result
+      },
       async initOptions() {
         const availableProperties = this.configPropertyList.filter(property => property.host_apply_enabled)
         this.searchOptions = availableProperties.map((property) => {
           const type = property.bk_property_type
           const data = { id: property.id, name: property.bk_property_name, type, disabled: false }
-          if (type === 'enum') {
+          if (type === PROPERTY_TYPES.ENUM) {
             // eslint-disable-next-line max-len
             data.children = (property.option || []).map(option => ({ id: option.id, name: option.name, disabled: false }))
             data.multiable = true
-          } else if (type === 'list') {
+          } else if (type === PROPERTY_TYPES.LIST) {
             data.children = (property.option || []).map(option => ({ id: option, name: option, disabled: false }))
             data.multiable = true
-          } else if (type === 'timezone') {
+          } else if (type === PROPERTY_TYPES.TIMEZONE) {
             data.children = TIMEZONE.map(timezone => ({ id: timezone, name: timezone, disabled: false }))
             data.multiable = true
-          } else if (type === 'bool') {
+          } else if (type === PROPERTY_TYPES.BOOL) {
             data.children = [{ id: true, name: 'true' }, { id: false, name: 'false' }]
+          } else if (type === PROPERTY_TYPES.OBJUSER) {
+            data.remote = true
           } else {
             data.children = []
           }
           return data
         })
         this.fullOptions = this.searchOptions.slice(0)
+      },
+      handleInputChange() {
+        this.isTyeing = true
       },
       handleChange(values) {
         const keywords = values.filter(value => !has(value, 'type') && has(value, 'id'))
@@ -130,10 +154,12 @@
         this.currentMenu = null
       },
       handleFocus() {
+        this.isTyeing = true
         this.showClear = true
       },
       handleBlur() {
         this.showClear = false
+        this.isTyeing = false
       },
       handleClear() {
         this.searchValue = []
@@ -145,6 +171,20 @@
       },
       handleSearch() {
         Bus.$emit(this.searchEventName, this.getSearchValue())
+      },
+      getSingleTypeVal(type, value) {
+        let val = value.id
+        switch (type) {
+          case PROPERTY_TYPES.ENUM:
+            val = value.name
+            break
+          case PROPERTY_TYPES.OBJUSER:
+            val = value.username
+            break
+          default:
+            break
+        }
+        return val
       },
       getSearchValue() {
         const params = {
@@ -164,8 +204,8 @@
               if (isAny) {
                 rule.operator = 'exist'
               } else {
-                // 对枚举类型特殊处理
-                const val = item.type === PROPERTY_TYPES.ENUM ? value.name : value.id
+                // 对枚举类型/用户类型特殊处理
+                const val = this.getSingleTypeVal(item.type, value)
                 rule.operator = 'contains'
                 rule.value = String(val).trim()
               }

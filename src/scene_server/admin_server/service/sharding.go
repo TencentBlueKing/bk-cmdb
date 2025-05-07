@@ -311,8 +311,7 @@ func (s *Service) saveUpdateShardingDBAudit(kit *rest.Kit, preConf, curConf *sha
 		RequestID:       kit.Rid,
 	}
 
-	err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNamePlatformAuditLog).Insert(kit.Ctx, audit)
-	if err != nil {
+	if err = s.db.Shard(kit.ShardOpts()).Table(common.BKTableNameAuditLog).Insert(kit.Ctx, audit); err != nil {
 		blog.Errorf("save sharding db config audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}

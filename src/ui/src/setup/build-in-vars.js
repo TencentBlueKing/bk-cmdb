@@ -11,7 +11,7 @@
  */
 
 /**
- * 内置到 Vue.proottype 的全局变量，命名规则为 $ 开头
+ * 内置到 Vue.prototype 的全局变量，命名规则为 $ 开头
  */
 import Vue from 'vue'
 

@@ -18,7 +18,6 @@
 package data
 
 import (
-	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -33,35 +32,33 @@ var cloudAreaData = []cloudArea{
 		CloudName: "Default Area",
 		Status:    "1",
 		Default:   int64(common.BuiltIn),
+		CloudID:   0,
 	},
 	{
 		CloudName: common.UnassignedCloudAreaName,
 		Default:   int64(common.BuiltIn),
+		CloudID:   -1,
 	},
 }
 
 func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 	cloudData := make([]mapstr.MapStr, 0)
-	cloudTmpData := make([]mapstr.MapStr, 0)
 	for _, data := range cloudAreaData {
 		data.Time = tools.NewTime()
-		data.Creator = "cc_system"
-		data.LastEditor = "cc_system"
+		data.Creator = common.CCSystemOperatorUserName
+		data.LastEditor = common.CCSystemOperatorUserName
 		item, err := tools.ConvStructToMap(data)
 		if err != nil {
 			blog.Errorf("convert struct to map failed, err: %v", err)
 			return err
 		}
 		cloudData = append(cloudData, item)
-		if data.CloudName != "Default Area" {
-			cloudTmpData = append(cloudTmpData, item)
-		}
 	}
 
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKCloudNameField},
 		IgnoreKeys:   []string{common.BKCloudIDField},
-		IDField:      []string{common.BKCloudIDField},
+		IDField:      []string{},
 		AuditTypeField: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
 			ResourceType: metadata.ModuleRes,
@@ -75,13 +72,6 @@ func addCloudAreaData(kit *rest.Kit, db local.DB) error {
 	_, err := tools.InsertData(kit, db, common.BKTableNameBasePlat, cloudData, needField)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameBasePlat, err)
-		return err
-	}
-
-	idOption := &tools.IDOptions{ResNameField: "bk_cloud_name", RemoveKeys: []string{common.BKCloudIDField}}
-	err = tools.InsertTemplateData(kit, db, cloudTmpData, needField, idOption, tenanttmp.TemplateTypePlat)
-	if err != nil {
-		blog.Errorf("insert template data failed, err: %v", err)
 		return err
 	}
 	return nil

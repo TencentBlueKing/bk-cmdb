@@ -15,36 +15,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package user
+package refresh
 
 import (
-	"context"
-	"net/http"
-
-	"configcenter/src/thirdparty/apigw/apigwutil"
+	"configcenter/pkg/tenant/types"
+	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/apimachinery/util"
 )
 
-// ClientI is the bk-user api gateway client
-type ClientI interface {
-	GetTenants(ctx context.Context, h http.Header) ([]Tenant, error)
-	ListUsers(ctx context.Context, h http.Header, page *PageOptions) (*ListUserResult, error)
-	BatchQueryUserDisplayInfo(ctx context.Context, h http.Header, opts *QueryUserDisplayInfoOpts) ([]UserDisplayInfo,
-		error)
-	BatchLookupDept(ctx context.Context, h http.Header, opts *BatchLookupDeptOpts) ([]DepartmentItem, error)
+// RefreshClientInterface refresh tenant info, skip tenant verify
+type RefreshClientInterface interface {
+	RefreshTenant(moduleName string) ([]types.Tenant, error)
 }
 
-type user struct {
-	service *apigwutil.ApiGWSrv
-}
-
-// NewClient create bk-user api gateway client
-func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
-	service, err := apigwutil.NewApiGW(options, "apiGW.bkUserApiGatewayUrl")
-	if err != nil {
-		return nil, err
+// NewRefreshClientInterface new refresh tenant info client
+func NewRefreshClientInterface(capability *util.Capability, disc discovery.DiscoveryInterface) RefreshClientInterface {
+	return &refresh{
+		capability: capability,
+		disc:       disc,
 	}
+}
 
-	return &user{
-		service: service,
-	}, nil
+type refresh struct {
+	capability *util.Capability
+	disc       discovery.DiscoveryInterface
 }

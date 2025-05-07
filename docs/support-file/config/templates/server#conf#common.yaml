@@ -53,8 +53,12 @@ authServer:
 crypto:
   # 是否开启加密
   enabled: __BK_CMDB_ENABLE_CRYPTO__
-  # 加密算法类型，枚举值：CLASSIC（国际算法）
+  # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
   algorithm: __BK_CRYPTO_TYPE__
+  # 使用SM4算法时所需的配置
+  sm4:
+    # 密钥
+    key: __BK_CMDB_SHANGMI_ENCRYPT_KEY__
   # 使用AES-GCM算法时所需的配置
   aesGcm:
     # 密钥

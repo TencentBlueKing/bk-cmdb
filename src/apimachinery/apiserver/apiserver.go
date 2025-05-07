@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/pkg/tenant/types"
 	fieldtmpl "configcenter/src/apimachinery/apiserver/field_template"
 	modelquote "configcenter/src/apimachinery/apiserver/model_quote"
 	"configcenter/src/apimachinery/rest"
@@ -37,7 +36,6 @@ type ApiServerClientInterface interface {
 	FieldTemplate() fieldtmpl.Interface
 	Txn() transaction.Interface
 
-	AddDefaultApp(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response, err error)
 	SearchDefaultApp(ctx context.Context, h http.Header) (resp *metadata.QueryInstResult, err error)
 	GetObjectData(ctx context.Context, h http.Header, cond *metadata.ExportObjectCondition) (
 		resp *metadata.ObjectAttrBatchResult, err error)
@@ -125,7 +123,6 @@ type ApiServerClientInterface interface {
 		err error)
 	TransferHostToResPool(ctx context.Context, bizID int64, h http.Header,
 		data *metadata.TransferHostWithAutoClearServiceInstanceOption) error
-	RefreshTenant(ctx context.Context, h http.Header) ([]types.Tenant, error)
 }
 
 // NewApiServerClientInterface TODO

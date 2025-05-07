@@ -21,6 +21,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"configcenter/src/common"
 	httpheader "configcenter/src/common/http/header"
@@ -34,6 +36,113 @@ func (u *user) GetTenants(ctx context.Context, h http.Header) ([]Tenant, error) 
 	err := u.service.Client.Get().
 		WithContext(ctx).
 		SubResourcef("/api/v3/open/tenants/").
+		WithHeaders(httpheader.SetBkAuth(h, u.service.Auth)).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	if resp.Error != nil {
+		return nil, fmt.Errorf("code: %s, message: %s", resp.Error.Code, resp.Error.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ListUsers list users
+func (u *user) ListUsers(ctx context.Context, h http.Header, page *PageOptions) (*ListUserResult, error) {
+	resp := new(BkUserResponse[*ListUserResult])
+
+	params := make(map[string]string)
+	if page != nil {
+		if page.Page != 0 {
+			params["page"] = strconv.Itoa(page.Page)
+		}
+		if page.PageSize != 0 {
+			params["page_size"] = strconv.Itoa(page.PageSize)
+		}
+	}
+
+	err := u.service.Client.Get().
+		WithContext(ctx).
+		WithParams(params).
+		SubResourcef("/api/v3/open/tenant/users/").
+		WithHeaders(httpheader.SetBkAuth(h, u.service.Auth)).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	if resp.Error != nil {
+		return nil, fmt.Errorf("code: %s, message: %s", resp.Error.Code, resp.Error.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// BatchQueryUserDisplayInfo batch query user display name info
+func (u *user) BatchQueryUserDisplayInfo(ctx context.Context, h http.Header, opts *QueryUserDisplayInfoOpts) (
+	[]UserDisplayInfo, error) {
+
+	resp := new(BkUserResponse[[]UserDisplayInfo])
+
+	err := u.service.Client.Get().
+		WithContext(ctx).
+		WithParam("bk_usernames", strings.Join(opts.BkUsernames, ",")).
+		SubResourcef("/api/v3/open/tenant/users/-/display_info/").
+		WithHeaders(httpheader.SetBkAuth(h, u.service.Auth)).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
+	}
+
+	if resp.Error != nil {
+		return nil, fmt.Errorf("code: %s, message: %s", resp.Error.Code, resp.Error.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// BatchLookupDept batch lookup department
+func (u *user) BatchLookupDept(ctx context.Context, h http.Header, opts *BatchLookupDeptOpts) ([]DepartmentItem,
+	error) {
+
+	strDeptIDs := make([]string, len(opts.DeptIDs))
+	for i, deptID := range opts.DeptIDs {
+		strDeptIDs[i] = strconv.FormatInt(deptID, 10)
+	}
+
+	params := map[string]string{
+		"department_ids": strings.Join(strDeptIDs, ","),
+	}
+	if opts.WithOrgPath {
+		params["with_organization_path"] = "true"
+	}
+
+	resp := new(BkUserResponse[[]DepartmentItem])
+
+	err := u.service.Client.Get().
+		WithContext(ctx).
+		WithParams(params).
+		SubResourcef("/api/v3/open/tenant/departments/-/lookup/").
 		WithHeaders(httpheader.SetBkAuth(h, u.service.Auth)).
 		Do().
 		Into(resp)

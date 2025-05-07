@@ -24,6 +24,7 @@ import (
 	"configcenter/src/apimachinery/healthz"
 	"configcenter/src/apimachinery/hostserver"
 	"configcenter/src/apimachinery/procserver"
+	"configcenter/src/apimachinery/refresh"
 	"configcenter/src/apimachinery/taskserver"
 	"configcenter/src/apimachinery/toposerver"
 	"configcenter/src/apimachinery/util"
@@ -45,6 +46,8 @@ type ClientSetInterface interface {
 	CacheService() cacheservice.CacheServiceClientInterface
 
 	Healthz() healthz.HealthzInterface
+
+	Refresh() refresh.RefreshClientInterface
 }
 
 // NewApiMachinery TODO
@@ -213,4 +216,13 @@ func (cs *ClientSet) CacheService() cacheservice.CacheServiceClientInterface {
 		Mock:     cs.Mock,
 	}
 	return cacheservice.NewCacheServiceClient(c, cs.version)
+}
+
+// Refresh return refresh client
+func (cs *ClientSet) Refresh() refresh.RefreshClientInterface {
+	c := &util.Capability{
+		Client:   cs.client,
+		Throttle: cs.throttle,
+	}
+	return refresh.NewRefreshClientInterface(c, cs.discover)
 }

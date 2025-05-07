@@ -31,17 +31,6 @@ import (
 func addSystemData(kit *rest.Kit, db local.DB) error {
 	blog.Infof("start add init data for table: %s", common.BKTableNameSystem)
 
-	data := map[string]interface{}{common.HostCrossBizField: common.HostCrossBizValue}
-	needField := &tools.InsertOptions{
-		UniqueFields: []string{common.HostCrossBizField},
-		IgnoreKeys:   []string{},
-	}
-	_, err := tools.InsertData(kit, db, common.BKTableNameSystem, []mapstr.MapStr{data}, needField)
-	if err != nil {
-		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameSystem, err)
-		return err
-	}
-
 	if err := initConfigAdmin(kit, db); err != nil {
 		blog.Errorf("add config admin failed, error: %v", err)
 		return err

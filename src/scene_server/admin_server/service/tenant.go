@@ -18,7 +18,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -26,19 +25,19 @@ import (
 	"configcenter/pkg/tenant"
 	"configcenter/pkg/tenant/types"
 	tenanttmp "configcenter/pkg/types/tenant-template"
-	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
-	"configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/index"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/watch"
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal/mongo/local"
+	daltypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/apigw/user"
 
@@ -139,6 +138,15 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 		return
 	}
 
+	if err = addResPool(kit, cli); err != nil {
+		blog.Errorf("add default resouce pool failed, err: %v, rid: %s", err, kit.Rid)
+		result := &metadata.RespError{
+			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
+		}
+		resp.WriteError(http.StatusInternalServerError, result)
+		return
+	}
+
 	// add tenant db relation
 	data := &types.Tenant{
 		TenantID: kit.TenantID,
@@ -156,7 +164,7 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 	}
 
 	// refresh tenants, ignore refresh tenants error
-	if err = refreshTenants(s.CoreAPI); err != nil {
+	if err = logics.RefreshTenants(s.CoreAPI); err != nil {
 		blog.Errorf("refresh tenants failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
@@ -188,58 +196,199 @@ func (s *Service) addWatchTokenForNewTenant(kit *rest.Kit) error {
 	return nil
 }
 
+var defaultCloudAreas = []metadata.CloudArea{
+	{
+		CloudID:   common.BKDefaultDirSubArea,
+		CloudName: common.DefaultCloudName,
+		Status:    "1",
+		Default:   int64(common.BuiltIn),
+	},
+	{
+		CloudID:   common.UnassignedCloudAreaID,
+		CloudName: common.UnassignedCloudAreaName,
+		Default:   int64(common.BuiltIn),
+	},
+}
+
+// addDefaultArea add default cloud areas
 func addDefaultArea(kit *rest.Kit, db local.DB) error {
-	// add default area
-	cond := map[string]interface{}{"bk_cloud_name": "Default Area"}
-	cnt, err := db.Table(common.BKTableNameBasePlat).Find(cond).Count(kit.Ctx)
+	cond := map[string]interface{}{common.BKDefaultField: common.BuiltIn}
+	existCloudAreas := make([]metadata.CloudArea, 0)
+	err := db.Table(common.BKTableNameBasePlat).Find(cond).Fields(common.BKCloudIDField).All(kit.Ctx, &existCloudAreas)
 	if err != nil {
 		blog.Errorf("get default area count failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
-	if cnt == 1 {
+	if len(existCloudAreas) == len(defaultCloudAreas) {
 		return nil
 	}
 
-	err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, metadata.CloudArea{
-		Creator:    common.CCSystemOperatorUserName,
-		LastEditor: common.CCSystemOperatorUserName,
-		CloudID:    common.BKDefaultDirSubArea,
-		CloudName:  "Default Area",
-		Default:    int64(common.BuiltIn),
-		CreateTime: time.Now(),
-		LastTime:   time.Now(),
-		Status:     "1",
-	})
-	if err != nil {
+	existCloudAreaMap := make(map[int64]struct{})
+	for _, area := range existCloudAreas {
+		existCloudAreaMap[area.CloudID] = struct{}{}
+	}
+
+	now := time.Now()
+	createCloudAreas := make([]metadata.CloudArea, 0)
+	for _, cloudArea := range defaultCloudAreas {
+		_, exists := existCloudAreaMap[cloudArea.CloudID]
+		if exists {
+			continue
+		}
+		cloudArea.Default = int64(common.BuiltIn)
+		cloudArea.Creator = common.CCSystemOperatorUserName
+		cloudArea.LastEditor = common.CCSystemOperatorUserName
+		cloudArea.CreateTime = now
+		cloudArea.LastTime = now
+		createCloudAreas = append(createCloudAreas, cloudArea)
+	}
+
+	if err = db.Table(common.BKTableNameBasePlat).Insert(kit.Ctx, createCloudAreas); err != nil {
 		blog.Errorf("add default area failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 	return nil
 }
 
-// addTableIndexes add table indexes
-func addTableIndexes(kit *rest.Kit, db local.DB) error {
-	tableIndexes := index.TableIndexes()
-	for _, object := range common.BKInnerObjects {
-		instAsstTable := common.GetObjectInstAsstTableName(object, kit.TenantID)
-		tableIndexes[instAsstTable] = index.InstanceAssociationIndexes()
+func addResPoolData(kit *rest.Kit, db local.DB, objID string, data mapstr.MapStr) (int64, error) {
+	table := common.GetInstTableName(objID, kit.TenantID)
+	idField := common.GetInstIDField(objID)
+
+	cond := mapstr.MapStr{common.BKDefaultField: data[common.BKDefaultField]}
+	existData := make([]map[string]int64, 0)
+	err := db.Table(table).Find(cond).Fields(idField).All(kit.Ctx, &existData)
+	if err != nil {
+		blog.Errorf("get exist resource pool %s failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return 0, err
 	}
 
-	for table, index := range tableIndexes {
-		dbCli := db
-		if common.IsPlatformTable(table) {
-			dbCli = mongodb.Shard(kit.SysShardOpts())
-		}
-		if err := logics.CreateTable(kit, dbCli, table); err != nil {
-			blog.Errorf("create table %s failed, err: %v, rid: %s", table, err, kit.Rid)
-			return err
-		}
+	if len(existData) > 0 {
+		return existData[0][idField], nil
+	}
 
-		if err := logics.CreateIndexes(kit, dbCli, table, index); err != nil {
-			blog.Errorf("create table %s failed, err: %v, rid: %s", table, err, kit.Rid)
+	id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, table)
+	if err != nil {
+		blog.Errorf("get next sequence for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
+		return 0, err
+	}
+
+	data[idField] = id
+	err = db.Table(table).Insert(kit.Ctx, data)
+	if err != nil {
+		blog.Errorf("create resource pool %s data(%+v) failed, err: %v, rid: %s", objID, data, err, kit.Rid)
+		return 0, err
+	}
+	return int64(id), nil
+}
+
+func addResPool(kit *rest.Kit, db local.DB) error {
+	now := time.Now()
+
+	bizID, err := addResPoolData(kit, db, common.BKInnerObjIDApp, mapstr.MapStr{
+		common.BKAppNameField:     common.DefaultAppName,
+		common.BKMaintainersField: "admin",
+		common.BKProductPMField:   "admin",
+		common.BKTimeZoneField:    "Asia/Shanghai",
+		common.BKLanguageField:    "1",
+		common.BKLifeCycleField:   common.DefaultAppLifeCycleNormal,
+		common.BKDefaultField:     common.DefaultAppFlag,
+		common.BKDeveloperField:   "",
+		common.BKTesterField:      "",
+		common.BKOperatorField:    "",
+		common.CreateTimeField:    now,
+		common.LastTimeField:      now,
+	})
+	if err != nil {
+		return err
+	}
+
+	setID, err := addResPoolData(kit, db, common.BKInnerObjIDSet, mapstr.MapStr{
+		common.BKAppIDField:         bizID,
+		common.BKInstParentStr:      bizID,
+		common.BKSetNameField:       common.DefaultResSetName,
+		common.BKDefaultField:       common.DefaultResSetFlag,
+		common.BKSetEnvField:        "3",
+		common.BKSetStatusField:     "1",
+		common.BKSetDescField:       "",
+		common.BKSetTemplateIDField: 0,
+		common.BKSetCapacityField:   nil,
+		common.BKDescriptionField:   "",
+		common.CreateTimeField:      now,
+		common.LastTimeField:        now,
+	})
+	if err != nil {
+		return err
+	}
+
+	// get default service category
+	cond := map[string]interface{}{
+		common.BKFieldName:     common.DefaultServiceCategoryName,
+		common.BKParentIDField: mapstr.MapStr{common.BKDBNE: 0},
+	}
+	defCategory := new(metadata.ServiceCategory)
+	err = db.Table(common.BKTableNameServiceCategory).Find(cond).Fields(common.BKFieldID).One(kit.Ctx, &defCategory)
+	if err != nil {
+		blog.Errorf("get default service category by cond(%+v) failed, err: %v, rid: %s", cond, err, kit.Rid)
+		return err
+	}
+
+	_, err = addResPoolData(kit, db, common.BKInnerObjIDModule, mapstr.MapStr{
+		common.BKAppIDField:             bizID,
+		common.BKSetIDField:             setID,
+		common.BKInstParentStr:          setID,
+		common.BKModuleNameField:        common.DefaultResModuleName,
+		common.BKDefaultField:           common.DefaultResModuleFlag,
+		common.BKServiceTemplateIDField: common.ServiceTemplateIDNotSet,
+		common.BKSetTemplateIDField:     common.SetTemplateIDNotSet,
+		common.BKServiceCategoryIDField: defCategory.ID,
+		common.BKModuleTypeField:        "1",
+		common.BKOperatorField:          "",
+		common.BKBakOperatorField:       "",
+		common.HostApplyEnabledField:    false,
+		common.CreateTimeField:          now,
+		common.LastTimeField:            now,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// addTableIndexes add table indexes
+func addTableIndexes(kit *rest.Kit, db local.DB) error {
+	for table, index := range index.TableIndexes() {
+		if err := addOneTableIndexes(kit, db, table, index); err != nil {
 			return err
 		}
+	}
+
+	for _, object := range common.BKInnerObjects {
+		instAsstTable := common.GetObjectInstAsstTableName(object, kit.TenantID)
+		if err := addOneTableIndexes(kit, db, instAsstTable, index.InstanceAssociationIndexes()); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// addOneTableIndexes add table indexes for one table
+func addOneTableIndexes(kit *rest.Kit, db local.DB, table string, indexes []daltypes.Index) error {
+	dbCli := db
+	if common.IsPlatformTable(table) {
+		dbCli = mongodb.Shard(kit.SysShardOpts())
+	}
+
+	if err := logics.CreateTable(kit, dbCli, table); err != nil {
+		blog.Errorf("create table %s failed, err: %v, rid: %s", table, err, kit.Rid)
+		return err
+	}
+
+	if err := logics.CreateIndexes(kit, dbCli, table, indexes); err != nil {
+		blog.Errorf("create index %s failed, err: %v, rid: %s", table, err, kit.Rid)
+		return err
 	}
 
 	return nil
@@ -254,21 +403,5 @@ func addDataFromTemplate(kit *rest.Kit, db local.DB) error {
 		}
 	}
 
-	return nil
-}
-
-// refreshTenants tenant info
-func refreshTenants(apiMachineryCli apimachinery.ClientSetInterface) error {
-	if apiMachineryCli == nil {
-		return fmt.Errorf("api machinery client is nil")
-	}
-
-	tenants, err := apiMachineryCli.ApiServer().RefreshTenant(context.Background(), util.GenDefaultHeader())
-	if err != nil {
-		blog.Errorf("refresh tenant info failed, err: %v", err)
-		return err
-	}
-
-	tenant.SetTenant(tenants)
 	return nil
 }

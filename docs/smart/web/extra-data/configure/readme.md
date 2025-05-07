@@ -11,7 +11,6 @@
 | BKPAAS_BK_DOMAIN                       | 用于配置前端需要的cookie domain地址         |             |
 | BK_HTTP_SCHEMA                         | 访问协议                             |             |
 | BKPAAS_SHARED_RES_URL                  | 蓝鲸共享资源URL                        |             |
-| BK_IAM_V3_APP_CODE                     | 权限中心app code                     |             |
 | BKPAAS_NODEMAN_URL                     | 节点管理地址                           |             |
 | BK_CMDB_ENABLE_BK_NOTICE               | 是否启用消息通知, true或false             |             |
 | BK_CMDB_APIGW_JWT_ENABLED              | 是否通过jwt调用apigw, true或false       | true        |
@@ -19,6 +18,7 @@
 | BK_APIGW_BK_NOTICE_URL                 | 消息通知中心API GATEWAY网关地址            |             |
 | BK_APIGW_BK_CMDB_URL                   | cmdb API GATEWAY网关地址             |             |
 | BK_APIGW_BK_LOGIN_URL                  | 蓝鲸登录API GATEWAY网关地址              |             |
+| BK_APIGW_BK_USER_URL                   | 用户管理API GATEWAY网关地址              |             |
 | BK_CMDB_MONGODB_HOST                   | cmdb mongodb地址                   |             |
 | BK_CMDB_MONGODB_PORT                   | cmdb mongodb端口                   |             |
 | BK_CMDB_MONGODB_USERNAME               | cmdb mongodb用户                   |             |

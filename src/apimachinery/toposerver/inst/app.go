@@ -132,19 +132,3 @@ func (t *instanceClient) GetDefaultApp(ctx context.Context, h http.Header) (
 		Into(resp)
 	return
 }
-
-// CreateDefaultApp TODO
-func (t *instanceClient) CreateDefaultApp(ctx context.Context, h http.Header, data map[string]interface{}) (
-	resp *metadata.CreateInstResult, err error) {
-	resp = new(metadata.CreateInstResult)
-	subPath := "/app/default/%s"
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(data).
-		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
-		SubResourcef(subPath, "0").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}

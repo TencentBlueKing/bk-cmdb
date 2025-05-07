@@ -469,7 +469,8 @@ func (dt *dbTable) syncModelShardingTable(ctx context.Context) error {
 
 	modelDBTableNameMap := make(map[string]struct{}, 0)
 	for _, name := range allDBTables {
-		if common.IsObjectInstAsstShardingTable(name) {
+		name = strings.TrimPrefix(name, dt.tenantID+"_")
+		if common.IsObjectShardingTable(name) {
 			modelDBTableNameMap[name] = struct{}{}
 		}
 	}
@@ -708,8 +709,8 @@ func (dt *dbTable) findObjUniques(ctx context.Context, objID string) ([]types.In
 	for _, idx := range uniqueIdxs {
 		newDBIndex, err := index.ToDBUniqueIndex(objID, idx.ID, idx.Keys, attrs)
 		if err != nil {
-			newErr := fmt.Errorf("obj(%s). %s", objID, err.Error())
-			blog.Errorf("%s, rid: %s", newErr.Error(), dt.rid)
+			newErr := fmt.Errorf("obj(%s). %v", objID, err)
+			blog.Errorf("%v, idx: %+v, rid: %s", newErr, idx, dt.rid)
 			return nil, newErr
 		}
 		indexes = append(indexes, newDBIndex)

@@ -15,27 +15,50 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package login
+package refresh
 
 import (
 	"context"
-	"net/http"
+	"fmt"
 
-	httpheader "configcenter/src/common/http/header"
-	"configcenter/src/thirdparty/esbserver/esbutil"
+	"configcenter/pkg/tenant/types"
+	"configcenter/src/apimachinery/rest"
+	"configcenter/src/common/http/header/util"
+	commontypes "configcenter/src/common/types"
 )
 
-// GetUser get all user from bk-login
-func (l *login) GetUser(ctx context.Context, h http.Header) (resp *UserResponse, err error) {
-	resp = &UserResponse{}
-	subPath := "/v2/bk_login/get_user/"
+// RefreshTenant refresh tenant info
+func (r *refresh) RefreshTenant(moduleName string) ([]types.Tenant, error) {
 
-	err = l.client.Get().
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithParams(map[string]string{"bk_token": httpheader.GetUserToken(h)}).
-		WithHeaders(esbutil.SetEsbAuthHeader(l.config.GetConfig(), h)).
+	switch moduleName {
+
+	case commontypes.CC_MODULE_APISERVER:
+		r.capability.Discover = r.disc.ApiServer()
+
+	case commontypes.CC_MODULE_TASK:
+		r.capability.Discover = r.disc.TaskServer()
+
+	default:
+		return nil, fmt.Errorf("unsupported refresh module: %s", moduleName)
+	}
+
+	resp := new(types.AllTenantsResult)
+	client := rest.NewRESTClient(r.capability, "/")
+	err := client.Post().
+		WithContext(context.Background()).
+		SubResourcef("/refresh/tenants").
+		Body(nil).
+		WithHeaders(util.GenDefaultHeader()).
 		Do().
 		Into(resp)
-	return
+
+	if err != nil {
+		return nil, err
+	}
+
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp.Data, nil
 }

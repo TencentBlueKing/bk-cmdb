@@ -35,21 +35,6 @@ func (a *adminServer) ClearDatabase(ctx context.Context, h http.Header) (resp *m
 	return
 }
 
-// Set TODO
-func (a *adminServer) Set(ctx context.Context, ownerID string, h http.Header) (resp *metadata.Response, err error) {
-	resp = new(metadata.Response)
-	subPath := "/migrate/system/hostcrossbiz/%s"
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(nil).
-		SubResourcef(subPath, ownerID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}
-
 // Migrate TODO
 func (a *adminServer) Migrate(ctx context.Context, h http.Header) error {
 	resp := new(metadata.Response)

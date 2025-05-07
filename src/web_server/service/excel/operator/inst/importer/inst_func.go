@@ -206,7 +206,7 @@ func getEnumIDByName(name string, items []interface{}) string {
 
 const (
 	organizationBracketsPattern = `\[(\d+)\]([^\s]+)`
-	userBracketsPattern         = `\([a-zA-Z0-9\@\p{Han} .,_-]*\)`
+	userBracketsPattern         = `\([a-zA-Z0-9\@\p{Han} .,_\-()]*\)`
 )
 
 var (

@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
 	apigwcli "configcenter/src/common/resource/apigw"
-	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/common/util"
 	"configcenter/src/common/webservice/restfulservice"
@@ -108,7 +107,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
 	api.Route(api.POST("/migrate/database").To(s.migrateDatabase))
 	api.Route(api.POST("/add/tenant").To(s.addTenant))
-	api.Route(api.POST("/migrate/system/hostcrossbiz/{ownerID}").To(s.SetSystemConfiguration))
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
 	api.Route(api.GET("/find/system/config_admin").To(s.SearchConfigAdmin))
 	api.Route(api.PUT("/update/system/config_admin").To(s.UpdateConfigAdmin))
@@ -206,15 +204,8 @@ func (s *Service) InitClients() error {
 		clients = []apigw.ClientType{apigw.User}
 	}
 
-	switch s.Config.DataIdMigrateWay {
-	case options.MigrateWayESB, "":
-		s.GseClient = esb.EsbClient().GseSrv()
-
-	case options.MigrateWayApiGW:
+	if s.Config.SnapDataID > 0 {
 		clients = append(clients, apigw.Gse)
-
-	default:
-		return fmt.Errorf("init gse client failed, unknow migrate dataid way")
 	}
 
 	if len(clients) > 0 {
@@ -223,9 +214,7 @@ func (s *Service) InitClients() error {
 			blog.Errorf("init gse api gateway client failed, err: %v", err)
 			return err
 		}
-		if s.GseClient == nil {
-			s.GseClient = apigwcli.Client().Gse()
-		}
+		s.GseClient = apigwcli.Client().Gse()
 	}
 
 	return nil

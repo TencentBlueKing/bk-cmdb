@@ -63,7 +63,7 @@ data:
     crypto:
       # 是否开启加密
       enabled: {{ .Values.common.crypto.enabled }}
-      # 加密算法类型，枚举值：CLASSIC（国际算法）
+      # 加密算法类型，枚举值：CLASSIC（国际算法）、SHANGMI（国密算法）
       algorithm: {{ .Values.global.bkCryptoType }}
       # 使用AES-GCM算法时所需的配置
       aesGcm:
@@ -251,6 +251,7 @@ data:
       bkNoticeApiGatewayUrl: {{ .Values.bkNoticeApiGatewayUrl }}
       bkCmdbApiGatewayUrl: {{ .Values.bkCmdbApiGatewayUrl }}
       bkLoginApiGatewayUrl: {{ .Values.bkLoginApiGatewayUrl }}
+      bkUserApiGatewayUrl: {{ .Values.bkUserApiGatewayUrl }}
       appCode: {{ .Values.common.apiGW.appCode }}
       appSecret: {{ .Values.common.apiGW.appSecret }}
       username: {{ .Values.common.apiGW.username }}
@@ -294,12 +295,6 @@ data:
 
     hostsnap:
       dataID: 1100010
-
-    dataid:
-      migrateWay: {{ .Values.migrate.dataid.migrateWay }}
-
-    apiGW:
-      bkUserApiGatewayUrl: {{ .Values.bkUserApiGatewayUrl }}}}
 
     tenant:
       enableMultiTenantMode: {{ .Values.tenant.enableMultiTenantMode }}

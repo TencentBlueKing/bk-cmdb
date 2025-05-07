@@ -58,7 +58,6 @@ const (
 	TemplateTypeObjAttribute      TenantTemplateType = "obj_attribute"
 	TemplateTypeObjAssociation    TenantTemplateType = "obj_association"
 	TemplateTypeObjClassification TenantTemplateType = "obj_classification"
-	TemplateTypePlat              TenantTemplateType = "plat"
 	TemplateTypePropertyGroup     TenantTemplateType = "property_group"
 	TemplateTypeServiceCategory   TenantTemplateType = "service_category"
 	TemplateTypeUniqueKeys        TenantTemplateType = "unique_keys"
@@ -72,7 +71,6 @@ var AllTemplateTypes = []TenantTemplateType{
 	TemplateTypeObjAttribute,
 	TemplateTypeObjAssociation,
 	TemplateTypeObjClassification,
-	TemplateTypePlat,
 	TemplateTypePropertyGroup,
 	TemplateTypeBizSet,
 	TemplateTypeServiceCategory,

@@ -18,9 +18,7 @@
 package core
 
 import (
-	"bytes"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -34,8 +32,9 @@ import (
 	"configcenter/src/common/language"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/resource/esb"
+	"configcenter/src/common/resource/apigw"
 	"configcenter/src/common/util"
+	"configcenter/src/thirdparty/apigw/user"
 	"configcenter/src/web_server/middleware/user/plugins"
 )
 
@@ -229,8 +228,8 @@ func (d *Client) GetInstWithOrgName(kit *rest.Kit, ccLang language.DefaultCCLang
 		return nil, err
 	}
 	orgMap := make(map[int64]string)
-	for _, item := range organizations.Results {
-		orgMap[item.ID] = item.FullName
+	for _, item := range organizations {
+		orgMap[item.ID] = item.Name
 	}
 
 	for idx, inst := range insts {
@@ -272,49 +271,42 @@ func (d *Client) GetInstWithOrgName(kit *rest.Kit, ccLang language.DefaultCCLang
 }
 
 // getAllOrganization get organization info from paas
-func getAllOrganization(kit *rest.Kit, orgIDs []int64) (*metadata.DepartmentData, errors.CCErrorCoder) {
-
+func getAllOrganization(kit *rest.Kit, orgIDs []int64) ([]user.DepartmentItem, errors.CCErrorCoder) {
 	loginVersion, _ := cc.String("webServer.login.version")
 	if loginVersion == common.BKOpenSourceLoginPluginVersion || loginVersion == common.BKSkipLoginPluginVersion {
-		return &metadata.DepartmentData{}, nil
+		return make([]user.DepartmentItem, 0), nil
 	}
 
-	orgIDList := getOrgListStr(orgIDs)
-	departments := &metadata.DepartmentData{}
+	orgIDList := util.SplitArr(orgIDs, 100)
+	departments := make([]user.DepartmentItem, 0)
 	var wg sync.WaitGroup
 	var lock sync.RWMutex
 	var firstErr error
 	pipeline := make(chan bool, 10)
 
-	for _, subStr := range orgIDList {
+	for _, ids := range orgIDList {
 		pipeline <- true
 		wg.Add(1)
-		go func(subStr string) {
+		go func(ids []int64) {
 			defer func() {
 				wg.Done()
 				<-pipeline
 			}()
 
-			params := make(map[string]string)
-			params["exact_lookups"] = subStr
-			result, esbErr := esb.EsbClient().User().GetAllDepartment(kit.Ctx, kit.Header, params)
-			if esbErr != nil {
-				firstErr = esbErr
-				blog.Errorf("get department by esb client failed, params: %+v, err: %v, rid: %s", params, esbErr,
-					kit.Rid)
-				return
+			deptOpts := &user.BatchLookupDeptOpts{
+				DeptIDs: ids,
 			}
-			if !result.Result {
-				blog.Errorf("get department by esb client failed, params: %+v, rid: %s", params, kit.Rid)
-				firstErr = fmt.Errorf("get department by esb failed, params: %v", params)
+			result, err := apigw.Client().User().BatchLookupDept(kit.Ctx, kit.Header, deptOpts)
+			if err != nil {
+				firstErr = err
+				blog.Errorf("get department by apigw failed, params: %+v, err: %v, rid: %s", deptOpts, err, kit.Rid)
 				return
 			}
 
 			lock.Lock()
-			departments.Count += result.Data.Count
-			departments.Results = append(departments.Results, result.Data.Results...)
+			departments = append(departments, result...)
 			lock.Unlock()
-		}(subStr)
+		}(ids)
 	}
 	wg.Wait()
 
@@ -323,36 +315,6 @@ func getAllOrganization(kit *rest.Kit, orgIDs []int64) (*metadata.DepartmentData
 	}
 
 	return departments, nil
-}
-
-const organizationMaxLength = 500
-
-// getOrgListStr get org list str
-func getOrgListStr(orgIDList []int64) []string {
-	orgListStr := make([]string, 0)
-
-	orgBuffer := bytes.Buffer{}
-	for _, orgID := range orgIDList {
-		if orgBuffer.Len()+len(strconv.FormatInt(orgID, 10)) > organizationMaxLength {
-			orgBuffer.WriteString(strconv.FormatInt(orgID, 10))
-			orgStr := orgBuffer.String()
-			orgListStr = append(orgListStr, orgStr)
-			orgBuffer.Reset()
-			continue
-		}
-
-		orgBuffer.WriteString(strconv.FormatInt(orgID, 10))
-		orgBuffer.WriteByte(',')
-	}
-
-	if orgBuffer.Len() == 0 {
-		return []string{}
-	}
-
-	orgStr := orgBuffer.String()
-	orgListStr = append(orgListStr, orgStr[:len(orgStr)-1])
-
-	return orgListStr
 }
 
 // GetInstWithTable 第一个返回值是返回带有表格数据的实例信息，第二个返回值返回的每个实例数据所占用的excel行数
@@ -428,21 +390,13 @@ func (d *Client) GetInstWithTable(kit *rest.Kit, objID string, insts []mapstr.Ma
 
 // GetInstWithUserFullName 将导出的实例的用户名转化为完整的用户名
 func (d *Client) GetInstWithUserFullName(kit *rest.Kit, lang language.DefaultCCLanguageIf, objID string,
-	insts []mapstr.MapStr) ([]mapstr.MapStr, error) {
-
-	cond := mapstr.MapStr{
-		common.BKObjIDField:                 objID,
-		metadata.AttributeFieldPropertyType: common.FieldTypeUser,
-	}
-	attrs, err := d.ApiClient.ModelQuote().GetObjectAttrWithTable(kit.Ctx, kit.Header, cond)
-	if err != nil {
-		blog.Errorf("get attributes failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
+	insts []mapstr.MapStr, colProps []ColProp) ([]mapstr.MapStr, error) {
 
 	propertyIDs := make([]string, 0)
-	for _, attr := range attrs {
-		propertyIDs = append(propertyIDs, attr.PropertyID)
+	for _, property := range colProps {
+		if property.PropertyType == common.FieldTypeUser {
+			propertyIDs = append(propertyIDs, property.ID)
+		}
 	}
 
 	names := make([]string, 0)
@@ -463,10 +417,10 @@ func (d *Client) GetInstWithUserFullName(kit *rest.Kit, lang language.DefaultCCL
 	}
 
 	userList := util.RemoveDuplicatesAndEmpty(names)
-	// get username from esb
-	fullNameMap, err := d.getUsernameFromEsb(kit, userList)
+	// get username from apigw
+	fullNameMap, err := d.getUsernameFromApigw(kit, userList)
 	if err != nil {
-		blog.Errorf("get username map from ESB failed, err: %v, rid: %s", err, kit.Rid)
+		blog.Errorf("get username map from apigw failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -480,6 +434,10 @@ func (d *Client) GetInstWithUserFullName(kit *rest.Kit, lang language.DefaultCCL
 			if !ok {
 				blog.Errorf("failed to cast %s instance from interface{} to string", objID, kit.Rid)
 				return nil, fmt.Errorf("failed to cast %s instance from interface{} to string", objID)
+			}
+
+			if nameStr == "" {
+				continue
 			}
 
 			oldNames := strings.Split(nameStr, ",")
@@ -500,7 +458,7 @@ func (d *Client) GetInstWithUserFullName(kit *rest.Kit, lang language.DefaultCCL
 	return insts, nil
 }
 
-func (d *Client) getUsernameFromEsb(kit *rest.Kit, userList []string) (map[string]string, error) {
+func (d *Client) getUsernameFromApigw(kit *rest.Kit, userList []string) (map[string]string, error) {
 	usernameMap := map[string]string{}
 
 	if len(userList) == 0 {
@@ -510,57 +468,19 @@ func (d *Client) getUsernameFromEsb(kit *rest.Kit, userList []string) (map[strin
 	loginVersion, _ := cc.String("webServer.login.version")
 	user := plugins.CurrentPlugin(loginVersion)
 
-	// 处理请求的用户数据，将用户拼接成不超过500字节的字符串进行用户数据的获取
-	userListStr := getUserListStr(userList)
-	userListEsb := make([]*metadata.LoginSystemUserInfo, 0)
-
-	for _, subStr := range userListStr {
-		params := make(map[string]string)
-		params["fields"] = "username,display_name"
-		params["exact_lookups"] = subStr
-
-		userListEsbSub, errNew := user.GetUserList(d.GinCtx, params)
+	userListArr := util.SplitArr(userList, 100)
+	for _, users := range userListArr {
+		userInfoList, errNew := user.GetUserList(d.GinCtx, &metadata.GetUserListOptions{Usernames: users})
 		if errNew != nil {
-			blog.Errorf("get users(%s) list from ESB failed, err: %v, rid: %s", subStr, errNew, kit.Rid)
+			blog.Errorf("get users(%+v) list from apigw failed, err: %v, rid: %s", users, errNew, kit.Rid)
 			return nil, errNew.ToCCError(kit.CCError)
 		}
 
-		userListEsb = append(userListEsb, userListEsbSub...)
-	}
-
-	for _, userInfo := range userListEsb {
-		username := fmt.Sprintf("%s(%s)", userInfo.EnName, userInfo.CnName)
-		usernameMap[userInfo.EnName] = username
-	}
-	return usernameMap, nil
-}
-
-const getUserMaxLength = 500
-
-// getUserListStr get user list str
-func getUserListStr(userList []string) []string {
-	userListStr := make([]string, 0)
-
-	userBuffer := bytes.Buffer{}
-	for _, user := range userList {
-		if userBuffer.Len()+len(user) > getUserMaxLength {
-			userBuffer.WriteString(user)
-			userStr := userBuffer.String()
-			userListStr = append(userListStr, userStr)
-			userBuffer.Reset()
-			continue
+		for _, userInfo := range userInfoList {
+			username := fmt.Sprintf("%s(%s)", userInfo.EnName, userInfo.CnName)
+			usernameMap[userInfo.EnName] = username
 		}
-
-		userBuffer.WriteString(user)
-		userBuffer.WriteByte(',')
 	}
 
-	if userBuffer.Len() == 0 {
-		return userList
-	}
-
-	userStr := userBuffer.String()
-	userListStr = append(userListStr, userStr[:len(userStr)-1])
-
-	return userListStr
+	return usernameMap, nil
 }

@@ -36,6 +36,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/common/version"
 	"configcenter/src/common/watch"
+	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/scene_server/admin_server/upgrader"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal/mongo/local"
@@ -91,6 +92,11 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 			Msg: kit.CCError.Errorf(common.CCErrCommMigrateFailed, err.Error()),
 		})
 		return
+	}
+
+	// refresh tenants, ignore refresh tenants error
+	if err = logics.RefreshTenants(s.CoreAPI); err != nil {
+		blog.Errorf("refresh tenant failed, err: %v", err)
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(result))

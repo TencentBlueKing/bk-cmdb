@@ -787,34 +787,6 @@ func (s *Service) SearchOwnerResourcePoolBusiness(ctx *rest.Contexts) {
 	return
 }
 
-// CreateDefaultBusiness create the default business
-func (s *Service) CreateDefaultBusiness(ctx *rest.Contexts) {
-	data := make(mapstr.MapStr)
-	if err := ctx.DecodeInto(&data); err != nil {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	data.Set(common.BKDefaultField, common.DefaultAppFlag)
-
-	var business mapstr.MapStr
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		business, err = s.Logics.BusinessOperation().CreateBusiness(ctx.Kit, data)
-		if err != nil {
-			blog.Errorf("create business failed, err: %+v", err)
-			return err
-		}
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
-	}
-	ctx.RespEntity(business)
-}
-
 // ListAllBusinessSimplify list all businesses with return only several fields
 func (s *Service) ListAllBusinessSimplify(ctx *rest.Contexts) {
 	page := metadata.BasePage{

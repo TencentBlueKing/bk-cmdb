@@ -36,34 +36,6 @@ var (
 	userConfigDefaultExpireHour = 6
 )
 
-// SetSystemConfiguration used for set variable in cc_System table
-func (s *Service) SetSystemConfiguration(req *restful.Request, resp *restful.Response) {
-	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	ownerID := common.BKDefaultTenantID
-	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-
-	blog.Infof("set system configuration on table %s start, rid: %s", common.BKTableNameSystem, rid)
-	cond := map[string]interface{}{
-		common.HostCrossBizField: common.HostCrossBizValue,
-	}
-	data := map[string]interface{}{
-		common.HostCrossBizField: common.HostCrossBizValue + ownerID,
-	}
-
-	err := s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(s.ctx, cond, data)
-	if nil != err {
-		blog.Errorf("set system configuration on table %s failed, err: %v, rid: %s", common.BKTableNameSystem, err, rid)
-		result := &metadata.RespError{
-			Msg: defErr.Error(common.CCErrCommMigrateFailed),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
-	}
-	resp.WriteEntity(metadata.NewSuccessResp("modify system config success"))
-}
-
 // UserConfigSwitch update blueking modify flag
 func (s *Service) UserConfigSwitch(req *restful.Request, resp *restful.Response) {
 	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)

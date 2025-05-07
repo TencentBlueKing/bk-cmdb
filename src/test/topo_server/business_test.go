@@ -22,7 +22,7 @@ var _ = Describe("business test", func() {
 	var bizId, bizId2, bizID string
 	var bizIdInt, bizId1, bizID2, hostID1 int64
 
-	It("create business bk_biz_name = 'eereeede'", func() {
+	It("create business bk_biz_name = 'eereeede' for tenant system", func() {
 		test.DeleteAllBizs()
 		input := map[string]interface{}{
 			"life_cycle":        "2",
@@ -41,6 +41,62 @@ var _ = Describe("business test", func() {
 		Expect(rsp.Result).To(Equal(true))
 		Expect(rsp.Data).To(ContainElement("eereeede"))
 		bizId = commonutil.GetStrByInterface(rsp.Data["bk_biz_id"])
+	})
+
+	It("biz test for multi-tenant", func() {
+		// create biz for tenant test
+		testHeader := test.GetTestTenantHeader()
+		input := map[string]interface{}{
+			"life_cycle":        "2",
+			"language":          "1",
+			"bk_biz_maintainer": "admin",
+			"bk_biz_productor":  "",
+			"bk_biz_tester":     "",
+			"bk_biz_developer":  "",
+			"operator":          "",
+			"bk_biz_name":       "biz_test",
+			"time_zone":         "Africa/Accra",
+		}
+		rsp, err := apiServerClient.CreateBiz(context.Background(), testHeader, input)
+		util.RegisterResponseWithRid(rsp, test.GetTestTenantHeader())
+		Expect(err).NotTo(HaveOccurred())
+		Expect(rsp.Result).To(Equal(true))
+		Expect(rsp.Data).To(ContainElement("biz_test"))
+		testBizId, err := commonutil.GetInt64ByInterface(rsp.Data["bk_biz_id"])
+		Expect(err).To(BeNil())
+		// search biz for tenant test
+		searchInput := &params.SearchParams{
+			Condition: map[string]interface{}{
+				"bk_biz_name": "eereeede",
+			},
+		}
+		searchRsp, err := instClient.SearchApp(context.Background(), testHeader, searchInput)
+		util.RegisterResponseWithRid(rsp, testHeader)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Data.Count).To(Equal(0))
+
+		searchInput = &params.SearchParams{
+			Condition: map[string]interface{}{
+				"bk_biz_name": "biz_test",
+			},
+		}
+		searchRsp, err = instClient.SearchApp(context.Background(), header, searchInput)
+		util.RegisterResponseWithRid(rsp, testHeader)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Data.Count).To(Equal(0))
+
+		searchInput = &params.SearchParams{
+			Condition: map[string]interface{}{
+				"bk_biz_name": "biz_test",
+			},
+		}
+		searchRsp, err = instClient.SearchApp(context.Background(), testHeader, searchInput)
+		util.RegisterResponseWithRid(rsp, testHeader)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(searchRsp.Data.Count).To(Equal(1))
+		id, err := commonutil.GetInt64ByInterface(searchRsp.Data.Info[0]["bk_biz_id"])
+		Expect(err).To(BeNil())
+		Expect(id).To(Equal(testBizId))
 	})
 
 	It("create business bk_biz_name = 'test_biz_status', set and module", func() {

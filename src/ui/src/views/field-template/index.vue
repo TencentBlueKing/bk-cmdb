@@ -410,7 +410,8 @@
       page: 1
     }
     filter.forEach((item) => {
-      query[item.id] = item.values.map(val => val.name).join(',')
+      const key = item.id === 'modifier' ? 'username' : 'name'
+      query[item.id] = item.values.map(val => val[key]).join(',')
     })
     RouterQuery.set(query)
   }

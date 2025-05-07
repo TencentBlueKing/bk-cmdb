@@ -36,7 +36,7 @@ func (s *service) RefreshTenant(req *restful.Request, resp *restful.Response) {
 	defErr := s.engine.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(req.Request.Header))
 	allTenants, err := s.clientSet.CoreService().Tenant().RefreshTenants(req.Request.Context(), req.Request.Header)
 	if err != nil {
-		blog.Errorf("refresh tenant info failed, rid: %s", rid)
+		blog.Errorf("refresh tenant info failed, err: %v, rid: %s", err, rid)
 		resp.WriteError(http.StatusInternalServerError,
 			&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommAddTenantErr, "refresh tenant info failed")})
 		return

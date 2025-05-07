@@ -89,7 +89,7 @@ func InsertData(kit *rest.Kit, db local.DB, table string, data []mapstr.MapStr, 
 	}
 
 	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
-		blog.Errorf("add data for table %s failed, data: %+v, err: %v", insertData, err)
+		blog.Errorf("add data for table %s failed, data: %+v, err: %v", table, insertData, err)
 		return nil, err
 	}
 

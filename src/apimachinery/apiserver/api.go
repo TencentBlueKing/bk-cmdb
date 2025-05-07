@@ -16,7 +16,6 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/pkg/tenant/types"
 	"configcenter/src/apimachinery/rest"
 	ccErr "configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
@@ -27,24 +26,6 @@ import (
 // Client TODO
 func (a *apiServer) Client() rest.ClientInterface {
 	return a.client
-}
-
-// AddDefaultApp TODO
-func (a *apiServer) AddDefaultApp(ctx context.Context, h http.Header, params mapstr.MapStr) (resp *metadata.Response,
-	err error) {
-
-	resp = new(metadata.Response)
-	subPath := "biz/default/%s"
-
-	err = a.client.Post().
-		WithContext(ctx).
-		Body(params).
-		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
-		SubResourcef(subPath, "0").
-		WithHeaders(h).
-		Do().
-		IntoCmdbResp(resp)
-	return
 }
 
 // SearchDefaultApp TODO
@@ -815,27 +796,4 @@ func (a *apiServer) UpdateBizCustomField(ctx context.Context, bizID, id int64, h
 	}
 
 	return nil
-}
-
-// RefreshTenant refresh tenant info
-func (a *apiServer) RefreshTenant(ctx context.Context, h http.Header) ([]types.Tenant, error) {
-
-	resp := new(types.AllTenantsResult)
-	subPath := "/refresh/tenant"
-	err := a.client.Post().
-		WithContext(ctx).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if ccErr := resp.CCError(); ccErr != nil {
-		return nil, ccErr
-	}
-
-	return resp.Data, nil
 }

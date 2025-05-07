@@ -20,8 +20,12 @@ package logics
 import (
 	"fmt"
 
+	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/types"
+	"configcenter/src/apimachinery"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	commontypes "configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -45,4 +49,22 @@ func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string, error) {
 	}
 
 	return dbCli, dbUUID, nil
+}
+
+// RefreshTenants refresh tenant info, skip tenant verify for apiserver
+func RefreshTenants(coreAPI apimachinery.ClientSetInterface) error {
+
+	var tenants []types.Tenant
+	var err error
+	needRefreshServer := []string{commontypes.CC_MODULE_APISERVER, commontypes.CC_MODULE_TASK}
+	for _, module := range needRefreshServer {
+		tenants, err = coreAPI.Refresh().RefreshTenant(module)
+		if err != nil {
+			blog.Errorf("refresh tenant info failed, module: %s, err: %v", module, err)
+			return err
+		}
+	}
+
+	tenant.SetTenant(tenants)
+	return nil
 }
