@@ -15,6 +15,7 @@ package flow
 import (
 	"context"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/cacheservice/event"
@@ -204,4 +205,73 @@ func (e *Event) addProjectTask() error {
 	}
 
 	return e.addFlowTask(opts, parseEvent)
+}
+
+func (e *Event) addFlowTask(opts flowOptions, parseEvent parseEventFunc) error {
+	flow, err := NewFlow(opts, parseEvent)
+	if err != nil {
+		return err
+	}
+
+	flowTask, err := flow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	e.tasks = append(e.tasks, flowTask)
+	return nil
+}
+
+func (e *Event) addInstanceFlowTask(ctx context.Context, opts flowOptions, parseEvent parseEventFunc) error {
+	flow, err := NewFlow(opts, parseEvent)
+	if err != nil {
+		return err
+	}
+	instFlow := InstanceFlow{
+		Flow: flow,
+		mainlineObjectMap: &mainlineObjectMap{
+			data: make(map[string]map[string]struct{}),
+		},
+	}
+
+	err = tenant.ExecForAllTenants(func(tenantID string) error {
+		mainlineObjMap, err := instFlow.getMainlineObjectMap(ctx, tenantID)
+		if err != nil {
+			blog.Errorf("run object instance watch, but get tenant %s mainline objects failed, err: %v", tenantID, err)
+			return err
+		}
+		instFlow.mainlineObjectMap.Set(tenantID, mainlineObjMap)
+
+		go instFlow.syncMainlineObjectMap(tenantID)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	flowTask, err := instFlow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	e.tasks = append(e.tasks, flowTask)
+	return nil
+}
+
+func (e *Event) addInstAsstFlowTask(opts flowOptions, parseEvent parseEventFunc) error {
+	flow, err := NewFlow(opts, parseEvent)
+	if err != nil {
+		return err
+	}
+	instAsstFlow := InstAsstFlow{
+		Flow: flow,
+	}
+
+	flowTask, err := instAsstFlow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	e.tasks = append(e.tasks, flowTask)
+	return nil
 }

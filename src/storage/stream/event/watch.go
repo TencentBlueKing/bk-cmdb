@@ -15,12 +15,16 @@ package event
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"configcenter/src/common/blog"
+	types2 "configcenter/src/common/types"
 	"configcenter/src/storage/stream/types"
+	"configcenter/src/thirdparty/monitor"
+	"configcenter/src/thirdparty/monitor/meta"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -74,7 +78,11 @@ func (e *Event) watch(ctx context.Context, pipeline mongo.Pipeline, streamOption
 		Watch(ctx, pipeline, streamOptions)
 
 	if err != nil && isFatalError(err) {
-		// TODO: send alarm immediately.
+		monitor.Collect(&meta.Alarm{
+			Type:   meta.FlowFatalError,
+			Detail: fmt.Sprintf("watch db: %s got a fatal error: %v, skip resume token and retry", err, e.DBName),
+			Module: types2.CC_MODULE_CACHESERVICE,
+		})
 		blog.Errorf("mongodb watch db: %s got a fatal error, skip resume token and retry, err: %v", e.DBName, err)
 		// reset the resume token, because we can not use the former resume token to watch success for now.
 		streamOptions.StartAfter = nil
@@ -108,23 +116,30 @@ func (e *Event) watch(ctx context.Context, pipeline mongo.Pipeline, streamOption
 }
 
 type loopWatchOpts struct {
+	// Options is the cmdb watch options
 	*types.Options
+	// streamOptions is the mongodb change stream options
 	streamOptions *options.ChangeStreamOptions
-	stream        *mongo.ChangeStream
-	pipeline      mongo.Pipeline
-	eventChan     chan *types.Event
-	currentToken  types.EventToken
-	collOptsInfo  *parsedCollOptsInfo
+	// stream is the mongodb change stream
+	stream *mongo.ChangeStream
+	// pipeline is the mongodb change stream aggregation pipeline which is used to filter events
+	pipeline mongo.Pipeline
+	// eventChan is the event channel that receives mongodb events
+	eventChan chan *types.Event
+	// currentToken is the current change stream token
+	currentToken types.EventToken
+	// collOptsInfo is the parsed watch task and collection info
+	collOptsInfo *parsedCollOptsInfo
+	// collTasksMap is the collection to task ids map
+	collTasksMap map[string][]string
 }
 
 func (e *Event) loopWatch(ctx context.Context, opts *loopWatchOpts) {
 	retry := false
 	opts.currentToken = types.EventToken{Data: ""}
+	opts.collTasksMap = make(map[string][]string)
 
 	e.setCleaner(ctx, opts.eventChan)
-
-	// init collection to task ids map
-	collTasksMap := make(map[string][]string)
 
 	for {
 		// no events, try cancel watch here.
@@ -159,7 +174,7 @@ func (e *Event) loopWatch(ctx context.Context, opts *loopWatchOpts) {
 			default:
 			}
 
-			opts, retry = e.handleStreamEvent(ctx, opts, collTasksMap)
+			opts, retry = e.handleStreamEvent(ctx, opts)
 			if retry {
 				break
 			}
@@ -224,9 +239,12 @@ func (e *Event) retryWatch(ctx context.Context, opts *loopWatchOpts) (*loopWatch
 		Watch(ctx, opts.pipeline, streamOptions)
 	if err != nil {
 		if isFatalError(err) {
-			// TODO: send alarm immediately.
-			blog.Errorf("mongodb watch db: %s got a fatal error, skip resume token and retry, err: %v",
-				e.DBName, err)
+			monitor.Collect(&meta.Alarm{
+				Type:   meta.FlowFatalError,
+				Detail: fmt.Sprintf("watch db: %s got a fatal error: %v, skip resume token and retry", err, e.DBName),
+				Module: types2.CC_MODULE_CACHESERVICE,
+			})
+			blog.Errorf("mongodb watch db: %s got a fatal error, skip resume token and retry, err: %v", e.DBName, err)
 			// reset the resume token, because we can not use the former resume token to watch success for now.
 			streamOptions.StartAfter = nil
 			opts.StartAfterToken = nil
@@ -259,9 +277,7 @@ func (e *Event) retryWatch(ctx context.Context, opts *loopWatchOpts) (*loopWatch
 	return opts, false
 }
 
-func (e *Event) handleStreamEvent(ctx context.Context, opts *loopWatchOpts, collTasksMap map[string][]string) (
-	*loopWatchOpts, bool) {
-
+func (e *Event) handleStreamEvent(ctx context.Context, opts *loopWatchOpts) (*loopWatchOpts, bool) {
 	event := new(types.RawEvent)
 	if err := opts.stream.Decode(event); err != nil {
 		blog.Errorf("watch db %s, but decode to raw event struct failed, err: %v", e.DBName, err)
@@ -296,23 +312,23 @@ func (e *Event) handleStreamEvent(ctx context.Context, opts *loopWatchOpts, coll
 
 	opts.currentToken.Data = event.EventStream.Token.Data
 
-	e.parseEvent(event, opts.eventChan, opts.collOptsInfo, collTasksMap)
+	opts.collTasksMap = e.parseEvent(event, opts.eventChan, opts.collOptsInfo, opts.collTasksMap)
 
 	return opts, false
 }
 
 func (e *Event) parseEvent(event *types.RawEvent, eventChan chan *types.Event, collOptsInfo *parsedCollOptsInfo,
-	collTasksMap map[string][]string) {
+	collTasksMap map[string][]string) map[string][]string {
 
 	base := event.EventStream
 
 	collInfo, err := parseCollInfo(base.Namespace.Collection)
 	if err != nil {
 		blog.Errorf("parse event(%+v) collection info failed, err: %v", base, err)
-		return
+		return collTasksMap
 	}
 
-	// get the event task ids matching the collection name
+	// get the event task ids matching the collection name, cache the task ids info in collTasksMap
 	taskIDs, exists := collTasksMap[base.Namespace.Collection]
 	if !exists {
 		for collRegex, regex := range collOptsInfo.collRegexMap {
@@ -325,7 +341,7 @@ func (e *Event) parseEvent(event *types.RawEvent, eventChan chan *types.Event, c
 
 	if len(taskIDs) == 0 {
 		blog.Errorf("watch db %s, but get invalid event not matching any task, base: %+v", e.DBName, base)
-		return
+		return collTasksMap
 	}
 
 	// decode the event data to the event data struct, use pre data for delete event
@@ -336,7 +352,7 @@ func (e *Event) parseEvent(event *types.RawEvent, eventChan chan *types.Event, c
 
 	if rawDoc == nil {
 		blog.Errorf("watch db %s, but get invalid event with no detail, base: %+v", e.DBName, base)
-		return
+		return collTasksMap
 	}
 
 	var wg sync.WaitGroup
@@ -367,6 +383,7 @@ func (e *Event) parseEvent(event *types.RawEvent, eventChan chan *types.Event, c
 		}(taskID)
 	}
 	wg.Wait()
+	return collTasksMap
 }
 
 // isFatalError if watch encountered a fatal error, we should watch without resume token, which means from now.

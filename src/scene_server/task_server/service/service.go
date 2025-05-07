@@ -35,7 +35,6 @@ import (
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/task_server/app/options"
 	"configcenter/src/scene_server/task_server/logics"
-	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
@@ -175,24 +174,6 @@ func (s *Service) RefreshTenants(req *restful.Request, resp *restful.Response) {
 	}
 
 	tenant.SetTenant(tenants)
-	// refresh tenant db map
-	shardingMongoManager, ok := mongodb.Dal().(*sharding.ShardingMongoManager)
-	if !ok {
-		blog.Errorf("convert to ShardingMongoManager failed, err: %v, rid: %s", err, kit.Rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommRefreshTenantErr, fmt.Errorf("get sharding mongo manager failed")),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-	}
-
-	if err = shardingMongoManager.RefreshTenantDBMap(); err != nil {
-		blog.Errorf("refresh tenant db map failed, err: %v, rid: %s", err, kit.Rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommRefreshTenantErr, fmt.Errorf("get sharding mongo manager failed")),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
-	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(tenants))
 }

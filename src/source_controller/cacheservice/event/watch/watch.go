@@ -619,34 +619,32 @@ func (c *Client) WatchWithCursor(kit *rest.Kit, key event.Key, opts *watch.Watch
 				// has already looped for timeout seconds, and we still got no event.
 				// return with NoEventCursor and empty detail
 				opts.Cursor = watch.NoEventCursor
-				return []*watch.WatchEventDetail{{
-					Cursor:    watch.NoEventCursor,
-					Resource:  opts.Resource,
-					EventType: "",
-					Detail:    nil,
-				}}, nil
-			} else {
-				// 如果最后一个事件存在，则重新拉取匹配watch条件(type和sub resource)的事件，防止最后一个事件正好在超时之后但是
-				// 拉取之前产生的情况下丢失从超时起到最后一个事件之间的事件。如果从起始cursor到最后一个事件之间没有匹配事件的话，
-				// 返回最后一个事件，以免下次拉取时需要从起始cursor再重新拉取一遍不匹配的事件
-				searchOpt.id = nodeID
-				nodes, err = c.searchFollowingEventChainNodesByID(kit, searchOpt)
-				if err != nil {
-					blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, kit.Rid)
-					return nil, err
-				}
-				if len(nodes) != 0 {
-					return c.getEventDetailsWithNodes(kit, opts, nodes, key)
-				}
-
-				resp := &watch.WatchEventDetail{
-					Cursor:   lastNode.Cursor,
-					Resource: opts.Resource,
-					Detail:   nil,
-				}
-				// at least the tail node should be scanned, so something goes wrong.
-				return []*watch.WatchEventDetail{resp}, nil
+				return []*watch.WatchEventDetail{{Cursor: watch.NoEventCursor, Resource: opts.Resource}}, nil
 			}
+
+			// 如果最后一个事件存在，则重新拉取匹配watch条件(type和sub resource)的事件，防止最后一个事件正好在超时之后但是
+			// 拉取之前产生的情况下丢失从超时起到最后一个事件之间的事件。如果从起始cursor到最后一个事件之间没有匹配事件的话，
+			// 返回最后一个事件，以免下次拉取时需要从起始cursor再重新拉取一遍不匹配的事件
+			searchOpt.id = nodeID
+			nodes, err = c.searchFollowingEventChainNodesByID(kit, searchOpt)
+			if err != nil {
+				blog.Errorf("watch event from cursor: %s failed, err: %v, rid: %s", opts.Cursor, err, kit.Rid)
+				return nil, err
+			}
+			if len(nodes) != 0 {
+				return c.getEventDetailsWithNodes(kit, opts, nodes, key)
+			}
+			// at least the tail node should be scanned, so something goes wrong.
+			return []*watch.WatchEventDetail{{Cursor: lastNode.Cursor, Resource: opts.Resource}}, nil
+		}
+
+		if !exists {
+			exists, nodes, nodeID, err = c.searchFollowingEventChainNodes(kit, searchOpt)
+			if err != nil {
+				blog.Errorf("search nodes after cursor %s failed, err: %v, rid: %s", opts.Cursor, err, kit.Rid)
+				return nil, err
+			}
+			continue
 		}
 
 		searchOpt.id = nodeID

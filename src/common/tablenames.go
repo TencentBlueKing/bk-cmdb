@@ -63,7 +63,6 @@ const (
 	BKTableNameHistory          = "History"
 	BKTableNameHostFavorite     = "HostFavourite"
 	BKTableNameAuditLog         = "AuditLog"
-	BKTableNamePlatformAuditLog = "PlatformAuditLog"
 	BKTableNameUserAPI          = "UserAPI"
 	BKTableNameDynamicGroup     = "DynamicGroup"
 	BKTableNameUserCustom       = "UserCustom"
@@ -288,12 +287,14 @@ var platformTableMap = map[string]struct{}{
 	BKTableNameIDgenerator:        {},
 	BKTableNameTenant:             {},
 	BKTableNameTenantTemplate:     {},
-	BKTableNamePlatformAuditLog:   {},
 	BKTableNameWatchToken:         {},
 	BKTableNameAPITask:            {},
 	BKTableNameAPITaskSyncHistory: {},
 	BKTableNameWatchDBRelation:    {},
 	BKTableNameFullSyncCond:       {},
+	BKTableNameCacheWatchToken:    {},
+	"SrcSyncDataToken":            {},
+	"SrcSyncDataCursor":           {},
 }
 
 // IsPlatformTable returns if the target table is a platform table

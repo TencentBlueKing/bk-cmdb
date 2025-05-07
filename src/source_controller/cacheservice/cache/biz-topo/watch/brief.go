@@ -73,7 +73,7 @@ func (w *briefWatcher) watchEvents(cursorType watch.CursorType) error {
 			case tenant.Create:
 				loopEventChan <- loop.TenantEvent{
 					EventType: watch.Create,
-					TenantID:  e.TenantID,
+					TenantID:  e.Tenant.TenantID,
 					WatchOpts: &watch.WatchEventOptions{
 						EventTypes: []watch.EventType{watch.Create, watch.Delete},
 						Fields:     []string{common.BKAppIDField},
@@ -83,7 +83,7 @@ func (w *briefWatcher) watchEvents(cursorType watch.CursorType) error {
 			case tenant.Delete:
 				loopEventChan <- loop.TenantEvent{
 					EventType: watch.Delete,
-					TenantID:  e.TenantID,
+					TenantID:  e.Tenant.TenantID,
 				}
 			}
 		}

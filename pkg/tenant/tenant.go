@@ -99,8 +99,8 @@ func SetTenant(tenant []types.Tenant) {
 	for _, t := range allTenants {
 		tenantMap[t.TenantID] = &t
 	}
-	generateAndPushTenantEvent(allTenants)
 	lock.Unlock()
+	generateAndPushTenantEvent(allTenants)
 }
 
 func refreshTenantInfo() error {

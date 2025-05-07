@@ -462,8 +462,4 @@ func refreshTenant() {
 	Expect(err).Should(BeNil())
 
 	tenant.SetTenant(allTenants)
-	shardingMongoManager, ok := db.(*sharding.ShardingMongoManager)
-	Expect(ok).Should(Equal(true))
-	err = shardingMongoManager.RefreshTenantDBMap()
-	Expect(err).Should(BeNil())
 }

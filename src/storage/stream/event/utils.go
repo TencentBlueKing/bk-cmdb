@@ -34,7 +34,7 @@ const fullDocPrefix = "fullDocument."
 var eventFields = []string{"_id", "operationType", "clusterTime", "ns", "documentKey", "updateDescription"}
 
 func generateOptions(opts *types.Options) (mongo.Pipeline, *options.ChangeStreamOptions, *parsedCollOptsInfo) {
-	collOptsInfo := parseCollOpts(opts.CollOpts)
+	collOptsInfo := parseCollOpts(opts.TaskCollOptsMap)
 
 	allFilters := genWatchFilter(collOptsInfo.collCondMap, collOptsInfo.collOpTypeMap)
 

@@ -15,32 +15,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package task
+package service
 
 import (
-	"configcenter/src/storage/stream/types"
+	"net/http"
+
+	"configcenter/pkg/tenant"
+	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
-// compareToken compare event with token, returns true if event is greater than the token
-func compareToken(event *types.Event, token *types.TokenInfo) bool {
-	if token == nil {
-		return true
+// RefreshTenant refresh tenant info
+func (s *cacheService) RefreshTenant(req *restful.Request, resp *restful.Response) {
+	kit := rest.NewKitFromHeader(req.Request.Header, s.err)
+	tenants, err := tenant.GetAllTenantsFromDB(kit.Ctx, mongodb.Shard(kit.SysShardOpts()))
+	if err != nil {
+		blog.Errorf("refresh tenant info but get all tenants failed, err: %v, rid: %s", err)
+		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
 	}
 
-	if token.Token != "" {
-		return event.Token.Data > token.Token
-	}
-
-	if token.StartAtTime == nil {
-		return true
-	}
-
-	if event.ClusterTime.Sec > token.StartAtTime.Sec {
-		return true
-	}
-
-	if event.ClusterTime.Sec == token.StartAtTime.Sec && event.ClusterTime.Nano > token.StartAtTime.Nano {
-		return true
-	}
-	return false
+	tenant.SetTenant(tenants)
+	resp.WriteEntity(metadata.NewSuccessResp(tenants))
 }

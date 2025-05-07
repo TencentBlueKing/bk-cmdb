@@ -262,7 +262,7 @@ func (s *Service) genUpdatedShardingDBConf(kit *rest.Kit, dbConf *sharding.Shard
 			return dbConf, nil
 		}
 
-		blog.Errorf("add new tenant db %s is invalid, rid: %s", conf.ForNewData, kit.Rid)
+		blog.Errorf("for new data db %s is invalid, rid: %s", conf.ForNewData, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "for_new_data")
 	}
 	return dbConf, nil
@@ -292,7 +292,7 @@ func (s *Service) genDBSlaveConf(kit *rest.Kit, name string, disabled bool, conf
 }
 
 func (s *Service) saveUpdateShardingDBAudit(kit *rest.Kit, preConf, curConf *sharding.ShardingDBConf) error {
-	id, err := s.db.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNamePlatformAuditLog)
+	id, err := s.db.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, common.BKTableNameAuditLog)
 	if err != nil {
 		blog.Errorf("generate next audit log id failed, err: %v, rid: %s", err, kit.Rid)
 		return err

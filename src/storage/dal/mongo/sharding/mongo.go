@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"configcenter/pkg/tenant"
@@ -62,7 +63,7 @@ func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryp
 		return nil, err
 	}
 
-	if err = sharding.RefreshTenantDBMap(); err != nil {
+	if err = sharding.refreshTenantDBMap(); err != nil {
 		return nil, err
 	}
 
@@ -70,9 +71,26 @@ func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryp
 	go func() {
 		for {
 			time.Sleep(time.Minute)
-			if err = sharding.RefreshTenantDBMap(); err != nil {
+			if err = sharding.refreshTenantDBMap(); err != nil {
 				blog.Errorf("refresh tenant to db relation failed, err: %v", err)
 				continue
+			}
+		}
+	}()
+
+	tenantChan := tenant.NewTenantEventChan(fmt.Sprintf("sharding_db_%s", clientInfo.masterCli.UUID()))
+	go func() {
+		for e := range tenantChan {
+			switch e.EventType {
+			case tenant.Create:
+				client, exists := sharding.dbClientMap[e.Tenant.Database]
+				if !exists {
+					blog.Errorf("tenant %s related db %s config not found", e.Tenant.TenantID, e.Tenant.Database)
+					continue
+				}
+				sharding.tenantCli.set(e.Tenant.TenantID, client)
+			case tenant.Delete:
+				sharding.tenantCli.delete(e.Tenant.TenantID)
 			}
 		}
 	}()
@@ -87,11 +105,35 @@ type shardingMongoClient struct {
 	// newDataCli is the client for mongodb that new data without specified db will be stored into
 	newDataCli *local.MongoClient
 	// tenantCli is the tenant id to mongodb client map
-	tenantCli map[string]*local.MongoClient
+	tenantCli *tenantMongoCliMap
 	// dbClientMap is the db uuid to mongodb client map
 	dbClientMap map[string]*local.MongoClient
 	// tm is the transaction manager
 	tm *local.ShardingTxnManager
+}
+
+type tenantMongoCliMap struct {
+	tenantCli map[string]*local.MongoClient
+	sync.RWMutex
+}
+
+func (m *tenantMongoCliMap) get(tenantID string) (*local.MongoClient, bool) {
+	m.RLock()
+	cli, exists := m.tenantCli[tenantID]
+	m.RUnlock()
+	return cli, exists
+}
+
+func (m *tenantMongoCliMap) set(tenantID string, cli *local.MongoClient) {
+	m.Lock()
+	m.tenantCli[tenantID] = cli
+	m.Unlock()
+}
+
+func (m *tenantMongoCliMap) delete(tenantID string) {
+	m.Lock()
+	delete(m.tenantCli, tenantID)
+	m.Unlock()
 }
 
 func newShardingMongoClient(config local.MongoConf, timeout time.Duration, crypto cryptor.Cryptor) (
@@ -104,9 +146,11 @@ func newShardingMongoClient(config local.MongoConf, timeout time.Duration, crypt
 	}
 
 	clientInfo := &shardingMongoClient{
-		masterCli:   masterCli,
-		newDataCli:  nil,
-		tenantCli:   make(map[string]*local.MongoClient),
+		masterCli:  masterCli,
+		newDataCli: nil,
+		tenantCli: &tenantMongoCliMap{
+			tenantCli: make(map[string]*local.MongoClient),
+		},
 		dbClientMap: nil,
 		tm:          new(local.ShardingTxnManager),
 	}
@@ -150,14 +194,14 @@ func newShardingMongoClient(config local.MongoConf, timeout time.Duration, crypt
 }
 
 // newTenantDB new db client for tenant
-func (c *shardingMongoClient) newTenantDB(tenant string, conf *local.MongoCliConf) local.DB {
-	if tenant == "" {
+func (c *shardingMongoClient) newTenantDB(tenantID string, conf *local.MongoCliConf) local.DB {
+	if tenantID == "" {
 		return local.NewErrDB(errors.New("tenant is not set"))
 	}
 
-	client, exists := c.tenantCli[tenant]
+	client, exists := c.tenantCli.get(tenantID)
 	if !exists {
-		return local.NewErrDB(fmt.Errorf("tenant %s not exists", tenant))
+		return local.NewErrDB(fmt.Errorf("tenant %s not exists", tenantID))
 	}
 
 	if client.Disabled() {
@@ -169,7 +213,7 @@ func (c *shardingMongoClient) newTenantDB(tenant string, conf *local.MongoCliCon
 		return local.NewErrDB(err)
 	}
 
-	db, err := local.NewMongo(client, txnManager, conf, &local.MongoOptions{Tenant: tenant})
+	db, err := local.NewMongo(client, txnManager, conf, &local.MongoOptions{Tenant: tenantID})
 	if err != nil {
 		return local.NewErrDB(err)
 	}
@@ -249,8 +293,8 @@ func getShardingDBConfig(ctx context.Context, c *local.Mongo) (*ShardingDBConf, 
 	return conf, nil
 }
 
-// RefreshTenantDBMap refresh tenant to db relation
-func (m *ShardingMongoManager) RefreshTenantDBMap() error {
+// refreshTenantDBMap refresh tenant to db relation
+func (m *ShardingMongoManager) refreshTenantDBMap() error {
 	tenantDBMap := make(map[string]string)
 	for _, relation := range tenant.GetAllTenants() {
 		tenantDBMap[relation.TenantID] = relation.Database
@@ -265,7 +309,7 @@ func (m *ShardingMongoManager) RefreshTenantDBMap() error {
 		tenantCli[tenant] = client
 	}
 
-	m.tenantCli = tenantCli
+	m.tenantCli.tenantCli = tenantCli
 	return nil
 }
 
@@ -352,6 +396,31 @@ func NewWatchMongo(config local.MongoConf, timeout time.Duration, crypto cryptor
 		return nil, err
 	}
 
+	tenantChan := tenant.NewTenantEventChan(fmt.Sprintf("watch_sharding_db_%s", clientInfo.masterCli.UUID()))
+	go func() {
+		for e := range tenantChan {
+			switch e.EventType {
+			case tenant.Create:
+				watchDBUUID, exists := sharding.dbWatchDBMap[e.Tenant.Database]
+				if !exists {
+					blog.Errorf("tenant %s db %s watch db config not found, use default watch db: %s",
+						e.Tenant.TenantID, e.Tenant.Database, clientInfo.newDataCli.UUID())
+
+					sharding.tenantCli.set(e.Tenant.TenantID, clientInfo.newDataCli)
+					continue
+				}
+				client, exists := sharding.dbClientMap[watchDBUUID]
+				if !exists {
+					blog.Errorf("tenant %s related watch db %s config not found", e.Tenant.TenantID, watchDBUUID)
+					continue
+				}
+				sharding.tenantCli.set(e.Tenant.TenantID, client)
+			case tenant.Delete:
+				sharding.tenantCli.delete(e.Tenant.TenantID)
+			}
+		}
+	}()
+
 	go func() {
 		for {
 			time.Sleep(time.Minute)
@@ -371,6 +440,10 @@ func (m *WatchMongo) refreshTenantDBMap() error {
 		watchDBUUID, exists := m.dbWatchDBMap[relation.Database]
 		if exists {
 			tenantDBMap[relation.TenantID] = watchDBUUID
+		} else {
+			blog.Warnf("tenant %s related db %s watch db not found, use default watch db %s", relation.TenantID,
+				relation.Database, m.newDataCli.UUID())
+			tenantDBMap[relation.TenantID] = m.newDataCli.UUID()
 		}
 	}
 
@@ -383,7 +456,7 @@ func (m *WatchMongo) refreshTenantDBMap() error {
 		tenantCli[tenant] = client
 	}
 
-	m.tenantCli = tenantCli
+	m.tenantCli.tenantCli = tenantCli
 	return nil
 }
 

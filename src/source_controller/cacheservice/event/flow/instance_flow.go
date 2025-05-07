@@ -20,7 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/mapstr"
@@ -40,42 +39,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-func (e *Event) addInstanceFlowTask(ctx context.Context, opts flowOptions, parseEvent parseEventFunc) error {
-	flow, err := NewFlow(opts, parseEvent)
-	if err != nil {
-		return err
-	}
-	instFlow := InstanceFlow{
-		Flow: flow,
-		mainlineObjectMap: &mainlineObjectMap{
-			data: make(map[string]map[string]struct{}),
-		},
-	}
-
-	err = tenant.ExecForAllTenants(func(tenantID string) error {
-		mainlineObjMap, err := instFlow.getMainlineObjectMap(ctx, tenantID)
-		if err != nil {
-			blog.Errorf("run object instance watch, but get tenant %s mainline objects failed, err: %v", tenantID, err)
-			return err
-		}
-		instFlow.mainlineObjectMap.Set(tenantID, mainlineObjMap)
-
-		go instFlow.syncMainlineObjectMap(tenantID)
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	flowTask, err := instFlow.GenWatchTask()
-	if err != nil {
-		return err
-	}
-
-	e.tasks = append(e.tasks, flowTask)
-	return nil
-}
 
 // syncMainlineObjectMap refresh mainline object ID map every 5 minutes
 func (f *InstanceFlow) syncMainlineObjectMap(tenantID string) {
@@ -255,7 +218,7 @@ func (f *InstanceFlow) parseEvents(dbInfo *types.DBInfo, ids []uint64, eventMap 
 			f.metrics.CollectBasic(e)
 
 			idIdx := oidIndexMap[e.Oid+e.Collection]
-			tenantID, chainNode, detail, retry, err := f.parseEvent(dbInfo.CcDB, key, e, ids[idIdx], rid)
+			tenantID, chainNode, detail, retry, err := f.parseEvent(dbInfo.DB, key, e, ids[idIdx], rid)
 			if err != nil {
 				if retry {
 					return nil, nil, nil, err

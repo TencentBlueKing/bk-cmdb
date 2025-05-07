@@ -159,5 +159,5 @@ type DBInfo struct {
 	// UUID is the cc db uuid
 	UUID    string
 	WatchDB *local.Mongo
-	CcDB    local.DB
+	DB      local.DB
 }

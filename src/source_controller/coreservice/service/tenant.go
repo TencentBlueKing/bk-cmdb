@@ -24,7 +24,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
-	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -49,17 +48,5 @@ func (s *coreService) RefreshAllTenants(ctx *rest.Contexts) {
 	}
 
 	tenant.SetTenant(tenants)
-	// refresh tenant db map
-	shardingMongoManager, ok := mongodb.Dal().(*sharding.ShardingMongoManager)
-	if !ok {
-		blog.Errorf("convert to ShardingMongoManager failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	if err = shardingMongoManager.RefreshTenantDBMap(); err != nil {
-		blog.Errorf("refresh tenant db map failed, err: %v, rid: %s", err, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
 	ctx.RespEntity(tenants)
 }

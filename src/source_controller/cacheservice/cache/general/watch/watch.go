@@ -141,13 +141,13 @@ func (w *Watcher) watchCacheChange(cursorType watch.CursorType, name string, loo
 			case tenant.Create:
 				loopEventChan <- loop.TenantEvent{
 					EventType: watch.Create,
-					TenantID:  e.TenantID,
+					TenantID:  e.Tenant.TenantID,
 					WatchOpts: &watch.WatchEventOptions{Resource: cursorType},
 				}
 			case tenant.Delete:
 				loopEventChan <- loop.TenantEvent{
 					EventType: watch.Delete,
-					TenantID:  e.TenantID,
+					TenantID:  e.Tenant.TenantID,
 				}
 			}
 		}

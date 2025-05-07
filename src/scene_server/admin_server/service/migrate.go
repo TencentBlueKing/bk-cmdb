@@ -86,17 +86,17 @@ func (s *Service) migrateDatabase(req *restful.Request, resp *restful.Response) 
 		return
 	}
 
+	// refresh tenants, ignore refresh tenants error
+	if err = logics.RefreshTenants(s.CoreAPI, s.db); err != nil {
+		blog.Errorf("refresh tenant failed, err: %v", err)
+	}
+
 	if err = s.createWatchDBChainCollections(kit); err != nil {
 		blog.Errorf("create watch db chain collections failed, err: %v", err)
 		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
 			Msg: kit.CCError.Errorf(common.CCErrCommMigrateFailed, err.Error()),
 		})
 		return
-	}
-
-	// refresh tenants, ignore refresh tenants error
-	if err = logics.RefreshTenants(s.CoreAPI); err != nil {
-		blog.Errorf("refresh tenant failed, err: %v", err)
 	}
 
 	resp.WriteEntity(metadata.NewSuccessResp(result))
@@ -126,14 +126,12 @@ func (s *Service) createWatchDBChainCollections(kit *rest.Kit) error {
 		}
 
 		err = tenant.ExecForAllTenants(func(tenantID string) error {
-			// TODO 在新增租户初始化时同时增加watch相关表，并刷新cache的tenant
 			return s.addTenantWatchToken(kit.NewKit().WithTenant(tenantID), cursorType, key)
 		})
 		if err != nil {
 			return err
 		}
 
-		// TODO 在新增DB时同时增加db relation和token数据
 		err = s.createWatchTokenForEventKey(kit, key, watchDBToDBRelation)
 		if err != nil {
 			return err
@@ -321,16 +319,20 @@ func (s *Service) createWatchIndexes(kit *rest.Kit, cursorType watch.CursorType,
 		existIdxMap[index.Name] = true
 	}
 
+	createIndexes := make([]daltypes.Index, 0)
 	for _, index := range indexes {
-		if _, exist := existIdxMap[index.Name]; exist {
-			continue
+		if _, exist := existIdxMap[index.Name]; !exist {
+			createIndexes = append(createIndexes, index)
 		}
+	}
+	if len(createIndexes) == 0 {
+		return nil
+	}
 
-		err = s.watchDB.Shard(kit.ShardOpts()).Table(key.ChainCollection()).CreateIndex(s.ctx, index)
-		if err != nil && !mongodb.IsDuplicatedError(err) {
-			blog.Errorf("create indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
-			return err
-		}
+	err = s.watchDB.Shard(kit.ShardOpts()).Table(key.ChainCollection()).BatchCreateIndexes(s.ctx, createIndexes)
+	if err != nil && !mongodb.IsDuplicatedError(err) {
+		blog.Errorf("create indexes for table %s failed, err: %v, rid: %s", key.ChainCollection(), err, kit.Rid)
+		return err
 	}
 	return nil
 }

@@ -172,7 +172,7 @@ func (t *loopWatchTask) doWatch(kit *rest.Kit, opts *watch.WatchEventOptions) er
 					return err
 				}
 
-				blog.Errorf("watch event failed, re-watch from now, err: %v, opt: %+v, rid: %s", err,
+				blog.Errorf("watch event failed, re-watch from now, err: %v, opt: %+v, rid: %s", ccErr,
 					*opts, kit.Rid)
 				return ccErr
 			}

@@ -22,24 +22,6 @@ import (
 	"configcenter/src/storage/stream/types"
 )
 
-func (e *Event) addInstAsstFlowTask(opts flowOptions, parseEvent parseEventFunc) error {
-	flow, err := NewFlow(opts, parseEvent)
-	if err != nil {
-		return err
-	}
-	instAsstFlow := InstAsstFlow{
-		Flow: flow,
-	}
-
-	flowTask, err := instAsstFlow.GenWatchTask()
-	if err != nil {
-		return err
-	}
-
-	e.tasks = append(e.tasks, flowTask)
-	return nil
-}
-
 // InstAsstFlow instance association event watch flow
 type InstAsstFlow struct {
 	Flow

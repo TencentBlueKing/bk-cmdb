@@ -125,7 +125,7 @@ func (e *Event) lister(ctx context.Context, withRetry bool, opts *listOptions, c
 	}
 }
 
-// get collection related task ids, find options and filters
+// parseCollListOpts get collection related task ids, find options and filters
 func (e *Event) parseCollListOpts(collection string, opts *listOptions) ([]string, *options.FindOptions, mapstr.MapStr,
 	bool, error) {
 	taskIDs, fields, filters := make([]string, 0), make([]string, 0), make([]filter.RuleFactory, 0)

@@ -38,21 +38,6 @@ type flowOptions struct {
 	EventStruct interface{}
 }
 
-func (e *Event) addFlowTask(opts flowOptions, parseEvent parseEventFunc) error {
-	flow, err := NewFlow(opts, parseEvent)
-	if err != nil {
-		return err
-	}
-
-	flowTask, err := flow.GenWatchTask()
-	if err != nil {
-		return err
-	}
-
-	e.tasks = append(e.tasks, flowTask)
-	return nil
-}
-
 // NewFlow create a new event watch flow
 func NewFlow(opts flowOptions, parseEvent parseEventFunc) (Flow, error) {
 	if parseEvent == nil {
@@ -249,7 +234,7 @@ func (f *Flow) parseEvents(dbInfo *types.DBInfo, es []*types.Event, rid string) 
 		// collect event's basic metrics
 		f.metrics.CollectBasic(e)
 
-		tenant, chainNode, detail, retry, err := f.parseEvent(dbInfo.CcDB, f.key, e, ids[index], rid)
+		tenant, chainNode, detail, retry, err := f.parseEvent(dbInfo.DB, f.key, e, ids[index], rid)
 		if err != nil {
 			if retry {
 				return nil, nil, nil, false, err

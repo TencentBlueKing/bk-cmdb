@@ -136,6 +136,7 @@ func (s *Scheduler) AddTasks(tasks ...*task.Task) error {
 	for _, t := range tasks {
 		_, exists := s.watchTasks[t.Name]
 		if exists {
+			blog.Errorf("add watch task %s to scheduler failed, task already exists", t.Name)
 			return fmt.Errorf("loop watch task %s already exists", t.Name)
 		}
 
@@ -154,19 +155,19 @@ func (s *Scheduler) AddTasks(tasks ...*task.Task) error {
 // Start execute all watch tasks
 func (s *Scheduler) Start() error {
 	if len(s.watchTasks) == 0 {
-		blog.Warnf("no watch task to start")
-		return nil
+		blog.Errorf("no watch task to start")
+		return fmt.Errorf("no watch task to start")
 	}
 
 	// generate task name to collection options map and db uuid to task name to db watch tasks map by watch task info
-	collOptions := make(map[string]types.WatchCollOptions)
-	listCollOptions := make(map[string]types.CollectionOptions)
+	taskCollOptsMap := make(map[string]types.WatchCollOptions)
+	taskListCollOptsMap := make(map[string]types.CollectionOptions)
 	dbWatchTasks := make(map[string]map[string]*task.DBWatchTask)
 	var batchSize int
 	for taskName, watchTask := range s.watchTasks {
-		collOptions[taskName] = *watchTask.CollOptions
+		taskCollOptsMap[taskName] = *watchTask.CollOptions
 		if watchTask.NeedList {
-			listCollOptions[taskName] = watchTask.CollOptions.CollectionOptions
+			taskListCollOptsMap[taskName] = watchTask.CollOptions.CollectionOptions
 		}
 		if watchTask.BatchSize > batchSize {
 			batchSize = watchTask.BatchSize
@@ -175,7 +176,7 @@ func (s *Scheduler) Start() error {
 			dbTask, err := task.NewDBWatchTask(watchTask, &types.DBInfo{
 				UUID:    uuid,
 				WatchDB: s.watchClients[uuid],
-				CcDB:    dbClient,
+				DB:      dbClient,
 			})
 			if err != nil {
 				return err
@@ -188,15 +189,15 @@ func (s *Scheduler) Start() error {
 	}
 
 	// list data for all list watch tasks
-	if len(listCollOptions) > 0 {
-		err := s.startList(listCollOptions, batchSize, dbWatchTasks)
+	if len(taskListCollOptsMap) > 0 {
+		err := s.startList(taskListCollOptsMap, batchSize, dbWatchTasks)
 		if err != nil {
 			return err
 		}
 	}
 
 	// loop watch all db events for all tasks
-	err := s.startLoopWatch(collOptions, dbWatchTasks, batchSize)
+	err := s.startLoopWatch(taskCollOptsMap, dbWatchTasks, batchSize)
 	if err != nil {
 		return err
 	}
@@ -211,13 +212,13 @@ func (s *Scheduler) Start() error {
 	return nil
 }
 
-func (s *Scheduler) startList(listCollOptions map[string]types.CollectionOptions, batchSize int,
+func (s *Scheduler) startList(taskListCollOptsMap map[string]types.CollectionOptions, batchSize int,
 	dbWatchTasks map[string]map[string]*task.DBWatchTask) error {
 
 	for uuid, eventInst := range s.eventMap {
 		ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 		opt := &types.ListOptions{
-			CollOpts:  listCollOptions,
+			CollOpts:  taskListCollOptsMap,
 			PageSize:  &batchSize,
 			WithRetry: true,
 		}
@@ -241,7 +242,7 @@ func (s *Scheduler) startList(listCollOptions map[string]types.CollectionOptions
 	return nil
 }
 
-func (s *Scheduler) startLoopWatch(collOptions map[string]types.WatchCollOptions,
+func (s *Scheduler) startLoopWatch(taskCollOptsMap map[string]types.WatchCollOptions,
 	dbWatchTasks map[string]map[string]*task.DBWatchTask, batchSize int) error {
 
 	for uuid, dbTaskMap := range dbWatchTasks {
@@ -253,9 +254,10 @@ func (s *Scheduler) startLoopWatch(collOptions map[string]types.WatchCollOptions
 
 		opts := &types.WatchOptions{
 			Options: types.Options{
-				MajorityCommitted: s.majorityCommitted,
-				MaxAwaitTime:      s.maxAwaitTime,
-				CollOpts:          collOptions,
+				MajorityCommitted:       s.majorityCommitted,
+				MaxAwaitTime:            s.maxAwaitTime,
+				TaskCollOptsMap:         taskCollOptsMap,
+				WatchFatalErrorCallback: watcher.resetWatchToken,
 			},
 		}
 		err = watcher.loopWatch(opts, batchSize)

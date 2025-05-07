@@ -37,7 +37,6 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/scheduler"
-	"configcenter/src/storage/stream/task"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
@@ -101,7 +100,6 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return err
 	}
 	s.scheduler = taskScheduler
-	watchTasks := make([]*task.Task, 0)
 
 	c, cacheErr := cacheop.NewCache(engine.ServiceManageInterface)
 	if cacheErr != nil {
@@ -109,31 +107,34 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return cacheErr
 	}
 	s.cacheSet = c
-	watchTasks = append(watchTasks, c.GetWatchTasks()...)
+	if err = taskScheduler.AddTasks(c.GetWatchTasks()...); err != nil {
+		return err
+	}
 
 	flowEvent, flowErr := flow.NewEvent()
 	if flowErr != nil {
 		blog.Errorf("new watch event failed, err: %v", flowErr)
 		return flowErr
 	}
-	watchTasks = append(watchTasks, flowEvent.GetWatchTasks()...)
+	if err = taskScheduler.AddTasks(flowEvent.GetWatchTasks()...); err != nil {
+		return err
+	}
 
 	hostIdentity, err := identifier.NewIdentity()
 	if err != nil {
 		blog.Errorf("new host identity event failed, err: %v", err)
 		return err
 	}
-	watchTasks = append(watchTasks, hostIdentity.GetWatchTasks()...)
+	if err = taskScheduler.AddTasks(hostIdentity.GetWatchTasks()...); err != nil {
+		return err
+	}
 
 	bsRelation, err := bsrelation.NewBizSetRelation()
 	if err != nil {
 		blog.Errorf("new biz set relation event failed, err: %v", err)
 		return err
 	}
-	watchTasks = append(watchTasks, bsRelation.GetWatchTasks()...)
-
-	if err = taskScheduler.AddTasks(watchTasks...); err != nil {
-		blog.Errorf("add event watch tasks failed, err: %v", err)
+	if err = taskScheduler.AddTasks(bsRelation.GetWatchTasks()...); err != nil {
 		return err
 	}
 
@@ -166,6 +167,7 @@ func (s *cacheService) WebService() *restful.Container {
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
 	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	commonAPI.Route(commonAPI.POST("/refresh/tenants").To(s.RefreshTenant))
 	container.Add(commonAPI)
 
 	return container

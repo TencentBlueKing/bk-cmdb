@@ -89,8 +89,6 @@ func (s *Scheduler) newDBWatcher(uuid string, taskMap map[string]*task.DBWatchTa
 }
 
 func (w *dbWatcher) loopWatch(watchOpt *types.WatchOptions, batchSize int) error {
-	watchOpt.WatchFatalErrorCallback = w.resetWatchToken
-
 	ctx, cancel := context.WithCancel(context.Background())
 
 	watcher, watchOpt, err := w.watch(ctx, watchOpt)
@@ -127,6 +125,7 @@ func (w *dbWatcher) loopWatch(watchOpt *types.WatchOptions, batchSize int) error
 				watcher, watchOpt, err = w.watch(ctx, watchOpt)
 				if err != nil {
 					// notify retry signal, exit loop
+					blog.Errorf("watch db %s with opt(%+v) failed, err: %v, retry again", w.uuid, *watchOpt)
 					w.notifyRetry()
 					continue
 				}
@@ -173,7 +172,7 @@ func (w *dbWatcher) watch(ctx context.Context, watchOpt *types.WatchOptions) (*t
 	if err != nil {
 		blog.Errorf("%s job, loop watch db %s, but get start watch token failed, err: %v", w.uuid, w.streamWatch.DBName,
 			err)
-		return nil, nil, err
+		return nil, watchOpt, err
 	}
 	w.lastToken = startToken
 
@@ -188,7 +187,7 @@ func (w *dbWatcher) watch(ctx context.Context, watchOpt *types.WatchOptions) (*t
 	watcher, err := w.streamWatch.Watch(ctx, watchOpt)
 	if err != nil {
 		blog.Errorf("%s job, run loop, but watch failed, err: %v", w.uuid, err)
-		return nil, nil, err
+		return nil, watchOpt, err
 	}
 
 	return watcher, watchOpt, nil

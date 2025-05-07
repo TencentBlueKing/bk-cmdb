@@ -26,13 +26,13 @@ import (
 var (
 	prevTenantInfo      = make(map[string]types.Tenant)
 	tenantEventChannels = make(map[string]chan TenantEvent)
-	tenantEventChLock   sync.RWMutex
+	tenantEventChLock   sync.Mutex
 )
 
 // TenantEvent is the tenant event info
 type TenantEvent struct {
 	EventType EventType
-	TenantID  string
+	Tenant    types.Tenant
 }
 
 // EventType is the tenant event type
@@ -54,14 +54,14 @@ func NewTenantEventChan(name string) <-chan TenantEvent {
 		return ch
 	}
 
-	eventChan := make(chan TenantEvent, 1)
+	eventChan := make(chan TenantEvent)
 	tenantEventChannels[name] = eventChan
 	go func() {
 		for _, tenant := range allTenants {
 			if tenant.Status == types.EnabledStatus {
 				eventChan <- TenantEvent{
 					EventType: Create,
-					TenantID:  tenant.TenantID,
+					Tenant:    tenant,
 				}
 			}
 		}
@@ -85,8 +85,8 @@ func RemoveTenantEventChan(name string) {
 
 // generateAndPushTenantEvent compare the tenant with the previous tenant info to generate and push event
 func generateAndPushTenantEvent(tenants []types.Tenant) {
-	tenantEventChLock.RLock()
-	defer tenantEventChLock.RUnlock()
+	tenantEventChLock.Lock()
+	defer tenantEventChLock.Unlock()
 
 	prevTenantMap := make(map[string]types.Tenant)
 
@@ -95,11 +95,15 @@ func generateAndPushTenantEvent(tenants []types.Tenant) {
 		prevTenantMap[tenantID] = tenant
 
 		prevTenant, exists := prevTenantInfo[tenantID]
-		if !exists && tenant.Status == types.EnabledStatus {
+		if !exists {
+			if tenant.Status != types.EnabledStatus {
+				continue
+			}
+
 			for _, eventChan := range tenantEventChannels {
 				eventChan <- TenantEvent{
 					EventType: Create,
-					TenantID:  tenantID,
+					Tenant:    tenant,
 				}
 			}
 			continue
@@ -113,7 +117,7 @@ func generateAndPushTenantEvent(tenants []types.Tenant) {
 			for _, eventChan := range tenantEventChannels {
 				eventChan <- TenantEvent{
 					EventType: eventType,
-					TenantID:  tenantID,
+					Tenant:    tenant,
 				}
 			}
 		}
@@ -121,11 +125,11 @@ func generateAndPushTenantEvent(tenants []types.Tenant) {
 		delete(prevTenantInfo, tenantID)
 	}
 
-	for tenantID := range prevTenantInfo {
+	for _, tenant := range prevTenantInfo {
 		for _, eventChan := range tenantEventChannels {
 			eventChan <- TenantEvent{
 				EventType: Delete,
-				TenantID:  tenantID,
+				Tenant:    tenant,
 			}
 		}
 	}

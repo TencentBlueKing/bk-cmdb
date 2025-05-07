@@ -95,7 +95,7 @@ func (opts *ListOptions) CheckSetDefault() error {
 	}
 
 	if opts.PageSize != nil {
-		if *opts.PageSize < 0 || *opts.PageSize > 2000 {
+		if *opts.PageSize < 200 || *opts.PageSize > 2000 {
 			return fmt.Errorf("invalid page size, range is [200,2000]")
 		}
 	} else {
@@ -190,8 +190,8 @@ type Options struct {
 	// default value is 1000ms
 	MaxAwaitTime *time.Duration
 
-	// CollOpts is the watch task id to watch options for different collections
-	CollOpts map[string]WatchCollOptions
+	// TaskCollOptsMap is the watch task id to watch options for different collections
+	TaskCollOptsMap map[string]WatchCollOptions
 
 	// StartAfterToken describe where you want to watch the event.
 	// Note: the returned event doesn't contains the token represented,
@@ -211,13 +211,13 @@ var defaultMaxAwaitTime = time.Second
 
 // CheckSetDefault check the legal of each option, and set the default value
 func (opts *Options) CheckSetDefault() error {
-	if len(opts.CollOpts) == 0 {
+	if len(opts.TaskCollOptsMap) == 0 {
 		return errors.New("invalid Namespace field, database and collection can not be empty")
 	}
 
-	for i, opt := range opts.CollOpts {
+	for taskID, opt := range opts.TaskCollOptsMap {
 		if err := opt.Validate(); err != nil {
-			return fmt.Errorf("collection options[%s] is invalid, err: %v", i, err)
+			return fmt.Errorf("task %s collection options is invalid, err: %v", taskID, err)
 		}
 	}
 
