@@ -77,7 +77,8 @@
             'model_attribute_group',
             'event',
             'association_kind',
-            'platform_setting'
+            'platform_setting',
+            'tenant_template'
           ])
         })
       }
