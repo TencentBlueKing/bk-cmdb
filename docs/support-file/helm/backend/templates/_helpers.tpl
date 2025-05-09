@@ -231,15 +231,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
       (include "cmdb.mongodb.addr" . | trim)
   -}}
   {{- /* Check if CA certificate is provided, indicating TLS is enabled */ -}}
-  {{- if .Values.mongodbCert.mongodb.ca -}}
-    {{- $tlsParams := printf "?tls=true&tlsInsecure=%v&tlsCAFile=%s/%s"
+  {{- if .Values.mongodb.tls.caFile -}}
+    {{- $tlsParams := printf "?tls=true&tlsInsecure=%v&tlsCAFile=%s/mongodb/%s"
         .Values.mongodb.tls.insecureSkipVerify
         .Values.certPath
         .Values.mongodb.tls.caFile
     -}}
     {{- /* Check if both client certificate and key are provided for mutual TLS */ -}}
-    {{- if and .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key -}}
-      {{- $tlsParams = printf "%s&tlsCertificateKeyFile=%s/%s"
+    {{- if and .Values.mongodb.tls.pemFile -}}
+      {{- $tlsParams = printf "%s&tlsCertificateKeyFile=%s/mongodb/%s"
           $tlsParams
           .Values.certPath
           .Values.mongodb.tls.pemFile
@@ -267,7 +267,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.redis.certVolumeMount" -}}
-{{- if or .Values.redisCert.redis.ca .Values.redisCert.redis.key .Values.redisCert.redis.cert }}
+{{- if or .Values.redisCert.redis.ca .Values.redisCert.redis.key .Values.redisCert.redis.cert .Values.redisCert.redis.tlsSecretName }}
 - name: redis-certs
   mountPath: {{ .Values.certPath }}/redis
 {{- end }}
@@ -278,11 +278,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 - name: redis-certs
   configMap:
     name: {{ template "bk-cmdb.fullname" . }}-redis-certs
+{{- else if .Values.redisCert.redis.tlsSecretName }}
+- name: redis-certs
+  secret:
+    secretName: {{ .Values.redisCert.redis.tlsSecretName }}
 {{- end }}
 {{- end -}}
 
 {{- define "cmdb.redis.snapshotCertVolumeMount" -}}
-{{- if or .Values.redisCert.snapshotRedis.ca .Values.redisCert.snapshotRedis.key .Values.redisCert.snapshotRedis.cert }}
+{{- if or .Values.redisCert.snapshotRedis.ca .Values.redisCert.snapshotRedis.key .Values.redisCert.snapshotRedis.cert .Values.redisCert.snapshotRedis.tlsSecretName }}
 - name: snapshot-redis-certs
   mountPath: {{ .Values.certPath }}/snapshot-redis
 {{- end }}
@@ -293,11 +297,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 - name: snapshot-redis-certs
   configMap:
     name: {{ template "bk-cmdb.fullname" . }}-snapshot-redis-certs
+{{- else if .Values.redisCert.snapshotRedis.tlsSecretName }}
+- name: snapshot-redis-certs
+  secret:
+    secretName: {{ .Values.redisCert.snapshotRedis.tlsSecretName }}
 {{- end }}
 {{- end -}}
 
 {{- define "cmdb.redis.discoverCertVolumeMount" -}}
-{{- if or .Values.redisCert.discoverRedis.ca .Values.redisCert.discoverRedis.key .Values.redisCert.discoverRedis.cert }}
+{{- if or .Values.redisCert.discoverRedis.ca .Values.redisCert.discoverRedis.key .Values.redisCert.discoverRedis.cert .Values.redisCert.discoverRedis.tlsSecretName }}
 - name: discover-redis-certs
   mountPath: {{ .Values.certPath }}/discover-redis
 {{- end }}
@@ -308,11 +316,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 - name: discover-redis-certs
   configMap:
     name: {{ template "bk-cmdb.fullname" . }}-discover-redis-certs
+{{- else if .Values.redisCert.discoverRedis.tlsSecretName }}
+- name: discover-redis-certs
+  secret:
+    secretName: {{ .Values.redisCert.discoverRedis.tlsSecretName }}
 {{- end }}
 {{- end -}}
 
 {{- define "cmdb.redis.netCollectCertVolumeMount" -}}
-{{- if or .Values.redisCert.netCollectRedis.ca .Values.redisCert.netCollectRedis.key .Values.redisCert.netCollectRedis.cert }}
+{{- if or .Values.redisCert.netCollectRedis.ca .Values.redisCert.netCollectRedis.key .Values.redisCert.netCollectRedis.cert .Values.redisCert.netCollectRedis.tlsSecretName }}
 - name: netcollect-redis-certs
   mountPath: {{ .Values.certPath }}/netcollect-redis
 {{- end }}
@@ -323,6 +335,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 - name: netcollect-redis-certs
   configMap:
     name: {{ template "bk-cmdb.fullname" . }}-netcollect-redis-certs
+{{- else if .Values.redisCert.netCollectRedis.tlsSecretName }}
+- name: netcollect-redis-certs
+  secret:
+    secretName: {{ .Values.redisCert.netCollectRedis.tlsSecretName }}
 {{- end }}
 {{- end -}}
 
@@ -334,7 +350,7 @@ imagePullSecrets:
 {{- end -}}
 
 {{- define "cmdb.mongodb.certVolumeMount" -}}
-{{- if or .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.ca }}
+{{- if or .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.ca .Values.mongodbCert.mongodb.tlsSecretName }}
 - name: mongodb-certs
   mountPath: {{ .Values.certPath }}/mongodb
 {{- end }}
@@ -345,11 +361,15 @@ imagePullSecrets:
 - name: mongodb-certs
   configMap:
     name: {{ template "bk-cmdb.fullname" . }}-mongodb-certs
+{{- else if .Values.mongodbCert.mongodb.tlsSecretName }}
+- name: mongodb-certs
+  secret:
+    secretName: {{ .Values.mongodbCert.mongodb.tlsSecretName }}
 {{- end }}
 {{- end -}}
 
 {{- define "cmdb.mongodb.watch.certVolumeMount" -}}
-{{- if or .Values.mongodbCert.watch.cert .Values.mongodbCert.watch.key .Values.mongodbCert.watch.ca }}
+{{- if or .Values.mongodbCert.watch.cert .Values.mongodbCert.watch.key .Values.mongodbCert.watch.ca .Values.mongodbCert.watch.tlsSecretName }}
 - name: mongodb-watch-certs
   mountPath: {{ .Values.certPath }}/mongodb-watch
 {{- end }}
@@ -360,11 +380,15 @@ imagePullSecrets:
 - name: mongodb-watch-certs
   configMap:
     name: {{ template "bk-cmdb.fullname" . }}-mongodb-watch-certs
+{{- else if .Values.mongodbCert.watch.tlsSecretName }}
+- name: mongodb-watch-certs
+  secret:
+    secretName: {{ .Values.mongodbCert.watch.tlsSecretName }}
 {{- end }}
 {{- end -}}
 
 {{- define  "cmdb.configAndServiceCenter.certVolumeMount" -}}
-{{- if or .Values.zookeeperCert.cert .Values.zookeeperCert.key .Values.zookeeperCert.ca }}
+{{- if or .Values.zookeeperCert.cert .Values.zookeeperCert.key .Values.zookeeperCert.ca .Values.zookeeperCert.tlsSecretName }}
 - name: zookeeper-certs
   mountPath: {{ .Values.certPath }}/zookeeper
 {{- end }}
@@ -375,17 +399,21 @@ imagePullSecrets:
 - name: zookeeper-certs
   configMap:
     name: {{ template "bk-cmdb.fullname" $ }}-zookeeper-certs
+{{- else if .Values.zookeeperCert.tlsSecretName }}
+- name: zookeeper-certs
+  secret:
+    secretName: {{ .Values.zookeeperCert.tlsSecretName }}
 {{- end }}
 {{- end }}
 
 {{- define "cmdb.configAndServiceCenter.certCommand" -}}
-{{- if .Values.zookeeperCert.ca }}
-- --regdiscv-cafile={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.caFile }}
+{{- if .Values.configAndServiceCenter.tls.caFile }}
+- --regdiscv-cafile={{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.caFile }}
 - --regdiscv-skipverify={{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}
 {{- end }}
-{{- if and .Values.zookeeperCert.cert .Values.zookeeperCert.key }}
-- --regdiscv-certfile={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.certFile }}
-- --regdiscv-keyfile={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.keyFile }}
+{{- if and .Values.configAndServiceCenter.tls.certFile .Values.configAndServiceCenter.tls.keyFile }}
+- --regdiscv-certfile={{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.certFile }}
+- --regdiscv-keyfile={{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.keyFile }}
 {{- end }}
 {{- if .Values.configAndServiceCenter.tls.password }}
 - --regdiscv-certpassword={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.password }}
@@ -393,7 +421,7 @@ imagePullSecrets:
 {{- end -}}
 
 {{- define "cmdb.es.certVolumeMount" -}}
-{{- if or .Values.esCert.ca .Values.esCert.cert .Values.esCert.key }}
+{{- if or .Values.esCert.ca .Values.esCert.cert .Values.esCert.key .Values.esCert.tlsSecretName }}
 - name: es-certs
   mountPath: {{ .Values.certPath }}/elasticsearch
 {{- end }}
@@ -404,5 +432,9 @@ imagePullSecrets:
 - name: es-certs
   configMap:
     name: {{ template "bk-cmdb.fullname" . }}-elasticsearch-certs
+{{- else if .Values.esCert.tlsSecretName }}
+- name: es-certs
+  secret:
+    secretName: {{ .Values.esCert.tlsSecretName }}
 {{- end }}
 {{- end -}}

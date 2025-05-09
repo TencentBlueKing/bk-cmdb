@@ -24,12 +24,12 @@ data:
       pwd: {{ .Values.common.es.pwd }}
       #tls
       tls:
-        {{- if and .Values.esCert.cert .Values.esCert.key }}
-        certFile: {{ .Values.certPath }}/{{ .Values.common.es.tls.certFile }}
-        keyFile: {{ .Values.certPath }}/{{ .Values.common.es.tls.keyFile }}
+        {{- if and .Values.common.es.tls.certFile .Values.common.es.tls.keyFile }}
+        certFile: {{ .Values.certPath }}/elasticsearch/{{ .Values.common.es.tls.certFile }}
+        keyFile: {{ .Values.certPath }}/elasticsearch/{{ .Values.common.es.tls.keyFile }}
         {{- end }}
-        {{- if and .Values.esCert.ca }}
-        caFile: {{ .Values.certPath }}/{{ .Values.common.es.tls.caFile }}
+        {{- if and .Values.common.es.tls.caFile }}
+        caFile: {{ .Values.certPath }}/elasticsearch/{{ .Values.common.es.tls.caFile }}
         {{- end }}
         insecureSkipVerify: {{ .Values.common.es.tls.insecureSkipVerify }}
     # esb配置
@@ -317,12 +317,12 @@ data:
       tls:
         insecureSkipVerify: {{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}
         password: {{ .Values.configAndServiceCenter.tls.password }}
-        {{- if .Values.zookeeperCert.ca }}
-        caFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.caFile }}
+        {{- if .Values.configAndServiceCenter.tls.caFile }}
+        caFile: {{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.caFile }}
         {{- end }}
-        {{- if and .Values.zookeeperCert.cert .Values.zookeeperCert.cert }}
-        certFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.certFile }}
-        keyFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.keyFile }}
+        {{- if and .Values.configAndServiceCenter.tls.certFile .Values.configAndServiceCenter.tls.keyFile }}
+        certFile: {{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.certFile }}
+        keyFile: {{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.keyFile }}
         {{- end }}
 
     registerServer:
@@ -332,12 +332,12 @@ data:
       tls:
         insecureSkipVerify: {{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}
         password: {{ .Values.configAndServiceCenter.tls.password }}
-        {{- if .Values.zookeeperCert.ca }}
-        caFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.caFile }}
+        {{- if .Values.configAndServiceCenter.tls.caFile }}
+        caFile: {{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.caFile }}
         {{- end }}
-        {{- if and .Values.zookeeperCert.cert .Values.zookeeperCert.cert }}
-        certFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.certFile }}
-        keyFile: {{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.keyFile }}
+        {{- if and .Values.configAndServiceCenter.tls.certFile .Values.configAndServiceCenter.tls.keyFile }}
+        certFile: {{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.certFile }}
+        keyFile: {{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.keyFile }}
         {{- end }}
 
     confs:
@@ -372,12 +372,12 @@ data:
       enable: {{ .Values.mongodb.externalMongodb.enabled }}
       tls:
         insecureSkipVerify: {{ .Values.mongodb.tls.insecureSkipVerify }}
-      {{- if .Values.mongodbCert.mongodb.ca }}
-        caFile: {{ .Values.certPath }}/{{ .Values.mongodb.tls.caFile }}
+      {{- if .Values.mongodb.tls.caFile }}
+        caFile: {{ .Values.certPath }}/mongodb/{{ .Values.mongodb.tls.caFile }}
       {{- end }}
-      {{- if and .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.cert }}
-        certFile: {{ .Values.certPath }}/{{ .Values.mongodb.tls.certFile }}
-        keyFile: {{ .Values.certPath }}/{{ .Values.mongodb.tls.keyFile }}
+      {{- if and .Values.mongodb.tls.certFile .Values.mongodb.tls.keyFile }}
+        certFile: {{ .Values.certPath }}/mongodb/{{ .Values.mongodb.tls.certFile }}
+        keyFile: {{ .Values.certPath }}/mongodb/{{ .Values.mongodb.tls.keyFile }}
       {{- end }}
 
     watch:
@@ -394,12 +394,12 @@ data:
       enable: {{ .Values.mongodb.watch.enable }}
       tls:
         insecureSkipVerify: {{ .Values.mongodb.watch.tls.insecureSkipVerify }}
-      {{- if .Values.mongodbCert.watch.ca }}
-        caFile: {{ .Values.certPath }}/{{ .Values.mongodb.watch.tls.caFile }}
+      {{- if .Values.mongodb.watch.tls.caFile }}
+        caFile: {{ .Values.certPath }}/mongodb-watch/{{ .Values.mongodb.watch.tls.caFile }}
       {{- end }}
-      {{- if and .Values.mongodbCert.watch.cert .Values.mongodbCert.watch.key }}
-        keyFile: {{ .Values.certPath }}/{{ .Values.mongodb.watch.tls.keyFile }}
-        certFile: {{ .Values.certPath }}/{{ .Values.mongodb.watch.tls.certFile }}
+      {{- if and .Values.mongodb.watch.tls.certFile .Values.mongodb.watch.tls.keyFile }}
+        keyFile: {{ .Values.certPath }}/mongodb-watch/{{ .Values.mongodb.watch.tls.keyFile }}
+        certFile: {{ .Values.certPath }}/mongodb-watch/{{ .Values.mongodb.watch.tls.certFile }}
       {{- end }}
 
   redis.yaml: |-
@@ -413,12 +413,12 @@ data:
       masterName: {{ .Values.redis.redis.masterName }}
       tls:
         insecureSkipVerify: {{ .Values.redis.redis.tls.insecureSkipVerify }}
-      {{- if .Values.redisCert.redis.ca }}
-        caFile: {{ .Values.certPath }}/{{ .Values.redis.redis.tls.caFile }}
+      {{- if .Values.redis.redis.tls.caFile }}
+        caFile: {{ .Values.certPath }}/redis/{{ .Values.redis.redis.tls.caFile }}
       {{- end }}
-      {{- if and .Values.redisCert.redis.cert .Values.redisCert.redis.key }}
-        certFile: {{ .Values.certPath }}/{{ .Values.redis.redis.tls.certFile }}
-        keyFile: {{ .Values.certPath }}/{{ .Values.redis.redis.tls.keyFile }}
+      {{- if and .Values.redis.redis.tls.certFile .Values.redis.redis.tls.keyFile }}
+        certFile: {{ .Values.certPath }}/redis/{{ .Values.redis.redis.tls.certFile }}
+        keyFile: {{ .Values.certPath }}/redis/{{ .Values.redis.redis.tls.keyFile }}
       {{- end }}
       snap:
         host: {{ include "cmdb.redis.snap.host" . | quote }}
@@ -430,12 +430,12 @@ data:
         masterName: {{ .Values.redis.snapshotRedis.masterName }}
         tls:
           insecureSkipVerify: {{ .Values.redis.snapshotRedis.tls.insecureSkipVerify }}
-          {{- if and .Values.redisCert.snapshotRedis.ca }}
-          caFile: {{ .Values.certPath }}/{{ .Values.redis.snapshotRedis.tls.caFile }}
+          {{- if and .Values.redis.snapshotRedis.tls.caFile }}
+          caFile: {{ .Values.certPath }}/snapshot-redis/{{ .Values.redis.snapshotRedis.tls.caFile }}
           {{- end }}
-          {{- if and .Values.redisCert.snapshotRedis.cert .Values.redisCert.snapshotRedis.key }}
-          certFile: {{ .Values.certPath }}/{{ .Values.redis.snapshotRedis.tls.certFile }}
-          keyFile: {{ .Values.certPath }}/{{ .Values.redis.snapshotRedis.tls.keyFile }}
+          {{- if and .Values.redis.snapshotRedis.tls.certFile .Values.redis.snapshotRedis.tls.keyFile }}
+          certFile: {{ .Values.certPath }}/snapshot-redis/{{ .Values.redis.snapshotRedis.tls.certFile }}
+          keyFile: {{ .Values.certPath }}/snapshot-redis/{{ .Values.redis.snapshotRedis.tls.keyFile }}
           {{- end }}
       discover:
         host: {{ include "cmdb.redis.discover.host" . | quote }}
@@ -447,12 +447,12 @@ data:
         masterName: {{ .Values.redis.discoverRedis.masterName }}
         tls:
           insecureSkipVerify: {{ .Values.redis.discoverRedis.tls.insecureSkipVerify }}
-          {{- if and .Values.redisCert.discoverRedis.ca }}
-          caFile: {{ .Values.certPath }}/{{ .Values.redis.discoverRedis.tls.caFile }}
+          {{- if and .Values.redis.discoverRedis.tls.caFile }}
+          caFile: {{ .Values.certPath }}/discover-redis/{{ .Values.redis.discoverRedis.tls.caFile }}
           {{- end }}
-          {{- if and .Values.redisCert.discoverRedis.cert .Values.redisCert.discoverRedis.key }}
-          certFile: {{ .Values.certPath }}/{{ .Values.redis.discoverRedis.tls.certFile }}
-          keyFile: {{ .Values.certPath }}/{{ .Values.redis.discoverRedis.tls.keyFile }}
+          {{- if and .Values.redis.discoverRedis.tls.certFile .Values.redis.discoverRedis.tls.keyFile }}
+          certFile: {{ .Values.certPath }}/discover-redis/{{ .Values.redis.discoverRedis.tls.certFile }}
+          keyFile: {{ .Values.certPath }}/discover-redis/{{ .Values.redis.discoverRedis.tls.keyFile }}
           {{- end }}
       netcollect:
         host: {{ include "cmdb.redis.netcollect.host" . | quote }}
@@ -464,10 +464,10 @@ data:
         masterName: {{ .Values.redis.netCollectRedis.masterName }}
         tls:
           insecureSkipVerify: {{ .Values.redis.netCollectRedis.tls.insecureSkipVerify }}
-          {{- if and .Values.redisCert.netCollectRedis.ca (ne .Values.redisCert.netCollectRedis.ca "") }}
-          caFile: {{ .Values.certPath }}/{{ .Values.redis.netCollectRedis.tls.caFile }}
+          {{- if and .Values.redis.netCollectRedis.tls.caFile }}
+          caFile: {{ .Values.certPath }}/netcollect-redis/{{ .Values.redis.netCollectRedis.tls.caFile }}
           {{- end }}
-          {{- if and .Values.redisCert.netCollectRedis.cert .Values.redisCert.netCollectRedis.key }}
-          certFile: {{ .Values.certPath }}/{{ .Values.redis.netCollectRedis.tls.certFile }}
-          keyFile: {{ .Values.certPath }}/{{ .Values.redis.netCollectRedis.tls.keyFile }}
+          {{- if and .Values.redis.netCollectRedis.tls.certFile .Values.redis.netCollectRedis.tls.keyFile }}
+          certFile: {{ .Values.certPath }}/netcollect-redis/{{ .Values.redis.netCollectRedis.tls.certFile }}
+          keyFile: {{ .Values.certPath }}/netcollect-redis/{{ .Values.redis.netCollectRedis.tls.keyFile }}
           {{- end }}

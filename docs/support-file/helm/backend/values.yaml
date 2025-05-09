@@ -1109,9 +1109,9 @@ common:
     usr:
     pwd:
     tls:
-      certFile: "elasticsearch/es.cert"
-      keyFile: "elasticsearch/es.key"
-      caFile: "elasticsearch/es.ca"
+      certFile:
+      keyFile:
+      caFile:
       insecureSkipVerify: true
   #auth_server专属配置
   authServer:
@@ -1438,9 +1438,9 @@ configAndServiceCenter:
   addr:
   tls:
     insecureSkipVerify: true
-    caFile: "zookeeper/zk.ca"
-    certFile: "zookeeper/zk.cert"
-    keyFile: "zookeeper/zk.key"
+    caFile:
+    certFile:
+    keyFile:
     password:
 
 ## @section mongodb parameters
@@ -1474,22 +1474,22 @@ mongodb:
     password:
     database: cmdb
   tls:
-    ## @param mongodb.tls.caFile redis TLS CA file
+    ## @param mongodb.tls.caFile mongodb TLS CA file
     ## Certificate file name, will be combined with certPath
     ##
-    caFile: "mongodb/mongodb.ca"
-    ## @param mongodb.tls.certFile redis TLS cert file
+    caFile:
+    ## @param mongodb.tls.certFile mongodb TLS cert file
     ## Certificate file name, will be combined with certPath
     ##
-    certFile: "mongodb/mongodb.cert"
-    ## @param mongodb.tls.keyFile redis TLS key file
+    certFile:
+    ## @param mongodb.tls.keyFile mongodb TLS key file
     ## Key file name, will be combined with certPath
     ##
-    keyFile: "mongodb/mongodb.key"
-    ## @param mongodb.tls.pemFile redis TLS pem file
+    keyFile:
+    ## @param mongodb.tls.pemFile mongodb TLS pem file
     ## Combined certificate and key file name, will be combined with certPath
     ##
-    pemFile: "mongodb/mongodb.pem"
+    pemFile:
     ## @param mongodb.tls.insecureSkipVerify mongodb TLS insecure skip verify
     ##
     insecureSkipVerify: true
@@ -1566,15 +1566,15 @@ mongodb:
       ## @param mongodb.watch.tls.caFile redis TLS CA file
       ## Certificate file name, will be combined with certPath
       ##
-      caFile: "mongodb-watch/mongodb-watch.ca"
+      caFile:
       ## @param mongodb.watch.tls.certFile redis TLS cert file
       ## Certificate file name, will be combined with certPath
       ##
-      certFile: "mongodb-watch/mongodb-watch.cert"
+      certFile:
       ## @param mongodb.watch.tls.keyFile redis TLS key file
       ## Key file name, will be combined with certPath
       ##
-      keyFile: "mongodb-watch/mongodb-watch.key"
+      keyFile:
       ## @param mongodb.watch.tls.insecureSkipVerify mongodb TLS insecure skip verify
       ##
       insecureSkipVerify: true
@@ -1628,15 +1628,15 @@ redis:
       ## @param redis.redis.tls.caFile redis TLS CA file
       ## Certificate file name, will be combined with certPath
       ##
-      caFile: "redis/redis.ca"
+      caFile:
       ## @param redis.redis.tls.certFile redis TLS cert file
       ## Certificate file name, will be combined with certPath
       ##
-      certFile: "redis/redis.cert"
+      certFile:
       ## @param redis.redis.tls.keyFile redis TLS key file
       ## Key file name, will be combined with certPath
       ##
-      keyFile: "redis/redis.key"
+      keyFile:
       ## @param redis.redis.tls.insecureSkipVerify redis TLS insecure skip verify
       ## 
       insecureSkipVerify: true
@@ -1669,13 +1669,13 @@ redis:
     tls:
       ## @param redis.snapshotRedis.tls.caFile external redis TLS CA file
       ##
-      caFile: "snapshot-redis/snapshot-redis.ca"
+      caFile:
       ## @param redis.snapshotRedis.tls.certFile external redis TLS cert file
       ##
-      certFile: "snapshot-redis/snapshot-redis.cert"
+      certFile:
       ## @param redis.snapshotRedis.tls.keyFile external redis TLS key file
       ##
-      keyFile: "snapshot-redis/snapshot-redis.key"
+      keyFile:
       ## @param redis.snapshotRedis.tls.insecureSkipVerify redis TLS insecure skip verify
       ## 
       insecureSkipVerify: true
@@ -1708,13 +1708,13 @@ redis:
     tls:
       ## @param redis.discoverRedis.tls.caFile discover redis TLS CA file
       ##
-      caFile: "discover-redis/discover-redis.ca"
+      caFile:
       ## @param redis.discoverRedis.tls.certFile discover redis TLS cert file
       ##
-      certFile: "discover-redis/discover-redis.cert"
+      certFile:
       ## @param redis.discoverRedis.tls.keyFile discover redis TLS key file
       ##
-      keyFile: "discover-redis/discover-redis.key"
+      keyFile:
       ## @param redis.discoverRedis.tls.insecureSkipVerify redis TLS insecure skip verify
       ## 
       insecureSkipVerify: true
@@ -1747,13 +1747,13 @@ redis:
     tls:
       ## @param redis.netCollectRedis.tls.caFile netcollect redis TLS CA file
       ##
-      caFile: "netcollect-redis/netcollect-redis.ca"
+      caFile:
       ## @param redis.netCollectRedis.tls.certFile netcollect redis TLS cert file
       ##
-      certFile: "netcollect-redis/netcollect-redis.cert"
+      certFile:
       ## @param redis.netCollectRedis.tls.keyFile netcollect redis TLS key file
       ##
-      keyFile: "netcollect-redis/netcollect-redis.key"
+      keyFile:
       ## @param redis.netCollectRedis.tls.insecureSkipVerify redis TLS insecure skip verify
       ## 
       insecureSkipVerify: true
@@ -1958,6 +1958,8 @@ redisCert:
     ## key content encoded in base64
     ##
     key: ""
+    ## @param redisCert.redis.tlsSecretName is the tls secret name
+    tlsSecretName: ""
   ## snapshot redis instance certificates
   snapshotRedis:
     ## @param redisCert.snapshotRedis.ca CA certificate for snapshot redis connection
@@ -1972,6 +1974,8 @@ redisCert:
     ## key content encoded in base64
     ##
     key: ""
+    ## @param redisCert.redis.tlsSecretName is the tls secret name
+    tlsSecretName: ""
   ## discover redis instance certificates
   discoverRedis:
     ## @param redisCert.discoverRedis.ca CA certificate for discover redis connection
@@ -1986,6 +1990,8 @@ redisCert:
     ## key content encoded in base64
     ##
     key: ""
+    ## @param redisCert.redis.tlsSecretName is the tls secret name
+    tlsSecretName: ""
   ## network collect redis instance certificates
   netCollectRedis:
     ## @param redisCert.netCollectRedis.ca CA certificate for network collect redis connection
@@ -2000,6 +2006,8 @@ redisCert:
     ## key content encoded in base64
     ##
     key: ""
+    ## @param redisCert.redis.tlsSecretName is the tls secret name
+    tlsSecretName: ""
 mongodbCert:
   mongodb:
     ## @param mongodbCert.ca CA certificate for mongodb connection
@@ -2014,6 +2022,8 @@ mongodbCert:
     ## key content encoded in base64
     ##
     key: ""
+    ## @param redisCert.redis.tlsSecretName is the tls secret name
+    tlsSecretName: ""
   watch:
     ## @param mongodbCert.ca CA certificate for mongodb connection
     ## certificate content encoded in base64
@@ -2027,11 +2037,15 @@ mongodbCert:
     ## key content encoded in base64
     ##
     key: ""
+    ## @param redisCert.redis.tlsSecretName is the tls secret name
+    tlsSecretName: ""
 zookeeperCert:
   ca: ""
   cert: ""
   key: ""
+  tlsSecretName: ""
 esCert:
   ca: ""
   cert: ""
   key: ""
+  tlsSecretName: ""

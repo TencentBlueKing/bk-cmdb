@@ -30,13 +30,13 @@ data:
     resume = false
 
     elasticsearch-validate-pem-file = {{ not .Values.common.es.tls.insecureSkipVerify }}
-    {{- if .Values.esCert.ca }}
-    elasticsearch-pem-file = "{{ .Values.certPath }}/{{ .Values.common.es.tls.caFile }}"
+    {{- if .Values.common.es.tls.caFile }}
+    elasticsearch-pem-file = "{{ .Values.certPath }}/elasticsearch/{{ .Values.common.es.tls.caFile }}"
     {{- end }}
-    {{- if and .Values.esCert.cert .Values.esCert.key }}
+    {{- if and .Values.common.es.tls.certFile .Values.common.es.tls.keyFile }}
     [elasticsearch-pki-auth]
-    cert-file = "{{ .Values.certPath }}/{{ .Values.common.es.tls.certFile }}"
-    key-file = "{{ .Values.certPath }}/{{ .Values.common.es.tls.keyFile }}"
+    cert-file = "{{ .Values.certPath }}/elasticsearch/{{ .Values.common.es.tls.certFile }}"
+    key-file = "{{ .Values.certPath }}/elasticsearch/{{ .Values.common.es.tls.keyFile }}"
     {{- end }}
 
   extra.toml: |-
