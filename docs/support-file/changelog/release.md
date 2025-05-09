@@ -1,3 +1,7 @@
+## [Version: v3.14.6-alpha2] - 2025-05-09
+**功能优化**
+- ssl配置支持secret挂载方式
+
 ## [Version: v3.14.6-alpha1] - 2025-05-06
 **功能优化**
 - mongodb、redis、elasticsearch支持tls连接
