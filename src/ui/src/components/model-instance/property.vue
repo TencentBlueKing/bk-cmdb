@@ -41,7 +41,7 @@
           </div>
           <template v-if="property.bk_property_type !== PROPERTY_TYPES.INNER_TABLE">
             <div :class="['property-value', { 'is-loading': loadingState.includes(property) }]"
-              v-if="property !== editState.property">
+              v-if="property !== editState.property || property.bk_property_type === PROPERTY_TYPES.ORGANIZATION">
               <cmdb-property-value
                 tag="div"
                 :is-show-overflow-tips="isShowOverflowTips(property)"
@@ -80,7 +80,8 @@
                     <i class="property-edit icon-cc-edit-shape"></i>
                   </bk-button>
                 </cmdb-auth>
-                <div class="property-form" v-if="property === editState.property"
+                <div class="property-form" v-if="property === editState.property &&
+                  property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION"
                   @keyup="(event) => keyupCallMethodFn(event)">
                   <div :class="['form-component', property.bk_property_type]">
                     <component
@@ -192,6 +193,16 @@
         </div>
       </dl>
     </div>
+
+    <cmdb-form-organization
+      class="organization-hide"
+      ref="form-organization"
+      v-model.trim="editState.value"
+      @close="handleOrganizationClose"
+      @confirm="handleOrganizationConfirm"
+      v-if="editState.property?.bk_property_type === PROPERTY_TYPES.ORGANIZATION">
+    </cmdb-form-organization>
+
   </div>
 </template>
 
@@ -315,8 +326,21 @@
         this.editState.property = property
         setTimeout(() => {
           const component = this.$refs[`component-${property.bk_property_id}`]
+          if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+            this.$refs?.['form-organization']?.$children?.[0]?.openEdit()
+            return
+          }
           component?.[0]?.focus()
         }, 100)
+      },
+      handleOrganizationConfirm(val) {
+        const value = val[0]?.data?.map(item => item.id) ?? []
+        this.editState.value = value
+        this.confirm()
+        this.editState.property = null
+      },
+      handleOrganizationClose() {
+        this.editState.property = null
       },
       async confirm() {
         const { property, value } = this.editState
