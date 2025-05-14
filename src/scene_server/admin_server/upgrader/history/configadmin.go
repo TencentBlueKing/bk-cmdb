@@ -193,7 +193,7 @@ func UpgradeConfigAdmin(ctx context.Context, db dal.RDB, dir string) error {
 	dbCfg := new(ConfigAdmin)
 
 	if dbCfgStr != "" {
-		// dbNewCfg 用来保存新的 GlobalSettingConfig 结构数据
+		// dbNewCfg 用来保存新的 PlatformSettingConfig 结构数据
 		dbNewCfg := new(PlatformSettingConfig)
 		if err := json.Unmarshal([]byte(dbCfgStr), dbNewCfg); err != nil {
 			blog.Errorf("get dbConfig failed, unmarshal err: %v, config: %v", err, dbCfgStr)

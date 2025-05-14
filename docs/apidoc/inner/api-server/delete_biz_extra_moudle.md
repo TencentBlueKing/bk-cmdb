@@ -1,10 +1,12 @@
 ### 请求方式
 
-POST /api/v3/topo/delete/biz/extra_moudle
+POST /api/v3/topo/delete/biz/extra_module
 
 ### 描述
 
-删除用户自定义模块
+删除业务空闲机池中用户自定义拓扑模块
+
+### 请求参数
 
 | 参数名称        | 参数类型   | 必选 | 描述         |
 |-------------|--------|----|------------|

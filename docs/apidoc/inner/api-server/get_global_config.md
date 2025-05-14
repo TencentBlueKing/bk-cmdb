@@ -27,7 +27,6 @@ GET /api/v3/admin/find/config/global_config
         },
         "last_time": "2025-05-09T13:05:40.482Z",
         "set": "空闲机池",
-        "tenant_id": "test_tenant",
         "validation_rules": {
             "associationId": {
                 "description": "关联类型唯一标识验证规则",
@@ -59,7 +58,6 @@ GET /api/v3/admin/find/config/global_config
 | backend          | object            | 拓扑层级配置     |
 | idle_pool        | object            | 业务空闲机池模块配置 |
 | set              | string            | 业务空闲机池集群配置 |
-| tenant_id        | string            | 租户ID       |
 | validation_rules | map[string]object | 校验规则       |
 
 #### data.backend

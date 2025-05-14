@@ -58,7 +58,7 @@ const (
 	updatemanyBizPropertyPattern        = `/api/v3/updatemany/biz/property`
 	deletemanyBizPropertyPattern        = `/api/v3/deletemany/biz`
 	updatePlatformSettingIdleSetPattern = `/api/v3/topo/update/biz/idle_set`
-	deletePlatformSettingModulePattern  = `/api/v3/topo/delete/biz/extra_moudle`
+	deletePlatformSettingModulePattern  = `/api/v3/topo/delete/biz/extra_module`
 )
 
 // NOCC:golint/fnsize(整体属于business操作需要放在一起)

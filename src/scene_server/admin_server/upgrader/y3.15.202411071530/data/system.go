@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 )
@@ -43,27 +44,17 @@ func addSystemData(kit *rest.Kit, db local.DB) error {
 
 func initPlatformSetting(kit *rest.Kit, db local.DB) error {
 
-	count, err := db.Table(common.BKTableNameSystem).Find(mapstr.MapStr{common.BKFieldDBID: common.PlatformConfig}).
-		Count(kit.Ctx)
+	existConfig := make([]PlatformConfig, 0)
+	err := db.Table(common.BKTableNameSystem).Find(mapstr.MapStr{common.BKFieldDBID: common.PlatformConfig}).Fields(
+		metadata.IDGeneratorConfig).All(kit.Ctx, &existConfig)
 	if err != nil {
-		blog.Errorf("count data for table %s failed, err: %v", common.BKTableNameSystem, err)
+		blog.Errorf("get config id generator failed, error: %v", err)
 		return err
 	}
 
-	var insertConfig IDGeneratorConf
-	if count == 0 {
-		insertConfig = InitIDGeneratorConfig
-	} else {
-
-		existConfig := new(PlatformConfig)
-		err = db.Table(common.BKTableNameSystem).Find(mapstr.MapStr{common.BKFieldDBID: common.PlatformConfig}).Fields(
-			"id_generator").One(kit.Ctx, existConfig)
-		if err != nil {
-			blog.Errorf("get config id generator failed, error: %v", err)
-			return err
-		}
-		if !cmpSame(&existConfig.IDGenerator, &InitIDGeneratorConfig) {
-			blog.Errorf("config id generator is not same, exist: %v, insert: %v", existConfig, insertConfig)
+	if len(existConfig) > 0 {
+		if !cmpSame(&existConfig[0].IDGenerator, &InitIDGeneratorConfig) {
+			blog.Errorf("config id generator is not same, exist: %v, insert: %v", existConfig[0], InitIDGeneratorConfig)
 			return fmt.Errorf("config id generator is not same")
 		}
 		return nil
@@ -71,10 +62,9 @@ func initPlatformSetting(kit *rest.Kit, db local.DB) error {
 
 	insertData := idGeneratorConf{
 		BID:         common.PlatformConfig,
-		IDGenerator: &insertConfig,
+		IDGenerator: &InitIDGeneratorConfig,
 	}
-	cond := mapstr.MapStr{common.BKFieldDBID: common.PlatformConfig}
-	err = db.Table(common.BKTableNameSystem).Upsert(kit.Ctx, cond, insertData)
+	err = db.Table(common.BKTableNameSystem).Insert(kit.Ctx, insertData)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameSystem, err)
 		return err

@@ -357,24 +357,11 @@ func (s *Service) SearchGlobalConfig(req *restful.Request, resp *restful.Respons
 		}
 		return
 	}
+	delete(conf, common.TenantID)
 
 	err = resp.WriteEntity(metadata.NewSuccessResp(conf))
 	if err != nil {
 		blog.Errorf("response url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, kit.Rid)
 		return
 	}
-}
-
-// SearchConfig search config
-func (s *Service) SearchConfig(kit *rest.Kit, db local.DB, table string, cond mapstr.MapStr,
-	fields ...string) (mapstr.MapStr, error) {
-
-	conf := mapstr.MapStr{}
-	err := db.Table(table).Find(cond).Fields(fields...).One(kit.Ctx, &conf)
-	if err != nil {
-		blog.Errorf("search platform db config failed, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
-
-	return conf, nil
 }

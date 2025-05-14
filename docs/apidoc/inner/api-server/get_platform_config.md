@@ -6,6 +6,12 @@ GET /api/v3/admin/find/config/platform_config/{type}
 
 查询平台配置
 
+### 请求参数
+
+| 参数名称         | 参数类型   | 必选 | 描述                 |
+|--------------|--------|----|--------------------|
+| id_generator | string | 是  | 查询id_generator配置内容 |
+
 ### 响应示例
 
 ```json

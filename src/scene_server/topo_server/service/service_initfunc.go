@@ -92,7 +92,7 @@ func (s *Service) initBusiness(web *restful.WebService) {
 		Handler: s.UpdateGlobalSetOrModuleConfig})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost,
-		Path:    "/topo/delete/biz/extra_moudle",
+		Path:    "/topo/delete/biz/extra_module",
 		Handler: s.DeleteUserModulesSettingConfig})
 
 	utility.AddToRestfulWebService(web)

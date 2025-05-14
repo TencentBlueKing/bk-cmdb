@@ -23,6 +23,7 @@ import (
 
 	"configcenter/pkg/tenant"
 	"configcenter/src/apimachinery"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 )
