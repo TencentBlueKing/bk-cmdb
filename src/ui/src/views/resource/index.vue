@@ -77,6 +77,12 @@
         return this.activeTab.toString() === '1'
       }
     },
+    watch: {
+      activeTab(val) {
+        const scope = RouterQuery.get('scope', '1')
+        if (scope !== val) RouterQuery.set('scope', val)
+      }
+    },
     methods: {
       handleTabChange(tab) {
         Bus.$emit('toggle-host-filter', false)

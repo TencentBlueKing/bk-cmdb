@@ -379,6 +379,7 @@
         }
         // eslint-disable-next-line prefer-destructuring
         const business = item.biz[0]
+        const scope = RouterQuery.get('scope', 1)
         if (business.default) {
           this.$routerActions.redirect({
             name: MENU_RESOURCE_HOST_DETAILS,
@@ -386,7 +387,8 @@
               id: item.host.bk_host_id
             },
             query: {
-              from: 'resource'
+              from: 'resource',
+              scope
             },
             history: true
           })
@@ -398,7 +400,8 @@
               id: item.host.bk_host_id
             },
             query: {
-              from: 'resource'
+              from: 'resource',
+              scope
             },
             history: true
           })
