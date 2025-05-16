@@ -20,6 +20,7 @@
       v-bind="$attrs"
       :list="[]"
       :has-delete-icon="true"
+      :paste-fn="handlePasteFn"
       @removeAll="() => $emit('clear')"
       @click.native="handleToggle(true)"
       @blur="handleToggle(false, ...arguments)"
@@ -44,6 +45,10 @@
       value: {
         type: [String, Array],
         default: ''
+      },
+      pasteDivide: {
+        type: Boolean,
+        default: false
       }
     },
     computed: {
@@ -60,36 +65,18 @@
         }
       }
     },
-    watch: {
-      multiple: {
-        immediate: true,
-        handler(multiple) {
-          multiple ? this.addPasteEvent() : this.removePasteEvent()
-        }
-      }
-    },
-    beforeDestroy() {
-      this.removePasteEvent()
-    },
     methods: {
-      async addPasteEvent() {
-        await this.$nextTick()
-        const { tagInput } = this.$refs
-        if (!tagInput) return
-        tagInput.$refs.input?.addEventListener('paste', this.handlePaste)
-      },
-      async removePasteEvent() {
-        await this.$nextTick()
-        const { tagInput } = this.$refs
-        if (!tagInput) return
-        tagInput.$refs.input?.removeEventListener('paste', this.handlePaste)
-      },
-      handlePaste(event) {
-        const text = event.clipboardData.getData('text')
-        const values = text.split(/,|;|\n/).map(value => value.trim())
+      dividePasteVal(val) {
+        const value = (val.split(/,|;|\n/)).map(value => value.trim())
           .filter(value => value.length)
-        const value = [...new Set([...this.localValue, ...values])]
-        this.localValue = value
+        return [...new Set([...this.localValue, ...value])]
+      },
+      handlePasteFn(value) {
+        if (this.pasteDivide && this.multiple) {
+          this.localValue = this.dividePasteVal(value)
+          return
+        }
+        this.localValue = [...new Set([...this.localValue, value])]
       },
       handleInputChange(value) {
         this.$emit('inputchange', value)
