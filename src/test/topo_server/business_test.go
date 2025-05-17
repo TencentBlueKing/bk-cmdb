@@ -305,11 +305,11 @@ var _ = Describe("business test", func() {
 	})
 
 	It("search resource business", func() {
-		rsp, err := instClient.GetDefaultApp(context.Background(), header)
+		rsp, err := apiServerClient.GetResourcePoolBiz(context.Background(), header)
 		util.RegisterResponseWithRid(rsp, header)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(rsp.Data.Count).To(Equal(1))
-		Expect(rsp.Data.Info[0]).To(ContainElement("资源池"))
+		resPoolBizID, err := commonutil.GetInt64ByInterface(rsp[common.BKAppIDField])
+		Expect(resPoolBizID).To(Equal(test.GetResBizID()))
 	})
 
 	It("search business bk_biz_name = 'mmrmm'", func() {

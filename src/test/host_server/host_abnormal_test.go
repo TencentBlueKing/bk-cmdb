@@ -264,7 +264,7 @@ var _ = Describe("host abnormal test", func() {
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     -1,
+							"bk_cloud_id":     12345,
 						},
 					},
 				}
@@ -495,7 +495,7 @@ var _ = Describe("host abnormal test", func() {
 					"host_info": map[string]interface{}{
 						"4": map[string]interface{}{
 							"bk_host_innerip": "127.0.1.1",
-							"bk_cloud_id":     -1,
+							"bk_cloud_id":     12345,
 						},
 					},
 					"input_type": "excel",

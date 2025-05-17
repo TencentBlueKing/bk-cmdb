@@ -171,7 +171,7 @@ func (lgc *Logics) handleHostParam(ccLang language.DefaultCCLanguageIf, index in
 		iSubArea = common.BKDefaultDirSubArea
 	}
 	cloudID, err := util.GetInt64ByInterface(iSubArea)
-	if err != nil || cloudID < 0 {
+	if err != nil {
 		return 0, "", 0, false, ccLang.Language("import_host_cloudID_invalid")
 	}
 
@@ -681,7 +681,7 @@ func (lgc *Logics) validateHostField(kit *rest.Kit, index int, host map[string]i
 	}
 
 	cloudIDVal, err := util.GetInt64ByInterface(cloudID)
-	if err != nil || cloudIDVal < 0 {
+	if err != nil {
 		return metadata.AddOneHostToResourcePoolResult{
 			Index:    index,
 			ErrorMsg: kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, common.BKCloudIDField).Error(),
@@ -780,10 +780,6 @@ func (h *importInstance) updateHostInstance(index int64, host map[string]interfa
 func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs []int64, toInternalModule bool,
 	host map[string]interface{}) (int64, error) {
 	ip, _ := host[common.BKHostInnerIPField].(string)
-	if cloudID < 0 {
-		return 0, fmt.Errorf(h.ccLang.Languagef("host_import_add_fail", index, ip,
-			h.ccLang.Language("import_host_cloudID_invalid")))
-	}
 
 	// determine if the cloud area exists
 	// default cloud area must be exist
@@ -805,7 +801,6 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 		Data: host,
 	}
 
-	// (h.ctx, h.pheader, host)
 	var err error
 	result, err := h.CoreAPI.CoreService().Instance().CreateInstance(h.ctx, h.pheader, common.BKInnerObjIDHost, input)
 	if err != nil {
@@ -938,7 +933,7 @@ func (h *importInstance) getQueryHostsFilter(hostInfos map[int64]map[string]inte
 			intCloudID = common.BKDefaultDirSubArea
 		} else {
 			intCloudID, err = util.GetInt64ByInterface(cloudID)
-			if err != nil || intCloudID < 0 {
+			if err != nil {
 				blog.Errorf("parse cloudID failed, err: %v, hostInfo: %#v, rid: %s", err, host, h.rid)
 				return nil, err
 			}
@@ -1075,7 +1070,7 @@ func (lgc *Logics) checkHostAttr(kit *rest.Kit, hostInfos []mapstr.MapStr) error
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 		}
 		cloudIDVal, err := util.GetInt64ByInterface(cloudID)
-		if err != nil || cloudIDVal < 0 {
+		if err != nil {
 			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
 		}
 		if err := hooks.ValidHostCloudIDHook(kit, cloudIDVal); err != nil {

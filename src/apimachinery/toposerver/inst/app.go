@@ -116,19 +116,3 @@ func (t *instanceClient) GetAppBasicInfo(ctx context.Context, h http.Header,
 		Into(resp)
 	return
 }
-
-// GetDefaultApp TODO
-func (t *instanceClient) GetDefaultApp(ctx context.Context, h http.Header) (
-	resp *metadata.SearchInstResult, err error) {
-	resp = new(metadata.SearchInstResult)
-	subPath := "/app/default/%s/search"
-	err = t.client.Post().
-		WithContext(ctx).
-		Body(nil).
-		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
-		SubResourcef(subPath, "0").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	return
-}

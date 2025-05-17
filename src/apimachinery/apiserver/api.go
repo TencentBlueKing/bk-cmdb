@@ -28,20 +28,26 @@ func (a *apiServer) Client() rest.ClientInterface {
 	return a.client
 }
 
-// SearchDefaultApp TODO
-func (a *apiServer) SearchDefaultApp(ctx context.Context, h http.Header) (resp *metadata.QueryInstResult, err error) {
-	resp = new(metadata.QueryInstResult)
-	subPath := "biz/default/%s/search"
+// GetResourcePoolBiz get resource pool biz
+func (a *apiServer) GetResourcePoolBiz(ctx context.Context, h http.Header) (mapstr.MapStr, error) {
+	resp := new(metadata.ResponseDataMapStr)
+	subPath := "/find/resource_pool/biz"
 
-	err = a.client.Post().
+	err := a.client.Post().
 		WithContext(ctx).
 		Body(nil).
-		// url参数已废弃，此处"0"仅作占位符，不代表实际租户
-		SubResourcef(subPath, "0").
+		SubResourcef(subPath).
 		WithHeaders(h).
 		Do().
 		IntoCmdbResp(resp)
-	return
+	if err != nil {
+		return nil, ccErr.CCHttpError
+	}
+	if ccErr := resp.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return resp.Data, nil
 }
 
 // GetObjectData get object data

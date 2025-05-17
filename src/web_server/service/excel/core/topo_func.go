@@ -97,20 +97,16 @@ func (d *Client) getCustomTopoObjIDs(kit *rest.Kit) ([]string, error) {
 
 // GetDefaultBizID get resource pool biz ID
 func (d *Client) GetDefaultBizID(kit *rest.Kit) (int64, error) {
-	resp, err := d.ApiClient.SearchDefaultApp(kit.Ctx, kit.Header)
+	resp, err := d.ApiClient.GetResourcePoolBiz(kit.Ctx, kit.Header)
 	if err != nil {
 		blog.Errorf("search default bizID failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.CCError(common.CCErrCommHTTPDoRequestFailed)
 	}
-	if !resp.Result {
-		blog.Errorf("search default bizID failed, err: %v, rid: %s", err, kit.Rid)
-		return 0, resp.CCError()
-	}
 
-	if len(resp.Data.Info) == 0 {
+	if len(resp) == 0 {
 		return 0, kit.CCError.CCError(common.CCErrHostNotResourceFail)
 	}
-	bizID, err := resp.Data.Info[0].Int64(common.BKAppIDField)
+	bizID, err := resp.Int64(common.BKAppIDField)
 	if err != nil {
 		return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
 			common.BKAppIDField, "int64", err.Error())

@@ -136,6 +136,7 @@ grant_permissions:
       - find_host_topo_relation
       - search_module
       - get_biz_brief_cache_topo
+      - get_resource_pool_biz
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`

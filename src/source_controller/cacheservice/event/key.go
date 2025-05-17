@@ -245,7 +245,7 @@ var ProcessInstanceRelationKey = Key{
 
 // this is a virtual collection name which represent for
 // the mix of host, host relation, process events.
-const hostIdentityWatchCollName = "cc_HostIdentityMixed"
+const hostIdentityWatchCollName = "HostIdentityMixed"
 
 // HostIdentityKey TODO
 var HostIdentityKey = Key{
@@ -315,7 +315,7 @@ var BizSetKey = Key{
 }
 
 // bizSetRelationWatchCollName a virtual collection name for biz set & biz events in the form of their relation events
-const bizSetRelationWatchCollName = "cc_bizSetRelationMixed"
+const bizSetRelationWatchCollName = "bizSetRelationMixed"
 
 // BizSetRelationKey TODO
 var BizSetRelationKey = Key{

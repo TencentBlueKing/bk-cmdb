@@ -36,7 +36,7 @@ type ApiServerClientInterface interface {
 	FieldTemplate() fieldtmpl.Interface
 	Txn() transaction.Interface
 
-	SearchDefaultApp(ctx context.Context, h http.Header) (resp *metadata.QueryInstResult, err error)
+	GetResourcePoolBiz(ctx context.Context, h http.Header) (mapstr.MapStr, error)
 	GetObjectData(ctx context.Context, h http.Header, cond *metadata.ExportObjectCondition) (
 		resp *metadata.ObjectAttrBatchResult, err error)
 	GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (

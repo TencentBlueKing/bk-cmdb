@@ -512,7 +512,7 @@ func (m *instanceManager) validMainlineInstanceData(kit *rest.Kit, objID string,
 func (m *instanceManager) validCloudID(kit *rest.Kit, objID string, instanceData mapstr.MapStr) error {
 	if objID == common.BKInnerObjIDHost {
 		if instanceData.Exists(common.BKCloudIDField) {
-			if cloudID, err := instanceData.Int64(common.BKCloudIDField); err != nil || cloudID < 0 {
+			if _, err := instanceData.Int64(common.BKCloudIDField); err != nil {
 				blog.Errorf("invalid bk_cloud_id value: %#v, err: %v, rid: %s", instanceData[common.BKCloudIDField],
 					err, kit.Rid)
 				return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)

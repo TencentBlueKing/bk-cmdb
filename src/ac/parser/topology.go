@@ -48,8 +48,7 @@ func (ps *parseStream) topology() *parseStream {
 var (
 	updateBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
 	// deleteBusinessRegexp             = regexp.MustCompile(`^/api/v3/biz/[^\s/]+/[0-9]+/?$`)
-	findResourcePoolBusinessRegexp = regexp.MustCompile(`^/api/v3/biz/default/[^\s/]+/search/?$`)
-	updateBusinessStatusRegexp     = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
+	updateBusinessStatusRegexp = regexp.MustCompile(`^/api/v3/biz/status/[^\s/]+/[^\s/]+/[0-9]+/?$`)
 )
 
 const (
@@ -159,20 +158,6 @@ func (ps *parseStream) findBiz() *parseStream {
 		return ps
 	}
 
-	// find resource pool business
-	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-				// we don't know if one or more business is to find, so we assume it's a find many
-				// business operation.
-			},
-		}
-		return ps
-	}
 	return ps
 }
 
@@ -239,21 +224,6 @@ func (ps *parseStream) updateBiz() *parseStream {
 					Action:     meta.Delete,
 					InstanceID: bizID,
 				},
-			},
-		}
-		return ps
-	}
-
-	// find resource pool business
-	if ps.hitRegexp(findResourcePoolBusinessRegexp, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.Business,
-					Action: meta.SkipAction,
-				},
-				// we don't know if one or more business is to find, so we assume it's a find many
-				// business operation.
 			},
 		}
 		return ps

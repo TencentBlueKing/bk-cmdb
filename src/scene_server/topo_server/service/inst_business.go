@@ -760,31 +760,38 @@ func (s *Service) SearchBusiness(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// SearchOwnerResourcePoolBusiness search archived business by condition
-func (s *Service) SearchOwnerResourcePoolBusiness(ctx *rest.Contexts) {
+// GetResourcePoolBiz get resource pool business info, right now only returns biz id
+func (s *Service) GetResourcePoolBiz(ctx *rest.Contexts) {
+	// authorize using list resource pool hosts permission
+	authRes := meta.ResourceAttribute{Basic: meta.Basic{Type: meta.HostInstance, Action: meta.Find}}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
 
-	query := metadata.QueryCondition{
+	query := &metadata.QueryCondition{
 		Condition: mapstr.MapStr{
 			common.BKDefaultField: common.DefaultAppFlag,
 		},
+		Fields: []string{common.BKAppIDField},
+		Page: metadata.BasePage{
+			Limit: 1,
+		},
 	}
 
-	cnt, instItems, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, &query)
+	_, bizInfo, err := s.Logics.BusinessOperation().FindBiz(ctx.Kit, query)
 	if err != nil {
-		blog.Errorf("find objects(%s) failed, err: %v, rid: %s", ctx.Request.PathParameter("obj_id"), err,
-			ctx.Kit.Rid)
+		blog.Errorf("get %s resource pool biz id failed, err: %v, rid: %s", ctx.Kit.TenantID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
-	if cnt == 0 {
-		blog.InfoJSON("cond:%s, header:%s, rid:%s", query, ctx.Kit.Header, ctx.Kit.Rid)
+	if len(bizInfo) == 0 {
+		blog.Errorf("%s resource pool biz not found, rid: %s", ctx.Kit.TenantID, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.New(common.CCErrCommParamsInvalid, "resource pool business not found"))
+		return
 	}
-	result := mapstr.MapStr{
-		"count": cnt,
-		"info":  instItems,
-	}
-	ctx.RespEntity(result)
-	return
+
+	ctx.RespEntity(bizInfo[0])
 }
 
 // ListAllBusinessSimplify list all businesses with return only several fields

@@ -127,6 +127,7 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 
 	ws.Route(ws.POST("/biz/{.*}").Filter(s.BizFilterChan).To(s.Post))
 	ws.Route(ws.POST("/biz/search/{.*}").Filter(s.BizFilterChan).To(s.Post))
+	ws.Route(ws.POST("/find/resource_pool/biz").Filter(s.TopoFilterChan).To(s.Post))
 
 	ws.Route(ws.POST("/findmany/hosts/by_service_templates/biz/{.*}").Filter(s.HostFilterChan).To(s.Post))
 	ws.Route(ws.POST("/findmany/module_relation/bk_biz_id/{.*}").Filter(s.HostFilterChan).To(s.Post))

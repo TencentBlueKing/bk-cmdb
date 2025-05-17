@@ -1168,12 +1168,6 @@ func (s *Service) CloneHostProperty(ctx *rest.Contexts) {
 		return
 	}
 
-	if input.CloudID < 0 {
-		blog.Errorf("invalid bk_cloud_id: %d ,rid: %s", input.CloudID, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedInt, "bk_cloud_id"))
-		return
-	}
-
 	// can only use ip or id for one.
 	if (len(input.OrgIP) != 0 || len(input.DstIP) != 0) && (input.OrgID > 0 || input.DstID > 0) {
 		ctx.RespErrorCodeOnly(common.CCErrCommParamsIsInvalid, "invalid org/dst ip or id")
