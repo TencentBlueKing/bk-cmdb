@@ -36,7 +36,7 @@ func initMetric() {
 		Subsystem: "response",
 		Name:      "total_response_error_count",
 		Help:      "the total error count responded to users",
-	}, []string{"app_code", "uri"})
+	}, []string{metrics.LabelAppCode, "uri", metrics.LabelTenantId})
 	metrics.Register().MustRegister(rm.totalErrorCount)
 
 	rm.noPermissionRequestTotal = prometheus.NewCounterVec(
@@ -44,7 +44,7 @@ func initMetric() {
 			Name: "cmdb_no_permission_request_total",
 			Help: "total number of request without permission.",
 		},
-		[]string{metrics.LabelHandler, metrics.LabelAppCode},
+		[]string{metrics.LabelHandler, metrics.LabelAppCode, metrics.LabelTenantId},
 	)
 	metrics.Register().MustRegister(rm.noPermissionRequestTotal)
 }
@@ -58,16 +58,18 @@ type restMetric struct {
 
 func (c *Contexts) collectErrorMetric() {
 	rm.totalErrorCount.With(prometheus.Labels{
-		"app_code": httpheader.GetAppCode(c.Kit.Header),
-		"uri":      c.uri,
+		metrics.LabelAppCode:  httpheader.GetAppCode(c.Kit.Header),
+		"uri":                 c.uri,
+		metrics.LabelTenantId: httpheader.GetTenantID(c.Kit.Header),
 	}).Inc()
 }
 
 func (c *Contexts) collectNoAuthMetric() {
 	rm.noPermissionRequestTotal.With(
 		prometheus.Labels{
-			metrics.LabelHandler: c.Request.Request.URL.Path,
-			metrics.LabelAppCode: httpheader.GetAppCode(c.Kit.Header),
+			metrics.LabelHandler:  c.Request.Request.URL.Path,
+			metrics.LabelAppCode:  httpheader.GetAppCode(c.Kit.Header),
+			metrics.LabelTenantId: httpheader.GetTenantID(c.Kit.Header),
 		},
 	).Inc()
 }

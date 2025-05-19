@@ -171,7 +171,7 @@ func (s *service) routeNeedAuthAPI(ws *restful.WebService, errFunc func() errors
 				Name: "cmdb_no_permission_request_total",
 				Help: "total number of request without permission.",
 			},
-			[]string{metrics.LabelHandler, metrics.LabelAppCode},
+			[]string{metrics.LabelHandler, metrics.LabelAppCode, metrics.LabelTenantId},
 		)
 		s.engine.Metric().Registry().MustRegister(s.noPermissionRequestTotal)
 
