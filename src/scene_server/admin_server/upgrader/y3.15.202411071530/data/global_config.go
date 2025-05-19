@@ -61,13 +61,7 @@ func addGlobalConfigData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
-	data, err := tools.ConvStructToMap(InitGlobalConfig)
-	if err != nil {
-		blog.Errorf("convert struct to map failed, err: %v", err)
-		return err
-	}
-
-	err = tools.InsertTemplateData(kit, db, []mapstr.MapStr{data}, &tools.InsertOptions{}, &tools.IDOptions{
+	err = tools.InsertTemplateData(kit, db, []interface{}{InitGlobalConfig}, &tools.InsertOptions{}, &tools.IDOptions{
 		RemoveKeys: []string{"tenant_id"}}, tenanttmp.TemplateTypeGlobalConfig)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
@@ -82,7 +76,12 @@ func addGlobalConfigData(kit *rest.Kit, db local.DB) error {
 		},
 		AuditDataField: &tools.AuditDataField{},
 	}
-	if err = tools.AddCreateAuditLog(kit, db, []map[string]interface{}{data}, auditField); err != nil {
+	globalConfigMap, err := tools.ConvStructToMap(InitGlobalConfig)
+	if err != nil {
+		blog.Errorf("convert struct to map failed, err: %v", err)
+		return err
+	}
+	if err = tools.AddCreateAuditLog(kit, db, []map[string]interface{}{globalConfigMap}, auditField); err != nil {
 		blog.Errorf("add audit log failed, err: %v", err)
 		return err
 	}

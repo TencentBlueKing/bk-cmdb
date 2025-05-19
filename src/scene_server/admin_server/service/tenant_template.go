@@ -30,6 +30,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 
@@ -428,7 +429,9 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 		existData[item.ObjectID] = struct{}{}
 	}
 	insertData := make([]metadata.Object, 0)
+	objIDs := make([]string, 0)
 	for _, item := range data {
+		objIDs = append(objIDs, item.Data.ObjectID)
 		if _, ok := existData[item.Data.ObjectID]; ok {
 			continue
 		}
@@ -467,7 +470,62 @@ func insertObjData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
+	if err = insertIDRuleData(kit, mongodb.Dal().Shard(kit.SysShardOpts()), objIDs); err != nil {
+		blog.Errorf("insert id rule data failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
 	return nil
+}
+
+func insertIDRuleData(kit *rest.Kit, db local.DB, objIDs []string) error {
+	ids := make([]string, 0)
+	for _, object := range objIDs {
+		ids = append(ids, metadata.GetIDRule(kit.TenantID, object))
+	}
+	ids = append(ids, metadata.GetIDRule(kit.TenantID, common.GlobalIDRule))
+
+	cond := mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBIN: ids}}
+	data := make([]map[string]interface{}, 0)
+	err := db.Table(common.BKTableNameIDgenerator).Find(cond).Fields(common.BKFieldDBID).All(kit.Ctx, &data)
+	if err != nil {
+		blog.Errorf("find id generator data failed, cond: %+v, err: %v", cond, err)
+		return err
+	}
+
+	dbIDMap := make(map[string]struct{})
+	for _, val := range data {
+		dbIDMap[util.GetStrByInterface(val[common.BKFieldDBID])] = struct{}{}
+	}
+
+	needAddIDs := make([]map[string]interface{}, 0)
+	now := time.Now()
+	for _, id := range ids {
+		if _, ok := dbIDMap[id]; ok {
+			continue
+		}
+
+		addID := map[string]interface{}{
+			common.BKFieldDBID:     id,
+			common.BKFieldSeqID:    0,
+			common.CreateTimeField: now,
+			common.LastTimeField:   now,
+		}
+		needAddIDs = append(needAddIDs, addID)
+	}
+
+	if len(needAddIDs) == 0 {
+		blog.Info("no need add id generator data")
+		return nil
+	}
+
+	if err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameIDgenerator).Insert(kit.Ctx,
+		needAddIDs); err != nil {
+		blog.Errorf("add id generator data failed, data: %+v, err: %v", needAddIDs, err)
+		return err
+	}
+	return nil
+
 }
 
 func getUniqueKeysStr(keys []metadata.UniqueKey, objID string) string {

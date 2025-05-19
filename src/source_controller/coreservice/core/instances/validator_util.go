@@ -450,7 +450,7 @@ func GetIDRuleVal(kit *rest.Kit, valData mapstr.MapStr, field metadata.Attribute
 			val += util.GetStrByInterface(valData[rule.Val])
 
 		case metadata.GlobalID:
-			seqName := metadata.GetIDRule(common.GlobalIDRule)
+			seqName := metadata.GetIDRule(kit.TenantID, common.GlobalIDRule)
 			id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, seqName)
 			if err != nil {
 				blog.Errorf("get next sequence failed, seq name: %s, err: %v, rid: %s", seqName, err, kit.Rid)
@@ -464,7 +464,7 @@ func GetIDRuleVal(kit *rest.Kit, valData mapstr.MapStr, field metadata.Attribute
 			val += idStr
 
 		case metadata.LocalID:
-			seqName := metadata.GetIDRule(field.ObjectID)
+			seqName := metadata.GetIDRule(kit.TenantID, field.ObjectID)
 			id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, seqName)
 			if err != nil {
 				blog.Errorf("get next sequence failed, seq name: %s, err: %v, rid: %s", seqName, err, kit.Rid)

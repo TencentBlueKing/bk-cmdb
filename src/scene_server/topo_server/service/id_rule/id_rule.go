@@ -53,7 +53,7 @@ func (s *service) UpdateIDRuleIncrID(ctx *rest.Contexts) {
 		return
 	}
 
-	opt.Type = metadata.GetIDRule(opt.Type)
+	opt.Type = metadata.GetIDRule(ctx.Kit.TenantID, opt.Type)
 	err := s.ClientSet.CoreService().Model().UpdateIDGenerator(ctx.Kit.Ctx, ctx.Kit.Header, opt)
 	if err != nil {
 		blog.Errorf("update id generator failed, err: %v, opt: %+v, rid: %s", err, opt, ctx.Kit.Rid)

@@ -285,8 +285,8 @@ func (a *IDRuleTaskOption) Validate() ccErr.RawErrorInfo {
 }
 
 // GetIDRule 获取对应id rule自增id的唯一标识，目前bk_obj_id唯一，后续涉及到多租户，可能需要调整
-func GetIDRule(flag string) string {
-	return fmt.Sprintf("%s%s", common.IDRulePrefix, flag)
+func GetIDRule(tenantID, flag string) string {
+	return fmt.Sprintf("%s%s:%s", common.IDRulePrefix, tenantID, flag)
 }
 
 // IsValidAttrRuleType check if attribute rule type is valid

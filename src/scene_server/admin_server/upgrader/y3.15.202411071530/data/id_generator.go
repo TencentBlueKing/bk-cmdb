@@ -35,9 +35,9 @@ func addSelfIncrIDData(kit *rest.Kit, db local.DB) error {
 	objIDs := []string{"host", "set", "module", "bk_project", "biz", "process", "plat", "bk_biz_set_obj"}
 	ids := make([]string, 0)
 	for _, object := range objIDs {
-		ids = append(ids, metadata.GetIDRule(object))
+		ids = append(ids, metadata.GetIDRule(kit.TenantID, object))
 	}
-	ids = append(ids, metadata.GetIDRule(common.GlobalIDRule))
+	ids = append(ids, metadata.GetIDRule(kit.TenantID, common.GlobalIDRule))
 
 	cond := mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBIN: ids}}
 	data := make([]map[string]interface{}, 0)

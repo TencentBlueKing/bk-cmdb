@@ -747,7 +747,7 @@ func dealProcessRunningTasks(kit *rest.Kit, ids []int64, objectID int64, isStop 
 func delIDRuleGenerator(kit *rest.Kit, objIDs []string) error {
 	ids := make([]string, len(objIDs))
 	for idx, objID := range objIDs {
-		ids[idx] = metadata.GetIDRule(objID)
+		ids[idx] = metadata.GetIDRule(kit.TenantID, objID)
 	}
 	cond := mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBIN: ids}}
 

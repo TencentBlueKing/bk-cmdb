@@ -26,7 +26,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/admin_server/upgrader/tools"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 )

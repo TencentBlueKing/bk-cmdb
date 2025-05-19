@@ -367,7 +367,8 @@ func DeleteAllObjects() {
 
 		var idRuleNames []string
 		for _, obj := range objIDs {
-			idRuleNames = append(idRuleNames, "id_rule:incr_id:"+obj)
+			idRule := fmt.Sprintf("id_rule:incr_id:%s:%s", tenantID, obj)
+			idRuleNames = append(idRuleNames, idRule)
 		}
 		idGenerateCond := mapstr.MapStr{"_id": mapstr.MapStr{common.BKDBIN: idRuleNames}}
 		err = db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).Table(common.BKTableNameIDgenerator).Delete(ctx,

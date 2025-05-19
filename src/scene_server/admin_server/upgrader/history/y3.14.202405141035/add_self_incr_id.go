@@ -19,6 +19,7 @@ package y3_14_202405141035
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"configcenter/src/common"
@@ -40,9 +41,9 @@ func addSelfIncrID(ctx context.Context, db dal.RDB, conf *history.Config) error 
 
 	ids := make([]string, 0)
 	for _, object := range objects {
-		ids = append(ids, metadata.GetIDRule(object.ObjectID))
+		ids = append(ids, GetIDRule(object.ObjectID))
 	}
-	ids = append(ids, metadata.GetIDRule(common.GlobalIDRule))
+	ids = append(ids, GetIDRule(common.GlobalIDRule))
 
 	cond := mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBIN: ids}}
 	data := make([]map[string]interface{}, 0)
@@ -83,4 +84,9 @@ func addSelfIncrID(ctx context.Context, db dal.RDB, conf *history.Config) error 
 	}
 
 	return nil
+}
+
+// GetIDRule 获取对应id rule自增id的唯一标识，目前bk_obj_id唯一，后续涉及到多租户，可能需要调整
+func GetIDRule(flag string) string {
+	return fmt.Sprintf("%s%s", common.IDRulePrefix, flag)
 }
