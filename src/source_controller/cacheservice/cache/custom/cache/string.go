@@ -18,10 +18,10 @@
 package cache
 
 import (
-	"context"
 	"errors"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/cache/custom/types"
 	"configcenter/src/storage/driver/redis"
@@ -40,7 +40,7 @@ func NewStrCache(key Key) *StrCache {
 }
 
 // List get data list by cache keys
-func (c *StrCache) List(ctx context.Context, keys []string, rid string) (map[string]string, error) {
+func (c *StrCache) List(kit *rest.Kit, keys []string) (map[string]string, error) {
 	if len(keys) == 0 {
 		return make(map[string]string), nil
 	}
@@ -48,17 +48,17 @@ func (c *StrCache) List(ctx context.Context, keys []string, rid string) (map[str
 
 	redisKeys := make([]string, len(keys))
 	for i, key := range keys {
-		redisKeys[i] = c.key.Key(key)
+		redisKeys[i] = c.key.Key(kit.TenantID, key)
 	}
 
-	result, err := redis.Client().MGet(ctx, redisKeys...).Result()
+	result, err := redis.Client().MGet(kit.Ctx, redisKeys...).Result()
 	if err != nil {
-		blog.Errorf("list %s data from redis failed, err: %v, keys: %+v, rid: %s", c.key.Type(), err, keys, rid)
+		blog.Errorf("list %s data from redis failed, err: %v, keys: %+v, rid: %s", c.key.Type(), err, keys, kit.Rid)
 		return nil, err
 	}
 
 	if len(result) != len(keys) {
-		blog.Errorf("%s redis result(%+v) length is invalid, keys: %+v, rid: %s", c.key.Type(), result, keys, rid)
+		blog.Errorf("%s redis result(%+v) length is invalid, keys: %+v, rid: %s", c.key.Type(), result, keys, kit.Rid)
 		return nil, errors.New("redis result length is invalid")
 	}
 
@@ -69,7 +69,7 @@ func (c *StrCache) List(ctx context.Context, keys []string, rid string) (map[str
 		}
 		detail, ok := res.(string)
 		if !ok {
-			blog.Errorf("%s redis result type %T is invalid, result: %+v, rid: %s", keys[idx], res, res, rid)
+			blog.Errorf("%s redis result type %T is invalid, result: %+v, rid: %s", keys[idx], res, res, kit.Rid)
 			return nil, errors.New("redis result type is invalid")
 		}
 		dataMap[keys[idx]] = detail
@@ -79,7 +79,7 @@ func (c *StrCache) List(ctx context.Context, keys []string, rid string) (map[str
 }
 
 // BatchUpdate batch update cache by map[key]data
-func (c *StrCache) BatchUpdate(ctx context.Context, dataMap map[string]interface{}, rid string) error {
+func (c *StrCache) BatchUpdate(kit *rest.Kit, dataMap map[string]interface{}) error {
 	if len(dataMap) == 0 {
 		return nil
 	}
@@ -88,12 +88,12 @@ func (c *StrCache) BatchUpdate(ctx context.Context, dataMap map[string]interface
 	defer pip.Close()
 
 	for key, data := range dataMap {
-		pip.Set(c.key.Key(key), data, c.key.ttl)
+		pip.Set(c.key.Key(kit.TenantID, key), data, c.key.ttl)
 	}
 
 	_, err := pip.Exec()
 	if err != nil {
-		blog.Errorf("update %s cache failed, err: %v, dataMap: %+v, rid: %s", c.key.Type(), err, dataMap, rid)
+		blog.Errorf("update %s cache failed, err: %v, dataMap: %+v, rid: %s", c.key.Type(), err, dataMap, kit.Rid)
 		return err
 	}
 
@@ -101,19 +101,19 @@ func (c *StrCache) BatchUpdate(ctx context.Context, dataMap map[string]interface
 }
 
 // BatchDelete batch delete cache keys
-func (c *StrCache) BatchDelete(ctx context.Context, keys []string, rid string) error {
+func (c *StrCache) BatchDelete(kit *rest.Kit, keys []string) error {
 	if len(keys) == 0 {
 		return nil
 	}
 	keys = util.StrArrayUnique(keys)
 
 	for i, key := range keys {
-		keys[i] = c.key.Key(key)
+		keys[i] = c.key.Key(kit.TenantID, key)
 	}
 
-	err := redis.Client().Del(ctx, keys...).Err()
+	err := redis.Client().Del(kit.Ctx, keys...).Err()
 	if err != nil {
-		blog.Errorf("delete %s cache failed, err: %v, keys: %+v, rid: %s", c.key.Type(), err, keys, rid)
+		blog.Errorf("delete %s cache failed, err: %v, keys: %+v, rid: %s", c.key.Type(), err, keys, kit.Rid)
 		return err
 	}
 
@@ -121,25 +121,25 @@ func (c *StrCache) BatchDelete(ctx context.Context, keys []string, rid string) e
 }
 
 // Refresh replace the cache info to map[data]count, returns the deleted data list
-func (c *StrCache) Refresh(ctx context.Context, match string, dataMap map[string]interface{}, rid string) error {
+func (c *StrCache) Refresh(kit *rest.Kit, match string, dataMap map[string]interface{}) error {
 	pip := redis.Client().Pipeline()
 	defer pip.Close()
 
 	keyDataMap := make(map[string]interface{})
 	for key, data := range dataMap {
-		redisKey := c.key.Key(key)
+		redisKey := c.key.Key(kit.TenantID, key)
 		keyDataMap[redisKey] = data
 		pip.Set(redisKey, data, c.key.ttl)
 	}
 
-	match = c.key.Key(match)
+	match = c.key.Key(kit.TenantID, match)
 	cursor := uint64(0)
 
 	for {
-		list, nextCursor, err := redis.Client().Scan(ctx, cursor, match, types.RedisPage).Result()
+		list, nextCursor, err := redis.Client().Scan(kit.Ctx, cursor, match, types.RedisPage).Result()
 		if err != nil {
 			blog.Errorf("scan %s cache matching %s by cursor %d failed, err: %v, rid: %s", c.key.Type(), match, cursor,
-				err, rid)
+				err, kit.Rid)
 			return err
 		}
 
@@ -159,7 +159,7 @@ func (c *StrCache) Refresh(ctx context.Context, match string, dataMap map[string
 	_, err := pip.Exec()
 	if err != nil {
 		blog.Errorf("refresh %s cache matching %s failed, err: %v, dataMap: %+v, rid: %s", c.key.Type(), match, err,
-			dataMap, rid)
+			dataMap, kit.Rid)
 		return err
 	}
 

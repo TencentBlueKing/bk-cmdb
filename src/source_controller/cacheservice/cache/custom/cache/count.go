@@ -18,10 +18,10 @@
 package cache
 
 import (
-	"context"
 	"strconv"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/cacheservice/cache/custom/types"
 	"configcenter/src/storage/driver/redis"
 )
@@ -39,15 +39,15 @@ func NewCountCache(key Key) *CountCache {
 }
 
 // GetDataList get data list by cache key
-func (c *CountCache) GetDataList(ctx context.Context, key string, rid string) ([]string, error) {
-	cacheKey := c.key.Key(key)
+func (c *CountCache) GetDataList(kit *rest.Kit, key string) ([]string, error) {
+	cacheKey := c.key.Key(kit.TenantID, key)
 	cursor := uint64(0)
 
 	all := make([]string, 0)
 	for {
-		list, nextCursor, err := redis.Client().HScan(ctx, cacheKey, cursor, "", types.RedisPage).Result()
+		list, nextCursor, err := redis.Client().HScan(kit.Ctx, cacheKey, cursor, "", types.RedisPage).Result()
 		if err != nil {
-			blog.Errorf("scan %s data count cache by cursor %d failed, err: %v, rid: %s", cacheKey, cursor, err, rid)
+			blog.Errorf("scan %s data list cache by cursor %d failed, err: %v, rid: %s", cacheKey, cursor, err, kit.Rid)
 			return nil, err
 		}
 
@@ -63,7 +63,7 @@ func (c *CountCache) GetDataList(ctx context.Context, key string, rid string) ([
 }
 
 // UpdateCount batch update cache by map[key]map[data]count
-func (c *CountCache) UpdateCount(ctx context.Context, cntMap map[string]map[string]int64, rid string) error {
+func (c *CountCache) UpdateCount(kit *rest.Kit, cntMap map[string]map[string]int64) error {
 	for key, dataCnt := range cntMap {
 		var args []interface{}
 		for k, v := range dataCnt {
@@ -71,10 +71,10 @@ func (c *CountCache) UpdateCount(ctx context.Context, cntMap map[string]map[stri
 		}
 		args = append(args, int64(c.key.TTL().Seconds()))
 
-		err := redis.Client().Eval(ctx, updateCountScript, []string{c.key.Key(key)}, args...).Err()
+		err := redis.Client().Eval(kit.Ctx, updateCountScript, []string{c.key.Key(kit.TenantID, key)}, args...).Err()
 		if err != nil {
 			blog.Errorf("update type: %s key: %s count cache failed, err: %v, data: %+v, rid: %s", c.key.Type(), key,
-				err, dataCnt, rid)
+				err, dataCnt, kit.Rid)
 			return err
 		}
 	}
@@ -98,10 +98,10 @@ return 1
 `
 
 // RefreshCount replace the cache info to map[data]count, returns the deleted data list
-func (c *CountCache) RefreshCount(ctx context.Context, key string, cntMap map[string]int64, rid string) ([]string,
+func (c *CountCache) RefreshCount(kit *rest.Kit, key string, cntMap map[string]int64) ([]string,
 	error) {
 
-	cacheKey := c.key.Key(key)
+	cacheKey := c.key.Key(kit.TenantID, key)
 
 	pip := redis.Client().Pipeline()
 	defer pip.Close()
@@ -119,7 +119,7 @@ func (c *CountCache) RefreshCount(ctx context.Context, key string, cntMap map[st
 		pip.HMSet(cacheKey, cntKeyValues)
 	}
 
-	list, err := c.GetDataList(ctx, key, rid)
+	list, err := c.GetDataList(kit, key)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (c *CountCache) RefreshCount(ctx context.Context, key string, cntMap map[st
 	_, err = pip.Exec()
 	if err != nil {
 		blog.Errorf("refresh type: %s key: %s count cache failed, err: %v, data: %+v, rid: %s", c.key.Type(), key, err,
-			cntMap, rid)
+			cntMap, kit.Rid)
 		return nil, err
 	}
 
@@ -154,13 +154,13 @@ func (c *CountCache) RefreshCount(ctx context.Context, key string, cntMap map[st
 }
 
 // Delete delete cache key
-func (c *CountCache) Delete(ctx context.Context, key string, rid string) error {
-	cacheKey := c.key.Key(key)
+func (c *CountCache) Delete(kit *rest.Kit, key string) error {
+	cacheKey := c.key.Key(kit.TenantID, key)
 
 	pip := redis.Client().Pipeline()
 	defer pip.Close()
 
-	list, err := c.GetDataList(ctx, key, rid)
+	list, err := c.GetDataList(kit, key)
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (c *CountCache) Delete(ctx context.Context, key string, rid string) error {
 
 	_, err = pip.Exec()
 	if err != nil {
-		blog.Errorf("delete %s count cache key failed, err: %v, rid: %s", cacheKey, err, rid)
+		blog.Errorf("delete %s count cache key failed, err: %v, rid: %s", cacheKey, err, kit.Rid)
 		return err
 	}
 

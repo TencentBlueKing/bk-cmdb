@@ -99,8 +99,8 @@ func SetTenant(tenant []types.Tenant) {
 	for _, t := range allTenants {
 		tenantMap[t.TenantID] = &t
 	}
-
 	lock.Unlock()
+	generateAndPushTenantEvent(allTenants)
 }
 
 func refreshTenantInfo() error {
@@ -110,6 +110,7 @@ func refreshTenantInfo() error {
 	if db != nil {
 		tenants, err = GetAllTenantsFromDB(context.Background(), db)
 		if err != nil {
+			blog.Errorf("get all tenants from db failed, err: %v", err)
 			return err
 		}
 	}

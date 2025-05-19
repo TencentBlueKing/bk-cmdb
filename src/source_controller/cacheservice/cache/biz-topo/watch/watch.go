@@ -19,26 +19,43 @@
 package watch
 
 import (
+	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
-	"configcenter/src/storage/stream"
+	watchcli "configcenter/src/source_controller/cacheservice/event/watch"
+	"configcenter/src/storage/stream/task"
 )
 
 // Watcher defines mongodb event watcher for biz topology
 type Watcher struct {
-	loopW    stream.LoopInterface
+	isMaster discovery.ServiceManageInterface
 	cacheSet *cache.CacheSet
+	watchCli *watchcli.Client
+	tasks    []*task.Task
 }
 
 // New  biz topology mongodb event watcher
-func New(loopW stream.LoopInterface, cacheSet *cache.CacheSet) (*Watcher, error) {
+func New(isMaster discovery.ServiceManageInterface, cacheSet *cache.CacheSet, watchCli *watchcli.Client) (*Watcher,
+	error) {
+
 	watcher := &Watcher{
-		loopW:    loopW,
+		isMaster: isMaster,
 		cacheSet: cacheSet,
+		watchCli: watchCli,
+		tasks:    make([]*task.Task, 0),
 	}
 
 	if err := watcher.watchKube(); err != nil {
 		return nil, err
 	}
 
+	if err := watcher.watchBrief(); err != nil {
+		return nil, err
+	}
+
 	return watcher, nil
+}
+
+// GetWatchTasks returns the event watch tasks
+func (w *Watcher) GetWatchTasks() []*task.Task {
+	return w.tasks
 }

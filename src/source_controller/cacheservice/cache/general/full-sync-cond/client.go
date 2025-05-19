@@ -38,7 +38,7 @@ func (f *FullSyncCond) CreateFullSyncCond(kit *rest.Kit, opt *types.CreateFullSy
 			cond[types.SubResField] = opt.SubResource
 		}
 
-		cnt, err := mongodb.Client().Table(types.BKTableNameFullSyncCond).Find(cond).Count(kit.Ctx)
+		cnt, err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameFullSyncCond).Find(cond).Count(kit.Ctx)
 		if err != nil {
 			blog.Errorf("count is_all=true full sync cond failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
 			return 0, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -53,7 +53,7 @@ func (f *FullSyncCond) CreateFullSyncCond(kit *rest.Kit, opt *types.CreateFullSy
 		cond := mapstr.MapStr{
 			types.IsAllField: false,
 		}
-		cnt, err := mongodb.Client().Table(types.BKTableNameFullSyncCond).Find(cond).Count(kit.Ctx)
+		cnt, err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameFullSyncCond).Find(cond).Count(kit.Ctx)
 		if err != nil {
 			blog.Errorf("count is_all=true full sync cond failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
 			return 0, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -66,7 +66,7 @@ func (f *FullSyncCond) CreateFullSyncCond(kit *rest.Kit, opt *types.CreateFullSy
 		}
 	}
 
-	id, err := mongodb.Client().NextSequence(kit.Ctx, types.BKTableNameFullSyncCond)
+	id, err := mongodb.Shard(kit.SysShardOpts()).NextSequence(kit.Ctx, types.BKTableNameFullSyncCond)
 	if err != nil {
 		blog.Errorf("generate full sync cond id failed, err: %v, rid: %s", err, kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommGenerateRecordIDFailed)
@@ -82,7 +82,7 @@ func (f *FullSyncCond) CreateFullSyncCond(kit *rest.Kit, opt *types.CreateFullSy
 		TenantID:    kit.TenantID,
 	}
 
-	err = mongodb.Client().Table(types.BKTableNameFullSyncCond).Insert(kit.Ctx, data)
+	err = mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameFullSyncCond).Insert(kit.Ctx, data)
 	if err != nil {
 		blog.Errorf("insert full sync cond failed, err: %v, data: %+v, rid: %s", err, data, kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommDBInsertFailed)
@@ -101,7 +101,7 @@ func (f *FullSyncCond) UpdateFullSyncCond(kit *rest.Kit, opt *types.UpdateFullSy
 		types.IntervalField: opt.Data.Interval,
 	}
 
-	err := mongodb.Client().Table(types.BKTableNameFullSyncCond).Update(kit.Ctx, cond, data)
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameFullSyncCond).Update(kit.Ctx, cond, data)
 	if err != nil {
 		blog.Errorf("update full sync cond failed, err: %v, cond: %+v, data: %+v, rid: %s", err, cond, data, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
@@ -116,7 +116,7 @@ func (f *FullSyncCond) DeleteFullSyncCond(kit *rest.Kit, opt *types.DeleteFullSy
 		types.IDField: opt.ID,
 	}
 
-	err := mongodb.Client().Table(types.BKTableNameFullSyncCond).Delete(kit.Ctx, delCond)
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameFullSyncCond).Delete(kit.Ctx, delCond)
 	if err != nil {
 		blog.Errorf("delete full sync cond %d failed, err: %v, rid: %s", opt.ID, err, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
@@ -146,7 +146,7 @@ func (f *FullSyncCond) ListFullSyncCond(kit *rest.Kit, opt *types.ListFullSyncCo
 	}
 
 	result := make([]types.FullSyncCond, 0)
-	err := mongodb.Client().Table(types.BKTableNameFullSyncCond).Find(listCond).All(kit.Ctx, &result)
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameFullSyncCond).Find(listCond).All(kit.Ctx, &result)
 	if err != nil {
 		blog.Errorf("list full sync cond failed, err: %v, cond: %+v, rid: %s", err, listCond, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
@@ -167,7 +167,7 @@ func (f *FullSyncCond) GetFullSyncCond(kit *rest.Kit, id int64) (*types.FullSync
 	}
 
 	fullSyncCond := new(types.FullSyncCond)
-	err := mongodb.Client().Table(types.BKTableNameFullSyncCond).Find(cond).One(kit.Ctx, &fullSyncCond)
+	err := mongodb.Shard(kit.ShardOpts()).Table(types.BKTableNameFullSyncCond).Find(cond).One(kit.Ctx, &fullSyncCond)
 	if err != nil {
 		blog.Errorf("get full sync cond failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)

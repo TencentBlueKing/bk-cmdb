@@ -34,7 +34,7 @@ func (c *Cache) FullSyncCond() *fullsynccondcli.FullSyncCond {
 // ListDetailByIDs list general resource detail cache by ids
 // NOTE: since event flow and cache are reused, this method may return deleted data
 // because event ttl is long and event detail cache will not be deleted
-func (c *Cache) ListDetailByIDs(kit *rest.Kit, opt *general.ListDetailByIDsOpt, isSystem bool) ([]string, error) {
+func (c *Cache) ListDetailByIDs(kit *rest.Kit, opt *general.ListDetailByIDsOpt) ([]string, error) {
 	cache, exists := c.cacheSet[opt.Resource]
 	if !exists {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, general.ResourceField)
@@ -46,30 +46,26 @@ func (c *Cache) ListDetailByIDs(kit *rest.Kit, opt *general.ListDetailByIDsOpt, 
 	}
 
 	listOpt := &types.ListDetailByIDsOpt{
-		SubRes:   opt.SubResource,
-		IsSystem: isSystem,
-		IDKeys:   idKeys,
-		Fields:   opt.Fields,
+		SubRes: opt.SubResource,
+		IDKeys: idKeys,
+		Fields: opt.Fields,
 	}
 
 	return cache.ListDetailByIDs(kit, listOpt)
 }
 
 // ListDetailByUniqueKey list general resource detail cache by unique keys
-func (c *Cache) ListDetailByUniqueKey(kit *rest.Kit, opt *general.ListDetailByUniqueKeyOpt,
-	isSystem bool) ([]string, error) {
-
+func (c *Cache) ListDetailByUniqueKey(kit *rest.Kit, opt *general.ListDetailByUniqueKeyOpt) ([]string, error) {
 	cache, exists := c.cacheSet[opt.Resource]
 	if !exists {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, general.ResourceField)
 	}
 
 	listOpt := &types.ListDetailByUniqueKeyOpt{
-		SubRes:   opt.SubResource,
-		IsSystem: isSystem,
-		Type:     opt.Type,
-		Keys:     opt.Keys,
-		Fields:   opt.Fields,
+		SubRes: opt.SubResource,
+		Type:   opt.Type,
+		Keys:   opt.Keys,
+		Fields: opt.Fields,
 	}
 
 	return cache.ListDetailByUniqueKey(kit, listOpt)
@@ -94,8 +90,7 @@ func (c *Cache) ListCacheByFullSyncCond(kit *rest.Kit, opt *fullsynccond.ListCac
 		IDListFilter: &types.IDListFilterOpt{
 			IDListKey: idListKey,
 			BasicFilter: &types.BasicFilter{
-				SubRes:   cond.SubResource,
-				TenantID: cond.TenantID,
+				SubRes: cond.SubResource,
 			},
 			IsAll: cond.IsAll,
 			Cond:  cond.Condition,
@@ -115,9 +110,9 @@ func (c *Cache) ListData(kit *rest.Kit, opt *general.ListDetailOpt) (int64, []st
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, general.ResourceField)
 	}
 
-	idListKey := cache.Key().IDListKey()
+	idListKey := cache.Key().IDListKey(kit.TenantID)
 	if opt.SubResource != "" {
-		idListKey = cache.Key().IDListKey(opt.SubResource)
+		idListKey = cache.Key().IDListKey(kit.TenantID, opt.SubResource)
 	}
 
 	listOpt := &types.ListDetailOpt{
@@ -125,9 +120,7 @@ func (c *Cache) ListData(kit *rest.Kit, opt *general.ListDetailOpt) (int64, []st
 		IDListFilter: &types.IDListFilterOpt{
 			IDListKey: idListKey,
 			BasicFilter: &types.BasicFilter{
-				SubRes:   opt.SubResource,
-				TenantID: kit.TenantID,
-				IsSystem: true,
+				SubRes: opt.SubResource,
 			},
 			IsAll: true,
 		},

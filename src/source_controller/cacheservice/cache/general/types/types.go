@@ -62,10 +62,9 @@ type FullSyncCondInfo struct {
 
 // ListDetailByIDsOpt is list general resource detail cache by ids option
 type ListDetailByIDsOpt struct {
-	SubRes   string
-	IsSystem bool
-	IDKeys   []string
-	Fields   []string
+	SubRes string
+	IDKeys []string
+	Fields []string
 }
 
 // Validate ListDetailByIDsOpt
@@ -87,11 +86,10 @@ func (o *ListDetailByIDsOpt) Validate(hasSubRes bool) ccErr.RawErrorInfo {
 
 // ListDetailByUniqueKeyOpt is list general resource detail cache by unique keys option
 type ListDetailByUniqueKeyOpt struct {
-	SubRes   string
-	IsSystem bool
-	Type     general.UniqueKeyType
-	Keys     []string
-	Fields   []string
+	SubRes string
+	Type   general.UniqueKeyType
+	Keys   []string
+	Fields []string
 }
 
 // Validate ListDetailByUniqueKeyOpt
@@ -226,11 +224,7 @@ func (o *IDListFilterOpt) Validate(hasSubRes bool) ccErr.RawErrorInfo {
 
 // BasicFilter is the basic filter for getting general resource data from db
 type BasicFilter struct {
-	SubRes   string
-	TenantID string
-
-	// IsSystem defines whether id list is for system use, system resource do not need to be filtered by TenantID
-	IsSystem bool
+	SubRes string
 }
 
 // Validate BasicFilter

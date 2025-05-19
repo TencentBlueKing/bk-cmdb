@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -272,11 +273,11 @@ func isRuleEqualOrNot(pType string, expectValue interface{}, propertyValue inter
 		}
 
 	case common.FieldTypeTime:
-		expectVal, ok := expectValue.(primitive.DateTime)
+		var ok bool
+		expectValue, ok = expectValue.(time.Time)
 		if !ok {
 			return false, errors.New(common.CCErrCommUnexpectedFieldType, "expect value type error")
 		}
-		expectValue = expectVal.Time()
 
 		propertyValue, err = metadata.ParseTime(propertyValue)
 		if err != nil {

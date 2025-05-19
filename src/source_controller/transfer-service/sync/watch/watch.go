@@ -27,18 +27,18 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/transfer-service/sync/medium"
 	syncmeta "configcenter/src/source_controller/transfer-service/sync/metadata"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
 // Watcher is cmdb data syncer event watcher
 type Watcher struct {
 	name          string
-	loopW         stream.LoopInterface
 	isMaster      discovery.ServiceManageInterface
 	metadata      *syncmeta.Metadata
 	cacheCli      cacheservice.CacheServiceClientInterface
@@ -47,7 +47,7 @@ type Watcher struct {
 }
 
 // New new cmdb data syncer event watcher
-func New(name string, loopW stream.LoopInterface, isMaster discovery.ServiceManageInterface, meta *syncmeta.Metadata,
+func New(name string, isMaster discovery.ServiceManageInterface, meta *syncmeta.Metadata,
 	cacheCli cacheservice.CacheServiceClientInterface, transMedium medium.ClientI) (*Watcher, error) {
 
 	// create cmdb data syncer event watch token table
@@ -60,19 +60,19 @@ func New(name string, loopW stream.LoopInterface, isMaster discovery.ServiceMana
 
 	if !exists {
 		err = mongodb.Client("watch").CreateTable(ctx, tokenTable)
-		if err != nil && !mongodb.Client("watch").IsDuplicatedError(err) {
+		if err != nil && !mongodb.IsDuplicatedError(err) {
 			blog.Errorf("create %s table failed, err: %v", tokenTable, err)
 			return nil, err
 		}
 
 		for _, resType := range types.ListAllResTypeForIncrSync() {
-			token := &tokenInfo{
+			token := &cursorInfo{
 				Resource:    resType,
 				StartAtTime: &metadata.Time{Time: time.Now()},
 			}
 
 			err = mongodb.Client("watch").Table(tokenTable).Insert(ctx, token)
-			if err != nil && !mongodb.Client("watch").IsDuplicatedError(err) {
+			if err != nil && !mongodb.IsDuplicatedError(err) {
 				blog.Errorf("init %s watch token failed, data: %+v, err: %v", resType, token, err)
 				return nil, err
 			}
@@ -82,7 +82,6 @@ func New(name string, loopW stream.LoopInterface, isMaster discovery.ServiceMana
 	// generate cmdb data syncer event watcher
 	watcher := &Watcher{
 		name:          name,
-		loopW:         loopW,
 		isMaster:      isMaster,
 		metadata:      meta,
 		cacheCli:      cacheCli,
@@ -98,12 +97,14 @@ func New(name string, loopW stream.LoopInterface, isMaster discovery.ServiceMana
 }
 
 // Watch cmdb data syncer events and push the events to transfer medium
-func (w *Watcher) Watch() error {
+func (w *Watcher) Watch() ([]*task.Task, error) {
+	tasks := make([]*task.Task, 0)
 	for _, resType := range types.ListAllResTypeForIncrSync() {
 		cursorTypes, exists := resTypeCursorMap[resType]
 		if exists {
 			for _, cursorType := range cursorTypes {
-				go w.watchAPI(resType, cursorType)
+				kit := rest.NewKit()
+				go w.watchAPI(kit, resType, cursorType)
 			}
 			continue
 		}
@@ -113,11 +114,13 @@ func (w *Watcher) Watch() error {
 			continue
 		}
 
-		if err := w.watchDB(resType); err != nil {
-			blog.Errorf("watch %s events from db failed, err: %v", resType, err)
-			return err
+		watchTask, err := w.watchDB(resType)
+		if err != nil {
+			blog.Errorf("new watch %s events task failed, err: %v", resType, err)
+			return nil, err
 		}
+		tasks = append(tasks, watchTask)
 	}
 
-	return nil
+	return tasks, nil
 }

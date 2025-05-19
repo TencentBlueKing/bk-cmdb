@@ -23,21 +23,18 @@ import (
 
 	"configcenter/pkg/cache/general"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
 // FullSyncCond defines the full sync cond related logics
 type FullSyncCond struct {
-	loopW stream.LoopInterface
 	chMap map[general.ResType]chan<- types.FullSyncCondEvent
+	tasks []*task.Task
 }
 
 // New FullSyncCond
-func New(loopW stream.LoopInterface, chMap map[general.ResType]chan<- types.FullSyncCondEvent) (*FullSyncCond,
-	error) {
-
+func New(chMap map[general.ResType]chan<- types.FullSyncCondEvent) (*FullSyncCond, error) {
 	f := &FullSyncCond{
-		loopW: loopW,
 		chMap: chMap,
 	}
 
@@ -46,4 +43,9 @@ func New(loopW stream.LoopInterface, chMap map[general.ResType]chan<- types.Full
 	}
 
 	return f, nil
+}
+
+// GetWatchTasks returns the event watch tasks
+func (f *FullSyncCond) GetWatchTasks() []*task.Task {
+	return f.tasks
 }

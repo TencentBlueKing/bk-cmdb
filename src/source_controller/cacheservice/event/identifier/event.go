@@ -13,19 +13,14 @@
 package identifier
 
 import (
-	"context"
 	"fmt"
 	"time"
 
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/watch"
 	"configcenter/src/source_controller/cacheservice/event"
 	mixevent "configcenter/src/source_controller/cacheservice/event/mix-event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/stream"
 	"configcenter/src/storage/stream/types"
 )
 
@@ -37,13 +32,9 @@ const (
 type identityOptions struct {
 	key         event.Key
 	watchFields []string
-	watch       stream.LoopInterface
-	isMaster    discovery.ServiceManageInterface
-	watchDB     *local.Mongo
-	ccDB        dal.DB
 }
 
-func newIdentity(ctx context.Context, opts identityOptions) error {
+func (i *Identity) addWatchTask(opts identityOptions) error {
 	identity := hostIdentity{
 		identityOptions: opts,
 		metrics:         event.InitialMetrics(opts.key.Collection(), "host_identifier"),
@@ -53,9 +44,6 @@ func newIdentity(ctx context.Context, opts identityOptions) error {
 		MixKey:       event.HostIdentityKey,
 		Key:          opts.key,
 		WatchFields:  opts.watchFields,
-		Watch:        opts.watch,
-		WatchDB:      opts.watchDB,
-		CcDB:         opts.ccDB,
 		EventLockTTL: hostIdentityLockTTL,
 		EventLockKey: hostIdentityLockKey,
 	}
@@ -65,7 +53,13 @@ func newIdentity(ctx context.Context, opts identityOptions) error {
 		return err
 	}
 
-	return flow.RunFlow(ctx)
+	flowTask, err := flow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	i.tasks = append(i.tasks, flowTask)
+	return nil
 }
 
 type hostIdentity struct {
@@ -81,6 +75,8 @@ func (f *hostIdentity) rearrangeEvents(rid string, es []*types.Event) ([]*types.
 		return f.rearrangeHostRelationEvents(es, rid)
 	case event.ProcessKey.Collection():
 		return f.rearrangeProcessEvents(es, rid)
+	case event.ProcessInstanceRelationKey.Collection():
+		return f.rearrangeHostRelationEvents(es, rid)
 	default:
 		blog.ErrorJSON("received unsupported host identity event, skip, es: %s, rid :%s", es, rid)
 		return es[:0], nil
@@ -88,17 +84,18 @@ func (f *hostIdentity) rearrangeEvents(rid string, es []*types.Event) ([]*types.
 }
 
 // parseEvent parse event into chain nodes, host identifier detail is formed when watched, do not store in redis
-func (f *hostIdentity) parseEvent(e *types.Event, id uint64, rid string) (*watch.ChainNode, []byte, bool, error) {
+func (f *hostIdentity) parseEvent(e *types.Event, id uint64, rid string) (string, *watch.ChainNode, []byte, bool,
+	error) {
 
 	switch e.OperationType {
 	case types.Insert, types.Update, types.Replace, types.Delete:
 	case types.Invalidate:
 		blog.Errorf("host identify event, received invalid event operation type, doc: %s, rid: %s", e.DocBytes, rid)
-		return nil, nil, false, nil
+		return "", nil, nil, false, nil
 	default:
 		blog.Errorf("host identify event, received unsupported event operation type: %s, doc: %s, rid: %s",
 			e.OperationType, e.DocBytes, rid)
-		return nil, nil, false, nil
+		return "", nil, nil, false, nil
 	}
 
 	name := f.key.Name(e.DocBytes)
@@ -106,7 +103,7 @@ func (f *hostIdentity) parseEvent(e *types.Event, id uint64, rid string) (*watch
 	if err != nil {
 		blog.Errorf("get %s event cursor failed, name: %s, err: %v, oid: %s, rid: %s", f.key.Collection(), name,
 			err, e.ID(), rid)
-		return nil, nil, false, err
+		return "", nil, nil, false, err
 	}
 
 	chainNode := &watch.ChainNode{
@@ -117,14 +114,13 @@ func (f *hostIdentity) parseEvent(e *types.Event, id uint64, rid string) (*watch
 		EventType: watch.ConvertOperateType(types.Update),
 		Token:     e.Token.Data,
 		Cursor:    cursor,
-		TenantID:  f.key.SupplierAccount(e.DocBytes),
 	}
 
 	if instanceID := event.HostIdentityKey.InstanceID(e.DocBytes); instanceID > 0 {
 		chainNode.InstanceID = instanceID
 	}
 
-	return chainNode, nil, false, nil
+	return e.TenantID, chainNode, nil, false, nil
 }
 
 func genHostIdentifyCursor(coll string, e *types.Event, rid string) (string, error) {
@@ -136,6 +132,8 @@ func genHostIdentifyCursor(coll string, e *types.Event, rid string) (string, err
 		curType = watch.ModuleHostRelation
 	case common.BKTableNameBaseProcess:
 		curType = watch.Process
+	case common.BKTableNameProcessInstanceRelation:
+		curType = watch.ProcessInstanceRelation
 	default:
 		blog.ErrorJSON("unsupported host identity cursor type collection: %s, event: %s, oid: %s", coll, e, rid)
 		return "", fmt.Errorf("unsupported host identity cursor type collection: %s", coll)

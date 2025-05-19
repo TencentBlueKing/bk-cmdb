@@ -27,13 +27,14 @@ import (
 	tenanttmp "configcenter/pkg/types/tenant-template"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/index"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	apigwcli "configcenter/src/common/resource/apigw"
+	"configcenter/src/common/watch"
 	"configcenter/src/scene_server/admin_server/logics"
+	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal/mongo/local"
 	daltypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
@@ -41,22 +42,24 @@ import (
 )
 
 func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
-	rHeader := req.Request.Header
-	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+	kit := rest.NewKitFromHeader(req.Request.Header, s.CCErr)
 
 	if !s.Config.EnableMultiTenantMode {
 		blog.Errorf("multi-tenant mode is not enabled, cannot add tenant, rid: %s", kit.Rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommAddTenantErr,
-				fmt.Errorf("multi-tenant mode is not enabled, cannot add tenant")),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+			Msg: kit.CCError.New(common.CCErrCommAddTenantErr, "multi-tenant mode is not enabled, cannot add tenant")})
 		return
 	}
 
 	_, exist := tenant.GetTenant(kit.TenantID)
 	if exist {
+		// add watch token for new tenant in case tenant is created without watch tokens
+		if err := s.addWatchTokenForNewTenant(kit); err != nil {
+			blog.Errorf("add watch token for new tenant %s failed, err: %v, rid: %s", kit.TenantID, err, kit.Rid)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+				Msg: kit.CCError.New(common.CCErrCommAddTenantErr, err.Error())})
+			return
+		}
 		resp.WriteEntity(metadata.NewSuccessResp("tenant exist"))
 		return
 	}
@@ -66,10 +69,8 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 		tenants, err := apigwcli.Client().User().GetTenants(kit.Ctx, kit.Header)
 		if err != nil {
 			blog.Errorf("get tenants from bk-user failed, err: %v, rid: %s", err, kit.Rid)
-			result := &metadata.RespError{
-				Msg: defErr.Errorf(common.CCErrCommAddTenantErr, fmt.Errorf("get tenants from bk-user failed")),
-			}
-			resp.WriteError(http.StatusInternalServerError, result)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+				Msg: kit.CCError.New(common.CCErrCommAddTenantErr, "get tenants from bk-user failed")})
 		}
 
 		tenantMap := make(map[string]types.Status)
@@ -79,60 +80,47 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 
 		if status, ok := tenantMap[kit.TenantID]; !ok || status != types.EnabledStatus {
 			blog.Errorf("tenant %s invalid, rid: %s", kit.TenantID, kit.Rid)
-			result := &metadata.RespError{
-				Msg: defErr.Errorf(common.CCErrCommAddTenantErr,
-					fmt.Errorf("tenant %s invalid", kit.TenantID)),
-			}
-			resp.WriteError(http.StatusInternalServerError, result)
+			resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+				Msg: kit.CCError.Errorf(common.CCErrCommAddTenantErr, fmt.Sprintf("tenant %s invalid", kit.TenantID))})
 			return
 		}
 	}
 
+	if err := s.addTenantData(kit); err != nil {
+		resp.WriteError(http.StatusInternalServerError, &metadata.RespError{
+			Msg: kit.CCError.New(common.CCErrCommAddTenantErr, err.Error())})
+		return
+	}
+
+	resp.WriteEntity(metadata.NewSuccessResp("add tenant success"))
+}
+
+func (s *Service) addTenantData(kit *rest.Kit) error {
 	cli, dbUUID, err := logics.GetNewTenantCli(kit, mongodb.Dal())
 	if err != nil {
 		blog.Errorf("get new tenant db failed, err: %v, rid: %s", err, kit.Rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, fmt.Errorf("get new tenant db failed")),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
+		return err
 	}
 
 	if err = addTableIndexes(kit, cli); err != nil {
 		blog.Errorf("create table and indexes for tenant %s failed, err: %v, rid: %s", kit.TenantID, err, kit.Rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
+		return err
 	}
 
 	// add default area
 	if err = addDefaultArea(kit, cli); err != nil {
 		blog.Errorf("add default area failed, err: %v, rid: %s", err, kit.Rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
+		return err
 	}
 
 	if err = addDataFromTemplate(kit, cli); err != nil {
 		blog.Errorf("create init data for tenant %s failed, err: %v", kit.TenantID, err)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
+		return err
 	}
 
 	if err = addResPool(kit, cli); err != nil {
-		blog.Errorf("add default resouce pool failed, err: %v, rid: %s", err, kit.Rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
+		blog.Errorf("add default resource pool failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
 	// add tenant db relation
@@ -144,19 +132,36 @@ func (s *Service) addTenant(req *restful.Request, resp *restful.Response) {
 	err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Insert(kit.Ctx, data)
 	if err != nil {
 		blog.Errorf("add tenant db relations failed, err: %v, rid: %s", err, kit.Rid)
-		result := &metadata.RespError{
-			Msg: defErr.Errorf(common.CCErrCommAddTenantErr, err.Error()),
-		}
-		resp.WriteError(http.StatusInternalServerError, result)
-		return
+		return err
 	}
 
 	// refresh tenants, ignore refresh tenants error
-	if err = logics.RefreshTenants(s.CoreAPI); err != nil {
+	if err = logics.RefreshTenants(s.CoreAPI, s.db); err != nil {
 		blog.Errorf("refresh tenants failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
-	resp.WriteEntity(metadata.NewSuccessResp("add tenant success"))
+	// add watch token for new tenant
+	if err = s.addWatchTokenForNewTenant(kit); err != nil {
+		blog.Errorf("add watch token for new tenant %s failed, err: %v, rid: %s", kit.TenantID, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+func (s *Service) addWatchTokenForNewTenant(kit *rest.Kit) error {
+	cursorTypes := watch.ListCursorTypes()
+	for _, cursorType := range cursorTypes {
+		key, err := event.GetResourceKeyWithCursorType(cursorType)
+		if err != nil {
+			blog.Errorf("get resource key with cursor type %s failed, err: %v, rid: %s", cursorType, err, kit.Rid)
+			return err
+		}
+
+		if err = s.addTenantWatchToken(kit, cursorType, key); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 var defaultCloudAreas = []metadata.CloudArea{

@@ -19,10 +19,10 @@
 package key
 
 import (
-	"context"
 	"fmt"
 	"time"
 
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
 	"configcenter/src/storage/driver/redis"
@@ -59,24 +59,24 @@ func (k Key) TTL() time.Duration {
 }
 
 // BizTopoKey is the redis key to store the biz topology tree
-func (k Key) BizTopoKey(biz int64) string {
-	return fmt.Sprintf("%s:%d", k.namespace, biz)
+func (k Key) BizTopoKey(tenantID string, biz int64) string {
+	return fmt.Sprintf("%s:%s:%d", k.namespace, tenantID, biz)
 }
 
 // UpdateTopology update biz topology cache
-func (k Key) UpdateTopology(ctx context.Context, topo *types.BizTopo) (*string, error) {
+func (k Key) UpdateTopology(kit *rest.Kit, bizID int64, topo any) (*string, error) {
 	js, err := json.Marshal(topo)
 	if err != nil {
-		return nil, fmt.Errorf("marshal %s biz %d topology failed, err: %v", k.topoType, topo.Biz.ID, err)
+		return nil, fmt.Errorf("marshal %s biz %d topology failed, err: %v", k.topoType, bizID, err)
 	}
 	value := string(js)
 
-	return &value, redis.Client().Set(ctx, k.BizTopoKey(topo.Biz.ID), value, k.ttl).Err()
+	return &value, redis.Client().Set(kit.Ctx, k.BizTopoKey(kit.TenantID, bizID), value, k.ttl).Err()
 }
 
 // GetTopology get biz Topology from cache
-func (k Key) GetTopology(ctx context.Context, biz int64) (*string, error) {
-	dat, err := redis.Client().Get(ctx, k.BizTopoKey(biz)).Result()
+func (k Key) GetTopology(kit *rest.Kit, biz int64) (*string, error) {
+	dat, err := redis.Client().Get(kit.Ctx, k.BizTopoKey(kit.TenantID, biz)).Result()
 	if err != nil {
 		if redis.IsNilErr(err) {
 			empty := ""

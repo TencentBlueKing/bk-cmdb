@@ -20,28 +20,35 @@ package tokenhandler
 import (
 	"context"
 
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream/types"
 )
 
-var _ types.TokenHandler = new(MemoryHandler)
+var _ types.TaskTokenHandler = new(MemoryHandler)
 
 // MemoryHandler is a token handler that stores the token in process memory
 type MemoryHandler struct {
-	token string
+	dbTokenMap map[string]*types.TokenInfo
 }
 
 // NewMemoryTokenHandler generate a new memory event token handler
 func NewMemoryTokenHandler() *MemoryHandler {
-	return new(MemoryHandler)
+	return &MemoryHandler{
+		dbTokenMap: make(map[string]*types.TokenInfo),
+	}
 }
 
 // SetLastWatchToken set last event watch token
-func (m *MemoryHandler) SetLastWatchToken(ctx context.Context, token string) error {
-	m.token = token
+func (m *MemoryHandler) SetLastWatchToken(_ context.Context, uuid string, _ local.DB, token *types.TokenInfo) error {
+	m.dbTokenMap[uuid] = token
 	return nil
 }
 
 // GetStartWatchToken get event start watch token
-func (m *MemoryHandler) GetStartWatchToken(ctx context.Context) (string, error) {
-	return m.token, nil
+func (m *MemoryHandler) GetStartWatchToken(_ context.Context, uuid string, _ local.DB) (*types.TokenInfo, error) {
+	token, exists := m.dbTokenMap[uuid]
+	if !exists {
+		return new(types.TokenInfo), nil
+	}
+	return token, nil
 }

@@ -34,8 +34,9 @@ import (
 	"configcenter/src/source_controller/transfer-service/sync/medium"
 	"configcenter/src/source_controller/transfer-service/sync/metadata"
 	"configcenter/src/source_controller/transfer-service/sync/watch"
+	"configcenter/src/storage/dal/mongo/sharding"
 	"configcenter/src/storage/driver/mongodb"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tidwall/gjson"
@@ -47,10 +48,11 @@ type Syncer struct {
 	isMaster     discovery.ServiceManageInterface
 	metadata     *metadata.Metadata
 	resSyncerMap map[types.ResType]*resSyncer
+	tasks        []*task.Task
 }
 
 // NewSyncer new cmdb data syncer
-func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface,
+func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface,
 	cacheCli cacheservice.CacheServiceClientInterface, reg prometheus.Registerer) (*Syncer, error) {
 
 	if !conf.Sync.EnableSync {
@@ -60,8 +62,8 @@ func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface, 
 	// check if id generator is enabled, can only start syncing when id generator is enabled
 	configAdminCond := map[string]interface{}{"_id": common.ConfigAdminID}
 	configAdminData := make(map[string]string)
-	err := mongodb.Client().Table(common.BKTableNameSystem).Find(configAdminCond).Fields(common.ConfigAdminValueField).
-		One(context.Background(), &configAdminData)
+	err := mongodb.Shard(sharding.NewShardOpts().WithIgnoreTenant()).Table(common.BKTableNameSystem).
+		Find(configAdminCond).Fields(common.ConfigAdminValueField).One(context.Background(), &configAdminData)
 	if err != nil {
 		blog.Errorf("get config admin data failed, err: %v, cond: %+v", err, configAdminCond)
 		return nil, err
@@ -111,7 +113,7 @@ func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface, 
 		}
 	}
 
-	err = syncer.run(conf, loopW, transMedium, cacheCli)
+	err = syncer.run(conf, transMedium, cacheCli)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +165,7 @@ func parseDestExConf(conf *options.Config) (map[types.ResType]map[string][]optio
 	return idRuleMap, innerDataIDMap
 }
 
-func (s *Syncer) run(conf *options.Config, loopW stream.LoopInterface, transMedium medium.ClientI,
+func (s *Syncer) run(conf *options.Config, transMedium medium.ClientI,
 	cacheCli cacheservice.CacheServiceClientInterface) error {
 
 	switch conf.Sync.Role {
@@ -174,13 +176,14 @@ func (s *Syncer) run(conf *options.Config, loopW stream.LoopInterface, transMedi
 			return nil
 		}
 
-		watcher, err := watch.New(conf.Sync.Name, loopW, s.isMaster, s.metadata, cacheCli, transMedium)
+		watcher, err := watch.New(conf.Sync.Name, s.isMaster, s.metadata, cacheCli, transMedium)
 		if err != nil {
 			blog.Errorf("new watcher failed, err: %v", err)
 			return err
 		}
 
-		if err = watcher.Watch(); err != nil {
+		s.tasks, err = watcher.Watch()
+		if err != nil {
 			blog.Errorf("watch src event failed, err: %v", err)
 			return err
 		}
@@ -205,4 +208,9 @@ type resSyncer struct {
 	transMedium medium.ClientI
 	lgc         logics.Logics
 	metadata    *metadata.Metadata
+}
+
+// GetWatchTasks returns the event watch tasks
+func (s *Syncer) GetWatchTasks() []*task.Task {
+	return s.tasks
 }

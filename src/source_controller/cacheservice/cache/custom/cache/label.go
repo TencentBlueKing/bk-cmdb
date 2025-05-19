@@ -25,9 +25,11 @@ import (
 	"time"
 
 	"configcenter/pkg/conv"
+	"configcenter/pkg/tenant"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/lock"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
@@ -66,20 +68,20 @@ func (c *PodLabelCache) genValueRedisKey(bizID int64, key string) string {
 }
 
 // GetKeys get biz pod label keys
-func (c *PodLabelCache) GetKeys(ctx context.Context, bizID int64, rid string) ([]string, error) {
+func (c *PodLabelCache) GetKeys(kit *rest.Kit, bizID int64) ([]string, error) {
 	redisKey := c.genKeyRedisKey(bizID)
 
-	existRes, err := redis.Client().Exists(ctx, c.keyCache.key.Key(redisKey)).Result()
+	existRes, err := redis.Client().Exists(kit.Ctx, c.keyCache.key.Key(kit.TenantID, redisKey)).Result()
 	if err != nil {
-		blog.Errorf("check if biz %d pod label cache exists failed, err: %v, rid: %s", bizID, err, rid)
+		blog.Errorf("check if biz %d pod label cache exists failed, err: %v, rid: %s", bizID, err, kit.Rid)
 		return nil, err
 	}
 
 	// get pod label keys from cache if cache exists
 	if existRes == 1 {
-		keys, err := c.keyCache.GetDataList(ctx, redisKey, rid)
+		keys, err := c.keyCache.GetDataList(kit, redisKey)
 		if err != nil {
-			blog.Errorf("get pod label keys from cache %s failed, err: %v, rid: %s", redisKey, err, rid)
+			blog.Errorf("get pod label keys from cache %s failed, err: %v, rid: %s", redisKey, err, kit.Rid)
 			return nil, err
 		}
 		return keys, nil
@@ -90,9 +92,9 @@ func (c *PodLabelCache) GetKeys(ctx context.Context, bizID int64, rid string) ([
 		BizID:      bizID,
 		ReturnType: LabelKeyReturnType,
 	}
-	keys, err := c.RefreshPodLabel(ctx, refreshOpt, rid)
+	keys, err := c.RefreshPodLabel(kit, refreshOpt)
 	if err != nil {
-		blog.Errorf("refresh biz: %d pod label cache failed, err: %v, rid: %s", bizID, err, rid)
+		blog.Errorf("refresh biz: %d pod label cache failed, err: %v, rid: %s", bizID, err, kit.Rid)
 		if len(keys) > 0 {
 			// do not return error if keys are acquired but cache update failed
 			return keys, nil
@@ -104,18 +106,19 @@ func (c *PodLabelCache) GetKeys(ctx context.Context, bizID int64, rid string) ([
 }
 
 // GetValues get biz pod label values for specified key
-func (c *PodLabelCache) GetValues(ctx context.Context, bizID int64, key string, rid string) ([]string, error) {
-	existRes, err := redis.Client().Exists(ctx, c.keyCache.key.Key(c.genKeyRedisKey(bizID))).Result()
+func (c *PodLabelCache) GetValues(kit *rest.Kit, bizID int64, key string) ([]string, error) {
+	existRes, err := redis.Client().Exists(kit.Ctx, c.keyCache.key.Key(kit.TenantID, c.genKeyRedisKey(bizID))).Result()
 	if err != nil {
-		blog.Errorf("check if biz %d pod label cache exists failed, err: %v, rid: %s", bizID, err, rid)
+		blog.Errorf("check if biz %d pod label cache exists failed, err: %v, rid: %s", bizID, err, kit.Rid)
 		return nil, err
 	}
 
 	// get pod label values from cache if cache exists
 	if existRes == 1 {
-		values, err := c.valueCache.GetDataList(ctx, c.genValueRedisKey(bizID, key), rid)
+		values, err := c.valueCache.GetDataList(kit, c.genValueRedisKey(bizID, key))
 		if err != nil {
-			blog.Errorf("get biz %d pod label key %s values from cache failed, err: %v, rid: %s", bizID, key, err, rid)
+			blog.Errorf("get biz %d pod label key %s values from cache failed, err: %v, rid: %s", bizID, key, err,
+				kit.Rid)
 			return nil, err
 		}
 		return values, nil
@@ -127,9 +130,9 @@ func (c *PodLabelCache) GetValues(ctx context.Context, bizID int64, key string, 
 		ReturnType: LabelValueReturnType,
 		LabelKey:   key,
 	}
-	values, err := c.RefreshPodLabel(ctx, refreshOpt, rid)
+	values, err := c.RefreshPodLabel(kit, refreshOpt)
 	if err != nil {
-		blog.Errorf("refresh biz: %d pod label cache failed, err: %v, rid: %s", bizID, err, rid)
+		blog.Errorf("refresh biz: %d pod label cache failed, err: %v, rid: %s", bizID, err, kit.Rid)
 		if len(values) > 0 {
 			// do not return error if values are acquired but cache update failed
 			return values, nil
@@ -141,7 +144,7 @@ func (c *PodLabelCache) GetValues(ctx context.Context, bizID int64, key string, 
 }
 
 // UpdateKeyCount update pod label key count cache by map[bizID]map[labelKey]count
-func (c *PodLabelCache) UpdateKeyCount(ctx context.Context, keyCntMap map[int64]map[string]int64, rid string) error {
+func (c *PodLabelCache) UpdateKeyCount(kit *rest.Kit, keyCntMap map[int64]map[string]int64) error {
 	cntMap := make(map[string]map[string]int64)
 
 	for bizID, keyCnt := range keyCntMap {
@@ -159,17 +162,15 @@ func (c *PodLabelCache) UpdateKeyCount(ctx context.Context, keyCntMap map[int64]
 		return nil
 	}
 
-	if err := c.keyCache.UpdateCount(ctx, cntMap, rid); err != nil {
-		blog.Errorf("update pod label count failed, err: %v, count info: %+v, rid: %s", err, cntMap, rid)
+	if err := c.keyCache.UpdateCount(kit, cntMap); err != nil {
+		blog.Errorf("update pod label count failed, err: %v, count info: %+v, rid: %s", err, cntMap, kit.Rid)
 		return err
 	}
 	return nil
 }
 
 // UpdateValueCount update pod label value count cache by map[bizID]map[labelKey]map[labelValue]count
-func (c *PodLabelCache) UpdateValueCount(ctx context.Context, valueCntMap map[int64]map[string]map[string]int64,
-	rid string) error {
-
+func (c *PodLabelCache) UpdateValueCount(kit *rest.Kit, valueCntMap map[int64]map[string]map[string]int64) error {
 	cntMap := make(map[string]map[string]int64)
 
 	for bizID, keyValueCnt := range valueCntMap {
@@ -190,8 +191,8 @@ func (c *PodLabelCache) UpdateValueCount(ctx context.Context, valueCntMap map[in
 		return nil
 	}
 
-	if err := c.valueCache.UpdateCount(ctx, cntMap, rid); err != nil {
-		blog.Errorf("update pod label count failed, err: %v, count info: %+v, rid: %s", err, cntMap, rid)
+	if err := c.valueCache.UpdateCount(kit, cntMap); err != nil {
+		blog.Errorf("update pod label count failed, err: %v, count info: %+v, rid: %s", err, cntMap, kit.Rid)
 		return err
 	}
 	return nil
@@ -237,7 +238,7 @@ func (opt *RefreshPodLabelOpt) Validate() error {
 }
 
 // RefreshPodLabel refresh pod label key and value cache
-func (c *PodLabelCache) RefreshPodLabel(ctx context.Context, opt *RefreshPodLabelOpt, rid string) ([]string, error) {
+func (c *PodLabelCache) RefreshPodLabel(kit *rest.Kit, opt *RefreshPodLabelOpt) ([]string, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -249,18 +250,18 @@ func (c *PodLabelCache) RefreshPodLabel(ctx context.Context, opt *RefreshPodLabe
 	locked, err := locker.Lock(lock.StrFormat(lockKey), 5*time.Minute)
 	defer locker.Unlock()
 	if err != nil {
-		blog.Errorf("get %s lock failed, err: %v, rid: %s", lockKey, err, rid)
+		blog.Errorf("get %s lock failed, err: %v, rid: %s", lockKey, err, kit.Rid)
 		return nil, err
 	}
 
 	if !locked {
-		blog.Errorf("%s task is already lock, rid: %s", lockKey, rid)
+		blog.Errorf("%s task is already lock, rid: %s", lockKey, kit.Rid)
 		return nil, errors.New("there's a same refreshing task running, please retry later")
 	}
 
-	ctx = util.SetDBReadPreference(ctx, common.SecondaryPreferredMode)
+	kit.Ctx = util.SetDBReadPreference(kit.Ctx, common.SecondaryPreferredMode)
 
-	keyCntMap, keyValueCntMap, err := c.getBizPodLabelCountInfo(ctx, opt.BizID, rid)
+	keyCntMap, keyValueCntMap, err := c.getBizPodLabelCountInfo(kit, opt.BizID)
 	if err != nil {
 		return nil, err
 	}
@@ -283,21 +284,22 @@ func (c *PodLabelCache) RefreshPodLabel(ctx context.Context, opt *RefreshPodLabe
 	}
 
 	// refresh label key and value count cache
-	delLabelKeys, err := c.keyCache.RefreshCount(ctx, c.genKeyRedisKey(opt.BizID), keyCntMap, rid)
+	delLabelKeys, err := c.keyCache.RefreshCount(kit, c.genKeyRedisKey(opt.BizID), keyCntMap)
 	if err != nil {
-		blog.Errorf("refresh pod label key count failed, err: %v, count info: %+v, rid: %s", err, keyCntMap, rid)
+		blog.Errorf("refresh pod label key count failed, err: %v, count info: %+v, rid: %s", err, keyCntMap, kit.Rid)
 		return results, err
 	}
 
 	for key, valueCntMap := range keyValueCntMap {
-		if _, err = c.valueCache.RefreshCount(ctx, c.genValueRedisKey(opt.BizID, key), valueCntMap, rid); err != nil {
-			blog.Errorf("refresh pod label key count failed, err: %v, count info: %+v, rid: %s", err, keyCntMap, rid)
+		if _, err = c.valueCache.RefreshCount(kit, c.genValueRedisKey(opt.BizID, key), valueCntMap); err != nil {
+			blog.Errorf("refresh pod label key count failed, err: %v, count info: %+v, rid: %s", err, keyCntMap,
+				kit.Rid)
 			return results, err
 		}
 	}
 
 	for _, key := range delLabelKeys {
-		if err = c.valueCache.Delete(ctx, c.genValueRedisKey(opt.BizID, key), rid); err != nil {
+		if err = c.valueCache.Delete(kit, c.genValueRedisKey(opt.BizID, key)); err != nil {
 			return nil, err
 		}
 	}
@@ -306,12 +308,12 @@ func (c *PodLabelCache) RefreshPodLabel(ctx context.Context, opt *RefreshPodLabe
 }
 
 // getBizPodLabelCountInfo generate map[label_key]count & map[label_key]map[label_value]count by biz pods
-func (c *PodLabelCache) getBizPodLabelCountInfo(ctx context.Context, bizID int64, rid string) (map[string]int64,
+func (c *PodLabelCache) getBizPodLabelCountInfo(kit *rest.Kit, bizID int64) (map[string]int64,
 	map[string]map[string]int64, error) {
 
-	cond, err := tools.GenKubeSharedNsCond(ctx, bizID, kubetypes.BKNamespaceIDField, rid)
+	cond, err := tools.GenKubeSharedNsCond(kit, bizID, kubetypes.BKNamespaceIDField)
 	if err != nil {
-		blog.Errorf("generate shared namespace condition failed, err: %v, biz: %d, rid: %v", err, bizID, rid)
+		blog.Errorf("generate shared namespace condition failed, err: %v, biz: %d, rid: %v", err, bizID, kit.Rid)
 		return nil, nil, err
 	}
 
@@ -321,10 +323,10 @@ func (c *PodLabelCache) getBizPodLabelCountInfo(ctx context.Context, bizID int64
 	for {
 		pods := make([]kubetypes.Pod, 0)
 
-		err = mongodb.Client().Table(kubetypes.BKTableNameBasePod).Find(cond).Fields(kubetypes.BKIDField,
-			kubetypes.LabelsField).Sort(kubetypes.BKIDField).Limit(types.DBPage).All(ctx, &pods)
+		err = mongodb.Shard(kit.ShardOpts()).Table(kubetypes.BKTableNameBasePod).Find(cond).Fields(kubetypes.BKIDField,
+			kubetypes.LabelsField).Sort(kubetypes.BKIDField).Limit(types.DBPage).All(kit.Ctx, &pods)
 		if err != nil {
-			blog.Errorf("get pods to refresh label cache failed, cond: %+v, err: %v, rid: %s", cond, err, rid)
+			blog.Errorf("get pods to refresh label cache failed, cond: %+v, err: %v, rid: %s", cond, err, kit.Rid)
 			return nil, nil, err
 		}
 
@@ -387,34 +389,40 @@ func (c *PodLabelCache) loopRefreshCache() {
 
 // RefreshCache loop refresh pod label cache for all bizs
 func (c *PodLabelCache) RefreshCache(rid string) {
-	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+	kit := rest.NewKit().WithCtx(util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)).
+		WithRid(rid)
 
-	bizIDs, err := c.getAllBizID(ctx)
-	if err != nil {
-		blog.Errorf("list all biz id for refresh pod label cache task failed, err: %v, rid: %s", err, rid)
-		return
-	}
+	_ = tenant.ExecForAllTenants(func(tenantID string) error {
+		kit = kit.WithTenant(tenantID)
 
-	for _, bizID := range bizIDs {
-		time.Sleep(100 * time.Millisecond)
-
-		bizRid := fmt.Sprintf("%s:%d", rid, bizID)
-
-		blog.Infof("start refresh biz %d pod label cache task, rid: %s", bizID, rid)
-
-		refreshOpt := &RefreshPodLabelOpt{BizID: bizID}
-		_, err = c.RefreshPodLabel(ctx, refreshOpt, bizRid)
+		bizIDs, err := c.getAllBizID(kit)
 		if err != nil {
-			blog.Errorf("refresh biz %d pod label cache task failed, err: %v, rid: %s", bizID, err, rid)
-			continue
+			blog.Errorf("list all biz id for refresh pod label cache task failed, err: %v, rid: %s", err, rid)
+			return nil
 		}
 
-		blog.Infof("refresh biz %d pod label cache task successfully, rid: %s", bizID, rid)
-	}
+		for _, bizID := range bizIDs {
+			time.Sleep(100 * time.Millisecond)
+
+			kit = kit.WithRid(fmt.Sprintf("%s:%d", rid, bizID))
+
+			blog.Infof("start refresh biz %d pod label cache task, rid: %s", bizID, rid)
+
+			refreshOpt := &RefreshPodLabelOpt{BizID: bizID}
+			_, err = c.RefreshPodLabel(kit, refreshOpt)
+			if err != nil {
+				blog.Errorf("refresh biz %d pod label cache task failed, err: %v, rid: %s", bizID, err, rid)
+				continue
+			}
+
+			blog.Infof("refresh biz %d pod label cache task successfully, rid: %s", bizID, rid)
+		}
+		return nil
+	})
 }
 
 // getAllBizID get all biz id
-func (c *PodLabelCache) getAllBizID(ctx context.Context) ([]int64, error) {
+func (c *PodLabelCache) getAllBizID(kit *rest.Kit) ([]int64, error) {
 	cond := mapstr.MapStr{
 		common.BKDefaultField:    mapstr.MapStr{common.BKDBNE: common.DefaultAppFlag},
 		common.BKDataStatusField: mapstr.MapStr{common.BKDBNE: common.DataStatusDisabled},
@@ -424,8 +432,8 @@ func (c *PodLabelCache) getAllBizID(ctx context.Context) ([]int64, error) {
 
 	for {
 		bizs := make([]metadata.BizInst, 0)
-		err := mongodb.Client().Table(common.BKTableNameBaseApp).Find(cond).Fields(common.BKAppIDField).
-			Limit(types.DBPage).Sort(common.BKAppIDField).All(ctx, &bizs)
+		err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseApp).Find(cond).Fields(common.BKAppIDField).
+			Limit(types.DBPage).Sort(common.BKAppIDField).All(kit.Ctx, &bizs)
 		if err != nil {
 			return nil, err
 		}

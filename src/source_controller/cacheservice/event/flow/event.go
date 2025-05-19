@@ -14,254 +14,264 @@ package flow
 
 import (
 	"context"
-	"fmt"
 
-	"configcenter/src/apimachinery/discovery"
+	"configcenter/pkg/tenant"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/cacheservice/event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
-// NewEvent TODO
-func NewEvent(watch stream.LoopInterface, isMaster discovery.ServiceManageInterface, watchDB dal.DB,
-	ccDB dal.DB) error {
-	watchMongoDB, ok := watchDB.(*local.Mongo)
-	if !ok {
-		blog.Errorf("watch event, but watch db is not an instance of local mongo to start transaction")
-		return fmt.Errorf("watch db is not an instance of local mongo")
+// NewEvent new event flow
+func NewEvent() (*Event, error) {
+	e := &Event{
+		tasks: make([]*task.Task, 0),
 	}
 
-	e := Event{
-		watch:    watch,
-		isMaster: isMaster,
-		watchDB:  watchMongoDB,
-		ccDB:     ccDB,
+	if err := e.addHostTask(); err != nil {
+		blog.Errorf("add host event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runHost(context.Background()); err != nil {
-		blog.Errorf("run host event flow failed, err: %v", err)
-		return err
+	if err := e.addModuleHostRelationTask(); err != nil {
+		blog.Errorf("add module host config event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runModuleHostRelation(context.Background()); err != nil {
-		blog.Errorf("run module host config event flow failed, err: %v", err)
-		return err
+	if err := e.addBizSetTask(); err != nil {
+		blog.Errorf("add biz set event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runBizSet(context.Background()); err != nil {
-		blog.Errorf("run biz set event flow failed, err: %v", err)
-		return err
+	if err := e.addBizTask(); err != nil {
+		blog.Errorf("add biz event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runBiz(context.Background()); err != nil {
-		blog.Errorf("run biz event flow failed, err: %v", err)
-		return err
+	if err := e.addSetTask(); err != nil {
+		blog.Errorf("add set event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runSet(context.Background()); err != nil {
-		blog.Errorf("run set event flow failed, err: %v", err)
-		return err
+	if err := e.addModuleTask(); err != nil {
+		blog.Errorf("add module event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runModule(context.Background()); err != nil {
-		blog.Errorf("run module event flow failed, err: %v", err)
-		return err
+	if err := e.addObjectBaseTask(context.Background()); err != nil {
+		blog.Errorf("add object base event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runObjectBase(context.Background()); err != nil {
-		blog.Errorf("run object base event flow failed, err: %v", err)
-		return err
+	if err := e.addProcessTask(); err != nil {
+		blog.Errorf("add process event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runProcess(context.Background()); err != nil {
-		blog.Errorf("run process event flow failed, err: %v", err)
-		return err
+	if err := e.addProcessInstanceRelationTask(); err != nil {
+		blog.Errorf("add process instance relation event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runProcessInstanceRelation(context.Background()); err != nil {
-		blog.Errorf("run process instance relation event flow failed, err: %v", err)
-		return err
+	if err := e.addInstAsstTask(); err != nil {
+		blog.Errorf("add instance association event flow task failed, err: %v", err)
+		return nil, err
 	}
 
-	if err := e.runInstAsst(context.Background()); err != nil {
-		blog.Errorf("run instance association event flow failed, err: %v", err)
-		return err
+	if err := e.addPlatTask(); err != nil {
+		blog.Errorf("add plat event flow task failed, err: %v", err)
 	}
 
-	if err := e.runPlat(context.Background()); err != nil {
-		blog.Errorf("run plat event flow failed, err: %v", err)
+	if err := e.addProjectTask(); err != nil {
+		blog.Errorf("add project event flow task failed, err: %v", err)
 	}
 
-	if err := e.runProject(context.Background()); err != nil {
-		blog.Errorf("run project event flow failed, err: %v", err)
-	}
-
-	return nil
+	return e, nil
 }
 
-// Event TODO
+// Event is the event flow struct
 type Event struct {
-	watch    stream.LoopInterface
-	watchDB  *local.Mongo
-	ccDB     dal.DB
-	isMaster discovery.ServiceManageInterface
+	tasks []*task.Task
 }
 
-func (e *Event) runHost(ctx context.Context) error {
+// GetWatchTasks returns the event flow tasks
+func (e *Event) GetWatchTasks() []*task.Task {
+	return e.tasks
+}
+
+func (e *Event) addHostTask() error {
 	opts := flowOptions{
 		key:         event.HostKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(metadata.HostMapStr),
 	}
 
-	return newFlow(ctx, opts, getHostDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runModuleHostRelation(ctx context.Context) error {
+func (e *Event) addModuleHostRelationTask() error {
 	opts := flowOptions{
 		key:         event.ModuleHostRelationKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runBiz(ctx context.Context) error {
+func (e *Event) addBizTask() error {
 	opts := flowOptions{
 		key:         event.BizKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runSet(ctx context.Context) error {
+func (e *Event) addSetTask() error {
 	opts := flowOptions{
 		key:         event.SetKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runModule(ctx context.Context) error {
+func (e *Event) addModuleTask() error {
 	opts := flowOptions{
 		key:         event.ModuleKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runObjectBase(ctx context.Context) error {
+func (e *Event) addObjectBaseTask(ctx context.Context) error {
 	opts := flowOptions{
 		key:         event.ObjectBaseKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newInstanceFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addInstanceFlowTask(ctx, opts, parseEvent)
 }
 
-func (e *Event) runProcess(ctx context.Context) error {
+func (e *Event) addProcessTask() error {
 	opts := flowOptions{
 		key:         event.ProcessKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runProcessInstanceRelation(ctx context.Context) error {
+func (e *Event) addProcessInstanceRelationTask() error {
 	opts := flowOptions{
 		key:         event.ProcessInstanceRelationKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runInstAsst(ctx context.Context) error {
+func (e *Event) addInstAsstTask() error {
 	opts := flowOptions{
 		key:         event.InstAsstKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newInstAsstFlow(ctx, opts, getDeleteEventDetails, parseInstAsstEvent)
+	return e.addInstAsstFlowTask(opts, parseInstAsstEvent)
 }
 
-func (e *Event) runBizSet(ctx context.Context) error {
+func (e *Event) addBizSetTask() error {
 	opts := flowOptions{
 		key:         event.BizSetKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runPlat(ctx context.Context) error {
+func (e *Event) addPlatTask() error {
 	opts := flowOptions{
 		key:         event.PlatKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
 }
 
-func (e *Event) runProject(ctx context.Context) error {
+func (e *Event) addProjectTask() error {
 	opts := flowOptions{
 		key:         event.ProjectKey,
-		watch:       e.watch,
-		watchDB:     e.watchDB,
-		ccDB:        e.ccDB,
-		isMaster:    e.isMaster,
 		EventStruct: new(map[string]interface{}),
 	}
 
-	return newFlow(ctx, opts, getDeleteEventDetails, parseEvent)
+	return e.addFlowTask(opts, parseEvent)
+}
+
+func (e *Event) addFlowTask(opts flowOptions, parseEvent parseEventFunc) error {
+	flow, err := NewFlow(opts, parseEvent)
+	if err != nil {
+		return err
+	}
+
+	flowTask, err := flow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	e.tasks = append(e.tasks, flowTask)
+	return nil
+}
+
+func (e *Event) addInstanceFlowTask(ctx context.Context, opts flowOptions, parseEvent parseEventFunc) error {
+	flow, err := NewFlow(opts, parseEvent)
+	if err != nil {
+		return err
+	}
+	instFlow := InstanceFlow{
+		Flow: flow,
+		mainlineObjectMap: &mainlineObjectMap{
+			data: make(map[string]map[string]struct{}),
+		},
+	}
+
+	err = tenant.ExecForAllTenants(func(tenantID string) error {
+		mainlineObjMap, err := instFlow.getMainlineObjectMap(ctx, tenantID)
+		if err != nil {
+			blog.Errorf("run object instance watch, but get tenant %s mainline objects failed, err: %v", tenantID, err)
+			return err
+		}
+		instFlow.mainlineObjectMap.Set(tenantID, mainlineObjMap)
+
+		go instFlow.syncMainlineObjectMap(tenantID)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	flowTask, err := instFlow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	e.tasks = append(e.tasks, flowTask)
+	return nil
+}
+
+func (e *Event) addInstAsstFlowTask(opts flowOptions, parseEvent parseEventFunc) error {
+	flow, err := NewFlow(opts, parseEvent)
+	if err != nil {
+		return err
+	}
+	instAsstFlow := InstAsstFlow{
+		Flow: flow,
+	}
+
+	flowTask, err := instAsstFlow.GenWatchTask()
+	if err != nil {
+		return err
+	}
+
+	e.tasks = append(e.tasks, flowTask)
+	return nil
 }

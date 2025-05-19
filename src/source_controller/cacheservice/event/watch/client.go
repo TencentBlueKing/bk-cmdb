@@ -21,34 +21,32 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
-	"configcenter/src/common/util/table"
 	"configcenter/src/common/watch"
-	kubetypes "configcenter/src/kube/types"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	daltypes "configcenter/src/storage/dal/types"
+	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 	"configcenter/src/storage/stream/types"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Client TODO
+// Client is watch client
 type Client struct {
 	// cache is cc redis client.
 	cache redis.Client
 
 	// watchDB is cc event watch database.
-	watchDB dal.DB
+	watchDB dal.Dal
 
 	// db is cc main database.
-	db dal.DB
+	db dal.Dal
 }
 
-// NewClient TODO
-func NewClient(watchDB dal.DB, db dal.DB, cache redis.Client) *Client {
+// NewClient new watch client
+func NewClient(watchDB dal.Dal, db dal.Dal, cache redis.Client) *Client {
 	return &Client{watchDB: watchDB, db: db, cache: cache}
 }
 
@@ -61,9 +59,10 @@ func (c *Client) getLatestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNode,
 	}
 
 	node := new(watch.ChainNode)
-	err := c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID+":-1").One(kit.Ctx, node)
+	err := c.watchDB.Shard(kit.ShardOpts()).Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID+":-1").
+		One(kit.Ctx, node)
 	if err != nil {
-		if !c.watchDB.IsNotFoundError(err) {
+		if !mongodb.IsNotFoundError(err) {
 			blog.ErrorJSON("get chain node from mongo failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 			return nil, false, fmt.Errorf("get last chain node from mongo failed, err: %v", err)
 		}
@@ -81,9 +80,10 @@ func (c *Client) getEarliestEvent(kit *rest.Kit, key event.Key) (*watch.ChainNod
 	}
 
 	node := new(watch.ChainNode)
-	err := c.watchDB.Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID).One(kit.Ctx, node)
+	err := c.watchDB.Shard(kit.ShardOpts()).Table(key.ChainCollection()).Find(filter).Sort(common.BKFieldID).
+		One(kit.Ctx, node)
 	if err != nil {
-		if !c.watchDB.IsNotFoundError(err) {
+		if !mongodb.IsNotFoundError(err) {
 			blog.ErrorJSON("get chain node from mongo failed, err: %s, collection: %s, filter: %s, rid: %s", err,
 				key.ChainCollection(), filter, kit.Rid)
 			return nil, false, fmt.Errorf("get first chain node from mongo failed, err: %v", err)
@@ -146,9 +146,9 @@ func (c *Client) getEventDetailFromRedis(kit *rest.Kit, node *watch.ChainNode, f
 
 	var detailKey string
 	if key.IsGeneralRes() {
-		detailKey = key.GeneralResDetailKey(node)
+		detailKey = key.GeneralResDetailKey(kit.TenantID, node)
 	} else {
-		detailKey = key.DetailKey(node.Cursor)
+		detailKey = key.DetailKey(kit.TenantID, node.Cursor)
 	}
 
 	detail, err := c.cache.Get(kit.Ctx, detailKey).Result()
@@ -176,76 +176,6 @@ func (c *Client) getEventDetailFromRedis(kit *rest.Kit, node *watch.ChainNode, f
 func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, fields []string, key event.Key) (
 	*string, bool, error) {
 
-	// get delete events' detail with oid from cmdb
-	if node.EventType == watch.Delete {
-		filter := map[string]interface{}{
-			"oid": node.Oid,
-		}
-
-		if key.Collection() == common.BKTableNameBaseInst || key.Collection() == common.BKTableNameMainlineInstance {
-			if len(node.SubResource) == 0 {
-				blog.Errorf("%s delete event chain node has no sub resource, oid: %s", key.Collection(), node.Oid)
-				return nil, false, nil
-			}
-			filter["coll"] = key.ShardingCollection(node.SubResource[0], node.TenantID)
-		} else {
-			filter["coll"] = key.Collection()
-		}
-
-		detailFields := make([]string, len(fields))
-		for index, field := range fields {
-			detailFields[index] = "detail." + field
-		}
-
-		if key.Collection() == common.BKTableNameBaseHost {
-			doc := new(event.HostArchive)
-			err := c.db.Table(common.BKTableNameDelArchive).Find(filter).Fields(detailFields...).One(kit.Ctx, doc)
-			if err != nil {
-				if c.db.IsNotFoundError(err) {
-					return nil, false, nil
-				}
-				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oid: %, err: %v",
-					key.Collection(), node.Oid, err)
-				return nil, false, fmt.Errorf("get archive deleted doc from mongo failed, err: %v", err)
-			}
-
-			byt, err := json.Marshal(doc.Detail)
-			if err != nil {
-				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
-					key.Collection(), node.Oid, err)
-				return nil, false, fmt.Errorf("marshal detail failed, err: %v", err)
-			}
-			detail := string(byt)
-			return &detail, true, nil
-		} else {
-			delArchiveTable, exists := table.GetDelArchiveTable(key.Collection())
-			if !exists {
-				blog.Errorf("collection %s related del archive table not exists", key.Collection())
-				return nil, false, fmt.Errorf("collection %s related del archive table not exists", key.Collection())
-			}
-
-			doc := make(map[string]interface{})
-			err := c.db.Table(delArchiveTable).Find(filter).Fields(detailFields...).One(kit.Ctx, &doc)
-			if err != nil {
-				if c.db.IsNotFoundError(err) {
-					return nil, false, nil
-				}
-				blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oid: %, err: %v",
-					key.Collection(), node.Oid, err)
-				return nil, false, fmt.Errorf("get archive deleted doc from mongo failed, err: %v", err)
-			}
-
-			byt, err := json.Marshal(doc["detail"])
-			if err != nil {
-				blog.Errorf("received delete %s event, but marshal detail to bytes failed, oid: %s, err: %v",
-					key.Collection(), node.Oid, err)
-				return nil, false, fmt.Errorf("marshal detail failed, err: %v", err)
-			}
-			detail := string(byt)
-			return &detail, true, nil
-		}
-	}
-
 	// get current detail from mongodb with oid
 	objectId, err := primitive.ObjectIDFromHex(node.Oid)
 	if err != nil {
@@ -269,11 +199,12 @@ func (c *Client) getEventDetailFromMongo(kit *rest.Kit, node *watch.ChainNode, f
 			blog.Errorf("%s event chain node has no sub resource, oid: %s", key.Collection(), node.Oid)
 			return nil, false, nil
 		}
-		collection = key.ShardingCollection(node.SubResource[0], node.TenantID)
+		collection = key.ShardingCollection(node.SubResource[0], kit.TenantID)
 	}
 
-	if err := c.db.Table(collection).Find(filter).Fields(fields...).One(kit.Ctx, detailMap); err != nil {
-		if c.db.IsNotFoundError(err) {
+	err = c.db.Shard(kit.ShardOpts()).Table(collection).Find(filter).Fields(fields...).One(kit.Ctx, detailMap)
+	if err != nil {
+		if mongodb.IsNotFoundError(err) {
 			return nil, false, nil
 		}
 		blog.ErrorJSON("get detail from db failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
@@ -335,9 +266,10 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 	}
 
 	node := new(watch.ChainNode)
-	err := c.watchDB.Table(opts.key.ChainCollection()).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, node)
+	err := c.watchDB.Shard(kit.ShardOpts()).Table(opts.key.ChainCollection()).Find(filter).Fields(common.BKFieldID).
+		One(kit.Ctx, node)
 	if err != nil {
-		if !c.watchDB.IsNotFoundError(err) {
+		if !mongodb.IsNotFoundError(err) {
 			blog.ErrorJSON("get chain node from mongo failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 			return false, nil, 0, err
 		}
@@ -348,9 +280,10 @@ func (c *Client) searchFollowingEventChainNodes(kit *rest.Kit, opts *searchFollo
 		}
 
 		data := new(watch.LastChainNodeData)
-		err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, data)
+		err := c.watchDB.Shard(kit.ShardOpts()).Table(common.BKTableNameLastWatchEvent).Find(filter).
+			Fields(common.BKFieldID).One(kit.Ctx, data)
 		if err != nil {
-			if !c.watchDB.IsNotFoundError(err) {
+			if !mongodb.IsNotFoundError(err) {
 				blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 				return false, nil, 0, err
 			}
@@ -380,9 +313,10 @@ func (c *Client) getLastEventID(kit *rest.Kit, key event.Key) (uint64, error) {
 
 	// host identifier event can use this logic too, since we've added an extra field of last id and cursor in it
 	data := new(watch.LastChainNodeData)
-	err := c.watchDB.Table(common.BKTableNameWatchToken).Find(filter).Fields(common.BKFieldID).One(kit.Ctx, data)
+	err := c.watchDB.Shard(kit.ShardOpts()).Table(common.BKTableNameLastWatchEvent).Find(filter).
+		Fields(common.BKFieldID).One(kit.Ctx, data)
 	if err != nil {
-		if !c.watchDB.IsNotFoundError(err) {
+		if !mongodb.IsNotFoundError(err) {
 			blog.ErrorJSON("get last watch id failed, err: %s, filter: %s, rid: %s", err, filter, kit.Rid)
 			return 0, err
 		}
@@ -412,8 +346,8 @@ func (c *Client) searchFollowingEventChainNodesByID(kit *rest.Kit, opt *searchFo
 	}
 
 	nodes := make([]*watch.ChainNode, 0)
-	if err := c.watchDB.Table(opt.key.ChainCollection()).Find(filter).Sort(common.BKFieldID).Limit(opt.limit).
-		All(kit.Ctx, &nodes); err != nil {
+	if err := c.watchDB.Shard(kit.ShardOpts()).Table(opt.key.ChainCollection()).Find(filter).Sort(common.BKFieldID).
+		Limit(opt.limit).All(kit.Ctx, &nodes); err != nil {
 		blog.Errorf("get chain nodes from mongo failed, err: %v, start id: %d, rid: %s", err, opt.id, kit.Rid)
 		return nil, fmt.Errorf("get chain nodes from mongo failed, err: %v, start id: %d", err, opt.id)
 	}
@@ -434,10 +368,10 @@ func (c *Client) searchEventDetailsFromRedis(kit *rest.Kit, nodes []*watch.Chain
 	detailKeys := make([]string, len(nodes))
 	for idx, node := range nodes {
 		if key.IsGeneralRes() {
-			detailKeys[idx] = key.GeneralResDetailKey(node)
+			detailKeys[idx] = key.GeneralResDetailKey(kit.TenantID, node)
 			continue
 		}
-		detailKeys[idx] = key.DetailKey(node.Cursor)
+		detailKeys[idx] = key.DetailKey(kit.TenantID, node.Cursor)
 	}
 
 	results, err := c.cache.MGet(kit.Ctx, detailKeys...).Result()
@@ -485,31 +419,26 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 
 	// get oids and its mapping with the detail array indexes
 	oids := make([]primitive.ObjectID, 0)
-	deletedOids := make([]string, 0)
-	deleteInstIDs := make([]int64, 0)
 	oidIndexMap := make(map[string][]int)
 	coll := key.Collection()
 	instIDs := make([]int64, 0)
+	delOidDetailMap := make(map[int]string)
 	for _, node := range nodes {
 		if node.EventType == watch.Delete {
-			deletedOids = append(deletedOids, node.Oid)
-
-			if coll == common.BKTableNameBaseInst || coll == common.BKTableNameMainlineInstance {
-				deleteInstIDs = append(deleteInstIDs, node.InstanceID)
-			}
-		} else {
-			objectId, err := primitive.ObjectIDFromHex(node.Oid)
-			if err != nil {
-				blog.Errorf("get mongodb _id from oid(%s) failed, err: %v, rid: %s", node.Oid, err, kit.Rid)
-				return nil, fmt.Errorf("get mongodb _id from oid(%s) failed, err: %v", node.Oid, err)
-			}
-			oids = append(oids, objectId)
-
-			if coll == common.BKTableNameBaseInst || coll == common.BKTableNameMainlineInstance {
-				instIDs = append(instIDs, node.InstanceID)
-			}
+			// delete event detail can not be retrieved from mongo
+			delOidDetailMap[errCursorIndexMap[node.Cursor]] = "{}"
+			continue
 		}
+		objectId, err := primitive.ObjectIDFromHex(node.Oid)
+		if err != nil {
+			blog.Errorf("get mongodb _id from oid(%s) failed, err: %v, rid: %s", node.Oid, err, kit.Rid)
+			return nil, fmt.Errorf("get mongodb _id from oid(%s) failed, err: %v", node.Oid, err)
+		}
+		oids = append(oids, objectId)
 
+		if coll == common.BKTableNameBaseInst || coll == common.BKTableNameMainlineInstance {
+			instIDs = append(instIDs, node.InstanceID)
+		}
 		oidIndexMap[node.Oid] = append(oidIndexMap[node.Oid], errCursorIndexMap[node.Cursor])
 	}
 
@@ -523,15 +452,8 @@ func (c *Client) searchEventDetailsFromMongo(kit *rest.Kit, nodes []*watch.Chain
 		}
 	}
 
-	if len(deletedOids) == 0 {
-		return oidDetailMap, nil
-	}
-
-	oidDetailMap, err := c.searchDeletedEventDetailsFromMongo(kit, coll, deletedOids, fields, deleteInstIDs,
-		oidIndexMap, oidDetailMap)
-	if err != nil {
-		blog.Errorf("get delete details from db failed, err: %v, oids: %+v, rid: %s", err, deletedOids, kit.Rid)
-		return nil, err
+	for idx, detail := range delOidDetailMap {
+		oidDetailMap[idx] = detail
 	}
 
 	return oidDetailMap, nil
@@ -552,7 +474,8 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 	switch coll {
 	case common.BKTableNameBaseHost:
 		detailArr := make([]metadata.HostMapStr, 0)
-		if err := c.db.Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
+		err := c.db.Shard(kit.ShardOpts()).Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr)
+		if err != nil {
 			blog.Errorf("get details from db failed, err: %v, oids: %+v, rid: %s", err, oids, kit.Rid)
 			return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
 		}
@@ -563,29 +486,6 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 				return nil, fmt.Errorf("parse detail oid failed, oid: %+v", detailMap["_id"])
 			}
 			delete(detailMap, "_id")
-			detailJson, _ := json.Marshal(detailMap)
-			for _, index := range oidIndexMap[objectID.Hex()] {
-				oidDetailMap[index] = string(detailJson)
-			}
-		}
-		return oidDetailMap, nil
-
-	case kubetypes.BKTableNameBasePod:
-		detailArr := make([]map[string]interface{}, 0)
-		if err := c.db.Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
-			blog.Errorf("get details from db failed, err: %v, oids: %+v, rid: %s", err, oids, kit.Rid)
-			return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
-		}
-
-		for _, detailMap := range detailArr {
-			objectID, ok := detailMap["_id"].(primitive.ObjectID)
-			if !ok {
-				return nil, fmt.Errorf("parse detail oid failed, oid: %+v", detailMap["_id"])
-			}
-			delete(detailMap, "_id")
-
-			detailMap = event.ConvertLabel(detailMap)
-
 			detailJson, _ := json.Marshal(detailMap)
 			for _, index := range oidIndexMap[objectID.Hex()] {
 				oidDetailMap[index] = string(detailJson)
@@ -617,8 +517,8 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 				}
 
 				objColl := common.GetInstTableName(objID, ownerID)
-				if err := c.db.Table(objColl).Find(filter, findOpts).Fields(fields...).All(kit.Ctx,
-					&detailArr); err != nil {
+				if err := c.db.Shard(kit.ShardOpts()).Table(objColl).Find(filter, findOpts).Fields(fields...).
+					All(kit.Ctx, &detailArr); err != nil {
 					blog.Errorf("get details from db failed, err: %v, inst ids: %+v, rid: %s", err, instIDs, kit.Rid)
 					return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
 				}
@@ -637,7 +537,8 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 	}
 
 	detailArr := make([]mapStrWithOid, 0)
-	if err := c.db.Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr); err != nil {
+	err := c.db.Shard(kit.ShardOpts()).Table(coll).Find(filter, findOpts).Fields(fields...).All(kit.Ctx, &detailArr)
+	if err != nil {
 		blog.Errorf("get details from db failed, err: %v, oids: %+v, rid: %s", err, oids, kit.Rid)
 		return nil, fmt.Errorf("get details from mongo failed, err: %v, oids: %+v", err, oids)
 	}
@@ -649,74 +550,6 @@ func (c *Client) getDetailsByOids(kit *rest.Kit, oids []primitive.ObjectID, fiel
 			oidDetailMap[index] = string(detailJson)
 		}
 	}
-	return oidDetailMap, nil
-}
-
-// searchDeletedEventDetailsFromMongo search delete events' details from the cc_DelArchive table by oids
-func (c *Client) searchDeletedEventDetailsFromMongo(kit *rest.Kit, coll string, deletedOids []string, fields []string,
-	deleteInstIDs []int64, oidIndexMap map[string][]int, oidDetailMap map[int]string) (map[int]string, error) {
-
-	detailFields := make([]string, 0)
-	if len(fields) > 0 {
-		for _, field := range fields {
-			detailFields = append(detailFields, "detail."+field)
-		}
-		detailFields = append(detailFields, "oid")
-	}
-
-	deleteFilter := map[string]interface{}{
-		"oid": map[string]interface{}{common.BKDBIN: deletedOids},
-	}
-
-	if coll == common.BKTableNameBaseInst || coll == common.BKTableNameMainlineInstance {
-		deleteFilter["detail.bk_inst_id"] = map[string]interface{}{common.BKDBIN: deleteInstIDs}
-	} else {
-		deleteFilter["coll"] = coll
-	}
-
-	if coll == common.BKTableNameBaseHost {
-		docs := make([]event.HostArchive, 0)
-		err := c.db.Table(common.BKTableNameDelArchive).Find(deleteFilter).Fields(detailFields...).All(kit.Ctx, &docs)
-		if err != nil {
-			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v, "+
-				"rid: %s", coll, deletedOids, err, kit.Rid)
-			return nil, fmt.Errorf("get archive deleted docs from mongo failed, err: %v, oids: %+v", err, deletedOids)
-		}
-
-		for _, doc := range docs {
-			detailJson, _ := json.Marshal(doc.Detail)
-			for _, index := range oidIndexMap[doc.Oid] {
-				oidDetailMap[index] = string(detailJson)
-			}
-		}
-	} else {
-		delArchiveTable, exists := table.GetDelArchiveTable(coll)
-		if !exists {
-			blog.Errorf("collection %s related del archive table not exists, rid: %s", coll, kit.Rid)
-			return nil, fmt.Errorf("collection %s related del archive table not exists", coll)
-		}
-
-		docs := make([]map[string]interface{}, 0)
-		err := c.db.Table(delArchiveTable).Find(deleteFilter).Fields(detailFields...).All(kit.Ctx, &docs)
-		if err != nil {
-			blog.Errorf("get archive deleted doc for collection %s from mongodb failed, oids: %+v, err: %v, "+
-				"rid: %s", coll, deletedOids, err, kit.Rid)
-			return nil, fmt.Errorf("get archive deleted docs from mongo failed, err: %v, oids: %+v", err, deletedOids)
-		}
-
-		for _, doc := range docs {
-			oid := util.GetStrByInterface(doc["oid"])
-			detailJson, err := json.Marshal(doc["detail"])
-			if err != nil {
-				blog.Errorf("marshal detail failed, oid: %s, err: %v, rid: %s", oid, err, kit.Rid)
-				return nil, fmt.Errorf("marshal detail failed, oid: %s, err: %v", oid, err)
-			}
-			for _, index := range oidIndexMap[oid] {
-				oidDetailMap[index] = string(detailJson)
-			}
-		}
-	}
-
 	return oidDetailMap, nil
 }
 

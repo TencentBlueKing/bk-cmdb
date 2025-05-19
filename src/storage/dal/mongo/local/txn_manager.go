@@ -86,13 +86,6 @@ type TxnManager struct {
 	cache redis.Client
 }
 
-// InitTxnManager is to init txn manager, set the redis storage
-// TODO remove this
-func (t *TxnManager) InitTxnManager(r redis.Client) error {
-	t.cache = r
-	return nil
-}
-
 // GetTxnNumber TODO
 func (t *TxnManager) GetTxnNumber(sessionID string) (int64, error) {
 	key := sessionKey(sessionID).genKey(t.dbID)
@@ -305,7 +298,7 @@ func (t *TxnManager) setTxnError(sessionID sessionKey, txnErr error) {
 func (t *TxnManager) GetTxnError(sessionID sessionKey) TxnErrorType {
 	key := sessionID.genErrKey(t.dbID)
 	errorType, err := t.cache.Get(context.Background(), key).Result()
-	if err != nil && redis.IsNilErr(err) {
+	if err != nil && !redis.IsNilErr(err) {
 		blog.Errorf("get txn error failed, err: %v, session id: %s", err, sessionID)
 		return UnknownType
 	}

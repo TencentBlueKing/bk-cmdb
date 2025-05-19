@@ -14,64 +14,63 @@
 package identifier
 
 import (
-	"context"
-	"fmt"
-
-	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/cacheservice/event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
-// NewIdentity TODO
-func NewIdentity(
-	watch stream.LoopInterface,
-	isMaster discovery.ServiceManageInterface,
-	watchDB dal.DB,
-	ccDB dal.DB) error {
+// Identity is the host identity event flow struct
+type Identity struct {
+	tasks []*task.Task
+}
 
-	watchMongoDB, ok := watchDB.(*local.Mongo)
-	if !ok {
-		blog.Errorf("watch event, but watch db is not an instance of local mongo to start transaction")
-		return fmt.Errorf("watch db is not an instance of local mongo")
-	}
+// GetWatchTasks returns the event watch tasks
+func (i *Identity) GetWatchTasks() []*task.Task {
+	return i.tasks
+}
 
-	base := identityOptions{
-		watch:    watch,
-		isMaster: isMaster,
-		watchDB:  watchMongoDB,
-		ccDB:     ccDB,
-	}
+// NewIdentity new host identifier event watch
+func NewIdentity() (*Identity, error) {
+	identity := &Identity{tasks: make([]*task.Task, 0)}
+
+	base := identityOptions{}
 
 	host := base
 	host.key = event.HostKey
 	host.watchFields = needCareHostFields
-	if err := newIdentity(context.Background(), host); err != nil {
+	if err := identity.addWatchTask(host); err != nil {
 		blog.Errorf("new host identify host event failed, err: %v", err)
-		return err
+		return nil, err
 	}
 	blog.Info("host identity events, watch host success.")
 
 	relation := base
 	relation.key = event.ModuleHostRelationKey
 	relation.watchFields = []string{common.BKHostIDField}
-	if err := newIdentity(context.Background(), relation); err != nil {
+	if err := identity.addWatchTask(relation); err != nil {
 		blog.Errorf("new host identify host relation event failed, err: %v", err)
-		return err
+		return nil, err
 	}
 	blog.Info("host identity events, watch host relation success.")
 
 	process := base
 	process.key = event.ProcessKey
 	process.watchFields = []string{common.BKProcessIDField}
-	if err := newIdentity(context.Background(), process); err != nil {
+	if err := identity.addWatchTask(process); err != nil {
 		blog.Errorf("new host identify process event failed, err: %v", err)
-		return err
+		return nil, err
 	}
 	blog.Info("host identity events, watch process success.")
 
-	return nil
+	procRel := base
+	procRel.key = event.ProcessInstanceRelationKey
+	procRel.watchFields = []string{common.BKHostIDField}
+	if err := identity.addWatchTask(procRel); err != nil {
+		blog.Errorf("new host identify process relation event failed, err: %v", err)
+		return nil, err
+	}
+	blog.Info("host identity events, watch process relation success.")
+
+	return identity, nil
 }

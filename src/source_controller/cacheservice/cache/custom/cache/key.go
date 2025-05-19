@@ -47,6 +47,6 @@ func (k Key) TTL() time.Duration {
 }
 
 // Key is the redis key to store the custom resource cache data
-func (k Key) Key(key string) string {
+func (k Key) Key(tenantID, key string) string {
 	return fmt.Sprintf("%s:%s:%s", Namespace, k.resType, key)
 }

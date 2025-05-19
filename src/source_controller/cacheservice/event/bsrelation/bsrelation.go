@@ -14,16 +14,13 @@
 package bsrelation
 
 import (
-	"context"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/source_controller/cacheservice/event"
 	mixevent "configcenter/src/source_controller/cacheservice/event/mix-event"
-	"configcenter/src/storage/dal"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/stream/task"
 )
 
 const (
@@ -31,13 +28,22 @@ const (
 	bizSetRelationLockTTL = 1 * time.Minute
 )
 
+// BizSetRelation is the biz set relation event flow struct
+type BizSetRelation struct {
+	tasks []*task.Task
+}
+
+// GetWatchTasks returns the event watch tasks
+func (b *BizSetRelation) GetWatchTasks() []*task.Task {
+	return b.tasks
+}
+
 // NewBizSetRelation init and run biz set relation event watch
-func NewBizSetRelation(watch stream.LoopInterface, watchDB *local.Mongo, ccDB dal.DB) error {
+func NewBizSetRelation() (*BizSetRelation, error) {
+	bizSetRel := &BizSetRelation{tasks: make([]*task.Task, 0)}
+
 	base := mixevent.MixEventFlowOptions{
 		MixKey:       event.BizSetRelationKey,
-		Watch:        watch,
-		WatchDB:      watchDB,
-		CcDB:         ccDB,
 		EventLockKey: bizSetRelationLockKey,
 		EventLockTTL: bizSetRelationLockTTL,
 	}
@@ -46,20 +52,20 @@ func NewBizSetRelation(watch stream.LoopInterface, watchDB *local.Mongo, ccDB da
 	bizSet := base
 	bizSet.Key = event.BizSetKey
 	bizSet.WatchFields = []string{common.BKBizSetIDField, common.BKBizSetScopeField}
-	if err := newBizSetRelation(context.Background(), bizSet); err != nil {
+	if err := bizSetRel.addWatchTask(bizSet); err != nil {
 		blog.Errorf("watch biz set event for biz set relation failed, err: %v", err)
-		return err
+		return nil, err
 	}
 	blog.Info("watch biz set relation events, watch biz set success")
 
 	// watch biz event
 	biz := base
 	biz.Key = event.BizKey
-	if err := newBizSetRelation(context.Background(), biz); err != nil {
+	if err := bizSetRel.addWatchTask(biz); err != nil {
 		blog.Errorf("watch biz event for biz set relation failed, err: %v", err)
-		return err
+		return nil, err
 	}
 	blog.Info("watch biz set relation events, watch biz success")
 
-	return nil
+	return bizSetRel, nil
 }

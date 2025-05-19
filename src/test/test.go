@@ -185,6 +185,7 @@ func ClearDatabase() {
 			err := db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).Table(tableName).Delete(context.Background(),
 				mapstr.MapStr{common.BKFieldDBID: mapstr.MapStr{common.BKDBNE: common.ShardingDBConfID}})
 			Expect(err).Should(BeNil())
+		case common.BKTableNameWatchDBRelation:
 		default:
 			err := db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).DropTable(context.Background(), tableName)
 			Expect(err).Should(BeNil())
@@ -461,8 +462,4 @@ func refreshTenant() {
 	Expect(err).Should(BeNil())
 
 	tenant.SetTenant(allTenants)
-	shardingMongoManager, ok := db.(*sharding.ShardingMongoManager)
-	Expect(ok).Should(Equal(true))
-	err = shardingMongoManager.RefreshTenantDBMap()
-	Expect(err).Should(BeNil())
 }

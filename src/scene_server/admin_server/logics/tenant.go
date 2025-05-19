@@ -18,15 +18,17 @@
 package logics
 
 import (
+	"context"
 	"fmt"
 
 	"configcenter/pkg/tenant"
-	"configcenter/pkg/tenant/types"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	commontypes "configcenter/src/common/types"
+	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo/local"
+	"configcenter/src/storage/dal/mongo/sharding"
 )
 
 // NewTenantInterface get new tenant cli interface
@@ -52,19 +54,24 @@ func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string, error) {
 }
 
 // RefreshTenants refresh tenant info, skip tenant verify for apiserver
-func RefreshTenants(coreAPI apimachinery.ClientSetInterface) error {
+func RefreshTenants(coreAPI apimachinery.ClientSetInterface, db dal.Dal) error {
+	tenants, err := tenant.GetAllTenantsFromDB(context.Background(),
+		db.Shard(sharding.NewShardOpts().WithIgnoreTenant()))
+	if err != nil {
+		blog.Errorf("get all tenants failed, err: %v", err)
+		return err
+	}
+	tenant.SetTenant(tenants)
 
-	var tenants []types.Tenant
-	var err error
-	needRefreshServer := []string{commontypes.CC_MODULE_APISERVER, commontypes.CC_MODULE_TASK}
+	needRefreshServer := []string{commontypes.CC_MODULE_APISERVER, commontypes.CC_MODULE_TASK,
+		commontypes.CC_MODULE_CACHESERVICE}
 	for _, module := range needRefreshServer {
-		tenants, err = coreAPI.Refresh().RefreshTenant(module)
+		_, err = coreAPI.Refresh().RefreshTenant(module)
 		if err != nil {
 			blog.Errorf("refresh tenant info failed, module: %s, err: %v", module, err)
 			return err
 		}
 	}
 
-	tenant.SetTenant(tenants)
 	return nil
 }

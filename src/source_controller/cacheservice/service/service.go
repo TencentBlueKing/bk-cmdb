@@ -16,7 +16,6 @@ package service
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
@@ -36,9 +35,8 @@ import (
 	"configcenter/src/source_controller/cacheservice/event/flow"
 	"configcenter/src/source_controller/cacheservice/event/identifier"
 	"configcenter/src/source_controller/coreservice/core"
-	"configcenter/src/storage/dal/mongo/local"
-	"configcenter/src/storage/reflector"
-	"configcenter/src/storage/stream"
+	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/stream/scheduler"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
@@ -48,6 +46,7 @@ import (
 type CacheServiceInterface interface {
 	WebService() *restful.Container
 	SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf, language language.CCLanguageIf) error
+	Scheduler() *scheduler.Scheduler
 }
 
 // New create cache service instance
@@ -65,17 +64,18 @@ type cacheService struct {
 	core        core.Core
 	cacheSet    *cache.ClientSet
 	authManager *extensions.AuthManager
+	scheduler   *scheduler.Scheduler
 }
 
 // SetConfig TODO
-func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, err errors.CCErrorIf,
+func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, errf errors.CCErrorIf,
 	lang language.CCLanguageIf) error {
 
 	s.cfg = cfg
 	s.engine = engine
 
-	if nil != err {
-		s.err = err
+	if errf != nil {
+		s.err = errf
 	}
 
 	if nil != lang {
@@ -94,56 +94,52 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 	}
 	s.authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
-	loopW, loopErr := stream.NewLoopStream(s.cfg.Mongo.GetMongoConf(), engine.ServiceManageInterface)
-	if loopErr != nil {
-		blog.Errorf("new loop stream failed, err: %v", loopErr)
-		return loopErr
+	taskScheduler, err := scheduler.New(mongodb.Dal(), mongodb.Dal("watch"), engine.ServiceManageInterface)
+	if err != nil {
+		blog.Errorf("new watch task scheduler instance failed, err: %v", err)
+		return err
 	}
+	s.scheduler = taskScheduler
 
-	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
-	if eventErr != nil {
-		blog.Errorf("new reflector failed, err: %v", eventErr)
-		return eventErr
-	}
-
-	watchDB, dbErr := local.NewMgo(s.cfg.WatchMongo.GetMongoConf(), time.Minute)
-	if dbErr != nil {
-		blog.Errorf("new watch mongo client failed, err: %v", dbErr)
-		return dbErr
-	}
-
-	c, cacheErr := cacheop.NewCache(event, loopW, engine.ServiceManageInterface, watchDB)
+	c, cacheErr := cacheop.NewCache(engine.ServiceManageInterface)
 	if cacheErr != nil {
 		blog.Errorf("new cache instance failed, err: %v", cacheErr)
 		return cacheErr
 	}
 	s.cacheSet = c
-
-	watcher, watchErr := stream.NewLoopStream(s.cfg.Mongo.GetMongoConf(), engine.ServiceManageInterface)
-	if watchErr != nil {
-		blog.Errorf("new loop watch stream failed, err: %v", watchErr)
-		return watchErr
+	if err = taskScheduler.AddTasks(c.GetWatchTasks()...); err != nil {
+		return err
 	}
 
-	ccDB, dbErr := local.NewMgo(s.cfg.Mongo.GetMongoConf(), time.Minute)
-	if dbErr != nil {
-		blog.Errorf("new cc mongo client failed, err: %v", dbErr)
-		return dbErr
-	}
-
-	flowErr := flow.NewEvent(watcher, engine.ServiceManageInterface, watchDB, ccDB)
+	flowEvent, flowErr := flow.NewEvent()
 	if flowErr != nil {
 		blog.Errorf("new watch event failed, err: %v", flowErr)
 		return flowErr
 	}
-
-	if err := identifier.NewIdentity(watcher, engine.ServiceManageInterface, watchDB, ccDB); err != nil {
-		blog.Errorf("new host identity event failed, err: %v", err)
+	if err = taskScheduler.AddTasks(flowEvent.GetWatchTasks()...); err != nil {
 		return err
 	}
 
-	if err := bsrelation.NewBizSetRelation(watcher, watchDB, ccDB); err != nil {
+	hostIdentity, err := identifier.NewIdentity()
+	if err != nil {
+		blog.Errorf("new host identity event failed, err: %v", err)
+		return err
+	}
+	if err = taskScheduler.AddTasks(hostIdentity.GetWatchTasks()...); err != nil {
+		return err
+	}
+
+	bsRelation, err := bsrelation.NewBizSetRelation()
+	if err != nil {
 		blog.Errorf("new biz set relation event failed, err: %v", err)
+		return err
+	}
+	if err = taskScheduler.AddTasks(bsRelation.GetWatchTasks()...); err != nil {
+		return err
+	}
+
+	if err = taskScheduler.Start(); err != nil {
+		blog.Errorf("start event watch task scheduler failed, err: %v", err)
 		return err
 	}
 
@@ -171,9 +167,15 @@ func (s *cacheService) WebService() *restful.Container {
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
 	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	commonAPI.Route(commonAPI.POST("/refresh/tenants").To(s.RefreshTenant))
 	container.Add(commonAPI)
 
 	return container
+}
+
+// Scheduler returns the watch task scheduler
+func (s *cacheService) Scheduler() *scheduler.Scheduler {
+	return s.scheduler
 }
 
 // Language TODO

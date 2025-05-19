@@ -24,23 +24,25 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
 	"configcenter/src/source_controller/cacheservice/cache/custom/watch"
-	"configcenter/src/storage/stream"
 )
 
 // Cache defines the custom resource caching logics
 type Cache struct {
 	cacheSet *cache.CacheSet
+	watcher  *watch.Watcher
 }
 
 // New Cache
-func New(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface) (*Cache, error) {
+func New(isMaster discovery.ServiceManageInterface) (*Cache, error) {
 	t := &Cache{
 		cacheSet: cache.New(isMaster),
 	}
 
-	if err := watch.Init(loopW, t.cacheSet); err != nil {
+	watcher, err := watch.Init(t.cacheSet)
+	if err != nil {
 		return nil, fmt.Errorf("initialize custom resource watcher failed, err: %v", err)
 	}
+	t.watcher = watcher
 
 	t.cacheSet.LoopRefreshCache()
 	return t, nil
@@ -49,4 +51,9 @@ func New(isMaster discovery.ServiceManageInterface, loopW stream.LoopInterface) 
 // CacheSet returns custom resource cache set
 func (c *Cache) CacheSet() *cache.CacheSet {
 	return c.cacheSet
+}
+
+// Watcher returns custom resource event watcher
+func (c *Cache) Watcher() *watch.Watcher {
+	return c.watcher
 }

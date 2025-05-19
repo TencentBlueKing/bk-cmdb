@@ -16,7 +16,7 @@ GET /migrate/v3/find/system/sharding_db_config
   "permission": null,
   "data": {
     "master_db": "masteruuid",
-    "for_new_tenant": "slave1uuid",
+    "for_new_data": "slave1uuid",
     "slave_db": {
       "slave1uuid": {
         "name": "slave1",
@@ -53,7 +53,7 @@ GET /migrate/v3/find/system/sharding_db_config
 | 参数名称           | 参数类型              | 描述                         |
 |----------------|-------------------|----------------------------|
 | master_db      | string            | 主库唯一标识                     |
-| for_new_tenant | string            | 指定新增租户数据写入哪个库，存储这个数据库的唯一标识 |
+| for_new_data | string            | 指定新增租户数据写入哪个库，存储这个数据库的唯一标识 |
 | slave_db       | map[string]object | 从库唯一标识->从库配置的映射            |
 
 #### data.slave_db[key]

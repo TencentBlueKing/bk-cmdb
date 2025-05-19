@@ -36,23 +36,6 @@
 | _id       | ObjectId   | 数据唯一ID               |
 | host_snap | NumberLong | gse数据入库的stream_to_id |
 
-## cc_DelArchive
-
-#### 作用
-
-用于归档被删除的数据
-
-#### 表结构
-
-| 字段          | 类型       | 描述     |
-|-------------|----------|--------|
-| _id         | ObjectId | 数据唯一ID |
-| oid         | String   | 事件ID   |
-| coll        | String   | 所操作的表  |
-| detail      | Object   | 操作数据详情 |
-| create_time | ISODate  | 创建时间   |
-| last_time   | ISODate  | 最后更新时间 |
-
 ## cc_idgenerator
 
 #### 作用

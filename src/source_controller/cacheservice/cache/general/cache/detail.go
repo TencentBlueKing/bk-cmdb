@@ -18,7 +18,6 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 
 	"configcenter/pkg/cache/general"
@@ -29,8 +28,6 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
 	"configcenter/src/storage/driver/redis"
-
-	"github.com/tidwall/gjson"
 )
 
 // ListDetailByIDs list general resource detail cache by ids
@@ -66,9 +63,9 @@ func (c *Cache) listDetailByIDs(kit *rest.Kit, opt *types.ListDetailByIDsOpt) (m
 	detailKeys := make([]string, len(idKeys))
 	for i, id := range idKeys {
 		if opt.SubRes == "" {
-			detailKeys[i] = c.key.DetailKey(id)
+			detailKeys[i] = c.key.DetailKey(kit.TenantID, id)
 		} else {
-			detailKeys[i] = c.key.DetailKey(id, opt.SubRes)
+			detailKeys[i] = c.key.DetailKey(kit.TenantID, id, opt.SubRes)
 		}
 	}
 
@@ -99,13 +96,6 @@ func (c *Cache) listDetailByIDs(kit *rest.Kit, opt *types.ListDetailByIDsOpt) (m
 			continue
 		}
 
-		if !opt.IsSystem && kit.TenantID != common.BKSuperTenantID {
-			tenantID := gjson.Get(detail, common.TenantID).String()
-			if tenantID != common.BKDefaultTenantID && tenantID != kit.TenantID {
-				continue
-			}
-		}
-
 		if len(opt.Fields) != 0 {
 			idDetailMap[idKeys[idx]] = *json.CutJsonDataWithFields(&detail, opt.Fields)
 		} else {
@@ -120,19 +110,17 @@ func (c *Cache) listDetailByIDs(kit *rest.Kit, opt *types.ListDetailByIDsOpt) (m
 	// can not find detail in cache, need refresh the cache
 	getDataOpt := &getDataByKeysOpt{
 		BasicFilter: &types.BasicFilter{
-			SubRes:   opt.SubRes,
-			TenantID: kit.TenantID,
-			IsSystem: opt.IsSystem,
+			SubRes: opt.SubRes,
 		},
 		Keys: needRefreshIDs,
 	}
-	dbData, err := c.getDataByID(kit.Ctx, getDataOpt, kit.Rid)
+	dbData, err := c.getDataByID(kit, getDataOpt)
 	if err != nil {
 		return nil, err
 	}
 
-	c.tryRefreshDetail(&tryRefreshDetailOpt{toRefreshKeys: needRefreshKeys, dbData: dbData, fields: opt.Fields,
-		idDetailMap: idDetailMap}, kit.Rid)
+	c.tryRefreshDetail(kit, &tryRefreshDetailOpt{toRefreshKeys: needRefreshKeys, dbData: dbData, fields: opt.Fields,
+		idDetailMap: idDetailMap})
 
 	return idDetailMap, nil
 }
@@ -147,7 +135,7 @@ type tryRefreshDetailOpt struct {
 }
 
 // tryRefreshDetail try refresh the general resource detail cache if it's not locked
-func (c *Cache) tryRefreshDetail(opt *tryRefreshDetailOpt, rid string) {
+func (c *Cache) tryRefreshDetail(kit *rest.Kit, opt *tryRefreshDetailOpt) {
 	toRefreshKeyMap := make(map[string]struct{})
 	for _, key := range opt.toRefreshKeys {
 		toRefreshKeyMap[key] = struct{}{}
@@ -157,7 +145,7 @@ func (c *Cache) tryRefreshDetail(opt *tryRefreshDetailOpt, rid string) {
 		// generate id detail map
 		info, err := c.parseData(data)
 		if err != nil {
-			blog.Errorf("parse %s data: %+v failed, err: %v, rid: %s", c.key.Resource(), data, err, rid)
+			blog.Errorf("parse %s data: %+v failed, err: %v, rid: %s", c.key.Resource(), data, err, kit.Rid)
 			continue
 		}
 
@@ -165,7 +153,7 @@ func (c *Cache) tryRefreshDetail(opt *tryRefreshDetailOpt, rid string) {
 
 		detailJs, err := json.Marshal(data)
 		if err != nil {
-			blog.Errorf("marshal %s mongo data %+v failed, err: %v, rid: %s", c.key.Resource(), data, err, rid)
+			blog.Errorf("marshal %s mongo data %+v failed, err: %v, rid: %s", c.key.Resource(), data, err, kit.Rid)
 			continue
 		}
 		detailStr := string(detailJs)
@@ -181,12 +169,12 @@ func (c *Cache) tryRefreshDetail(opt *tryRefreshDetailOpt, rid string) {
 			redisKeys, _ := lgc.genKey(data, info)
 			for _, redisKey := range redisKeys {
 				opt.keyDetailMap[redisKey] = opt.idDetailMap[idKey]
-				delete(toRefreshKeyMap, c.key.UniqueKey(string(opt.uniqueKeyType), redisKey))
+				delete(toRefreshKeyMap, c.key.UniqueKey(string(opt.uniqueKeyType), kit.TenantID, redisKey))
 			}
 		}
 
 		// refresh the general resource detail cache when we had the lock
-		detailKey := c.key.DetailKey(idKey, info.subRes...)
+		detailKey := c.key.DetailKey(kit.TenantID, idKey, info.subRes...)
 		delete(toRefreshKeyMap, detailKey)
 		if !c.refreshingLock.CanRefresh(detailKey) {
 			continue
@@ -204,12 +192,12 @@ func (c *Cache) tryRefreshDetail(opt *tryRefreshDetailOpt, rid string) {
 				redisKeys, err := lgc.genKey(data, info)
 				if err != nil {
 					blog.Errorf("generate %s %s key failed, err: %v, data: %+v, rid: %s", c.key.Resource(), typ, err,
-						data, rid)
+						data, kit.Rid)
 					continue
 				}
 
 				for _, redisKey := range redisKeys {
-					pipeline.SetNX(c.key.UniqueKey(string(typ), redisKey), idKey, ttl)
+					pipeline.SetNX(c.key.UniqueKey(string(typ), kit.TenantID, redisKey), idKey, ttl)
 				}
 			}
 
@@ -219,19 +207,19 @@ func (c *Cache) tryRefreshDetail(opt *tryRefreshDetailOpt, rid string) {
 			_, err = pipeline.Exec()
 			if err != nil {
 				blog.Errorf("refresh %s cache failed, err: %v, data: %s, rid: %s", c.key.Resource(), idKey, err,
-					detailStr, rid)
+					detailStr, kit.Rid)
 				return
 			}
 
-			blog.V(4).Infof("refresh %s cache success, id: %s, rid: %s", c.key.Resource(), idKey, rid)
+			blog.V(4).Infof("refresh %s cache success, id: %s, rid: %s", c.key.Resource(), idKey, kit.Rid)
 		}(data)
 	}
 
-	go c.handleNotExistKey(toRefreshKeyMap, rid)
+	go c.handleNotExistKey(kit, toRefreshKeyMap)
 }
 
 // handleNotExistKey set not exist refresh key cache to empty string to avoid cache penetration
-func (c *Cache) handleNotExistKey(notExistKeyMap map[string]struct{}, rid string) error {
+func (c *Cache) handleNotExistKey(kit *rest.Kit, notExistKeyMap map[string]struct{}) error {
 	if len(notExistKeyMap) == 0 {
 		return nil
 	}
@@ -243,11 +231,12 @@ func (c *Cache) handleNotExistKey(notExistKeyMap map[string]struct{}, rid string
 
 	if _, err := pipeline.Exec(); err != nil {
 		blog.Errorf("refresh not exist %s cache failed, err: %v, key info: %+v, rid: %s", c.key.Resource(), err,
-			notExistKeyMap, rid)
+			notExistKeyMap, kit.Rid)
 		return err
 	}
 
-	blog.V(4).Infof("refresh not exist %s cache success, key info: %+v, rid: %s", c.key.Resource(), notExistKeyMap, rid)
+	blog.V(4).Infof("refresh not exist %s cache success, key info: %+v, rid: %s", c.key.Resource(), notExistKeyMap,
+		kit.Rid)
 	return nil
 }
 
@@ -290,7 +279,7 @@ func (c *Cache) listDetailByUniqueKey(kit *rest.Kit, opt *types.ListDetailByUniq
 	keys := util.StrArrayUnique(opt.Keys)
 	uniqueKeys := make([]string, len(keys))
 	for i, key := range keys {
-		uniqueKeys[i] = c.key.UniqueKey(string(opt.Type), key)
+		uniqueKeys[i] = c.key.UniqueKey(string(opt.Type), kit.TenantID, key)
 	}
 
 	results, err := redis.Client().MGet(kit.Ctx, uniqueKeys...).Result()
@@ -329,8 +318,7 @@ func (c *Cache) listDetailByUniqueKey(kit *rest.Kit, opt *types.ListDetailByUniq
 	idDetailMap := make(map[string]string)
 	keyDetailMap := make(map[string]string)
 	if len(idKeys) > 0 {
-		listByIDOpt := &types.ListDetailByIDsOpt{SubRes: opt.SubRes, IsSystem: opt.IsSystem, IDKeys: idKeys,
-			Fields: opt.Fields}
+		listByIDOpt := &types.ListDetailByIDsOpt{SubRes: opt.SubRes, IDKeys: idKeys, Fields: opt.Fields}
 		idDetailMap, err = c.listDetailByIDs(kit, listByIDOpt)
 		if err != nil {
 			blog.Errorf("list detail by ids(%+v) failed, err: %v, rid: %s", listByIDOpt, err, kit.Rid)
@@ -348,17 +336,16 @@ func (c *Cache) listDetailByUniqueKey(kit *rest.Kit, opt *types.ListDetailByUniq
 
 	// can not find detail in cache, need refresh the cache
 	getDataOpt := &getDataByKeysOpt{
-		BasicFilter: &types.BasicFilter{SubRes: opt.SubRes, TenantID: kit.TenantID,
-			IsSystem: opt.IsSystem},
-		Keys: needRefreshKeys,
+		BasicFilter: &types.BasicFilter{SubRes: opt.SubRes},
+		Keys:        needRefreshKeys,
 	}
-	dbData, err := uniqueKeyLgc.getData(kit.Ctx, getDataOpt, kit.Rid)
+	dbData, err := uniqueKeyLgc.getData(kit, getDataOpt)
 	if err != nil {
 		return nil, err
 	}
 
-	c.tryRefreshDetail(&tryRefreshDetailOpt{toRefreshKeys: needRefreshRedisKeys, dbData: dbData, fields: opt.Fields,
-		idDetailMap: idDetailMap, uniqueKeyType: opt.Type, keyDetailMap: keyDetailMap}, kit.Rid)
+	c.tryRefreshDetail(kit, &tryRefreshDetailOpt{toRefreshKeys: needRefreshRedisKeys, dbData: dbData,
+		fields: opt.Fields, idDetailMap: idDetailMap, uniqueKeyType: opt.Type, keyDetailMap: keyDetailMap})
 
 	return keyDetailMap, nil
 }
@@ -380,7 +367,7 @@ func (c *Cache) ListDetail(kit *rest.Kit, opt *types.ListDetailOpt) ([]string, e
 		filterOpt: opt.IDListFilter,
 		ttl:       idListTTL,
 	}
-	notExists, _, err := c.tryRefreshIDListIfNeeded(kit.Ctx, refreshOpt, kit.Rid)
+	notExists, _, err := c.tryRefreshIDListIfNeeded(kit, refreshOpt)
 	if err != nil {
 		blog.Errorf("try refresh id list failed, err: %v, opt: %+v, rid: %s", err, opt, kit.Rid)
 		return nil, err
@@ -388,7 +375,7 @@ func (c *Cache) ListDetail(kit *rest.Kit, opt *types.ListDetailOpt) ([]string, e
 
 	// id list not exists, get detail from db
 	if notExists {
-		dbRes, err := c.listDataFromDB(kit.Ctx, opt, kit.Rid)
+		dbRes, err := c.listDataFromDB(kit, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -406,7 +393,7 @@ func (c *Cache) ListDetail(kit *rest.Kit, opt *types.ListDetailOpt) ([]string, e
 	}
 
 	// id list exists, get id list and detail from redis
-	idKeys, err := c.listIDsFromRedis(kit.Ctx, opt.IDListFilter.IDListKey, opt.Page, kit.Rid)
+	idKeys, err := c.listIDsFromRedis(kit, opt.IDListFilter.IDListKey, opt.Page)
 	if err != nil {
 		return nil, err
 	}
@@ -416,18 +403,18 @@ func (c *Cache) ListDetail(kit *rest.Kit, opt *types.ListDetailOpt) ([]string, e
 	}
 
 	listByIDsOpt := &types.ListDetailByIDsOpt{
-		SubRes:   opt.IDListFilter.SubRes,
-		IsSystem: opt.IDListFilter.IsSystem,
-		IDKeys:   idKeys,
-		Fields:   opt.Fields,
+		SubRes: opt.IDListFilter.SubRes,
+		IDKeys: idKeys,
+		Fields: opt.Fields,
 	}
 	return c.ListDetailByIDs(kit, listByIDsOpt)
 }
 
 // listDataFromDB list detail from db
-func (c *Cache) listDataFromDB(ctx context.Context, opt *types.ListDetailOpt, rid string) (*listDataRes, error) {
+func (c *Cache) listDataFromDB(kit *rest.Kit, opt *types.ListDetailOpt) (*listDataRes, error) {
 	if rawErr := opt.Validate(c.key.HasSubRes()); rawErr.ErrCode != 0 {
-		blog.Errorf("list %s detail option is invalid, err: %v, opt: %+v, rid: %s", c.key.Resource(), rawErr, opt, rid)
+		blog.Errorf("list %s detail option is invalid, err: %v, opt: %+v, rid: %s", c.key.Resource(), rawErr, opt,
+			kit.Rid)
 		return nil, fmt.Errorf("list detail option is invalid")
 	}
 
@@ -443,12 +430,12 @@ func (c *Cache) listDataFromDB(ctx context.Context, opt *types.ListDetailOpt, ri
 		listOpt.Cond, err = opt.IDListFilter.Cond.ToMgo()
 		if err != nil {
 			blog.Errorf("parse list %s detail cond(%s) failed, err: %v, rid: %s", c.key.Resource(),
-				opt.IDListFilter.Cond, err, rid)
+				opt.IDListFilter.Cond, err, kit.Rid)
 			return nil, err
 		}
 	}
 
-	return c.listData(ctx, listOpt, rid)
+	return c.listData(kit, listOpt)
 }
 
 // RefreshDetailByIDs refresh general resource detail cache by ids
@@ -460,18 +447,16 @@ func (c *Cache) RefreshDetailByIDs(kit *rest.Kit, opt *types.RefreshDetailByIDsO
 
 	getDataOpt := &getDataByKeysOpt{
 		BasicFilter: &types.BasicFilter{
-			SubRes:   opt.SubResource,
-			TenantID: kit.TenantID,
-			IsSystem: true,
+			SubRes: opt.SubResource,
 		},
 		Keys: opt.IDKeys,
 	}
-	dbData, err := c.getDataByID(kit.Ctx, getDataOpt, kit.Rid)
+	dbData, err := c.getDataByID(kit, getDataOpt)
 	if err != nil {
 		return err
 	}
 
-	c.tryRefreshDetail(&tryRefreshDetailOpt{dbData: dbData, idDetailMap: make(map[string]string)}, kit.Rid)
+	c.tryRefreshDetail(kit, &tryRefreshDetailOpt{dbData: dbData, idDetailMap: make(map[string]string)})
 	return nil
 }
 
@@ -488,14 +473,14 @@ func (c *Cache) CountData(kit *rest.Kit, opt *types.ListDetailOpt) (int64, error
 		return 0, err
 	}
 
-	exists, err := isIDListExists(kit.Ctx, opt.IDListFilter.IDListKey, kit.Rid)
+	exists, err := isIDListExists(kit, opt.IDListFilter.IDListKey)
 	if err != nil {
 		return 0, err
 	}
 
 	// id list not exists, get data count from db
 	if !exists {
-		dbRes, err := c.listDataFromDB(kit.Ctx, opt, kit.Rid)
+		dbRes, err := c.listDataFromDB(kit, opt)
 		if err != nil {
 			return 0, err
 		}
@@ -503,7 +488,7 @@ func (c *Cache) CountData(kit *rest.Kit, opt *types.ListDetailOpt) (int64, error
 	}
 
 	// id list exists, get id list count from redis
-	cnt, err := c.countIDsFromRedis(kit.Ctx, opt.IDListFilter.IDListKey, kit.Rid)
+	cnt, err := c.countIDsFromRedis(kit, opt.IDListFilter.IDListKey)
 	if err != nil {
 		return 0, err
 	}
