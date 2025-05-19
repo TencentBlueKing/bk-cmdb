@@ -87,6 +87,7 @@
                       :is="`cmdb-form-${property.bk_property_type}`"
                       :class="[property.bk_property_type, { error: errors.has(property.bk_property_id) }]"
                       :unit="property.unit"
+                      :is-simple-show="true"
                       :options="property.option || []"
                       :data-vv-name="property.bk_property_id"
                       :data-vv-as="property.bk_property_name"
@@ -98,6 +99,8 @@
                       v-model.trim="editState.value"
                       @focus="handleFocus"
                       @blur="handleBlur"
+                      @close="handleOrganizationClose"
+                      @confirm="handleOrganizationConfirm"
                       v-bk-tooltips.top="{
                         disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
                         theme: 'light',
@@ -108,8 +111,10 @@
                       :ref="`component-${property.bk_property_id}`">
                     </component>
                   </div>
-                  <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
-                  <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                  <i v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION"
+                    class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
+                  <i v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION"
+                    class="form-cancel bk-icon icon-close" @click="exitForm"></i>
                   <cmdb-default-picker
                     v-if="showDefault(property.bk_property_id)"
                     :value="propertyDefaults[property.bk_property_id]"
@@ -315,14 +320,32 @@
         this.editState.property = property
         setTimeout(() => {
           const component = this.$refs[`component-${property.bk_property_id}`]
+          if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+            // 组织类型弹出处理
+            component?.[0]?.$children?.[0]?.openEdit()
+            return
+          }
           component?.[0]?.focus()
         }, 100)
+      },
+      handleOrganizationConfirm(val) {
+        const value = val[0]?.data?.map(item => item.id) ?? []
+        this.editState.value = value
+        this.confirm()
+        this.editState.property = null
+      },
+      handleOrganizationClose() {
+        this.editState.property = null
       },
       async confirm() {
         const { property, value } = this.editState
         try {
           const isValid = await this.$validator.validateAll()
           if (!isValid) {
+            // 替代方案--组织组件暂时没有必填属性
+            if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+              this.$error(this.$t(`${property.bk_property_name}值为必填`))
+            }
             return false
           }
           this.exitForm()
@@ -464,6 +487,17 @@
 </script>
 
 <style lang="scss" scoped>
+    .organization {
+      :deep(.bk-org-selector) {
+        line-height: 32px;
+      }
+      :deep(.org-selector-result-info-title) {
+        padding-bottom: 0 !important;
+      }
+      :deep(.org-selector-result-info-edit-container) {
+        display: none;
+      }
+    }
     .property-name-tooltips {
       margin-right: 2px;
     }

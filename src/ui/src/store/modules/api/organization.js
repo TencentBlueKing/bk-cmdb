@@ -23,8 +23,9 @@ const getters = {
 }
 
 const actions = {
-  getDepartment({ commit, state, dispatch }, config) {
-    return $http.get(`${window.API_HOST}organization/department`, config)
+  getDepartment({ commit, state, dispatch }, value) {
+    const api = `${window.Site.userManageUrl}/api/v3/open-web/tenant/departments/-/lookup/?department_ids=${value}`
+    return $http.get(api, { globalHeaders: false, globalError: false, headers: { 'X-Bk-Tenant-Id': window.Site.tenantId } })
   }
 }
 

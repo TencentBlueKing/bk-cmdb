@@ -701,6 +701,14 @@ export function getSelectAll(property = {}) {
   return !ispre && fields.includes(type)
 }
 
+// 组织选择器回显
+export function parseOrgVal(data) {
+  const { orgPath, name, organization_path: path } = data
+  if (orgPath) return orgPath
+  if (path) return `${path}/${name}`
+  return name
+}
+
 export default {
   getProperty,
   getPropertyText,
@@ -736,5 +744,6 @@ export default {
   isPropertySortable,
   isIconTipProperty,
   isContainerObjects,
-  getSelectAll
+  getSelectAll,
+  parseOrgVal
 }

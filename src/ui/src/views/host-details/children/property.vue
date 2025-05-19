@@ -103,6 +103,7 @@
                         :placeholder="$tools.getPropertyPlaceholder(property)"
                         :auto-check="false"
                         :multiple="property.ismultiple"
+                        :is-simple-show="true"
                         v-bind="$tools.getValidateEvents(property)"
                         v-validate="$tools.getValidateRules(property)"
                         v-model.trim="editState.value"
@@ -116,11 +117,15 @@
                           content: property.placeholder
                         }"
                         @focus="handleFocus"
-                        @blur="handleBlur">
+                        @blur="handleBlur"
+                        @close="handleOrganizationClose"
+                        @confirm="handleOrganizationConfirm">
                       </component>
                     </div>
-                    <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
-                    <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                    <i v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION"
+                      class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
+                    <i v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION"
+                      class="form-cancel bk-icon icon-close" @click="exitForm"></i>
                     <cmdb-default-picker
                       v-if="showDefault(property.bk_property_id)"
                       :value="propertyDefaults[property.bk_property_id]"
@@ -368,8 +373,22 @@
         this.editState.property = property
         setTimeout(() => {
           const component = this.$refs[`component-${property.bk_property_id}`]
+          if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+            // 组织类型弹出处理
+            component?.[0]?.$children?.[0]?.openEdit()
+            return
+          }
           component?.[0]?.focus()
         }, 100)
+      },
+      handleOrganizationConfirm(val) {
+        const value = val[0]?.data?.map(item => item.id) ?? []
+        this.editState.value = value
+        this.confirm()
+        this.editState.property = null
+      },
+      handleOrganizationClose() {
+        this.editState.property = null
       },
       async confirm() {
         const { property, value } = this.editState
@@ -498,6 +517,14 @@
 </script>
 
 <style lang="scss" scoped>
+    .organization {
+      :deep(.org-selector-result-info-title) {
+        padding-bottom: 0 !important;
+      }
+      :deep(.org-selector-result-info-edit-container) {
+        display: none;
+      }
+    }
     .property {
         height: 100%;
         overflow: auto;

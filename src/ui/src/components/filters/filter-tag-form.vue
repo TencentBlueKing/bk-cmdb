@@ -34,7 +34,8 @@
             :placeholder="getPlaceholder()"
             v-bind="getBindProps()"
             v-model.trim="value"
-            @active-change="handleActiveChange">
+            @active-change="handleActiveChange"
+            @sure-org-value="handleSureOrgVal">
           </component>
         </div>
       </div>
@@ -110,6 +111,10 @@
       }
     },
     methods: {
+      handleSureOrgVal() {
+        // 组织类型自动调用确认接口
+        this.handleConfirm()
+      },
       getPlaceholder() {
         return Utils.getPlaceholder(this.property)
       },

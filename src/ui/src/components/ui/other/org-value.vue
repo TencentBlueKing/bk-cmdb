@@ -15,7 +15,7 @@
   import store from '@/store'
   import Loading from '@/components/loading/index.vue'
   import FlexTag from '@/components/ui/flex-tag'
-  import { isEmptyPropertyValue } from '@/utils/tools'
+  import { isEmptyPropertyValue, parseOrgVal } from '@/utils/tools'
 
   const props = defineProps({
     value: {
@@ -35,23 +35,21 @@
 
   const list = ref([])
 
-  const tagList = computed(() => list.value.map(item => item.full_name.split('/').join(' / ')))
+  const tagList = computed(() => list.value.map(item => parseOrgVal(item)))
 
   const requestId = computed(() => `get_department_id_${Array.isArray(props.value) ? props.value.join('_') : String(props.value)}`)
 
   const isTextStyle = computed(() => props.showOn === 'search')
 
   const getOrganization = async (value) => {
-    const res = await store.dispatch('organization/getDepartment', {
-      params: {
-        lookup_field: 'id',
-        exact_lookups: Array.isArray(value) ? value.join(',') : value
-      },
-      fromCache: true,
-      requestId: requestId.value
-    })
-
-    return res?.results ?? []
+    let val = value
+    // 回显组织
+    if (value?.[0]?.id) {
+      val = value.map(item => item.id)
+    }
+    val =  Array.isArray(val) ? val.join(',') : val
+    const res = await store.dispatch('organization/getDepartment', val)
+    return res ?? []
   }
 
   watchEffect(async () => {
