@@ -8,27 +8,28 @@ POST /api/v3/topo/update/biz/idle_set
 
 ### 输入参数
 
-| 参数名称   | 参数类型   | 必选 | 描述                       |
-|--------|--------|----|--------------------------|
-| type   | string | 是  | 更改集群或模块配置(可选值module、set) |
-| module | object | 是  | 更新具体配置信息                 |
+| 参数名称   | 参数类型   | 必选            | 描述                       |
+|--------|--------|---------------|--------------------------|
+| type   | string | 是             | 更改集群或模块配置(可选值module,set) |
+| module | object | module,set二选一 | 更新具体业务空闲机池模块配置信息         |
+| set    | object | module,set二选一 | 更新具体业务空闲机池集群配置信息         |
 
-#### module(type=module)
+#### module
 
-| 参数名称        | 参数类型   | 必选 | 描述                                    |
-|-------------|--------|----|---------------------------------------|
-| module_key  | string | 是  | 拓扑key(内置idle,recycle,fault),或用户自定义key |
-| module_name | string | 是  | 模块名                                   |
+| 参数名称        | 参数类型   | 必选 | 描述                                       |
+|-------------|--------|----|------------------------------------------|
+| module_key  | string | 是  | 拓扑key,可选值[内置idle,recycle,fault,用户自定义key] |
+| module_name | string | 是  | 业务空闲机池模块名                                |
 
-#### module(type=set)
+#### set
 
-| 参数名称        | 参数类型   | 必选 | 描述        |
-|-------------|--------|----|-----------|
-| module_key  | string | 是  | 当前版本支持任意值 |
-| module_name | string | 是  | 集群名       |
+| 参数名称     | 参数类型   | 必选 | 描述        |
+|----------|--------|----|-----------|
+| set_key  | string | 是  | 当前版本支持任意值 |
+| set_name | string | 是  | 业务空闲机池集群名 |
 
 ### 调用示例
-
+type=module
 ```json
 {
   "type": "module",
@@ -38,12 +39,13 @@ POST /api/v3/topo/update/biz/idle_set
   }
 }
 ```
+type=set
 ```json
 {
   "type": "set",
-  "module": {
-    "module_key": "1",
-    "module_name": "空闲机"
+  "set": {
+    "set_key": "1",
+    "set_name": "空闲机"
   }
 }
 ```

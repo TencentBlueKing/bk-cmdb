@@ -8,11 +8,12 @@ PUT /api/v3/admin/update/config/global_config/{type}
 
 ### 请求参数
 
-| 参数名称    | 参数类型   | 必选 | 描述       |
-|---------|--------|----|----------|
-| backend | string | 是  | 更新拓扑层级配置 |
+| 参数名称 | 参数类型   | 必选 | 描述                    |
+|------|--------|----|-----------------------|
+| type | string | 是  | 可选值:backend(更新拓扑层级配置) |
 
 ### 输入参数
+type=backend
 
 | 参数名称            | 参数类型              | 必选 | 描述                 |
 |-----------------|-------------------|----|--------------------|
@@ -25,7 +26,7 @@ PUT /api/v3/admin/update/config/global_config/{type}
 | max_biz_topo_level | int  | 是  | 拓扑层级 |
 
 ### 调用示例
-
+type=backend
 ```json
 {
   "backend": {
@@ -35,7 +36,7 @@ PUT /api/v3/admin/update/config/global_config/{type}
 ```
 
 ### 响应示例
-
+type=backend
 ```json
 {
   "result": true,

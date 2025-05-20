@@ -8,11 +8,11 @@ PUT /api/v3/admin/update/config/platform_config/{type}
 
 ### 请求参数
 
-| 参数名称         | 参数类型   | 必选 | 描述                 |
-|--------------|--------|----|--------------------|
-| id_generator | string | 是  | 查询id_generator配置内容 |
+| 参数名称 | 参数类型   | 必选 | 描述                                  |
+|------|--------|----|-------------------------------------|
+| type | string | 是  | 可选值[id_generator]查询id_generator配置内容 |
 
-### 输入参数
+### 输入参数[type=id_generator]
 
 | 参数名称         | 参数类型   | 必选 | 描述                 |
 |--------------|--------|----|--------------------|
@@ -27,6 +27,7 @@ PUT /api/v3/admin/update/config/platform_config/{type}
 
 ### 调用示例
 
+[type=id_generator]
 ```json
 {
     "id_generator": {
@@ -38,6 +39,7 @@ PUT /api/v3/admin/update/config/platform_config/{type}
 
 ### 响应示例
 
+[type=id_generator]
 ```json
 {
     "result": true,

@@ -8,12 +8,12 @@ GET /api/v3/admin/find/config/platform_config/{type}
 
 ### 请求参数
 
-| 参数名称         | 参数类型   | 必选 | 描述                 |
-|--------------|--------|----|--------------------|
-| id_generator | string | 是  | 查询id_generator配置内容 |
+| 参数名称 | 参数类型   | 必选 | 描述                          |
+|------|--------|----|-----------------------------|
+| type | string | 是  | 可选值：id_generator(id生成器相关配置) |
 
 ### 响应示例
-
+type=id_generator
 ```json
 {
   "result": true,
@@ -47,7 +47,8 @@ GET /api/v3/admin/find/config/platform_config/{type}
 | permission | object | 权限信息                       |
 | data       | object | 请求返回的数据                    |
 
-#### data
+#### data说明
+type=id_generator
 
 | 参数名称       | 参数类型           | 描述                 |
 |------------|----------------|--------------------|
