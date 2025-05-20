@@ -15,7 +15,6 @@
   import { useHttp, jsonp } from '@/api'
   import { t } from '@/i18n'
   import { useStore } from '@/store'
-  import { escapeRegexChar } from '@/utils/util'
 
   const props = defineProps({
     defaultFilter: {
@@ -90,7 +89,7 @@
   const fetchDynamicGroup = async (val, menu) => {
     const params = {
       condition: {
-        [menu.id]: escapeRegexChar(val)
+        [menu.id]: val
       },
       page: {
         start: 0,

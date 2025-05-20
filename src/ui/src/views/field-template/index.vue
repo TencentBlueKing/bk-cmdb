@@ -101,9 +101,9 @@
       }
     }
     filter.value.forEach((item) => {
-      const itemValue = item.value?.split(',').map(escapeRegexChar)
+      const itemValue = item.value?.split(',')
       const operator = queryBuilderOperator(itemValue?.length > 1 ? QUERY_OPERATOR.IN : QUERY_OPERATOR.LIKE)
-      const value = itemValue?.length > 1 ? itemValue : itemValue[0]
+      const value = itemValue?.length > 1 ? itemValue : escapeRegexChar(itemValue[0])
       if (item.id === 'templateName') {
         params.template_filter.rules.push({
           field: 'name',

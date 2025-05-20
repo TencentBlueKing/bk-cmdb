@@ -118,14 +118,10 @@ export const swapItem = (arr, fromIndex, toIndex) => {
   return arr
 }
 
-export const escapeRegexChar = (val) => {
+export const escapeRegexChar = (str) => {
   // eslint-disable-next-line no-useless-escape
   const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
-  if (Array.isArray(val)) {
-    return val.join(',').replace(escapeCharRE, '\\$1')
-      .split(',')
-  }
-  return val.replace(escapeCharRE, '\\$1')
+  return str.replace(escapeCharRE, '\\$1')
 }
 
 /**

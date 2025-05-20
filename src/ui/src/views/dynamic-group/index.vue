@@ -111,7 +111,6 @@
   import RouterQuery from '@/router/query'
   import DynamicGroupForm from './form/form.js'
   import SearchSelect from './children/search-select.vue'
-  import { escapeRegexChar } from '@/utils/util'
 
   export default {
     components: {
@@ -149,7 +148,7 @@
           }
         }
         this.filter.forEach((item) => {
-          const itemValue = item.value?.split(',').map(escapeRegexChar)
+          const itemValue = item.value?.split(',')
           const value = itemValue?.length > 1 ? {
             $in: itemValue
           } : itemValue[0]
