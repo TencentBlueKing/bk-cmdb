@@ -91,8 +91,8 @@ func NewHeader(header http.Header) http.Header {
 	httpheader.SetAppCode(newHeader, httpheader.GetAppCode(header))
 
 	httpheader.SetTXId(newHeader, httpheader.GetTXId(header))
-
 	httpheader.SetTXTimeout(newHeader, httpheader.GetTXTimeout(header))
+	httpheader.SetTXTenant(newHeader, httpheader.GetTXTenant(header))
 
 	if httpheader.IsReqFromWeb(header) {
 		httpheader.SetReqFromWeb(newHeader)

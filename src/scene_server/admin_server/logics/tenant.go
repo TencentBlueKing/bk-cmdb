@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -55,7 +56,7 @@ func GetNewTenantCli(kit *rest.Kit, cli interface{}) (local.DB, string, error) {
 
 // RefreshTenants refresh tenant info, skip tenant verify for apiserver
 func RefreshTenants(coreAPI apimachinery.ClientSetInterface, db dal.Dal) error {
-	tenants, err := tenant.GetAllTenantsFromDB(context.Background(),
+	tenants, err := logics.GetAllTenantsFromDB(context.Background(),
 		db.Shard(sharding.NewShardOpts().WithIgnoreTenant()))
 	if err != nil {
 		blog.Errorf("get all tenants failed, err: %v", err)

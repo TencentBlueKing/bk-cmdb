@@ -19,6 +19,9 @@
 package sharding
 
 import (
+	"context"
+
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 )
@@ -26,7 +29,12 @@ import (
 // ShardingDB is the sharding db manager interface
 type ShardingDB interface {
 	Shard(opt ShardOpts) local.DB
-	InitTxnManager(r redis.Client) error
 	Ping() error
 	ExecForAllDB(handler func(db local.DB) error) error
+
+	InitTxnManager(r redis.Client) error
+	// CommitTransaction 提交事务
+	CommitTransaction(context.Context, *metadata.TxnCapable) error
+	// AbortTransaction 取消事务
+	AbortTransaction(context.Context, *metadata.TxnCapable) (bool, error)
 }

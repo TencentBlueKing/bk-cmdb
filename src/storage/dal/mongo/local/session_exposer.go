@@ -29,8 +29,9 @@ import (
 
 // SessionInfo session information for mongo distributed transactions
 type SessionInfo struct {
-	TxnNubmer int64
+	TxnNumber int64
 	SessionID string
+	DBID      string
 }
 
 // CmdbReloadSession is used to reset a created session's session id, so that we can
@@ -53,7 +54,7 @@ func CmdbReloadSession(sess mongo.Session, info *SessionInfo) error {
 	clientSession.Server.SessionID = idDoc
 	clientSession.SessionID = idDoc
 	// i.didCommitAfterStart=false
-	if info.TxnNubmer > 1 {
+	if info.TxnNumber > 1 {
 		// when the txnNumber is large than 1, it means that it's not the first transaction in
 		// this session, we do not need to create a new transaction with this txnNumber and mongodb does
 		// not allow this, so we need to change the session status from Starting to InProgressing.

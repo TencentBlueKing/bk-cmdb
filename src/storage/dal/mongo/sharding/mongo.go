@@ -25,9 +25,11 @@ import (
 	"time"
 
 	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 
@@ -58,7 +60,7 @@ func NewShardingMongo(config local.MongoConf, timeout time.Duration, crypto cryp
 		return nil, err
 	}
 
-	err = tenant.Init(&tenant.Options{DB: sharding.IgnoreTenant()})
+	err = logics.Init(&logics.Options{DB: sharding.IgnoreTenant()})
 	if err != nil {
 		return nil, err
 	}
@@ -478,11 +480,6 @@ func (m *WatchMongo) IgnoreTenant() local.DB {
 	return m.shardingMongoClient.newIgnoreTenantDB(&local.MongoCliConf{IDGenStep: 1})
 }
 
-// InitTxnManager TxnID management of initial transaction
-func (m *WatchMongo) InitTxnManager(_ redis.Client) error {
-	return fmt.Errorf("watch db do not support transaction")
-}
-
 // Ping all sharding db clients
 func (m *WatchMongo) Ping() error {
 	return m.shardingMongoClient.ping()
@@ -491,4 +488,19 @@ func (m *WatchMongo) Ping() error {
 // ExecForAllDB execute handler for all db clients
 func (m *WatchMongo) ExecForAllDB(handler func(db local.DB) error) error {
 	return m.shardingMongoClient.execForAllDB(handler, &local.MongoCliConf{IDGenStep: 1})
+}
+
+// InitTxnManager TxnID management of initial transaction
+func (m *WatchMongo) InitTxnManager(_ redis.Client) error {
+	return fmt.Errorf("watch db do not support transaction")
+}
+
+// CommitTransaction commit transaction
+func (m *WatchMongo) CommitTransaction(ctx context.Context, cap *metadata.TxnCapable) error {
+	return fmt.Errorf("watch db do not support transaction")
+}
+
+// AbortTransaction abort transaction
+func (m *WatchMongo) AbortTransaction(context.Context, *metadata.TxnCapable) (bool, error) {
+	return false, fmt.Errorf("watch db do not support transaction")
 }

@@ -22,9 +22,14 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
 
 	"github.com/google/uuid"
@@ -32,18 +37,23 @@ import (
 )
 
 const (
-	transactionNumberRedisKeyNamespace = common.BKCacheKeyV3Prefix + "transaction:number:"
-	transactionErrorRedisKeyNamespace  = common.BKCacheKeyV3Prefix + "transaction:error:"
+	transactionSessionRedisKeyNamespace = common.BKCacheKeyV3Prefix + "transaction:session:"
+	transactionNumberRedisKeyNamespace  = common.BKCacheKeyV3Prefix + "transaction:number:"
+	transactionErrorRedisKeyNamespace   = common.BKCacheKeyV3Prefix + "transaction:error:"
 )
 
 type sessionKey string
 
-func (s sessionKey) genKey(dbID string) string {
-	return fmt.Sprintf("%s%s:%s", transactionNumberRedisKeyNamespace, dbID, string(s))
+func (s sessionKey) genSessionKey() string {
+	return fmt.Sprintf("%s%s", transactionSessionRedisKeyNamespace, string(s))
 }
 
-func (s sessionKey) genErrKey(dbID string) string {
-	return fmt.Sprintf("%s%s:%s", transactionErrorRedisKeyNamespace, dbID, string(s))
+func (s sessionKey) genTxnNumKey() string {
+	return fmt.Sprintf("%s%s", transactionNumberRedisKeyNamespace, string(s))
+}
+
+func (s sessionKey) genErrKey() string {
+	return fmt.Sprintf("%s%s", transactionErrorRedisKeyNamespace, string(s))
 }
 
 // TxnErrorType the error type of the transaction, some error type needs to do special operations like retry
@@ -86,68 +96,198 @@ type TxnManager struct {
 	cache redis.Client
 }
 
-// GetTxnNumber TODO
-func (t *TxnManager) GetTxnNumber(sessionID string) (int64, error) {
-	key := sessionKey(sessionID).genKey(t.dbID)
-	v, err := t.cache.Get(context.Background(), key).Result()
+// GetAllSessionInfos get all session id and txn number infos from redis
+func (t *ShardingTxnManager) GetAllSessionInfos(sessionID, initDBID string) ([]SessionInfo, error) {
+	ctx := context.Background()
+
+	// get session info for initial session
+	txnNumber, err := t.getTxnNumber(sessionID, ctx)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return strconv.ParseInt(v, 10, 64)
+	initSess := make([]SessionInfo, 0)
+	if txnNumber > 0 {
+		initSess = append(initSess, SessionInfo{TxnNumber: txnNumber, SessionID: sessionID, DBID: initDBID})
+	}
+
+	// get session id info from redis
+	key := sessionKey(sessionID).genSessionKey()
+	sessionIDInfo, err := t.cache.Get(ctx, key).Result()
+	if err != nil {
+		if !redis.IsNilErr(err) {
+			return nil, fmt.Errorf("get %s session id info from redis failed, err: %v", sessionID, err)
+		}
+
+		// do not have session for other db, get txn number for this session
+		return initSess, nil
+	}
+
+	sessionIDMap := make(map[string]string)
+	if err = json.UnmarshalFromString(sessionIDInfo, &sessionIDMap); err != nil {
+		return nil, fmt.Errorf("unmarshal %s session id info %s failed, err: %v", sessionID, sessionIDInfo, err)
+	}
+
+	// get all session txn numbers from redis
+	sessionInfos := make([]SessionInfo, 0)
+	for dbID, dbSessionID := range sessionIDMap {
+		txnNumber, err = t.getTxnNumber(dbSessionID, ctx)
+		if err != nil {
+			return nil, fmt.Errorf("get %s txn number failed, err: %v", dbID, err)
+		}
+		// skip session id with no txn number
+		if txnNumber == 0 {
+			continue
+		}
+		sessionInfos = append(sessionInfos, SessionInfo{TxnNumber: txnNumber, SessionID: dbSessionID, DBID: dbID})
+	}
+
+	return append(sessionInfos, initSess...), nil
 }
 
-// GenTxnNumber generate the transaction number from redis.
-func (t *TxnManager) GenTxnNumber(sessionID string, ttl time.Duration) (int64, error) {
-	// return txnNumber with 1 directly, when our mongodb client option's RetryWrite
-	// is set to false.
-	key := sessionKey(sessionID).genKey(t.dbID)
+func (t *ShardingTxnManager) getTxnNumber(sessionID string, ctx context.Context) (int64, error) {
+	numKey := sessionKey(sessionID).genTxnNumKey()
+	txnNum, err := t.cache.Get(ctx, numKey).Result()
+	if err != nil {
+		if redis.IsNilErr(err) {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("get %s txn number from redis failed, err: %v", sessionID, err)
+	}
+
+	txnNumber, err := strconv.ParseInt(txnNum, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("parse %s txn number %s failed, err: %v", sessionID, txnNum, err)
+	}
+	return txnNumber, nil
+}
+
+// GenTxnSessionInfo generate the transaction number and session id from redis.
+func (t *TxnManager) GenTxnSessionInfo(cap *txnCapableInfo) (*SessionInfo, error) {
+	if cap.Timeout == 0 {
+		cap.Timeout = common.TransactionDefaultTimeout
+	}
+
+	sessionID, err := t.getTxnSessionID(cap)
+	if err != nil {
+		return nil, err
+	}
+	key := sessionKey(sessionID).genTxnNumKey()
 
 	pip := t.cache.Pipeline()
 	defer pip.Close()
-	if ttl == 0 {
-		ttl = common.TransactionDefaultTimeout
-	}
+
 	// we increase by step 1, so that we can calculate how many transaction has already
-	// be executed in a same session.
-	pip.SetNX(key, 0, ttl).Result()
+	// been executed in a same session.
+	pip.SetNX(key, 0, cap.Timeout).Result()
 	incrBy := pip.IncrBy(key, 1)
-	_, err := pip.Exec()
+	_, err = pip.Exec()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	num := incrBy.Val()
+
 	// value of (num - num/2 +1) is the real transaction number
 	// in a distribute session.
-	return num, nil
+	return &SessionInfo{
+		TxnNumber: num,
+		SessionID: sessionID,
+	}, nil
+}
+
+// getTxnSessionID get transaction session id for current db
+func (t *TxnManager) getTxnSessionID(cap *txnCapableInfo) (string, error) {
+	// initial db of this transaction use initial session id
+	if cap.isTxnInitialDB {
+		return cap.SessionID, nil
+	}
+
+	ctx := context.Background()
+	key := sessionKey(cap.SessionID).genSessionKey()
+
+	// get session id info from redis
+	sessionIDInfo, err := t.cache.Get(ctx, key).Result()
+	if err != nil {
+		if !redis.IsNilErr(err) {
+			return "", fmt.Errorf("get %s session id for db %s failed, err: %v", cap.SessionID, t.dbID, err)
+		}
+
+		// generate session id and set session id info of current db to redis
+		sessionID, err := GenSessionID()
+		if err != nil {
+			return "", fmt.Errorf("generate %s session id for db %s failed, err: %v", cap.SessionID, t.dbID, err)
+		}
+		sessionIDInfo = fmt.Sprintf(`{"%s":"%s"}`, t.dbID, sessionID)
+		if err = t.cache.Set(ctx, key, sessionIDInfo, cap.Timeout).Err(); err != nil {
+			return "", fmt.Errorf("set %s session id info %s failed, err: %v", cap.SessionID, sessionIDInfo, err)
+		}
+
+		return sessionID, nil
+	}
+
+	sessionIDMap := make(map[string]string)
+	if err = json.UnmarshalFromString(sessionIDInfo, &sessionIDMap); err != nil {
+		return "", fmt.Errorf("unmarshal %s session id info %s failed, err: %v", cap.SessionID, sessionIDInfo, err)
+	}
+
+	sessionID, exists := sessionIDMap[t.dbID]
+	if exists {
+		return sessionID, nil
+	}
+
+	// generate session id and set session id info of current db to redis
+	sessionID, err = GenSessionID()
+	if err != nil {
+		return "", fmt.Errorf("generate %s session id for db %s failed, err: %v", cap.SessionID, t.dbID, err)
+	}
+
+	sessionIDMap[t.dbID] = sessionID
+	sessionIDInfo, err = json.MarshalToString(sessionIDMap)
+	if err != nil {
+		return "", fmt.Errorf("marshal %s session id info %v failed, err: %v", cap.SessionID, sessionIDMap, err)
+	}
+
+	if err = t.cache.Set(ctx, key, sessionIDInfo, cap.Timeout).Err(); err != nil {
+		return "", fmt.Errorf("set %s session id info %s failed, err: %v", cap.SessionID, sessionIDInfo, err)
+	}
+
+	return sessionID, nil
 }
 
 // RemoveSessionKey remove transaction session key
-func (t *TxnManager) RemoveSessionKey(sessionID string) error {
-	key := sessionKey(sessionID).genKey(t.dbID)
+func (t *ShardingTxnManager) RemoveSessionKey(sessionID string) error {
+	key := sessionKey(sessionID).genSessionKey()
 	return t.cache.Del(context.Background(), key).Err()
 }
 
-// ReloadSession is used to reset a created session's session id
-func (t *TxnManager) ReloadSession(sess mongo.Session, info *SessionInfo) (mongo.Session, error) {
-	err := CmdbReloadSession(sess, info)
+// RemoveTxnNumKey remove transaction number key
+func (t *ShardingTxnManager) RemoveTxnNumKey(sessionID string) error {
+	key := sessionKey(sessionID).genTxnNumKey()
+	return t.cache.Del(context.Background(), key).Err()
+}
+
+// PrepareCommitOrAbort prepare transaction commit or abort and reload session
+func (t *ShardingTxnManager) PrepareCommitOrAbort(cli *mongo.Client, info *SessionInfo) (mongo.Session, error) {
+	// create a session client.
+	sess, err := cli.StartSession()
+	if err != nil {
+		return nil, fmt.Errorf("start session failed, err: %v", err)
+	}
+
+	// only for changing the transaction status
+	err = sess.StartTransaction()
+	if err != nil {
+		return nil, fmt.Errorf("start transaction failed: %v", err)
+	}
+
+	err = CmdbReloadSession(sess, info)
 	if err != nil {
 		return nil, err
 	}
 	return sess, nil
 }
 
-// PrepareCommit prepare transaction commit
-func (t *TxnManager) PrepareCommit(cli *mongo.Client) (mongo.Session, error) {
-	// create a session client.
-	sess, err := cli.StartSession()
-	if err != nil {
-		return nil, fmt.Errorf("start session failed, err: %v", err)
-	}
-	return sess, nil
-}
-
 // PrepareTransaction prepare transaction
-func (t *TxnManager) PrepareTransaction(cap *metadata.TxnCapable, cli *mongo.Client) (mongo.Session, error) {
+func (t *TxnManager) PrepareTransaction(cap *txnCapableInfo, cli *mongo.Client) (mongo.Session, error) {
 	// create a session client.
 	sess, err := cli.StartSession()
 	if err != nil {
@@ -160,17 +300,12 @@ func (t *TxnManager) PrepareTransaction(cap *metadata.TxnCapable, cli *mongo.Cli
 		return nil, fmt.Errorf("start transaction %s failed: %v", cap.SessionID, err)
 	}
 
-	txnNumber, err := t.GenTxnNumber(cap.SessionID, cap.Timeout)
+	info, err := t.GenTxnSessionInfo(cap)
 	if err != nil {
 		return nil, fmt.Errorf("generate txn number failed, err: %v", err)
 	}
 
 	// reset the session info with the session id.
-	info := &SessionInfo{
-		TxnNubmer: txnNumber,
-		SessionID: cap.SessionID,
-	}
-
 	err = CmdbReloadSession(sess, info)
 	if err != nil {
 		return nil, fmt.Errorf("reload transaction: %s failed, err: %v", cap.SessionID, err)
@@ -186,7 +321,7 @@ func (t *TxnManager) PrepareTransaction(cap *metadata.TxnCapable, cli *mongo.Cli
 func (t *TxnManager) GetTxnContext(ctx context.Context, cli *mongo.Client) (context.Context, mongo.Session, bool,
 	error) {
 
-	cap, useTxn, err := parseTxnInfoFromCtx(ctx)
+	cap, useTxn, err := t.parseTxnInfoFromCtx(ctx)
 	if err != nil {
 		return ctx, nil, false, err
 	}
@@ -207,10 +342,16 @@ func (t *TxnManager) GetTxnContext(ctx context.Context, cli *mongo.Client) (cont
 	return sessCtx, session, true, nil
 }
 
+type txnCapableInfo struct {
+	*metadata.TxnCapable
+	// isTxnInitialDB defines whether the transaction initial db is the same with current db
+	isTxnInitialDB bool
+}
+
 // parseTxnInfoFromCtx try to parse transaction info from context,
 // it returns the TxnCable, and a bool to indicate whether it's a transaction context or not.
 // so the caller can use the returned TxnCapable only when the bool is true. otherwise it will be panic.
-func parseTxnInfoFromCtx(txnCtx context.Context) (*metadata.TxnCapable, bool, error) {
+func (t *TxnManager) parseTxnInfoFromCtx(txnCtx context.Context) (*txnCapableInfo, bool, error) {
 	id := txnCtx.Value(common.TransactionIdHeader)
 	if id == nil {
 		// do not use transaction, and return directly.
@@ -228,6 +369,17 @@ func parseTxnInfoFromCtx(txnCtx context.Context) (*metadata.TxnCapable, bool, er
 		return nil, false, errors.New("transaction timeout value not exist")
 	}
 
+	// parse transaction tenant id and check if
+	txnTenantID := txnCtx.Value(common.TransactionTenantIDHeader)
+	if txnTenantID == nil {
+		return nil, false, errors.New("transaction tenant id value not exist")
+	}
+
+	txnTenant, exist := tenant.GetTenant(util.GetStrByInterface(txnTenantID))
+	if !exist || txnTenant.Status != types.EnabledStatus {
+		return nil, false, fmt.Errorf("transaction tenant id %s is invalid", txnTenantID)
+	}
+
 	ttlStr, ok := ttl.(string)
 	if !ok {
 		return nil, false, fmt.Errorf("invalid transaction timeout value: %v", ttl)
@@ -238,17 +390,19 @@ func parseTxnInfoFromCtx(txnCtx context.Context) (*metadata.TxnCapable, bool, er
 		return nil, false, fmt.Errorf("invalid transaction timeout value, parse %v failed, err: %v", ttl, err)
 	}
 
-	cap := &metadata.TxnCapable{
-		// timeout is not
-		Timeout:   time.Duration(timeout),
-		SessionID: txnID,
+	cap := &txnCapableInfo{
+		TxnCapable: &metadata.TxnCapable{
+			Timeout:   time.Duration(timeout),
+			SessionID: txnID,
+		},
+		isTxnInitialDB: txnTenant.Database == t.dbID,
 	}
 	return cap, true, nil
 }
 
 // AutoRunWithTxn auto run with transaction
 func (t *TxnManager) AutoRunWithTxn(ctx context.Context, cli *mongo.Client, cmd func(ctx context.Context) error) error {
-	cap, useTxn, err := parseTxnInfoFromCtx(ctx)
+	cap, useTxn, err := t.parseTxnInfoFromCtx(ctx)
 	if err != nil {
 		return err
 	}
@@ -285,7 +439,7 @@ func (t *TxnManager) AutoRunWithTxn(ctx context.Context, cli *mongo.Client, cmd 
 func (t *TxnManager) setTxnError(sessionID sessionKey, txnErr error) {
 	switch {
 	case strings.Contains(txnErr.Error(), "WriteConflict"):
-		key := sessionID.genErrKey(t.dbID)
+		key := sessionID.genErrKey()
 		err := t.cache.SetNX(context.Background(), key, string(WriteConflictType), time.Minute*5).Err()
 		if err != nil {
 			blog.Errorf("set txn error(%v) failed, err: %v, session id: %s", txnErr, err, sessionID)
@@ -295,8 +449,8 @@ func (t *TxnManager) setTxnError(sessionID sessionKey, txnErr error) {
 }
 
 // GetTxnError get mongo raw error type in redis, the error may be used in scene server to retry this transaction
-func (t *TxnManager) GetTxnError(sessionID sessionKey) TxnErrorType {
-	key := sessionID.genErrKey(t.dbID)
+func (t *ShardingTxnManager) GetTxnError(sessionID string) TxnErrorType {
+	key := sessionKey(sessionID).genErrKey()
 	errorType, err := t.cache.Get(context.Background(), key).Result()
 	if err != nil && !redis.IsNilErr(err) {
 		blog.Errorf("get txn error failed, err: %v, session id: %s", err, sessionID)
@@ -342,6 +496,7 @@ func GenTxnCableAndSetHeader(header http.Header, opts ...metadata.TxnOption) (*m
 
 	header.Set(common.TransactionIdHeader, sessionID)
 	header.Set(common.TransactionTimeoutHeader, strconv.FormatInt(int64(timeout), 10))
+	header.Set(common.TransactionTenantIDHeader, httpheader.GetTenantID(header))
 
 	cap := metadata.TxnCapable{
 		Timeout:   timeout,

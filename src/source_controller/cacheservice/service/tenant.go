@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/logics"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -32,7 +33,7 @@ import (
 // RefreshTenant refresh tenant info
 func (s *cacheService) RefreshTenant(req *restful.Request, resp *restful.Response) {
 	kit := rest.NewKitFromHeader(req.Request.Header, s.err)
-	tenants, err := tenant.GetAllTenantsFromDB(kit.Ctx, mongodb.Shard(kit.SysShardOpts()))
+	tenants, err := logics.GetAllTenantsFromDB(kit.Ctx, mongodb.Shard(kit.SysShardOpts()))
 	if err != nil {
 		blog.Errorf("refresh tenant info but get all tenants failed, err: %v, rid: %s", err)
 		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})

@@ -1272,8 +1272,9 @@ const (
 
 // transaction related
 const (
-	TransactionIdHeader      = "cc_transaction_id_string"
-	TransactionTimeoutHeader = "cc_transaction_timeout"
+	TransactionIdHeader       = "cc_transaction_id_string"
+	TransactionTimeoutHeader  = "cc_transaction_timeout"
+	TransactionTenantIDHeader = "cc_transaction_tenant_id"
 
 	// mongodb default transaction timeout is 1 minute.
 	TransactionDefaultTimeout = 2 * time.Minute

@@ -83,6 +83,11 @@ func GetTXTimeout(header http.Header) string {
 	return header.Get(common.TransactionTimeoutHeader)
 }
 
+// GetTXTenant get transaction tenantID from http header
+func GetTXTenant(header http.Header) string {
+	return header.Get(common.TransactionTenantIDHeader)
+}
+
 // SetRid set request id to http header
 func SetRid(header http.Header, value string) {
 	header.Set(BkRidHeader, value)
@@ -147,6 +152,11 @@ func SetTXId(header http.Header, value string) {
 // SetTXTimeout set transaction timeout to http header
 func SetTXTimeout(header http.Header, value string) {
 	header.Set(common.TransactionTimeoutHeader, value)
+}
+
+// SetTXTenant set transaction tenant id to http header
+func SetTXTenant(header http.Header, value string) {
+	header.Set(common.TransactionTenantIDHeader, value)
 }
 
 // AddRid add request id to http header

@@ -136,6 +136,7 @@ func (r *RestUtility) wrapperAction(action Action) func(req *restful.Request, re
 			// we got a request with transaction info, which is only useful for coreservice.
 			ctx = context.WithValue(ctx, common.TransactionIdHeader, txnID)
 			ctx = context.WithValue(ctx, common.TransactionTimeoutHeader, header.Get(common.TransactionTimeoutHeader))
+			ctx = context.WithValue(ctx, common.TransactionTenantIDHeader, header.Get(common.TransactionTenantIDHeader))
 		}
 		if mode := util.GetHTTPReadPreference(header); mode != common.NilMode {
 			ctx = util.SetDBReadPreference(ctx, mode)
