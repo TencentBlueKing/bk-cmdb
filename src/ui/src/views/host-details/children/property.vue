@@ -118,14 +118,14 @@
                         }"
                         @focus="handleFocus"
                         @blur="handleBlur"
-                        @close="handleOrganizationClose"
-                        @confirm="handleOrganizationConfirm">
+                        @close="() => handleClose(property)"
+                        @confirm="(val) => handleConfirm(val, property)">
                       </component>
                     </div>
-                    <i v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION"
-                      class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
-                    <i v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION"
-                      class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                    <template v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION">
+                      <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
+                      <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                    </template>
                     <cmdb-default-picker
                       v-if="showDefault(property.bk_property_id)"
                       :value="propertyDefaults[property.bk_property_id]"
@@ -380,6 +380,16 @@
           }
           component?.[0]?.focus()
         }, 100)
+      },
+      handleConfirm(val, property) {
+        if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+          this.handleOrganizationConfirm(val)
+        }
+      },
+      handleClose(property) {
+        if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+          this.handleOrganizationClose()
+        }
       },
       handleOrganizationConfirm(val) {
         const value = val[0]?.data?.map(item => item.id) ?? []

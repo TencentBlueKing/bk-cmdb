@@ -18,7 +18,8 @@
       {
         'is-focus': focused,
         'is-disabled': disabled,
-        'is-unselected': unselected
+        'is-unselected': unselected,
+        'organization-hide': hidden
       }
     ]"
     v-model="checked"
@@ -64,7 +65,11 @@
       type: Number,
       default: 2500
     },
-    formatter: Function
+    formatter: Function,
+    hidden: {
+      type: Boolean,
+      default: false
+    }
   })
 
   const emit = defineEmits(['on-checked', 'input', 'toggle', 'result-change', 'close', 'confirm'])
@@ -138,10 +143,7 @@
   }
 }
 .organization-hide {
-  position: absolute;
-  top: -999px;
-  left: -999px;
-  opacity: 0;
+  display: none;
 }
 :deep(.bk-big-tree-empty) {
   position: static;

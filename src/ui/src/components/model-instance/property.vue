@@ -99,8 +99,8 @@
                       v-model.trim="editState.value"
                       @focus="handleFocus"
                       @blur="handleBlur"
-                      @close="handleOrganizationClose"
-                      @confirm="handleOrganizationConfirm"
+                      @close="() => handleClose(property)"
+                      @confirm="(val) => handleConfirm(val, property)"
                       v-bk-tooltips.top="{
                         disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
                         theme: 'light',
@@ -111,10 +111,10 @@
                       :ref="`component-${property.bk_property_id}`">
                     </component>
                   </div>
-                  <i v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION"
-                    class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
-                  <i v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION"
-                    class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                  <template v-if="property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION">
+                    <i class="form-confirm bk-icon icon-check-1" @click="confirm"></i>
+                    <i class="form-cancel bk-icon icon-close" @click="exitForm"></i>
+                  </template>
                   <cmdb-default-picker
                     v-if="showDefault(property.bk_property_id)"
                     :value="propertyDefaults[property.bk_property_id]"
@@ -328,6 +328,16 @@
           component?.[0]?.focus()
         }, 100)
       },
+      handleConfirm(val, property) {
+        if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+          this.handleOrganizationConfirm(val)
+        }
+      },
+      handleClose(property) {
+        if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+          this.handleOrganizationClose()
+        }
+      },
       handleOrganizationConfirm(val) {
         const value = val[0]?.data?.map(item => item.id) ?? []
         this.editState.value = value
@@ -343,7 +353,7 @@
           const isValid = await this.$validator.validateAll()
           if (!isValid) {
             // 替代方案--组织组件暂时没有必填属性
-            if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+            if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION && property.isrequired && !value[0]) {
               this.$error(this.$t(`${property.bk_property_name}值为必填`))
             }
             return false

@@ -35,7 +35,7 @@
             v-bind="getBindProps()"
             v-model.trim="value"
             @active-change="handleActiveChange"
-            @sure-org-value="handleSureOrgVal">
+            @confirm="handleSureVal">
           </component>
         </div>
       </div>
@@ -54,6 +54,7 @@
   import { mapGetters } from 'vuex'
   import { isContainerObject } from '@/service/container/common'
   import { QUERY_OPERATOR, QUERY_OPERATOR_HOST_SYMBOL, QUERY_OPERATOR_HOST_DESC } from '@/utils/query-builder-operator'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
   export default {
     components: {
@@ -111,9 +112,11 @@
       }
     },
     methods: {
-      handleSureOrgVal() {
+      handleSureVal() {
         // 组织类型自动调用确认接口
-        this.handleConfirm()
+        if (this.property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+          this.handleConfirm()
+        }
       },
       getPlaceholder() {
         return Utils.getPlaceholder(this.property)
