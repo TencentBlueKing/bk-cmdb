@@ -46,7 +46,7 @@
         type: [String, Array],
         default: ''
       },
-      pasteDivide: {
+      isPasteSplit: {
         type: Boolean,
         default: false
       }
@@ -66,17 +66,14 @@
       }
     },
     methods: {
-      dividePasteVal(val) {
-        const value = (val.split(/,|;|\n/)).map(value => value.trim())
-          .filter(value => value.length)
-        return [...new Set([...this.localValue, ...value])]
-      },
       handlePasteFn(value) {
-        if (this.pasteDivide && this.multiple) {
-          this.localValue = this.dividePasteVal(value)
-          return
+        if (!value) return
+        let val = [value]
+        if (this.isPasteSplit && this.multiple) {
+          val = (value.split(/,|;|\n/)).map(value => value.trim())
+            .filter(value => value.length)
         }
-        this.localValue = [...new Set([...this.localValue, value])]
+        this.localValue = [...new Set([...this.localValue, ...val])]
       },
       handleInputChange(value) {
         this.$emit('inputchange', value)
