@@ -284,6 +284,7 @@
       },
       async getNodeDetails() {
         this.type = 'details'
+        this.instance = {}
         await this.getInstance()
 
         // 获取节点的模板属性配置
