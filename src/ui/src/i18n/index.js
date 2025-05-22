@@ -13,7 +13,7 @@
 import Vue from 'vue'
 import VueI18n from 'vue-i18n'
 import Cookies from 'js-cookie'
-import { jsonp } from '@/api'
+import http from '@/api'
 import { useSiteConfig } from '@/setup/build-in-vars'
 import messages from './lang/messages'
 import { LANG_COOKIE_NAME, LANG_KEYS, LANG_SET } from './constants'
@@ -45,10 +45,10 @@ export const changeLocale = async (locale) => {
     domain: siteConfig?.cookieDomain || window.location.hostname.replace(/^.*(\.[^.]+\.[^.]+)$/, '$1'),
   })
 
-  if (siteConfig?.componentApiUrl) {
-    const url = `${siteConfig.componentApiUrl}/api/c/compapi/v2/usermanage/fe_update_user_language/`
+  if (siteConfig?.userManageUrl) {
+    const url = `${siteConfig.userManageUrl}/api/v3/open-web/tenant/current-user/language/`
     try {
-      await jsonp(url, { language: cookieValue })
+      await http.put(url, { language: cookieValue }, { globalHeaders: false, globalError: false, headers: { 'X-Bk-Tenant-Id': siteConfig.tenantId } })
     } finally {
       window.location.reload()
     }
