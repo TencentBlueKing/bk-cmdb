@@ -62,10 +62,26 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 		return
 	}
 
+	tableObjUUIDMap := make(map[string]string)
+	for objID, importData := range *data {
+		for _, attr := range importData.Attr {
+			if attr.PropertyType == common.FieldTypeInnerTable {
+				uniqueTableObjStr := objID + "*" + attr.PropertyID + "*" + fmt.Sprintf("%d", attr.BizID)
+				tableObjUUIDMap[uniqueTableObjStr] = xid.New().String()
+				err = s.createTableObjectTable(ctx.Kit, objID, attr.PropertyID, tableObjUUIDMap[uniqueTableObjStr])
+				if err != nil {
+					blog.Errorf("creat table object instance table failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+					ctx.RespAutoError(err)
+					return
+				}
+			}
+		}
+	}
+
 	var ret mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Logics.AttributeOperation().CreateObjectBatch(ctx.Kit, *data)
+		ret, err = s.Logics.AttributeOperation().CreateObjectBatch(ctx.Kit, *data, tableObjUUIDMap)
 		if err != nil {
 			return err
 		}

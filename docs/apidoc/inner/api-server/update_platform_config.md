@@ -8,11 +8,12 @@ PUT /api/v3/admin/update/config/platform_config/{type}
 
 ### 请求参数
 
-| 参数名称 | 参数类型   | 必选 | 描述                                  |
-|------|--------|----|-------------------------------------|
-| type | string | 是  | 可选值[id_generator]查询id_generator配置内容 |
+| 参数名称 | 参数类型   | 必选 | 描述                                 |
+|------|--------|----|------------------------------------|
+| type | string | 是  | 可选值id_generator 查询id_generator配置内容 |
 
-### 输入参数[type=id_generator]
+### 输入参数
+type=id_generator
 
 | 参数名称         | 参数类型   | 必选 | 描述                 |
 |--------------|--------|----|--------------------|
@@ -24,6 +25,7 @@ PUT /api/v3/admin/update/config/platform_config/{type}
 |---------|--------|----|--------------------|
 | step    | int    | 是  | id generator步长     |
 | enabled | string | 是  | 是否开始id generator配置 |
+| init_id | int    | 否  | 更新模型实例id的初始配置值     |
 
 ### 调用示例
 
@@ -33,7 +35,10 @@ PUT /api/v3/admin/update/config/platform_config/{type}
     "id_generator": {
         "enabled": true,
         "step": 2
-    }
+    },
+  "init_id": {
+    "biz": 4
+  }
 }
 ```
 

@@ -47,24 +47,3 @@ func (obj *object) GetUUIDByObj(ctx context.Context, h http.Header, objName stri
 
 	return resp.Data, nil
 }
-
-func (obj *object) GetObjByUUID(ctx context.Context, h http.Header, uuid string) (string, error) {
-	resp := new(metadata.ObjetUUIDResp)
-
-	err := obj.client.Post().
-		WithContext(ctx).
-		SubResourcef("/find/core/obj/%s", uuid).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return "", errors.New(common.CCErrCommHTTPDoRequestFailed, err.Error())
-	}
-
-	if !resp.Result {
-		return "", errors.New(resp.Code, resp.ErrMsg)
-	}
-
-	return resp.Data, nil
-}

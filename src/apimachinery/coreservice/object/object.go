@@ -29,7 +29,6 @@ import (
 // ToDo: it's for test, can be removed after cache instance ready
 type ObjectClientInterface interface {
 	GetUUIDByObj(ctx context.Context, h http.Header, objName string) (string, error)
-	GetObjByUUID(ctx context.Context, h http.Header, uuid string) (string, error)
 }
 
 // NewObjectClientInterface TODO

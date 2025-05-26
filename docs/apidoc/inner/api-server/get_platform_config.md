@@ -23,6 +23,9 @@ type=id_generator
   "data": {
     "enabled": false,
     "step": 1,
+    "init_id": {
+      "biz": 4
+    },
     "current_id": {
       "biz": 2,
       "host": 0,
@@ -55,3 +58,4 @@ type=id_generator
 | enabled    | bool           | 是否开启id generator配置 |
 | step       | int            | id generator配置步长   |
 | current_id | map[string]int | 模型实例当前id           |
+| init_id    | map[string]int | 模型实例配置初始化id,未生效    |

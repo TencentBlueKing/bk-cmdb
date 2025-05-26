@@ -187,6 +187,17 @@ func AddObjectData(kit *rest.Kit, db local.DB) (map[string]string, error) {
 		insertData = append(insertData, objMapData)
 	}
 
+	if err = insertObjData(kit, db, insertTemplateData, insertData); err != nil {
+		blog.Errorf("insert object related data failed, err: %v", err)
+		return nil, err
+	}
+
+	return objUUIDMap, nil
+}
+
+func insertObjData(kit *rest.Kit, db local.DB, insertTemplateData []interface{},
+	insertData []map[string]interface{}) error {
+
 	needField := &tools.InsertOptions{
 		UniqueFields: []string{common.BKObjIDField},
 		IgnoreKeys:   []string{common.BKFieldID, common.ObjSortNumberField, metadata.ModelFieldObjUUID},
@@ -202,20 +213,20 @@ func AddObjectData(kit *rest.Kit, db local.DB) (map[string]string, error) {
 	}
 
 	idOptions := &tools.IDOptions{ResNameField: "bk_obj_name", RemoveKeys: []string{"id"}}
-	err = tools.InsertTemplateData(kit, db, insertTemplateData, needField, idOptions, tenanttmp.TemplateTypeObject)
+	err := tools.InsertTemplateData(kit, db, insertTemplateData, needField, idOptions, tenanttmp.TemplateTypeObject)
 	if err != nil {
 		blog.Errorf("insert template data failed, err: %v", err)
-		return nil, err
+		return err
 	}
 
 	if len(insertData) == 0 {
-		return objUUIDMap, nil
+		return nil
 	}
 
 	err = db.Table(common.BKTableNameObjDes).Insert(kit.Ctx, insertData)
 	if err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v", common.BKTableNameObjDes, err)
-		return nil, err
+		return err
 	}
 
 	auditField := &tools.AuditStruct{
@@ -225,14 +236,14 @@ func AddObjectData(kit *rest.Kit, db local.DB) (map[string]string, error) {
 		},
 		AuditTypeData: &tools.AuditResType{
 			AuditType:    metadata.ModelType,
-			ResourceType: metadata.ModuleRes,
+			ResourceType: metadata.ModelRes,
 		},
 	}
 
 	if err = tools.AddCreateAuditLog(kit, db, insertData, auditField); err != nil {
 		blog.Errorf("add audit log failed, err: %v", err)
-		return nil, err
+		return err
 	}
 
-	return objUUIDMap, nil
+	return nil
 }

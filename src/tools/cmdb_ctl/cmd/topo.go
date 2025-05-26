@@ -359,13 +359,11 @@ func (s *topoCheckService) checkMainlineInstanceTopo() {
 func (s *topoCheckService) getParentKey(instance *topoInstance) string {
 	if instance.ObjectID == common.BKInnerObjIDSet && instance.Default == 1 {
 		// `空闲机池` 是一种特殊的set，它用来包含空闲机和故障机两个模块，它的父节点直接是业务（不论是否有自定义层级）
-		parentKey := fmt.Sprintf("%s:%d", common.BKInnerObjIDApp, instance.ParentInstanceID)
-		return parentKey
+		return fmt.Sprintf("%s:%d", common.BKInnerObjIDApp, instance.ParentInstanceID)
 	}
 
 	parentObjectID := s.objectParentMap[instance.ObjectID]
-	parentKey := fmt.Sprintf("%s:%d", parentObjectID, instance.ParentInstanceID)
-	return parentKey
+	return fmt.Sprintf("%s:%d", parentObjectID, instance.ParentInstanceID)
 }
 
 func getObjInstTable(db local.DB, objectID, tenantID string) (string, error) {

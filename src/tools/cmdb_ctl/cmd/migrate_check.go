@@ -98,7 +98,7 @@ func runUniqueCheck() error {
 
 	err = tenant.ExecForAllTenants(func(tenantID string) error {
 		srv := newMigrateCheckService(service.DbProxy, tenantID)
-		return srv.checkUnique(tenantID)
+		return srv.checkUnique()
 	})
 	return err
 }
@@ -119,7 +119,7 @@ func runProcCheck(clearProc bool) error {
 	return err
 }
 
-func (s *migrateCheckService) checkUnique(tenantID string) error {
+func (s *migrateCheckService) checkUnique() error {
 	fmt.Println("=================================")
 	printInfo("start checking unique constraints\n")
 
@@ -173,7 +173,7 @@ func (s *migrateCheckService) checkUnique(tenantID string) error {
 				fmt.Printf("WARNING: not must check object(%s) unique(%d) will not be supported\n", objID, unique.ID)
 			}
 
-			if err := s.checkObjectUnique(ctx, objID, tenantID, unique, attrMap); err != nil {
+			if err := s.checkObjectUnique(ctx, objID, unique, attrMap); err != nil {
 				return err
 			}
 		}
@@ -252,8 +252,8 @@ func (s *migrateCheckService) getObjAttrMap(ctx context.Context, objID string) (
 	return attrMap, nil
 }
 
-func (s *migrateCheckService) checkObjectUnique(ctx context.Context, objID, tenantID string,
-	unique ObjectUnique, attrMap map[int64]metadata.Attribute) error {
+func (s *migrateCheckService) checkObjectUnique(ctx context.Context, objID string, unique ObjectUnique,
+	attrMap map[int64]metadata.Attribute) error {
 
 	// check if all unique keys are valid
 	uniqueFields := make([]metadata.Attribute, 0)

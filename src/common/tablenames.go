@@ -271,9 +271,10 @@ func GetInnerInstTableName(objID string) string {
 		return BKTableNameBaseHost
 	case BKInnerObjIDProc:
 		return BKTableNameBaseProcess
-	default:
+	case BKInnerObjIDPlat:
 		return BKTableNameBasePlat
 	}
+	return ""
 }
 
 // GetInstObjIDByTableName get objID by table name. TODO remove after cache-service and iam
