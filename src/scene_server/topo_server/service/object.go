@@ -78,20 +78,33 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 			blog.Errorf("object %s is not exist, rid: %s", objID, ctx.Kit.Rid)
 			continue
 		}
-		for _, attr := range importData.Attr {
+
+		importTableAttrs := make([]metadata.Attribute, 0)
+		for idx, attr := range importData.Attr {
 			if attr.PropertyType == common.FieldTypeInnerTable {
-				// check attr exist
-				result, err := model.SearchAttrInfo(ctx.Kit, s.Engine.CoreAPI, objID, &attr)
-				if err != nil {
-					ctx.RespAutoError(err)
-					return
-				}
-				if len(result.Info) != 0 {
-					continue
-				}
-				uniqueTableObjStr := model.GetUniqueTableObjKey(objID, attr.PropertyID, attr.BizID)
-				tableObjUUIDMap[uniqueTableObjStr] = xid.New().String()
-				err = s.createTableObjectTable(ctx.Kit, objID, attr.PropertyID, tableObjUUIDMap[uniqueTableObjStr])
+				importTableAttrs = append(importTableAttrs, importData.Attr[idx])
+			}
+		}
+
+		// check attr exist
+		result, err := model.SearchAttrInfo(ctx.Kit, s.Engine.CoreAPI, objID, importTableAttrs)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+
+		existTableAttrsMap := make(map[string]metadata.Attribute)
+		for _, attr := range result.Info {
+			uniqueTableObjStr := model.GetUniqueTableObjKey(objID, attr.PropertyID, attr.BizID)
+			existTableAttrsMap[uniqueTableObjStr] = attr
+		}
+
+		for _, attr := range importTableAttrs {
+			uniqueKey := model.GetUniqueTableObjKey(objID, attr.PropertyID, attr.BizID)
+			_, exist = existTableAttrsMap[uniqueKey]
+			if !exist {
+				tableObjUUIDMap[uniqueKey] = xid.New().String()
+				err = s.createTableObjectTable(ctx.Kit, objID, attr.PropertyID, tableObjUUIDMap[uniqueKey])
 				if err != nil {
 					blog.Errorf("creat table object instance table failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 					ctx.RespAutoError(err)

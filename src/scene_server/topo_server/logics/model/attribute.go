@@ -1737,27 +1737,23 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 func (a *attribute) upsertObjectAttr(kit *rest.Kit, objID string, attr *metadata.Attribute,
 	tableObjUUIDMap map[string]string) (upsertResult, error) {
 
-	result, err := SearchAttrInfo(kit, a.clientSet, objID, attr)
-	if err != nil {
-		return undefinedFail, err
-	}
-
-	if len(result.Info) == 0 {
-		// create attribute
-		if attr.PropertyType == common.FieldTypeInnerTable {
-			tableObjUniqueStr := GetUniqueTableObjKey(objID, attr.PropertyID, attr.BizID)
-			tableObjUUID, exist := tableObjUUIDMap[tableObjUniqueStr]
-			if !exist {
-				blog.Errorf("get table obj uuid failed, tableObjUniqueStr: %s, rid: %s", tableObjUniqueStr, kit.Rid)
-				return undefinedFail, err
-			}
+	if attr.PropertyType == common.FieldTypeInnerTable {
+		uniqueKey := GetUniqueTableObjKey(objID, attr.PropertyID, attr.BizID)
+		if tableObjUUID, exist := tableObjUUIDMap[uniqueKey]; exist {
 			if _, err := a.CreateTableObjectAttribute(kit, attr, tableObjUUID); err != nil {
 				blog.Errorf("create attribute(%#v) failed, ObjID: %s, err: %v, rid: %s", attr, objID, err, kit.Rid)
 				return insertFail, err
 			}
 			return success, nil
 		}
+	}
 
+	result, err := SearchAttrInfo(kit, a.clientSet, objID, []metadata.Attribute{*attr})
+	if err != nil {
+		return undefinedFail, err
+	}
+
+	if len(result.Info) == 0 {
 		createAttrOpt := &metadata.CreateModelAttributes{Attributes: []metadata.Attribute{*attr}}
 		_, err := a.clientSet.CoreService().Model().CreateModelAttrs(kit.Ctx, kit.Header, objID, createAttrOpt)
 		if err != nil {
@@ -1857,14 +1853,28 @@ func (a *attribute) FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapS
 
 // SearchAttrInfo search attribute info
 func SearchAttrInfo(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, objID string,
-	attr *metadata.Attribute) (*metadata.QueryModelAttributeDataResult, error) {
+	attr []metadata.Attribute) (*metadata.QueryModelAttributeDataResult, error) {
+
+	if len(attr) == 0 {
+		blog.Errorf("attr is empty, rid: %s", kit.Rid)
+		return nil, fmt.Errorf("attr is empty")
+	}
+
+	attrIds := make([]string, 0)
+	for _, item := range attr {
+		attrIds = append(attrIds, item.PropertyID)
+	}
 
 	// check if attribute exists, if exists, update these attributes, otherwise, create the attribute
-	cond := mapstr.MapStr{metadata.AttributeFieldObjectID: objID, metadata.AttributeFieldPropertyID: attr.PropertyID}
-	util.AddModelBizIDCondition(cond, attr.BizID)
+	cond := mapstr.MapStr{
+		metadata.AttributeFieldObjectID: objID,
+		metadata.AttributeFieldPropertyID: mapstr.MapStr{
+			common.BKDBIN: attrIds},
+	}
+	util.AddModelBizIDCondition(cond, attr[0].BizID)
 	queryCond := &metadata.QueryCondition{Condition: cond}
-	result, err := clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header, attr.BizID,
-		queryCond)
+	result, err := clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header,
+		attr[0].BizID, queryCond)
 	if err != nil {
 		blog.Errorf("find attribute failed, err: %v, cond: %#v, rid: %s", err, queryCond, kit.Rid)
 		return nil, err
