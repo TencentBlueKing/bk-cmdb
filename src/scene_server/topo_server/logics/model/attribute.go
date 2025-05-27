@@ -1737,21 +1737,15 @@ func (a *attribute) upsertObjectAttrBatch(kit *rest.Kit, objID string, attribute
 func (a *attribute) upsertObjectAttr(kit *rest.Kit, objID string, attr *metadata.Attribute,
 	tableObjUUIDMap map[string]string) (upsertResult, error) {
 
-	// check if attribute exists, if exists, update these attributes, otherwise, create the attribute
-	cond := mapstr.MapStr{metadata.AttributeFieldObjectID: objID, metadata.AttributeFieldPropertyID: attr.PropertyID}
-	util.AddModelBizIDCondition(cond, attr.BizID)
-	queryCond := &metadata.QueryCondition{Condition: cond}
-	result, err := a.clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header, attr.BizID,
-		queryCond)
+	result, err := SearchAttrInfo(kit, a.clientSet, objID, attr)
 	if err != nil {
-		blog.Errorf("find attribute failed, err: %v, cond: %#v, rid: %s", err, queryCond, kit.Rid)
 		return undefinedFail, err
 	}
 
 	if len(result.Info) == 0 {
 		// create attribute
 		if attr.PropertyType == common.FieldTypeInnerTable {
-			tableObjUniqueStr := objID + "*" + attr.PropertyID + "*" + fmt.Sprintf("%d", attr.BizID)
+			tableObjUniqueStr := GetUniqueTableObjKey(objID, attr.PropertyID, attr.BizID)
 			tableObjUUID, exist := tableObjUUIDMap[tableObjUniqueStr]
 			if !exist {
 				blog.Errorf("get table obj uuid failed, tableObjUniqueStr: %s, rid: %s", tableObjUniqueStr, kit.Rid)
@@ -1791,6 +1785,7 @@ func (a *attribute) upsertObjectAttr(kit *rest.Kit, objID string, attr *metadata
 	updateData.Remove(metadata.AttributeFieldPropertyID)
 	updateData.Remove(metadata.AttributeFieldObjectID)
 	updateData.Remove(metadata.AttributeFieldID)
+	cond := mapstr.MapStr{metadata.AttributeFieldObjectID: objID, metadata.AttributeFieldPropertyID: attr.PropertyID}
 	updateAttrOpt := metadata.UpdateOption{Condition: cond, Data: updateData}
 	_, err = a.clientSet.CoreService().Model().UpdateModelAttrs(kit.Ctx, kit.Header, objID, &updateAttrOpt)
 	if err != nil {
@@ -1858,4 +1853,27 @@ func (a *attribute) FindObjectBatch(kit *rest.Kit, objIDs []string) (mapstr.MapS
 	}
 
 	return result, nil
+}
+
+// SearchAttrInfo search attribute info
+func SearchAttrInfo(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, objID string,
+	attr *metadata.Attribute) (*metadata.QueryModelAttributeDataResult, error) {
+
+	// check if attribute exists, if exists, update these attributes, otherwise, create the attribute
+	cond := mapstr.MapStr{metadata.AttributeFieldObjectID: objID, metadata.AttributeFieldPropertyID: attr.PropertyID}
+	util.AddModelBizIDCondition(cond, attr.BizID)
+	queryCond := &metadata.QueryCondition{Condition: cond}
+	result, err := clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header, attr.BizID,
+		queryCond)
+	if err != nil {
+		blog.Errorf("find attribute failed, err: %v, cond: %#v, rid: %s", err, queryCond, kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetUniqueTableObjKey get unique table object key
+func GetUniqueTableObjKey(objID, propertyID string, bizID int64) string {
+	return objID + "*" + propertyID + "*" + fmt.Sprintf("%d", bizID)
 }

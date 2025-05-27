@@ -19,12 +19,14 @@ import (
 	"configcenter/src/ac"
 	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
+	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/topo_server/logics/model"
 	"configcenter/src/storage/driver/redis"
 
 	"github.com/rs/xid"
@@ -64,9 +66,30 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 
 	tableObjUUIDMap := make(map[string]string)
 	for objID, importData := range *data {
+		// check object exist
+		exist, err := s.Logics.ObjectOperation().IsObjectExist(ctx.Kit, objID)
+		if err != nil {
+			blog.Errorf("find the object(%s) failed, err: %v, rid: %s", objID, err, ctx.Kit.Rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		if !exist {
+			blog.Errorf("object %s is not exist, rid: %s", objID, ctx.Kit.Rid)
+			continue
+		}
 		for _, attr := range importData.Attr {
 			if attr.PropertyType == common.FieldTypeInnerTable {
-				uniqueTableObjStr := objID + "*" + attr.PropertyID + "*" + fmt.Sprintf("%d", attr.BizID)
+				// check attr exist
+				result, err := model.SearchAttrInfo(ctx.Kit, s.Engine.CoreAPI, objID, &attr)
+				if err != nil {
+					ctx.RespAutoError(err)
+					return
+				}
+				if len(result.Info) != 0 {
+					continue
+				}
+				uniqueTableObjStr := model.GetUniqueTableObjKey(objID, attr.PropertyID, attr.BizID)
 				tableObjUUIDMap[uniqueTableObjStr] = xid.New().String()
 				err = s.createTableObjectTable(ctx.Kit, objID, attr.PropertyID, tableObjUUIDMap[uniqueTableObjStr])
 				if err != nil {
@@ -530,4 +553,25 @@ func (s *Service) SearchObjectWithTotalInfo(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(resp)
+}
+
+// IsObjectExist check whether objID is a real model's bk_obj_id field in backend
+func IsObjectExist(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, objID string) (bool, error) {
+
+	checkObjCond := mapstr.MapStr{
+		common.BKObjIDField: objID,
+	}
+
+	objItems, err := clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameObjDes, []map[string]interface{}{checkObjCond})
+	if err != nil {
+		blog.Errorf("failed to search object(%s), err: %v, rid: %s", objID, err, kit.Rid)
+		return false, err
+	}
+
+	if objItems[0] == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
