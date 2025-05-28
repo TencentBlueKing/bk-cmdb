@@ -23,6 +23,7 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/event_server/types"
 	"configcenter/src/thirdparty/apigw/gse"
 	pushfile "configcenter/src/thirdparty/gse/push_file_forsyncdata"
@@ -43,6 +44,8 @@ const (
 type Task struct {
 	// 任务id
 	TaskID string `json:"task_id"`
+	// TenantID is the tenant id of the task
+	TenantID string `json:"tenant_id"`
 	// 该任务包含的主机信息
 	HostInfos []*HostInfo `json:"host_infos"`
 	// 当超过该时间后，视该任务已经超时，将此任务中还没有查到推送状态的主机视为推送失败
@@ -69,6 +72,8 @@ type HostInfo struct {
 	// 对于1.0的agent为cloudID:innerIP, 对于2.0的agent，为bk_agent_id
 	AgentID      string `json:"bk_agent_id"`
 	BKAddressing string `json:"bk_addressing"`
+	// TenantID is the tenant id of the failed host
+	TenantID string `json:"tenant_id"`
 }
 
 // MarshalBinary marshal HostInfo struct
@@ -84,37 +89,40 @@ func (h *HostIdentifier) GetTaskExecutionStatus() {
 			continue
 		}
 
-		header, rid := newHeaderWithRid()
+		kit := rest.NewKit()
+
 		// 1. 拿到任务
 		task, err := h.getFromTaskList()
 		if err != nil {
-			blog.Errorf("get task from redis task list error, err: %v, rid: %s", err, rid)
+			blog.Errorf("get task from redis task list error, err: %v, rid: %s", err, kit.Rid)
 			continue
 		}
 
 		// 2. 判断任务是否过期, 过期不处理
 		if task.ExpiredTime < time.Now().Unix() {
-			blog.Errorf("the task is expired, skip it, taskID: %s, rid: %s", task.TaskID, rid)
+			blog.Errorf("the task is expired, skip it, taskID: %s, rid: %s", task.TaskID, kit.Rid)
 			continue
 		}
 
+		kit = kit.WithTenant(task.TenantID)
+
 		// 3. 拿任务执行结果
-		taskResultMap, err := h.GetTaskExecutionResultMap(task, header, rid)
+		taskResultMap, err := h.GetTaskExecutionResultMap(task, kit.Header, kit.Rid)
 		if err != nil {
-			blog.Errorf("get task result error, taskID: %s, err: %v, rid: %s", task.TaskID, err, rid)
+			blog.Errorf("get task result error, taskID: %s, err: %v, rid: %s", task.TaskID, err, kit.Rid)
 			continue
 		}
 
 		// 4.遍历任务里的主机信息，与查到的任务结果进行对比，判断任务中的主机身份下发操作是否成功, 是否需要重新查任务状态
 		failHosts, retry := h.compareTaskResult(task, taskResultMap)
 		if len(failHosts) != 0 {
-			h.addToFailHostList(failHosts)
+			h.addToFailHostList(kit, failHosts)
 		}
 
 		// 5.该任务包含的主机还没有拿到全部的结果，并且还没超过规定时间时，把任务重新放入任务队列中
 		if retry && time.Now().Unix() < task.ExpiredTime {
 			if err := h.addToTaskList(task); err != nil {
-				blog.Errorf("add task to redis list error, task: %v, err: %v, rid: %s", task, err, rid)
+				blog.Errorf("add task to redis list error, task: %v, err: %v, rid: %s", task, err, kit.Rid)
 			}
 		}
 	}
@@ -247,29 +255,34 @@ func (h *HostIdentifier) LaunchTaskForFailedHost() {
 		}
 
 		// 1、收集失败的主机
-		header, rid := newHeaderWithRid()
-		hostInfoArray, statusReq, success := h.collectFailHost(rid)
+		kit := rest.NewKit()
+		hostInfoMap, statusReqMap, success := h.collectFailHost(kit.Rid)
 		if !success {
 			continue
 		}
 
-		// 2、查询主机的agent状态
-		resp, err := h.getAgentStatus(statusReq, header, rid)
-		if err != nil {
-			blog.Errorf("get agent status error, hostInfo: %v, err: %v, rid: %s", hostInfoArray, err, rid)
-			continue
-		}
+		for tenantID, hostInfoArray := range hostInfoMap {
+			kit = kit.WithTenant(tenantID)
 
-		// 3、将处于on状态的主机拿出来构造推送信息
-		hostIDs, hostInfos, hostMap := h.getOnStatusAgentFromHostInfo(hostInfoArray, resp, rid)
-		if len(hostIDs) == 0 {
-			blog.Warnf("get fail host success, but agent status is off, hostInfos: %v, rid: %s", hostInfoArray, rid)
-			continue
-		}
+			// 2、查询主机的agent状态
+			resp, err := h.getAgentStatus(kit, statusReqMap[tenantID])
+			if err != nil {
+				blog.Errorf("get agent status error, hostInfo: %v, err: %v, rid: %s", hostInfoArray, err, kit.Rid)
+				continue
+			}
 
-		// 4、查询主机身份并推送
-		if _, err := h.getHostIdentifierAndPush(hostIDs, hostMap, hostInfos, false, rid, header); err != nil {
-			blog.Errorf("launch task for failed host error, err: %v, rid: %s", err, rid)
+			// 3、将处于on状态的主机拿出来构造推送信息
+			hostIDs, hostInfos, hostMap := h.getOnStatusAgentFromHostInfo(hostInfoArray, resp, kit.Rid)
+			if len(hostIDs) == 0 {
+				blog.Warnf("get fail host success, but agent status is off, hostInfos: %v, rid: %s", hostInfoArray,
+					kit.Rid)
+				continue
+			}
+
+			// 4、查询主机身份并推送
+			if _, err := h.getHostIdentifierAndPush(kit, hostIDs, hostMap, hostInfos, false); err != nil {
+				blog.Errorf("launch task for failed host error, err: %v, rid: %s", err, kit.Rid)
+			}
 		}
 	}
 }
@@ -337,15 +350,18 @@ func (h *HostIdentifier) getV1OnStatusAgentFromHostInfo(hosts []*HostInfo, statu
 }
 
 // collectFailHost collect fail host
-func (h *HostIdentifier) collectFailHost(rid string) ([]*HostInfo, []StatusReq, bool) {
+func (h *HostIdentifier) collectFailHost(rid string) (map[string][]*HostInfo, map[string][]StatusReq, bool) {
 	start := time.Now()
-	hostInfoArray := make([]*HostInfo, 0)
-	statusReqList := make([]StatusReq, 0)
+	// hostInfoMap is the tenant id to failed host info list map
+	hostInfoMap := make(map[string][]*HostInfo)
+	// statusReqMap is the tenant id to failed host status requests map
+	statusReqMap := make(map[string][]StatusReq)
+	hostCnt := 0
 	uniqueMap := make(map[int64]struct{})
 
 	// 从redis的保存失败的主机的list中拿出一定数量主机，并进行去重
 	for time.Now().Sub(start) < time.Minute {
-		if len(hostInfoArray) >= makeNewTaskFromFailHostCount {
+		if hostCnt >= makeNewTaskFromFailHostCount {
 			break
 		}
 
@@ -372,21 +388,21 @@ func (h *HostIdentifier) collectFailHost(rid string) ([]*HostInfo, []StatusReq, 
 		}
 		uniqueMap[hostInfo.HostID] = struct{}{}
 
-		statusReqList = append(statusReqList, StatusReq{
+		statusReqMap[hostInfo.TenantID] = append(statusReqMap[hostInfo.TenantID], StatusReq{
 			CloudID:      strconv.FormatInt(hostInfo.CloudID, 10),
 			InnerIP:      hostInfo.HostInnerIP,
 			BKAddressing: hostInfo.BKAddressing,
 			AgentID:      hostInfo.AgentID,
 		})
+		hostCnt++
+		hostInfoMap[hostInfo.TenantID] = append(hostInfoMap[hostInfo.HostInnerIP], hostInfo)
 	}
 
-	return hostInfoArray, statusReqList, len(hostInfoArray) > 0
+	return hostInfoMap, statusReqMap, hostCnt > 0
 }
 
 // pushFile push host identifier file to gse and create a new task to redis task_list
-func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, taskInfo *TaskInfo, header http.Header,
-	rid string) (*Task, error) {
-
+func (h *HostIdentifier) pushFile(kit *rest.Kit, hostInfos []*HostInfo, taskInfo *TaskInfo) (*Task, error) {
 	if taskInfo == nil || (taskInfo.V1Task == nil && taskInfo.V2Task == nil) {
 		return nil, errors.New("the task info about host is empty")
 	}
@@ -396,24 +412,25 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, taskInfo *
 	var err error
 	switch h.apiVersion {
 	case types.V1:
-		taskID, err = h.pushFileByV1Api(taskInfo.V1Task, rid)
+		taskID, err = h.pushFileByV1Api(taskInfo.V1Task, kit.Rid)
 		if err != nil {
 			return nil, err
 		}
 
 	case types.V2:
-		taskID, err = h.pushFileByV2Api(taskInfo.V2Task, header, rid)
+		taskID, err = h.pushFileByV2Api(taskInfo.V2Task, kit.Header, kit.Rid)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	h.metric.pushFileTotal.WithLabelValues("success").Inc()
-	blog.V(5).Infof("push host identifier to gse success: taskID: %s, rid: %s", taskID, rid)
+	blog.V(5).Infof("push host identifier to gse success: taskID: %s, rid: %s", taskID, kit.Rid)
 
 	// 2、构建task放到redis维护的任务队列中
 	task := &Task{
 		TaskID:      taskID,
+		TenantID:    kit.TenantID,
 		HostInfos:   hostInfos,
 		ExpiredTime: time.Now().Add(50 * time.Minute).Unix(),
 	}
@@ -427,7 +444,7 @@ func (h *HostIdentifier) pushFile(always bool, hostInfos []*HostInfo, taskInfo *
 		break
 	}
 	if failCount >= retryTimes {
-		blog.Errorf("add task to redis error, taskID: %s, err: %v, rid: %s", taskID, err, rid)
+		blog.Errorf("add task to redis error, taskID: %s, err: %v, rid: %s", taskID, err, kit.Rid)
 		return nil, err
 	}
 	return task, nil
@@ -531,16 +548,17 @@ func (h *HostIdentifier) getFromTaskList() (*Task, error) {
 }
 
 // addToFailHostList add host to redis fail host list
-func (h *HostIdentifier) addToFailHostList(hosts []*HostInfo) {
+func (h *HostIdentifier) addToFailHostList(kit *rest.Kit, hosts []*HostInfo) {
 	for _, host := range hosts {
 		if host.Times >= retryTimes {
-			blog.Errorf("host exceed the max retry times, hostInfo; %v", host)
+			blog.Errorf("host exceed the max retry times, hostInfo: %v, rid: %s", host, kit.Rid)
 			continue
 		}
 
+		host.TenantID = kit.TenantID
 		host.Times++
 		if err := h.redisCli.RPush(context.Background(), RedisFailHostListName, host).Err(); err != nil {
-			blog.Errorf("add fail host to redis list error, hostInfo; %v, err: %v", host, err)
+			blog.Errorf("add fail host to redis list error, hostInfo: %v, err: %v, rid: %s", host, err, kit.Rid)
 		}
 	}
 }
@@ -558,7 +576,7 @@ func (h *HostIdentifier) getFromFailHostList() (*HostInfo, error) {
 
 	hostInfo := new(HostInfo)
 	if err := json.Unmarshal([]byte(result[1]), hostInfo); err != nil {
-		blog.Errorf("Unmarshal hostInfo error, hostInfo: %s, err: %v", result[1], err)
+		return nil, fmt.Errorf("unmarshal hostInfo error, hostInfo: %s, err: %v", result[1], err)
 	}
 
 	return hostInfo, nil

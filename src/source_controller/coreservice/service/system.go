@@ -13,9 +13,12 @@
 package service
 
 import (
+	"configcenter/src/common"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
+	"configcenter/src/storage/driver/mongodb"
 )
 
 // GetSystemUserConfig TODO
@@ -54,4 +57,33 @@ func (s *coreService) SearchGlobalConfig(ctx *rest.Contexts) {
 		return
 	}
 	ctx.RespEntity(conf)
+}
+
+// GetHostSnapDataID get host snap data id
+func (s *coreService) GetHostSnapDataID(ctx *rest.Contexts) {
+	cond := map[string]interface{}{
+		common.BKFieldDBID: "gse_data_id",
+	}
+
+	dataIDInfo := new(metadata.DataIDInfo)
+	err := mongodb.Shard(ctx.Kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).
+		Fields("host_snap."+ctx.Kit.TenantID).One(ctx.Kit.Ctx, &dataIDInfo)
+	if err != nil && !mongodb.IsNotFoundError(err) {
+		blog.Errorf("get host snap data id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	if len(dataIDInfo.HostSnap) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "host_snap"))
+		return
+	}
+
+	dataID, exists := dataIDInfo.HostSnap[ctx.Kit.TenantID]
+	if !exists {
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "host_snap"))
+		return
+	}
+
+	ctx.RespEntity(dataID)
 }

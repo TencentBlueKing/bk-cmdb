@@ -393,6 +393,9 @@ func (s *coreService) ccSystem(web *restful.WebService) {
 		Path:    "/update/global_config/{type}",
 		Handler: s.UpdateGlobalConfig})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host_snap/data_id",
+		Handler: s.GetHostSnapDataID})
+
 	utility.AddToRestfulWebService(web)
 }
 

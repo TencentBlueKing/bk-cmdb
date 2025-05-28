@@ -20,12 +20,15 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/types"
@@ -83,6 +86,14 @@ type HostIdentifier struct {
 	watchLimiter        flowctrl.RateLimiter
 	fullLimiter         flowctrl.RateLimiter
 	metric              *hostIdentifierMetric
+	observer            observer
+	eventOp             *Event
+	tenantMap           sync.Map
+}
+
+type tenantInfo struct {
+	cancelFunc context.CancelFunc
+	dataID     int64
 }
 
 // NewHostIdentifier new HostIdentifier struct
@@ -199,38 +210,102 @@ func (h *HostIdentifier) registerMetrics() {
 
 // WatchToSyncHostIdentifier watch to sync host identifier
 func (h *HostIdentifier) WatchToSyncHostIdentifier() {
-	eventOp := &Event{
+	h.eventOp = &Event{
 		engine:   h.engine,
 		errFreq:  util.NewErrFrequency(nil),
 		redisCli: h.redisCli,
 	}
-	observer := observer{
+	h.observer = observer{
 		isMaster: h.engine.Discovery(),
 	}
 
+	tenantChan := tenant.NewTenantEventChan("host_identifier")
+	for e := range tenantChan {
+		switch e.EventType {
+		case tenant.Create:
+			h.startTenantTask(e.Tenant.TenantID)
+		case tenant.Delete:
+			h.stopTenantTask(e.Tenant.TenantID)
+		}
+	}
+}
+
+// startTenantTask start loop watch task for new tenant
+func (h *HostIdentifier) startTenantTask(tenantID string) {
+	if _, exists := h.tenantMap.Load(tenantID); exists {
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	kit := rest.NewKit().WithCtx(ctx).WithTenant(tenantID)
+
+	var dataID int64
+	var err error
+	for {
+		dataID, err = h.engine.CoreAPI.CoreService().System().GetHostSnapDataID(kit.Ctx, kit.Header)
+		if err != nil {
+			blog.Errorf("get tenant %s data id failed, err: %v, retry again", tenantID, err)
+			time.Sleep(time.Second)
+			continue
+		}
+		break
+	}
+
+	h.tenantMap.Store(tenantID, tenantInfo{
+		cancelFunc: cancel,
+		dataID:     dataID,
+	})
+
+	go h.loopWatch(kit, dataID)
+	blog.Infof("start tenant %s host identifier loop watch task", tenantID)
+}
+
+// stopTenantTask stop loop watch task for removed or disabled tenant
+func (h *HostIdentifier) stopTenantTask(tenantID string) {
+	if info, exists := h.tenantMap.Load(tenantID); exists {
+		tenantTaskInfo, ok := info.(tenantInfo)
+		if !ok {
+			blog.Errorf("tenant %s host identifier loop watch task info is invalid", tenantID)
+			h.tenantMap.Delete(tenantID)
+			return
+		}
+
+		tenantTaskInfo.cancelFunc()
+		h.tenantMap.Delete(tenantID)
+		blog.Infof("stop tenant %s host identifier loop watch task", tenantID)
+	}
+}
+
+// LoopWatch loop watch event flow
+func (h *HostIdentifier) loopWatch(kit *rest.Kit, dataID int64) {
 	// start to watch and push host identifier
 	for {
-		preStatus, loop := observer.canLoop()
+		select {
+		case <-kit.Ctx.Done():
+			return
+		default:
+		}
+
+		preStatus, loop := h.observer.canLoop()
 		if !loop {
 			blog.V(4).Infof("loop watch host identifier, but not master, skip.")
 			time.Sleep(time.Minute)
 			continue
 		}
 
-		header, rid := newHeaderWithRid()
-		events, lastCursor, ok := eventOp.getEvent(header, rid, preStatus)
+		events, lastCursor, ok := h.eventOp.getEvent(kit, preStatus, dataID)
 		if !ok {
 			time.Sleep(time.Second)
 			continue
 		}
 
-		h.watchToSyncHostIdentifier(events, header, rid)
+		h.watchToSyncHostIdentifier(kit, events)
 
-		eventOp.setCursor(lastCursor, rid)
+		h.eventOp.setCursor(kit, lastCursor)
 	}
 }
 
-func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, header http.Header, rid string) {
+func (h *HostIdentifier) watchToSyncHostIdentifier(kit *rest.Kit, events []*IdentifierEvent) {
 	// 1、查询主机状态
 	statusReqList := make([]StatusReq, 0)
 	for _, event := range events {
@@ -242,22 +317,22 @@ func (h *HostIdentifier) watchToSyncHostIdentifier(events []*IdentifierEvent, he
 		})
 	}
 
-	resp, err := h.getAgentStatus(statusReqList, header, rid)
+	resp, err := h.getAgentStatus(kit, statusReqList)
 	if err != nil {
-		blog.Errorf("get agent status error, host: %v, err: %v, rid: %s", events, err, rid)
+		blog.Errorf("get agent status error, host: %v, err: %v, rid: %s", events, err, kit.Rid)
 		return
 	}
 
 	// 2、将处于on状态的主机拿出来构造推送信息
-	task, hostInfos := h.getTaskFromEvent(events, resp, rid)
+	task, hostInfos := h.getTaskFromEvent(events, resp, kit.Rid)
 	if task == nil || (len(task.V1Task) == 0 && len(task.V2Task) == 0) {
 		return
 	}
 
 	// 3、推送主机身份信息
 	h.watchLimiter.AcceptMany(int64(len(hostInfos)))
-	if _, err := h.pushFile(true, hostInfos, task, header, rid); err != nil {
-		blog.Errorf("push host identifier to gse error, err: %v, rid: %s", err, rid)
+	if _, err := h.pushFile(kit, hostInfos, task); err != nil {
+		blog.Errorf("push host identifier to gse error, err: %v, rid: %s", err, kit.Rid)
 	}
 }
 
@@ -367,44 +442,47 @@ func (h *HostIdentifier) getV1Task(events []*IdentifierEvent, statusMap map[stri
 
 // FullSyncHostIdentifier Fully synchronize host identity
 func (h *HostIdentifier) FullSyncHostIdentifier() {
-	start := 0
-	for {
-		if !h.engine.Discovery().IsMaster() {
-			blog.V(4).Infof("loop full sync host identifier, but not master, skip.")
-			return
-		}
+	for _, tenant := range tenant.GetAllTenants() {
+		kit := rest.NewKit().WithTenant(tenant.TenantID)
+		kit.Ctx, kit.Header = util.SetReadPreference(kit.Ctx, kit.Header, common.SecondaryPreferredMode)
 
-		header, rid := newHeaderWithRid()
-		ctx, header := util.SetReadPreference(h.ctx, header, common.SecondaryPreferredMode)
-		option := &metadata.ListHosts{
-			Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField,
-				common.BKAddressingField, common.BKAgentIDField},
-			Page: metadata.BasePage{
-				Start: start,
-				Limit: hostIdentifierBatchSyncPerLimit,
-			},
-		}
+		start := 0
+		for {
+			if !h.engine.Discovery().IsMaster() {
+				blog.V(4).Infof("loop full sync host identifier, but not master, skip.")
+				return
+			}
 
-		hosts, err := h.engine.CoreAPI.CoreService().Host().ListHosts(ctx, header, option)
-		if err != nil {
-			blog.Errorf("get host in batch error, resp: %v, err: %v, rid: %s", hosts, err, rid)
-			continue
-		}
+			option := &metadata.ListHosts{
+				Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKCloudIDField,
+					common.BKAddressingField, common.BKAgentIDField},
+				Page: metadata.BasePage{
+					Start: start,
+					Limit: hostIdentifierBatchSyncPerLimit,
+				},
+			}
 
-		if _, err := h.BatchSyncHostIdentifier(hosts.Info, false, header, rid); err != nil {
-			blog.Errorf("full sync host identifier error, hosts: %v, err: %v, rid: %s", hosts.Info, err, rid)
-		}
+			hosts, err := h.engine.CoreAPI.CoreService().Host().ListHosts(kit.Ctx, kit.Header, option)
+			if err != nil {
+				blog.Errorf("get host in batch error, resp: %v, err: %v, rid: %s", hosts, err, kit.Rid)
+				continue
+			}
 
-		start += hostIdentifierBatchSyncPerLimit
-		if start >= hosts.Count {
-			break
+			if _, err := h.BatchSyncHostIdentifier(kit, hosts.Info, false); err != nil {
+				blog.Errorf("full sync host identifier error, hosts: %v, err: %v, rid: %s", hosts.Info, err, kit.Rid)
+			}
+
+			start += hostIdentifierBatchSyncPerLimit
+			if start >= hosts.Count {
+				break
+			}
 		}
 	}
 }
 
 // BatchSyncHostIdentifier batch sync host identifier
-func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{}, isApi bool, header http.Header,
-	rid string) (*Task, error) {
+func (h *HostIdentifier) BatchSyncHostIdentifier(kit *rest.Kit, hosts []map[string]interface{}, isApi bool) (*Task,
+	error) {
 
 	if len(hosts) == 0 {
 		return nil, errors.New("the hosts count is 0")
@@ -421,20 +499,20 @@ func (h *HostIdentifier) BatchSyncHostIdentifier(hosts []map[string]interface{},
 		})
 	}
 
-	resp, err := h.getAgentStatus(statusReqList, header, rid)
+	resp, err := h.getAgentStatus(kit, statusReqList)
 	if err != nil {
-		blog.Errorf("get agent status error,  hostInfo: %v, err: %v, rid: %s", hosts, err, rid)
+		blog.Errorf("get agent status error,  hostInfo: %v, err: %v, rid: %s", hosts, err, kit.Rid)
 		return nil, err
 	}
 
 	// 2、将处于on状态的主机拿出来构造主机身份推送信息
-	hostIDs, hostInfos, hostMap := h.getOnStatusAgent(hosts, resp, rid)
+	hostIDs, hostInfos, hostMap := h.getOnStatusAgent(hosts, resp, kit.Rid)
 	if len(hostIDs) == 0 {
 		return nil, errors.New("the host agent status is off")
 	}
 
 	// 3、查询主机身份并推送
-	return h.getHostIdentifierAndPush(hostIDs, hostMap, hostInfos, isApi, rid, header)
+	return h.getHostIdentifierAndPush(kit, hostIDs, hostMap, hostInfos, isApi)
 }
 
 func (h *HostIdentifier) getOnStatusAgent(hosts []map[string]interface{}, statusMap map[string]string, rid string) (
@@ -554,7 +632,7 @@ func (h *HostIdentifier) getV1OnStatusAgent(hosts []map[string]interface{}, stat
 	return hostIDs, hostInfos, hostMap
 }
 
-func (h *HostIdentifier) getAgentStatus(statusReqList []StatusReq, header http.Header, rid string) (
+func (h *HostIdentifier) getAgentStatus(kit *rest.Kit, statusReqList []StatusReq) (
 	map[string]string, error) {
 
 	if len(statusReqList) == 0 {
@@ -563,18 +641,18 @@ func (h *HostIdentifier) getAgentStatus(statusReqList []StatusReq, header http.H
 
 	switch h.apiVersion {
 	case types.V2:
-		result, err := h.getAgentStatusByV2Api(statusReqList, header)
+		result, err := h.getAgentStatusByV2Api(statusReqList, kit.Header)
 		if err != nil {
-			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
+			blog.Errorf("get host agent status error, err: %v, rid: %s", err, kit.Rid)
 			return nil, err
 		}
 		h.metric.getAgentStatusTotal.WithLabelValues("success").Inc()
 		return result, nil
 
 	case types.V1:
-		result, err := h.getAgentStatusByV1Api(statusReqList, rid)
+		result, err := h.getAgentStatusByV1Api(statusReqList, kit.Rid)
 		if err != nil {
-			blog.Errorf("get host agent status error, err: %v, rid: %s", err, rid)
+			blog.Errorf("get host agent status error, err: %v, rid: %s", err, kit.Rid)
 			return nil, err
 		}
 		h.metric.getAgentStatusTotal.WithLabelValues("success").Inc()
@@ -730,10 +808,17 @@ func (h *HostIdentifier) buildV1PushFile(hostIdentifier, hostIP string, cloudID 
 	return fileInfo
 }
 
-func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[int64]string, hostInfos []*HostInfo,
-	isApi bool, rid string, header http.Header) (*Task, error) {
+type hostIdentifierFile struct {
+	metadata.HostIdentifier `json:",inline"`
+	TenantID                string `json:"tenant_id"`
+	DataID                  int64  `json:"dataid"`
+}
+
+func (h *HostIdentifier) getHostIdentifierAndPush(kit *rest.Kit, hostIDs []int64, hostMap map[int64]string,
+	hostInfos []*HostInfo, isApi bool) (*Task, error) {
+
 	if len(hostIDs) == 0 {
-		blog.Errorf("hostIDs count is 0, rid: %s", rid)
+		blog.Errorf("hostIDs count is 0, rid: %s", kit.Rid)
 		return nil, errors.New("hostIDs count is 0")
 	}
 	hostInfoMap := make(map[int64]*HostInfo)
@@ -745,26 +830,50 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 	}
 
 	// 1、查询主机身份
-	ctx, header := util.SetReadPreference(h.ctx, header, common.SecondaryPreferredMode)
+	ctx, header := util.SetReadPreference(kit.Ctx, kit.Header, common.SecondaryPreferredMode)
 	queryHostIdentifier := &metadata.SearchHostIdentifierParam{HostIDs: hostIDs}
 	rsp, err := h.engine.CoreAPI.CoreService().Host().FindIdentifier(ctx, header, queryHostIdentifier)
 	if err != nil {
-		blog.Errorf("find host identifier error, hostIDs: %v, err: %v, rid: %s", hostIDs, err, rid)
+		blog.Errorf("find host identifier error, hostIDs: %v, err: %v, rid: %s", hostIDs, err, kit.Rid)
 		return nil, err
 	}
 	if rsp.Count == 0 {
-		blog.Errorf("can not find host identifier, hostIDs: %v, rid: %s", hostIDs, rid)
+		blog.Errorf("can not find host identifier, hostIDs: %v, rid: %s", hostIDs, kit.Rid)
 		return nil, errors.New("can not find host identifier")
 	}
 
+	hosts, task, err := h.genHostIdentifierTask(kit, rsp.Info, hostIDs, hostMap, hostInfoMap, isApi)
+	if err != nil {
+		return nil, err
+	}
+
+	return h.pushFile(kit, hosts, task)
+}
+
+func (h *HostIdentifier) genHostIdentifierTask(kit *rest.Kit, identifiers []metadata.HostIdentifier, hostIDs []int64,
+	hostMap map[int64]string, hostInfoMap map[int64]*HostInfo, isApi bool) ([]*HostInfo, *TaskInfo, error) {
+
 	// 2、构造想要推送的主机身份文件信息
+	var dataID int64
+	if info, exists := h.tenantMap.Load(kit.TenantID); exists {
+		tenantTaskInfo, ok := info.(tenantInfo)
+		if ok {
+			dataID = tenantTaskInfo.dataID
+		}
+	}
+
 	fileList := make([]*pushfile.API_FileInfoV2, 0)
 	file2List := make([]*gse.Task, 0)
 	hosts := make([]*HostInfo, 0)
-	for _, identifier := range rsp.Info {
-		hostIdentifier, err := json.Marshal(identifier)
+	for _, identifier := range identifiers {
+		identifierFile := &hostIdentifierFile{
+			HostIdentifier: identifier,
+			TenantID:       kit.TenantID,
+			DataID:         dataID,
+		}
+		hostIdentifier, err := json.Marshal(identifierFile)
 		if err != nil {
-			blog.Errorf("marshal host identifier failed, val: %v, err: %v, rid: %s", identifier, err, rid)
+			blog.Errorf("marshal host identifier failed, val: %v, err: %v, rid: %s", identifier, err, kit.Rid)
 			continue
 		}
 
@@ -776,9 +885,10 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 			continue
 		case types.V2:
 			if isFileExceedLimit(string(hostIdentifier)) {
-				blog.Errorf("file exceed limit: %d, unit:byte, hostID: %d, rid: %s", fileLimit, identifier.HostID, rid)
+				blog.Errorf("file exceed limit: %d byte, hostID: %d, rid: %s", fileLimit, identifier.HostID, kit.Rid)
 				if isApi {
-					return nil, fmt.Errorf("file exceed limit: %d, unit:byte, hostID: %d", fileLimit, identifier.HostID)
+					return nil, nil, fmt.Errorf("file exceed limit: %d, unit:byte, hostID: %d", fileLimit,
+						identifier.HostID)
 				}
 				continue
 			}
@@ -790,13 +900,13 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 	switch h.apiVersion {
 	case types.V1:
 		if len(fileList) == 0 {
-			blog.Errorf("get identifier success, but can not build file to push, hostID: %v, rid: %s", hostIDs, rid)
-			return nil, errors.New("get host identifier success, but can not build file to push")
+			blog.Errorf("get identifier success, but can not build file to push, hostID: %v, rid: %s", hostIDs, kit.Rid)
+			return nil, nil, errors.New("get host identifier success, but can not build file to push")
 		}
 	case types.V2:
 		if len(file2List) == 0 {
-			blog.Errorf("get identifier success, but can not build file to push, hostID: %v, rid: %s", hostIDs, rid)
-			return nil, errors.New("get host identifier success, but can not build file to push")
+			blog.Errorf("get identifier success, but can not build file to push, hostID: %v, rid: %s", hostIDs, kit.Rid)
+			return nil, nil, errors.New("get host identifier success, but can not build file to push")
 		}
 	}
 
@@ -810,6 +920,5 @@ func (h *HostIdentifier) getHostIdentifierAndPush(hostIDs []int64, hostMap map[i
 		h.fullLimiter.AcceptMany(int64(len(file2List)))
 		task.V2Task = file2List
 	}
-
-	return h.pushFile(false, hosts, task, header, rid)
+	return hosts, task, nil
 }

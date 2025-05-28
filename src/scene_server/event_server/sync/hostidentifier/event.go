@@ -13,14 +13,15 @@
 package hostidentifier
 
 import (
-	"context"
 	"encoding/json"
-	"net/http"
+	"fmt"
+	"sync"
 	"time"
 
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
 	"configcenter/src/storage/dal/redis"
@@ -31,72 +32,88 @@ import (
 // Event operate watch host identifier
 type Event struct {
 	engine   *backbone.Engine
-	cursor   string
+	cursor   sync.Map
 	errFreq  util.ErrFrequencyInterface
 	redisCli redis.Client
 }
 
 // getEvent watch to get hostIdentifier event
-func (e *Event) getEvent(header http.Header, rid string, preStatus bool) ([]*IdentifierEvent, string, bool) {
+func (e *Event) getEvent(kit *rest.Kit, preStatus bool, dataID int64) ([]*IdentifierEvent, string, bool) {
+	cursorKey := e.genCursorKey(kit.TenantID)
+
 	// 如果之前节点的状态为从节点（或刚启动时为false），需要从redis中拿到最新的cursor或者直接从当前开始watch
 	if !preStatus {
-		newCursor, err := e.redisCli.Get(context.Background(), hostIdentifierCursor).Result()
+		newCursor, err := e.redisCli.Get(kit.Ctx, cursorKey).Result()
 		if err != nil {
-			blog.Warnf("get host identity cursor from redis fail, start watch from now, err: %v， rid: %s", err, rid)
+			blog.Warnf("get identifier cursor from redis failed, start watch from now, err: %v， rid: %s", err, kit.Rid)
 			// 从redis里拿不到cursor，从当前时间watch
 			newCursor = ""
 		}
-		e.cursor = newCursor
+		e.cursor.Store(kit.TenantID, newCursor)
+	}
+
+	cursor := ""
+	rawCursor, exists := e.cursor.Load(kit.TenantID)
+	if exists {
+		cursor, _ = rawCursor.(string)
 	}
 
 	options := &watch.WatchEventOptions{
 		EventTypes: []watch.EventType{watch.Create, watch.Update},
 		Resource:   watch.HostIdentifier,
-		Cursor:     e.cursor,
+		Cursor:     cursor,
 	}
 
-	events, err := e.engine.CoreAPI.CacheService().Cache().Event().WatchEvent(context.Background(), header, options)
+	events, err := e.engine.CoreAPI.CacheService().Cache().Event().WatchEvent(kit.Ctx, kit.Header, options)
 	if err != nil {
 		if err.GetCode() == common.CCErrEventChainNodeNotExist {
 			// 设置从当前时间开始watch
-			e.cursor = ""
-			if err := e.redisCli.Del(context.Background(), hostIdentifierCursor).Err(); err != nil {
-				blog.Errorf("delete redis key failed, key: %s, err: %v, rid: %s", hostIdentifierCursor, err, rid)
+			e.cursor.Store(kit.TenantID, "")
+			if err := e.redisCli.Del(kit.Ctx, cursorKey).Err(); err != nil {
+				blog.Errorf("delete redis key failed, key: %s, err: %v, rid: %s", cursorKey, err, kit.Rid)
 			}
 
-			blog.Errorf("watch identifier event failed, reset watch it from current time, err: %v, rid: %s", err, rid)
+			blog.Errorf("watch identifier event failed, reset watch from now, err: %v, rid: %s", err, kit.Rid)
 			return nil, "", false
 		}
 
 		// 同一个错误如果出现太频繁，设置从当前时间开始watch
 		if e.errFreq.IsErrAlwaysAppear(err) {
-			e.cursor = ""
-			if err := e.redisCli.Del(context.Background(), hostIdentifierCursor).Err(); err != nil {
-				blog.Errorf("delete redis key failed, key: %s, err: %v, rid: %s", hostIdentifierCursor, err, rid)
+			e.cursor.Store(kit.TenantID, "")
+			if err := e.redisCli.Del(kit.Ctx, cursorKey).Err(); err != nil {
+				blog.Errorf("delete redis key failed, key: %s, err: %v, rid: %s", cursorKey, err, kit.Rid)
 			}
 			e.errFreq.Release()
-			blog.Errorf("watch frequent same error, reset watch it from current time, err: %v, rid: %s", err, rid)
+			blog.Errorf("watch frequent same error, reset watch it from current time, err: %v, rid: %s", err, kit.Rid)
 			return nil, "", false
 		}
 
-		blog.Errorf("watch identifier event failed, err: %v, rid: %s", err, rid)
+		blog.Errorf("watch identifier event failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, "", false
 	}
 
 	e.errFreq.Release()
 
 	if !gjson.Get(*events, "bk_watched").Bool() {
-		e.cursor = gjson.Get(*events, "bk_events.0.bk_cursor").String()
-		blog.Warnf("can not get host identifier watch event, rid: %s", rid)
+		e.cursor.Store(kit.TenantID, gjson.Get(*events, "bk_events.0.bk_cursor").String())
+		blog.Warnf("can not get host identifier watch event, rid: %s", kit.Rid)
 		return nil, "", false
 	}
 
 	rawEvents := gjson.Get(*events, "bk_events").Array()
 	if len(rawEvents) == 0 {
-		blog.Errorf("can not get events from bk_events, watchEvent: %v, rid: %s", *events, rid)
+		blog.Errorf("can not get events from bk_events, watchEvent: %v, rid: %s", *events, kit.Rid)
 		return nil, "", false
 	}
 
+	eventArr := e.parseRawEvents(kit, rawEvents, dataID)
+
+	cursor = rawEvents[len(rawEvents)-1].Get("bk_cursor").String()
+
+	return eventArr, cursor, len(eventArr) > 0
+}
+
+func (e *Event) parseRawEvents(kit *rest.Kit, rawEvents []gjson.Result, dataID int64) []*IdentifierEvent {
 	eventArr := make([]*IdentifierEvent, 0)
 
 	for _, rawEvent := range rawEvents {
@@ -108,40 +125,47 @@ func (e *Event) getEvent(header http.Header, rid string, preStatus bool) ([]*Ide
 		eventDetailMap := eventDetail.Map()
 		if !eventDetailMap[common.BKCloudIDField].Exists() || !eventDetailMap[common.BKHostInnerIPField].Exists() ||
 			!eventDetailMap[common.BKHostIDField].Exists() || !eventDetailMap[common.BKOSTypeField].Exists() {
-			blog.Errorf("the eventDetail message is error, event: %v, rid: %s", eventDetailMap, rid)
+			blog.Errorf("the eventDetail message is error, event: %v, rid: %s", eventDetailMap, kit.Rid)
 			continue
 		}
 
-		event := &IdentifierEvent{}
-		err := json.Unmarshal([]byte(eventDetail.String()), event)
+		rawEventDetail := eventDetail.String()
+		event := new(IdentifierEvent)
+		err := json.Unmarshal([]byte(rawEventDetail), event)
 		if err != nil {
-			blog.Errorf("unmarshal hostIdentifier error, val: %v, err: %v, rid: %s", eventDetail.String(), err, rid)
+			blog.Errorf("unmarshal hostIdentifier error, val: %v, err: %v, rid: %s", eventDetail.String(), err, kit.Rid)
 			continue
 		}
-		event.RawEvent = eventDetail.String()
+
+		// add tenant id and data id to event data
+		event.RawEvent = fmt.Sprintf(`{"%s":"%s","dataid":%d,%s`, common.TenantID, kit.TenantID, dataID,
+			rawEventDetail[1:])
 		eventArr = append(eventArr, event)
 	}
 
-	cursor := rawEvents[len(rawEvents)-1].Get("bk_cursor").String()
-
-	return eventArr, cursor, len(eventArr) > 0
+	return eventArr
 }
 
 // setCursor set watch cursor
-func (e *Event) setCursor(cursor string, rid string) {
+func (e *Event) setCursor(kit *rest.Kit, cursor string) {
 	// 保存新的cursor到内存和redis中
-	e.cursor = cursor
+	e.cursor.Store(kit.TenantID, cursor)
 
+	cursorKey := e.genCursorKey(kit.TenantID)
 	redisFailCount := 0
 	for redisFailCount < retryTimes {
-		if err := e.redisCli.Set(context.Background(), hostIdentifierCursor, cursor, 3*time.Hour).Err(); err != nil {
-			blog.Errorf("set redis error, key: %s, val: %s, err: %v, rid: %s", hostIdentifierCursor, cursor, err, rid)
+		if err := e.redisCli.Set(kit.Ctx, cursorKey, cursor, 3*time.Hour).Err(); err != nil {
+			blog.Errorf("set redis error, key: %s, val: %s, err: %v, rid: %s", cursorKey, cursor, err, kit.Rid)
 			redisFailCount++
 			sleepForFail(redisFailCount)
 			continue
 		}
 		break
 	}
+}
+
+func (e *Event) genCursorKey(tenantID string) string {
+	return hostIdentifierCursor + ":" + tenantID
 }
 
 // IdentifierEvent host identifier event

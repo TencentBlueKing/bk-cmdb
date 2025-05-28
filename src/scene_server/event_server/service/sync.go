@@ -68,7 +68,7 @@ func (s *Service) SyncHostIdentifier(ctx *rest.Contexts) {
 		return
 	}
 
-	task, err := s.SyncData.BatchSyncHostIdentifier(hosts.Info, true, ctx.Kit.Header, ctx.Kit.Rid)
+	task, err := s.SyncData.BatchSyncHostIdentifier(ctx.Kit, hosts.Info, true)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
 		return
@@ -234,7 +234,7 @@ func (s *Service) PushHostIdentifier(ctx *rest.Contexts) {
 		return
 	}
 
-	task, err := s.SyncData.BatchSyncHostIdentifier(hosts.Info, true, ctx.Kit.Header, ctx.Kit.Rid)
+	task, err := s.SyncData.BatchSyncHostIdentifier(ctx.Kit, hosts.Info, true)
 	if err != nil {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, err.Error()))
 		return

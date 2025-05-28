@@ -16,15 +16,11 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
-	"configcenter/pkg/tenant/tools"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	headerutil "configcenter/src/common/http/header/util"
-	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/apigw/gse"
 	getstatus "configcenter/src/thirdparty/gse/get_agent_state_forsyncdata"
 	pushfile "configcenter/src/thirdparty/gse/push_file_forsyncdata"
@@ -46,13 +42,6 @@ func strMd5(str string) (retMd5 string) {
 // sleepForFail sleep due to failure
 func sleepForFail(failCount int) {
 	time.Sleep(time.Duration(failCount) * time.Second)
-}
-
-func newHeaderWithRid() (http.Header, string) {
-	rid := util.GenerateRID()
-	tenantID := tools.GetDefaultTenant()
-	header := headerutil.GenCommonHeader(common.CCSystemOperatorUserName, tenantID, rid)
-	return header, rid
 }
 
 // buildForStatus 构造查询agent状态的主机信息

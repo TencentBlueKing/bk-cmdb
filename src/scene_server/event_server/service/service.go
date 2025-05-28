@@ -17,10 +17,12 @@ import (
 	"context"
 	"net/http"
 
+	"configcenter/pkg/tenant"
 	"configcenter/src/ac"
 	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
+	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -87,6 +89,7 @@ func (s *Service) WebService() *restful.Container {
 	commonAPI := new(restful.WebService).Produces(restful.MIME_JSON)
 	commonAPI.Route(commonAPI.GET("/healthz").To(s.Healthz))
 	commonAPI.Route(commonAPI.GET("/version").To(restfulservice.Version))
+	commonAPI.Route(commonAPI.POST("/refresh/tenants").To(s.RefreshTenant))
 	container.Add(commonAPI)
 
 	return container
@@ -154,4 +157,19 @@ func (s *Service) Healthz(req *restful.Request, resp *restful.Response) {
 
 	resp.Header().Set("Content-Type", "application/json")
 	resp.WriteEntity(answer)
+}
+
+// RefreshTenant refresh tenant info
+func (s *Service) RefreshTenant(req *restful.Request, resp *restful.Response) {
+	kit := rest.NewKitFromHeader(req.Request.Header, s.engine.CCErr)
+
+	tenants, err := s.engine.CoreAPI.CoreService().Tenant().RefreshTenants(kit.Ctx, kit.Header)
+	if err != nil {
+		blog.Errorf("refresh tenant info failed, err: %v, rid: %s", err, kit.Rid)
+		resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
+		return
+	}
+
+	tenant.SetTenant(tenants)
+	resp.WriteEntity(metadata.NewSuccessResp(tenants))
 }

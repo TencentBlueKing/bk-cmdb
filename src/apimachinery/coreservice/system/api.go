@@ -98,3 +98,27 @@ func (s *system) SearchGlobalConfig(ctx context.Context, h http.Header,
 
 	return &resp.Data, nil
 }
+
+// GetHostSnapDataID get tenant related host snap data id
+func (s *system) GetHostSnapDataID(ctx context.Context, h http.Header) (int64, error) {
+	resp := new(metadata.DataIDResp)
+	subPath := "/find/host_snap/data_id"
+
+	err := s.client.Post().
+		WithContext(ctx).
+		SubResourcef(subPath).
+		WithHeaders(h).
+		Body(nil).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return 0, errors.CCHttpError
+	}
+
+	if err = resp.CCError(); err != nil {
+		return 0, err
+	}
+
+	return resp.Data, nil
+}
