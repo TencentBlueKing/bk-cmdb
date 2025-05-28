@@ -34,15 +34,15 @@ import (
 
 // CreateObjectBatch batch to create some objects
 func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
-	data := new(map[string]metadata.ImportObjectData)
-	if err := ctx.DecodeInto(data); err != nil {
+	data := make(map[string]metadata.ImportObjectData)
+	if err := ctx.DecodeInto(&data); err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
 	// auth: check authorization
 	objIDs := make([]string, 0)
-	for objID := range *data {
+	for objID := range data {
 		objIDs = append(objIDs, objID)
 	}
 
@@ -73,7 +73,7 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 	var ret mapstr.MapStr
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		var err error
-		ret, err = s.Logics.AttributeOperation().CreateObjectBatch(ctx.Kit, *data, tableObjUUIDMap)
+		ret, err = s.Logics.AttributeOperation().CreateObjectBatch(ctx.Kit, data, tableObjUUIDMap)
 		if err != nil {
 			return err
 		}
@@ -87,11 +87,11 @@ func (s *Service) CreateObjectBatch(ctx *rest.Contexts) {
 	ctx.RespEntity(ret)
 }
 
-func (s *Service) createTableObjInst(kit *rest.Kit, data *map[string]metadata.ImportObjectData) (map[string]string,
+func (s *Service) createTableObjInst(kit *rest.Kit, data map[string]metadata.ImportObjectData) (map[string]string,
 	error) {
 
 	tableObjUUIDMap := make(map[string]string)
-	for objID, importData := range *data {
+	for objID, importData := range data {
 		// check object exist
 		exist, err := s.Logics.ObjectOperation().IsObjectExist(kit, objID)
 		if err != nil {

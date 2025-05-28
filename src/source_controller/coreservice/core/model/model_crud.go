@@ -463,6 +463,10 @@ func (m *modelManager) cascadeDeleteTable(kit *rest.Kit, input metadata.DeleteTa
 		return kit.CCError.Error(common.CCErrCommDBSelectFailed)
 	}
 
+	if err = delIDRuleGenerator(kit, []string{obj}); err != nil {
+		blog.Errorf("delete id rule failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
 	return nil
 }
 
