@@ -48,26 +48,32 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.Var(auth.EnableAuthFlag, "enable-auth", "The auth center enable status, true for enabled, false for disabled")
 }
 
-// Config TODO
+// Config is admin server config
 type Config struct {
-	MongoDB        mongo.Config
-	WatchDB        mongo.Config
-	Errors         ErrorConfig
-	Language       LanguageConfig
-	Configures     ConfConfig
-	Register       RegisterConfig
-	Redis          redis.Config
+	MongoDB    mongo.Config
+	WatchDB    mongo.Config
+	Errors     ErrorConfig
+	Language   LanguageConfig
+	Configures ConfConfig
+	Register   RegisterConfig
+	Redis      redis.Config
+	HostSnapConfig
+	IAM           iam.AuthConfig
+	Crypto        *cryptor.Config
+	ShardingTable ShardingTableConfig
+	// SyncIAMPeriodMinutes the period for sync IAM resources
+	SyncIAMPeriodMinutes  int
+	DisableVerifyTenant   bool
+	EnableMultiTenantMode bool
+}
+
+// HostSnapConfig is host snapshot config
+type HostSnapConfig struct {
 	SnapRedis      redis.Config
 	SnapKafka      kafka.Config
-	IAM            iam.AuthConfig
-	Crypto         *cryptor.Config
-	SnapDataID     int64
+	MigrateDataID  bool
 	SnapReportMode string
-	ShardingTable  ShardingTableConfig
-	// SyncIAMPeriodMinutes the period for sync IAM resources
-	SyncIAMPeriodMinutes int
-	DisableVerifyTenant bool
-	EnableMultiTenantMode bool
+	SnapStreamToID int64
 }
 
 // LanguageConfig TODO

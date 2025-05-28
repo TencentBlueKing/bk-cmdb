@@ -869,7 +869,6 @@ migrate:
   ## @param migrate.migrateDataId Enable register dataid to GSE
   ##
   migrateDataId: false
-  migrateOldDataId: false
 
 ## @section bk-cmdb iam authentication parameters
 ##

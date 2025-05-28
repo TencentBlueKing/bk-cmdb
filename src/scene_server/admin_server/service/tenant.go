@@ -131,6 +131,14 @@ func (s *Service) addTenantData(kit *rest.Kit) error {
 		return err
 	}
 
+	// add gse data id for tenant if needed
+	if s.Config.MigrateDataID {
+		if err = s.upsertTenantDataID(kit); err != nil {
+			blog.Errorf("upsert tenant %s data id failed, err: %v, rid: %s", kit.TenantID, err, kit.Rid)
+			return err
+		}
+	}
+
 	// add tenant db relation
 	data := &types.Tenant{
 		TenantID: kit.TenantID,

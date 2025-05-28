@@ -294,7 +294,7 @@ data:
       res: {{ .Values.adminserver.language }}
 
     hostsnap:
-      dataID: 1100010
+      migrateDataID: {{ .Values.migrate.migrateDataId }}
 
     tenant:
       enableMultiTenantMode: {{ .Values.tenant.enableMultiTenantMode }}
