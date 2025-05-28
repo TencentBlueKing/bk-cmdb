@@ -15,7 +15,7 @@ package service
 import (
 	"strconv"
 
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -175,7 +175,7 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 			}
 			iamInstancesWithCreator := metadata.IamInstancesWithCreator{
 				IamInstances: metadata.IamInstances{
-					Type:      string(iam.SysCloudArea),
+					Type:      string(types.SysCloudArea),
 					Instances: iamInstances,
 				},
 				Creator: user,
@@ -249,7 +249,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstancesWithCreator{
 				IamInstances: metadata.IamInstances{
-					Type: string(iam.SysCloudArea),
+					Type: string(types.SysCloudArea),
 					Instances: []metadata.IamInstance{{
 						ID:   strconv.FormatInt(platID, 10),
 						Name: util.GetStrByInterface(input[common.BKCloudNameField]),

@@ -19,23 +19,16 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/esbserver/esbutil"
 )
 
 var (
-	esbClient esbserver.EsbClientInterface
-	cfgChan   = make(chan esbutil.EsbConfig, 10)
+	cfgChan = make(chan esbutil.EsbConfig, 10)
 
 	lastInitErr   errors.CCErrorCoder
 	lastConfigErr errors.CCErrorCoder
 	tlsConfig     util.TLSClientConfig
 )
-
-// EsbClient TODO
-func EsbClient() esbserver.EsbClientInterface {
-	return esbClient
-}
 
 // ParseEsbConfig parse esb config
 func ParseEsbConfig() (*esbutil.EsbConfig, errors.CCErrorCoder) {
@@ -78,24 +71,6 @@ func ParseEsbConfig() (*esbutil.EsbConfig, errors.CCErrorCoder) {
 	}
 	return esbConfig, nil
 
-}
-
-// InitEsbClient TODO
-func InitEsbClient(defaultCfg *esbutil.EsbConfig) errors.CCErrorCoder {
-
-	apiMachineryConfig := &util.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     1000,
-		TLSConfig: &tlsConfig,
-	}
-	esbSrv, err := esbserver.NewEsb(apiMachineryConfig, cfgChan, defaultCfg, nil)
-	if err != nil {
-		blog.Errorf(" esbserve initialization error. err:%s", err.Error())
-		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed, "'esb' initialization failed")
-		return lastInitErr
-	}
-	esbClient = esbSrv
-	return nil
 }
 
 // Validate TODO

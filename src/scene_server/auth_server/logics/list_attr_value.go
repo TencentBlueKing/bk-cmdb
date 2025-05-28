@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -25,7 +26,7 @@ import (
 )
 
 // ListAttrValue list enumeration or list type attribute options of instance type resource
-func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListAttrValueFilter,
+func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListAttrValueFilter,
 	page types.Page) (*types.ListAttrValueResult, error) {
 
 	// get attributes' enumeration options from cache

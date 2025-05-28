@@ -20,7 +20,6 @@ import (
 
 	"configcenter/src/ac/extensions"
 	"configcenter/src/ac/iam"
-	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -28,6 +27,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/collections"
@@ -35,7 +35,7 @@ import (
 	svc "configcenter/src/scene_server/datacollection/service"
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/esbserver"
+	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/esbserver/esbutil"
 
 	"github.com/Shopify/sarama"
@@ -67,11 +67,10 @@ type DataCollectionConfig struct {
 	// ESB blueking ESB configs.
 	Esb esbutil.EsbConfig
 
-	// Auth is auth config
-	Auth iam.AuthConfig
-
 	// SnapReportMode hostsnap report mode
-	SnapReportMode string
+	SnapReportMode        string
+	EnableMultiTenantMode bool
+	DisableVerifyTenant   bool
 }
 
 // DataCollection is data collection server.
@@ -225,7 +224,9 @@ func (c *DataCollection) initConfigs() error {
 		}
 	}
 
-	c.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
+	c.config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
+	c.config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
+
 	if err != nil {
 		blog.Warnf("parse auth center config failed: %v", err)
 	}
@@ -233,28 +234,31 @@ func (c *DataCollection) initConfigs() error {
 	return nil
 }
 
+// InitClients init apiGW client
+func (c *DataCollection) InitClients() error {
+
+	var clients []apigw.ClientType
+	if c.config.EnableMultiTenantMode && !c.config.DisableVerifyTenant {
+		clients = []apigw.ClientType{apigw.User}
+	}
+
+	if auth.EnableAuthorize() {
+		clients = append(clients, apigw.Iam)
+	}
+
+	if len(clients) > 0 {
+		err := apigwcli.Init("apiGW", c.engine.Metric().Registry(), clients)
+		if err != nil {
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
 // initModules inits modules for new DataCollection server.
 func (c *DataCollection) initModules() error {
-	// create blueking ESB client.
-	tlsConfig, err := apiutil.NewTLSClientConfigFromConfig("esb")
-	if err != nil {
-		return err
-	}
-	apiMachineryConfig := &apiutil.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     1000,
-		TLSConfig: &tlsConfig,
-	}
-
-	esb, err := esbserver.NewEsb(apiMachineryConfig, nil, /* you can update it by a chan here */
-		&c.config.Esb, c.engine.Metric().Registry())
-	if err != nil {
-		return fmt.Errorf("create ESB client, %+v", err)
-	}
-	blog.Info("DataCollection| init modules, create ESB success[%+v]", c.config.Esb)
-
-	// build logics comm.
-	c.service.SetLogics(esb)
 
 	// connect to cc main redis.
 	redisCli, err := redis.NewFromConfig(c.config.CCRedis)
@@ -305,14 +309,14 @@ func (c *DataCollection) initModules() error {
 	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(c.config.Auth, c.engine.Metric().Registry())
+		iamCli, err = iam.NewIAM()
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
+		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, iamCli)
 	} else {
 		blog.Infof("disable auth center access")
 	}
-	c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, iamCli)
 
 	return nil
 }
@@ -358,6 +362,11 @@ func (c *DataCollection) Run() error {
 		return err
 	}
 	blog.Info("init configs success!")
+
+	if err := c.InitClients(); err != nil {
+		blog.Errorf("init apigw clients failed, err: %v", err)
+		return err
+	}
 
 	// ready to setup comms for new server instance now.
 	if err := c.initModules(); err != nil {

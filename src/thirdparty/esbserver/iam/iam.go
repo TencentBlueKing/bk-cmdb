@@ -13,9 +13,6 @@
 package iam
 
 import (
-	"context"
-	"net/http"
-
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/esbserver/esbutil"
@@ -23,14 +20,6 @@ import (
 
 // IamClientInterface TODO
 type IamClientInterface interface {
-	GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error)
-	RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
-		[]metadata.IamCreatorActionPolicy, error)
-	BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header,
-		instance metadata.IamInstancesWithCreator) (
-		[]metadata.IamCreatorActionPolicy, error)
-	BatchOperateInstanceAuth(ctx context.Context, header http.Header, req *metadata.IamBatchOperateInstanceAuthReq) (
-		[]metadata.IamBatchOperateInstanceAuthRes, error)
 }
 
 // NewIamClientInterface TODO

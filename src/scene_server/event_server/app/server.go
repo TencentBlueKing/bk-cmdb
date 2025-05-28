@@ -160,12 +160,6 @@ func (es *EventServer) initConfigs() error {
 		return fmt.Errorf("init cc redis configs, %+v", err)
 	}
 
-	es.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-	if err != nil {
-		blog.Errorf("parse auth center config failed: %v", err)
-		return err
-	}
-
 	identifierConf, err := hostidentifier.ParseIdentifierConf()
 	if err != nil {
 		blog.Errorf("parse eventServer host identifier config error, err: %v", err)
@@ -214,18 +208,22 @@ func (es *EventServer) initModules() error {
 
 	// initialize auth authorizer
 	es.service.SetAuthorizer(iam.NewAuthorizer(es.engine.CoreAPI))
+	parseServerConfig(es)
 
+	if err = es.InitClients(); err != nil {
+		return err
+	}
 	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(es.config.Auth, es.engine.Metric().Registry())
+		iamCli, err = iam.NewIAM()
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
+		es.service.AuthManager = extensions.NewAuthManager(es.engine.CoreAPI, iamCli)
 	} else {
 		blog.Infof("disable auth center access")
 	}
-	es.service.AuthManager = extensions.NewAuthManager(es.engine.CoreAPI, iamCli)
 
 	return nil
 }
@@ -339,4 +337,32 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	<-ctx.Done()
 	blog.Info("EventServer stopping now!")
 	return nil
+}
+
+// InitClients init apiGW client
+func (s *EventServer) InitClients() error {
+
+	var clients []apigw.ClientType
+	if s.config.EnableMultiTenantMode && !s.config.DisableVerifyTenant {
+		clients = []apigw.ClientType{apigw.User}
+	}
+
+	if auth.EnableAuthorize() {
+		clients = append(clients, apigw.Iam)
+	}
+
+	if len(clients) > 0 {
+		err := apigwcli.Init("apiGW", s.engine.Metric().Registry(), clients)
+		if err != nil {
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func parseServerConfig(es *EventServer) {
+	es.config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
+	es.config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
 }

@@ -22,11 +22,13 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/language"
 	"configcenter/src/common/rdapi"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/source_controller/cacheservice/app/options"
 	"configcenter/src/source_controller/cacheservice/cache"
@@ -37,6 +39,7 @@ import (
 	"configcenter/src/source_controller/coreservice/core"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/scheduler"
+	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
@@ -78,21 +81,27 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		s.err = errf
 	}
 
+	s.cfg.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
+	s.cfg.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
 	if nil != lang {
 		s.langFactory = make(map[common.LanguageType]language.DefaultCCLanguageIf)
 		s.langFactory[common.Chinese] = lang.CreateDefaultCCLanguageIf(string(common.Chinese))
 		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
 	}
 
+	ccErr := s.InitClients()
+	if ccErr != nil {
+		fmt.Errorf("new apigw client failed: %v", ccErr)
+	}
 	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		var rawErr error
-		iamCli, rawErr = iam.NewIAM(cfg.Auth, engine.Metric().Registry())
+		iamCli, rawErr = iam.NewIAM()
 		if rawErr != nil {
 			return fmt.Errorf("new iam client failed: %v", rawErr)
 		}
+		s.authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 	}
-	s.authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
 	taskScheduler, err := scheduler.New(mongodb.Dal(), mongodb.Dal("watch"), engine.ServiceManageInterface)
 	if err != nil {
@@ -186,4 +195,27 @@ func (s *cacheService) Language(header http.Header) language.DefaultCCLanguageIf
 		return s.langFactory[common.Chinese]
 	}
 	return l
+}
+
+// InitClients init apiGW client
+func (s *cacheService) InitClients() error {
+
+	var clients []apigw.ClientType
+	if s.cfg.EnableMultiTenantMode && !s.cfg.DisableVerifyTenant {
+		clients = []apigw.ClientType{apigw.User}
+	}
+
+	if auth.EnableAuthorize() {
+		clients = append(clients, apigw.Iam)
+	}
+
+	if len(clients) > 0 {
+		err := apigwcli.Init("apiGW", s.engine.Metric().Registry(), clients)
+		if err != nil {
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
+			return err
+		}
+	}
+
+	return nil
 }

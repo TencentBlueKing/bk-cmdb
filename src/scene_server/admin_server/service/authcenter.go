@@ -75,7 +75,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		Host:    param.Host,
 		Objects: models,
 	}
-	if err := s.iam.Register(s.ctx, s.cache, opt, rid); err != nil {
+	if err := s.iam.Register(kit, s.cache, opt); err != nil {
 		blog.Errorf("init iam failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.CCErrorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
@@ -105,6 +105,7 @@ func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Respon
 	rHeader := req.Request.Header
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
 	if !auth.EnableAuthorize() {
 		blog.Warnf("received iam register request, but auth not enabled, rid: %s", rid)
 		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
@@ -128,7 +129,7 @@ func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Respon
 		return
 	}
 
-	if err := s.iam.RegisterToIAM(s.ctx, param.Host); err != nil {
+	if err := s.iam.RegisterToIAM(kit, param.Host); err != nil {
 		blog.Errorf("register cmdb to iam failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: err,

@@ -13,17 +13,17 @@
 package iam
 
 import (
-	"context"
-	"net/http"
 	"reflect"
 
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	commonlgc "configcenter/src/common/logics"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
 type viewer struct {
@@ -40,7 +40,7 @@ func NewViewer(client apimachinery.ClientSetInterface, iam *IAM) *viewer {
 }
 
 // CreateView create iam view for objects
-func (v *viewer) CreateView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
+func (v *viewer) CreateView(kit *rest.Kit, objects []metadata.Object, redisCli redis.Client,
 	rid string) error {
 
 	if !auth.EnableAuthorize() {
@@ -53,26 +53,26 @@ func (v *viewer) CreateView(ctx context.Context, header http.Header, objects []m
 	}
 	defer locker.Unlock()
 
-	systemResp, err := v.iam.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	systemInfo, err := v.iam.Client.GetSystemInfo(kit.Ctx, kit.Header, []iamtypes.SystemQueryField{})
 	if err != nil {
 		blog.Errorf("get iam system info failed, err: %v, rid: %s", err, rid)
 		return err
 	}
 
 	// register order: 1.ResourceType 2.InstanceSelection 3.Action 4.ActionGroup
-	if err = v.registerModelResourceTypes(ctx, systemResp.Data.ResourceTypes, objects); err != nil {
+	if err = v.registerModelResourceTypes(kit, systemInfo.ResourceTypes, objects); err != nil {
 		return err
 	}
 
-	if err = v.registerModelInstanceSelections(ctx, systemResp.Data.InstanceSelections, objects); err != nil {
+	if err = v.registerModelInstanceSelections(kit, systemInfo.InstanceSelections, objects); err != nil {
 		return err
 	}
 
-	if err = v.registerModelActions(ctx, systemResp.Data.Actions, objects); err != nil {
+	if err = v.registerModelActions(kit, systemInfo.Actions, objects); err != nil {
 		return err
 	}
 
-	if err = v.updateModelActionGroups(ctx, header, systemResp.Data.ActionGroups); err != nil {
+	if err = v.updateModelActionGroups(kit, systemInfo.ActionGroups); err != nil {
 		return err
 	}
 
@@ -80,7 +80,7 @@ func (v *viewer) CreateView(ctx context.Context, header http.Header, objects []m
 }
 
 // DeleteView delete iam view for objects
-func (v *viewer) DeleteView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
+func (v *viewer) DeleteView(kit *rest.Kit, objects []metadata.Object, redisCli redis.Client,
 	rid string) error {
 
 	if !auth.EnableAuthorize() {
@@ -93,26 +93,26 @@ func (v *viewer) DeleteView(ctx context.Context, header http.Header, objects []m
 	}
 	defer locker.Unlock()
 
-	systemResp, err := v.iam.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	systemInfo, err := v.iam.Client.GetSystemInfo(kit.Ctx, kit.Header, []iamtypes.SystemQueryField{})
 	if err != nil {
 		blog.Errorf("get iam system info failed, err: %v, rid: %s", err, rid)
 		return err
 	}
 
 	// unregister order: 1.Action 2.InstanceSelection 3.ResourceType 4.ActionGroup
-	if err = v.unregisterModelActions(ctx, systemResp.Data.Actions, objects); err != nil {
+	if err = v.unregisterModelActions(kit, systemInfo.Actions, objects); err != nil {
 		return err
 	}
 
-	if err = v.unregisterModelInstanceSelections(ctx, systemResp.Data.InstanceSelections, objects); err != nil {
+	if err = v.unregisterModelInstanceSelections(kit, systemInfo.InstanceSelections, objects); err != nil {
 		return err
 	}
 
-	if err = v.unregisterModelResourceTypes(ctx, systemResp.Data.ResourceTypes, objects); err != nil {
+	if err = v.unregisterModelResourceTypes(kit, systemInfo.ResourceTypes, objects); err != nil {
 		return err
 	}
 
-	if err = v.updateModelActionGroups(ctx, header, systemResp.Data.ActionGroups); err != nil {
+	if err = v.updateModelActionGroups(kit, systemInfo.ActionGroups); err != nil {
 		return err
 	}
 
@@ -120,8 +120,7 @@ func (v *viewer) DeleteView(ctx context.Context, header http.Header, objects []m
 }
 
 // UpdateView update iam view for objects
-func (v *viewer) UpdateView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
-	rid string) error {
+func (v *viewer) UpdateView(kit *rest.Kit, objects []metadata.Object, redisCli redis.Client, rid string) error {
 
 	if !auth.EnableAuthorize() {
 		return nil
@@ -133,26 +132,26 @@ func (v *viewer) UpdateView(ctx context.Context, header http.Header, objects []m
 	}
 	defer locker.Unlock()
 
-	systemResp, err := v.iam.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	systemInfo, err := v.iam.Client.GetSystemInfo(kit.Ctx, kit.Header, []iamtypes.SystemQueryField{})
 	if err != nil {
 		blog.Errorf("get iam system info failed, err: %v, rid: %s", err, rid)
 		return err
 	}
 
 	// update order: 1.ResourceType 2.InstanceSelection 3.Action 4.ActionGroup
-	if err = v.updateModelResourceTypes(ctx, objects); err != nil {
+	if err = v.updateModelResourceTypes(kit, objects); err != nil {
 		return err
 	}
 
-	if err = v.updateModelInstanceSelections(ctx, objects); err != nil {
+	if err = v.updateModelInstanceSelections(kit, objects); err != nil {
 		return err
 	}
 
-	if err = v.updateModelActions(ctx, objects); err != nil {
+	if err = v.updateModelActions(kit, objects); err != nil {
 		return err
 	}
 
-	if err = v.updateModelActionGroups(ctx, header, systemResp.Data.ActionGroups); err != nil {
+	if err = v.updateModelActionGroups(kit, systemInfo.ActionGroups); err != nil {
 		return err
 	}
 
@@ -160,18 +159,18 @@ func (v *viewer) UpdateView(ctx context.Context, header http.Header, objects []m
 }
 
 // registerModelResourceTypes register resource types for models
-func (v *viewer) registerModelResourceTypes(ctx context.Context, existTypes []ResourceType,
+func (v *viewer) registerModelResourceTypes(kit *rest.Kit, existTypes []iam.ResourceType,
 	objects []metadata.Object) error {
 
-	rid := util.ExtractRequestIDFromContext(ctx)
+	rid := kit.Rid
 
-	existMap := make(map[TypeID]struct{})
+	existMap := make(map[iamtypes.TypeID]struct{})
 	for _, resourceType := range existTypes {
 		existMap[resourceType.ID] = struct{}{}
 	}
 
 	resourceTypes := genDynamicResourceTypes(objects)
-	newResTypes := make([]ResourceType, 0)
+	newResTypes := make([]iam.ResourceType, 0)
 	for _, resourceType := range resourceTypes {
 		_, exists := existMap[resourceType.ID]
 		if !exists {
@@ -179,14 +178,14 @@ func (v *viewer) registerModelResourceTypes(ctx context.Context, existTypes []Re
 			continue
 		}
 
-		if err := v.iam.Client.UpdateResourcesType(ctx, resourceType); err != nil {
+		if err := v.iam.Client.UpdateResourcesType(kit.Ctx, kit.Header, resourceType); err != nil {
 			blog.Errorf("update resource type failed, err: %v, resourceType: %+v， rid: %s", err, resourceType, rid)
 			return err
 		}
 
 	}
 
-	if err := v.iam.Client.RegisterResourcesTypes(ctx, newResTypes); err != nil {
+	if err := v.iam.Client.RegisterResourcesTypes(kit.Ctx, kit.Header, newResTypes); err != nil {
 		blog.Errorf("register resource types failed, err: %v, objects: %+v, resourceTypes: %+v， rid: %s", err, objects,
 			newResTypes, rid)
 		return err
@@ -196,17 +195,17 @@ func (v *viewer) registerModelResourceTypes(ctx context.Context, existTypes []Re
 }
 
 // unregisterModelResourceTypes unregister resourceTypes for models
-func (v *viewer) unregisterModelResourceTypes(ctx context.Context, existTypes []ResourceType,
+func (v *viewer) unregisterModelResourceTypes(kit *rest.Kit, existTypes []iam.ResourceType,
 	objects []metadata.Object) error {
 
-	rid := util.ExtractRequestIDFromContext(ctx)
+	rid := kit.Rid
 
-	existMap := make(map[TypeID]struct{})
+	existMap := make(map[iamtypes.TypeID]struct{})
 	for _, resourceType := range existTypes {
 		existMap[resourceType.ID] = struct{}{}
 	}
 
-	typeIDs := make([]TypeID, 0)
+	typeIDs := make([]iamtypes.TypeID, 0)
 	resourceTypes := genDynamicResourceTypes(objects)
 	for _, resourceType := range resourceTypes {
 		_, exists := existMap[resourceType.ID]
@@ -215,7 +214,7 @@ func (v *viewer) unregisterModelResourceTypes(ctx context.Context, existTypes []
 		}
 	}
 
-	if err := v.iam.Client.DeleteResourcesTypes(ctx, typeIDs); err != nil {
+	if err := v.iam.Client.DeleteResourcesTypes(kit.Ctx, kit.Header, typeIDs); err != nil {
 		blog.Errorf("unregister resourceTypes failed, err: %v, objects: %+v, resourceTypes: %+v, rid: %s",
 			err, objects, resourceTypes, rid)
 		return err
@@ -225,11 +224,11 @@ func (v *viewer) unregisterModelResourceTypes(ctx context.Context, existTypes []
 }
 
 // updateModelResourceTypes update resource types for models
-func (v *viewer) updateModelResourceTypes(ctx context.Context, objects []metadata.Object) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
+func (v *viewer) updateModelResourceTypes(kit *rest.Kit, objects []metadata.Object) error {
+	rid := kit.Rid
 	resourceTypes := genDynamicResourceTypes(objects)
 	for _, resourceType := range resourceTypes {
-		if err := v.iam.Client.UpdateResourcesType(ctx, resourceType); err != nil {
+		if err := v.iam.Client.UpdateResourcesType(kit.Ctx, kit.Header, resourceType); err != nil {
 			blog.Errorf("update resourceType failed, err: %v, objects: %+v, resourceType: %+v，rid: %s", err, objects,
 				resourceType, rid)
 			return err
@@ -240,18 +239,18 @@ func (v *viewer) updateModelResourceTypes(ctx context.Context, objects []metadat
 }
 
 // registerModelInstanceSelections register instanceSelections for models
-func (v *viewer) registerModelInstanceSelections(ctx context.Context, existsSelections []InstanceSelection,
+func (v *viewer) registerModelInstanceSelections(kit *rest.Kit, existsSelections []iam.InstanceSelection,
 	objects []metadata.Object) error {
 
-	rid := util.ExtractRequestIDFromContext(ctx)
+	rid := kit.Rid
 
-	existMap := make(map[InstanceSelectionID]struct{})
+	existMap := make(map[iamtypes.InstanceSelectionID]struct{})
 	for _, selection := range existsSelections {
 		existMap[selection.ID] = struct{}{}
 	}
 
 	instanceSelections := genDynamicInstanceSelections(objects)
-	newSelections := make([]InstanceSelection, 0)
+	newSelections := make([]iam.InstanceSelection, 0)
 	for _, selection := range instanceSelections {
 		_, exists := existMap[selection.ID]
 		if !exists {
@@ -259,13 +258,13 @@ func (v *viewer) registerModelInstanceSelections(ctx context.Context, existsSele
 			continue
 		}
 
-		if err := v.iam.Client.UpdateInstanceSelection(ctx, selection); err != nil {
+		if err := v.iam.Client.UpdateInstanceSelection(kit.Ctx, kit.Header, selection); err != nil {
 			blog.Errorf("update instanceSelection %+v failed, err: %v, rid: %s", selection, err, rid)
 			return err
 		}
 	}
 
-	if err := v.iam.Client.RegisterInstanceSelections(ctx, newSelections); err != nil {
+	if err := v.iam.Client.RegisterInstanceSelections(kit.Ctx, kit.Header, newSelections); err != nil {
 		blog.Errorf("register instanceSelections failed, err: %v, objects: %+v, instanceSelections: %+v, rid: %s",
 			err, objects, instanceSelections, rid)
 		return err
@@ -275,17 +274,17 @@ func (v *viewer) registerModelInstanceSelections(ctx context.Context, existsSele
 }
 
 // unregisterModelInstanceSelections unregister instanceSelections for models
-func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, existsSelections []InstanceSelection,
+func (v *viewer) unregisterModelInstanceSelections(kit *rest.Kit, existsSelections []iam.InstanceSelection,
 	objects []metadata.Object) error {
 
-	rid := util.ExtractRequestIDFromContext(ctx)
+	rid := kit.Rid
 
-	existMap := make(map[InstanceSelectionID]struct{})
+	existMap := make(map[iamtypes.InstanceSelectionID]struct{})
 	for _, selection := range existsSelections {
 		existMap[selection.ID] = struct{}{}
 	}
 
-	instanceSelectionIDs := make([]InstanceSelectionID, 0)
+	instanceSelectionIDs := make([]iamtypes.InstanceSelectionID, 0)
 	instanceSelections := genDynamicInstanceSelections(objects)
 	for _, instanceSelection := range instanceSelections {
 		_, exists := existMap[instanceSelection.ID]
@@ -295,7 +294,7 @@ func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, existsSe
 		}
 	}
 
-	if err := v.iam.Client.DeleteInstanceSelections(ctx, instanceSelectionIDs); err != nil {
+	if err := v.iam.Client.DeleteInstanceSelections(kit.Ctx, kit.Header, instanceSelectionIDs); err != nil {
 		blog.Errorf("unregister instanceSelections failed, err: %v, objects: %+v, instanceSelections: %+v, rid: %s",
 			err, objects, instanceSelections, rid)
 		return err
@@ -305,11 +304,11 @@ func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, existsSe
 }
 
 // updateModelInstanceSelections update instanceSelections for models
-func (v *viewer) updateModelInstanceSelections(ctx context.Context, objects []metadata.Object) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
+func (v *viewer) updateModelInstanceSelections(kit *rest.Kit, objects []metadata.Object) error {
+	rid := kit.Rid
 	instanceSelections := genDynamicInstanceSelections(objects)
 	for _, instanceSelection := range instanceSelections {
-		if err := v.iam.Client.UpdateInstanceSelection(ctx, instanceSelection); err != nil {
+		if err := v.iam.Client.UpdateInstanceSelection(kit.Ctx, kit.Header, instanceSelection); err != nil {
 			blog.Errorf("update instanceSelections failed, err: %v, objects: %+v, instanceSelection: %+v, rid: %s",
 				err, objects, instanceSelection, rid)
 			return err
@@ -320,18 +319,17 @@ func (v *viewer) updateModelInstanceSelections(ctx context.Context, objects []me
 }
 
 // registerModelActions register actions for models
-func (v *viewer) registerModelActions(ctx context.Context, existAction []ResourceAction,
+func (v *viewer) registerModelActions(kit *rest.Kit, existAction []iam.ResourceAction,
 	objects []metadata.Object) error {
 
-	rid := util.ExtractRequestIDFromContext(ctx)
-
-	existMap := make(map[ActionID]struct{})
+	rid := kit.Rid
+	existMap := make(map[iamtypes.ActionID]struct{})
 	for _, action := range existAction {
 		existMap[action.ID] = struct{}{}
 	}
 
 	actions := genDynamicActions(objects)
-	newActions := make([]ResourceAction, 0)
+	newActions := make([]iam.ResourceAction, 0)
 	for _, action := range actions {
 		_, exists := existMap[action.ID]
 		if !exists {
@@ -339,13 +337,13 @@ func (v *viewer) registerModelActions(ctx context.Context, existAction []Resourc
 			continue
 		}
 
-		if err := v.iam.Client.UpdateAction(ctx, action); err != nil {
+		if err := v.iam.Client.UpdateAction(kit.Ctx, kit.Header, action); err != nil {
 			blog.Errorf("update action %+v failed, err: %v, rid: %s", action, err, rid)
 			return err
 		}
 	}
 
-	if err := v.iam.Client.RegisterActions(ctx, newActions); err != nil {
+	if err := v.iam.Client.RegisterActions(kit.Ctx, kit.Header, newActions); err != nil {
 		blog.Errorf("register actions %+v failed, err: %v, objects: %+v, rid: %s", err, objects, newActions, rid)
 		return err
 	}
@@ -354,17 +352,17 @@ func (v *viewer) registerModelActions(ctx context.Context, existAction []Resourc
 }
 
 // unregisterModelActions unregister actions for models
-func (v *viewer) unregisterModelActions(ctx context.Context, existAction []ResourceAction,
+func (v *viewer) unregisterModelActions(kit *rest.Kit, existAction []iam.ResourceAction,
 	objects []metadata.Object) error {
 
-	rid := util.ExtractRequestIDFromContext(ctx)
+	rid := kit.Rid
 
-	existMap := make(map[ActionID]struct{})
+	existMap := make(map[iamtypes.ActionID]struct{})
 	for _, action := range existAction {
 		existMap[action.ID] = struct{}{}
 	}
 
-	actionIDs := make([]ActionID, 0)
+	actionIDs := make([]iamtypes.ActionID, 0)
 	for _, obj := range objects {
 		ids := genDynamicActionIDs(obj)
 		for _, id := range ids {
@@ -378,13 +376,13 @@ func (v *viewer) unregisterModelActions(ctx context.Context, existAction []Resou
 
 	// before deleting action, the dependent action policies must be deleted
 	for _, actionID := range actionIDs {
-		if err := v.iam.Client.DeleteActionPolicies(ctx, actionID); err != nil {
+		if err := v.iam.Client.DeleteActionPolicies(kit.Ctx, kit.Header, actionID); err != nil {
 			blog.Errorf("delete action %s policies failed, err: %v, rid: %s", actionID, err, rid)
 			return err
 		}
 	}
 
-	if err := v.iam.Client.DeleteActions(ctx, actionIDs); err != nil {
+	if err := v.iam.Client.DeleteActions(kit.Ctx, kit.Header, actionIDs); err != nil {
 		blog.Errorf("unregister actions failed, err: %v, objects: %+v, actionIDs: %s, rid: %s", err, objects, actionIDs,
 			rid)
 		return err
@@ -394,11 +392,11 @@ func (v *viewer) unregisterModelActions(ctx context.Context, existAction []Resou
 }
 
 // updateModelActions update actions for models
-func (v *viewer) updateModelActions(ctx context.Context, objects []metadata.Object) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
+func (v *viewer) updateModelActions(kit *rest.Kit, objects []metadata.Object) error {
+	rid := kit.Rid
 	actions := genDynamicActions(objects)
 	for _, action := range actions {
-		if err := v.iam.Client.UpdateAction(ctx, action); err != nil {
+		if err := v.iam.Client.UpdateAction(kit.Ctx, kit.Header, action); err != nil {
 			blog.Errorf("update action failed, err: %v, objects: %+v, action: %+v, rid: %s", err, objects, action, rid)
 			return err
 		}
@@ -409,9 +407,9 @@ func (v *viewer) updateModelActions(ctx context.Context, objects []metadata.Obje
 
 // updateModelActionGroups update actionGroups for models
 // for now, the update api can only support full update, not incremental update
-func (v *viewer) updateModelActionGroups(ctx context.Context, header http.Header, existGroups []ActionGroup) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	objects, err := commonlgc.GetCustomObjects(ctx, header, v.client)
+func (v *viewer) updateModelActionGroups(kit *rest.Kit, existGroups []iam.ActionGroup) error {
+	rid := kit.Rid
+	objects, err := commonlgc.GetCustomObjects(kit, v.client)
 	if err != nil {
 		blog.Errorf("get custom objects failed, err: %v, rid: %s", err, rid)
 		return err
@@ -419,7 +417,7 @@ func (v *viewer) updateModelActionGroups(ctx context.Context, header http.Header
 	actionGroups := GenerateActionGroups(objects)
 
 	if len(existGroups) == 0 {
-		if err = v.iam.Client.RegisterActionGroups(ctx, actionGroups); err != nil {
+		if err = v.iam.Client.RegisterActionGroups(kit.Ctx, kit.Header, actionGroups); err != nil {
 			blog.Errorf("register action groups(%s) failed, err: %v, rid: %s", actionGroups, err, rid)
 			return err
 		}
@@ -430,7 +428,7 @@ func (v *viewer) updateModelActionGroups(ctx context.Context, header http.Header
 		return nil
 	}
 
-	if err = v.iam.Client.UpdateActionGroups(ctx, actionGroups); err != nil {
+	if err = v.iam.Client.UpdateActionGroups(kit.Ctx, kit.Header, actionGroups); err != nil {
 		blog.Errorf("update actionGroups failed, error: %v, actionGroups: %+v, rid: %s", err, actionGroups, rid)
 		return err
 	}

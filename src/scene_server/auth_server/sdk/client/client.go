@@ -17,78 +17,13 @@ import (
 	"context"
 	"net/http"
 
-	"configcenter/src/apimachinery/flowctrl"
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
-	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
 // Interface TODO
 type Interface interface {
-	GetUserPolicy(ctx context.Context, opt *types.GetPolicyOption) (*operator.Policy, error)
-	ListUserPolicies(ctx context.Context, opts *types.ListPolicyOptions) ([]*types.ActionPolicy, error)
-	GetSystemToken(ctx context.Context) (string, error)
-}
-
-// NewClient TODO
-func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {
-
-	if err := conf.Validate(); err != nil {
-		return nil, err
-	}
-
-	client, err := util.NewClient(&conf.TLS)
-	if err != nil {
-		return nil, err
-	}
-
-	c := &util.Capability{
-		Client: client,
-		Discover: &acDiscovery{
-			servers: conf.Address,
-		},
-		Throttle: flowctrl.NewRateLimiter(2000, 3000),
-		Mock: util.MockInfo{
-			Mocked: false,
-		},
-	}
-
-	// add prometheus metric if possible.
-	if opt.Metric != nil {
-		c.MetricOpts = util.MetricOption{Register: opt.Metric}
-	}
-
-	header := http.Header{}
-	header.Set("Content-Type", "application/json")
-	header.Set("Accept", "application/json")
-	header.Set("X-Bk-App-Code", conf.AppCode)
-	header.Set("X-Bk-App-Secret", conf.AppSecret)
-
-	return &authClient{
-		client:      rest.NewRESTClient(c, ""),
-		basicHeader: header,
-		config:      conf,
-	}, nil
-}
-
-type authClient struct {
-	// http client instance
-	client rest.ClientInterface
-	// http header info
-	basicHeader http.Header
-	// iam config
-	config types.IamConfig
-}
-
-func (ac *authClient) cloneHeader(ctx context.Context) http.Header {
-	h := http.Header{}
-	rid, ok := ctx.Value(types.RequestIDKey).(string)
-	if ok {
-		h.Set(types.RequestIDHeaderKey, rid)
-	}
-	for key := range ac.basicHeader {
-		h.Set(key, ac.basicHeader.Get(key))
-	}
-	return h
+	ListUserPolicies(ctx context.Context, header http.Header, opts *iam.ListPolicyOptions) ([]*iam.ActionPolicy, error)
+	GetSystemToken(ctx context.Context, header http.Header) (string, error)
+	GetUserPolicy(ctx context.Context, header http.Header, opt *iam.GetPolicyOption) (*operator.Policy, error)
 }

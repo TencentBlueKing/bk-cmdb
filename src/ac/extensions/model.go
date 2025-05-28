@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -126,7 +127,7 @@ func (am *AuthManager) GenObjectBatchNoPermissionResp(ctx context.Context, heade
 	iamObjects := make([][]metadata.IamResourceInstance, 0)
 	for _, object := range objects {
 		iamObjects = append(iamObjects, []metadata.IamResourceInstance{{
-			Type: string(iam.SysModel),
+			Type: string(types.SysModel),
 			ID:   strconv.FormatInt(object.ID, 10),
 		}})
 	}
@@ -137,12 +138,12 @@ func (am *AuthManager) GenObjectBatchNoPermissionResp(ctx context.Context, heade
 	}
 
 	permission := &metadata.IamPermission{
-		SystemID: iam.SystemIDCMDB,
+		SystemID: types.SystemIDCMDB,
 		Actions: []metadata.IamAction{{
 			ID: string(iamAction),
 			RelatedResourceTypes: []metadata.IamResourceType{{
-				SystemID:  iam.SystemIDCMDB,
-				Type:      string(iam.SysModel),
+				SystemID:  types.SystemIDCMDB,
+				Type:      string(types.SysModel),
 				Instances: iamObjects,
 			}},
 		}},
@@ -173,23 +174,21 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 // CreateObjectOnIAM create object on iam including:
 // 1. create iam view
 // 2. register object resource creator action to iam
-func (am *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header, objects []metadata.Object,
+func (am *AuthManager) CreateObjectOnIAM(kit *rest.Kit, objects []metadata.Object,
 	iamInstances []metadata.IamInstanceWithCreator, redisCli redis.Client) error {
 	if !am.Enabled() {
 		return nil
 	}
 
-	rid := util.ExtractRequestIDFromContext(ctx)
-
+	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 	// create iam view
-	if err := am.Viewer.CreateView(ctx, header, objects, redisCli, rid); err != nil {
+	if err := am.Viewer.CreateView(kit, objects, redisCli, rid); err != nil {
 		blog.ErrorJSON("create view failed, objects:%s, err: %s, rid: %s", objects, err, rid)
 		return err
 	}
-
 	// register object resource creator action to iam
 	for _, iamInstance := range iamInstances {
-		if _, err := am.Authorizer.RegisterResourceCreatorAction(ctx, header, iamInstance); err != nil {
+		if _, err := am.Authorizer.RegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstance); err != nil {
 			blog.ErrorJSON("register created object to iam failed, iam instance:%s, err: %s, rid: %s",
 				iamInstance, err, rid)
 			return err

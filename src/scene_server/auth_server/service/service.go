@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"time"
 
-	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/webservice/restfulservice"
+	"configcenter/src/scene_server/auth_server/app/options"
 	"configcenter/src/scene_server/auth_server/logics"
 	sdkauth "configcenter/src/scene_server/auth_server/sdk/auth"
 	"configcenter/src/scene_server/auth_server/sdk/client"
@@ -44,6 +45,7 @@ type AuthService struct {
 	iamClient  client.Interface
 	lgc        *logics.Logics
 	authorizer sdkauth.Authorizer
+	Config     *options.Config
 }
 
 // NewAuthService TODO
@@ -84,8 +86,8 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 		}
 
 		// use iam request id as cc rid
-		rid := req.Request.Header.Get(iam.IamRequestHeader)
-		resp.Header().Set(iam.IamRequestHeader, rid)
+		rid := req.Request.Header.Get(iamtypes.IamRequestHeader)
+		resp.Header().Set(iamtypes.IamRequestHeader, rid)
 		if rid == "" {
 			if rid = httpheader.GetRid(req.Request.Header); rid == "" {
 				rid = util.GenerateRID()
@@ -118,9 +120,9 @@ var iamToken = struct {
 }{}
 
 func checkRequestAuthorization(iamClient client.Interface, req *http.Request) (bool, error) {
-	rid := req.Header.Get(iam.IamRequestHeader)
+	rid := req.Header.Get(iamtypes.IamRequestHeader)
 	name, pwd, ok := req.BasicAuth()
-	if !ok || name != iam.SystemIDIAM {
+	if !ok || name != iamtypes.SystemIDIAM {
 		blog.Errorf("request have no basic authorization, rid: %s", rid)
 		return false, nil
 	}
@@ -129,7 +131,7 @@ func checkRequestAuthorization(iamClient client.Interface, req *http.Request) (b
 		return true, nil
 	}
 	var err error
-	iamToken.token, err = iamClient.GetSystemToken(context.Background())
+	iamToken.token, err = iamClient.GetSystemToken(context.Background(), req.Header)
 	if err != nil {
 		blog.Errorf("check request authorization get system token failed, error: %s, rid: %s", err.Error(), rid)
 		return false, err

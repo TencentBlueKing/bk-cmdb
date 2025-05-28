@@ -24,11 +24,13 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/driver/redis"
+	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/elasticsearch"
 )
 
@@ -48,10 +50,6 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", nil)
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
-	}
-	t.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
 	}
 }
 
@@ -104,17 +102,21 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		essrv.Client = esClient
 	}
 
+	parseServerConfig(server.Service)
+	server.InitClients()
+
 	iamCli := new(iam.IAM)
+	authManager := new(extensions.AuthManager)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(server.Config.Auth, engine.Metric().Registry())
+		iamCli, err = iam.NewIAM()
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
+		authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 	} else {
 		blog.Infof("disable auth center access")
 	}
-	authManager := extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
 	server.Service = &service.Service{
 		Language:    engine.Language,
@@ -150,4 +152,31 @@ func (t *TopoServer) CheckForReadiness() error {
 		return nil
 	}
 	return errors.New("wait for topology server configuration timeout")
+}
+
+func parseServerConfig(op *service.Service) {
+	op.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
+	op.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
+}
+
+// InitClients init apiGW client
+func (s *TopoServer) InitClients() error {
+
+	var clients []apigw.ClientType
+	if s.Config.EnableMultiTenantMode && !s.Config.DisableVerifyTenant {
+		clients = []apigw.ClientType{apigw.User}
+	}
+
+	if auth.EnableAuthorize() {
+		clients = append(clients, apigw.Iam)
+	}
+
+	if len(clients) > 0 {
+		err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), clients)
+		if err != nil {
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
+			return err
+		}
+	}
+	return nil
 }

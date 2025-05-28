@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -117,9 +117,9 @@ func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Head
 // GenModuleSetNoPermissionResp TODO
 func (am *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
 	permission := &metadata.IamPermission{
-		SystemID: iam.SystemIDCMDB,
+		SystemID: types.SystemIDCMDB,
 		Actions: []metadata.IamAction{{
-			ID:                   string(iam.EditBusinessLayer),
+			ID:                   string(types.EditBusinessLayer),
 			RelatedResourceTypes: nil,
 		}},
 	}

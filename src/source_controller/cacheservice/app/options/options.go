@@ -14,7 +14,6 @@
 package options
 
 import (
-	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -30,10 +29,11 @@ type ServerOption struct {
 
 // Config export
 type Config struct {
-	Mongo      mongo.Config
-	WatchMongo mongo.Config
-	Redis      redis.Config
-	Auth       iam.AuthConfig
+	Mongo                 mongo.Config
+	WatchMongo            mongo.Config
+	Redis                 redis.Config
+	DisableVerifyTenant   bool
+	EnableMultiTenantMode bool
 }
 
 // NewServerOption create a ServerOption object

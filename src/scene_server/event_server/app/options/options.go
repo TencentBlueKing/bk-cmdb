@@ -14,7 +14,6 @@
 package options
 
 import (
-	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
@@ -48,9 +47,6 @@ type Config struct {
 	// Redis is cc redis configs.
 	Redis redis.Config
 
-	// Auth is auth config
-	Auth iam.AuthConfig
-
 	// IdentifierConf host identifier config
 	IdentifierConf *hostidentifier.HostIdentifierConf
 
@@ -58,5 +54,7 @@ type Config struct {
 	TaskConf *client.GseConnConfig
 
 	// ApiConf gse apiServer connection config
-	ApiConf *client.GseConnConfig
+	ApiConf               *client.GseConnConfig
+	DisableVerifyTenant   bool
+	EnableMultiTenantMode bool
 }

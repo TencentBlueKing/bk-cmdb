@@ -12,13 +12,6 @@
  */
 package esbutil
 
-import (
-	"net/http"
-
-	httpheader "configcenter/src/common/http/header"
-	"configcenter/src/thirdparty/apigw/apigwutil"
-)
-
 // EsbConfig TODO
 type EsbConfig struct {
 	Addrs     string
@@ -29,20 +22,4 @@ type EsbConfig struct {
 // EsbCommParams is esb common parameters
 type EsbCommParams struct {
 	TenantID string `json:"tenant_id"`
-}
-
-// SetEsbAuthHeader set esb authorization header
-func SetEsbAuthHeader(esbConfig EsbConfig, header http.Header) http.Header {
-	appConf := apigwutil.AppAuthConfig{
-		AppCode:   esbConfig.AppCode,
-		AppSecret: esbConfig.AppSecret,
-	}
-	return apigwutil.SetAuthHeader(appConf, header)
-}
-
-// GetEsbRequestParams get esb request parameters
-func GetEsbRequestParams(esbConfig EsbConfig, header http.Header) *EsbCommParams {
-	return &EsbCommParams{
-		TenantID: httpheader.GetTenantID(header),
-	}
 }

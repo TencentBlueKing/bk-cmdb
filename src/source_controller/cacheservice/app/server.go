@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"time"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -145,12 +144,6 @@ func initResource(cacheSvr *CacheServer) error {
 	if cacheRrr != nil {
 		blog.Errorf("new redis client failed, err: %v", cacheRrr)
 		return cacheRrr
-	}
-
-	cacheSvr.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-	if err != nil {
-		blog.Errorf("parse iam config failed: %v", err)
-		return err
 	}
 
 	return nil

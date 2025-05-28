@@ -14,7 +14,6 @@
 package options
 
 import (
-	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/cryptor"
@@ -59,14 +58,13 @@ type Config struct {
 	Redis          redis.Config
 	SnapRedis      redis.Config
 	SnapKafka      kafka.Config
-	IAM            iam.AuthConfig
 	Crypto         *cryptor.Config
 	SnapDataID     int64
 	SnapReportMode string
 	ShardingTable  ShardingTableConfig
 	// SyncIAMPeriodMinutes the period for sync IAM resources
-	SyncIAMPeriodMinutes int
-	DisableVerifyTenant bool
+	SyncIAMPeriodMinutes  int
+	DisableVerifyTenant   bool
 	EnableMultiTenantMode bool
 }
 

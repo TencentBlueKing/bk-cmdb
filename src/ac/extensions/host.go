@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -203,25 +204,25 @@ func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header 
 	for _, host := range hosts {
 		if host.BKAppIDField == resPoolBizID {
 			resourceHosts = append(resourceHosts, []metadata.IamResourceInstance{{
-				Type: string(iam.SysHostRscPoolDirectory),
+				Type: string(iamtypes.SysHostRscPoolDirectory),
 				ID:   strconv.FormatInt(host.BKModuleIDField, 10),
 			}, {
-				Type: string(iam.Host),
+				Type: string(iamtypes.Host),
 				ID:   strconv.FormatInt(host.BKHostIDField, 10),
 			}})
 		} else {
 			bizID = host.BKAppIDField
 			bizHosts = append(bizHosts, []metadata.IamResourceInstance{{
-				Type: string(iam.Business),
+				Type: string(iamtypes.Business),
 				ID:   strconv.FormatInt(host.BKAppIDField, 10),
 			}, {
-				Type: string(iam.Host),
+				Type: string(iamtypes.Host),
 				ID:   strconv.FormatInt(host.BKHostIDField, 10),
 			}})
 		}
 	}
 
-	permission := &metadata.IamPermission{SystemID: iam.SystemIDCMDB}
+	permission := &metadata.IamPermission{SystemID: iamtypes.SystemIDCMDB}
 	if len(bizHosts) > 0 {
 		action, err := iam.ConvertResourceAction(meta.HostInstance, action, bizID)
 		if err != nil {
@@ -230,8 +231,8 @@ func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header 
 		permission.Actions = append(permission.Actions, metadata.IamAction{
 			ID: string(action),
 			RelatedResourceTypes: []metadata.IamResourceType{{
-				SystemID:  iam.SystemIDCMDB,
-				Type:      string(iam.Host),
+				SystemID:  iamtypes.SystemIDCMDB,
+				Type:      string(iamtypes.Host),
 				Instances: bizHosts,
 			}},
 		})
@@ -244,8 +245,8 @@ func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header 
 		permission.Actions = append(permission.Actions, metadata.IamAction{
 			ID: string(action),
 			RelatedResourceTypes: []metadata.IamResourceType{{
-				SystemID:  iam.SystemIDCMDB,
-				Type:      string(iam.Host),
+				SystemID:  iamtypes.SystemIDCMDB,
+				Type:      string(iamtypes.Host),
 				Instances: resourceHosts,
 			}},
 		})
@@ -264,20 +265,20 @@ func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, heade
 	instances := make([][]metadata.IamResourceInstance, len(hosts))
 	for index, host := range hosts {
 		instances[index] = []metadata.IamResourceInstance{{
-			Type: string(iam.Business),
+			Type: string(iamtypes.Business),
 			ID:   strconv.FormatInt(host.BKAppIDField, 10),
 		}, {
-			Type: string(iam.Host),
+			Type: string(iamtypes.Host),
 			ID:   strconv.FormatInt(host.BKHostIDField, 10),
 		}}
 	}
 	permission := &metadata.IamPermission{
-		SystemID: iam.SystemIDCMDB,
+		SystemID: iamtypes.SystemIDCMDB,
 		Actions: []metadata.IamAction{{
-			ID: string(iam.EditBusinessHost),
+			ID: string(iamtypes.EditBusinessHost),
 			RelatedResourceTypes: []metadata.IamResourceType{{
-				SystemID:  iam.SystemIDCMDB,
-				Type:      string(iam.Host),
+				SystemID:  iamtypes.SystemIDCMDB,
+				Type:      string(iamtypes.Host),
 				Instances: instances,
 			}},
 		}},

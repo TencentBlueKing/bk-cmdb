@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"configcenter/src/ac"
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -83,7 +83,7 @@ func (s *Service) CreateBusiness(ctx *rest.Contexts) {
 			}
 
 			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.Business),
+				Type:    string(types.Business),
 				ID:      strconv.FormatInt(bizID, 10),
 				Name:    bizName,
 				Creator: ctx.Kit.User,

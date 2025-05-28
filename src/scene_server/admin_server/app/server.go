@@ -23,7 +23,6 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
-	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/admin_server/app/options"
 	"configcenter/src/scene_server/admin_server/configures"
@@ -73,11 +72,15 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	process.Service.SetCache(cache)
 
+	process.Service.Logics = logics.NewLogics(process.Core)
+
+	if err := service.InitClients(); err != nil {
+		return err
+	}
+
 	var iamCli *iamcli.IAM
 	if auth.EnableAuthorize() {
-		blog.Info("enable auth center access.")
-
-		iamCli, err = iamcli.NewIAM(process.Config.IAM, process.Core.Metric().Registry())
+		iamCli, err = iamcli.NewIAM()
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
@@ -85,20 +88,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	} else {
 		blog.Infof("disable auth center access.")
 	}
-
-	if esbConfig, err := esb.ParseEsbConfig(); err == nil {
-		esb.UpdateEsbConfig(*esbConfig)
-	}
-
-	process.Service.Logics = logics.NewLogics(process.Core)
-
-	// init esb client
-	esb.InitEsbClient(nil)
-
-	if err := service.InitClients(); err != nil {
-		return err
-	}
-
 	if err = service.InitCrypto(); err != nil {
 		return err
 	}
@@ -194,12 +183,6 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 		return nil, fmt.Errorf("get host snapshot redis configuration failed, err: %v", err)
 	}
 	process.Config.SnapRedis = snapRedisConf
-
-	process.Config.IAM, err = iamcli.ParseConfigFromKV("authServer", nil)
-	if err != nil && auth.EnableAuthorize() {
-		blog.Errorf("parse iam error: %v", err)
-		return nil, err
-	}
 
 	process.Config.Crypto, err = cc.Crypto("crypto")
 	if err != nil {

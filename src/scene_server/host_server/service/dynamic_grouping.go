@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"time"
 
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
@@ -110,7 +110,7 @@ func (s *Service) registerActionToIAM(kit *rest.Kit, dynamicGroup meta.DynamicGr
 	}
 
 	iamInstance := meta.IamInstanceWithCreator{
-		Type:    string(iam.BizCustomQuery),
+		Type:    string(types.BizCustomQuery),
 		ID:      resp.Data.ID,
 		Name:    resp.Data.Name,
 		Creator: kit.User,

@@ -23,12 +23,10 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
-func (a *Authorize) calculatePolicy(
-	ctx context.Context,
-	resources []types.Resource,
-	p *operator.Policy) (bool, error) {
+func (a *Authorize) calculatePolicy(ctx context.Context, resources []iam.Resource, p *operator.Policy) (bool, error) {
 
 	rid := ctx.Value(common.ContextRequestIDField)
 	if blog.V(5) {
@@ -48,7 +46,7 @@ func (a *Authorize) calculatePolicy(
 		return false, errors.New("auth options at least have one resource")
 	}
 
-	rscMap := make(map[string]*types.Resource)
+	rscMap := make(map[string]*iam.Resource)
 	for idx, r := range resources {
 		rscMap[string(r.Type)] = &resources[idx]
 	}
@@ -65,7 +63,7 @@ func (a *Authorize) calculatePolicy(
 // returns true when having policy of any resource of the action
 func (a *Authorize) calculateAnyPolicy(
 	ctx context.Context,
-	resources []types.Resource,
+	resources []iam.Resource,
 	p *operator.Policy) (bool, error) {
 
 	if p == nil || p.Operator == "" {
@@ -75,7 +73,7 @@ func (a *Authorize) calculateAnyPolicy(
 }
 
 // authFieldValue is to calculate the authorize status for attribute.
-func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscMap map[string]*types.Resource) (bool,
+func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscMap map[string]*iam.Resource) (bool,
 	error) {
 	// must be a FieldValue type
 	fv, can := p.Element.(*operator.FieldValue)
@@ -117,7 +115,7 @@ func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscM
 }
 
 // NOCC:golint/fnsize(设计如此)
-func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap map[string]*types.Resource) (
+func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap map[string]*iam.Resource) (
 	bool, error) {
 
 	content, canContent := p.Element.(*operator.Content)
@@ -207,7 +205,7 @@ func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap 
 	}
 }
 
-func (a *Authorize) authAtomPolicy(ctx context.Context, rscMap map[string]*types.Resource, policy *operator.Policy,
+func (a *Authorize) authAtomPolicy(ctx context.Context, rscMap map[string]*iam.Resource, policy *operator.Policy,
 	resource string) (bool, bool, string, error) {
 
 	rid := ctx.Value(common.ContextRequestIDField)
@@ -306,7 +304,7 @@ func (a *Authorize) authWithPath(p *operator.Policy, fv *operator.FieldValue, au
 // if a user have a attribute based auth policy, then we need to use the filter constructed by the policy to filter
 // out the resources. Then check the resource id is in or not in it. if yes, user is authorized.
 func (a *Authorize) authResourceAttribute(ctx context.Context, op operator.OperType, attrPolicies []*operator.Policy,
-	rsc *types.Resource) (bool, error) {
+	rsc *iam.Resource) (bool, error) {
 
 	listOpts := &types.ListWithAttributes{
 		Operator:     op,
@@ -368,7 +366,7 @@ func (a *Authorize) calculateAuthPath(p *operator.Policy, fv *operator.FieldValu
 	return false, nil
 }
 
-func getIamPath(attr types.ResourceAttributes) ([]string, error) {
+func getIamPath(attr iam.ResourceAttributes) ([]string, error) {
 	path, exist := attr[types.IamPathKey]
 	if exist {
 		if path == nil {

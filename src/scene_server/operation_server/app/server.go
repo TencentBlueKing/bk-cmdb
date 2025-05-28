@@ -20,6 +20,7 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/operation_server/app/options"
@@ -50,25 +51,21 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if err != nil {
 		return err
 	}
+	parseServerConfig(operationSvr)
+	operationSvr.Engine = engine
 
-	operationSvr.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
-	}
-
+	operationSvr.InitClients()
 	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(operationSvr.Config.Auth, engine.Metric().Registry())
+		iamCli, err = iam.NewIAM()
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
+		operationSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 	} else {
 		blog.Infof("disable auth center access")
 	}
-	operationSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
-
-	operationSvr.Engine = engine
 
 	if err := backbone.StartServer(ctx, cancel, engine, operationSvr.WebService(), true); err != nil {
 		return err
@@ -80,4 +77,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	return nil
+}
+
+func parseServerConfig(op *service.OperationServer) {
+	op.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
+	op.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
 }

@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -117,12 +117,13 @@ func (p *project) CreateProject(kit *rest.Kit, data []mapstr.MapStr) ([]int64, e
 		}
 		iamInstancesWithCreator := metadata.IamInstancesWithCreator{
 			IamInstances: metadata.IamInstances{
-				Type:      string(iam.Project),
+				Type:      string(types.Project),
 				Instances: iamInstances,
 			},
 			Creator: kit.User,
 		}
-		_, err = p.authManager.Authorizer.BatchRegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstancesWithCreator)
+		_, err = p.authManager.Authorizer.BatchRegisterResourceCreatorAction(kit.Ctx, kit.Header,
+			iamInstancesWithCreator)
 		if err != nil {
 			blog.Errorf("register created project to iam failed, err: %s, rid: %s", err, kit.Rid)
 			return nil, err

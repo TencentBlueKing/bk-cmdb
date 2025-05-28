@@ -25,12 +25,13 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 	"configcenter/src/storage/dal/redis"
-
+	"configcenter/src/thirdparty/apigw"
 	"github.com/emicklei/go-restful/v3"
 )
 
@@ -70,6 +71,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		blog.Infof("waiting config timeout.")
 		return errors.New("configuration item not found")
 	}
+	service.Config = hostSrv.Config
+	parseServerConfig(service)
 
 	hostSrv.Config.Redis, err = engine.WithRedis()
 	if err != nil {
@@ -82,29 +85,29 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
 
-	hostSrv.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
+	hostSrv.Core = engine
+	if err = hostSrv.InitClients(); err != nil {
+		blog.Errorf("init clients failed, err: %v", err)
+		return err
 	}
 
 	iamCli := new(iam.IAM)
+	authManager := new(extensions.AuthManager)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(hostSrv.Config.Auth, engine.Metric().Registry())
+		iamCli, err = iam.NewIAM()
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
+		authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 	} else {
 		blog.Infof("disable auth center access")
 	}
-	authManager := extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
 	service.AuthManager = authManager
 	service.Engine = engine
-	service.Config = hostSrv.Config
 	service.CacheDB = cacheDB
 	service.Logic = logics.NewLogics(engine, cacheDB, authManager)
-	hostSrv.Core = engine
 	hostSrv.Service = service
 
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
@@ -135,4 +138,32 @@ func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	if h.Config == nil {
 		h.Config = new(options.Config)
 	}
+}
+
+func parseServerConfig(service *hostsvc.Service) {
+	service.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
+	service.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
+}
+
+// InitClients init apiGW client
+func (s *HostServer) InitClients() error {
+
+	var clients []apigw.ClientType
+	if s.Config.EnableMultiTenantMode && !s.Config.DisableVerifyTenant {
+		clients = []apigw.ClientType{apigw.User}
+	}
+
+	if auth.EnableAuthorize() {
+		clients = append(clients, apigw.Iam)
+	}
+
+	if len(clients) > 0 {
+		err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), clients)
+		if err != nil {
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
+			return err
+		}
+	}
+
+	return nil
 }
