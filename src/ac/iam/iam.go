@@ -255,8 +255,7 @@ type iamName struct {
 
 // crossCompareResTypes cross compare resource types to get need create/update/delete ones
 func (i IAM) crossCompareResTypes(kit *httprest.Kit, registeredResourceTypes []iam.ResourceType,
-	objects []metadata.Object) (
-	[]iam.ResourceType, []iam.ResourceType, []iamtypes.TypeID) {
+	objects []metadata.Object) ([]iam.ResourceType, []iam.ResourceType, []iamtypes.TypeID) {
 
 	registeredResTypeMap := make(map[iamtypes.TypeID]iam.ResourceType)
 	for _, resourceType := range registeredResourceTypes {
@@ -267,24 +266,19 @@ func (i IAM) crossCompareResTypes(kit *httprest.Kit, registeredResourceTypes []i
 	resNameMap := make(map[string]iamtypes.TypeID)
 	resNameEnMap := make(map[string]iamtypes.TypeID)
 	updateResPrevNameMap := make(map[iamtypes.TypeID]iamName)
-
 	newResTypes := make([]iam.ResourceType, 0)
 	updateResTypes := make([]iam.ResourceType, 0)
-
 	for _, resourceType := range GenerateResourceTypes(objects) {
 		resNameMap[resourceType.Name] = resourceType.ID
 		resNameEnMap[resourceType.NameEn] = resourceType.ID
-
 		// if current resource type is not registered, register it, otherwise, update it if its version is changed
 		registeredResType, exists := registeredResTypeMap[resourceType.ID]
 		if exists {
 			// registered resource type exists in current resource types, should not be removed
 			delete(registeredResTypeMap, resourceType.ID)
-
 			if i.compareResType(registeredResType, resourceType) {
 				continue
 			}
-
 			updateResPrevNameMap[resourceType.ID] = iamName{
 				Name:   registeredResType.Name,
 				NameEn: registeredResType.NameEn,
@@ -292,41 +286,33 @@ func (i IAM) crossCompareResTypes(kit *httprest.Kit, registeredResourceTypes []i
 			updateResTypes = append(updateResTypes, resourceType)
 			continue
 		}
-
 		newResTypes = append(newResTypes, resourceType)
 	}
-
 	// if to update resource type previous name conflict with a valid one, change its name to an intermediate one first
 	conflictResTypes := make([]iam.ResourceType, 0)
 	for _, updateResType := range updateResTypes {
 		prevName := updateResPrevNameMap[updateResType.ID]
 		isConflict := false
-
 		if resNameMap[prevName.Name] != updateResType.ID {
 			isConflict = true
 			updateResType.Name = prevName.Name + "_"
 		}
-
 		if resNameEnMap[prevName.NameEn] != updateResType.ID {
 			isConflict = true
 			updateResType.NameEn = prevName.NameEn + "_"
 		}
-
 		if isConflict {
 			conflictResTypes = append(conflictResTypes, updateResType)
 		}
 	}
-
 	// remove the resource types that are not exist in new resource types
 	removedResTypeIDs := make([]iamtypes.TypeID, len(registeredResTypeMap))
 	idx := 0
 	for resTypeID, resType := range registeredResTypeMap {
 		removedResTypeIDs[idx] = resTypeID
 		idx++
-
 		// if to remove resource type name conflicts with a valid one, change its name to an intermediate one first
 		isConflict := false
-
 		if _, exists := resNameMap[resType.Name]; exists {
 			resType.Name += "_"
 			isConflict = true
@@ -335,7 +321,6 @@ func (i IAM) crossCompareResTypes(kit *httprest.Kit, registeredResourceTypes []i
 			resType.NameEn += "_"
 			isConflict = true
 		}
-
 		if isConflict {
 			if resType.Version == 0 {
 				resType.Version = 1
@@ -343,7 +328,6 @@ func (i IAM) crossCompareResTypes(kit *httprest.Kit, registeredResourceTypes []i
 			conflictResTypes = append(conflictResTypes, resType)
 		}
 	}
-
 	return newResTypes, append(conflictResTypes, updateResTypes...), removedResTypeIDs
 }
 
@@ -374,8 +358,7 @@ func (i IAM) compareResType(registeredResType, resType iam.ResourceType) bool {
 
 // crossCompareInstSelections cross compare instance selections to get need create/update/delete ones
 func (i IAM) crossCompareInstSelections(registeredInstanceSelections []iam.InstanceSelection,
-	objects []metadata.Object) (
-	[]iam.InstanceSelection, []iam.InstanceSelection, []iamtypes.InstanceSelectionID) {
+	objects []metadata.Object) ([]iam.InstanceSelection, []iam.InstanceSelection, []iamtypes.InstanceSelectionID) {
 
 	registeredInstSelectionMap := make(map[iamtypes.InstanceSelectionID]iam.InstanceSelection)
 	for _, instanceSelection := range registeredInstanceSelections {
@@ -412,41 +395,33 @@ func (i IAM) crossCompareInstSelections(registeredInstanceSelections []iam.Insta
 			updateInstSelections = append(updateInstSelections, instanceSelection)
 			continue
 		}
-
 		newInstSelections = append(newInstSelections, instanceSelection)
 	}
-
 	// if to update selection previous name conflict with a valid one, change its name to an intermediate one first
 	conflictSelections := make([]iam.InstanceSelection, 0)
 	for _, updateSelection := range updateInstSelections {
 		prevName := updateSelectionPrevNameMap[updateSelection.ID]
 		isConflict := false
-
 		if selectionNameMap[prevName.Name] != updateSelection.ID {
 			updateSelection.Name = prevName.Name + "_"
 			isConflict = true
 		}
-
 		if selectionNameEnMap[prevName.NameEn] != updateSelection.ID {
 			updateSelection.NameEn = prevName.NameEn + "_"
 			isConflict = true
 		}
-
 		if isConflict {
 			conflictSelections = append(conflictSelections, updateSelection)
 		}
 	}
-
 	// remove the resource types that are not exist in new resource types
 	removedInstSelectionIDs := make([]iamtypes.InstanceSelectionID, len(registeredInstSelectionMap))
 	idx := 0
 	for selectionID, selection := range registeredInstSelectionMap {
 		removedInstSelectionIDs[idx] = selectionID
 		idx++
-
 		// if to remove selection name conflicts with a valid one, change its name to an intermediate one first
 		isConflict := false
-
 		if _, exists := selectionNameMap[selection.Name]; exists {
 			selection.Name += "_"
 			isConflict = true
@@ -455,12 +430,10 @@ func (i IAM) crossCompareInstSelections(registeredInstanceSelections []iam.Insta
 			selection.NameEn += "_"
 			isConflict = true
 		}
-
 		if isConflict {
 			conflictSelections = append(conflictSelections, selection)
 		}
 	}
-
 	return newInstSelections, append(conflictSelections, updateInstSelections...), removedInstSelectionIDs
 }
 
@@ -728,7 +701,6 @@ func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
 		return err
 	}
 	defer locker.Unlock()
-
 	fields := []iamtypes.SystemQueryField{iamtypes.FieldResourceTypes, iamtypes.FieldActions,
 		iamtypes.FieldActionGroups, iamtypes.FieldInstanceSelections}
 	iamInfo, err := i.Client.GetSystemInfo(kit.Ctx, kit.Header, fields)
@@ -742,12 +714,6 @@ func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
 	for _, objects := range tenantObjects {
 		allTenantsObjects = append(allTenantsObjects, objects...)
 	}
-	/*		// Todo remove it after iam tenant ready
-			if tenantID != kit.TenantID {
-				continue
-			}
-	*/
-
 	// get the cmdb resources
 	cmdbActions := genDynamicActions(allTenantsObjects)
 	cmdbInstanceSelections := genDynamicInstanceSelections(allTenantsObjects)
@@ -758,10 +724,6 @@ func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
 	addedInstanceSelections, deletedInstanceSelections := compareInstanceSelections(cmdbInstanceSelections,
 		iamInfo.InstanceSelections)
 	addedResourceTypes, deletedResourceTypes := compareResourceTypes(cmdbResourceTypes, iamInfo.ResourceTypes)
-	blog.Errorf("addedActions  %v, deletedActions %v", addedActions, deletedActions)
-	blog.Errorf("addedInstanceSelections %v, deletedInstanceSelections:  %v", addedInstanceSelections,
-		deletedInstanceSelections)
-	blog.Errorf("addedResourceTypes %v, deletedResourceTypes:  %v", addedResourceTypes, deletedResourceTypes)
 	// 因为资源间的依赖关系，删除和更新的顺序为 1.Action 2.InstanceSelection 3.IamResourceType
 	// 因为资源间的依赖关系，新建的顺序则反过来为 1.IamResourceType 2.InstanceSelection 3.Action
 	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
@@ -771,12 +733,47 @@ func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
 	if err != nil {
 		return err
 	}
+	err = i.registerIamResource(kit, addedResourceTypes, addedInstanceSelections, addedActions)
+	if err != nil {
+		return err
+	}
+
+	// update action_groups in iam, the action groups contains only the existed actions in iam
+	if len(addedActions) > 0 || len(deletedActions) > 0 {
+		actionMap := map[iamtypes.ActionID]struct{}{}
+		for _, action := range iamInfo.Actions {
+			if !isIAMSysInstanceAction(action.ID) {
+				actionMap[action.ID] = struct{}{}
+			}
+		}
+		for _, action := range cmdbActions {
+			actionMap[action.ID] = struct{}{}
+		}
+		cmdbActionGroups := GenerateActionGroups(allTenantsObjects)
+		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
+
+		// if all exist actions in iam needs no action group(which happens when first initializing), **skip**
+		if len(actualActionGroups) > 0 {
+			blog.Infof("begin update actionGroups, rid: %s", kit.Rid)
+			if err = i.Client.UpdateActionGroups(kit.Ctx, kit.Header, actualActionGroups); err != nil {
+				blog.Errorf("update action groups failed, actionGroups: %v,  err: %v, rid: %s", actualActionGroups, err,
+					kit.Rid)
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (i IAM) registerIamResource(kit *httprest.Kit, addedResourceTypes []iam.ResourceType,
+	addedInstanceSelections []iam.InstanceSelection, addedActions []iam.ResourceAction) error {
 
 	// add cmdb ResourceTypes in iam
 	if len(addedResourceTypes) > 0 {
 		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s",
 			len(addedResourceTypes), addedResourceTypes, kit.Rid)
-		if err = i.Client.RegisterResourcesTypes(kit.Ctx, kit.Header, addedResourceTypes); err != nil {
+		if err := i.Client.RegisterResourcesTypes(kit.Ctx, kit.Header, addedResourceTypes); err != nil {
 			blog.Errorf("sync iam sysInstances failed, add resourceType, resourceType: %s, error: %v, rid: %s",
 				addedResourceTypes, err, kit.Rid)
 			return err
@@ -804,33 +801,6 @@ func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
 			return err
 		}
 	}
-
-	// update action_groups in iam, the action groups contains only the existed actions in iam
-	if len(addedActions) > 0 || len(deletedActions) > 0 {
-		actionMap := map[iamtypes.ActionID]struct{}{}
-		for _, action := range iamInfo.Actions {
-			if !isIAMSysInstanceAction(action.ID) {
-				actionMap[action.ID] = struct{}{}
-			}
-		}
-		for _, action := range cmdbActions {
-			actionMap[action.ID] = struct{}{}
-		}
-
-		cmdbActionGroups := GenerateActionGroups(allTenantsObjects)
-		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
-
-		// if all exist actions in iam needs no action group(which happens when first initializing), **skip**
-		if len(actualActionGroups) > 0 {
-			blog.Infof("begin update actionGroups, rid: %s", kit.Rid)
-			if err = i.Client.UpdateActionGroups(kit.Ctx, kit.Header, actualActionGroups); err != nil {
-				blog.Errorf("update action groups failed, actionGroups: %v,  err: %v, rid: %s", actualActionGroups, err,
-					kit.Rid)
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -927,7 +897,6 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 			err, fields, rid)
 		return err
 	}
-
 	// get deleted actions
 	deletedActions := getDeletedActions(param.ActionIDs, iamInfo.Actions)
 	deletedInstanceSelections := getDeletedInstanceSelections(param.InstanceSelectionIDs,
@@ -936,7 +905,6 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 
 	// 因为资源间的依赖关系，删除的顺序为 1.Action 2.InstanceSelection 3.IamResourceType
 	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
-
 	// delete unnecessary actions in iam
 	if len(deletedActions) > 0 {
 		// before deleting action, the dependent action policies must be deleted
@@ -947,7 +915,6 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 				return err
 			}
 		}
-
 		blog.Infof("begin delete actions, count:%d, detail:%v, rid: %s", len(deletedActions), deletedActions, rid)
 		if err := i.Client.DeleteActions(ctx, header, deletedActions); err != nil {
 			blog.Errorf("delete cmdb resource failed, delete IAM actions error: %s, actions: %s, rid: %s",
@@ -955,7 +922,6 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 			return err
 		}
 	}
-
 	// delete unnecessary InstanceSelections in iam
 	if len(deletedInstanceSelections) > 0 {
 		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid: %s",
@@ -966,7 +932,6 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 			return err
 		}
 	}
-
 	// delete unnecessary ResourceTypes in iam
 	if len(deletedResourceTypes) > 0 {
 		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid: %s",
@@ -977,21 +942,17 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 			return err
 		}
 	}
-
 	// update action_groups in iam
 	if len(deletedActions) > 0 {
 		actionMap := map[iamtypes.ActionID]struct{}{}
 		for _, action := range iamInfo.Actions {
 			actionMap[action.ID] = struct{}{}
 		}
-
 		for _, action := range deletedActions {
 			delete(actionMap, action)
 		}
-
 		cmdbActionGroups := GenerateActionGroups(objects)
 		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
-
 		if len(actualActionGroups) > 0 {
 			blog.Infof("begin update action groups")
 			if err := i.Client.UpdateActionGroups(ctx, header, actualActionGroups); err != nil {
@@ -1001,7 +962,6 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 			}
 		}
 	}
-
 	return nil
 }
 

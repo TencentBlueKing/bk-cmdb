@@ -36,8 +36,6 @@ import (
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/apigw"
-	"configcenter/src/thirdparty/esbserver/esbutil"
-
 	"github.com/Shopify/sarama"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -63,9 +61,6 @@ type DataCollectionConfig struct {
 
 	// SnapKafka snap kafka configs.
 	SnapKafka kafka.Config
-
-	// ESB blueking ESB configs.
-	Esb esbutil.EsbConfig
 
 	// SnapReportMode hostsnap report mode
 	SnapReportMode        string
@@ -175,10 +170,6 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 		}
 
 		blog.V(3).Infof("DataCollection| on host config update event: \n%s", string(curr.ConfigData))
-		// ESB configs.
-		c.config.Esb.Addrs, _ = cc.String("esb.addr")
-		c.config.Esb.AppCode, _ = cc.String("esb.appCode")
-		c.config.Esb.AppSecret, _ = cc.String("esb.appSecret")
 	}
 }
 

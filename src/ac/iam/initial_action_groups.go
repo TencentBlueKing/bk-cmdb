@@ -92,136 +92,76 @@ func genBizSetManageActionGroups() []iam.ActionGroup {
 
 func genBusinessManageActionGroups() []iam.ActionGroup {
 	return []iam.ActionGroup{
-		{
-			Name:   "业务管理",
-			NameEn: "Business Manage",
-			Actions: []iam.ActionWithID{
-				{
-					ID: iamtypes.ViewBusinessResource,
-				},
-			},
+		{Name: "业务管理",
+			NameEn:  "Business Manage",
+			Actions: []iam.ActionWithID{{ID: iamtypes.ViewBusinessResource}},
 			SubGroups: []iam.ActionGroup{
 				{
 					Name:   "业务主机",
 					NameEn: "Business Host",
 					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.EditBusinessHost,
-						},
-						{
-							ID: iamtypes.BusinessHostTransferToResourcePool,
-						},
-						{
-							ID: iamtypes.HostTransferAcrossBusiness,
-						},
+						{ID: iamtypes.EditBusinessHost},
+						{ID: iamtypes.BusinessHostTransferToResourcePool},
+						{ID: iamtypes.HostTransferAcrossBusiness},
 					},
 				},
 				{
 					Name:   "业务拓扑",
 					NameEn: "Business Topology",
 					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.CreateBusinessTopology,
-						},
-						{
-							ID: iamtypes.EditBusinessTopology,
-						},
-						{
-							ID: iamtypes.DeleteBusinessTopology,
-						},
+						{ID: iamtypes.CreateBusinessTopology}, {ID: iamtypes.EditBusinessTopology},
+						{ID: iamtypes.DeleteBusinessTopology},
 					},
 				},
 				{
 					Name:   "服务实例",
 					NameEn: "Service Instance",
 					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.CreateBusinessServiceInstance,
-						},
-						{
-							ID: iamtypes.EditBusinessServiceInstance,
-						},
-						{
-							ID: iamtypes.DeleteBusinessServiceInstance,
-						},
+						{ID: iamtypes.CreateBusinessServiceInstance}, {ID: iamtypes.EditBusinessServiceInstance},
+						{ID: iamtypes.DeleteBusinessServiceInstance},
 					},
 				},
 				{
 					Name:   "服务模版",
 					NameEn: "Service Template",
-					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.CreateBusinessServiceTemplate,
-						},
-						{
-							ID: iamtypes.EditBusinessServiceTemplate,
-						},
-						{
-							ID: iamtypes.DeleteBusinessServiceTemplate,
-						},
+					Actions: []iam.ActionWithID{{ID: iamtypes.CreateBusinessServiceTemplate},
+						{ID: iamtypes.EditBusinessServiceTemplate}, {ID: iamtypes.DeleteBusinessServiceTemplate},
 					},
 				},
 				{
 					Name:   "集群模版",
 					NameEn: "Set Template",
 					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.CreateBusinessSetTemplate,
-						},
-						{
-							ID: iamtypes.EditBusinessSetTemplate,
-						},
-						{
-							ID: iamtypes.DeleteBusinessSetTemplate,
-						},
+						{ID: iamtypes.CreateBusinessSetTemplate}, {ID: iamtypes.EditBusinessSetTemplate},
+						{ID: iamtypes.DeleteBusinessSetTemplate},
 					},
 				},
 				{
 					Name:   "服务分类",
 					NameEn: "Service Category",
 					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.CreateBusinessServiceCategory,
-						},
-						{
-							ID: iamtypes.EditBusinessServiceCategory,
-						},
-						{
-							ID: iamtypes.DeleteBusinessServiceCategory,
-						},
+						{ID: iamtypes.CreateBusinessServiceCategory}, {ID: iamtypes.EditBusinessServiceCategory},
+						{ID: iamtypes.DeleteBusinessServiceCategory},
 					},
 				},
 				{
 					Name:   "动态分组",
 					NameEn: "Dynamic Grouping",
 					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.CreateBusinessCustomQuery,
-						},
-						{
-							ID: iamtypes.EditBusinessCustomQuery,
-						},
-						{
-							ID: iamtypes.DeleteBusinessCustomQuery,
-						},
+						{ID: iamtypes.CreateBusinessCustomQuery}, {ID: iamtypes.EditBusinessCustomQuery},
+						{ID: iamtypes.DeleteBusinessCustomQuery},
 					},
 				},
 				{
-					Name:   "业务自定义字段",
-					NameEn: "Business Custom Field",
-					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.EditBusinessCustomField,
-						},
-					},
+					Name:    "业务自定义字段",
+					NameEn:  "Business Custom Field",
+					Actions: []iam.ActionWithID{{ID: iamtypes.EditBusinessCustomField}},
 				},
 				{
 					Name:   "主机自动应用",
 					NameEn: "Business Host Apply",
 					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.EditBusinessHostApply,
-						},
+						{ID: iamtypes.EditBusinessHostApply},
 					},
 				},
 			},
@@ -238,185 +178,55 @@ func genResourceManageActionGroups() []iam.ActionGroup {
 				{
 					Name:   "主机池",
 					NameEn: "Host Pool",
-					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.ViewResourcePoolHost,
-						},
-						{
-							ID: iamtypes.CreateResourcePoolHost,
-						},
-						{
-							ID: iamtypes.EditResourcePoolHost,
-						},
-						{
-							ID: iamtypes.DeleteResourcePoolHost,
-						},
-						{
-							ID: iamtypes.ResourcePoolHostTransferToBusiness,
-						},
-						{
-							ID: iamtypes.ResourcePoolHostTransferToDirectory,
-						},
-						{
-							ID: iamtypes.CreateResourcePoolDirectory,
-						},
-						{
-							ID: iamtypes.EditResourcePoolDirectory,
-						},
-						{
-							ID: iamtypes.DeleteResourcePoolDirectory,
-						},
-						{
-							ID: iamtypes.ManageHostAgentID,
-						},
-					},
+					Actions: []iam.ActionWithID{{ID: iamtypes.ViewResourcePoolHost},
+						{ID: iamtypes.CreateResourcePoolHost}, {ID: iamtypes.EditResourcePoolHost},
+						{ID: iamtypes.DeleteResourcePoolHost}, {ID: iamtypes.ResourcePoolHostTransferToBusiness},
+						{ID: iamtypes.ResourcePoolHostTransferToDirectory}, {ID: iamtypes.CreateResourcePoolDirectory},
+						{ID: iamtypes.EditResourcePoolDirectory}, {ID: iamtypes.DeleteResourcePoolDirectory},
+						{ID: iamtypes.ManageHostAgentID}},
 				},
 				{
-					Name:   "业务",
-					NameEn: "Business",
+					Name: "业务", NameEn: "Business",
 					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.CreateBusiness,
-						},
-						{
-							ID: iamtypes.EditBusiness,
-						},
-						{
-							ID: iamtypes.ArchiveBusiness,
-						},
-						{
-							ID: iamtypes.FindBusiness,
-						},
-					},
+						{ID: iamtypes.CreateBusiness}, {ID: iamtypes.EditBusiness}, {ID: iamtypes.ArchiveBusiness},
+						{ID: iamtypes.FindBusiness}}},
+				{
+					Name: "项目", NameEn: "Project",
+					Actions: []iam.ActionWithID{{ID: iamtypes.CreateProject}, {ID: iamtypes.EditProject},
+						{ID: iamtypes.DeleteProject}, {ID: iamtypes.ViewProject}},
 				},
 				{
-					Name:   "项目",
-					NameEn: "Project",
-					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.CreateProject,
-						},
-						{
-							ID: iamtypes.EditProject,
-						},
-						{
-							ID: iamtypes.DeleteProject,
-						},
-						{
-							ID: iamtypes.ViewProject,
-						},
-					},
-				},
-				{
-					Name:   "业务集",
-					NameEn: "BizSet",
-					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.CreateBizSet,
-						},
-						{
-							ID: iamtypes.EditBizSet,
-						},
-						{
-							ID: iamtypes.DeleteBizSet,
-						},
-						{
-							ID: iamtypes.ViewBizSet,
-						},
-					},
+					Name: "业务集", NameEn: "BizSet",
+					Actions: []iam.ActionWithID{{ID: iamtypes.CreateBizSet}, {ID: iamtypes.EditBizSet},
+						{ID: iamtypes.DeleteBizSet}, {ID: iamtypes.ViewBizSet}},
 				},
 				{
 					Name:   "管控区域",
 					NameEn: "Cloud Area",
-					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.ViewCloudArea,
-						},
-						{
-							ID: iamtypes.CreateCloudArea,
-						},
-						{
-							ID: iamtypes.EditCloudArea,
-						},
-						{
-							ID: iamtypes.DeleteCloudArea,
-						},
-					},
+					Actions: []iam.ActionWithID{{ID: iamtypes.ViewCloudArea}, {ID: iamtypes.CreateCloudArea},
+						{ID: iamtypes.EditCloudArea}, {ID: iamtypes.DeleteCloudArea}},
 				},
 				{
 					Name:   "事件监听",
 					NameEn: "Event Watch",
 					Actions: []iam.ActionWithID{
-						{
-							ID: iamtypes.WatchHostEvent,
-						},
-						{
-							ID: iamtypes.WatchHostRelationEvent,
-						},
-						{
-							ID: iamtypes.WatchBizEvent,
-						},
-						{
-							ID: iamtypes.WatchSetEvent,
-						},
-						{
-							ID: iamtypes.WatchModuleEvent,
-						},
-						{
-							ID: iamtypes.WatchProcessEvent,
-						},
-						{
-							ID: iamtypes.WatchCommonInstanceEvent,
-						},
-						{
-							ID: iamtypes.WatchMainlineInstanceEvent,
-						},
-						{
-							ID: iamtypes.WatchInstAsstEvent,
-						},
-						{
-							ID: iamtypes.WatchBizSetEvent,
-						},
-						{
-							ID: iamtypes.WatchPlatEvent,
-						},
-						{
-							ID: iamtypes.WatchKubeClusterEvent,
-						},
-						{
-							ID: iamtypes.WatchKubeNodeEvent,
-						},
-						{
-							ID: iamtypes.WatchKubeNamespaceEvent,
-						},
-						{
-							ID: iamtypes.WatchKubeWorkloadEvent,
-						},
-						{
-							ID: iamtypes.WatchKubePodEvent,
-						},
-						{
-							ID: iamtypes.WatchProjectEvent,
-						},
-					},
+						{ID: iamtypes.WatchHostEvent}, {ID: iamtypes.WatchHostRelationEvent},
+						{ID: iamtypes.WatchBizEvent}, {ID: iamtypes.WatchSetEvent},
+						{ID: iamtypes.WatchModuleEvent}, {ID: iamtypes.WatchProcessEvent},
+						{ID: iamtypes.WatchCommonInstanceEvent}, {ID: iamtypes.WatchMainlineInstanceEvent},
+						{ID: iamtypes.WatchInstAsstEvent}, {ID: iamtypes.WatchBizSetEvent},
+						{ID: iamtypes.WatchPlatEvent}, {ID: iamtypes.WatchKubeClusterEvent},
+						{ID: iamtypes.WatchKubeNodeEvent}, {ID: iamtypes.WatchKubeNamespaceEvent},
+						{ID: iamtypes.WatchKubeWorkloadEvent}, {ID: iamtypes.WatchKubePodEvent},
+						{ID: iamtypes.WatchProjectEvent}},
 				},
 				{
-					Name:   "全量同步缓存条件",
-					NameEn: "Full Sync Condition",
-					Actions: []iam.ActionWithID{
-						{ID: iamtypes.CreateFullSyncCond},
-						{ID: iamtypes.ViewFullSyncCond},
-						{ID: iamtypes.EditFullSyncCond},
-						{ID: iamtypes.DeleteFullSyncCond},
-					},
-				},
+					Name: "全量同步缓存条件", NameEn: "Full Sync Condition",
+					Actions: []iam.ActionWithID{{ID: iamtypes.CreateFullSyncCond},
+						{ID: iamtypes.ViewFullSyncCond}, {ID: iamtypes.EditFullSyncCond},
+						{ID: iamtypes.DeleteFullSyncCond}}},
 				{
-					Name:   "缓存",
-					NameEn: "Cache",
-					Actions: []iam.ActionWithID{
-						{ID: iamtypes.ViewGeneralCache},
-					},
-				},
+					Name: "缓存", NameEn: "Cache", Actions: []iam.ActionWithID{{ID: iamtypes.ViewGeneralCache}}},
 			},
 		},
 	}

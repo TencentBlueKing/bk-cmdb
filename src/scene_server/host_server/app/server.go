@@ -45,14 +45,12 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	service := new(hostsvc.Service)
 	hostSrv := new(HostServer)
-
 	input := &backbone.BackboneParameter{
 		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: hostSrv.onHostConfigUpdate,
 		SrvInfo:      svrInfo,
 	}
-
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		blog.Errorf("new backbone failed, err: %v", err)
@@ -115,7 +113,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err
 	}
-
 	select {
 	case <-ctx.Done():
 	}
@@ -146,10 +143,10 @@ func parseServerConfig(service *hostsvc.Service) {
 }
 
 // InitClients init apiGW client
-func (s *HostServer) InitClients() error {
+func (h *HostServer) InitClients() error {
 
 	var clients []apigw.ClientType
-	if s.Config.EnableMultiTenantMode && !s.Config.DisableVerifyTenant {
+	if h.Config.EnableMultiTenantMode && !h.Config.DisableVerifyTenant {
 		clients = []apigw.ClientType{apigw.User}
 	}
 
@@ -158,7 +155,7 @@ func (s *HostServer) InitClients() error {
 	}
 
 	if len(clients) > 0 {
-		err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), clients)
+		err := apigwcli.Init("apiGW", h.Core.Metric().Registry(), clients)
 		if err != nil {
 			blog.Errorf("init gse api gateway client failed, err: %v", err)
 			return err

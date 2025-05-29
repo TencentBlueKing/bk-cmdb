@@ -367,10 +367,10 @@ func GetResourceIDField(resourceType iamtypes.TypeID) string {
 	switch resourceType {
 	case iamtypes.Host:
 		return common.BKHostIDField
-	case iamtypes.SysModelGroup, iamtypes.SysModel, iamtypes.SysInstanceModel, iamtypes.SysModelEvent, iamtypes.InstAsstEvent,
-		iamtypes.MainlineModelEvent, iamtypes.SysAssociationType, iamtypes.BizCustomQuery, iamtypes.BizProcessServiceTemplate,
-		iamtypes.BizProcessServiceCategory, iamtypes.BizProcessServiceInstance, iamtypes.BizSetTemplate, iamtypes.Project,
-		iamtypes.FieldGroupingTemplate:
+	case iamtypes.SysModelGroup, iamtypes.SysModel, iamtypes.SysInstanceModel, iamtypes.SysModelEvent,
+		iamtypes.InstAsstEvent, iamtypes.MainlineModelEvent, iamtypes.SysAssociationType, iamtypes.BizCustomQuery,
+		iamtypes.BizProcessServiceTemplate, iamtypes.BizProcessServiceCategory, iamtypes.BizProcessServiceInstance,
+		iamtypes.BizSetTemplate, iamtypes.Project, iamtypes.FieldGroupingTemplate:
 		return common.BKFieldID
 	case iamtypes.SysInstance:
 		return common.BKInstIDField
@@ -401,7 +401,8 @@ func GetResourceNameField(resourceType iamtypes.TypeID) string {
 		return common.BKHostInnerIPField
 	case iamtypes.SysModelGroup:
 		return common.BKClassificationNameField
-	case iamtypes.SysModel, iamtypes.SysInstanceModel, iamtypes.SysModelEvent, iamtypes.MainlineModelEvent, iamtypes.InstAsstEvent:
+	case iamtypes.SysModel, iamtypes.SysInstanceModel, iamtypes.SysModelEvent, iamtypes.MainlineModelEvent,
+		iamtypes.InstAsstEvent:
 		return common.BKObjNameField
 	case iamtypes.SysAssociationType:
 		return common.AssociationKindNameField

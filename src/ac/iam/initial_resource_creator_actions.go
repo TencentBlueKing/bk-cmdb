@@ -23,190 +23,73 @@ func GenerateResourceCreatorActions() iam.ResourceCreatorActions {
 		Config: []iam.ResourceCreatorAction{
 			{
 				ResourceID: types.SysResourcePoolDirectory,
-				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditResourcePoolDirectory,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteResourcePoolDirectory,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditResourcePoolDirectory, IsRequired: false},
+					{ID: types.DeleteResourcePoolDirectory, IsRequired: false}}, SubResourceTypes: nil},
 			{
 				ResourceID: types.Business,
-				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditBusiness,
-						IsRequired: false,
-					},
-					{
-						ID:         types.ArchiveBusiness,
-						IsRequired: false,
-					},
-					{
-						ID:         types.FindBusiness,
-						IsRequired: false,
-					},
-				},
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditBusiness, IsRequired: false},
+					{ID: types.ArchiveBusiness, IsRequired: false}, {ID: types.FindBusiness, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 			{
 				ResourceID: types.SysCloudArea,
-				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditCloudArea,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteCloudArea,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditCloudArea, IsRequired: false},
+					{ID: types.DeleteCloudArea, IsRequired: false}}, SubResourceTypes: nil},
 			{
 				ResourceID: types.SysModelGroup,
-				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditModelGroup,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteModelGroup,
-						IsRequired: false,
-					},
-				},
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditModelGroup, IsRequired: false},
+					{ID: types.DeleteModelGroup, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 			{
 				ResourceID: types.SysModel,
-				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.ViewSysModel,
-						IsRequired: false,
-					},
-					{
-						ID:         types.EditSysModel,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteSysModel,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
+				Actions: []iam.CreatorRelatedAction{{ID: types.ViewSysModel, IsRequired: false},
+					{ID: types.EditSysModel, IsRequired: false},
+					{ID: types.DeleteSysModel, IsRequired: false}}, SubResourceTypes: nil},
 			{
 				ResourceID: types.SysAssociationType,
-				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditAssociationType,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteAssociationType,
-						IsRequired: false,
-					},
-				},
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditAssociationType, IsRequired: false},
+					{ID: types.DeleteAssociationType, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 			{
 				ResourceID: types.BizProcessServiceTemplate,
 				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditBusinessServiceTemplate,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteBusinessServiceTemplate,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
+					{ID: types.EditBusinessServiceTemplate, IsRequired: false},
+					{ID: types.DeleteBusinessServiceTemplate, IsRequired: false},
+				}, SubResourceTypes: nil,
 			},
 			{
 				ResourceID: types.BizSetTemplate,
 				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditBusinessSetTemplate,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteBusinessSetTemplate,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
+					{ID: types.EditBusinessSetTemplate, IsRequired: false},
+					{ID: types.DeleteBusinessSetTemplate, IsRequired: false},
+				}, SubResourceTypes: nil,
 			},
 			{
 				ResourceID: types.BizCustomQuery,
 				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditBusinessCustomQuery,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteBusinessCustomQuery,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
+					{ID: types.EditBusinessCustomQuery, IsRequired: false},
+					{ID: types.DeleteBusinessCustomQuery, IsRequired: false},
+				}, SubResourceTypes: nil,
 			},
 			{
 				ResourceID: types.FieldGroupingTemplate,
 				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditFieldGroupingTemplate,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteFieldGroupingTemplate,
-						IsRequired: false,
-					},
-					{
-						ID:         types.ViewFieldGroupingTemplate,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
+					{ID: types.EditFieldGroupingTemplate, IsRequired: false},
+					{ID: types.DeleteFieldGroupingTemplate, IsRequired: false},
+					{ID: types.ViewFieldGroupingTemplate, IsRequired: false},
+				}, SubResourceTypes: nil,
 			},
 			{
-				ResourceID: types.BizSet,
-				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditBizSet,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteBizSet,
-						IsRequired: false,
-					},
-					{
-						ID:         types.ViewBizSet,
-						IsRequired: false,
-					},
-				},
+				ResourceID: types.BizSet, Actions: []iam.CreatorRelatedAction{{ID: types.EditBizSet, IsRequired: false},
+					{ID: types.DeleteBizSet, IsRequired: false}, {ID: types.ViewBizSet, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 			{
 				ResourceID: types.Project,
-				Actions: []iam.CreatorRelatedAction{
-					{
-						ID:         types.EditProject,
-						IsRequired: false,
-					},
-					{
-						ID:         types.DeleteProject,
-						IsRequired: false,
-					},
-					{
-						ID:         types.ViewProject,
-						IsRequired: false,
-					},
-				},
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditProject, IsRequired: false},
+					{ID: types.DeleteProject, IsRequired: false}, {ID: types.ViewProject, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 		},

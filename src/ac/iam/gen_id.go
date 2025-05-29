@@ -552,113 +552,66 @@ func genModelTopologyViewResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
 	return make([]iam.Resource, 0), nil
 }
 
+func getResource(types []iam.IamResourceType, a *meta.ResourceAttribute) ([]iam.Resource, error) {
+
+	if len(a.Layers) != 2 {
+		return nil, NotEnoughLayer
+	}
+	resources := make([]iam.Resource, 2)
+	resources[0] = iam.Resource{
+		System: iamtypes.SystemIDCMDB,
+		Type:   types[0],
+		ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
+	}
+	resources[1] = iam.Resource{
+		System: iamtypes.SystemIDCMDB,
+		Type:   types[1],
+		ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
+	}
+
+	return resources, nil
+}
+
 func genHostInstanceResource(act iamtypes.ActionID, typ iamtypes.TypeID, a *meta.ResourceAttribute) ([]iam.Resource,
 	error) {
 
 	// find host instances
 	if act == iamtypes.Skip {
-		r := iam.Resource{
-			System:    iamtypes.SystemIDCMDB,
-			Type:      iam.IamResourceType(typ),
-			Attribute: nil,
-		}
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(typ), Attribute: nil}
 		return []iam.Resource{r}, nil
 	}
 
 	// transfer resource pool's host to it's another directory.
 	if act == iamtypes.ResourcePoolHostTransferToDirectory {
-		if len(a.Layers) != 2 {
-			return nil, NotEnoughLayer
-		}
-
-		resources := make([]iam.Resource, 2)
-		resources[0] = iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
-			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
-		}
-
-		resources[1] = iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.SysResourcePoolDirectory),
-			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
-		}
-
-		return resources, nil
+		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
+			iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
+		return getResource(types, a)
 	}
 
 	// transfer host in resource pool to business
 	if act == iamtypes.ResourcePoolHostTransferToBusiness {
-		if len(a.Layers) != 2 {
-			return nil, NotEnoughLayer
-		}
-
-		resources := make([]iam.Resource, 2)
-		resources[0] = iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
-			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
-		}
-
-		resources[1] = iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.Business),
-			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
-		}
-
-		return resources, nil
+		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
+			iam.IamResourceType(iamtypes.Business)}
+		return getResource(types, a)
 	}
 
 	// transfer host from business to resource pool
 	if act == iamtypes.BusinessHostTransferToResourcePool {
-		if len(a.Layers) != 2 {
-			return nil, NotEnoughLayer
-		}
-
-		resources := make([]iam.Resource, 2)
-		resources[0] = iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.Business),
-			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
-		}
-
-		resources[1] = iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.SysResourcePoolDirectory),
-			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
-		}
-
-		return resources, nil
+		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.Business),
+			iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
+		return getResource(types, a)
 	}
 
 	// transfer host from one business to another
 	if act == iamtypes.HostTransferAcrossBusiness {
-		if len(a.Layers) != 2 {
-			return nil, NotEnoughLayer
-		}
-
-		resources := make([]iam.Resource, 2)
-		resources[0] = iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.BusinessForHostTrans),
-			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
-		}
-
-		resources[1] = iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.Business),
-			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
-		}
-
-		return resources, nil
+		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.BusinessForHostTrans),
+			iam.IamResourceType(iamtypes.Business)}
+		return getResource(types, a)
 	}
 
 	// import host
 	if act == iamtypes.CreateResourcePoolHost {
-		r := iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.SysResourcePoolDirectory),
-		}
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
 		if len(a.Layers) > 0 {
 			r.ID = strconv.FormatInt(a.Layers[0].InstanceID, 10)
 		}
@@ -667,49 +620,36 @@ func genHostInstanceResource(act iamtypes.ActionID, typ iamtypes.TypeID, a *meta
 
 	// edit or delete resource pool host instances
 	if act == iamtypes.EditResourcePoolHost || act == iamtypes.DeleteResourcePoolHost {
-		r := iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(typ),
-		}
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(typ)}
 		if a.InstanceID > 0 {
 			r.ID = strconv.FormatInt(a.InstanceID, 10)
 		}
 		if len(a.Layers) > 0 {
-			r.Attribute = map[string]interface{}{
-				types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", iamtypes.SysHostRscPoolDirectory,
-					a.Layers[0].InstanceID)},
-			}
+			r.Attribute = map[string]interface{}{types.IamPathKey: []string{
+				fmt.Sprintf("/%s,%d/", iamtypes.SysHostRscPoolDirectory, a.Layers[0].InstanceID)}}
 		}
 		return []iam.Resource{r}, nil
 	}
 
 	// edit business host
 	if act == iamtypes.EditBusinessHost {
-		r := iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(typ),
-		}
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(typ)}
 		if a.InstanceID > 0 {
 			r.ID = strconv.FormatInt(a.InstanceID, 10)
 		}
 		if len(a.Layers) > 0 {
-			r.Attribute = map[string]interface{}{
-				types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", iamtypes.Business, a.Layers[0].InstanceID)},
-			}
+			r.Attribute = map[string]interface{}{types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", iamtypes.Business,
+				a.Layers[0].InstanceID)}}
 		}
 		return []iam.Resource{r}, nil
 	}
 
 	// find business host
 	if act == iamtypes.ViewBusinessResource {
-		r := iam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   iam.IamResourceType(iamtypes.Business),
-			ID:     strconv.FormatInt(a.BusinessID, 10),
-		}
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(iamtypes.Business),
+			ID: strconv.FormatInt(a.BusinessID, 10)}
 		return []iam.Resource{r}, nil
 	}
-
 	return []iam.Resource{}, nil
 }
 

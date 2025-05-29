@@ -23,9 +23,7 @@ import (
 	"configcenter/src/common/metric"
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/restfulservice"
-	"configcenter/src/scene_server/datacollection/logics"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/esbserver"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
@@ -40,18 +38,11 @@ type Service struct {
 	snapCli redis.Client
 	disCli  redis.Client
 	netCli  redis.Client
-
-	logics *logics.Logics
 }
 
 // NewService creates a new Service object.
 func NewService(ctx context.Context, engine *backbone.Engine) *Service {
 	return &Service{ctx: ctx, engine: engine}
-}
-
-// SetLogics setups logics comm.
-func (s *Service) SetLogics(esb esbserver.EsbClientInterface) {
-	s.logics = logics.NewLogics(s.ctx, s.engine, esb)
 }
 
 // SetCache setups cc main redis.

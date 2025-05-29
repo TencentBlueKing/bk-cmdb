@@ -25,7 +25,6 @@ import (
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	apigwcli "configcenter/src/common/resource/apigw"
-	"configcenter/src/common/resource/esb"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/auth_server/app/options"
 	"configcenter/src/scene_server/auth_server/logics"
@@ -112,10 +111,6 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 		a.Config.TLS, err = util.NewTLSClientConfigFromConfig("authServer")
 		if err != nil {
 			blog.Warnf("parse auth center tls config failed: %v", err)
-		}
-
-		if esbConfig, err := esb.ParseEsbConfig(); err == nil {
-			esb.UpdateEsbConfig(*esbConfig)
 		}
 	}
 }

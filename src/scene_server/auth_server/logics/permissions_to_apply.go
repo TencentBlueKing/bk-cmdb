@@ -111,13 +111,10 @@ func (lgc *Logics) getPermissionData(kit *rest.Kit, rs []meta.ResourceAttribute)
 		if err != nil {
 			return nil, err
 		}
-
 		actionIDRscTypeMap[actionID] = *rscType
-
 		if _, ok := permissionMap[actionID]; !ok {
 			permissionMap[actionID] = make(map[string][][]metadata.IamResourceInstance, 0)
 		}
-
 		sysInstModelIDs := getAllSysInstanceModelIDs(*rscType, resource)
 		if len(sysInstModelIDs) > 0 {
 			var err error
@@ -125,14 +122,12 @@ func (lgc *Logics) getPermissionData(kit *rest.Kit, rs []meta.ResourceAttribute)
 				return nil, err
 			}
 		}
-
 		// generate iam resource instances by its paths and itself
 		for _, res := range resource {
 			if len(res.ID) == 0 && res.Attribute == nil {
 				permissionMap[actionID][string(res.Type)] = nil
 				continue
 			}
-
 			instance := make([]metadata.IamResourceInstance, 0)
 			if res.Attribute != nil {
 				iamPath, ok := res.Attribute[types.IamPathKey].([]string)
@@ -155,7 +150,6 @@ func (lgc *Logics) getPermissionData(kit *rest.Kit, rs []meta.ResourceAttribute)
 						ancestorID)
 				}
 			}
-
 			if len(res.ID) > 0 {
 				instance = append(instance, metadata.IamResourceInstance{
 					Type:     string(res.Type),
@@ -173,7 +167,6 @@ func (lgc *Logics) getPermissionData(kit *rest.Kit, rs []meta.ResourceAttribute)
 			permissionMap[actionID][string(res.Type)] = append(permissionMap[actionID][string(res.Type)], instance)
 		}
 	}
-
 	return &permissionData{permissionMap: permissionMap, actionIDRscTypeMap: actionIDRscTypeMap,
 		sysInstModelIDNameMap: sysInstModelIDNameMap, instTypeIDsMap: instTypeIDsMap,
 	}, nil

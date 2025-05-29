@@ -15,6 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package types provides types for iam
 package types
 
 import "configcenter/src/ac/meta"

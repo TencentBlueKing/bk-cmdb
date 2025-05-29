@@ -12,14 +12,6 @@
  */
 package metadata
 
-// EsbBaseResponse TODO
-type EsbBaseResponse struct {
-	Result       bool   `json:"result"`
-	Code         int    `json:"code"`
-	Message      string `json:"message"`
-	EsbRequestID string `json:"request_id"`
-}
-
 // ProcessModule TODO
 type ProcessModule struct {
 	AppID      int64  `json:"bk_biz_id" bson:"bk_biz_id"`
