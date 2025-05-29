@@ -198,7 +198,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	if collection == "" || idField == "" {
 		return nil, fmt.Errorf("request type %s is invalid", opts.Type)
 	}
-
 	// get aggregated policy for all attribute policies
 	policy, err := lgc.getAggrPolicy(opts.Operator, opts.AttrPolicies)
 	if err != nil {
@@ -206,7 +205,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			err, opts.Operator, opts.AttrPolicies, rid)
 		return nil, err
 	}
-
 	cond, err := lgc.parseFilterToMongo(ctx, header, policy, resourceType)
 	if err != nil {
 		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s", policy, err.Error(), rid)
@@ -215,7 +213,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	if cond == nil {
 		return make([]string, 0), nil
 	}
-
 	if len(opts.IDList) > 0 {
 		idCond := make(map[string]interface{})
 		if isResourceIDStringType(resourceType) {
@@ -232,10 +229,8 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			}
 			idCond[idField] = map[string]interface{}{common.BKDBIN: ids}
 		}
-
 		cond = map[string]interface{}{common.BKDBAND: []map[string]interface{}{idCond, cond}}
 	}
-
 	param := metadata.PullResourceParam{
 		Collection: collection,
 		Condition:  cond,
@@ -251,7 +246,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		blog.Errorf("search auth resource failed, err: %v, param: %#v, rid: %s", err, param, rid)
 		return nil, err
 	}
-
 	idList := make([]string, 0)
 	for _, instance := range res.Data.Info {
 		id := util.GetStrByInterface(instance[idField])
