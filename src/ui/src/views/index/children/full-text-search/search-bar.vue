@@ -26,6 +26,9 @@
           @input="handleInput"
           @enter="handleSearch"
           @clear="handleClear">
+          <div slot="append" :class="{ 'input-focus': focusWithin }">
+            <bk-checkbox v-model="isExactSearch" class="exact-search">精确匹配</bk-checkbox>
+          </div>
         </bk-input>
         <bk-button theme="primary" class="search-btn" v-test-id="'search'"
           @click="handleSearch">
@@ -99,16 +102,22 @@
       const query = computed(() => RouterQuery.getAll())
 
       const keyword = ref('')
+      const isExactSearch = ref(false)
       watch(query, (query) => {
         keyword.value = query.keyword || ''
+        isExactSearch.value = +query.isExactSearch === 1
       }, { immediate: true })
+      watch(isExactSearch, () => {
+        getSearchResult()
+      })
 
       const focusWithin = ref(false)
       const searchInput = ref(null)
       const forceHide = ref(false)
       let maxLengthPopover = null
 
-      const { result, getSearchResult, onkeydownResult, selectResultIndex } = useResult({ route, keyword })
+      const { result, getSearchResult, onkeydownResult, selectResultIndex } = useResult({
+        route, keyword, isExactSearch })
 
       const getAuthMaskProps = () => {
         const auth = { type: OPERATION.R_FULLTEXT_SEARCH }
@@ -154,6 +163,7 @@
           query: {
             ...query,
             keyword: keyword.value,
+            isExactSearch: isExactSearch.value ? 1 : undefined,
             t: Date.now()
           }
         })
@@ -219,6 +229,7 @@
         selectIndex,
         showHistory,
         historyList,
+        focusWithin,
 
         getAuthMaskProps,
 
@@ -232,6 +243,7 @@
         keyword,
         result,
         searchInput,
+        isExactSearch,
 
         handleInput,
         handleSearch,
@@ -268,7 +280,20 @@
             border: 1px solid #C4C6CC;
             padding: 5px 16px;
             border-radius: 0 0 0 2px;
+            border-right: 0;
+            transition: border linear 0s;
           }
+          .group-append {
+            background: white;
+            width: 100px;
+            height: 42px;
+            line-height: 42px;
+          }
+        }
+      }
+      /deep/ .control-active {
+        .group-append {
+          border-color: #3a84ff;
         }
       }
       .search-btn {
