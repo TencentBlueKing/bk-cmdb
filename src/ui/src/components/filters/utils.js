@@ -166,7 +166,7 @@ function createTimeCondition() {
 }
 // eslint-disable-next-line no-useless-escape
 const escapeCharRE = /([\*\.\?\+\$\^\[\]\(\)\{\}\|\\\/])/g
-const needReplaceOperate = [QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.LIKE, QUERY_OPERATOR.CONTAINS_CS]
+const needEscapeOperator = [QUERY_OPERATOR.CONTAINS, QUERY_OPERATOR.LIKE, QUERY_OPERATOR.CONTAINS_CS]
 export function transformCondition(condition, properties, header) {
   const conditionMap = {
     host: [],
@@ -212,7 +212,7 @@ export function transformCondition(condition, properties, header) {
       submitCondition.push({
         field: property.bk_property_id,
         operator: operator === QUERY_OPERATOR.CONTAINS ? operator.replace('$', '') : operator,
-        value: needReplaceOperate.includes(operator) ? value.replace(escapeCharRE, '\\$1') : value
+        value: needEscapeOperator.includes(operator) ? value.replace(escapeCharRE, '\\$1') : value
       })
     }
   })
@@ -326,7 +326,7 @@ export function transformGeneralModelCondition(condition, properties) {
     conditions.rules.push({
       field: property.bk_property_id,
       operator: queryBuilderOperator(operator),
-      value: needReplaceOperate.includes(operator) ? value.replace(escapeCharRE, '\\$1') : value
+      value: needEscapeOperator.includes(operator) ? value.replace(escapeCharRE, '\\$1') : value
     })
   }
 
