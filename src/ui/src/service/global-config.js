@@ -46,13 +46,6 @@ export const initialConfig = {
 }
 
 /**
- * 更新平台设置
- * @param {Object} globalConfig 平台设置集合
- * @returns {Promise}
- */
-export const updateConfig = globalConfig => $http.put('admin/update/system_config/platform_setting', globalConfig)
-
-/**
  * 更新全局设置-业务通用
  * @param {string} type  可选值:backend(更新拓扑层级配置)
  * @param {Object} config 业务通用参数
