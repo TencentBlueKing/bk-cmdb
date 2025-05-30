@@ -26,8 +26,8 @@
           @input="handleInput"
           @enter="handleSearch"
           @clear="handleClear">
-          <div slot="append" :class="{ 'input-focus': focusWithin }">
-            <bk-checkbox v-model="isExactSearch" class="exact-search">精确匹配</bk-checkbox>
+          <div slot="append">
+            <bk-checkbox v-model="isExactSearch" class="exact-search">{{$t('精确匹配')}}</bk-checkbox>
           </div>
         </bk-input>
         <bk-button theme="primary" class="search-btn" v-test-id="'search'"
@@ -105,7 +105,7 @@
       const isExactSearch = ref(false)
       watch(query, (query) => {
         keyword.value = query.keyword || ''
-        isExactSearch.value = +query.isExactSearch === 1
+        isExactSearch.value = +query.exact === 1
       }, { immediate: true })
       watch(isExactSearch, () => {
         getSearchResult()
@@ -116,8 +116,12 @@
       const forceHide = ref(false)
       let maxLengthPopover = null
 
-      const { result, getSearchResult, onkeydownResult, selectResultIndex } = useResult({
-        route, keyword, isExactSearch })
+      const {
+        result,
+        getSearchResult,
+        onkeydownResult,
+        selectResultIndex
+      } = useResult({ route, keyword, isExactSearch })
 
       const getAuthMaskProps = () => {
         const auth = { type: OPERATION.R_FULLTEXT_SEARCH }
@@ -163,7 +167,7 @@
           query: {
             ...query,
             keyword: keyword.value,
-            isExactSearch: isExactSearch.value ? 1 : undefined,
+            exact: isExactSearch.value ? 1 : undefined,
             t: Date.now()
           }
         })
@@ -229,7 +233,6 @@
         selectIndex,
         showHistory,
         historyList,
-        focusWithin,
 
         getAuthMaskProps,
 
@@ -285,7 +288,8 @@
           }
           .group-append {
             background: white;
-            width: 100px;
+            white-space: nowrap;
+            padding-right: 5px;
             height: 42px;
             line-height: 42px;
           }

@@ -1925,5 +1925,6 @@
     "前往模型管理": "Go to model management",
     "刚刚刷新": "Last refreshed just now",
     "大于1小时前刷新": "Last refreshed more than 1h ago",
-    "x分钟前刷新": "Last refreshed {time}m ago"
+    "x分钟前刷新": "Last refreshed {time}m ago",
+    "精确匹配": "Exact match"
 }
