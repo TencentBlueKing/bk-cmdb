@@ -733,6 +733,42 @@ func (i IAM) SyncIAMSysInstances(kit *rest.Kit, redisCli redis.Client,
 		return err
 	}
 
+	err = i.registerResource(kit, addedResourceTypes, addedInstanceSelections, addedActions)
+	if err != nil {
+		return err
+	}
+
+	// update action_groups in iam, the action groups contains only the existed actions in iam
+	if len(addedActions) > 0 || len(deletedActions) > 0 {
+		actionMap := map[iamtypes.ActionID]struct{}{}
+		for _, action := range iamInfo.Actions {
+			if !isIAMSysInstanceAction(action.ID) {
+				actionMap[action.ID] = struct{}{}
+			}
+		}
+		for _, action := range cmdbActions {
+			actionMap[action.ID] = struct{}{}
+		}
+		cmdbActionGroups := GenerateActionGroups(tenantObjects)
+		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
+
+		// if all exist actions in iam needs no action group(which happens when first initializing), **skip**
+		if len(actualActionGroups) > 0 {
+			blog.Infof("begin update actionGroups, rid: %s", kit.Rid)
+			if err = i.Client.UpdateActionGroups(kit.Ctx, kit.Header, actualActionGroups); err != nil {
+				blog.Errorf("update action groups failed, actionGroups: %v,  err: %v, rid: %s", actualActionGroups, err,
+					kit.Rid)
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (i IAM) registerResource(kit *rest.Kit, addedResourceTypes []iam.ResourceType,
+	addedInstanceSelections []iam.InstanceSelection, addedActions []iam.ResourceAction) error {
+
 	// add cmdb ResourceTypes in iam
 	if len(addedResourceTypes) > 0 {
 		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s",
@@ -764,32 +800,6 @@ func (i IAM) SyncIAMSysInstances(kit *rest.Kit, redisCli redis.Client,
 			return err
 		}
 	}
-
-	// update action_groups in iam, the action groups contains only the existed actions in iam
-	if len(addedActions) > 0 || len(deletedActions) > 0 {
-		actionMap := map[iamtypes.ActionID]struct{}{}
-		for _, action := range iamInfo.Actions {
-			if !isIAMSysInstanceAction(action.ID) {
-				actionMap[action.ID] = struct{}{}
-			}
-		}
-		for _, action := range cmdbActions {
-			actionMap[action.ID] = struct{}{}
-		}
-		cmdbActionGroups := GenerateActionGroups(tenantObjects)
-		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
-
-		// if all exist actions in iam needs no action group(which happens when first initializing), **skip**
-		if len(actualActionGroups) > 0 {
-			blog.Infof("begin update actionGroups, rid: %s", kit.Rid)
-			if err = i.Client.UpdateActionGroups(kit.Ctx, kit.Header, actualActionGroups); err != nil {
-				blog.Errorf("update action groups failed, actionGroups: %v,  err: %v, rid: %s", actualActionGroups, err,
-					kit.Rid)
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
