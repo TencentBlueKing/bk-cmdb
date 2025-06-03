@@ -34,7 +34,7 @@ import (
 
 // collectObjectsByObjectIDs collect business object that belongs to business or global object,
 // which both id must in objectIDs
-func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, businessID int64,
+func (a *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header http.Header, businessID int64,
 	objectIDs ...string) ([]metadata.Object, error) {
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -47,7 +47,7 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 	fCond.Remove(metadata.BKMetadata)
 	queryCond := &metadata.QueryCondition{Condition: fCond}
 
-	resp, err := am.clientSet.CoreService().Model().ReadModel(ctx, header, queryCond)
+	resp, err := a.clientSet.CoreService().Model().ReadModel(ctx, header, queryCond)
 	if err != nil {
 		return nil, fmt.Errorf("get model by id: %+v failed, err: %+v", objectIDs, err)
 	}
@@ -62,7 +62,7 @@ func (am *AuthManager) collectObjectsByObjectIDs(ctx context.Context, header htt
 }
 
 // MakeResourcesByObjects make object resource with businessID and objects
-func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.Header, action meta.Action,
 	objects ...metadata.Object) ([]meta.ResourceAttribute, error) {
 	// prepare resource layers for authorization
 	resources := make([]meta.ResourceAttribute, 0)
@@ -85,15 +85,15 @@ func (am *AuthManager) MakeResourcesByObjects(ctx context.Context, header http.H
 }
 
 // AuthorizeByObjectIDs TODO
-func (am *AuthManager) AuthorizeByObjectIDs(ctx context.Context, header http.Header, action meta.Action, bizID int64,
+func (a *AuthManager) AuthorizeByObjectIDs(ctx context.Context, header http.Header, action meta.Action, bizID int64,
 	objIDs ...string) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
-	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+	if a.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, objIDs: %+v, rid: %s", objIDs, rid)
 		return nil
 	}
@@ -102,24 +102,24 @@ func (am *AuthManager) AuthorizeByObjectIDs(ctx context.Context, header http.Hea
 		return nil
 	}
 
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, bizID, objIDs...)
+	objects, err := a.collectObjectsByObjectIDs(ctx, header, bizID, objIDs...)
 	if err != nil {
 		return fmt.Errorf("get objects by objIDs(%+v) failed, err: %v, rid: %s", objIDs, err, rid)
 	}
 
 	// make auth resources
-	resources, err := am.MakeResourcesByObjects(ctx, header, action, objects...)
+	resources, err := a.MakeResourcesByObjects(ctx, header, action, objects...)
 	if err != nil {
 		return fmt.Errorf("make object resources failed, err: %+v", err)
 	}
-	return am.batchAuthorize(ctx, header, resources...)
+	return a.batchAuthorize(ctx, header, resources...)
 }
 
 // GenObjectBatchNoPermissionResp TODO
-func (am *AuthManager) GenObjectBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) GenObjectBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
 	bizID int64, objIDs []string) (*metadata.BaseResp, error) {
 
-	objects, err := am.collectObjectsByObjectIDs(ctx, header, bizID, objIDs...)
+	objects, err := a.collectObjectsByObjectIDs(ctx, header, bizID, objIDs...)
 	if err != nil {
 		return nil, err
 	}
@@ -153,9 +153,9 @@ func (am *AuthManager) GenObjectBatchNoPermissionResp(ctx context.Context, heade
 }
 
 // AuthorizeResourceCreate TODO
-func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64,
+func (a *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.Header, businessID int64,
 	resourceType meta.ResourceType) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
@@ -168,27 +168,29 @@ func (am *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.
 		BusinessID: businessID,
 	}
 
-	return am.batchAuthorize(ctx, header, resource)
+	return a.batchAuthorize(ctx, header, resource)
 }
 
 // CreateObjectOnIAM create object on iam including:
 // 1. create iam view
 // 2. register object resource creator action to iam
-func (am *AuthManager) CreateObjectOnIAM(kit *rest.Kit, objects []metadata.Object,
-	iamInstances []metadata.IamInstanceWithCreator, redisCli redis.Client) error {
-	if !am.Enabled() {
+func (a *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header,
+	tenantObjects map[string][]metadata.Object, iamInstances []metadata.IamInstanceWithCreator,
+	redisCli redis.Client) error {
+
+	if !a.Enabled() {
 		return nil
 	}
 
-	rid := util.ExtractRequestIDFromContext(kit.Ctx)
+	rid := util.ExtractRequestIDFromContext(ctx)
 	// create iam view
-	if err := am.Viewer.CreateView(kit, objects, redisCli, rid); err != nil {
-		blog.ErrorJSON("create view failed, objects:%s, err: %s, rid: %s", objects, err, rid)
+	if err := a.Viewer.CreateView(ctx, header, tenantObjects, redisCli, rid); err != nil {
+		blog.ErrorJSON("create view failed, objects:%s, err: %s, rid: %s", tenantObjects, err, rid)
 		return err
 	}
 	// register object resource creator action to iam
 	for _, iamInstance := range iamInstances {
-		if _, err := am.Authorizer.RegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstance); err != nil {
+		if _, err := a.Authorizer.RegisterResourceCreatorAction(ctx, header, iamInstance); err != nil {
 			blog.ErrorJSON("register created object to iam failed, iam instance:%s, err: %s, rid: %s",
 				iamInstance, err, rid)
 			return err
@@ -199,8 +201,8 @@ func (am *AuthManager) CreateObjectOnIAM(kit *rest.Kit, objects []metadata.Objec
 }
 
 // getSkipFindAttrAuthModel 主线模型和内置模型（不包括：交换机、路由器、防火墙、负载均衡）模型属性查看不鉴权
-func (am *AuthManager) getSkipFindAttrAuthModel(kit *rest.Kit) (map[string]struct{}, error) {
-	models, err := am.getMainlineModel(kit)
+func (a *AuthManager) getSkipFindAttrAuthModel(kit *rest.Kit) (map[string]struct{}, error) {
+	models, err := a.getMainlineModel(kit)
 	if err != nil {
 		return nil, err
 	}
@@ -212,8 +214,8 @@ func (am *AuthManager) getSkipFindAttrAuthModel(kit *rest.Kit) (map[string]struc
 }
 
 // getSkipFindAttrAuthModelID 主线模型和内置模型（不包括：交换机、路由器、防火墙、负载均衡）模型属性查看不鉴权
-func (am *AuthManager) getSkipFindAttrAuthModelID(kit *rest.Kit) (map[int64]struct{}, error) {
-	skipObjIDMap, err := am.getSkipFindAttrAuthModel(kit)
+func (a *AuthManager) getSkipFindAttrAuthModelID(kit *rest.Kit) (map[int64]struct{}, error) {
+	skipObjIDMap, err := a.getSkipFindAttrAuthModel(kit)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +234,7 @@ func (am *AuthManager) getSkipFindAttrAuthModelID(kit *rest.Kit) (map[int64]stru
 			},
 		},
 	}
-	objResp, err := am.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
+	objResp, err := a.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +257,7 @@ var objTypeMap = map[string]meta.ResourceType{
 	common.BKInnerObjIDProject: meta.Project,
 }
 
-func (am *AuthManager) getInstanceTypeByObject(mainlineModel map[string]struct{}, objID string, id int64) (
+func (a *AuthManager) getInstanceTypeByObject(mainlineModel map[string]struct{}, objID string, id int64) (
 	meta.ResourceType, error) {
 
 	if objType, ok := objTypeMap[objID]; ok {
@@ -269,9 +271,9 @@ func (am *AuthManager) getInstanceTypeByObject(mainlineModel map[string]struct{}
 	return iam.GenCMDBDynamicResType(id), nil
 }
 
-func (am *AuthManager) getMainlineModel(kit *rest.Kit) (map[string]struct{}, error) {
+func (a *AuthManager) getMainlineModel(kit *rest.Kit) (map[string]struct{}, error) {
 	cond := mapstr.MapStr{common.AssociationKindIDField: common.AssociationKindMainline}
-	asst, err := am.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
+	asst, err := a.clientSet.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header,
 		&metadata.QueryCondition{Condition: cond})
 	if err != nil {
 		return nil, err
@@ -291,8 +293,8 @@ func (am *AuthManager) getMainlineModel(kit *rest.Kit) (map[string]struct{}, err
 }
 
 // HasFindModelAuthUseObjID use the objID parameter to determine whether you have permission to find the model
-func (am *AuthManager) HasFindModelAuthUseObjID(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
-	if !am.Enabled() {
+func (a *AuthManager) HasFindModelAuthUseObjID(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
+	if !a.Enabled() {
 		return nil, true, nil
 	}
 
@@ -300,7 +302,7 @@ func (am *AuthManager) HasFindModelAuthUseObjID(kit *rest.Kit, objIDs []string) 
 		return nil, true, nil
 	}
 
-	models, err := am.getSkipFindAttrAuthModel(kit)
+	models, err := a.getSkipFindAttrAuthModel(kit)
 	if err != nil {
 		return nil, false, err
 	}
@@ -324,7 +326,7 @@ func (am *AuthManager) HasFindModelAuthUseObjID(kit *rest.Kit, objIDs []string) 
 			},
 		},
 	}
-	modelResp, err := am.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
+	modelResp, err := a.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		return nil, false, err
 	}
@@ -337,12 +339,12 @@ func (am *AuthManager) HasFindModelAuthUseObjID(kit *rest.Kit, objIDs []string) 
 		ids[idx] = val.ID
 	}
 
-	return am.hasFindModelAuthWithID(kit, ids)
+	return a.hasFindModelAuthWithID(kit, ids)
 }
 
 // HasFindModelAuthUseID use the id parameter to determine whether you have permission to find the model
-func (am *AuthManager) HasFindModelAuthUseID(kit *rest.Kit, ids []int64) (*metadata.BaseResp, bool, error) {
-	if !am.Enabled() {
+func (a *AuthManager) HasFindModelAuthUseID(kit *rest.Kit, ids []int64) (*metadata.BaseResp, bool, error) {
+	if !a.Enabled() {
 		return nil, true, nil
 	}
 
@@ -350,7 +352,7 @@ func (am *AuthManager) HasFindModelAuthUseID(kit *rest.Kit, ids []int64) (*metad
 		return nil, true, nil
 	}
 
-	models, err := am.getSkipFindAttrAuthModelID(kit)
+	models, err := a.getSkipFindAttrAuthModelID(kit)
 	if err != nil {
 		return nil, false, err
 	}
@@ -366,12 +368,12 @@ func (am *AuthManager) HasFindModelAuthUseID(kit *rest.Kit, ids []int64) (*metad
 		return nil, true, nil
 	}
 
-	return am.hasFindModelAuthWithID(kit, finalIDs)
+	return a.hasFindModelAuthWithID(kit, finalIDs)
 }
 
 // HasFindModelAuthWithID use the id parameter to determine whether you have permission to find the model
-func (am *AuthManager) hasFindModelAuthWithID(kit *rest.Kit, ids []int64) (*metadata.BaseResp, bool, error) {
-	if !am.Enabled() {
+func (a *AuthManager) hasFindModelAuthWithID(kit *rest.Kit, ids []int64) (*metadata.BaseResp, bool, error) {
+	if !a.Enabled() {
 		return nil, true, nil
 	}
 
@@ -385,15 +387,15 @@ func (am *AuthManager) hasFindModelAuthWithID(kit *rest.Kit, ids []int64) (*meta
 			Action: meta.Find}}
 	}
 
-	authResp, authorized := am.Authorize(kit, authResources...)
+	authResp, authorized := a.Authorize(kit, authResources...)
 	return authResp, authorized, nil
 }
 
 // HasInstOpAuth have permission to operate model instance
-func (am *AuthManager) HasInstOpAuth(kit *rest.Kit, objIDs []string, action meta.Action) (*metadata.BaseResp, bool,
+func (a *AuthManager) HasInstOpAuth(kit *rest.Kit, objIDs []string, action meta.Action) (*metadata.BaseResp, bool,
 	error) {
 
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil, true, nil
 	}
 
@@ -410,7 +412,7 @@ func (am *AuthManager) HasInstOpAuth(kit *rest.Kit, objIDs []string, action meta
 			},
 		},
 	}
-	modelResp, err := am.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
+	modelResp, err := a.clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, cond)
 	if err != nil {
 		return nil, false, err
 	}
@@ -419,14 +421,14 @@ func (am *AuthManager) HasInstOpAuth(kit *rest.Kit, objIDs []string, action meta
 		return nil, false, fmt.Errorf("get model by objID failed, val: %+v", objIDs)
 	}
 
-	mainlineModels, err := am.getMainlineModel(kit)
+	mainlineModels, err := a.getMainlineModel(kit)
 	if err != nil {
 		return nil, false, err
 	}
 
 	authResources := make([]meta.ResourceAttribute, 0)
 	for _, v := range modelResp.Info {
-		instanceType, err := am.getInstanceTypeByObject(mainlineModels, v.ObjectID, v.ID)
+		instanceType, err := a.getInstanceTypeByObject(mainlineModels, v.ObjectID, v.ID)
 		if err != nil {
 			return nil, false, err
 		}
@@ -435,16 +437,16 @@ func (am *AuthManager) HasInstOpAuth(kit *rest.Kit, objIDs []string, action meta
 			meta.ResourceAttribute{Basic: meta.Basic{Type: instanceType, Action: action}})
 	}
 
-	authResp, authorized := am.Authorize(kit, authResources...)
+	authResp, authorized := a.Authorize(kit, authResources...)
 	return authResp, authorized, nil
 }
 
 // HasFindModelInstAuth has find model instance auth
-func (am *AuthManager) HasFindModelInstAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
-	return am.HasInstOpAuth(kit, objIDs, meta.Find)
+func (a *AuthManager) HasFindModelInstAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
+	return a.HasInstOpAuth(kit, objIDs, meta.Find)
 }
 
 // HasUpdateModelInstAuth has update model instance auth
-func (am *AuthManager) HasUpdateModelInstAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
-	return am.HasInstOpAuth(kit, objIDs, meta.Update)
+func (a *AuthManager) HasUpdateModelInstAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
+	return a.HasInstOpAuth(kit, objIDs, meta.Update)
 }

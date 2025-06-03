@@ -63,8 +63,7 @@ var genIamResFuncMap = map[meta.ResourceType]func(iamtypes.ActionID, iamtypes.Ty
 }
 
 // GenIamResource TODO
-func GenIamResource(act iamtypes.ActionID, rscType iamtypes.TypeID, a *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+func GenIamResource(act iamtypes.ActionID, rscType iamtypes.TypeID, a *meta.ResourceAttribute) ([]iam.Resource, error) {
 	// skip actions do not need to relate to resources
 	if act == iamtypes.Skip {
 		return genSkipResource(act, rscType, a)
@@ -109,8 +108,7 @@ func GenIamResource(act iamtypes.ActionID, rscType iamtypes.TypeID, a *meta.Reso
 // genBusinessResource TODO
 // generate business related resource id.
 func genBusinessResource(act iamtypes.ActionID, typ iamtypes.TypeID,
-	attribute *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	attribute *meta.ResourceAttribute) ([]iam.Resource, error) {
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -134,6 +132,7 @@ func genBusinessResource(act iamtypes.ActionID, typ iamtypes.TypeID,
 // generate biz set related resource id.
 func genBizSetResource(act iamtypes.ActionID, typ iamtypes.TypeID, attribute *meta.ResourceAttribute) ([]iam.Resource,
 	error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -153,9 +152,9 @@ func genBizSetResource(act iamtypes.ActionID, typ iamtypes.TypeID, attribute *me
 	return []iam.Resource{r}, nil
 }
 
-func genProjectResource(act iamtypes.ActionID, typ iamtypes.TypeID,
-	attribute *meta.ResourceAttribute) ([]iam.Resource,
+func genProjectResource(act iamtypes.ActionID, typ iamtypes.TypeID, attribute *meta.ResourceAttribute) ([]iam.Resource,
 	error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -209,8 +208,7 @@ func genDynamicGroupingResource(act iamtypes.ActionID, typ iamtypes.TypeID,
 }
 
 func genProcessServiceCategoryResource(_ iamtypes.ActionID, _ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
 
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
@@ -226,8 +224,8 @@ func genProcessServiceCategoryResource(_ iamtypes.ActionID, _ iamtypes.TypeID,
 	return []iam.Resource{r}, nil
 }
 
-func genResourceWatch(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+func genResourceWatch(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
 	switch act {
 	case iamtypes.WatchCommonInstanceEvent:
 		r := iam.Resource{
@@ -285,8 +283,7 @@ func genResourceWatch(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.Reso
 }
 
 func genServiceTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
 
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
@@ -313,6 +310,7 @@ func genServiceTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID,
 
 func genSetTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
 	error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Attribute: nil,
@@ -336,8 +334,7 @@ func genSetTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *met
 	return []iam.Resource{r}, nil
 }
 
-func genAuditLogResource(_ iamtypes.ActionID, typ iamtypes.TypeID, _ *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+func genAuditLogResource(_ iamtypes.ActionID, typ iamtypes.TypeID, _ *meta.ResourceAttribute) ([]iam.Resource, error) {
 	return make([]iam.Resource, 0), nil
 }
 
@@ -359,8 +356,7 @@ func genPlat(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttri
 
 }
 
-func genHostApplyResource(_ iamtypes.ActionID, _ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+func genHostApplyResource(_ iamtypes.ActionID, _ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource, error) {
 
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
@@ -376,8 +372,7 @@ func genHostApplyResource(_ iamtypes.ActionID, _ iamtypes.TypeID, att *meta.Reso
 }
 
 func genResourcePoolDirectoryResource(act iamtypes.ActionID, typ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -395,8 +390,8 @@ func genResourcePoolDirectoryResource(act iamtypes.ActionID, typ iamtypes.TypeID
 }
 
 func genProcessServiceInstanceResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -413,8 +408,8 @@ func genProcessServiceInstanceResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
 }
 
 func genBusinessTopologyResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -430,8 +425,7 @@ func genBusinessTopologyResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
 	return []iam.Resource{r}, nil
 }
 
-func genModelResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+func genModelResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource, error) {
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -458,6 +452,7 @@ func genModelResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.Reso
 
 func genModelRelatedResource(_ iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
 	error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -475,8 +470,8 @@ func genModelRelatedResource(_ iamtypes.ActionID, typ iamtypes.TypeID, att *meta
 }
 
 func genModelClassificationResource(act iamtypes.ActionID, typ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -496,8 +491,8 @@ func genModelClassificationResource(act iamtypes.ActionID, typ iamtypes.TypeID,
 }
 
 func genAssociationTypeResource(act iamtypes.ActionID, typ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(typ),
@@ -517,6 +512,7 @@ func genAssociationTypeResource(act iamtypes.ActionID, typ iamtypes.TypeID,
 
 func genModelAttributeResource(_ iamtypes.ActionID, _ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
 	error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(iamtypes.SysModel),
@@ -552,7 +548,7 @@ func genModelTopologyViewResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
 	return make([]iam.Resource, 0), nil
 }
 
-func getResource(types []iam.IamResourceType, a *meta.ResourceAttribute) ([]iam.Resource, error) {
+func getHostResource(types []iam.IamResourceType, a *meta.ResourceAttribute) ([]iam.Resource, error) {
 
 	if len(a.Layers) != 2 {
 		return nil, NotEnoughLayer
@@ -585,28 +581,28 @@ func genHostInstanceResource(act iamtypes.ActionID, typ iamtypes.TypeID, a *meta
 	if act == iamtypes.ResourcePoolHostTransferToDirectory {
 		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
 			iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
-		return getResource(types, a)
+		return getHostResource(types, a)
 	}
 
 	// transfer host in resource pool to business
 	if act == iamtypes.ResourcePoolHostTransferToBusiness {
 		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
 			iam.IamResourceType(iamtypes.Business)}
-		return getResource(types, a)
+		return getHostResource(types, a)
 	}
 
 	// transfer host from business to resource pool
 	if act == iamtypes.BusinessHostTransferToResourcePool {
 		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.Business),
 			iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
-		return getResource(types, a)
+		return getHostResource(types, a)
 	}
 
 	// transfer host from one business to another
 	if act == iamtypes.HostTransferAcrossBusiness {
 		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.BusinessForHostTrans),
 			iam.IamResourceType(iamtypes.Business)}
-		return getResource(types, a)
+		return getHostResource(types, a)
 	}
 
 	// import host
@@ -729,6 +725,7 @@ func genKubeResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.Resou
 
 func genGeneralCacheResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
 	error) {
+
 	r := iam.Resource{
 		System: iamtypes.SystemIDCMDB,
 		Type:   iam.IamResourceType(iamtypes.GeneralCache),
@@ -742,8 +739,8 @@ func genGeneralCacheResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *me
 }
 
 func genTenantSetResource(act iamtypes.ActionID, typ iamtypes.TypeID,
-	attribute *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	attribute *meta.ResourceAttribute) ([]iam.Resource, error) {
+
 	r := iam.Resource{
 		System: iamtypes.SystemIDCMDB,
 		Type:   iam.IamResourceType(typ),

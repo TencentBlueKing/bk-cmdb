@@ -26,9 +26,9 @@ var (
 )
 
 // GenerateInstanceSelections generate all the instance selections registered to IAM.
-func GenerateInstanceSelections(models []metadata.Object) []iam.InstanceSelection {
+func GenerateInstanceSelections(tenantObjects map[string][]metadata.Object) []iam.InstanceSelection {
 	instSelections := GenerateStaticInstanceSelections()
-	instSelections = append(instSelections, genDynamicInstanceSelections(models)...)
+	instSelections = append(instSelections, genDynamicInstanceSelections(tenantObjects)...)
 	return instSelections
 }
 

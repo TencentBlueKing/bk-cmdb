@@ -265,8 +265,7 @@ func (lgc *Logics) enrichHostInfo(kit *rest.Kit, hosts []map[string]interface{},
 
 // FetchObjInstInfo fetch object instances' specified attributes info using instance ids
 func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iamtypes.TypeID,
-	filter *types.FetchInstanceInfoFilter) (
-	[]map[string]interface{}, error) {
+	filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
 
 	if !iam.IsIAMSysInstance(resourceType) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)

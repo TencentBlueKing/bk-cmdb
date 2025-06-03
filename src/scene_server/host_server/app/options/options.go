@@ -43,7 +43,5 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 // Config TODO
 type Config struct {
-	Redis                 redis.Config
-	DisableVerifyTenant   bool
-	EnableMultiTenantMode bool
+	Redis redis.Config
 }

@@ -54,7 +54,5 @@ type Config struct {
 	TaskConf *client.GseConnConfig
 
 	// ApiConf gse apiServer connection config
-	ApiConf               *client.GseConnConfig
-	DisableVerifyTenant   bool
-	EnableMultiTenantMode bool
+	ApiConf *client.GseConnConfig
 }

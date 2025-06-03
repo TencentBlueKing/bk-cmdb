@@ -29,11 +29,11 @@ import (
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	headerutil "configcenter/src/common/http/header/util"
-	httprest "configcenter/src/common/http/rest"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/lock"
 	"configcenter/src/common/metadata"
 	apigwcli "configcenter/src/common/resource/apigw"
-	commonutil "configcenter/src/common/util"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/apigw/iam"
@@ -98,100 +98,100 @@ type RegisterIamOptions struct {
 */
 
 // Register cc auth resources to iam
-func (i IAM) Register(kit *httprest.Kit, redisCli redis.Client, opt *RegisterIamOptions) error {
+func (i IAM) Register(ctx context.Context, h http.Header, redisCli redis.Client, opt *RegisterIamOptions,
+	rid string) error {
+
 	if !auth.EnableAuthorize() {
 		return nil
 	}
 
-	locker, err := tryLockRegister(redisCli, kit.Rid)
+	locker, err := tryLockRegister(redisCli, rid)
 	if err != nil {
 		return err
 	}
 	defer locker.Unlock()
 
-	registeredInfo, err := i.registerSystem(kit, opt.Host)
+	registeredInfo, err := i.registerSystem(ctx, h, opt.Host)
+	if err != nil {
+		return err
+	}
 	if err != nil {
 		return err
 	}
 
-	allTenantObjects := make([]metadata.Object, 0)
-	for _, objects := range opt.Objects {
-		allTenantObjects = append(allTenantObjects, objects...)
-	}
-
-	newResTypes, updateResTypes, removedResTypeIDs := i.crossCompareResTypes(kit, registeredInfo.ResourceTypes,
-		allTenantObjects)
+	newResTypes, updateResTypes, removedResTypeIDs := i.crossCompareResTypes(registeredInfo.ResourceTypes,
+		opt.Objects)
 	newInstSelections, updateInstSelections, removedInstSelectionIDs := i.crossCompareInstSelections(
-		registeredInfo.InstanceSelections, allTenantObjects)
+		registeredInfo.InstanceSelections, opt.Objects)
 	newResActions, updateResActions, removedResActionIDs := i.crossCompareResActions(registeredInfo.Actions,
-		allTenantObjects)
+		opt.Objects)
 
-	if err = i.removeResActions(kit, removedResActionIDs, kit.Rid); err != nil {
+	if err = i.removeResActions(ctx, h, removedResActionIDs, rid); err != nil {
 		return err
 	}
 
 	for _, resourceType := range updateResTypes {
-		if err = i.Client.UpdateResourcesType(kit.Ctx, kit.Header, resourceType); err != nil {
-			blog.Errorf("update resource type(%v) failed, err: %v, rid: %s", resourceType, err, kit.Rid)
+		if err = i.Client.UpdateResourcesType(ctx, h, resourceType); err != nil {
+			blog.Errorf("update resource type(%v) failed, err: %v, rid: %s", resourceType, err, rid)
 			return err
 		}
 	}
 
-	if err = i.Client.RegisterResourcesTypes(kit.Ctx, kit.Header, newResTypes); err != nil {
-		blog.Errorf("register resource types(%v) failed, err: %v, rid: %s", newResTypes, err, kit.Rid)
+	if err = i.Client.RegisterResourcesTypes(ctx, h, newResTypes); err != nil {
+		blog.Errorf("register resource types(%v) failed, err: %v, rid: %s", newResTypes, err, rid)
 		return err
 	}
 
 	for _, instanceSelection := range updateInstSelections {
-		if err = i.Client.UpdateInstanceSelection(kit.Ctx, kit.Header, instanceSelection); err != nil {
-			blog.Errorf("update instance selection(%v) failed, err: %v, rid: %s", instanceSelection, err, kit.Rid)
+		if err = i.Client.UpdateInstanceSelection(ctx, h, instanceSelection); err != nil {
+			blog.Errorf("update instance selection(%v) failed, err: %v, rid: %s", instanceSelection, err, rid)
 			return err
 		}
 	}
 
-	if err = i.Client.RegisterInstanceSelections(kit.Ctx, kit.Header, newInstSelections); err != nil {
-		blog.Errorf("register instance selections(%v) failed, err: %v, rid: %s", newInstSelections, err, kit.Rid)
+	if err = i.Client.RegisterInstanceSelections(ctx, h, newInstSelections); err != nil {
+		blog.Errorf("register instance selections(%v) failed, err: %v, rid: %s", newInstSelections, err, rid)
 		return err
 	}
 
 	for _, resourceAction := range updateResActions {
-		if err = i.Client.UpdateAction(kit.Ctx, kit.Header, resourceAction); err != nil {
+		if err = i.Client.UpdateAction(ctx, h, resourceAction); err != nil {
 			blog.Errorf("update resource action(%v) failed, err: %v, rid: %s", resourceAction, err,
-				kit.Rid)
+				rid)
 			return err
 		}
 	}
 
-	if err = i.Client.RegisterActions(kit.Ctx, kit.Header, newResActions); err != nil {
+	if err = i.Client.RegisterActions(ctx, h, newResActions); err != nil {
 		blog.Errorf("register resource actions(%v) failed, err: %v, rid: %s", newResActions, err,
-			kit.Rid)
+			rid)
 		return err
 	}
 
-	if err = i.Client.DeleteInstanceSelections(kit.Ctx, kit.Header, removedInstSelectionIDs); err != nil {
+	if err = i.Client.DeleteInstanceSelections(ctx, h, removedInstSelectionIDs); err != nil {
 		blog.Errorf("delete instance selections(%v) failed, err: %v, rid: %s",
-			removedInstSelectionIDs, err, kit.Rid)
+			removedInstSelectionIDs, err, rid)
 		return err
 	}
 
-	if err = i.Client.DeleteResourcesTypes(kit.Ctx, kit.Header, removedResTypeIDs); err != nil {
-		blog.Errorf("delete resource types(%v) failed, err: %v, rid: %s", removedResTypeIDs, err, kit.Rid)
+	if err = i.Client.DeleteResourcesTypes(ctx, h, removedResTypeIDs); err != nil {
+		blog.Errorf("delete resource types(%v) failed, err: %v, rid: %s", removedResTypeIDs, err, rid)
 		return err
 	}
 
-	if err := i.registerActionGroups(kit, registeredInfo, allTenantObjects, kit.Rid); err != nil {
-		blog.Errorf("register action groups(%v) failed, err: %v, rid: %s", registeredInfo, err, kit.Rid)
+	if err := i.registerActionGroups(ctx, h, registeredInfo, opt.Objects, rid); err != nil {
+		blog.Errorf("register action groups(%v) failed, err: %v, rid: %s", registeredInfo, err, rid)
 		return err
 	}
 
-	if err := i.registerResCreatorActions(kit, registeredInfo, kit.Rid); err != nil {
+	if err := i.registerResCreatorActions(ctx, h, registeredInfo, rid); err != nil {
 		blog.Errorf("register resCreator actions(%v) failed, tenantID: %s, err: %v, rid: %s", registeredInfo, err,
-			kit.Rid)
+			rid)
 		return err
 	}
 
-	if err := i.registerCommonActions(kit, registeredInfo, kit.Rid); err != nil {
-		blog.Errorf("register common actions(%v) failed, tenantID: %s, err: %v, rid: %s", registeredInfo, err, kit.Rid)
+	if err := i.registerCommonActions(ctx, h, registeredInfo, rid); err != nil {
+		blog.Errorf("register common actions(%v) failed, tenantID: %s, err: %v, rid: %s", registeredInfo, err, rid)
 		return err
 	}
 
@@ -199,9 +199,9 @@ func (i IAM) Register(kit *httprest.Kit, redisCli redis.Client, opt *RegisterIam
 }
 
 // registerSystem register cc system to iam
-func (i IAM) registerSystem(kit *httprest.Kit, host string) (*iam.RegisteredSystemInfo, error) {
+func (i IAM) registerSystem(ctx context.Context, header http.Header, host string) (*iam.RegisteredSystemInfo, error) {
 
-	systemInfo, err := i.Client.GetSystemInfo(kit.Ctx, kit.Header, []iamtypes.SystemQueryField{})
+	systemInfo, err := i.Client.GetSystemInfo(ctx, header, []iamtypes.SystemQueryField{})
 	if err != nil && err != iam.ErrNotFound {
 		blog.Errorf("get system info failed, err: %v", err)
 		return nil, err
@@ -220,7 +220,7 @@ func (i IAM) registerSystem(kit *httprest.Kit, host string) (*iam.RegisteredSyst
 			},
 		}
 
-		if err = i.Client.RegisterSystem(kit.Ctx, kit.Header, sys); err != nil {
+		if err = i.Client.RegisterSystem(ctx, header, sys); err != nil {
 			blog.Errorf("register system(%s) failed, err: %v", sys, err)
 			return nil, err
 		}
@@ -233,7 +233,7 @@ func (i IAM) registerSystem(kit *httprest.Kit, host string) (*iam.RegisteredSyst
 	if providerConfig == nil || providerConfig.Host != host {
 		// if iam registered cmdb system has no ProviderConfig
 		// or registered host config is different with current host config, update system host config
-		if err = i.Client.UpdateSystemConfig(kit.Ctx, kit.Header, &iam.SysConfig{Host: host}); err != nil {
+		if err = i.Client.UpdateSystemConfig(ctx, header, &iam.SysConfig{Host: host}); err != nil {
 			blog.Errorf("update system host %s config failed, err: %v", host, err)
 			return nil, err
 		}
@@ -254,8 +254,8 @@ type iamName struct {
 }
 
 // crossCompareResTypes cross compare resource types to get need create/update/delete ones
-func (i IAM) crossCompareResTypes(kit *httprest.Kit, registeredResourceTypes []iam.ResourceType,
-	objects []metadata.Object) ([]iam.ResourceType, []iam.ResourceType, []iamtypes.TypeID) {
+func (i IAM) crossCompareResTypes(registeredResourceTypes []iam.ResourceType,
+	tenantObjects map[string][]metadata.Object) ([]iam.ResourceType, []iam.ResourceType, []iamtypes.TypeID) {
 
 	registeredResTypeMap := make(map[iamtypes.TypeID]iam.ResourceType)
 	for _, resourceType := range registeredResourceTypes {
@@ -268,7 +268,7 @@ func (i IAM) crossCompareResTypes(kit *httprest.Kit, registeredResourceTypes []i
 	updateResPrevNameMap := make(map[iamtypes.TypeID]iamName)
 	newResTypes := make([]iam.ResourceType, 0)
 	updateResTypes := make([]iam.ResourceType, 0)
-	for _, resourceType := range GenerateResourceTypes(objects) {
+	for _, resourceType := range GenerateResourceTypes(tenantObjects) {
 		resNameMap[resourceType.Name] = resourceType.ID
 		resNameEnMap[resourceType.NameEn] = resourceType.ID
 		// if current resource type is not registered, register it, otherwise, update it if its version is changed
@@ -358,7 +358,8 @@ func (i IAM) compareResType(registeredResType, resType iam.ResourceType) bool {
 
 // crossCompareInstSelections cross compare instance selections to get need create/update/delete ones
 func (i IAM) crossCompareInstSelections(registeredInstanceSelections []iam.InstanceSelection,
-	objects []metadata.Object) ([]iam.InstanceSelection, []iam.InstanceSelection, []iamtypes.InstanceSelectionID) {
+	tenantObjects map[string][]metadata.Object) ([]iam.InstanceSelection, []iam.InstanceSelection,
+	[]iamtypes.InstanceSelectionID) {
 
 	registeredInstSelectionMap := make(map[iamtypes.InstanceSelectionID]iam.InstanceSelection)
 	for _, instanceSelection := range registeredInstanceSelections {
@@ -373,7 +374,7 @@ func (i IAM) crossCompareInstSelections(registeredInstanceSelections []iam.Insta
 	newInstSelections := make([]iam.InstanceSelection, 0)
 	updateInstSelections := make([]iam.InstanceSelection, 0)
 
-	for _, instanceSelection := range GenerateInstanceSelections(objects) {
+	for _, instanceSelection := range GenerateInstanceSelections(tenantObjects) {
 		selectionNameMap[instanceSelection.Name] = instanceSelection.ID
 		selectionNameEnMap[instanceSelection.NameEn] = instanceSelection.ID
 
@@ -438,8 +439,8 @@ func (i IAM) crossCompareInstSelections(registeredInstanceSelections []iam.Insta
 }
 
 // crossCompareResActions cross compare resource actions to get need create/update/delete ones
-func (i IAM) crossCompareResActions(registeredActions []iam.ResourceAction, objects []metadata.Object) (
-	[]iam.ResourceAction, []iam.ResourceAction, []iamtypes.ActionID) {
+func (i IAM) crossCompareResActions(registeredActions []iam.ResourceAction,
+	tenantObjects map[string][]metadata.Object) ([]iam.ResourceAction, []iam.ResourceAction, []iamtypes.ActionID) {
 
 	registeredResActionMap := make(map[iamtypes.ActionID]iam.ResourceAction)
 	for _, resourceAction := range registeredActions {
@@ -454,7 +455,7 @@ func (i IAM) crossCompareResActions(registeredActions []iam.ResourceAction, obje
 	newResActions := make([]iam.ResourceAction, 0)
 	updateResActions := make([]iam.ResourceAction, 0)
 
-	for _, resourceAction := range GenerateActions(objects) {
+	for _, resourceAction := range GenerateActions(tenantObjects) {
 		actionNameMap[resourceAction.Name] = resourceAction.ID
 		actionNameEnMap[resourceAction.NameEn] = resourceAction.ID
 
@@ -587,20 +588,20 @@ func (i IAM) compareResActionType(resType iam.RelateResourceType, registeredResT
 }
 
 // removeResActions remove resource actions and related policies
-func (i IAM) removeResActions(kit *httprest.Kit, actionIDs []iamtypes.ActionID, rid string) error {
+func (i IAM) removeResActions(ctx context.Context, h http.Header, actionIDs []iamtypes.ActionID, rid string) error {
 	if len(actionIDs) == 0 {
 		return nil
 	}
 
 	// before deleting action, the dependent action policies must be deleted
 	for _, resourceActionID := range actionIDs {
-		if err := i.Client.DeleteActionPolicies(kit.Ctx, kit.Header, resourceActionID); err != nil {
+		if err := i.Client.DeleteActionPolicies(ctx, h, resourceActionID); err != nil {
 			blog.Errorf("delete action %s policies failed, err: %v, rid: %s", resourceActionID, err, rid)
 			return err
 		}
 	}
 
-	if err := i.Client.DeleteActions(kit.Ctx, kit.Header, actionIDs); err != nil {
+	if err := i.Client.DeleteActions(ctx, h, actionIDs); err != nil {
 		blog.Errorf("delete resource actions(%+v) failed, err: %v, rid: %s", actionIDs, err, rid)
 		return err
 	}
@@ -609,13 +610,13 @@ func (i IAM) removeResActions(kit *httprest.Kit, actionIDs []iamtypes.ActionID, 
 }
 
 // registerActionGroups register or update resource action groups
-func (i IAM) registerActionGroups(kit *httprest.Kit, registeredInfo *iam.RegisteredSystemInfo,
-	objects []metadata.Object, rid string) error {
+func (i IAM) registerActionGroups(ctx context.Context, h http.Header, registeredInfo *iam.RegisteredSystemInfo,
+	tenantObjects map[string][]metadata.Object, rid string) error {
 
-	actionGroups := GenerateActionGroups(objects)
+	actionGroups := GenerateActionGroups(tenantObjects)
 
 	if len(registeredInfo.ActionGroups) == 0 {
-		if err := i.Client.RegisterActionGroups(kit.Ctx, kit.Header, actionGroups); err != nil {
+		if err := i.Client.RegisterActionGroups(ctx, h, actionGroups); err != nil {
 			blog.Errorf("register action groups(%s) failed, err: %s, rid: %s", actionGroups, err, rid)
 			return err
 		}
@@ -626,7 +627,7 @@ func (i IAM) registerActionGroups(kit *httprest.Kit, registeredInfo *iam.Registe
 		return nil
 	}
 
-	if err := i.Client.UpdateActionGroups(kit.Ctx, kit.Header, actionGroups); err != nil {
+	if err := i.Client.UpdateActionGroups(ctx, h, actionGroups); err != nil {
 		blog.Errorf("update action groups(%s) failed, err: %s, rid: %s", actionGroups, err, rid)
 		return err
 	}
@@ -634,11 +635,12 @@ func (i IAM) registerActionGroups(kit *httprest.Kit, registeredInfo *iam.Registe
 }
 
 // registerResCreatorActions register or update resource creator actions
-func (i IAM) registerResCreatorActions(kit *httprest.Kit, registeredInfo *iam.RegisteredSystemInfo, rid string) error {
+func (i IAM) registerResCreatorActions(ctx context.Context, h http.Header, registeredInfo *iam.RegisteredSystemInfo,
+	rid string) error {
 	rcActions := GenerateResourceCreatorActions()
 
 	if len(registeredInfo.ResourceCreatorActions.Config) == 0 {
-		if err := i.Client.RegisterResourceCreatorActions(kit.Ctx, kit.Header, rcActions); err != nil {
+		if err := i.Client.RegisterResourceCreatorActions(ctx, h, rcActions); err != nil {
 			blog.Errorf("register resource creator actions(%s) failed, err: %s, rid: %s", rcActions, err, rid)
 			return err
 		}
@@ -649,7 +651,7 @@ func (i IAM) registerResCreatorActions(kit *httprest.Kit, registeredInfo *iam.Re
 		return nil
 	}
 
-	if err := i.Client.UpdateResourceCreatorActions(kit.Ctx, kit.Header, rcActions); err != nil {
+	if err := i.Client.UpdateResourceCreatorActions(ctx, h, rcActions); err != nil {
 		blog.Errorf("update resource creator actions(%s) failed, err: %s, rid: %s", rcActions, err, rid)
 		return err
 	}
@@ -657,11 +659,12 @@ func (i IAM) registerResCreatorActions(kit *httprest.Kit, registeredInfo *iam.Re
 }
 
 // registerCommonActions register or update common actions
-func (i IAM) registerCommonActions(kit *httprest.Kit, registeredInfo *iam.RegisteredSystemInfo, rid string) error {
+func (i IAM) registerCommonActions(ctx context.Context, h http.Header, registeredInfo *iam.RegisteredSystemInfo,
+	rid string) error {
 	commonActions := GenerateCommonActions()
 
 	if len(registeredInfo.CommonActions) == 0 {
-		if err := i.Client.RegisterCommonActions(kit.Ctx, kit.Header, commonActions); err != nil {
+		if err := i.Client.RegisterCommonActions(ctx, h, commonActions); err != nil {
 			blog.Errorf("register common actions(%s) failed, err: %s, rid: %s", commonActions, err, rid)
 			return err
 		}
@@ -672,7 +675,7 @@ func (i IAM) registerCommonActions(kit *httprest.Kit, registeredInfo *iam.Regist
 		return nil
 	}
 
-	if err := i.Client.UpdateCommonActions(kit.Ctx, kit.Header, commonActions); err != nil {
+	if err := i.Client.UpdateCommonActions(ctx, h, commonActions); err != nil {
 		blog.Errorf("update common actions(%s) failed, err: %s, rid: %s", commonActions, err, rid)
 		return err
 	}
@@ -682,7 +685,7 @@ func (i IAM) registerCommonActions(kit *httprest.Kit, registeredInfo *iam.Regist
 // SyncIAMSysInstances sync system instances between CMDB and IAM
 // it check the difference of system instances resource between CMDB and IAM
 // if they have difference, sync and make them same
-func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
+func (i IAM) SyncIAMSysInstances(kit *rest.Kit, redisCli redis.Client,
 	tenantObjects map[string][]metadata.Object) error {
 
 	// validate the objects
@@ -710,14 +713,10 @@ func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
 		return err
 	}
 
-	allTenantsObjects := make([]metadata.Object, 0)
-	for _, objects := range tenantObjects {
-		allTenantsObjects = append(allTenantsObjects, objects...)
-	}
 	// get the cmdb resources
-	cmdbActions := genDynamicActions(allTenantsObjects)
-	cmdbInstanceSelections := genDynamicInstanceSelections(allTenantsObjects)
-	cmdbResourceTypes := genDynamicResourceTypes(allTenantsObjects)
+	cmdbActions := genDynamicActions(tenantObjects)
+	cmdbInstanceSelections := genDynamicInstanceSelections(tenantObjects)
+	cmdbResourceTypes := genDynamicResourceTypes(tenantObjects)
 
 	// compare resources between cmdb and iam
 	addedActions, deletedActions := compareActions(cmdbActions, iamInfo.Actions)
@@ -733,9 +732,37 @@ func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
 	if err != nil {
 		return err
 	}
-	err = i.registerIamResource(kit, addedResourceTypes, addedInstanceSelections, addedActions)
-	if err != nil {
-		return err
+
+	// add cmdb ResourceTypes in iam
+	if len(addedResourceTypes) > 0 {
+		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s",
+			len(addedResourceTypes), addedResourceTypes, kit.Rid)
+		if err := i.Client.RegisterResourcesTypes(kit.Ctx, kit.Header, addedResourceTypes); err != nil {
+			blog.Errorf("sync iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid: %s",
+				err, addedResourceTypes, kit.Rid)
+			return err
+		}
+	}
+
+	// add cmdb InstanceSelections in iam
+	if len(addedInstanceSelections) > 0 {
+		blog.Infof("begin add instanceSelections, count:%d, detail:%v, rid: %s",
+			len(addedInstanceSelections), addedInstanceSelections, kit.Rid)
+		if err := i.Client.RegisterInstanceSelections(kit.Ctx, kit.Header, addedInstanceSelections); err != nil {
+			blog.Errorf("sync iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, "+
+				"rid: %s", err, addedInstanceSelections, kit.Rid)
+			return err
+		}
+	}
+
+	// add cmdb actions in iam
+	if len(addedActions) > 0 {
+		blog.Infof("begin add actions, count:%d, detail:%v, rid: %s", len(addedActions), addedActions, kit.Rid)
+		if err := i.Client.RegisterActions(kit.Ctx, kit.Header, addedActions); err != nil {
+			blog.ErrorJSON("sync iam sysInstances failed, add IAM actions failed, error: %s, actions: %s, rid: %s",
+				err, addedActions, kit.Rid)
+			return err
+		}
 	}
 
 	// update action_groups in iam, the action groups contains only the existed actions in iam
@@ -749,7 +776,7 @@ func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
 		for _, action := range cmdbActions {
 			actionMap[action.ID] = struct{}{}
 		}
-		cmdbActionGroups := GenerateActionGroups(allTenantsObjects)
+		cmdbActionGroups := GenerateActionGroups(tenantObjects)
 		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
 
 		// if all exist actions in iam needs no action group(which happens when first initializing), **skip**
@@ -766,7 +793,7 @@ func (i IAM) SyncIAMSysInstances(kit *httprest.Kit, redisCli redis.Client,
 	return nil
 }
 
-func (i IAM) registerIamResource(kit *httprest.Kit, addedResourceTypes []iam.ResourceType,
+func (i IAM) registerIamResource(kit *rest.Kit, addedResourceTypes []iam.ResourceType,
 	addedInstanceSelections []iam.InstanceSelection, addedActions []iam.ResourceAction) error {
 
 	// add cmdb ResourceTypes in iam
@@ -804,7 +831,7 @@ func (i IAM) registerIamResource(kit *httprest.Kit, addedResourceTypes []iam.Res
 	return nil
 }
 
-func (i IAM) deleteIamResources(kit *httprest.Kit, deletedActions []iamtypes.ActionID,
+func (i IAM) deleteIamResources(kit *rest.Kit, deletedActions []iamtypes.ActionID,
 	deletedInstanceSelections []iamtypes.InstanceSelectionID, deletedResourceTypes []iamtypes.TypeID,
 	rid string) error {
 
@@ -883,9 +910,9 @@ func getActionGroupWithExistAction(cmdbActionGroups []iam.ActionGroup,
 // DeleteCMDBResource delete unnecessary CMDB resource from IAM
 // it will  delete the resource if it exists on IAM
 func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBResourceParam,
-	objects []metadata.Object) error {
+	tenantObjects map[string][]metadata.Object) error {
 
-	rid := commonutil.ExtractRequestIDFromContext(ctx)
+	rid := util.ExtractRequestIDFromContext(ctx)
 	header := headerutil.GenDefaultHeader()
 	httpheader.SetRid(header, rid)
 
@@ -951,7 +978,7 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 		for _, action := range deletedActions {
 			delete(actionMap, action)
 		}
-		cmdbActionGroups := GenerateActionGroups(objects)
+		cmdbActionGroups := GenerateActionGroups(tenantObjects)
 		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
 		if len(actualActionGroups) > 0 {
 			blog.Infof("begin update action groups")
@@ -966,8 +993,8 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 }
 
 // RegisterToIAM register to iam
-func (i IAM) RegisterToIAM(kit *httprest.Kit, host string) error {
-	rid := commonutil.ExtractRequestIDFromContext(kit.Ctx)
+func (i IAM) RegisterToIAM(kit *rest.Kit, host string) error {
+	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
 	_, err := i.Client.GetSystemInfo(kit.Ctx, kit.Header, []iamtypes.SystemQueryField{})
 	if err == nil {
@@ -1000,7 +1027,7 @@ func (i IAM) RegisterToIAM(kit *httprest.Kit, host string) error {
 
 // IsRegisteredToIAM checks if cmdb is registered to iam or not
 func (i IAM) IsRegisteredToIAM(ctx context.Context) (bool, error) {
-	rid := commonutil.ExtractRequestIDFromContext(ctx)
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	header := headerutil.GenDefaultHeader()
 	_, err := i.Client.GetSystemInfo(ctx, header, []iamtypes.SystemQueryField{})

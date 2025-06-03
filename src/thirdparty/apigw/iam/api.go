@@ -99,7 +99,8 @@ func (i *iam) RegisterResourceCreatorAction(ctx context.Context, header http.Hea
 	return resp.Data, nil
 }
 
-// BatchRegisterResourceCreatorAction batch register iam resource instances with creator, returns related actions with policy id that the creator gained
+// BatchRegisterResourceCreatorAction batch register iam resource instances with creator, returns related actions with
+// policy id that the creator gained
 func (i *iam) BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header,
 	instances metadata.IamInstancesWithCreator) ([]metadata.IamCreatorActionPolicy, error) {
 
@@ -554,18 +555,19 @@ func (i *iam) UpdateActionGroups(ctx context.Context, header http.Header, action
 	return nil
 }
 
-// RegisterInstanceSelections TODO
+// RegisterInstanceSelections register instance selections in IAM
 func (i *iam) RegisterInstanceSelections(ctx context.Context, header http.Header,
 	instanceSelections []InstanceSelection) error {
+
+	if len(instanceSelections) == 0 {
+		return nil
+	}
 
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
-	if len(instanceSelections) == 0 {
-		return nil
-	}
 	subPath := "/api/v1/model/systems/%s/instance-selections"
 
 	resp := new(apigwutil.ApiGWBaseResponse)

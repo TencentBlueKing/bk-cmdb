@@ -30,7 +30,7 @@ import (
 	"configcenter/src/common/util"
 )
 
-func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr) (
+func (a *AuthManager) constructHostFromSearchResult(ctx context.Context, header http.Header, rawData []mapstr.MapStr) (
 	[]HostSimplify, error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -51,7 +51,7 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 		HostIDArr: hostIDs,
 		Fields:    []string{common.BKAppIDField, common.BKSetIDField, common.BKModuleIDField, common.BKHostIDField},
 	}
-	hostModuleResult, err := am.clientSet.CoreService().Host().GetHostModuleRelation(ctx, header, query)
+	hostModuleResult, err := a.clientSet.CoreService().Host().GetHostModuleRelation(ctx, header, query)
 	if err != nil {
 		err = fmt.Errorf("get host:%+v layer failed, err: %+v", hostIDs, err)
 		return nil, err
@@ -84,7 +84,7 @@ func (am *AuthManager) constructHostFromSearchResult(ctx context.Context, header
 	return hosts, nil
 }
 
-func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify,
+func (a *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Header, hostIDs ...int64) ([]HostSimplify,
 	error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -104,7 +104,7 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 				Start: offset,
 			},
 		}
-		result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDHost, &cond)
+		result, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDHost, &cond)
 		if err != nil {
 			blog.V(3).Infof("get hosts by id failed, err: %+v, rid: %s", err, rid)
 			return nil, fmt.Errorf("get hosts by id failed, err: %+v", err)
@@ -112,11 +112,11 @@ func (am *AuthManager) collectHostByHostIDs(ctx context.Context, header http.Hea
 		hosts = append(hosts, result.Info...)
 		count = result.Count
 	}
-	return am.constructHostFromSearchResult(ctx, header, hosts)
+	return a.constructHostFromSearchResult(ctx, header, hosts)
 }
 
 // MakeResourcesByHosts make resources by host
-func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Header, action meta.Action,
 	hosts ...HostSimplify) ([]meta.ResourceAttribute, error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -126,7 +126,7 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 		businessIDs = append(businessIDs, host.BKAppIDField)
 	}
 	businessIDs = util.IntArrayUnique(businessIDs)
-	resPoolBizID, err := am.getResourcePoolBusinessID(ctx, header)
+	resPoolBizID, err := a.getResourcePoolBusinessID(ctx, header)
 	if err != nil {
 		return nil, fmt.Errorf("correct host related business id failed, err: %+v", err)
 	}
@@ -169,9 +169,9 @@ func (am *AuthManager) MakeResourcesByHosts(ctx context.Context, header http.Hea
 }
 
 // AuthorizeByHosts TODO
-func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header, action meta.Action,
 	hosts ...HostSimplify) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
@@ -180,21 +180,21 @@ func (am *AuthManager) AuthorizeByHosts(ctx context.Context, header http.Header,
 	}
 
 	// make auth resources
-	resources, err := am.MakeResourcesByHosts(ctx, header, action, hosts...)
+	resources, err := a.MakeResourcesByHosts(ctx, header, action, hosts...)
 	if err != nil {
 		return fmt.Errorf("make host resources failed, err: %+v", err)
 	}
-	return am.batchAuthorize(ctx, header, resources...)
+	return a.batchAuthorize(ctx, header, resources...)
 }
 
 // GenHostBatchNoPermissionResp TODO
-func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
 	hostIDs []int64) (*metadata.BaseResp, error) {
-	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	hosts, err := a.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return nil, err
 	}
-	resPoolBizID, err := am.getResourcePoolBusinessID(ctx, header)
+	resPoolBizID, err := a.getResourcePoolBusinessID(ctx, header)
 	if err != nil {
 		return nil, err
 	}
@@ -256,9 +256,9 @@ func (am *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header 
 }
 
 // GenEditBizHostNoPermissionResp TODO
-func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, header http.Header,
+func (a *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, header http.Header,
 	hostIDs []int64) (*metadata.BaseResp, error) {
-	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	hosts, err := a.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return nil, err
 	}
@@ -288,14 +288,14 @@ func (am *AuthManager) GenEditBizHostNoPermissionResp(ctx context.Context, heade
 }
 
 // AuthorizeByHostsIDs TODO
-func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Header, action meta.Action,
 	hostIDs ...int64) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
-	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+	if a.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, hosts: %+v, rid: %s", hostIDs, rid)
 		return nil
 	}
@@ -303,18 +303,18 @@ func (am *AuthManager) AuthorizeByHostsIDs(ctx context.Context, header http.Head
 	if len(hostIDs) == 0 {
 		return nil
 	}
-	hosts, err := am.collectHostByHostIDs(ctx, header, hostIDs...)
+	hosts, err := a.collectHostByHostIDs(ctx, header, hostIDs...)
 	if err != nil {
 		return fmt.Errorf("authorize hosts failed, get hosts by id failed, err: %+v, rid: %s", err, rid)
 	}
-	return am.AuthorizeByHosts(ctx, header, action, hosts...)
+	return a.AuthorizeByHosts(ctx, header, action, hosts...)
 }
 
 // AuthorizeCreateHost TODO
-func (am *AuthManager) AuthorizeCreateHost(ctx context.Context, header http.Header, bizID int64) error {
-	if !am.Enabled() {
+func (a *AuthManager) AuthorizeCreateHost(ctx context.Context, header http.Header, bizID int64) error {
+	if !a.Enabled() {
 		return nil
 	}
 
-	return am.AuthorizeResourceCreate(ctx, header, bizID, meta.HostInstance)
+	return a.AuthorizeResourceCreate(ctx, header, bizID, meta.HostInstance)
 }

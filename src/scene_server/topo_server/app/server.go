@@ -101,7 +101,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		essrv.Client = esClient
 	}
 
-	parseServerConfig(server.Service)
 	server.InitClients()
 
 	iamCli := new(iam.IAM)
@@ -112,7 +111,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
-		authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
+		authManager = extensions.NewAuthManager(engine.CoreAPI).WithViewer(engine.CoreAPI, iamCli)
 	} else {
 		blog.Infof("disable auth center access")
 	}
@@ -153,18 +152,10 @@ func (t *TopoServer) CheckForReadiness() error {
 	return errors.New("wait for topology server configuration timeout")
 }
 
-func parseServerConfig(op *service.Service) {
-	op.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
-	op.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
-}
-
 // InitClients init apiGW client
 func (s *TopoServer) InitClients() error {
 
 	var clients []apigw.ClientType
-	if s.Config.EnableMultiTenantMode && !s.Config.DisableVerifyTenant {
-		clients = []apigw.ClientType{apigw.User}
-	}
 
 	if auth.EnableAuthorize() {
 		clients = append(clients, apigw.Iam)

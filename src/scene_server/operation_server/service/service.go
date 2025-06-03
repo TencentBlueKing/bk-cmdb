@@ -15,20 +15,16 @@ package service
 import (
 	"configcenter/src/ac/extensions"
 	"configcenter/src/common"
-	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
-	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/metric"
 	"configcenter/src/common/rdapi"
-	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/scene_server/operation_server/app/options"
-	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/logplatform/opentelemetry"
 
 	"github.com/emicklei/go-restful/v3"
@@ -128,27 +124,4 @@ func (o *OperationServer) Healthz(req *restful.Request, resp *restful.Response) 
 // OnOperationConfigUpdate TODO
 func (o *OperationServer) OnOperationConfigUpdate(previous, current cc.ProcessConfig) {
 	o.Config = &options.Config{}
-}
-
-// InitClients init apiGW client
-func (o *OperationServer) InitClients() error {
-
-	var clients []apigw.ClientType
-	if o.Config.EnableMultiTenantMode && !o.Config.DisableVerifyTenant {
-		clients = []apigw.ClientType{apigw.User}
-	}
-
-	if auth.EnableAuthorize() {
-		clients = append(clients, apigw.Iam)
-	}
-
-	if len(clients) > 0 {
-		err := apigwcli.Init("apiGW", o.Engine.Metric().Registry(), clients)
-		if err != nil {
-			blog.Errorf("init gse api gateway client failed, err: %v", err)
-			return err
-		}
-	}
-
-	return nil
 }

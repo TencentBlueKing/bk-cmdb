@@ -15,8 +15,11 @@ package reflector
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"configcenter/src/common/blog"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream"
 	"configcenter/src/storage/stream/types"
 )
@@ -28,6 +31,16 @@ type Interface interface {
 	ListWatcher(ctx context.Context, opts *types.ListWatchOptions, cap *Capable) error
 }
 
+// NewReflector TODO
+func NewReflector(conf local.MongoConf) (Interface, error) {
+	s, err := stream.NewStream(conf)
+	if err != nil {
+		return nil, fmt.Errorf("new stream faiiled, err: %v", err)
+	}
+
+	return &Reflector{Stream: s}, nil
+}
+
 // Reflector TODO
 type Reflector struct {
 	Stream stream.Interface
@@ -36,6 +49,47 @@ type Reflector struct {
 // Lister TODO
 func (r *Reflector) Lister(ctx context.Context, opts *types.ListOptions) (ch chan *types.Event, err error) {
 	return r.Stream.List(ctx, opts)
+}
+
+// Watcher TODO
+func (r *Reflector) Watcher(ctx context.Context, opts *types.WatchOptions, cap *Capable) error {
+	if cap == nil {
+		return errors.New("invalid Capable value, must be a pointer and not nil")
+	}
+	if cap.OnChange.OnAdd == nil || cap.OnChange.OnUpdate == nil || cap.OnChange.OnDelete == nil {
+		return errors.New("invalid Capable value")
+	}
+
+	if cap.OnChange.OnLister != nil || cap.OnChange.OnListerDone != nil {
+		return errors.New("watch can not have OnLister or OnListerDone in Capable")
+	}
+
+	watch, err := r.Stream.Watch(ctx, opts)
+	if err != nil {
+		return err
+	}
+
+	go r.loopWatch(opts.Collection, watch, cap)
+	return nil
+}
+
+// ListWatcher TODO
+func (r *Reflector) ListWatcher(ctx context.Context, opts *types.ListWatchOptions, cap *Capable) error {
+	if cap == nil {
+		return errors.New("invalid Capable value, must be a pointer and not nil")
+	}
+	if cap.OnChange.OnLister == nil || cap.OnChange.OnAdd == nil ||
+		cap.OnChange.OnUpdate == nil || cap.OnChange.OnDelete == nil {
+		return errors.New("invalid Capable value")
+	}
+
+	watch, err := r.Stream.ListWatch(ctx, opts)
+	if err != nil {
+		return err
+	}
+
+	go r.loopWatch(opts.Collection, watch, cap)
+	return nil
 }
 
 func (r *Reflector) loopWatch(coll string, w *types.Watcher, cap *Capable) {
@@ -67,6 +121,7 @@ func (r *Reflector) loopWatch(coll string, w *types.Watcher, cap *Capable) {
 		default:
 			blog.ErrorJSON("watch collection: %s, received a unsupported event type: %s, doc: %s.", coll,
 				event.OperationType, event.Document)
+
 		}
 	}
 

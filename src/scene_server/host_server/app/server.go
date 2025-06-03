@@ -19,19 +19,16 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/host_server/app/options"
 	"configcenter/src/scene_server/host_server/logics"
 	hostsvc "configcenter/src/scene_server/host_server/service"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/apigw"
 	"github.com/emicklei/go-restful/v3"
 )
 
@@ -70,7 +67,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return errors.New("configuration item not found")
 	}
 	service.Config = hostSrv.Config
-	parseServerConfig(service)
 
 	hostSrv.Config.Redis, err = engine.WithRedis()
 	if err != nil {
@@ -83,21 +79,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
 
-	hostSrv.Core = engine
-	if err = hostSrv.InitClients(); err != nil {
-		blog.Errorf("init clients failed, err: %v", err)
-		return err
-	}
-
-	iamCli := new(iam.IAM)
 	authManager := new(extensions.AuthManager)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM()
-		if err != nil {
-			return fmt.Errorf("new iam client failed: %v", err)
-		}
-		authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
+		authManager = extensions.NewAuthManager(engine.CoreAPI)
 	} else {
 		blog.Infof("disable auth center access")
 	}
@@ -107,6 +92,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service.CacheDB = cacheDB
 	service.Logic = logics.NewLogics(engine, cacheDB, authManager)
 	hostSrv.Service = service
+	hostSrv.Core = engine
 
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
 	if err != nil {
@@ -135,32 +121,4 @@ func (h *HostServer) onHostConfigUpdate(previous, current cc.ProcessConfig) {
 	if h.Config == nil {
 		h.Config = new(options.Config)
 	}
-}
-
-func parseServerConfig(service *hostsvc.Service) {
-	service.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
-	service.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
-}
-
-// InitClients init apiGW client
-func (h *HostServer) InitClients() error {
-
-	var clients []apigw.ClientType
-	if h.Config.EnableMultiTenantMode && !h.Config.DisableVerifyTenant {
-		clients = []apigw.ClientType{apigw.User}
-	}
-
-	if auth.EnableAuthorize() {
-		clients = append(clients, apigw.Iam)
-	}
-
-	if len(clients) > 0 {
-		err := apigwcli.Init("apiGW", h.Core.Metric().Registry(), clients)
-		if err != nil {
-			blog.Errorf("init gse api gateway client failed, err: %v", err)
-			return err
-		}
-	}
-
-	return nil
 }

@@ -915,6 +915,9 @@ bkLoginApiGatewayUrl: "http://bkapi.example.com"
 # 蓝鲸用户管理 API Gateway url
 bkUserApiGatewayUrl: "http://bkapi.example.com"
 
+# 蓝鲸 IAM API Gateway url
+bkIamApiGatewayUrl: "http://bkapi.example.com"
+
 ## @section bk-cmdb common config parameters
 ##
 common:

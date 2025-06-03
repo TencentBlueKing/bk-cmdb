@@ -29,11 +29,9 @@ type ServerOption struct {
 
 // Config export
 type Config struct {
-	Mongo                 mongo.Config
-	WatchMongo            mongo.Config
-	Redis                 redis.Config
-	DisableVerifyTenant   bool
-	EnableMultiTenantMode bool
+	Mongo      mongo.Config
+	WatchMongo mongo.Config
+	Redis      redis.Config
 }
 
 // NewServerOption create a ServerOption object

@@ -67,5 +67,6 @@ func setEnableAuth(enable bool) {
 
 // EnableAuthorize TODO
 func EnableAuthorize() bool {
-	return enableAuth
+	return true
+	//	return enableAuth
 }

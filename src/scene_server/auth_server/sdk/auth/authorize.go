@@ -13,11 +13,12 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 
-	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/auth_server/sdk/client"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/scene_server/auth_server/sdk/types"
@@ -33,7 +34,7 @@ type Authorize struct {
 }
 
 // Authorize TODO
-func (a *Authorize) Authorize(kit *rest.Kit, opts *iam.AuthOptions) (*types.Decision, error) {
+func (a *Authorize) Authorize(ctx context.Context, header http.Header, opts *iam.AuthOptions) (*types.Decision, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
@@ -47,12 +48,12 @@ func (a *Authorize) Authorize(kit *rest.Kit, opts *iam.AuthOptions) (*types.Deci
 		Resources: make([]iam.Resource, 0),
 	}
 
-	policy, err := a.iam.GetUserPolicy(kit.Ctx, kit.Header, &getOpt)
+	policy, err := a.iam.GetUserPolicy(ctx, header, &getOpt)
 	if err != nil {
 		return nil, err
 	}
 
-	authorized, err := a.calculatePolicy(kit.Ctx, opts.Resources, policy)
+	authorized, err := a.calculatePolicy(ctx, opts.Resources, policy)
 	if err != nil {
 		return nil, fmt.Errorf("calculate user's auth policy failed, err: %v", err)
 	}
@@ -61,17 +62,22 @@ func (a *Authorize) Authorize(kit *rest.Kit, opts *iam.AuthOptions) (*types.Deci
 }
 
 // AuthorizeBatch TODO
-func (a *Authorize) AuthorizeBatch(kit *rest.Kit, opts *iam.AuthBatchOptions) ([]*types.Decision, error) {
-	return a.authorizeBatch(kit, opts, true)
+func (a *Authorize) AuthorizeBatch(ctx context.Context, header http.Header, opts *iam.AuthBatchOptions) (
+	[]*types.Decision, error) {
+
+	return a.authorizeBatch(ctx, header, opts, true)
 }
 
 // AuthorizeAnyBatch TODO
-func (a *Authorize) AuthorizeAnyBatch(kit *rest.Kit, opts *iam.AuthBatchOptions) ([]*types.Decision, error) {
-	return a.authorizeBatch(kit, opts, false)
+func (a *Authorize) AuthorizeAnyBatch(ctx context.Context, header http.Header,
+	opts *iam.AuthBatchOptions) ([]*types.Decision, error) {
+
+	return a.authorizeBatch(ctx, header, opts, false)
 }
 
-func (a *Authorize) authorizeBatch(kit *rest.Kit, opts *iam.AuthBatchOptions, exact bool) ([]*types.Decision,
-	error) {
+func (a *Authorize) authorizeBatch(ctx context.Context, header http.Header, opts *iam.AuthBatchOptions,
+	exact bool) ([]*types.Decision, error) {
+
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
@@ -80,7 +86,7 @@ func (a *Authorize) authorizeBatch(kit *rest.Kit, opts *iam.AuthBatchOptions, ex
 		return nil, errors.New("no resource instance need to authorize")
 	}
 
-	policies, err := a.listUserPolicyBatchWithCompress(kit, opts)
+	policies, err := a.listUserPolicyBatchWithCompress(ctx, header, opts)
 	if err != nil {
 		return nil, fmt.Errorf("list user policy failed, err: %v", err)
 	}
@@ -103,9 +109,9 @@ func (a *Authorize) authorizeBatch(kit *rest.Kit, opts *iam.AuthBatchOptions, ex
 			var authorized bool
 			var err error
 			if exact {
-				authorized, err = a.calculatePolicy(kit.Ctx, resources, policy)
+				authorized, err = a.calculatePolicy(ctx, resources, policy)
 			} else {
-				authorized, err = a.calculateAnyPolicy(kit.Ctx, resources, policy)
+				authorized, err = a.calculateAnyPolicy(ctx, resources, policy)
 			}
 			if err != nil {
 				hitError = err
@@ -126,7 +132,8 @@ func (a *Authorize) authorizeBatch(kit *rest.Kit, opts *iam.AuthBatchOptions, ex
 	return decisions, nil
 }
 
-func (a *Authorize) listUserPolicyBatchWithCompress(kit *rest.Kit, opts *iam.AuthBatchOptions) ([]*operator.Policy,
+func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context, header http.Header,
+	opts *iam.AuthBatchOptions) ([]*operator.Policy,
 	error) {
 
 	// because these resource are the same, so we can unique the action id,
@@ -149,7 +156,7 @@ func (a *Authorize) listUserPolicyBatchWithCompress(kit *rest.Kit, opts *iam.Aut
 		Resources: nil,
 	}
 
-	policies, err := a.iam.ListUserPolicies(kit.Ctx, kit.Header, listOpts)
+	policies, err := a.iam.ListUserPolicies(ctx, header, listOpts)
 	if err != nil {
 		return nil, fmt.Errorf("list user's policy failed, err: %s", err)
 	}
@@ -172,8 +179,9 @@ func (a *Authorize) listUserPolicyBatchWithCompress(kit *rest.Kit, opts *iam.Aut
 }
 
 // ListAuthorizedInstances list a user's all the authorized resource instance list with an action.
-func (a *Authorize) ListAuthorizedInstances(kit *rest.Kit, opts *iam.AuthOptions,
+func (a *Authorize) ListAuthorizedInstances(ctx context.Context, header http.Header, opts *iam.AuthOptions,
 	resourceType iam.IamResourceType) (*iam.AuthorizeList, error) {
+
 	// find user's policy with action
 	getOpt := iam.GetPolicyOption{
 		System:  opts.System,
@@ -182,12 +190,12 @@ func (a *Authorize) ListAuthorizedInstances(kit *rest.Kit, opts *iam.AuthOptions
 		// do not use user's policy, so that we can get all the user's policy.
 		Resources: opts.Resources,
 	}
-	policy, err := a.iam.GetUserPolicy(kit.Ctx, kit.Header, &getOpt)
+	policy, err := a.iam.GetUserPolicy(ctx, header, &getOpt)
 	if err != nil {
 		return nil, err
 	}
 	if policy == nil || policy.Operator == "" {
 		return &iam.AuthorizeList{}, nil
 	}
-	return a.countPolicy(kit.Ctx, policy, resourceType)
+	return a.countPolicy(ctx, policy, resourceType)
 }

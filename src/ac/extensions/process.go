@@ -30,7 +30,7 @@ import (
  * process
  */
 
-func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.Header, ids ...int64) ([]ProcessSimplify,
+func (a *AuthManager) collectProcessesByIDs(ctx context.Context, header http.Header, ids ...int64) ([]ProcessSimplify,
 	error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -41,7 +41,7 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKProcIDField).In(ids).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDProc, &cond)
+	result, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDProc, &cond)
 	if err != nil {
 		blog.Errorf("get processes by id %+v failed, err: %+v, rid: %s", ids, err, rid)
 		return nil, fmt.Errorf("get processes by id failed, err: %+v", err)
@@ -61,7 +61,7 @@ func (am *AuthManager) collectProcessesByIDs(ctx context.Context, header http.He
 }
 
 // MakeResourcesByProcesses TODO
-func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.Action, businessID int64,
+func (a *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.Action, businessID int64,
 	processes ...ProcessSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, process := range processes {
@@ -82,14 +82,14 @@ func (am *AuthManager) MakeResourcesByProcesses(header http.Header, action meta.
 }
 
 // GenProcessNoPermissionResp TODO
-func (am *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header http.Header,
+func (a *AuthManager) GenProcessNoPermissionResp(ctx context.Context, header http.Header,
 	businessID int64) (*metadata.BaseResp, error) {
 	// process read authorization is skipped
 	resp := metadata.NewNoPermissionResp(nil)
 	return &resp, nil
 }
 
-func (am *AuthManager) extractBusinessIDFromProcesses(processes ...ProcessSimplify) (int64, error) {
+func (a *AuthManager) extractBusinessIDFromProcesses(processes ...ProcessSimplify) (int64, error) {
 	var businessID int64
 	for idx, process := range processes {
 		bizID := process.BKAppIDField
@@ -102,38 +102,38 @@ func (am *AuthManager) extractBusinessIDFromProcesses(processes ...ProcessSimpli
 }
 
 // AuthorizeByProcesses TODO
-func (am *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByProcesses(ctx context.Context, header http.Header, action meta.Action,
 	processes ...ProcessSimplify) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
 	// extract business id
-	bizID, err := am.extractBusinessIDFromProcesses(processes...)
+	bizID, err := a.extractBusinessIDFromProcesses(processes...)
 	if err != nil {
 		return fmt.Errorf("authorize processes failed, extract business id from processes failed, err: %+v", err)
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByProcesses(header, action, bizID, processes...)
+	resources := a.MakeResourcesByProcesses(header, action, bizID, processes...)
 
-	return am.batchAuthorize(ctx, header, resources...)
+	return a.batchAuthorize(ctx, header, resources...)
 }
 
 // AuthorizeByProcessID TODO
-func (am *AuthManager) AuthorizeByProcessID(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByProcessID(ctx context.Context, header http.Header, action meta.Action,
 	ids ...int64) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
 	if len(ids) == 0 {
 		return nil
 	}
-	processes, err := am.collectProcessesByIDs(ctx, header, ids...)
+	processes, err := a.collectProcessesByIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("authorize processes failed, collect process by id failed, id: %+v, err: %+v", ids, err)
 	}
 
-	return am.AuthorizeByProcesses(ctx, header, action, processes...)
+	return a.AuthorizeByProcesses(ctx, header, action, processes...)
 }

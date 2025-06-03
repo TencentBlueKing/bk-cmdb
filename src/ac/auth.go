@@ -19,7 +19,6 @@ import (
 	"net/http"
 
 	"configcenter/src/ac/meta"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/storage/dal/redis"
@@ -31,14 +30,14 @@ var NoAuthorizeError = errors.New("no authorize")
 // Viewer is a interface to operate iam view
 type Viewer interface {
 	// CreateView create iam view for objects
-	CreateView(kit *rest.Kit, objects []metadata.Object, redisCli redis.Client,
-		rid string) error
+	CreateView(ctx context.Context, h http.Header, tenantObjects map[string][]metadata.Object,
+		redisCli redis.Client, rid string) error
 	// DeleteView delete iam view for objects
-	DeleteView(kit *rest.Kit, objects []metadata.Object, redisCli redis.Client,
-		rid string) error
+	DeleteView(ctx context.Context, h http.Header, tenantObjects map[string][]metadata.Object,
+		redisCli redis.Client, rid string) error
 	// UpdateView update iam view for objects
-	UpdateView(kit *rest.Kit, objects []metadata.Object, redisCli redis.Client,
-		rid string) error
+	UpdateView(ctx context.Context, h http.Header, tenantObjects map[string][]metadata.Object,
+		redisCli redis.Client, rid string) error
 }
 
 // AuthorizeInterface TODO

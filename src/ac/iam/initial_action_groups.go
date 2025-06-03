@@ -19,11 +19,11 @@ import (
 )
 
 // GenerateActionGroups generate all the resource action groups registered to IAM.
-func GenerateActionGroups(objects []metadata.Object) []iam.ActionGroup {
+func GenerateActionGroups(tenantObjects map[string][]metadata.Object) []iam.ActionGroup {
 	ActionGroups := GenerateStaticActionGroups()
 
 	// generate model instance manage action groups, contains model instance related actions which are dynamic
-	ActionGroups = append(ActionGroups, GenModelInstanceManageActionGroups(objects)...)
+	ActionGroups = append(ActionGroups, GenModelInstanceManageActionGroups(tenantObjects)...)
 
 	return ActionGroups
 }
@@ -312,15 +312,19 @@ func genModelManageActionGroups() []iam.ActionGroup {
 }
 
 // GenModelInstanceManageActionGroups TODO
-func GenModelInstanceManageActionGroups(objects []metadata.Object) []iam.ActionGroup {
-	if len(objects) == 0 {
+func GenModelInstanceManageActionGroups(tenantObjects map[string][]metadata.Object) []iam.ActionGroup {
+
+	if len(tenantObjects) == 0 {
 		return make([]iam.ActionGroup, 0)
 	}
 
 	subGroups := []iam.ActionGroup{}
-	for _, obj := range objects {
-		subGroups = append(subGroups, genDynamicActionSubGroup(obj))
+	for _, objects := range tenantObjects {
+		for _, obj := range objects {
+			subGroups = append(subGroups, genDynamicActionSubGroup(obj))
+		}
 	}
+
 	return []iam.ActionGroup{
 		{
 			Name:      "模型实例管理",

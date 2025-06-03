@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -27,7 +26,6 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
-	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/datacollection/app/options"
 	"configcenter/src/scene_server/datacollection/collections"
@@ -35,7 +33,6 @@ import (
 	svc "configcenter/src/scene_server/datacollection/service"
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/apigw"
 	"github.com/Shopify/sarama"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -63,9 +60,7 @@ type DataCollectionConfig struct {
 	SnapKafka kafka.Config
 
 	// SnapReportMode hostsnap report mode
-	SnapReportMode        string
-	EnableMultiTenantMode bool
-	DisableVerifyTenant   bool
+	SnapReportMode string
 }
 
 // DataCollection is data collection server.
@@ -215,34 +210,8 @@ func (c *DataCollection) initConfigs() error {
 		}
 	}
 
-	c.config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
-	c.config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
-
 	if err != nil {
 		blog.Warnf("parse auth center config failed: %v", err)
-	}
-
-	return nil
-}
-
-// InitClients init apiGW client
-func (c *DataCollection) InitClients() error {
-
-	var clients []apigw.ClientType
-	if c.config.EnableMultiTenantMode && !c.config.DisableVerifyTenant {
-		clients = []apigw.ClientType{apigw.User}
-	}
-
-	if auth.EnableAuthorize() {
-		clients = append(clients, apigw.Iam)
-	}
-
-	if len(clients) > 0 {
-		err := apigwcli.Init("apiGW", c.engine.Metric().Registry(), clients)
-		if err != nil {
-			blog.Errorf("init gse api gateway client failed, err: %v", err)
-			return err
-		}
 	}
 
 	return nil
@@ -297,14 +266,9 @@ func (c *DataCollection) initModules() error {
 		}
 	}
 
-	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM()
-		if err != nil {
-			return fmt.Errorf("new iam client failed: %v", err)
-		}
-		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, iamCli)
+		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI)
 	} else {
 		blog.Infof("disable auth center access")
 	}
@@ -353,11 +317,6 @@ func (c *DataCollection) Run() error {
 		return err
 	}
 	blog.Info("init configs success!")
-
-	if err := c.InitClients(); err != nil {
-		blog.Errorf("init apigw clients failed, err: %v", err)
-		return err
-	}
 
 	// ready to setup comms for new server instance now.
 	if err := c.initModules(); err != nil {

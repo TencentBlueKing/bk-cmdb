@@ -62,14 +62,14 @@ var ResourceTypeIDMap = map[iamtypes.TypeID]string{
 }
 
 // GenerateResourceTypes generate all the resource types registered to IAM.
-func GenerateResourceTypes(models []metadata.Object) []iam.ResourceType {
+func GenerateResourceTypes(tenantObjects map[string][]metadata.Object) []iam.ResourceType {
 	resourceTypeList := make([]iam.ResourceType, 0)
 
 	// add public and business resources
 	resourceTypeList = append(resourceTypeList, GenerateStaticResourceTypes()...)
 
 	// add dynamic resources
-	resourceTypeList = append(resourceTypeList, genDynamicResourceTypes(models)...)
+	resourceTypeList = append(resourceTypeList, genDynamicResourceTypes(tenantObjects)...)
 
 	return resourceTypeList
 }

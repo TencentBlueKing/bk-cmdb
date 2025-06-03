@@ -18,11 +18,9 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
-	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/proc_server/app/options"
@@ -68,18 +66,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 	procSvr.Config.Mongo = &mongo
-
-	parseServerConfig(procSvr)
 	procSvr.Engine = engine
-	procSvr.InitClients()
-	iamCli := new(iam.IAM)
+
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM()
-		if err != nil {
-			return fmt.Errorf("new iam client failed: %v", err)
-		}
-		procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
+		procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI)
 	} else {
 		blog.Infof("disable auth center access")
 	}
@@ -99,9 +90,4 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	return nil
-}
-
-func parseServerConfig(op *service.ProcServer) {
-	op.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
-	op.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
 }

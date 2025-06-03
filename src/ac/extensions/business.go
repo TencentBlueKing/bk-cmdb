@@ -30,7 +30,7 @@ import (
  * business related auth interface
  */
 
-func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) (
+func (a *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Header, businessIDs ...int64) (
 	[]BusinessSimplify, error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -41,7 +41,7 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKAppIDField).In(businessIDs).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
+	result, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, &cond)
 	if err != nil {
 		blog.V(3).Infof("get businesses by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get businesses by id failed, err: %+v", err)
@@ -60,7 +60,7 @@ func (am *AuthManager) collectBusinessByIDs(ctx context.Context, header http.Hea
 }
 
 // MakeResourcesByBusiness TODO
-func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.Action,
+func (a *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.Action,
 	businesses ...BusinessSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, business := range businesses {
@@ -80,14 +80,14 @@ func (am *AuthManager) MakeResourcesByBusiness(header http.Header, action meta.A
 }
 
 // AuthorizeByBusiness authorize by business
-func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Header, action meta.Action,
 	businesses ...BusinessSimplify) error {
 
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
-	resourcePoolBusinessID, err := am.getResourcePoolBusinessID(ctx, header)
+	resourcePoolBusinessID, err := a.getResourcePoolBusinessID(ctx, header)
 	if err != nil {
 		return err
 	}
@@ -105,39 +105,39 @@ func (am *AuthManager) AuthorizeByBusiness(ctx context.Context, header http.Head
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByBusiness(header, action, bizArr...)
+	resources := a.MakeResourcesByBusiness(header, action, bizArr...)
 
-	return am.batchAuthorize(ctx, header, resources...)
+	return a.batchAuthorize(ctx, header, resources...)
 }
 
 // AuthorizeByBusinessID TODO
-func (am *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByBusinessID(ctx context.Context, header http.Header, action meta.Action,
 	businessIDs ...int64) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
-	businesses, err := am.collectBusinessByIDs(ctx, header, businessIDs...)
+	businesses, err := a.collectBusinessByIDs(ctx, header, businessIDs...)
 	if err != nil {
 		return fmt.Errorf("authorize businesses failed, get business by id failed, err: %+v", err)
 	}
 
-	return am.AuthorizeByBusiness(ctx, header, action, businesses...)
+	return a.AuthorizeByBusiness(ctx, header, action, businesses...)
 }
 
 // GenBizBatchNoPermissionResp TODO
-func (am *AuthManager) GenBizBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) GenBizBatchNoPermissionResp(ctx context.Context, header http.Header, action meta.Action,
 	bizIDs []int64) (*metadata.BaseResp, error) {
-	businesses, err := am.collectBusinessByIDs(ctx, header, bizIDs...)
+	businesses, err := a.collectBusinessByIDs(ctx, header, bizIDs...)
 	if err != nil {
 		return nil, err
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByBusiness(header, action, businesses...)
+	resources := a.MakeResourcesByBusiness(header, action, businesses...)
 
 	rid := util.ExtractRequestIDFromContext(ctx)
-	permission, err := am.Authorizer.GetPermissionToApply(ctx, header, resources)
+	permission, err := a.Authorizer.GetPermissionToApply(ctx, header, resources)
 	if err != nil {
 		blog.Errorf("get permission to apply failed, err: %v, rid: %s", err, rid)
 		return nil, err

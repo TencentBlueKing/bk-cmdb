@@ -35,7 +35,7 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 		return
 	}
 
-	decisions, err := s.authorizer.AuthorizeBatch(ctx.Kit, opts)
+	decisions, err := s.authorizer.AuthorizeBatch(ctx.Kit.Ctx, ctx.Kit.Header, opts)
 	if err != nil {
 		blog.ErrorJSON("authorize batch failed, err: %s, ops: %s, rid: %s", err, opts, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -55,7 +55,7 @@ func (s *AuthService) AuthorizeAnyBatch(ctx *rest.Contexts) {
 
 	blog.InfoJSON("-> authorize any request: %s, rid: %s", opts, ctx.Kit.Rid)
 
-	decisions, err := s.authorizer.AuthorizeAnyBatch(ctx.Kit, opts)
+	decisions, err := s.authorizer.AuthorizeAnyBatch(ctx.Kit.Ctx, ctx.Kit.Header, opts)
 	if err != nil {
 		blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, rid: %s", err, opts, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -111,7 +111,8 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		},
 		Resources: resources,
 	}
-	authorizeList, err := s.authorizer.ListAuthorizedInstances(ctx.Kit, ops, apigwiam.IamResourceType(*iamResourceType))
+	authorizeList, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ctx.Kit.Header, ops,
+		apigwiam.IamResourceType(*iamResourceType))
 	if err != nil {
 		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v,  ops: %s, input: %s, rid: %s", err, ops,
 			input, ctx.Kit.Rid)

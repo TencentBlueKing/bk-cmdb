@@ -30,7 +30,7 @@ import (
  * plat represent cloud plat here
  */
 
-func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header, platIDs ...int64) ([]PlatSimplify,
+func (a *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header, platIDs ...int64) ([]PlatSimplify,
 	error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -41,7 +41,7 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKSubAreaField).In(platIDs).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDPlat, &cond)
+	result, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDPlat, &cond)
 	if err != nil {
 		blog.V(3).Infof("get plats by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get plats by id failed, err: %+v", err)
@@ -60,7 +60,7 @@ func (am *AuthManager) collectPlatByIDs(ctx context.Context, header http.Header,
 
 // MakeResourcesByPlat TODO
 // be careful: plat is registered as a common instance in iam
-func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action,
+func (a *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Action,
 	plats ...PlatSimplify) ([]meta.ResourceAttribute, error) {
 
 	resources := make([]meta.ResourceAttribute, 0)
@@ -81,34 +81,34 @@ func (am *AuthManager) MakeResourcesByPlat(header http.Header, action meta.Actio
 }
 
 // AuthorizeByPlat TODO
-func (am *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByPlat(ctx context.Context, header http.Header, action meta.Action,
 	plats ...PlatSimplify) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
 	rid := httpheader.GetRid(header)
 
 	// make auth resources
-	resources, err := am.MakeResourcesByPlat(header, action, plats...)
+	resources, err := a.MakeResourcesByPlat(header, action, plats...)
 	if err != nil {
 		blog.Errorf("AuthorizeByPlat failed, MakeResourcesByPlat failed, err: %+v, rid: %s", err, rid)
 		return fmt.Errorf("MakeResourcesByPlat failed, err: %s", err.Error())
 	}
 
-	return am.batchAuthorize(ctx, header, resources...)
+	return a.batchAuthorize(ctx, header, resources...)
 }
 
 // AuthorizeByPlatIDs TODO
-func (am *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByPlatIDs(ctx context.Context, header http.Header, action meta.Action,
 	platIDs ...int64) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
-	plats, err := am.collectPlatByIDs(ctx, header, platIDs...)
+	plats, err := a.collectPlatByIDs(ctx, header, platIDs...)
 	if err != nil {
 		return fmt.Errorf("get plat by id failed, err: %+d", err)
 	}
-	return am.AuthorizeByPlat(ctx, header, action, plats...)
+	return a.AuthorizeByPlat(ctx, header, action, plats...)
 }

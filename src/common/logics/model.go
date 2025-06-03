@@ -13,23 +13,25 @@
 package logics
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 )
 
 // GetCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
-func GetCustomObjects(kit *rest.Kit, client apimachinery.ClientSetInterface) (
+func GetCustomObjects(ctx context.Context, header http.Header, client apimachinery.ClientSetInterface) (
 	[]metadata.Object, error) {
+
 	// get mainline objects
 	assoCond := &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
 		Fields:    []string{common.BKObjIDField},
 	}
-	assoRsp, err := client.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, assoCond)
+	assoRsp, err := client.CoreService().Association().ReadModelAssociation(ctx, header, assoCond)
 	if err != nil {
 		return nil, fmt.Errorf("get custom models failed, read model association cond:%#v, err: %#v", assoCond, err)
 	}
@@ -55,7 +57,7 @@ func GetCustomObjects(kit *rest.Kit, client apimachinery.ClientSetInterface) (
 			},
 		},
 	}
-	resp, err := client.CoreService().Model().ReadModel(kit.Ctx, kit.Header, objCond)
+	resp, err := client.CoreService().Model().ReadModel(ctx, header, objCond)
 	if err != nil {
 		return nil, fmt.Errorf("get custom models failed, read model cond:%#v, err: %#v", objCond, err)
 	}
@@ -69,7 +71,7 @@ func GetCustomObjects(kit *rest.Kit, client apimachinery.ClientSetInterface) (
 		Fields: []string{common.BKDestModelField},
 		Page:   metadata.BasePage{Limit: common.BKMaxPageSize},
 	}
-	relRes, err := client.CoreService().ModelQuote().ListModelQuoteRelation(kit.Ctx, kit.Header, opt)
+	relRes, err := client.CoreService().ModelQuote().ListModelQuoteRelation(ctx, header, opt)
 	if err != nil {
 		return nil, err
 	}

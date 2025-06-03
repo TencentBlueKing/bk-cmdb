@@ -205,7 +205,9 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		}
 
 		if auth.EnableAuthorize() {
-			objects := []metadata.Object{*rsp}
+			tenantObjects := map[string][]metadata.Object{
+				ctx.Kit.TenantID: []metadata.Object{*rsp},
+			}
 			iamInstances := []metadata.IamInstanceWithCreator{{
 				Type:    string(types.SysModel),
 				ID:      strconv.FormatInt(rsp.ID, 10),
@@ -213,10 +215,11 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 				Creator: ctx.Kit.User,
 			}}
 
-			err = s.AuthManager.CreateObjectOnIAM(ctx.Kit, objects, iamInstances, redis.Client())
+			err = s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, tenantObjects, iamInstances,
+				redis.Client())
 			if err != nil {
-				blog.ErrorJSON("create object on iam failed, objects: %s, iam instances: %s, err: %s, rid: %s",
-					objects, iamInstances, err, ctx.Kit.Rid)
+				blog.Errorf("create object on iam failed, objects: %s, iam instances: %s, err: %s, rid: %s",
+					tenantObjects, iamInstances, err, ctx.Kit.Rid)
 				return err
 			}
 		}
@@ -325,7 +328,11 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 			}
 
 			objects := []metadata.Object{resp.Info[0]}
-			err = s.AuthManager.Viewer.UpdateView(ctx.Kit, objects, redis.Client(), ctx.Kit.Rid)
+			tenantObjectMap := map[string][]metadata.Object{
+				ctx.Kit.TenantID: objects,
+			}
+			err = s.AuthManager.Viewer.UpdateView(ctx.Kit.Ctx, ctx.Kit.Header, tenantObjectMap, redis.Client(),
+				ctx.Kit.Rid)
 			if err != nil {
 				blog.Errorf("update view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -369,10 +376,12 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 	if auth.EnableAuthorize() {
 		// delete iam view
 		// if some errors occur, the sync iam task will delete the iam view in the end
-		objects := []metadata.Object{*obj}
+		tenantObjectMap := map[string][]metadata.Object{
+			ctx.Kit.TenantID: []metadata.Object{*obj},
+		}
 		// use new transaction, need a new header
 		ctx.Kit.Header = ctx.Kit.NewHeader()
-		err = s.AuthManager.Viewer.DeleteView(ctx.Kit, objects, redis.Client(), ctx.Kit.Rid)
+		err = s.AuthManager.Viewer.DeleteView(ctx.Kit.Ctx, ctx.Kit.Header, tenantObjectMap, redis.Client(), ctx.Kit.Rid)
 		if err != nil {
 			blog.Errorf("delete view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		}
@@ -525,7 +534,11 @@ func (s *Service) CreateManyObject(ctx *rest.Contexts) {
 					Creator: ctx.Kit.User,
 				})
 			}
-			err := s.AuthManager.CreateObjectOnIAM(ctx.Kit, rsp, iamInstances, redis.Client())
+			tenantObjects := map[string][]metadata.Object{
+				ctx.Kit.TenantID: rsp,
+			}
+			err := s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, tenantObjects, iamInstances,
+				redis.Client())
 			if err != nil {
 				blog.Errorf("create object on iam failed, objects: %v, iam instances: %v, err: %v, rid: %s",
 					rsp, iamInstances, err, ctx.Kit.Rid)

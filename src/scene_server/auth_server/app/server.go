@@ -61,7 +61,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		parseServerConfig(authServer)
 		if err = authServer.InitClients(); err != nil {
 			blog.Errorf("init apiGW clients failed, err: %v", err)
 			return err
@@ -115,18 +114,10 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 	}
 }
 
-func parseServerConfig(service *AuthServer) {
-	service.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
-	service.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
-}
-
 // InitClients init apiGW client
 func (s *AuthServer) InitClients() error {
 
 	var clients []apigw.ClientType
-	if s.Config.EnableMultiTenantMode && !s.Config.DisableVerifyTenant {
-		clients = []apigw.ClientType{apigw.User}
-	}
 
 	if commonauth.EnableAuthorize() {
 		clients = append(clients, apigw.Iam)

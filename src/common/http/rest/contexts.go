@@ -14,12 +14,12 @@ package rest
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
+	"configcenter/src/ac"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	commonerror "configcenter/src/common/errors"
@@ -179,7 +179,7 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 		blog.ErrorfDepthf(1, "code: %s, user: %s, rid: %s, err: %v", httpheader.GetAppCode(c.Kit.Header), c.Kit.User,
 			c.Kit.Rid, err)
 
-		if err == errors.New("no authorize") {
+		if err == ac.NoAuthorizeError {
 			body, err := json.Marshal(data)
 			if err != nil {
 				blog.ErrorfDepthf(2, "rid: %s, marshal json response failed, err: %v", c.Kit.Rid, err)

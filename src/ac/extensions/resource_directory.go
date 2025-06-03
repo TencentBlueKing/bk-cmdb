@@ -29,7 +29,7 @@ import (
  * module instance
  */
 
-func (am *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Context, header http.Header,
+func (a *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Context, header http.Header,
 	directoryIDs ...int64) ([]ModuleSimplify, error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -40,7 +40,7 @@ func (am *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Contex
 	cond := metadata.QueryCondition{
 		Condition: map[string]interface{}{common.BKModuleIDField: map[string]interface{}{common.BKDBIN: directoryIDs}},
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, &cond)
+	result, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, &cond)
 	if err != nil {
 		blog.V(3).Infof("get directory by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get directory by id failed, err: %+v", err)
@@ -59,7 +59,7 @@ func (am *AuthManager) collectResourceDirectoryByDirectoryIDs(ctx context.Contex
 }
 
 // MakeResourcesByResourceDirectory TODO
-func (am *AuthManager) MakeResourcesByResourceDirectory(header http.Header, action meta.Action,
+func (a *AuthManager) MakeResourcesByResourceDirectory(header http.Header, action meta.Action,
 	directoryArr ...ModuleSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, directory := range directoryArr {
@@ -79,9 +79,9 @@ func (am *AuthManager) MakeResourcesByResourceDirectory(header http.Header, acti
 }
 
 // AuthorizeByResourceDirectoryID TODO
-func (am *AuthManager) AuthorizeByResourceDirectoryID(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByResourceDirectoryID(ctx context.Context, header http.Header, action meta.Action,
 	ids ...int64) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
@@ -89,17 +89,17 @@ func (am *AuthManager) AuthorizeByResourceDirectoryID(ctx context.Context, heade
 		return nil
 	}
 
-	directoryArr, err := am.collectResourceDirectoryByDirectoryIDs(ctx, header, ids...)
+	directoryArr, err := a.collectResourceDirectoryByDirectoryIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered directoryArr failed, get directoryArr by id failed, err: %+v", err)
 	}
-	return am.AuthorizeByResourceDirectory(ctx, header, action, directoryArr...)
+	return a.AuthorizeByResourceDirectory(ctx, header, action, directoryArr...)
 }
 
 // AuthorizeByResourceDirectory TODO
-func (am *AuthManager) AuthorizeByResourceDirectory(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByResourceDirectory(ctx context.Context, header http.Header, action meta.Action,
 	directoryArr ...ModuleSimplify) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
@@ -108,7 +108,7 @@ func (am *AuthManager) AuthorizeByResourceDirectory(ctx context.Context, header 
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByResourceDirectory(header, action, directoryArr...)
+	resources := a.MakeResourcesByResourceDirectory(header, action, directoryArr...)
 
-	return am.batchAuthorize(ctx, header, resources...)
+	return a.batchAuthorize(ctx, header, resources...)
 }

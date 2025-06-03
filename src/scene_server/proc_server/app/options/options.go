@@ -43,7 +43,5 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 // Config TODO
 type Config struct {
-	Mongo                 *mongo.Config
-	DisableVerifyTenant   bool
-	EnableMultiTenantMode bool
+	Mongo *mongo.Config
 }

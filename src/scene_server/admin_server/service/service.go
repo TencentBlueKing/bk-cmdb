@@ -201,9 +201,6 @@ func (s *Service) MonitorHealth(req *restful.Request, resp *restful.Response) {
 func (s *Service) InitClients() error {
 
 	var clients []apigw.ClientType
-	if s.Config.EnableMultiTenantMode && !s.Config.DisableVerifyTenant {
-		clients = []apigw.ClientType{apigw.User}
-	}
 
 	if s.Config.SnapDataID > 0 {
 		clients = append(clients, apigw.Gse)

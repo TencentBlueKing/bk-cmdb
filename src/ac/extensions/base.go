@@ -40,10 +40,10 @@ import (
 var resourcePoolBusinessID int64
 
 // Authorize cc auth resource, returns no permission response(only when not authorized) and if user is authorized
-func (am *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttribute) (
+func (a *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttribute) (
 	*metadata.BaseResp, bool) {
 
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil, true
 	}
 
@@ -54,7 +54,7 @@ func (am *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttrib
 		UserName: kit.User,
 		TenantID: kit.TenantID,
 	}
-	decisions, err := am.Authorizer.AuthorizeBatch(kit.Ctx, kit.Header, user, resources...)
+	decisions, err := a.Authorizer.AuthorizeBatch(kit.Ctx, kit.Header, user, resources...)
 	if err != nil {
 		blog.Errorf("authorize failed, resources: %+v, err: %v, rid: %s", resources, err, kit.Rid)
 		return &metadata.BaseResp{
@@ -80,7 +80,7 @@ func (am *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttrib
 	}
 
 	// get permissions that user need to apply for this request
-	permission, err := am.Authorizer.GetPermissionToApply(kit.Ctx, kit.Header, permissionRes)
+	permission, err := a.Authorizer.GetPermissionToApply(kit.Ctx, kit.Header, permissionRes)
 	if err != nil {
 		blog.Errorf("get permission to apply failed, resources: %+v, err: %v, rid: %s", resources, err, kit.Rid)
 		return &metadata.BaseResp{
@@ -102,7 +102,7 @@ func (am *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttrib
 
 // getResourcePoolBusinessID to get bizID of resource pool
 // this function is concurrent safe.
-func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header http.Header) (int64, error) {
+func (a *AuthManager) getResourcePoolBusinessID(ctx context.Context, header http.Header) (int64, error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// this operation is concurrent safe
@@ -117,7 +117,7 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 			"default": 1,
 		},
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, query)
+	result, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDApp, query)
 	if err != nil {
 		blog.Errorf("get biz by query failed, err: %v, rid: %s", err, rid)
 		return 0, err
@@ -140,13 +140,13 @@ func (am *AuthManager) getResourcePoolBusinessID(ctx context.Context, header htt
 	return bizID, nil
 }
 
-func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header,
+func (a *AuthManager) batchAuthorize(ctx context.Context, header http.Header,
 	resources ...meta.ResourceAttribute) error {
 	commonInfo, err := parser.ParseCommonInfo(header)
 	if err != nil {
 		return fmt.Errorf("authentication failed, parse user info from header failed, err: %+v", err)
 	}
-	decisions, err := am.Authorizer.AuthorizeBatch(ctx, header, commonInfo.User, resources...)
+	decisions, err := a.Authorizer.AuthorizeBatch(ctx, header, commonInfo.User, resources...)
 	if err != nil {
 		return fmt.Errorf("authorize failed, err: %+v", err)
 	}
@@ -161,6 +161,6 @@ func (am *AuthManager) batchAuthorize(ctx context.Context, header http.Header,
 }
 
 // Enabled returns if authorization is enabled
-func (am *AuthManager) Enabled() bool {
+func (a *AuthManager) Enabled() bool {
 	return auth.EnableAuthorize()
 }

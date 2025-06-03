@@ -45,8 +45,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 		return nil
 	}
 	rid := util.ExtractRequestIDFromContext(ctx)
-	kit := newKit()
-	kit.Rid = rid
+	kit := rest.NewKit().WithCtx(ctx).WithRid(rid)
 
 	// for the first installation, cmdb is not registered to iam,
 	// skip migrate iam system instances
@@ -96,7 +95,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 	}
 
 	// add new system instances
-	if err := iam.SyncIAMSysInstances(kit, cache, convertTenantObjectMap(objects)); err != nil {
+	if err := iam.SyncIAMSysInstances(kit, cache, convertTenantObjectMap(kit, objects)); err != nil {
 		blog.Errorf("sync iam system instances failed, err: %v", err)
 		return err
 	}
@@ -138,7 +137,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 		InstanceSelectionIDs: []types.InstanceSelectionID{"sys_instance", "sys_event_pushing"},
 		TypeIDs:              []types.TypeID{"sys_instance", "sys_event_pushing"},
 	}
-	return iam.DeleteCMDBResource(ctx, param, convertTenantObject(objects))
+	return iam.DeleteCMDBResource(ctx, param, convertTenantObject(kit, objects))
 }
 
 func migrateModelInstancePermission(ctx context.Context, action types.ActionID, db dal.DB, iam *iamtype.IAM,
@@ -430,7 +429,9 @@ type AssociationOnDeleteAction string
 // AssociationMapping TODO
 type AssociationMapping string
 
-func convertTenantObject(objs []Object) []metadata.Object {
+func convertTenantObject(kit *rest.Kit, objs []Object) map[string][]metadata.Object {
+
+	tenantObjects := make(map[string][]metadata.Object)
 	objects := make([]metadata.Object, 0)
 	for _, obj := range objs {
 		metaObj := metadata.Object{
@@ -452,11 +453,15 @@ func convertTenantObject(objs []Object) []metadata.Object {
 		}
 		objects = append(objects, metaObj)
 	}
-	return objects
+
+	tenantObjects[kit.TenantID] = objects
+	return tenantObjects
 }
 
-func convertTenantObjectMap(objs []Object) map[string][]metadata.Object {
-	objects := make(map[string][]metadata.Object, 0)
+func convertTenantObjectMap(kit *rest.Kit, objs []Object) map[string][]metadata.Object {
+
+	allTenantsObjects := make(map[string][]metadata.Object)
+	objects := make([]metadata.Object, 0)
 	for _, obj := range objs {
 		metaObj := metadata.Object{
 			ID:            obj.ID,
@@ -475,35 +480,10 @@ func convertTenantObjectMap(objs []Object) map[string][]metadata.Object {
 			LastTime:      obj.LastTime,
 			ObjSortNumber: obj.ObjSortNumber,
 		}
-		objects[common.BKSingleTenantID] = append(objects[common.BKSingleTenantID], metaObj)
+		objects = append(objects, metaObj)
 	}
-	return objects
-}
-
-// newHeader 创建IAM同步需要的header
-func newHeader() http.Header {
-	header := headerutil.BuildHeader(common.BKIAMSyncUser, BKSuperTenantID)
-	httpheader.SetLanguage(header, "cn")
-	return header
-}
-
-// newKit 创建新的Kit
-func newKit() *rest.Kit {
-	header := newHeader()
-	ctx := util.NewContextFromHTTPHeader(header)
-	rid := httpheader.GetRid(header)
-	user := httpheader.GetUser(header)
-	tenantID := httpheader.GetTenantID(header)
-	defaultCCError := util.GetDefaultCCError(header)
-
-	return &rest.Kit{
-		Rid:      rid,
-		Header:   header,
-		Ctx:      ctx,
-		CCError:  defaultCCError,
-		User:     user,
-		TenantID: tenantID,
-	}
+	allTenantsObjects[kit.TenantID] = objects
+	return allTenantsObjects
 }
 
 // SimplifiedInstance simplified instance with only id and name
@@ -511,6 +491,3 @@ type SimplifiedInstance struct {
 	InstanceID   int64  `json:"bk_inst_id" bson:"bk_inst_id"`
 	InstanceName string `json:"bk_inst_name" bson:"bk_inst_name"`
 }
-
-// BKSuperTenantID the super tenant value
-const BKSuperTenantID = "superadmin"

@@ -252,6 +252,7 @@ data:
       bkCmdbApiGatewayUrl: {{ .Values.bkCmdbApiGatewayUrl }}
       bkLoginApiGatewayUrl: {{ .Values.bkLoginApiGatewayUrl }}
       bkUserApiGatewayUrl: {{ .Values.bkUserApiGatewayUrl }}
+      bkIamApiGatewayUrl: {{ .Values.bkIamApiGatewayUrl }}
       appCode: {{ .Values.common.apiGW.appCode }}
       appSecret: {{ .Values.common.apiGW.appSecret }}
       username: {{ .Values.common.apiGW.username }}

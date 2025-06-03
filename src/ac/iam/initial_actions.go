@@ -159,9 +159,9 @@ var ActionIDNameMap = map[iamtypes.ActionID]string{
 }
 
 // GenerateActions generate all the actions registered to IAM.
-func GenerateActions(objects []metadata.Object) []iam.ResourceAction {
+func GenerateActions(tenantObjects map[string][]metadata.Object) []iam.ResourceAction {
 	resourceActionList := GenerateStaticActions()
-	resourceActionList = append(resourceActionList, genDynamicActions(objects)...)
+	resourceActionList = append(resourceActionList, genDynamicActions(tenantObjects)...)
 	return resourceActionList
 }
 

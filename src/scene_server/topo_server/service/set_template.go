@@ -53,8 +53,8 @@ func (s *Service) CreateSetTemplate(ctx *rest.Contexts) {
 		setTemplate, err = s.Engine.CoreAPI.CoreService().SetTemplate().CreateSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header,
 			bizID, option)
 		if err != nil {
-			blog.Errorf("CreateSetTemplate failed, core service create failed, bizID: %d, option: %+v, err: %+v, rid: %s",
-				bizID, option, err, ctx.Kit.Rid)
+			blog.Errorf("create set template failed, bizID: %d, option: %+v, err: %+v, rid: %s", bizID, option, err,
+				ctx.Kit.Rid)
 			return err
 		}
 
@@ -183,8 +183,8 @@ func (s *Service) UpdateSetTemplate(ctx *rest.Contexts) {
 		setTemplate, err = s.Engine.CoreAPI.CoreService().SetTemplate().UpdateSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header,
 			bizID, setTemplateID, option)
 		if err != nil {
-			blog.Errorf("UpdateSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s",
-				bizID, option, err, ctx.Kit.Rid)
+			blog.Errorf("update set template failed, bizID: %d, option: %+v, err: %v, rid: %s", bizID, option, err,
+				ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -362,8 +362,8 @@ func (s *Service) DeleteSetTemplate(ctx *rest.Contexts) {
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		if err := s.Engine.CoreAPI.CoreService().SetTemplate().DeleteSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
 			option); err != nil {
-			blog.Errorf("DeleteSetTemplate failed, do core service update failed, bizID: %d, option: %+v, err: %+v, rid: %s",
-				bizID, option, err, ctx.Kit.Rid)
+			blog.Errorf("delete set template failed, bizID: %d, option: %+v, err: %v, rid: %s", bizID, option, err,
+				ctx.Kit.Rid)
 			return err
 		}
 		return nil
@@ -395,8 +395,8 @@ func (s *Service) GetSetTemplate(ctx *rest.Contexts) {
 	setTemplate, err := s.Engine.CoreAPI.CoreService().SetTemplate().GetSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
 		setTemplateID)
 	if err != nil {
-		blog.Errorf("GetSetTemplate failed, do core service get failed, bizID: %d, setTemplateID: %d, err: %+v, rid: %s",
-			bizID, setTemplateID, err, ctx.Kit.Rid)
+		blog.Errorf("get set template failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID, setTemplateID,
+			err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -490,8 +490,8 @@ func (s *Service) ListSetTemplate(ctx *rest.Contexts) {
 	setTemplate, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
 		option)
 	if err != nil {
-		blog.Errorf("ListSetTemplate failed, do core service ListSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s",
-			bizID, option, err, ctx.Kit.Rid)
+		blog.Errorf("list set template failed, bizID: %d, option: %+v, err: %v, rid: %s", bizID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -519,8 +519,8 @@ func (s *Service) ListSetTemplateWeb(ctx *rest.Contexts) {
 	listResult, err := s.Engine.CoreAPI.CoreService().SetTemplate().ListSetTemplate(ctx.Kit.Ctx, ctx.Kit.Header, bizID,
 		listOption)
 	if err != nil {
-		blog.Errorf("ListSetTemplate failed, do core service ListSetTemplate failed, bizID: %d, option: %+v, err: %+v, rid: %s",
-			bizID, listOption, err, ctx.Kit.Rid)
+		blog.Errorf("list set template failed, bizID: %d, option: %+v, err: %v, rid: %s", bizID, listOption, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -540,8 +540,8 @@ func (s *Service) ListSetTemplateWeb(ctx *rest.Contexts) {
 	setTplInstCount, err := s.Engine.CoreAPI.CoreService().SetTemplate().CountSetTplInstances(ctx.Kit.Ctx,
 		ctx.Kit.Header, bizID, option)
 	if err != nil {
-		blog.Errorf("ListSetTemplateWeb failed, CountSetTplInstances failed, bizID: %d, option: %+v, err: %s, rid: %s",
-			bizID, option, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("count set template instances failed, bizID: %d, option: %+v, err: %v, rid: %s", bizID, option, err,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -1082,8 +1082,8 @@ func (s *Service) CheckSetInstUpdateToDateStatus(ctx *rest.Contexts) {
 
 	result, err := s.Logics.SetTemplateOperation().CheckSetInstUpdateToDateStatus(ctx.Kit, bizID, setTemplateID)
 	if err != nil {
-		blog.ErrorJSON("CheckSetInstUpdateToDateStatus failed, call core implement failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s",
-			bizID, setTemplateID, err.Error(), ctx.Kit.Rid)
+		blog.Errorf("check inst update status failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
+			setTemplateID, err, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
@@ -1110,8 +1110,8 @@ func (s *Service) BatchCheckSetInstUpdateToDateStatus(ctx *rest.Contexts) {
 	for _, setTemplateID := range option.SetTemplateIDs {
 		oneResult, err := s.Logics.SetTemplateOperation().CheckSetInstUpdateToDateStatus(ctx.Kit, bizID, setTemplateID)
 		if err != nil {
-			blog.ErrorJSON("BatchCheckSetInstUpdateToDateStatus failed, CheckSetInstUpdateToDateStatus failed, bizID: %d, setTemplateID: %d, err: %s, rid: %s",
-				bizID, setTemplateID, err.Error(), ctx.Kit.Rid)
+			blog.Errorf("check inst update status failed, bizID: %d, setTemplateID: %d, err: %v, rid: %s", bizID,
+				setTemplateID, err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)
 			return
 		}
