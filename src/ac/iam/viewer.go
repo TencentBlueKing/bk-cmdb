@@ -43,8 +43,8 @@ func NewViewer(client apimachinery.ClientSetInterface, iam *IAM) *viewer {
 }
 
 // CreateView create iam view for objects
-func (v *viewer) CreateView(ctx context.Context, h http.Header, tenantObjects map[string][]metadata.Object,
-	redisCli redis.Client, rid string) error {
+func (v *viewer) CreateView(ctx context.Context, h http.Header, objects []metadata.Object, redisCli redis.Client,
+	rid string) error {
 
 	if !auth.EnableAuthorize() {
 		return nil
@@ -63,15 +63,15 @@ func (v *viewer) CreateView(ctx context.Context, h http.Header, tenantObjects ma
 	}
 
 	// register order: 1.ResourceType 2.InstanceSelection 3.Action 4.ActionGroup
-	if err = v.registerModelResourceTypes(ctx, h, systemInfo.ResourceTypes, tenantObjects); err != nil {
+	if err = v.registerModelResourceTypes(ctx, h, systemInfo.ResourceTypes, objects); err != nil {
 		return err
 	}
 
-	if err = v.registerModelInstanceSelections(ctx, h, systemInfo.InstanceSelections, tenantObjects); err != nil {
+	if err = v.registerModelInstanceSelections(ctx, h, systemInfo.InstanceSelections, objects); err != nil {
 		return err
 	}
 
-	if err = v.registerModelActions(ctx, h, systemInfo.Actions, tenantObjects); err != nil {
+	if err = v.registerModelActions(ctx, h, systemInfo.Actions, objects); err != nil {
 		return err
 	}
 
@@ -83,8 +83,8 @@ func (v *viewer) CreateView(ctx context.Context, h http.Header, tenantObjects ma
 }
 
 // DeleteView delete iam view for objects
-func (v *viewer) DeleteView(ctx context.Context, header http.Header, tenantObjects map[string][]metadata.Object,
-	redisCli redis.Client, rid string) error {
+func (v *viewer) DeleteView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
+	rid string) error {
 
 	if !auth.EnableAuthorize() {
 		return nil
@@ -103,16 +103,16 @@ func (v *viewer) DeleteView(ctx context.Context, header http.Header, tenantObjec
 	}
 
 	// unregister order: 1.Action 2.InstanceSelection 3.ResourceType 4.ActionGroup
-	if err = v.unregisterModelActions(ctx, header, systemInfo.Actions, tenantObjects); err != nil {
+	if err = v.unregisterModelActions(ctx, header, systemInfo.Actions, objects); err != nil {
 		return err
 	}
 
 	if err = v.unregisterModelInstanceSelections(ctx, header, systemInfo.InstanceSelections,
-		tenantObjects); err != nil {
+		objects); err != nil {
 		return err
 	}
 
-	if err = v.unregisterModelResourceTypes(ctx, header, systemInfo.ResourceTypes, tenantObjects); err != nil {
+	if err = v.unregisterModelResourceTypes(ctx, header, systemInfo.ResourceTypes, objects); err != nil {
 		return err
 	}
 
@@ -124,8 +124,8 @@ func (v *viewer) DeleteView(ctx context.Context, header http.Header, tenantObjec
 }
 
 // UpdateView update iam view for objects
-func (v *viewer) UpdateView(ctx context.Context, header http.Header, tenantObjects map[string][]metadata.Object,
-	redisCli redis.Client, rid string) error {
+func (v *viewer) UpdateView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
+	rid string) error {
 
 	if !auth.EnableAuthorize() {
 		return nil
@@ -144,15 +144,15 @@ func (v *viewer) UpdateView(ctx context.Context, header http.Header, tenantObjec
 	}
 
 	// update order: 1.ResourceType 2.InstanceSelection 3.Action 4.ActionGroup
-	if err = v.updateModelResourceTypes(ctx, header, tenantObjects); err != nil {
+	if err = v.updateModelResourceTypes(ctx, header, objects); err != nil {
 		return err
 	}
 
-	if err = v.updateModelInstanceSelections(ctx, header, tenantObjects); err != nil {
+	if err = v.updateModelInstanceSelections(ctx, header, objects); err != nil {
 		return err
 	}
 
-	if err = v.updateModelActions(ctx, header, tenantObjects); err != nil {
+	if err = v.updateModelActions(ctx, header, objects); err != nil {
 		return err
 	}
 
@@ -165,7 +165,7 @@ func (v *viewer) UpdateView(ctx context.Context, header http.Header, tenantObjec
 
 // registerModelResourceTypes register resource types for models
 func (v *viewer) registerModelResourceTypes(ctx context.Context, h http.Header, existTypes []iam.ResourceType,
-	tenantObjects map[string][]metadata.Object) error {
+	objects []metadata.Object) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 
@@ -174,6 +174,10 @@ func (v *viewer) registerModelResourceTypes(ctx context.Context, h http.Header, 
 		existMap[resourceType.ID] = struct{}{}
 	}
 
+	tenantID := httpheader.GetTenantID(h)
+	tenantObjects := map[string][]metadata.Object{
+		tenantID: objects,
+	}
 	resourceTypes := genDynamicResourceTypes(tenantObjects)
 	newResTypes := make([]iam.ResourceType, 0)
 	for _, resourceType := range resourceTypes {
@@ -201,7 +205,7 @@ func (v *viewer) registerModelResourceTypes(ctx context.Context, h http.Header, 
 
 // unregisterModelResourceTypes unregister resourceTypes for models
 func (v *viewer) unregisterModelResourceTypes(ctx context.Context, header http.Header, existTypes []iam.ResourceType,
-	tenantObjects map[string][]metadata.Object) error {
+	objects []metadata.Object) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 
@@ -211,6 +215,10 @@ func (v *viewer) unregisterModelResourceTypes(ctx context.Context, header http.H
 	}
 
 	typeIDs := make([]iamtypes.TypeID, 0)
+	tenantID := httpheader.GetTenantID(header)
+	tenantObjects := map[string][]metadata.Object{
+		tenantID: objects,
+	}
 	resourceTypes := genDynamicResourceTypes(tenantObjects)
 	for _, resourceType := range resourceTypes {
 		_, exists := existMap[resourceType.ID]
@@ -229,10 +237,13 @@ func (v *viewer) unregisterModelResourceTypes(ctx context.Context, header http.H
 }
 
 // updateModelResourceTypes update resource types for models
-func (v *viewer) updateModelResourceTypes(ctx context.Context, header http.Header,
-	tenantObjects map[string][]metadata.Object) error {
+func (v *viewer) updateModelResourceTypes(ctx context.Context, header http.Header, objects []metadata.Object) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
+	tenantID := httpheader.GetTenantID(header)
+	tenantObjects := map[string][]metadata.Object{
+		tenantID: objects,
+	}
 	resourceTypes := genDynamicResourceTypes(tenantObjects)
 	for _, resourceType := range resourceTypes {
 		if err := v.iam.Client.UpdateResourcesType(ctx, header, resourceType); err != nil {
@@ -247,7 +258,7 @@ func (v *viewer) updateModelResourceTypes(ctx context.Context, header http.Heade
 
 // registerModelInstanceSelections register instanceSelections for models
 func (v *viewer) registerModelInstanceSelections(ctx context.Context, h http.Header,
-	existsSelections []iam.InstanceSelection, tenantObjects map[string][]metadata.Object) error {
+	existsSelections []iam.InstanceSelection, objects []metadata.Object) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 
@@ -256,6 +267,10 @@ func (v *viewer) registerModelInstanceSelections(ctx context.Context, h http.Hea
 		existMap[selection.ID] = struct{}{}
 	}
 
+	tenantID := httpheader.GetTenantID(h)
+	tenantObjects := map[string][]metadata.Object{
+		tenantID: objects,
+	}
 	instanceSelections := genDynamicInstanceSelections(tenantObjects)
 	newSelections := make([]iam.InstanceSelection, 0)
 	for _, selection := range instanceSelections {
@@ -282,7 +297,7 @@ func (v *viewer) registerModelInstanceSelections(ctx context.Context, h http.Hea
 
 // unregisterModelInstanceSelections unregister instanceSelections for models
 func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, header http.Header,
-	existsSelections []iam.InstanceSelection, tenantObjects map[string][]metadata.Object) error {
+	existsSelections []iam.InstanceSelection, objects []metadata.Object) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	existMap := make(map[iamtypes.InstanceSelectionID]struct{})
@@ -291,7 +306,11 @@ func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, header h
 	}
 
 	instanceSelectionIDs := make([]iamtypes.InstanceSelectionID, 0)
-	instanceSelections := genDynamicInstanceSelections(tenantObjects)
+	tenantID := httpheader.GetTenantID(header)
+	tenantObjectMap := map[string][]metadata.Object{
+		tenantID: objects,
+	}
+	instanceSelections := genDynamicInstanceSelections(tenantObjectMap)
 	for _, instanceSelection := range instanceSelections {
 		_, exists := existMap[instanceSelection.ID]
 		if exists {
@@ -302,7 +321,7 @@ func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, header h
 
 	if err := v.iam.Client.DeleteInstanceSelections(ctx, header, instanceSelectionIDs); err != nil {
 		blog.Errorf("unregister instanceSelections failed, err: %v, objects: %+v, instanceSelections: %+v, rid: %s",
-			err, tenantObjects, instanceSelections, rid)
+			err, tenantObjectMap, instanceSelections, rid)
 		return err
 	}
 
@@ -311,9 +330,13 @@ func (v *viewer) unregisterModelInstanceSelections(ctx context.Context, header h
 
 // updateModelInstanceSelections update instanceSelections for models
 func (v *viewer) updateModelInstanceSelections(ctx context.Context, header http.Header,
-	tenantObjects map[string][]metadata.Object) error {
+	objects []metadata.Object) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
+	tenantID := httpheader.GetTenantID(header)
+	tenantObjects := map[string][]metadata.Object{
+		tenantID: objects,
+	}
 	instanceSelections := genDynamicInstanceSelections(tenantObjects)
 	for _, instanceSelection := range instanceSelections {
 		if err := v.iam.Client.UpdateInstanceSelection(ctx, header, instanceSelection); err != nil {
@@ -328,7 +351,7 @@ func (v *viewer) updateModelInstanceSelections(ctx context.Context, header http.
 
 // registerModelActions register actions for models
 func (v *viewer) registerModelActions(ctx context.Context, h http.Header, existAction []iam.ResourceAction,
-	tenantObjects map[string][]metadata.Object) error {
+	objects []metadata.Object) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	existMap := make(map[iamtypes.ActionID]struct{})
@@ -336,6 +359,10 @@ func (v *viewer) registerModelActions(ctx context.Context, h http.Header, existA
 		existMap[action.ID] = struct{}{}
 	}
 
+	tenantID := httpheader.GetTenantID(h)
+	tenantObjects := map[string][]metadata.Object{
+		tenantID: objects,
+	}
 	actions := genDynamicActions(tenantObjects)
 	newActions := make([]iam.ResourceAction, 0)
 	for _, action := range actions {
@@ -361,7 +388,7 @@ func (v *viewer) registerModelActions(ctx context.Context, h http.Header, existA
 
 // unregisterModelActions unregister actions for models
 func (v *viewer) unregisterModelActions(ctx context.Context, header http.Header, existAction []iam.ResourceAction,
-	tenantObjects map[string][]metadata.Object) error {
+	objects []metadata.Object) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	existMap := make(map[iamtypes.ActionID]struct{})
@@ -370,15 +397,13 @@ func (v *viewer) unregisterModelActions(ctx context.Context, header http.Header,
 	}
 
 	actionIDs := make([]iamtypes.ActionID, 0)
-	for _, objects := range tenantObjects {
-		for _, obj := range objects {
-			ids := genDynamicActionIDs(obj)
-			for _, id := range ids {
-				_, exists := existMap[id]
-				if exists {
-					actionIDs = append(actionIDs, id)
-					continue
-				}
+	for _, obj := range objects {
+		ids := genDynamicActionIDs(obj)
+		for _, id := range ids {
+			_, exists := existMap[id]
+			if exists {
+				actionIDs = append(actionIDs, id)
+				continue
 			}
 		}
 	}
@@ -392,7 +417,7 @@ func (v *viewer) unregisterModelActions(ctx context.Context, header http.Header,
 	}
 
 	if err := v.iam.Client.DeleteActions(ctx, header, actionIDs); err != nil {
-		blog.Errorf("unregister actions failed, err: %v, objects: %+v, actionIDs: %s, rid: %s", err, tenantObjects,
+		blog.Errorf("unregister actions failed, err: %v, objects: %+v, actionIDs: %s, rid: %s", err, objects,
 			actionIDs, rid)
 		return err
 	}
@@ -401,10 +426,13 @@ func (v *viewer) unregisterModelActions(ctx context.Context, header http.Header,
 }
 
 // updateModelActions update actions for models
-func (v *viewer) updateModelActions(ctx context.Context, header http.Header,
-	tenantObjects map[string][]metadata.Object) error {
+func (v *viewer) updateModelActions(ctx context.Context, header http.Header, objects []metadata.Object) error {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
+	tenantID := httpheader.GetTenantID(header)
+	tenantObjects := map[string][]metadata.Object{
+		tenantID: objects,
+	}
 	actions := genDynamicActions(tenantObjects)
 	for _, action := range actions {
 		if err := v.iam.Client.UpdateAction(ctx, header, action); err != nil {

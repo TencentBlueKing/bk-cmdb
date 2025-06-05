@@ -115,9 +115,6 @@ func (i IAM) Register(ctx context.Context, h http.Header, redisCli redis.Client,
 	if err != nil {
 		return err
 	}
-	if err != nil {
-		return err
-	}
 
 	newResTypes, updateResTypes, removedResTypeIDs := i.crossCompareResTypes(registeredInfo.ResourceTypes,
 		opt.Objects)
@@ -156,8 +153,7 @@ func (i IAM) Register(ctx context.Context, h http.Header, redisCli redis.Client,
 
 	for _, resourceAction := range updateResActions {
 		if err = i.Client.UpdateAction(ctx, h, resourceAction); err != nil {
-			blog.Errorf("update resource action(%v) failed, err: %v, rid: %s", resourceAction, err,
-				rid)
+			blog.Errorf("update resource action(%v) failed, err: %v, rid: %s", resourceAction, err, rid)
 			return err
 		}
 	}
@@ -685,31 +681,31 @@ func (i IAM) registerCommonActions(ctx context.Context, h http.Header, registere
 // SyncIAMSysInstances sync system instances between CMDB and IAM
 // it check the difference of system instances resource between CMDB and IAM
 // if they have difference, sync and make them same
-func (i IAM) SyncIAMSysInstances(kit *rest.Kit, redisCli redis.Client,
+func (i IAM) SyncIAMSysInstances(ctx context.Context, header http.Header, redisCli redis.Client,
 	tenantObjects map[string][]metadata.Object) error {
 
+	rid := util.ExtractRequestIDFromContext(ctx)
 	// validate the objects
 	for tenantID, objects := range tenantObjects {
 		for _, object := range objects {
 			if object.ID == 0 || len(object.ObjectID) == 0 || len(object.ObjectName) == 0 {
 				blog.Errorf("sync iam system instances but object(%#v) is invalid, tenantID: %s, rid: %s",
-					tenantID, object, kit.Rid)
+					tenantID, object, rid)
 				return errors.New("sync iam instances, but object is invalid")
 			}
 		}
 	}
 
-	locker, err := tryLockRegister(redisCli, kit.Rid)
+	locker, err := tryLockRegister(redisCli, rid)
 	if err != nil {
 		return err
 	}
 	defer locker.Unlock()
 	fields := []iamtypes.SystemQueryField{iamtypes.FieldResourceTypes, iamtypes.FieldActions,
 		iamtypes.FieldActionGroups, iamtypes.FieldInstanceSelections}
-	iamInfo, err := i.Client.GetSystemInfo(kit.Ctx, kit.Header, fields)
+	iamInfo, err := i.Client.GetSystemInfo(ctx, header, fields)
 	if err != nil {
-		blog.Errorf("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
-			err, fields, kit.Rid)
+		blog.Errorf("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s", err, fields, rid)
 		return err
 	}
 
@@ -728,12 +724,12 @@ func (i IAM) SyncIAMSysInstances(kit *rest.Kit, redisCli redis.Client,
 	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
 	// 先删除资源，再新增资源，因为实例视图的名称在系统中是唯一的，如果不先删，同样名称的实例视图将创建失败
 
-	err = i.deleteIamResources(kit, deletedActions, deletedInstanceSelections, deletedResourceTypes, kit.Rid)
+	err = i.deleteIamResources(ctx, header, deletedActions, deletedInstanceSelections, deletedResourceTypes, rid)
 	if err != nil {
 		return err
 	}
 
-	err = i.registerResource(kit, addedResourceTypes, addedInstanceSelections, addedActions)
+	err = i.registerResource(ctx, header, addedResourceTypes, addedInstanceSelections, addedActions)
 	if err != nil {
 		return err
 	}
@@ -754,10 +750,10 @@ func (i IAM) SyncIAMSysInstances(kit *rest.Kit, redisCli redis.Client,
 
 		// if all exist actions in iam needs no action group(which happens when first initializing), **skip**
 		if len(actualActionGroups) > 0 {
-			blog.Infof("begin update actionGroups, rid: %s", kit.Rid)
-			if err = i.Client.UpdateActionGroups(kit.Ctx, kit.Header, actualActionGroups); err != nil {
+			blog.Infof("begin update actionGroups, rid: %s", rid)
+			if err = i.Client.UpdateActionGroups(ctx, header, actualActionGroups); err != nil {
 				blog.Errorf("update action groups failed, actionGroups: %v,  err: %v, rid: %s", actualActionGroups, err,
-					kit.Rid)
+					rid)
 				return err
 			}
 		}
@@ -766,16 +762,17 @@ func (i IAM) SyncIAMSysInstances(kit *rest.Kit, redisCli redis.Client,
 	return nil
 }
 
-func (i IAM) registerResource(kit *rest.Kit, addedResourceTypes []iam.ResourceType,
+func (i IAM) registerResource(ctx context.Context, header http.Header, addedResourceTypes []iam.ResourceType,
 	addedInstanceSelections []iam.InstanceSelection, addedActions []iam.ResourceAction) error {
 
+	rid := util.ExtractRequestIDFromContext(ctx)
 	// add cmdb ResourceTypes in iam
 	if len(addedResourceTypes) > 0 {
-		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s",
-			len(addedResourceTypes), addedResourceTypes, kit.Rid)
-		if err := i.Client.RegisterResourcesTypes(kit.Ctx, kit.Header, addedResourceTypes); err != nil {
+		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s", len(addedResourceTypes), addedResourceTypes,
+			rid)
+		if err := i.Client.RegisterResourcesTypes(ctx, header, addedResourceTypes); err != nil {
 			blog.Errorf("sync iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid: %s",
-				err, addedResourceTypes, kit.Rid)
+				err, addedResourceTypes, rid)
 			return err
 		}
 	}
@@ -783,20 +780,20 @@ func (i IAM) registerResource(kit *rest.Kit, addedResourceTypes []iam.ResourceTy
 	// add cmdb InstanceSelections in iam
 	if len(addedInstanceSelections) > 0 {
 		blog.Infof("begin add instanceSelections, count:%d, detail:%v, rid: %s",
-			len(addedInstanceSelections), addedInstanceSelections, kit.Rid)
-		if err := i.Client.RegisterInstanceSelections(kit.Ctx, kit.Header, addedInstanceSelections); err != nil {
+			len(addedInstanceSelections), addedInstanceSelections, rid)
+		if err := i.Client.RegisterInstanceSelections(ctx, header, addedInstanceSelections); err != nil {
 			blog.Errorf("sync iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, "+
-				"rid: %s", err, addedInstanceSelections, kit.Rid)
+				"rid: %s", err, addedInstanceSelections, rid)
 			return err
 		}
 	}
 
 	// add cmdb actions in iam
 	if len(addedActions) > 0 {
-		blog.Infof("begin add actions, count:%d, detail:%v, rid: %s", len(addedActions), addedActions, kit.Rid)
-		if err := i.Client.RegisterActions(kit.Ctx, kit.Header, addedActions); err != nil {
+		blog.Infof("begin add actions, count:%d, detail:%v, rid: %s", len(addedActions), addedActions, rid)
+		if err := i.Client.RegisterActions(ctx, header, addedActions); err != nil {
 			blog.ErrorJSON("sync iam sysInstances failed, add IAM actions failed, error: %s, actions: %s, rid: %s",
-				err, addedActions, kit.Rid)
+				err, addedActions, rid)
 			return err
 		}
 	}
@@ -808,8 +805,8 @@ func (i IAM) registerIamResource(kit *rest.Kit, addedResourceTypes []iam.Resourc
 
 	// add cmdb ResourceTypes in iam
 	if len(addedResourceTypes) > 0 {
-		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s",
-			len(addedResourceTypes), addedResourceTypes, kit.Rid)
+		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s", len(addedResourceTypes), addedResourceTypes,
+			kit.Rid)
 		if err := i.Client.RegisterResourcesTypes(kit.Ctx, kit.Header, addedResourceTypes); err != nil {
 			blog.Errorf("sync iam sysInstances failed, add resourceType, resourceType: %s, error: %v, rid: %s",
 				addedResourceTypes, err, kit.Rid)
@@ -841,7 +838,7 @@ func (i IAM) registerIamResource(kit *rest.Kit, addedResourceTypes []iam.Resourc
 	return nil
 }
 
-func (i IAM) deleteIamResources(kit *rest.Kit, deletedActions []iamtypes.ActionID,
+func (i IAM) deleteIamResources(ctx context.Context, header http.Header, deletedActions []iamtypes.ActionID,
 	deletedInstanceSelections []iamtypes.InstanceSelectionID, deletedResourceTypes []iamtypes.TypeID,
 	rid string) error {
 
@@ -851,13 +848,13 @@ func (i IAM) deleteIamResources(kit *rest.Kit, deletedActions []iamtypes.ActionI
 
 		// before deleting action, the dependent action policies must be deleted
 		for _, actionID := range deletedActions {
-			if err := i.Client.DeleteActionPolicies(kit.Ctx, kit.Header, actionID); err != nil {
+			if err := i.Client.DeleteActionPolicies(ctx, header, actionID); err != nil {
 				blog.Errorf("delete iam action %s policies failed, err: %v, rid: %s", actionID, err, rid)
 				return err
 			}
 		}
 
-		if err := i.Client.DeleteActions(kit.Ctx, kit.Header, deletedActions); err != nil {
+		if err := i.Client.DeleteActions(ctx, header, deletedActions); err != nil {
 			blog.Errorf("delete IAM actions failed, err: %s, actions: %s, rid: %s", err, deletedActions, rid)
 			return err
 		}
@@ -867,7 +864,7 @@ func (i IAM) deleteIamResources(kit *rest.Kit, deletedActions []iamtypes.ActionI
 	if len(deletedInstanceSelections) > 0 {
 		blog.Infof("begin delete instanceSelections, count: %d, detail: %v, rid: %s", len(deletedInstanceSelections),
 			deletedInstanceSelections, rid)
-		if err := i.Client.DeleteInstanceSelections(kit.Ctx, kit.Header, deletedInstanceSelections); err != nil {
+		if err := i.Client.DeleteInstanceSelections(ctx, header, deletedInstanceSelections); err != nil {
 			blog.Errorf("delete instanceSelections failed, err: %s, instanceSelections: %s, rid: %s", err,
 				deletedInstanceSelections, rid)
 			return err
@@ -878,7 +875,7 @@ func (i IAM) deleteIamResources(kit *rest.Kit, deletedActions []iamtypes.ActionI
 	if len(deletedResourceTypes) > 0 {
 		blog.Infof("begin delete resourceTypes, count: %d, detail: %v, rid: %s", len(deletedResourceTypes),
 			deletedResourceTypes, rid)
-		if err := i.Client.DeleteResourcesTypes(kit.Ctx, kit.Header, deletedResourceTypes); err != nil {
+		if err := i.Client.DeleteResourcesTypes(ctx, header, deletedResourceTypes); err != nil {
 			blog.Errorf("delete resourceType failed, err: %s, resourceType: %s, rid: %s", err, deletedResourceTypes,
 				rid)
 			return err
@@ -1227,16 +1224,14 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 	if exact {
 		authDecisions, err = a.authClientSet.AuthorizeBatch(ctx, h, opts)
 		if err != nil {
-			blog.Errorf("authorize batch failed, err: %s, ops: %s, resources: %s, rid: %s",
-				err, opts, resources,
-				rid)
+			blog.Errorf("authorize batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
 			return nil, err
 		}
 	} else {
 		authDecisions, err = a.authClientSet.AuthorizeAnyBatch(ctx, h, opts)
 		if err != nil {
-			blog.Errorf("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s",
-				err, opts, resources, rid)
+			blog.Errorf("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources,
+				rid)
 			return nil, err
 		}
 

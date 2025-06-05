@@ -139,7 +139,7 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, redisCli redis.Client, lgc *logics.
 			continue
 		}
 
-		if err := iamCli.SyncIAMSysInstances(kit, redisCli, objects); err != nil {
+		if err := iamCli.SyncIAMSysInstances(kit.Ctx, kit.Header, redisCli, objects); err != nil {
 			blog.Errorf("sync iam failed, sync iam system instances err: %s ,rid: %s", err, kit.Rid)
 			time.Sleep(time.Duration(s.SyncIAMPeriodMinutes) * time.Minute)
 			continue

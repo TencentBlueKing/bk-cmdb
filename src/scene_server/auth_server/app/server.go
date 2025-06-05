@@ -117,14 +117,8 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 // InitClients init apiGW client
 func (s *AuthServer) InitClients() error {
 
-	var clients []apigw.ClientType
-
 	if commonauth.EnableAuthorize() {
-		clients = append(clients, apigw.Iam)
-	}
-
-	if len(clients) > 0 {
-		err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), clients)
+		err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), []apigw.ClientType{apigw.Iam})
 		if err != nil {
 			blog.Errorf("init gse api gateway client failed, err: %v", err)
 			return err

@@ -629,7 +629,7 @@ func GenCMDBDynamicResType(modelID int64) meta.ResourceType {
 }
 
 // genDynamicResourceType generate dynamic resourceType
-func genDynamicResourceType(obj metadata.Object) iam.ResourceType {
+func genDynamicResourceType(tenantID string, obj metadata.Object) iam.ResourceType {
 	return iam.ResourceType{
 		ID:      GenIAMDynamicResTypeID(obj.ID),
 		Name:    obj.ObjectName,
@@ -646,9 +646,9 @@ func genDynamicResourceType(obj metadata.Object) iam.ResourceType {
 func genDynamicResourceTypes(tenantObjects map[string][]metadata.Object) []iam.ResourceType {
 	resourceTypes := make([]iam.ResourceType, 0)
 
-	for _, objects := range tenantObjects {
+	for tenantID, objects := range tenantObjects {
 		for _, obj := range objects {
-			resourceTypes = append(resourceTypes, genDynamicResourceType(obj))
+			resourceTypes = append(resourceTypes, genDynamicResourceType(tenantID, obj))
 		}
 	}
 

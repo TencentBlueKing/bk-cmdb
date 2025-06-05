@@ -111,7 +111,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
-		authManager = extensions.NewAuthManager(engine.CoreAPI).WithViewer(engine.CoreAPI, iamCli)
+		authManager = extensions.NewAuthManager(engine.CoreAPI).WithViewer(iamCli)
 	} else {
 		blog.Infof("disable auth center access")
 	}
@@ -155,18 +155,13 @@ func (t *TopoServer) CheckForReadiness() error {
 // InitClients init apiGW client
 func (s *TopoServer) InitClients() error {
 
-	var clients []apigw.ClientType
-
 	if auth.EnableAuthorize() {
-		clients = append(clients, apigw.Iam)
-	}
-
-	if len(clients) > 0 {
-		err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), clients)
+		err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), []apigw.ClientType{apigw.Iam})
 		if err != nil {
 			blog.Errorf("init gse api gateway client failed, err: %v", err)
 			return err
 		}
 	}
+
 	return nil
 }

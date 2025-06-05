@@ -30,14 +30,11 @@ var NoAuthorizeError = errors.New("no authorize")
 // Viewer is a interface to operate iam view
 type Viewer interface {
 	// CreateView create iam view for objects
-	CreateView(ctx context.Context, h http.Header, tenantObjects map[string][]metadata.Object,
-		redisCli redis.Client, rid string) error
+	CreateView(ctx context.Context, h http.Header, objects []metadata.Object, redisCli redis.Client, rid string) error
 	// DeleteView delete iam view for objects
-	DeleteView(ctx context.Context, h http.Header, tenantObjects map[string][]metadata.Object,
-		redisCli redis.Client, rid string) error
+	DeleteView(ctx context.Context, h http.Header, objects []metadata.Object, redisCli redis.Client, rid string) error
 	// UpdateView update iam view for objects
-	UpdateView(ctx context.Context, h http.Header, tenantObjects map[string][]metadata.Object,
-		redisCli redis.Client, rid string) error
+	UpdateView(ctx context.Context, h http.Header, objects []metadata.Object, redisCli redis.Client, rid string) error
 }
 
 // AuthorizeInterface TODO

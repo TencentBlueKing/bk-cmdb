@@ -48,8 +48,8 @@ func NewAuthManager(clientSet apimachinery.ClientSetInterface) *AuthManager {
 }
 
 // WithViewer get AuthManager with viewer
-func (a *AuthManager) WithViewer(clientSet apimachinery.ClientSetInterface, iamCli *iam.IAM) *AuthManager {
-	a.Viewer = iam.NewViewer(clientSet, iamCli)
+func (a *AuthManager) WithViewer(iamCli *iam.IAM) *AuthManager {
+	a.Viewer = iam.NewViewer(a.clientSet, iamCli)
 	return a
 }
 

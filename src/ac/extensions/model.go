@@ -175,8 +175,7 @@ func (a *AuthManager) AuthorizeResourceCreate(ctx context.Context, header http.H
 // 1. create iam view
 // 2. register object resource creator action to iam
 func (a *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header,
-	tenantObjects map[string][]metadata.Object, iamInstances []metadata.IamInstanceWithCreator,
-	redisCli redis.Client) error {
+	objects []metadata.Object, iamInstances []metadata.IamInstanceWithCreator, redisCli redis.Client) error {
 
 	if !a.Enabled() {
 		return nil
@@ -184,8 +183,8 @@ func (a *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header,
 
 	rid := util.ExtractRequestIDFromContext(ctx)
 	// create iam view
-	if err := a.Viewer.CreateView(ctx, header, tenantObjects, redisCli, rid); err != nil {
-		blog.ErrorJSON("create view failed, objects:%s, err: %s, rid: %s", tenantObjects, err, rid)
+	if err := a.Viewer.CreateView(ctx, header, objects, redisCli, rid); err != nil {
+		blog.ErrorJSON("create view failed, objects:%s, err: %s, rid: %s", objects, err, rid)
 		return err
 	}
 	// register object resource creator action to iam
@@ -257,8 +256,8 @@ var objTypeMap = map[string]meta.ResourceType{
 	common.BKInnerObjIDProject: meta.Project,
 }
 
-func (a *AuthManager) getInstanceTypeByObject(mainlineModel map[string]struct{}, objID string, id int64) (
-	meta.ResourceType, error) {
+func (a *AuthManager) getInstanceTypeByObject(mainlineModel map[string]struct{}, objID string,
+	id int64) (meta.ResourceType, error) {
 
 	if objType, ok := objTypeMap[objID]; ok {
 		return objType, nil

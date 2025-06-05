@@ -174,9 +174,8 @@ func genProjectResource(act iamtypes.ActionID, typ iamtypes.TypeID, attribute *m
 	return []iam.Resource{r}, nil
 }
 
-func genDynamicGroupingResource(act iamtypes.ActionID, typ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+func genDynamicGroupingResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) (
+	[]iam.Resource, error) {
 
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
@@ -548,7 +547,7 @@ func genModelTopologyViewResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
 	return make([]iam.Resource, 0), nil
 }
 
-func getHostResource(types []iam.IamResourceType, a *meta.ResourceAttribute) ([]iam.Resource, error) {
+func getHostTransferResource(types []iam.IamResourceType, a *meta.ResourceAttribute) ([]iam.Resource, error) {
 
 	if len(a.Layers) != 2 {
 		return nil, NotEnoughLayer
@@ -581,28 +580,28 @@ func genHostInstanceResource(act iamtypes.ActionID, typ iamtypes.TypeID, a *meta
 	if act == iamtypes.ResourcePoolHostTransferToDirectory {
 		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
 			iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
-		return getHostResource(types, a)
+		return getHostTransferResource(types, a)
 	}
 
 	// transfer host in resource pool to business
 	if act == iamtypes.ResourcePoolHostTransferToBusiness {
 		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
 			iam.IamResourceType(iamtypes.Business)}
-		return getHostResource(types, a)
+		return getHostTransferResource(types, a)
 	}
 
 	// transfer host from business to resource pool
 	if act == iamtypes.BusinessHostTransferToResourcePool {
 		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.Business),
 			iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
-		return getHostResource(types, a)
+		return getHostTransferResource(types, a)
 	}
 
 	// transfer host from one business to another
 	if act == iamtypes.HostTransferAcrossBusiness {
 		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.BusinessForHostTrans),
 			iam.IamResourceType(iamtypes.Business)}
-		return getHostResource(types, a)
+		return getHostTransferResource(types, a)
 	}
 
 	// import host
@@ -650,8 +649,8 @@ func genHostInstanceResource(act iamtypes.ActionID, typ iamtypes.TypeID, a *meta
 }
 
 func genBizModelAttributeResource(_ iamtypes.ActionID, _ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
 	r := iam.Resource{
 		System:    iamtypes.SystemIDCMDB,
 		Type:      iam.IamResourceType(iamtypes.Business),
@@ -687,8 +686,8 @@ func genSysInstanceResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *met
 }
 
 func genFieldTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID,
-	att *meta.ResourceAttribute) ([]iam.Resource,
-	error) {
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
 	r := iam.Resource{
 		System: iamtypes.SystemIDCMDB,
 		Type:   iam.IamResourceType(iamtypes.FieldGroupingTemplate),

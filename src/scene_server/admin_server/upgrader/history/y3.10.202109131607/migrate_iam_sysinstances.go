@@ -95,7 +95,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 	}
 
 	// add new system instances
-	if err := iam.SyncIAMSysInstances(kit, cache, convertTenantObjectMap(kit, objects)); err != nil {
+	if err := iam.SyncIAMSysInstances(kit.Ctx, kit.Header, cache, convertTenantObjectMap(kit, objects)); err != nil {
 		blog.Errorf("sync iam system instances failed, err: %v", err)
 		return err
 	}
