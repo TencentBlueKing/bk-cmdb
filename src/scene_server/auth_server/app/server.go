@@ -53,6 +53,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
+	if !commonauth.EnableAuthorize() {
+		blog.Errorf("enable auth is false, can not run auth server")
+		return fmt.Errorf("enable auth is false, can not run auth server")
+	}
+
 	authServer.Core = engine
 	for {
 		if authServer.Config == nil {
@@ -117,12 +122,10 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 // InitClients init apiGW client
 func (s *AuthServer) InitClients() error {
 
-	if commonauth.EnableAuthorize() {
-		err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), []apigw.ClientType{apigw.Iam})
-		if err != nil {
-			blog.Errorf("init gse api gateway client failed, err: %v", err)
-			return err
-		}
+	err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), []apigw.ClientType{apigw.Iam})
+	if err != nil {
+		blog.Errorf("init gse api gateway client failed, err: %v", err)
+		return err
 	}
 
 	return nil

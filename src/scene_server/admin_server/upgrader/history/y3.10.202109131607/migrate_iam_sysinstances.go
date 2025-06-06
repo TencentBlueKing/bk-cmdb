@@ -29,7 +29,6 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/apigw"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
@@ -44,8 +43,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 	if !auth.EnableAuthorize() {
 		return nil
 	}
-	rid := util.ExtractRequestIDFromContext(ctx)
-	kit := rest.NewKit().WithCtx(ctx).WithRid(rid)
+	header := headerutil.GenDefaultHeader()
 
 	// for the first installation, cmdb is not registered to iam,
 	// skip migrate iam system instances
@@ -94,14 +92,15 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 		return err
 	}
 
+	tenantID := httpheader.GetTenantID(header)
 	// add new system instances
-	if err := iam.SyncIAMSysInstances(kit.Ctx, kit.Header, cache, convertTenantObjectMap(kit, objects)); err != nil {
+	if err := iam.SyncIAMSysInstances(ctx, header, cache, convertTenantObjectMap(tenantID, objects)); err != nil {
 		blog.Errorf("sync iam system instances failed, err: %v", err)
 		return err
 	}
 
 	fields := []types.SystemQueryField{types.FieldActions}
-	iamInfo, err := iam.Client.GetSystemInfo(ctx, kit.Header, fields)
+	iamInfo, err := iam.Client.GetSystemInfo(ctx, header, fields)
 	if err != nil {
 		blog.Errorf("get system info failed, error: %v", err)
 		return err
@@ -137,7 +136,7 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 		InstanceSelectionIDs: []types.InstanceSelectionID{"sys_instance", "sys_event_pushing"},
 		TypeIDs:              []types.TypeID{"sys_instance", "sys_event_pushing"},
 	}
-	return iam.DeleteCMDBResource(ctx, param, convertTenantObject(kit, objects))
+	return iam.DeleteCMDBResource(ctx, param, convertTenantObject(tenantID, objects))
 }
 
 func migrateModelInstancePermission(ctx context.Context, action types.ActionID, db dal.DB, iam *iamtype.IAM,
@@ -429,7 +428,7 @@ type AssociationOnDeleteAction string
 // AssociationMapping TODO
 type AssociationMapping string
 
-func convertTenantObject(kit *rest.Kit, objs []Object) map[string][]metadata.Object {
+func convertTenantObject(tenantID string, objs []Object) map[string][]metadata.Object {
 
 	tenantObjects := make(map[string][]metadata.Object)
 	objects := make([]metadata.Object, 0)
@@ -454,11 +453,11 @@ func convertTenantObject(kit *rest.Kit, objs []Object) map[string][]metadata.Obj
 		objects = append(objects, metaObj)
 	}
 
-	tenantObjects[kit.TenantID] = objects
+	tenantObjects[tenantID] = objects
 	return tenantObjects
 }
 
-func convertTenantObjectMap(kit *rest.Kit, objs []Object) map[string][]metadata.Object {
+func convertTenantObjectMap(tenantID string, objs []Object) map[string][]metadata.Object {
 
 	allTenantsObjects := make(map[string][]metadata.Object)
 	objects := make([]metadata.Object, 0)
@@ -482,7 +481,7 @@ func convertTenantObjectMap(kit *rest.Kit, objs []Object) map[string][]metadata.
 		}
 		objects = append(objects, metaObj)
 	}
-	allTenantsObjects[kit.TenantID] = objects
+	allTenantsObjects[tenantID] = objects
 	return allTenantsObjects
 }
 

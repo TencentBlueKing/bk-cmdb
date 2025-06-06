@@ -215,8 +215,8 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 			err = s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, []metadata.Object{*rsp}, iamInstances,
 				redis.Client())
 			if err != nil {
-				blog.Errorf("create object on iam failed, objects: %s, iam instances: %s, err: %s, rid: %s",
-					[]metadata.Object{*rsp}, iamInstances, err, ctx.Kit.Rid)
+				blog.Errorf("create object on iam failed, objects: %v, iam instances: %v, err: %s, rid: %s", *rsp,
+					iamInstances, err, ctx.Kit.Rid)
 				return err
 			}
 		}

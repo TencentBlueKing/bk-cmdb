@@ -159,14 +159,12 @@ func (i IAM) Register(ctx context.Context, h http.Header, redisCli redis.Client,
 	}
 
 	if err = i.Client.RegisterActions(ctx, h, newResActions); err != nil {
-		blog.Errorf("register resource actions(%v) failed, err: %v, rid: %s", newResActions, err,
-			rid)
+		blog.Errorf("register resource actions(%v) failed, err: %v, rid: %s", newResActions, err, rid)
 		return err
 	}
 
 	if err = i.Client.DeleteInstanceSelections(ctx, h, removedInstSelectionIDs); err != nil {
-		blog.Errorf("delete instance selections(%v) failed, err: %v, rid: %s",
-			removedInstSelectionIDs, err, rid)
+		blog.Errorf("delete instance selections(%v) failed, err: %v, rid: %s", removedInstSelectionIDs, err, rid)
 		return err
 	}
 
@@ -181,8 +179,7 @@ func (i IAM) Register(ctx context.Context, h http.Header, redisCli redis.Client,
 	}
 
 	if err := i.registerResCreatorActions(ctx, h, registeredInfo, rid); err != nil {
-		blog.Errorf("register resCreator actions(%v) failed, tenantID: %s, err: %v, rid: %s", registeredInfo, err,
-			rid)
+		blog.Errorf("register resCreator actions(%v) failed, tenantID: %s, err: %v, rid: %s", registeredInfo, err, rid)
 		return err
 	}
 
@@ -1000,10 +997,10 @@ func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBR
 }
 
 // RegisterToIAM register to iam
-func (i IAM) RegisterToIAM(kit *rest.Kit, host string) error {
-	rid := util.ExtractRequestIDFromContext(kit.Ctx)
+func (i IAM) RegisterToIAM(ctx context.Context, header http.Header, host string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
-	_, err := i.Client.GetSystemInfo(kit.Ctx, kit.Header, []iamtypes.SystemQueryField{})
+	_, err := i.Client.GetSystemInfo(ctx, header, []iamtypes.SystemQueryField{})
 	if err == nil {
 		return nil
 	}
@@ -1024,7 +1021,7 @@ func (i IAM) RegisterToIAM(kit *rest.Kit, host string) error {
 			Auth: "basic",
 		},
 	}
-	if err = i.Client.RegisterSystem(kit.Ctx, kit.Header, sys); err != nil {
+	if err = i.Client.RegisterSystem(ctx, header, sys); err != nil {
 		blog.Errorf("register system %s failed, error: %v, rid: %s", sys, err, rid)
 		return err
 	}

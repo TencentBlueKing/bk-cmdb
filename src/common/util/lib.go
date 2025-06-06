@@ -51,15 +51,15 @@ func ExtractRequestIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-// ExtractOwnerFromContext TODO
-func ExtractOwnerFromContext(ctx context.Context) string {
+// ExtractTenantIDFromContext TODO
+func ExtractTenantIDFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return ""
 	}
-	owner := ctx.Value(common.ContextRequestTenantField)
-	ownerValue, ok := owner.(string)
+	tenantID := ctx.Value(common.ContextRequestTenantField)
+	tenantIDValue, ok := tenantID.(string)
 	if ok == true {
-		return ownerValue
+		return tenantIDValue
 	}
 	return ""
 }

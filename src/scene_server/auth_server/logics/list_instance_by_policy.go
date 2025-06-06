@@ -176,14 +176,17 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 }
 
 // ListInstancesWithAttributes list resource instances that user is privileged to access by policy
-func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) (
-	[]string, error) {
+func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string,
+	error) {
+
 	resourceType := iamtypes.TypeID(opts.Type)
 	rid := util.ExtractRequestIDFromContext(ctx)
-	tenantID := util.ExtractOwnerFromContext(ctx)
+	tenantID := util.ExtractTenantIDFromContext(ctx)
 	if tenantID == "" {
-		tenantID = common.BKDefaultTenantID
+		blog.Errorf("request tenant id is empty, rid: %s", rid)
+		return nil, fmt.Errorf("request tenant id is empty")
 	}
+
 	header := headerutil.NewHeaderFromContext(ctx)
 	collection := ""
 	if iam.IsIAMSysInstance(resourceType) {

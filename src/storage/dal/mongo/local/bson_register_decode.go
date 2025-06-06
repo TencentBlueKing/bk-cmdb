@@ -178,7 +178,8 @@ func MapDecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader, val refle
 func ArrayDecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader, val reflect.Value) error {
 
 	if !val.IsValid() || val.Kind() != reflect.Array {
-		return bsoncodec.ValueDecoderError{Name: "ArrayDecodeValue", Kinds: []reflect.Kind{reflect.Array}, Received: val}
+		return bsoncodec.ValueDecoderError{Name: "ArrayDecodeValue", Kinds: []reflect.Kind{reflect.Array},
+			Received: val}
 	}
 
 	switch vr.Type() {
@@ -221,7 +222,8 @@ func ArrayDecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader, val ref
 func SliceDecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader, val reflect.Value) error {
 
 	if !val.CanSet() || val.Kind() != reflect.Slice {
-		return bsoncodec.ValueDecoderError{Name: "SliceDecodeValue", Kinds: []reflect.Kind{reflect.Slice}, Received: val}
+		return bsoncodec.ValueDecoderError{Name: "SliceDecodeValue", Kinds: []reflect.Kind{reflect.Slice},
+			Received: val}
 	}
 
 	switch vr.Type() {
@@ -266,7 +268,8 @@ func SliceDecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader, val ref
 // EmptyInterfaceDecodeValue is the ValueDecoderFunc for interface{}.
 func EmptyInterfaceDecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader, val reflect.Value) error {
 	if !val.CanSet() || val.Type() != tEmpty {
-		return bsoncodec.ValueDecoderError{Name: "EmptyInterfaceDecodeValue", Types: []reflect.Type{tEmpty}, Received: val}
+		return bsoncodec.ValueDecoderError{Name: "EmptyInterfaceDecodeValue", Types: []reflect.Type{tEmpty},
+			Received: val}
 	}
 
 	if extendEmbeddedDocumentDecoder(vr.Type(), val) {
@@ -322,7 +325,8 @@ func isInterface(t reflect.Type) bool {
 	return false
 }
 
-// documentDecodeUseMapStrInterface Whether to enable bson EmbeddedDocument with bson Unmarshal value of interface to use map[string]interface object parsing
+// documentDecodeUseMapStrInterface Whether to enable bson EmbeddedDocument with bson Unmarshal value of interface to
+// use map[string]interface object parsing
 const documentDecodeUseMapStrInterface = true
 
 // isEmbeddedDocument  is bsontype EmbeddedDocument
@@ -336,16 +340,17 @@ func isEmbeddedDocument(bt bsontype.Type) bool {
 // extendEmbeddedDocumentDecoder use map[string]interface decode bson  EmbeddedDocument to map[string]interface
 func extendEmbeddedDocumentDecoder(vrType bsontype.Type, val reflect.Value) bool {
 	/*
-		eg: test case
-		instanceMap := map[string]interface{}{"value": map[string]interface{}{"a": []int{12, 14}, "b": map[string]interface{}{"cc": 11}}}
-		instanceByte, err := bson.Marshal(instanceMap)
-		require.NoError(t, err)
-		var i map[string]interface{}
-		err = bson.Unmarshal(instanceByte, &i)
-		require.NoError(t, err)
-		result :
-		{"value":{"a":[12,14],"b":{"cc":11}}}
-		not  [{"Key":"value","Value":[{"Key":"a","Value":12},{"Key":"b","Value":122}]}]
+			eg: test case
+			instanceMap := map[string]interface{}{"value": map[string]interface{}{"a": []int{12, 14},
+		    "b": map[string]interface{}{"cc": 11}}}
+			instanceByte, err := bson.Marshal(instanceMap)
+			require.NoError(t, err)
+			var i map[string]interface{}
+			err = bson.Unmarshal(instanceByte, &i)
+			require.NoError(t, err)
+			result :
+			{"value":{"a":[12,14],"b":{"cc":11}}}
+			not  [{"Key":"value","Value":[{"Key":"a","Value":12},{"Key":"b","Value":122}]}]
 	*/
 
 	if documentDecodeUseMapStrInterface &&
@@ -360,16 +365,17 @@ func extendEmbeddedDocumentDecoder(vrType bsontype.Type, val reflect.Value) bool
 // extendInterfaceDecode return documentDecodeUseMapStrInterface value
 func extendInterfaceDecode(val reflect.Value) bool {
 	/*
-		eg: test case
-		instanceMap := map[string]interface{}{"value": map[string]interface{}{"a": []int{12, 14}, "b": map[string]interface{}{"cc": 11}}}
-		instanceByte, err := bson.Marshal(instanceMap)
-		require.NoError(t, err)
-		var i map[string]interface{}
-		err = bson.Unmarshal(instanceByte, &i)
-		require.NoError(t, err)
-		result :
-		{"value":{"a":[12,14],"b":{"cc":11}}}
-		not  [{"Key":"value","Value":[{"Key":"a","Value":12},{"Key":"b","Value":122}]}]
+			eg: test case
+			instanceMap := map[string]interface{}{"value": map[string]interface{}{"a": []int{12, 14},
+		"b": map[string]interface{}{"cc": 11}}}
+			instanceByte, err := bson.Marshal(instanceMap)
+			require.NoError(t, err)
+			var i map[string]interface{}
+			err = bson.Unmarshal(instanceByte, &i)
+			require.NoError(t, err)
+			result :
+			{"value":{"a":[12,14],"b":{"cc":11}}}
+			not  [{"Key":"value","Value":[{"Key":"a","Value":12},{"Key":"b","Value":122}]}]
 	*/
 	if documentDecodeUseMapStrInterface && isInterface(val.Type()) {
 		return true
