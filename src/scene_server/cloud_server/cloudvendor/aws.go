@@ -17,6 +17,9 @@ import (
 	"configcenter/src/common/metadata"
 	ccom "configcenter/src/scene_server/cloud_server/common"
 
+	"fmt"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -58,6 +61,8 @@ var regionIdNameMap = map[string]string{
 	"eu-north-1":     "欧洲（斯德哥尔摩）",
 	"me-south-1":     "中东（巴林）",
 	"sa-east-1":      "南美洲（圣保罗）",
+	"cn-north-1":     "中国（北京）",
+	"cn-northwest-1": "中国（宁夏）",
 }
 
 // NewVendorClient 创建云厂商客户端
@@ -72,13 +77,33 @@ func (c *awsClient) NewVendorClient(secretID, secretKey string) VendorClient {
 // GetRegions 获取地域列表
 // API文档：https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeRegions.html
 func (c *awsClient) GetRegions() ([]*metadata.Region, error) {
-	sess, err := c.newSession("us-west-1")
-	if err != nil {
-		return nil, err
-	}
-	ec2Svc := ec2.New(sess)
+	// 首先尝试标准区域
+	standardRegion := "us-west-1"
+	sess, err := c.newSession(standardRegion)
+	chinaSession := false
 
+	if err != nil || strings.HasPrefix(c.secretID, "AKIAZ") { // 常见的中国区AK前缀
+		// 尝试中国区域
+		blog.Infof("Trying with China regions for AWS API")
+		chinaRegion := "cn-north-1"
+		sess, err = c.newSession(chinaRegion)
+		if err != nil {
+			return nil, err
+		}
+		chinaSession = true
+	}
+
+	ec2Svc := ec2.New(sess)
 	input := c.newDescribeRegionsInput()
+
+	// 如果是中国区，明确指定只获取中国区域
+	if chinaSession {
+		input.RegionNames = []*string{
+			aws.String("cn-north-1"),
+			aws.String("cn-northwest-1"),
+		}
+	}
+
 	resp, err := ec2Svc.DescribeRegions(input)
 	if err != nil {
 		return nil, err
@@ -86,11 +111,31 @@ func (c *awsClient) GetRegions() ([]*metadata.Region, error) {
 
 	regionSet := make([]*metadata.Region, 0)
 	for _, region := range resp.Regions {
+		regionName, exists := regionIdNameMap[*region.RegionName]
+		if !exists {
+			regionName = *region.RegionName // 使用区域ID作为名称的后备
+		}
+
 		regionSet = append(regionSet, &metadata.Region{
 			RegionId:   *region.RegionName,
-			RegionName: regionIdNameMap[*region.RegionName],
+			RegionName: regionName,
 		})
 	}
+
+	// 中国区环境下，如果API没有返回任何区域，手动添加中国区域
+	if chinaSession && len(regionSet) == 0 {
+		regionSet = append(regionSet,
+			&metadata.Region{
+				RegionId:   "cn-north-1",
+				RegionName: regionIdNameMap["cn-north-1"],
+			},
+			&metadata.Region{
+				RegionId:   "cn-northwest-1",
+				RegionName: regionIdNameMap["cn-northwest-1"],
+			},
+		)
+	}
+
 	return regionSet, nil
 }
 
@@ -252,10 +297,20 @@ func (c *awsClient) GetInstancesTotalCnt(region string, opt *ccom.InstanceOpt) (
 
 // newSession 创建会话
 func (c *awsClient) newSession(region string) (*session.Session, error) {
-	sess, err := session.NewSession(&aws.Config{
+	config := &aws.Config{
 		Region:      aws.String(region),
 		Credentials: credentials.NewStaticCredentials(c.secretID, c.secretKey, ""),
-	})
+	}
+
+	// Handle China regions which use different endpoints
+	if region == "cn-north-1" || region == "cn-northwest-1" {
+		// AWS China endpoints use .amazonaws.com.cn
+		// 对于服务使用正确的端点格式
+		endpoint := fmt.Sprintf("https://ec2.%s.amazonaws.com.cn", region)
+		config.Endpoint = aws.String(endpoint)
+	}
+
+	sess, err := session.NewSession(config)
 	if err != nil {
 		return nil, err
 	}

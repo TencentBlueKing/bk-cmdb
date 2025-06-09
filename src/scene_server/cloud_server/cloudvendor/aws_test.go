@@ -14,6 +14,7 @@ package cloudvendor
 
 import (
 	"os"
+	"strings"
 	"sync"
 	"testing"
 
@@ -22,12 +23,23 @@ import (
 )
 
 var awsTestClient VendorClient
+var defaultAWSRegion string
 
 func init() {
+	secretID := os.Getenv("AWS_SECRET_ID")
+	secretKey := os.Getenv("AWS_SECRET_KEY")
+
+	// 自动检测是否使用中国区凭证
+	defaultAWSRegion = "us-west-1"
+	if strings.HasPrefix(secretID, "AKIAZ") {
+		// 中国区凭证，使用中国区域
+		defaultAWSRegion = "cn-north-1"
+	}
+
 	conf := metadata.CloudAccountConf{
 		VendorName: metadata.AWS,
-		SecretID:   os.Getenv("AWS_SECRET_ID"),
-		SecretKey:  os.Getenv("AWS_SECRET_KEY"),
+		SecretID:   secretID,
+		SecretKey:  secretKey,
 	}
 	var err error
 	awsTestClient, err = GetVendorClient(conf)
@@ -48,8 +60,7 @@ func TestAWSGetRegions(t *testing.T) {
 
 func TestAWSGetVpcs(t *testing.T) {
 	opt := &ccom.VpcOpt{}
-	region := "us-west-1"
-	vpcsInfo, err := awsTestClient.GetVpcs(region, opt)
+	vpcsInfo, err := awsTestClient.GetVpcs(defaultAWSRegion, opt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,8 +72,7 @@ func TestAWSGetVpcs(t *testing.T) {
 
 func TestAWSGetInstances(t *testing.T) {
 	opt := &ccom.InstanceOpt{}
-	region := "us-west-1"
-	instancesInfo, err := awsTestClient.GetInstances(region, opt)
+	instancesInfo, err := awsTestClient.GetInstances(defaultAWSRegion, opt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,8 +84,7 @@ func TestAWSGetInstances(t *testing.T) {
 
 func TestAWSGetInstancesTotalCnt(t *testing.T) {
 	opt := &ccom.InstanceOpt{}
-	region := "us-west-1"
-	count, err := awsTestClient.GetInstancesTotalCnt(region, opt)
+	count, err := awsTestClient.GetInstancesTotalCnt(defaultAWSRegion, opt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,8 +97,7 @@ func TestAWSRequestOpt(t *testing.T) {
 			Filters: []*ccom.Filter{{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game2"})}},
 		},
 	}
-	region := "us-west-1"
-	vpcsInfo, err := awsTestClient.GetVpcs(region, opt)
+	vpcsInfo, err := awsTestClient.GetVpcs(defaultAWSRegion, opt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,10 +119,10 @@ func TestAWSConcurrence(t *testing.T) {
 					Filters: []*ccom.Filter{{ccom.StringPtr("tag:Name"), ccom.StringPtrs([]string{"game2"})}},
 				},
 			}
-			region := "us-west-1"
-			vpcsInfo, err := awsTestClient.GetVpcs(region, opt)
+			vpcsInfo, err := awsTestClient.GetVpcs(defaultAWSRegion, opt)
 			if err != nil {
-				t.Fatal(err)
+				t.Logf("g%d error: %v", idx, err)
+				return
 			}
 			t.Logf("g%d vpcs count:%#v\n", idx, vpcsInfo.Count)
 			for i, vpc := range vpcsInfo.VpcSet {

@@ -10,7 +10,7 @@ require (
 	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/apache/thrift v0.19.0
-	github.com/aws/aws-sdk-go v1.44.14
+	github.com/aws/aws-sdk-go v1.55.7
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/coccyx/timeparser v0.0.0-20161029180942-5644122b3667
 	github.com/emicklei/go-restful/v3 v3.11.0
@@ -57,7 +57,7 @@ require (
 	go.opentelemetry.io/otel v1.19.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.17.0
 	go.opentelemetry.io/otel/sdk v1.19.0
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/client-go v0.24.2
