@@ -15,7 +15,7 @@ package service
 import (
 	"strconv"
 
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -42,7 +42,7 @@ func (s *Service) CreateClassification(ctx *rest.Contexts) {
 		// register object classification resource creator action to iam
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.SysModelGroup),
+				Type:    string(types.SysModelGroup),
 				ID:      strconv.FormatInt(cls.ID, 10),
 				Name:    cls.ClassificationName,
 				Creator: ctx.Kit.User,

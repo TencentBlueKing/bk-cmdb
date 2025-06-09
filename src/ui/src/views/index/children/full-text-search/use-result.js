@@ -19,15 +19,15 @@ import { currentSetting as advancedSetting, allModelIds } from './use-advanced-s
 const requestId = Symbol('fullTextSearch')
 
 export default function useResult(state) {
-  const { route, keyword } = state
+  const { route, keyword, isExactSearch } = state
   const result = ref({})
   const fetching = ref(-1)
   const selectResultIndex = ref(-1)
 
   // 如注入 keyword 则为输入联想模式
   const typing = computed(() => isRef(keyword))
-
   const queryKeyword = computed(() => (typing.value ? keyword.value : route.value.query.keyword))
+  const exactSearch = computed(() => (typing.value ? isExactSearch.value : +route.value.query.exact === 1))
 
   const params = computed(() => {
     const { query } = route.value
@@ -51,6 +51,7 @@ export default function useResult(state) {
     })
     const params = {
       filter,
+      is_exact_search: exactSearch.value,
       query_string: nonLetter ? `*${queryString}*` : queryString,
       page: {
         start: typing.value ? 0 : (page - 1) * limit,

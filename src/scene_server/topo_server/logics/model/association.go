@@ -16,7 +16,7 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -208,7 +208,7 @@ func (assoc *association) CreateOrUpdateAssociationType(kit *rest.Kit, asst []me
 
 		for index, item := range createCond.Datas {
 			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.SysAssociationType),
+				Type:    string(types.SysAssociationType),
 				ID:      strconv.FormatInt(indexID[int64(index)], 10),
 				Name:    item.AssociationKindName,
 				Creator: kit.User,

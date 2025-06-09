@@ -12,158 +12,162 @@
 
 package iam
 
-import "configcenter/src/common/metadata"
+import (
+	iamtypes "configcenter/src/ac/iam/types"
+	"configcenter/src/common/metadata"
+	"configcenter/src/thirdparty/apigw/iam"
+)
 
 var (
-	businessResource = RelateResourceType{
-		SystemID:    SystemIDCMDB,
-		ID:          Business,
+	businessResource = iam.RelateResourceType{
+		SystemID:    iamtypes.SystemIDCMDB,
+		ID:          iamtypes.Business,
 		NameAlias:   "",
 		NameAliasEn: "",
 		Scope:       nil,
-		InstanceSelections: []RelatedInstanceSelection{{
-			SystemID: SystemIDCMDB,
-			ID:       BusinessSelection,
+		InstanceSelections: []iam.RelatedInstanceSelection{{
+			SystemID: iamtypes.SystemIDCMDB,
+			ID:       iamtypes.BusinessSelection,
 		}},
 	}
 
-	resourcePoolDirResource = RelateResourceType{
-		SystemID:    SystemIDCMDB,
-		ID:          SysResourcePoolDirectory,
+	resourcePoolDirResource = iam.RelateResourceType{
+		SystemID:    iamtypes.SystemIDCMDB,
+		ID:          iamtypes.SysResourcePoolDirectory,
 		NameAlias:   "",
 		NameAliasEn: "",
 		Scope:       nil,
-		InstanceSelections: []RelatedInstanceSelection{{
-			SystemID: SystemIDCMDB,
-			ID:       SysResourcePoolDirectorySelection,
+		InstanceSelections: []iam.RelatedInstanceSelection{{
+			SystemID: iamtypes.SystemIDCMDB,
+			ID:       iamtypes.SysResourcePoolDirectorySelection,
 		}},
 	}
 )
 
 // ActionIDNameMap TODO
-var ActionIDNameMap = map[ActionID]string{
-	EditBusinessHost:                    "业务主机编辑",
-	BusinessHostTransferToResourcePool:  "主机归还主机池",
-	HostTransferAcrossBusiness:          "主机转移到其他业务",
-	CreateBusinessCustomQuery:           "动态分组新建",
-	EditBusinessCustomQuery:             "动态分组编辑",
-	DeleteBusinessCustomQuery:           "动态分组删除",
-	EditBusinessCustomField:             "业务自定义字段编辑",
-	CreateBusinessServiceCategory:       "服务分类新建",
-	EditBusinessServiceCategory:         "服务分类编辑",
-	DeleteBusinessServiceCategory:       "服务分类删除",
-	CreateBusinessServiceInstance:       "服务实例新建",
-	EditBusinessServiceInstance:         "服务实例编辑",
-	DeleteBusinessServiceInstance:       "服务实例删除",
-	CreateBusinessServiceTemplate:       "服务模板新建",
-	EditBusinessServiceTemplate:         "服务模板编辑",
-	DeleteBusinessServiceTemplate:       "服务模板删除",
-	CreateBusinessSetTemplate:           "集群模板新建",
-	EditBusinessSetTemplate:             "集群模板编辑",
-	DeleteBusinessSetTemplate:           "集群模板删除",
-	CreateBusinessTopology:              "业务拓扑新建",
-	EditBusinessTopology:                "业务拓扑编辑",
-	DeleteBusinessTopology:              "业务拓扑删除",
-	EditBusinessHostApply:               "主机自动应用编辑",
-	ViewResourcePoolHost:                "主机池主机查看",
-	CreateResourcePoolHost:              "主机池主机创建",
-	EditResourcePoolHost:                "主机池主机编辑",
-	DeleteResourcePoolHost:              "主机池主机删除",
-	ResourcePoolHostTransferToBusiness:  "主机池主机分配到业务",
-	ResourcePoolHostTransferToDirectory: "主机池主机分配到目录",
-	CreateResourcePoolDirectory:         "主机池目录创建",
-	EditResourcePoolDirectory:           "主机池目录编辑",
-	DeleteResourcePoolDirectory:         "主机池目录删除",
-	CreateBusiness:                      "业务创建",
-	EditBusiness:                        "业务编辑",
-	ArchiveBusiness:                     "业务归档",
-	FindBusiness:                        "业务查询",
-	ViewBusinessResource:                "业务访问",
-	CreateBizSet:                        "业务集新增",
-	EditBizSet:                          "业务集编辑",
-	DeleteBizSet:                        "业务集删除",
-	ViewBizSet:                          "业务集查看",
-	AccessBizSet:                        "业务集访问",
-	CreateProject:                       "项目新建",
-	EditProject:                         "项目编辑",
-	DeleteProject:                       "项目删除",
-	ViewProject:                         "项目查看",
-	ViewCloudArea:                       "管控区域查看",
-	CreateCloudArea:                     "管控区域创建",
-	EditCloudArea:                       "管控区域编辑",
-	DeleteCloudArea:                     "管控区域删除",
-	ViewSysModel:                        "模型查看",
-	CreateSysModel:                      "模型新建",
-	EditSysModel:                        "模型编辑",
-	DeleteSysModel:                      "模型删除",
-	CreateAssociationType:               "关联类型新建",
-	EditAssociationType:                 "关联类型编辑",
-	DeleteAssociationType:               "关联类型删除",
-	CreateModelGroup:                    "模型分组新建",
-	EditModelGroup:                      "模型分组编辑",
-	DeleteModelGroup:                    "模型分组删除",
-	ViewModelTopo:                       "模型拓扑查看",
-	EditBusinessLayer:                   "业务层级编辑",
-	EditModelTopologyView:               "模型拓扑视图编辑",
-	FindAuditLog:                        "操作审计查询",
-	WatchHostEvent:                      "主机事件监听",
-	WatchHostRelationEvent:              "主机关系事件监听",
-	WatchBizEvent:                       "业务事件监听",
-	WatchSetEvent:                       "集群事件监听",
-	WatchModuleEvent:                    "模块数据监听",
-	WatchProcessEvent:                   "进程数据监听",
-	WatchCommonInstanceEvent:            "模型实例事件监听",
-	WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
-	WatchInstAsstEvent:                  "实例关联事件监听",
-	WatchBizSetEvent:                    "业务集事件监听",
-	WatchPlatEvent:                      "管控区域事件监听",
-	WatchKubeClusterEvent:               "容器集群事件监听",
-	WatchKubeNodeEvent:                  "容器节点事件监听",
-	WatchKubeNamespaceEvent:             "容器命名空间事件监听",
-	WatchKubeWorkloadEvent:              "容器工作负载事件监听",
-	WatchKubePodEvent:                   "容器Pod事件监听",
-	WatchProjectEvent:                   "项目事件监听",
-	GlobalSettings:                      "全局设置",
-	ManageHostAgentID:                   "主机AgentID管理",
-	CreateContainerCluster:              "容器集群新建",
-	EditContainerCluster:                "容器集群编辑",
-	DeleteContainerCluster:              "容器集群删除",
-	CreateContainerNode:                 "容器集群节点新建",
-	EditContainerNode:                   "容器集群节点编辑",
-	DeleteContainerNode:                 "容器集群节点删除",
-	CreateContainerNamespace:            "容器命名空间新建",
-	EditContainerNamespace:              "容器命名空间编辑",
-	DeleteContainerNamespace:            "容器命名空间删除",
-	CreateContainerWorkload:             "容器工作负载新建",
-	EditContainerWorkload:               "容器工作负载编辑",
-	DeleteContainerWorkload:             "容器工作负载删除",
-	CreateContainerPod:                  "容器Pod新建",
-	DeleteContainerPod:                  "容器Pod删除",
-	UseFulltextSearch:                   "全文检索",
-	CreateFieldGroupingTemplate:         "字段组合模板新建",
-	ViewFieldGroupingTemplate:           "字段组合模板查看",
-	EditFieldGroupingTemplate:           "字段组合模板编辑",
-	DeleteFieldGroupingTemplate:         "字段组合模板删除",
-	EditIDRuleIncrID:                    "ID规则自增ID编辑",
-	CreateFullSyncCond:                  "全量同步缓存条件新建",
-	ViewFullSyncCond:                    "全量同步缓存条件查看",
-	EditFullSyncCond:                    "全量同步缓存条件编辑",
-	DeleteFullSyncCond:                  "全量同步缓存条件删除",
-	ViewGeneralCache:                    "通用缓存查询",
-	ViewTenantSet:                       "租户集查看",
-	AccessTenantSet:                     "租户集访问",
+var ActionIDNameMap = map[iamtypes.ActionID]string{
+	iamtypes.EditBusinessHost:                    "业务主机编辑",
+	iamtypes.BusinessHostTransferToResourcePool:  "主机归还主机池",
+	iamtypes.HostTransferAcrossBusiness:          "主机转移到其他业务",
+	iamtypes.CreateBusinessCustomQuery:           "动态分组新建",
+	iamtypes.EditBusinessCustomQuery:             "动态分组编辑",
+	iamtypes.DeleteBusinessCustomQuery:           "动态分组删除",
+	iamtypes.EditBusinessCustomField:             "业务自定义字段编辑",
+	iamtypes.CreateBusinessServiceCategory:       "服务分类新建",
+	iamtypes.EditBusinessServiceCategory:         "服务分类编辑",
+	iamtypes.DeleteBusinessServiceCategory:       "服务分类删除",
+	iamtypes.CreateBusinessServiceInstance:       "服务实例新建",
+	iamtypes.EditBusinessServiceInstance:         "服务实例编辑",
+	iamtypes.DeleteBusinessServiceInstance:       "服务实例删除",
+	iamtypes.CreateBusinessServiceTemplate:       "服务模板新建",
+	iamtypes.EditBusinessServiceTemplate:         "服务模板编辑",
+	iamtypes.DeleteBusinessServiceTemplate:       "服务模板删除",
+	iamtypes.CreateBusinessSetTemplate:           "集群模板新建",
+	iamtypes.EditBusinessSetTemplate:             "集群模板编辑",
+	iamtypes.DeleteBusinessSetTemplate:           "集群模板删除",
+	iamtypes.CreateBusinessTopology:              "业务拓扑新建",
+	iamtypes.EditBusinessTopology:                "业务拓扑编辑",
+	iamtypes.DeleteBusinessTopology:              "业务拓扑删除",
+	iamtypes.EditBusinessHostApply:               "主机自动应用编辑",
+	iamtypes.ViewResourcePoolHost:                "主机池主机查看",
+	iamtypes.CreateResourcePoolHost:              "主机池主机创建",
+	iamtypes.EditResourcePoolHost:                "主机池主机编辑",
+	iamtypes.DeleteResourcePoolHost:              "主机池主机删除",
+	iamtypes.ResourcePoolHostTransferToBusiness:  "主机池主机分配到业务",
+	iamtypes.ResourcePoolHostTransferToDirectory: "主机池主机分配到目录",
+	iamtypes.CreateResourcePoolDirectory:         "主机池目录创建",
+	iamtypes.EditResourcePoolDirectory:           "主机池目录编辑",
+	iamtypes.DeleteResourcePoolDirectory:         "主机池目录删除",
+	iamtypes.CreateBusiness:                      "业务创建",
+	iamtypes.EditBusiness:                        "业务编辑",
+	iamtypes.ArchiveBusiness:                     "业务归档",
+	iamtypes.FindBusiness:                        "业务查询",
+	iamtypes.ViewBusinessResource:                "业务访问",
+	iamtypes.CreateBizSet:                        "业务集新增",
+	iamtypes.EditBizSet:                          "业务集编辑",
+	iamtypes.DeleteBizSet:                        "业务集删除",
+	iamtypes.ViewBizSet:                          "业务集查看",
+	iamtypes.AccessBizSet:                        "业务集访问",
+	iamtypes.CreateProject:                       "项目新建",
+	iamtypes.EditProject:                         "项目编辑",
+	iamtypes.DeleteProject:                       "项目删除",
+	iamtypes.ViewProject:                         "项目查看",
+	iamtypes.ViewCloudArea:                       "管控区域查看",
+	iamtypes.CreateCloudArea:                     "管控区域创建",
+	iamtypes.EditCloudArea:                       "管控区域编辑",
+	iamtypes.DeleteCloudArea:                     "管控区域删除",
+	iamtypes.ViewSysModel:                        "模型查看",
+	iamtypes.CreateSysModel:                      "模型新建",
+	iamtypes.EditSysModel:                        "模型编辑",
+	iamtypes.DeleteSysModel:                      "模型删除",
+	iamtypes.CreateAssociationType:               "关联类型新建",
+	iamtypes.EditAssociationType:                 "关联类型编辑",
+	iamtypes.DeleteAssociationType:               "关联类型删除",
+	iamtypes.CreateModelGroup:                    "模型分组新建",
+	iamtypes.EditModelGroup:                      "模型分组编辑",
+	iamtypes.DeleteModelGroup:                    "模型分组删除",
+	iamtypes.ViewModelTopo:                       "模型拓扑查看",
+	iamtypes.EditBusinessLayer:                   "业务层级编辑",
+	iamtypes.EditModelTopologyView:               "模型拓扑视图编辑",
+	iamtypes.FindAuditLog:                        "操作审计查询",
+	iamtypes.WatchHostEvent:                      "主机事件监听",
+	iamtypes.WatchHostRelationEvent:              "主机关系事件监听",
+	iamtypes.WatchBizEvent:                       "业务事件监听",
+	iamtypes.WatchSetEvent:                       "集群事件监听",
+	iamtypes.WatchModuleEvent:                    "模块数据监听",
+	iamtypes.WatchProcessEvent:                   "进程数据监听",
+	iamtypes.WatchCommonInstanceEvent:            "模型实例事件监听",
+	iamtypes.WatchMainlineInstanceEvent:          "自定义拓扑层级事件监听",
+	iamtypes.WatchInstAsstEvent:                  "实例关联事件监听",
+	iamtypes.WatchBizSetEvent:                    "业务集事件监听",
+	iamtypes.WatchPlatEvent:                      "管控区域事件监听",
+	iamtypes.WatchKubeClusterEvent:               "容器集群事件监听",
+	iamtypes.WatchKubeNodeEvent:                  "容器节点事件监听",
+	iamtypes.WatchKubeNamespaceEvent:             "容器命名空间事件监听",
+	iamtypes.WatchKubeWorkloadEvent:              "容器工作负载事件监听",
+	iamtypes.WatchKubePodEvent:                   "容器Pod事件监听",
+	iamtypes.WatchProjectEvent:                   "项目事件监听",
+	iamtypes.GlobalSettings:                      "全局设置",
+	iamtypes.ManageHostAgentID:                   "主机AgentID管理",
+	iamtypes.CreateContainerCluster:              "容器集群新建",
+	iamtypes.EditContainerCluster:                "容器集群编辑",
+	iamtypes.DeleteContainerCluster:              "容器集群删除",
+	iamtypes.CreateContainerNode:                 "容器集群节点新建",
+	iamtypes.EditContainerNode:                   "容器集群节点编辑",
+	iamtypes.DeleteContainerNode:                 "容器集群节点删除",
+	iamtypes.CreateContainerNamespace:            "容器命名空间新建",
+	iamtypes.EditContainerNamespace:              "容器命名空间编辑",
+	iamtypes.DeleteContainerNamespace:            "容器命名空间删除",
+	iamtypes.CreateContainerWorkload:             "容器工作负载新建",
+	iamtypes.EditContainerWorkload:               "容器工作负载编辑",
+	iamtypes.DeleteContainerWorkload:             "容器工作负载删除",
+	iamtypes.CreateContainerPod:                  "容器Pod新建",
+	iamtypes.DeleteContainerPod:                  "容器Pod删除",
+	iamtypes.UseFulltextSearch:                   "全文检索",
+	iamtypes.CreateFieldGroupingTemplate:         "字段组合模板新建",
+	iamtypes.ViewFieldGroupingTemplate:           "字段组合模板查看",
+	iamtypes.EditFieldGroupingTemplate:           "字段组合模板编辑",
+	iamtypes.DeleteFieldGroupingTemplate:         "字段组合模板删除",
+	iamtypes.EditIDRuleIncrID:                    "ID规则自增ID编辑",
+	iamtypes.CreateFullSyncCond:                  "全量同步缓存条件新建",
+	iamtypes.ViewFullSyncCond:                    "全量同步缓存条件查看",
+	iamtypes.EditFullSyncCond:                    "全量同步缓存条件编辑",
+	iamtypes.DeleteFullSyncCond:                  "全量同步缓存条件删除",
+	iamtypes.ViewGeneralCache:                    "通用缓存查询",
+	iamtypes.ViewTenantSet:                       "租户集查看",
+	iamtypes.AccessTenantSet:                     "租户集访问",
 }
 
 // GenerateActions generate all the actions registered to IAM.
-func GenerateActions(objects []metadata.Object) []ResourceAction {
+func GenerateActions(tenantObjects map[string][]metadata.Object) []iam.ResourceAction {
 	resourceActionList := GenerateStaticActions()
-	resourceActionList = append(resourceActionList, genDynamicActions(objects)...)
+	resourceActionList = append(resourceActionList, genDynamicActions(tenantObjects)...)
 	return resourceActionList
 }
 
 // GenerateStaticActions TODO
-func GenerateStaticActions() []ResourceAction {
-	resourceActionList := make([]ResourceAction, 0)
+func GenerateStaticActions() []iam.ResourceAction {
+	resourceActionList := make([]iam.ResourceAction, 0)
 	// add business resource actions
 	resourceActionList = append(resourceActionList, genBusinessHostActions()...)
 	resourceActionList = append(resourceActionList, genBusinessCustomQueryActions()...)
@@ -202,83 +206,83 @@ func GenerateStaticActions() []ResourceAction {
 	return resourceActionList
 }
 
-func genBusinessHostActions() []ResourceAction {
-	hostSelection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       BizHostInstanceSelection,
+func genBusinessHostActions() []iam.ResourceAction {
+	hostSelection := []iam.RelatedInstanceSelection{{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.BizHostInstanceSelection,
 	}}
 
-	relatedResource := []RelateResourceType{{
-		SystemID:    SystemIDCMDB,
-		ID:          Host,
+	relatedResource := []iam.RelateResourceType{{
+		SystemID:    iamtypes.SystemIDCMDB,
+		ID:          iamtypes.Host,
 		NameAlias:   "",
 		NameAliasEn: "",
 		Scope:       nil,
 		// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
-		SelectionMode:      modeAll,
+		SelectionMode:      iamtypes.ModeAll,
 		InstanceSelections: hostSelection,
 	}}
 
-	actions := make([]ResourceAction, 0)
+	actions := make([]iam.ResourceAction, 0)
 
 	// edit business's host actions
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessHost,
-		Name:                 ActionIDNameMap[EditBusinessHost],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessHost,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessHost],
 		NameEn:               "Edit Business Hosts",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	// business host transfer to resource pool actions
-	actions = append(actions, ResourceAction{
-		ID:                   BusinessHostTransferToResourcePool,
-		Name:                 ActionIDNameMap[BusinessHostTransferToResourcePool],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.BusinessHostTransferToResourcePool,
+		Name:                 ActionIDNameMap[iamtypes.BusinessHostTransferToResourcePool],
 		NameEn:               "Return Hosts To Pool",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{businessResource, resourcePoolDirResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource, resourcePoolDirResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	businessHostResource := RelateResourceType{
-		SystemID:    SystemIDCMDB,
-		ID:          BusinessForHostTrans,
+	businessHostResource := iam.RelateResourceType{
+		SystemID:    iamtypes.SystemIDCMDB,
+		ID:          iamtypes.BusinessForHostTrans,
 		NameAlias:   "",
 		NameAliasEn: "",
 		Scope:       nil,
-		InstanceSelections: []RelatedInstanceSelection{{
-			SystemID: SystemIDCMDB,
-			ID:       BusinessHostTransferSelection,
+		InstanceSelections: []iam.RelatedInstanceSelection{{
+			SystemID: iamtypes.SystemIDCMDB,
+			ID:       iamtypes.BusinessHostTransferSelection,
 		}},
 	}
 
 	// business host transfer to another business actions
-	actions = append(actions, ResourceAction{
-		ID:                   HostTransferAcrossBusiness,
-		Name:                 ActionIDNameMap[HostTransferAcrossBusiness],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.HostTransferAcrossBusiness,
+		Name:                 ActionIDNameMap[iamtypes.HostTransferAcrossBusiness],
 		NameEn:               "Assigned Host To Other Business",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{businessHostResource, businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{businessHostResource, businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genBusinessCustomQueryActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       BizCustomQuerySelection,
+func genBusinessCustomQueryActions() []iam.ResourceAction {
+	selection := []iam.RelatedInstanceSelection{{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.BizCustomQuerySelection,
 	}}
 
-	relatedResource := []RelateResourceType{
+	relatedResource := []iam.RelateResourceType{
 		{
-			SystemID:           SystemIDCMDB,
-			ID:                 BizCustomQuery,
+			SystemID:           iamtypes.SystemIDCMDB,
+			ID:                 iamtypes.BizCustomQuery,
 			NameAlias:          "",
 			NameAliasEn:        "",
 			Scope:              nil,
@@ -286,139 +290,139 @@ func genBusinessCustomQueryActions() []ResourceAction {
 		},
 	}
 
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateBusinessCustomQuery,
-		Name:                 ActionIDNameMap[CreateBusinessCustomQuery],
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateBusinessCustomQuery,
+		Name:                 ActionIDNameMap[iamtypes.CreateBusinessCustomQuery],
 		NameEn:               "Create Dynamic Grouping",
-		Type:                 Create,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Create,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessCustomQuery,
-		Name:                 ActionIDNameMap[EditBusinessCustomQuery],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessCustomQuery,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessCustomQuery],
 		NameEn:               "Edit Dynamic Grouping",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteBusinessCustomQuery,
-		Name:                 ActionIDNameMap[DeleteBusinessCustomQuery],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteBusinessCustomQuery,
+		Name:                 ActionIDNameMap[iamtypes.DeleteBusinessCustomQuery],
 		NameEn:               "Delete Dynamic Grouping",
-		Type:                 Delete,
+		Type:                 iamtypes.Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genBusinessCustomFieldActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
+func genBusinessCustomFieldActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessCustomField,
-		Name:                 ActionIDNameMap[EditBusinessCustomField],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessCustomField,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessCustomField],
 		NameEn:               "Edit Custom Field",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genBusinessServiceCategoryActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
+func genBusinessServiceCategoryActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
 
-	actions = append(actions, ResourceAction{
-		ID:                   CreateBusinessServiceCategory,
-		Name:                 ActionIDNameMap[CreateBusinessServiceCategory],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateBusinessServiceCategory,
+		Name:                 ActionIDNameMap[iamtypes.CreateBusinessServiceCategory],
 		NameEn:               "Create Service Category",
-		Type:                 Create,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Create,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessServiceCategory,
-		Name:                 ActionIDNameMap[EditBusinessServiceCategory],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessServiceCategory,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessServiceCategory],
 		NameEn:               "Edit Service Category",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteBusinessServiceCategory,
-		Name:                 ActionIDNameMap[DeleteBusinessServiceCategory],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteBusinessServiceCategory,
+		Name:                 ActionIDNameMap[iamtypes.DeleteBusinessServiceCategory],
 		NameEn:               "Delete Service Category",
-		Type:                 Delete,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Delete,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genBusinessServiceInstanceActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
+func genBusinessServiceInstanceActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
 
-	actions = append(actions, ResourceAction{
-		ID:                   CreateBusinessServiceInstance,
-		Name:                 ActionIDNameMap[CreateBusinessServiceInstance],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateBusinessServiceInstance,
+		Name:                 ActionIDNameMap[iamtypes.CreateBusinessServiceInstance],
 		NameEn:               "Create Service Instance",
-		Type:                 Create,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Create,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessServiceInstance,
-		Name:                 ActionIDNameMap[EditBusinessServiceInstance],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessServiceInstance,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessServiceInstance],
 		NameEn:               "Edit Service Instance",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteBusinessServiceInstance,
-		Name:                 ActionIDNameMap[DeleteBusinessServiceInstance],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteBusinessServiceInstance,
+		Name:                 ActionIDNameMap[iamtypes.DeleteBusinessServiceInstance],
 		NameEn:               "Delete Service Instance",
-		Type:                 Delete,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Delete,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genBusinessServiceTemplateActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID:       SystemIDCMDB,
-		ID:             BizProcessServiceTemplateSelection,
+func genBusinessServiceTemplateActions() []iam.ResourceAction {
+	selection := []iam.RelatedInstanceSelection{{
+		SystemID:       iamtypes.SystemIDCMDB,
+		ID:             iamtypes.BizProcessServiceTemplateSelection,
 		IgnoreAuthPath: true,
 	}}
 
-	relatedResource := []RelateResourceType{
+	relatedResource := []iam.RelateResourceType{
 		{
-			SystemID:           SystemIDCMDB,
-			ID:                 BizProcessServiceTemplate,
+			SystemID:           iamtypes.SystemIDCMDB,
+			ID:                 iamtypes.BizProcessServiceTemplate,
 			NameAlias:          "",
 			NameAliasEn:        "",
 			Scope:              nil,
@@ -426,51 +430,51 @@ func genBusinessServiceTemplateActions() []ResourceAction {
 		},
 	}
 
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateBusinessServiceTemplate,
-		Name:                 ActionIDNameMap[CreateBusinessServiceTemplate],
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateBusinessServiceTemplate,
+		Name:                 ActionIDNameMap[iamtypes.CreateBusinessServiceTemplate],
 		NameEn:               "Create Service Template",
-		Type:                 Create,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Create,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessServiceTemplate,
-		Name:                 ActionIDNameMap[EditBusinessServiceTemplate],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessServiceTemplate,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessServiceTemplate],
 		NameEn:               "Edit Service Template",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteBusinessServiceTemplate,
-		Name:                 ActionIDNameMap[DeleteBusinessServiceTemplate],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteBusinessServiceTemplate,
+		Name:                 ActionIDNameMap[iamtypes.DeleteBusinessServiceTemplate],
 		NameEn:               "Delete Service Template",
-		Type:                 Delete,
+		Type:                 iamtypes.Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genBusinessSetTemplateActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID:       SystemIDCMDB,
-		ID:             BizSetTemplateSelection,
+func genBusinessSetTemplateActions() []iam.ResourceAction {
+	selection := []iam.RelatedInstanceSelection{{
+		SystemID:       iamtypes.SystemIDCMDB,
+		ID:             iamtypes.BizSetTemplateSelection,
 		IgnoreAuthPath: true,
 	}}
 
-	relatedResource := []RelateResourceType{
+	relatedResource := []iam.RelateResourceType{
 		{
-			SystemID:           SystemIDCMDB,
-			ID:                 BizSetTemplate,
+			SystemID:           iamtypes.SystemIDCMDB,
+			ID:                 iamtypes.BizSetTemplate,
 			NameAlias:          "",
 			NameAliasEn:        "",
 			Scope:              nil,
@@ -478,224 +482,193 @@ func genBusinessSetTemplateActions() []ResourceAction {
 		},
 	}
 
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateBusinessSetTemplate,
-		Name:                 ActionIDNameMap[CreateBusinessSetTemplate],
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateBusinessSetTemplate,
+		Name:                 ActionIDNameMap[iamtypes.CreateBusinessSetTemplate],
 		NameEn:               "Create Set Template",
-		Type:                 Create,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Create,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessSetTemplate,
-		Name:                 ActionIDNameMap[EditBusinessSetTemplate],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessSetTemplate,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessSetTemplate],
 		NameEn:               "Edit Set Template",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteBusinessSetTemplate,
-		Name:                 ActionIDNameMap[DeleteBusinessSetTemplate],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteBusinessSetTemplate,
+		Name:                 ActionIDNameMap[iamtypes.DeleteBusinessSetTemplate],
 		NameEn:               "Delete Set Template",
-		Type:                 Delete,
+		Type:                 iamtypes.Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genBusinessTopologyActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
+func genBusinessTopologyActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
 
-	actions = append(actions, ResourceAction{
-		ID:                   CreateBusinessTopology,
-		Name:                 ActionIDNameMap[CreateBusinessTopology],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateBusinessTopology,
+		Name:                 ActionIDNameMap[iamtypes.CreateBusinessTopology],
 		NameEn:               "Create Business Topo",
-		Type:                 Create,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Create,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessTopology,
-		Name:                 ActionIDNameMap[EditBusinessTopology],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessTopology,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessTopology],
 		NameEn:               "Edit Business Topo",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteBusinessTopology,
-		Name:                 ActionIDNameMap[DeleteBusinessTopology],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteBusinessTopology,
+		Name:                 ActionIDNameMap[iamtypes.DeleteBusinessTopology],
 		NameEn:               "Delete Business Topo",
-		Type:                 Delete,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Delete,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genBusinessHostApplyActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
+func genBusinessHostApplyActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessHostApply,
-		Name:                 ActionIDNameMap[EditBusinessHostApply],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessHostApply,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessHostApply],
 		NameEn:               "Edit Host Apply",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{ViewBusinessResource},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBusinessResource},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genResourcePoolHostActions() []ResourceAction {
-	hostSelection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysHostInstanceSelection,
-	}}
+func genResourcePoolHostActions() []iam.ResourceAction {
+	hostSelection := []iam.RelatedInstanceSelection{{SystemID: iamtypes.SystemIDCMDB,
+		ID: iamtypes.SysHostInstanceSelection}}
 
-	relatedResource := []RelateResourceType{{
-		SystemID:    SystemIDCMDB,
-		ID:          Host,
-		NameAlias:   "",
-		NameAliasEn: "",
-		Scope:       nil,
+	relatedResource := []iam.RelateResourceType{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.Host, NameAlias: "",
+		NameAliasEn: "", Scope: nil,
 		// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
-		SelectionMode:      modeAll,
-		InstanceSelections: hostSelection,
+		SelectionMode: iamtypes.ModeAll, InstanceSelections: hostSelection,
 	}}
 
-	actions := make([]ResourceAction, 0)
+	actions := make([]iam.ResourceAction, 0)
 
-	actions = append(actions, ResourceAction{
-		ID:                   ViewResourcePoolHost,
-		Name:                 ActionIDNameMap[ViewResourcePoolHost],
-		NameEn:               "View Resource Pool Hosts",
-		Type:                 View,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
+	actions = append(actions, iam.ResourceAction{
+		ID:   iamtypes.ViewResourcePoolHost,
+		Name: ActionIDNameMap[iamtypes.ViewResourcePoolHost], NameEn: "View Resource Pool Hosts",
+		Type: iamtypes.View, RelatedResourceTypes: nil,
+		RelatedActions: nil, Version: 1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   CreateResourcePoolHost,
-		Name:                 ActionIDNameMap[CreateResourcePoolHost],
-		NameEn:               "Create Pool Hosts",
-		Type:                 Create,
-		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
-		RelatedActions:       nil,
-		Version:              1,
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.CreateResourcePoolHost, Name: ActionIDNameMap[iamtypes.CreateResourcePoolHost],
+		NameEn: "Create Pool Hosts", Type: iamtypes.Create,
+		RelatedResourceTypes: []iam.RelateResourceType{resourcePoolDirResource},
+		RelatedActions:       nil, Version: 1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditResourcePoolHost,
-		Name:                 ActionIDNameMap[EditResourcePoolHost],
-		NameEn:               "Edit Pool Hosts",
-		Type:                 Edit,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewResourcePoolHost},
-		Version:              1,
+	actions = append(actions, iam.ResourceAction{
+		ID:   iamtypes.EditResourcePoolHost,
+		Name: ActionIDNameMap[iamtypes.EditResourcePoolHost], NameEn: "Edit Pool Hosts",
+		Type: iamtypes.Edit, RelatedResourceTypes: relatedResource,
+		RelatedActions: []iamtypes.ActionID{iamtypes.ViewResourcePoolHost}, Version: 1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteResourcePoolHost,
-		Name:                 ActionIDNameMap[DeleteResourcePoolHost],
-		NameEn:               "Delete Pool Hosts",
-		Type:                 Delete,
-		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewResourcePoolHost},
-		Version:              1,
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.DeleteResourcePoolHost, Name: ActionIDNameMap[iamtypes.DeleteResourcePoolHost],
+		NameEn: "Delete Pool Hosts",
+		Type:   iamtypes.Delete, RelatedResourceTypes: relatedResource,
+		RelatedActions: []iamtypes.ActionID{iamtypes.ViewResourcePoolHost}, Version: 1,
 	})
 
-	relatedHostResource := []RelateResourceType{{
-		SystemID:    SystemIDCMDB,
-		ID:          SysHostRscPoolDirectory,
-		NameAlias:   "",
-		NameAliasEn: "",
-		Scope:       nil,
-		InstanceSelections: []RelatedInstanceSelection{{
-			SystemID: SystemIDCMDB,
-			ID:       SysHostRscPoolDirectorySelection,
-		}},
+	relatedHostResource := []iam.RelateResourceType{{
+		SystemID:  iamtypes.SystemIDCMDB,
+		ID:        iamtypes.SysHostRscPoolDirectory,
+		NameAlias: "", NameAliasEn: "", Scope: nil,
+		InstanceSelections: []iam.RelatedInstanceSelection{{SystemID: iamtypes.SystemIDCMDB,
+			ID: iamtypes.SysHostRscPoolDirectorySelection}},
 	}}
 
 	transferToBusinessRelatedResource := append(relatedHostResource, businessResource)
-	actions = append(actions, ResourceAction{
-		ID:                   ResourcePoolHostTransferToBusiness,
-		Name:                 ActionIDNameMap[ResourcePoolHostTransferToBusiness],
-		NameEn:               "Assigned Pool Hosts To Business",
-		Type:                 Edit,
+	actions = append(actions, iam.ResourceAction{
+		ID:     iamtypes.ResourcePoolHostTransferToBusiness,
+		Name:   ActionIDNameMap[iamtypes.ResourcePoolHostTransferToBusiness],
+		NameEn: "Assigned Pool Hosts To Business", Type: iamtypes.Edit,
 		RelatedResourceTypes: transferToBusinessRelatedResource,
-		RelatedActions:       []ActionID{ViewResourcePoolHost},
-		Version:              1,
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewResourcePoolHost}, Version: 1,
 	})
 
 	transferToDirectoryRelatedResource := append(relatedHostResource, resourcePoolDirResource)
-	actions = append(actions, ResourceAction{
-		ID:                   ResourcePoolHostTransferToDirectory,
-		Name:                 ActionIDNameMap[ResourcePoolHostTransferToDirectory],
-		NameEn:               "Assigned Pool Hosts To Directory",
-		Type:                 Edit,
+	actions = append(actions, iam.ResourceAction{
+		ID:     iamtypes.ResourcePoolHostTransferToDirectory,
+		Name:   ActionIDNameMap[iamtypes.ResourcePoolHostTransferToDirectory],
+		NameEn: "Assigned Pool Hosts To Directory", Type: iamtypes.Edit,
 		RelatedResourceTypes: transferToDirectoryRelatedResource,
-		RelatedActions:       []ActionID{ViewResourcePoolHost},
-		Version:              1,
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewResourcePoolHost}, Version: 1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:      ManageHostAgentID,
-		Name:    ActionIDNameMap[ManageHostAgentID],
-		NameEn:  "Manage Host AgentID",
-		Type:    Edit,
-		Version: 1,
-	})
+	actions = append(actions,
+		iam.ResourceAction{ID: iamtypes.ManageHostAgentID, Name: ActionIDNameMap[iamtypes.ManageHostAgentID],
+			NameEn: "Manage Host AgentID", Type: iamtypes.Edit, Version: 1})
 
 	return actions
 }
 
-func genResourcePoolDirectoryActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateResourcePoolDirectory,
-		Name:                 ActionIDNameMap[CreateResourcePoolDirectory],
+func genResourcePoolDirectoryActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateResourcePoolDirectory,
+		Name:                 ActionIDNameMap[iamtypes.CreateResourcePoolDirectory],
 		NameEn:               "Create Pool Directory",
-		Type:                 Create,
+		Type:                 iamtypes.Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditResourcePoolDirectory,
-		Name:                 ActionIDNameMap[EditResourcePoolDirectory],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditResourcePoolDirectory,
+		Name:                 ActionIDNameMap[iamtypes.EditResourcePoolDirectory],
 		NameEn:               "Edit Pool Directory",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{resourcePoolDirResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteResourcePoolDirectory,
-		Name:                 ActionIDNameMap[DeleteResourcePoolDirectory],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteResourcePoolDirectory,
+		Name:                 ActionIDNameMap[iamtypes.DeleteResourcePoolDirectory],
 		NameEn:               "Delete Pool Directory",
-		Type:                 Delete,
-		RelatedResourceTypes: []RelateResourceType{resourcePoolDirResource},
+		Type:                 iamtypes.Delete,
+		RelatedResourceTypes: []iam.RelateResourceType{resourcePoolDirResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -703,55 +676,55 @@ func genResourcePoolDirectoryActions() []ResourceAction {
 	return actions
 }
 
-func genBusinessActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateBusiness,
-		Name:                 ActionIDNameMap[CreateBusiness],
+func genBusinessActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateBusiness,
+		Name:                 ActionIDNameMap[iamtypes.CreateBusiness],
 		NameEn:               "Create Business",
-		Type:                 Create,
+		Type:                 iamtypes.Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusiness,
-		Name:                 ActionIDNameMap[EditBusiness],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusiness,
+		Name:                 ActionIDNameMap[iamtypes.EditBusiness],
 		NameEn:               "Edit Business",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{FindBusiness},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.FindBusiness},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   ArchiveBusiness,
-		Name:                 ActionIDNameMap[ArchiveBusiness],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.ArchiveBusiness,
+		Name:                 ActionIDNameMap[iamtypes.ArchiveBusiness],
 		NameEn:               "Archive Business",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
-		RelatedActions:       []ActionID{FindBusiness},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.FindBusiness},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   FindBusiness,
-		Name:                 ActionIDNameMap[FindBusiness],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.FindBusiness,
+		Name:                 ActionIDNameMap[iamtypes.FindBusiness],
 		NameEn:               "View Business",
-		Type:                 View,
-		RelatedResourceTypes: []RelateResourceType{businessResource},
+		Type:                 iamtypes.View,
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:     ViewBusinessResource,
-		Name:   ActionIDNameMap[ViewBusinessResource],
+	actions = append(actions, iam.ResourceAction{
+		ID:     iamtypes.ViewBusinessResource,
+		Name:   ActionIDNameMap[iamtypes.ViewBusinessResource],
 		NameEn: "View Business Resource",
-		Type:   View,
+		Type:   iamtypes.View,
 		// TODO add business collection resource
-		RelatedResourceTypes: []RelateResourceType{businessResource},
+		RelatedResourceTypes: []iam.RelateResourceType{businessResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -759,63 +732,63 @@ func genBusinessActions() []ResourceAction {
 	return actions
 }
 
-func genBizSetActions() []ResourceAction {
-	bizSetResource := RelateResourceType{
-		SystemID: SystemIDCMDB,
-		ID:       BizSet,
-		InstanceSelections: []RelatedInstanceSelection{{
-			SystemID: SystemIDCMDB,
-			ID:       BizSetSelection,
+func genBizSetActions() []iam.ResourceAction {
+	bizSetResource := iam.RelateResourceType{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.BizSet,
+		InstanceSelections: []iam.RelatedInstanceSelection{{
+			SystemID: iamtypes.SystemIDCMDB,
+			ID:       iamtypes.BizSetSelection,
 		}},
 	}
 
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateBizSet,
-		Name:                 ActionIDNameMap[CreateBizSet],
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateBizSet,
+		Name:                 ActionIDNameMap[iamtypes.CreateBizSet],
 		NameEn:               "Create Business Set",
-		Type:                 Create,
+		Type:                 iamtypes.Create,
 		RelatedResourceTypes: nil,
-		RelatedActions:       []ActionID{ViewBizSet},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBizSet},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditBizSet,
-		Name:                 ActionIDNameMap[EditBizSet],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBizSet,
+		Name:                 ActionIDNameMap[iamtypes.EditBizSet],
 		NameEn:               "Edit Business Set",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{bizSetResource},
-		RelatedActions:       []ActionID{ViewBizSet},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{bizSetResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBizSet},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteBizSet,
-		Name:                 ActionIDNameMap[DeleteBizSet],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteBizSet,
+		Name:                 ActionIDNameMap[iamtypes.DeleteBizSet],
 		NameEn:               "Delete Business Set",
-		Type:                 Delete,
-		RelatedResourceTypes: []RelateResourceType{bizSetResource},
-		RelatedActions:       []ActionID{ViewBizSet},
+		Type:                 iamtypes.Delete,
+		RelatedResourceTypes: []iam.RelateResourceType{bizSetResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewBizSet},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   ViewBizSet,
-		Name:                 ActionIDNameMap[ViewBizSet],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.ViewBizSet,
+		Name:                 ActionIDNameMap[iamtypes.ViewBizSet],
 		NameEn:               "View Business Set",
-		Type:                 View,
-		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		Type:                 iamtypes.View,
+		RelatedResourceTypes: []iam.RelateResourceType{bizSetResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   AccessBizSet,
-		Name:                 ActionIDNameMap[AccessBizSet],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.AccessBizSet,
+		Name:                 ActionIDNameMap[iamtypes.AccessBizSet],
 		NameEn:               "Access Business Set",
-		Type:                 View,
-		RelatedResourceTypes: []RelateResourceType{bizSetResource},
+		Type:                 iamtypes.View,
+		RelatedResourceTypes: []iam.RelateResourceType{bizSetResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
@@ -823,52 +796,52 @@ func genBizSetActions() []ResourceAction {
 	return actions
 }
 
-func genProjectActions() []ResourceAction {
-	projectResource := RelateResourceType{
-		SystemID: SystemIDCMDB,
-		ID:       Project,
-		InstanceSelections: []RelatedInstanceSelection{{
-			SystemID: SystemIDCMDB,
-			ID:       ProjectSelection,
+func genProjectActions() []iam.ResourceAction {
+	projectResource := iam.RelateResourceType{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.Project,
+		InstanceSelections: []iam.RelatedInstanceSelection{{
+			SystemID: iamtypes.SystemIDCMDB,
+			ID:       iamtypes.ProjectSelection,
 		}},
 	}
 
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateProject,
-		Name:                 ActionIDNameMap[CreateProject],
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateProject,
+		Name:                 ActionIDNameMap[iamtypes.CreateProject],
 		NameEn:               "Create Project",
-		Type:                 Create,
+		Type:                 iamtypes.Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditProject,
-		Name:                 ActionIDNameMap[EditProject],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditProject,
+		Name:                 ActionIDNameMap[iamtypes.EditProject],
 		NameEn:               "Edit Project",
-		Type:                 Edit,
-		RelatedResourceTypes: []RelateResourceType{projectResource},
-		RelatedActions:       []ActionID{ViewProject},
+		Type:                 iamtypes.Edit,
+		RelatedResourceTypes: []iam.RelateResourceType{projectResource},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewProject},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteProject,
-		Name:                 ActionIDNameMap[DeleteProject],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteProject,
+		Name:                 ActionIDNameMap[iamtypes.DeleteProject],
 		NameEn:               "Delete Project",
-		Type:                 Delete,
-		RelatedResourceTypes: []RelateResourceType{projectResource},
+		Type:                 iamtypes.Delete,
+		RelatedResourceTypes: []iam.RelateResourceType{projectResource},
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   ViewProject,
-		Name:                 ActionIDNameMap[ViewProject],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.ViewProject,
+		Name:                 ActionIDNameMap[iamtypes.ViewProject],
 		NameEn:               "View Project",
-		Type:                 View,
+		Type:                 iamtypes.View,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
@@ -877,16 +850,16 @@ func genProjectActions() []ResourceAction {
 	return actions
 }
 
-func genCloudAreaActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysCloudAreaSelection,
+func genCloudAreaActions() []iam.ResourceAction {
+	selection := []iam.RelatedInstanceSelection{{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.SysCloudAreaSelection,
 	}}
 
-	relatedResource := []RelateResourceType{
+	relatedResource := []iam.RelateResourceType{
 		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysCloudArea,
+			SystemID:           iamtypes.SystemIDCMDB,
+			ID:                 iamtypes.SysCloudArea,
 			NameAlias:          "",
 			NameAliasEn:        "",
 			Scope:              nil,
@@ -894,60 +867,60 @@ func genCloudAreaActions() []ResourceAction {
 		},
 	}
 
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   ViewCloudArea,
-		Name:                 ActionIDNameMap[ViewCloudArea],
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.ViewCloudArea,
+		Name:                 ActionIDNameMap[iamtypes.ViewCloudArea],
 		NameEn:               "View Cloud Area",
-		Type:                 View,
+		Type:                 iamtypes.View,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   CreateCloudArea,
-		Name:                 ActionIDNameMap[CreateCloudArea],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateCloudArea,
+		Name:                 ActionIDNameMap[iamtypes.CreateCloudArea],
 		NameEn:               "Create Cloud Area",
-		Type:                 Create,
+		Type:                 iamtypes.Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditCloudArea,
-		Name:                 ActionIDNameMap[EditCloudArea],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditCloudArea,
+		Name:                 ActionIDNameMap[iamtypes.EditCloudArea],
 		NameEn:               "Edit Cloud Area",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewCloudArea},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewCloudArea},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteCloudArea,
-		Name:                 ActionIDNameMap[DeleteCloudArea],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteCloudArea,
+		Name:                 ActionIDNameMap[iamtypes.DeleteCloudArea],
 		NameEn:               "Delete Cloud Area",
-		Type:                 Delete,
+		Type:                 iamtypes.Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewCloudArea},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewCloudArea},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genModelActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysModelSelection,
+func genModelActions() []iam.ResourceAction {
+	selection := []iam.RelatedInstanceSelection{{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.SysModelSelection,
 	}}
 
-	relatedResource := []RelateResourceType{
+	relatedResource := []iam.RelateResourceType{
 		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysModel,
+			SystemID:           iamtypes.SystemIDCMDB,
+			ID:                 iamtypes.SysModel,
 			NameAlias:          "",
 			NameAliasEn:        "",
 			Scope:              nil,
@@ -955,32 +928,32 @@ func genModelActions() []ResourceAction {
 		},
 	}
 
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   ViewSysModel,
-		Name:                 ActionIDNameMap[ViewSysModel],
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.ViewSysModel,
+		Name:                 ActionIDNameMap[iamtypes.ViewSysModel],
 		NameEn:               "View Model",
-		Type:                 View,
+		Type:                 iamtypes.View,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:     CreateSysModel,
-		Name:   ActionIDNameMap[CreateSysModel],
+	actions = append(actions, iam.ResourceAction{
+		ID:     iamtypes.CreateSysModel,
+		Name:   ActionIDNameMap[iamtypes.CreateSysModel],
 		NameEn: "Create Model",
-		Type:   Create,
-		RelatedResourceTypes: []RelateResourceType{
+		Type:   iamtypes.Create,
+		RelatedResourceTypes: []iam.RelateResourceType{
 			{
-				SystemID:    SystemIDCMDB,
-				ID:          SysModelGroup,
+				SystemID:    iamtypes.SystemIDCMDB,
+				ID:          iamtypes.SysModelGroup,
 				NameAlias:   "",
 				NameAliasEn: "",
 				Scope:       nil,
-				InstanceSelections: []RelatedInstanceSelection{{
-					SystemID: SystemIDCMDB,
-					ID:       SysModelGroupSelection,
+				InstanceSelections: []iam.RelatedInstanceSelection{{
+					SystemID: iamtypes.SystemIDCMDB,
+					ID:       iamtypes.SysModelGroupSelection,
 				}},
 			},
 		},
@@ -988,39 +961,39 @@ func genModelActions() []ResourceAction {
 		Version:        1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditSysModel,
-		Name:                 ActionIDNameMap[EditSysModel],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditSysModel,
+		Name:                 ActionIDNameMap[iamtypes.EditSysModel],
 		NameEn:               "Edit Model",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewSysModel},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewSysModel},
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteSysModel,
-		Name:                 ActionIDNameMap[DeleteSysModel],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteSysModel,
+		Name:                 ActionIDNameMap[iamtypes.DeleteSysModel],
 		NameEn:               "Delete Model",
-		Type:                 Delete,
+		Type:                 iamtypes.Delete,
 		RelatedResourceTypes: relatedResource,
-		RelatedActions:       []ActionID{ViewSysModel},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewSysModel},
 		Version:              1,
 	})
 
 	return actions
 }
 
-func genAssociationTypeActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysAssociationTypeSelection,
+func genAssociationTypeActions() []iam.ResourceAction {
+	selection := []iam.RelatedInstanceSelection{{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.SysAssociationTypeSelection,
 	}}
 
-	relatedResource := []RelateResourceType{
+	relatedResource := []iam.RelateResourceType{
 		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysAssociationType,
+			SystemID:           iamtypes.SystemIDCMDB,
+			ID:                 iamtypes.SysAssociationType,
 			NameAlias:          "",
 			NameAliasEn:        "",
 			Scope:              nil,
@@ -1028,32 +1001,32 @@ func genAssociationTypeActions() []ResourceAction {
 		},
 	}
 
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateAssociationType,
-		Name:                 ActionIDNameMap[CreateAssociationType],
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateAssociationType,
+		Name:                 ActionIDNameMap[iamtypes.CreateAssociationType],
 		NameEn:               "Create Association Type",
-		Type:                 Create,
+		Type:                 iamtypes.Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditAssociationType,
-		Name:                 ActionIDNameMap[EditAssociationType],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditAssociationType,
+		Name:                 ActionIDNameMap[iamtypes.EditAssociationType],
 		NameEn:               "Edit Association Type",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteAssociationType,
-		Name:                 ActionIDNameMap[DeleteAssociationType],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteAssociationType,
+		Name:                 ActionIDNameMap[iamtypes.DeleteAssociationType],
 		NameEn:               "Delete Association Type",
-		Type:                 Delete,
+		Type:                 iamtypes.Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
 		Version:              1,
@@ -1062,16 +1035,16 @@ func genAssociationTypeActions() []ResourceAction {
 	return actions
 }
 
-func genModelGroupActions() []ResourceAction {
-	selection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysModelGroupSelection,
+func genModelGroupActions() []iam.ResourceAction {
+	selection := []iam.RelatedInstanceSelection{{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.SysModelGroupSelection,
 	}}
 
-	relatedResource := []RelateResourceType{
+	relatedResource := []iam.RelateResourceType{
 		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysModelGroup,
+			SystemID:           iamtypes.SystemIDCMDB,
+			ID:                 iamtypes.SysModelGroup,
 			NameAlias:          "",
 			NameAliasEn:        "",
 			Scope:              nil,
@@ -1079,32 +1052,32 @@ func genModelGroupActions() []ResourceAction {
 		},
 	}
 
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   CreateModelGroup,
-		Name:                 ActionIDNameMap[CreateModelGroup],
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.CreateModelGroup,
+		Name:                 ActionIDNameMap[iamtypes.CreateModelGroup],
 		NameEn:               "Create Model Group",
-		Type:                 Create,
+		Type:                 iamtypes.Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditModelGroup,
-		Name:                 ActionIDNameMap[EditModelGroup],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditModelGroup,
+		Name:                 ActionIDNameMap[iamtypes.EditModelGroup],
 		NameEn:               "Edit Model Group",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
 		Version:              1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   DeleteModelGroup,
-		Name:                 ActionIDNameMap[DeleteModelGroup],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.DeleteModelGroup,
+		Name:                 ActionIDNameMap[iamtypes.DeleteModelGroup],
 		NameEn:               "Delete Model Group",
-		Type:                 Delete,
+		Type:                 iamtypes.Delete,
 		RelatedResourceTypes: relatedResource,
 		RelatedActions:       nil,
 		Version:              1,
@@ -1113,49 +1086,49 @@ func genModelGroupActions() []ResourceAction {
 	return actions
 }
 
-func genBusinessLayerActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   EditBusinessLayer,
-		Name:                 ActionIDNameMap[EditBusinessLayer],
+func genBusinessLayerActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditBusinessLayer,
+		Name:                 ActionIDNameMap[iamtypes.EditBusinessLayer],
 		NameEn:               "Edit Business Level",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: nil,
-		RelatedActions:       []ActionID{ViewModelTopo},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewModelTopo},
 		Version:              1,
 	})
 	return actions
 }
 
-func genModelTopologyViewActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:      ViewModelTopo,
-		Name:    ActionIDNameMap[ViewModelTopo],
+func genModelTopologyViewActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:      iamtypes.ViewModelTopo,
+		Name:    ActionIDNameMap[iamtypes.ViewModelTopo],
 		NameEn:  "View Model Topo",
-		Type:    View,
+		Type:    iamtypes.View,
 		Version: 1,
 	})
 
-	actions = append(actions, ResourceAction{
-		ID:                   EditModelTopologyView,
-		Name:                 ActionIDNameMap[EditModelTopologyView],
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.EditModelTopologyView,
+		Name:                 ActionIDNameMap[iamtypes.EditModelTopologyView],
 		NameEn:               "Edit Model Topo View",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: nil,
-		RelatedActions:       []ActionID{ViewModelTopo},
+		RelatedActions:       []iamtypes.ActionID{iamtypes.ViewModelTopo},
 		Version:              1,
 	})
 	return actions
 }
 
-func genAuditLogActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   FindAuditLog,
-		Name:                 ActionIDNameMap[FindAuditLog],
+func genAuditLogActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.FindAuditLog,
+		Name:                 ActionIDNameMap[iamtypes.FindAuditLog],
 		NameEn:               "View Operation Audit",
-		Type:                 View,
+		Type:                 iamtypes.View,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
@@ -1163,225 +1136,140 @@ func genAuditLogActions() []ResourceAction {
 	return actions
 }
 
-func genEventWatchActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   WatchHostEvent,
-		Name:                 ActionIDNameMap[WatchHostEvent],
-		NameEn:               "Host Event Listen",
-		Type:                 View,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
+func genEventWatchActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{ID: iamtypes.WatchHostEvent,
+		Name: ActionIDNameMap[iamtypes.WatchHostEvent], NameEn: "Host Event Listen",
+		Type: iamtypes.View, RelatedResourceTypes: nil, RelatedActions: nil, Version: 1})
 
-	actions = append(actions, ResourceAction{
-		ID:                   WatchHostRelationEvent,
-		Name:                 ActionIDNameMap[WatchHostRelationEvent],
-		NameEn:               "Host Relation Event Listen",
-		Type:                 View,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
+	actions = append(actions, iam.ResourceAction{ID: iamtypes.WatchHostRelationEvent,
+		Name:   ActionIDNameMap[iamtypes.WatchHostRelationEvent],
+		NameEn: "Host Relation Event Listen", Type: iamtypes.View,
+		RelatedResourceTypes: nil, RelatedActions: nil, Version: 1})
 
-	actions = append(actions, ResourceAction{
-		ID:                   WatchBizEvent,
-		Name:                 ActionIDNameMap[WatchBizEvent],
-		NameEn:               "Business Event Listen",
-		Type:                 View,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
+	actions = append(actions, iam.ResourceAction{ID: iamtypes.WatchBizEvent,
+		Name: ActionIDNameMap[iamtypes.WatchBizEvent], NameEn: "Business Event Listen",
+		Type: iamtypes.View, RelatedResourceTypes: nil, RelatedActions: nil, Version: 1})
 
-	actions = append(actions, ResourceAction{
-		ID:                   WatchSetEvent,
-		Name:                 ActionIDNameMap[WatchSetEvent],
-		NameEn:               "Set Event Listen",
-		Type:                 View,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.WatchSetEvent, Name: ActionIDNameMap[iamtypes.WatchSetEvent],
+		NameEn: "Set Event Listen", Type: iamtypes.View, RelatedResourceTypes: nil,
+		RelatedActions: nil, Version: 1})
 
-	actions = append(actions, ResourceAction{
-		ID:                   WatchModuleEvent,
-		Name:                 ActionIDNameMap[WatchModuleEvent],
-		NameEn:               "Module Event Listen",
-		Type:                 View,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.WatchModuleEvent, Name: ActionIDNameMap[iamtypes.WatchModuleEvent],
+		NameEn: "Module Event Listen", Type: iamtypes.View,
+		RelatedResourceTypes: nil, RelatedActions: nil, Version: 1})
 
-	actions = append(actions, ResourceAction{
-		ID:                   WatchProcessEvent,
-		Name:                 ActionIDNameMap[WatchProcessEvent],
-		NameEn:               "Process Event Listen",
-		Type:                 View,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	})
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.WatchProcessEvent, Name: ActionIDNameMap[iamtypes.WatchProcessEvent],
+		NameEn: "Process Event Listen", Type: iamtypes.View,
+		RelatedResourceTypes: nil, RelatedActions: nil, Version: 1})
 
-	actions = append(actions, ResourceAction{
-		ID:      WatchBizSetEvent,
-		Name:    ActionIDNameMap[WatchBizSetEvent],
-		NameEn:  "Business Set Event Listen",
-		Type:    View,
-		Version: 1,
-	})
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.WatchBizSetEvent, Name: ActionIDNameMap[iamtypes.WatchBizSetEvent],
+		NameEn: "Business Set Event Listen", Type: iamtypes.View, Version: 1})
 
-	actions = append(actions, ResourceAction{
-		ID:      WatchPlatEvent,
-		Name:    ActionIDNameMap[WatchPlatEvent],
-		NameEn:  "Cloud Area Event Listen",
-		Type:    View,
-		Version: 1,
-	})
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.WatchPlatEvent, Name: ActionIDNameMap[iamtypes.WatchPlatEvent],
+		NameEn: "Cloud Area Event Listen", Type: iamtypes.View, Version: 1})
 
-	actions = append(actions, ResourceAction{
-		ID:      WatchProjectEvent,
-		Name:    ActionIDNameMap[WatchProjectEvent],
-		NameEn:  "Project Event Listen",
-		Type:    View,
-		Version: 1,
-	})
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.WatchProjectEvent, Name: ActionIDNameMap[iamtypes.WatchProjectEvent],
+		NameEn: "Project Event Listen", Type: iamtypes.View, Version: 1})
 
-	modelSelection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       SysModelEventSelection,
-	}}
+	modelSelection := []iam.RelatedInstanceSelection{{SystemID: iamtypes.SystemIDCMDB,
+		ID: iamtypes.SysModelEventSelection}}
 
-	modelResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 SysModelEvent,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: modelSelection,
-		},
+	modelResource := []iam.RelateResourceType{
+		{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.SysModelEvent, NameAlias: "",
+			NameAliasEn: "", Scope: nil, InstanceSelections: modelSelection}}
+
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.WatchCommonInstanceEvent, Name: ActionIDNameMap[iamtypes.WatchCommonInstanceEvent],
+		NameEn: "Common Model Instance Event Listen", Type: iamtypes.View,
+		RelatedResourceTypes: modelResource, RelatedActions: nil, Version: 1})
+
+	mainlineModelSelection := []iam.RelatedInstanceSelection{{SystemID: iamtypes.SystemIDCMDB,
+		ID: iamtypes.MainlineModelEventSelection}}
+
+	mainlineModelResource := []iam.RelateResourceType{
+		{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.MainlineModelEvent, NameAlias: "",
+			NameAliasEn: "", Scope: nil, InstanceSelections: mainlineModelSelection},
 	}
 
-	actions = append(actions, ResourceAction{
-		ID:                   WatchCommonInstanceEvent,
-		Name:                 ActionIDNameMap[WatchCommonInstanceEvent],
-		NameEn:               "Common Model Instance Event Listen",
-		Type:                 View,
-		RelatedResourceTypes: modelResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.WatchMainlineInstanceEvent, Name: ActionIDNameMap[iamtypes.WatchMainlineInstanceEvent],
+		NameEn: "Custom Topo Layer Event Listen", Type: iamtypes.View,
+		RelatedResourceTypes: mainlineModelResource, RelatedActions: nil, Version: 1})
 
-	mainlineModelSelection := []RelatedInstanceSelection{{
-		SystemID: SystemIDCMDB,
-		ID:       MainlineModelEventSelection,
-	}}
-
-	mainlineModelResource := []RelateResourceType{
-		{
-			SystemID:           SystemIDCMDB,
-			ID:                 MainlineModelEvent,
-			NameAlias:          "",
-			NameAliasEn:        "",
-			Scope:              nil,
-			InstanceSelections: mainlineModelSelection,
-		},
-	}
-
-	actions = append(actions, ResourceAction{
-		ID:                   WatchMainlineInstanceEvent,
-		Name:                 ActionIDNameMap[WatchMainlineInstanceEvent],
-		NameEn:               "Custom Topo Layer Event Listen",
-		Type:                 View,
-		RelatedResourceTypes: mainlineModelResource,
-		RelatedActions:       nil,
-		Version:              1,
-	})
-
-	actions = append(actions, ResourceAction{
-		ID:     WatchInstAsstEvent,
-		Name:   ActionIDNameMap[WatchInstAsstEvent],
-		NameEn: "Instance Association Event Listen",
-		Type:   View,
-		RelatedResourceTypes: []RelateResourceType{
-			{
-				SystemID:    SystemIDCMDB,
-				ID:          InstAsstEvent,
-				NameAlias:   "",
-				NameAliasEn: "",
-				Scope:       nil,
-				InstanceSelections: []RelatedInstanceSelection{{
-					SystemID: SystemIDCMDB,
-					ID:       InstAsstEventSelection,
-				}},
-			},
-		},
-		RelatedActions: nil,
-		Version:        1,
-	})
+	actions = append(actions, iam.ResourceAction{
+		ID: iamtypes.WatchInstAsstEvent, Name: ActionIDNameMap[iamtypes.WatchInstAsstEvent],
+		NameEn: "Instance Association Event Listen", Type: iamtypes.View,
+		RelatedResourceTypes: []iam.RelateResourceType{
+			{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.InstAsstEvent, NameAlias: "", NameAliasEn: "", Scope: nil,
+				InstanceSelections: []iam.RelatedInstanceSelection{{SystemID: iamtypes.SystemIDCMDB,
+					ID: iamtypes.InstAsstEventSelection}}}}, RelatedActions: nil, Version: 1})
 	return actions
 }
 
-func genKubeEventWatchActions() []ResourceAction {
-	return []ResourceAction{
+func genKubeEventWatchActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
-			ID:      WatchKubeClusterEvent,
-			Name:    ActionIDNameMap[WatchKubeClusterEvent],
+			ID:      iamtypes.WatchKubeClusterEvent,
+			Name:    ActionIDNameMap[iamtypes.WatchKubeClusterEvent],
 			NameEn:  "Kube Cluster Event Listen",
-			Type:    View,
+			Type:    iamtypes.View,
 			Version: 1,
 		},
 		{
-			ID:      WatchKubeNodeEvent,
-			Name:    ActionIDNameMap[WatchKubeNodeEvent],
+			ID:      iamtypes.WatchKubeNodeEvent,
+			Name:    ActionIDNameMap[iamtypes.WatchKubeNodeEvent],
 			NameEn:  "Kube Node Event Listen",
-			Type:    View,
+			Type:    iamtypes.View,
 			Version: 1,
 		},
 		{
-			ID:      WatchKubeNamespaceEvent,
-			Name:    ActionIDNameMap[WatchKubeNamespaceEvent],
+			ID:      iamtypes.WatchKubeNamespaceEvent,
+			Name:    ActionIDNameMap[iamtypes.WatchKubeNamespaceEvent],
 			NameEn:  "Kube Namespace Event Listen",
-			Type:    View,
+			Type:    iamtypes.View,
 			Version: 1,
 		},
 		{
-			ID:     WatchKubeWorkloadEvent,
-			Name:   ActionIDNameMap[WatchKubeWorkloadEvent],
+			ID:     iamtypes.WatchKubeWorkloadEvent,
+			Name:   ActionIDNameMap[iamtypes.WatchKubeWorkloadEvent],
 			NameEn: "Kube Workload Event Listen",
-			Type:   View,
-			RelatedResourceTypes: []RelateResourceType{
+			Type:   iamtypes.View,
+			RelatedResourceTypes: []iam.RelateResourceType{
 				{
-					SystemID: SystemIDCMDB,
-					ID:       KubeWorkloadEvent,
-					InstanceSelections: []RelatedInstanceSelection{{
-						SystemID: SystemIDCMDB,
-						ID:       KubeWorkloadEventSelection,
+					SystemID: iamtypes.SystemIDCMDB,
+					ID:       iamtypes.KubeWorkloadEvent,
+					InstanceSelections: []iam.RelatedInstanceSelection{{
+						SystemID: iamtypes.SystemIDCMDB,
+						ID:       iamtypes.KubeWorkloadEventSelection,
 					}},
 				},
 			},
 			Version: 1,
 		},
 		{
-			ID:      WatchKubePodEvent,
-			Name:    ActionIDNameMap[WatchKubePodEvent],
+			ID:      iamtypes.WatchKubePodEvent,
+			Name:    ActionIDNameMap[iamtypes.WatchKubePodEvent],
 			NameEn:  "Kube Pod Event Listen",
-			Type:    View,
+			Type:    iamtypes.View,
 			Version: 1,
 		},
 	}
 }
 
-func genConfigAdminActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:                   GlobalSettings,
-		Name:                 ActionIDNameMap[GlobalSettings],
+func genConfigAdminActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:                   iamtypes.GlobalSettings,
+		Name:                 ActionIDNameMap[iamtypes.GlobalSettings],
 		NameEn:               "Global Settings",
-		Type:                 Edit,
+		Type:                 iamtypes.Edit,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
@@ -1389,8 +1277,8 @@ func genConfigAdminActions() []ResourceAction {
 	return actions
 }
 
-func genContainerManagementActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
+func genContainerManagementActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
 
 	actions = append(actions, genContainerClusterActions()...)
 	actions = append(actions, genContainerNodeActions()...)
@@ -1401,264 +1289,264 @@ func genContainerManagementActions() []ResourceAction {
 	return actions
 }
 
-func genContainerClusterActions() []ResourceAction {
-	return []ResourceAction{
+func genContainerClusterActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
-			ID:      CreateContainerCluster,
-			Name:    ActionIDNameMap[CreateContainerCluster],
+			ID:      iamtypes.CreateContainerCluster,
+			Name:    ActionIDNameMap[iamtypes.CreateContainerCluster],
 			NameEn:  "Create Container Cluster",
-			Type:    Create,
+			Type:    iamtypes.Create,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      EditContainerCluster,
-			Name:    ActionIDNameMap[EditContainerCluster],
+			ID:      iamtypes.EditContainerCluster,
+			Name:    ActionIDNameMap[iamtypes.EditContainerCluster],
 			NameEn:  "Edit Container Cluster",
-			Type:    Edit,
+			Type:    iamtypes.Edit,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      DeleteContainerCluster,
-			Name:    ActionIDNameMap[DeleteContainerCluster],
+			ID:      iamtypes.DeleteContainerCluster,
+			Name:    ActionIDNameMap[iamtypes.DeleteContainerCluster],
 			NameEn:  "Delete Container Cluster",
-			Type:    Delete,
+			Type:    iamtypes.Delete,
 			Version: 1,
 			Hidden:  true,
 		},
 	}
 }
 
-func genContainerNodeActions() []ResourceAction {
-	return []ResourceAction{
+func genContainerNodeActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
-			ID:      CreateContainerNode,
-			Name:    ActionIDNameMap[CreateContainerNode],
+			ID:      iamtypes.CreateContainerNode,
+			Name:    ActionIDNameMap[iamtypes.CreateContainerNode],
 			NameEn:  "Create Container Node",
-			Type:    Create,
+			Type:    iamtypes.Create,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      EditContainerNode,
-			Name:    ActionIDNameMap[EditContainerNode],
+			ID:      iamtypes.EditContainerNode,
+			Name:    ActionIDNameMap[iamtypes.EditContainerNode],
 			NameEn:  "Edit Container Node",
-			Type:    Edit,
+			Type:    iamtypes.Edit,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      DeleteContainerNode,
-			Name:    ActionIDNameMap[DeleteContainerNode],
+			ID:      iamtypes.DeleteContainerNode,
+			Name:    ActionIDNameMap[iamtypes.DeleteContainerNode],
 			NameEn:  "Delete Container Node",
-			Type:    Delete,
+			Type:    iamtypes.Delete,
 			Version: 1,
 			Hidden:  true,
 		},
 	}
 }
 
-func genContainerNamespaceActions() []ResourceAction {
-	return []ResourceAction{
+func genContainerNamespaceActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
-			ID:      CreateContainerNamespace,
-			Name:    ActionIDNameMap[CreateContainerNamespace],
+			ID:      iamtypes.CreateContainerNamespace,
+			Name:    ActionIDNameMap[iamtypes.CreateContainerNamespace],
 			NameEn:  "Create Container Namespace",
-			Type:    Create,
+			Type:    iamtypes.Create,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      EditContainerNamespace,
-			Name:    ActionIDNameMap[EditContainerNamespace],
+			ID:      iamtypes.EditContainerNamespace,
+			Name:    ActionIDNameMap[iamtypes.EditContainerNamespace],
 			NameEn:  "Edit Container Namespace",
-			Type:    Edit,
+			Type:    iamtypes.Edit,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      DeleteContainerNamespace,
-			Name:    ActionIDNameMap[DeleteContainerNamespace],
+			ID:      iamtypes.DeleteContainerNamespace,
+			Name:    ActionIDNameMap[iamtypes.DeleteContainerNamespace],
 			NameEn:  "Delete Container Namespace",
-			Type:    Delete,
+			Type:    iamtypes.Delete,
 			Version: 1,
 			Hidden:  true,
 		},
 	}
 }
 
-func genContainerWorkloadActions() []ResourceAction {
-	return []ResourceAction{
+func genContainerWorkloadActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
-			ID:      CreateContainerWorkload,
-			Name:    ActionIDNameMap[CreateContainerWorkload],
+			ID:      iamtypes.CreateContainerWorkload,
+			Name:    ActionIDNameMap[iamtypes.CreateContainerWorkload],
 			NameEn:  "Create Container Workload",
-			Type:    Create,
+			Type:    iamtypes.Create,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      EditContainerWorkload,
-			Name:    ActionIDNameMap[EditContainerWorkload],
+			ID:      iamtypes.EditContainerWorkload,
+			Name:    ActionIDNameMap[iamtypes.EditContainerWorkload],
 			NameEn:  "Edit Container Workload",
-			Type:    Edit,
+			Type:    iamtypes.Edit,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      DeleteContainerWorkload,
-			Name:    ActionIDNameMap[DeleteContainerWorkload],
+			ID:      iamtypes.DeleteContainerWorkload,
+			Name:    ActionIDNameMap[iamtypes.DeleteContainerWorkload],
 			NameEn:  "Delete Container Workload",
-			Type:    Delete,
+			Type:    iamtypes.Delete,
 			Version: 1,
 			Hidden:  true,
 		},
 	}
 }
 
-func genContainerPodActions() []ResourceAction {
-	return []ResourceAction{
+func genContainerPodActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
-			ID:      CreateContainerPod,
-			Name:    ActionIDNameMap[CreateContainerPod],
+			ID:      iamtypes.CreateContainerPod,
+			Name:    ActionIDNameMap[iamtypes.CreateContainerPod],
 			NameEn:  "Create Container Pod",
-			Type:    Create,
+			Type:    iamtypes.Create,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      DeleteContainerPod,
-			Name:    ActionIDNameMap[DeleteContainerPod],
+			ID:      iamtypes.DeleteContainerPod,
+			Name:    ActionIDNameMap[iamtypes.DeleteContainerPod],
 			NameEn:  "Delete Container Pod",
-			Type:    Delete,
+			Type:    iamtypes.Delete,
 			Version: 1,
 			Hidden:  true,
 		},
 	}
 }
 
-func genFulltextSearchActions() []ResourceAction {
-	actions := make([]ResourceAction, 0)
-	actions = append(actions, ResourceAction{
-		ID:      UseFulltextSearch,
-		Name:    ActionIDNameMap[UseFulltextSearch],
+func genFulltextSearchActions() []iam.ResourceAction {
+	actions := make([]iam.ResourceAction, 0)
+	actions = append(actions, iam.ResourceAction{
+		ID:      iamtypes.UseFulltextSearch,
+		Name:    ActionIDNameMap[iamtypes.UseFulltextSearch],
 		NameEn:  "Fulltext Search",
-		Type:    View,
+		Type:    iamtypes.View,
 		Version: 1,
 	})
 	return actions
 }
 
-func genFieldGroupingTemplateActions() []ResourceAction {
-	templateResource := RelateResourceType{
-		SystemID: SystemIDCMDB,
-		ID:       FieldGroupingTemplate,
-		InstanceSelections: []RelatedInstanceSelection{{
-			SystemID: SystemIDCMDB,
-			ID:       FieldGroupingTemplateSelection,
+func genFieldGroupingTemplateActions() []iam.ResourceAction {
+	templateResource := iam.RelateResourceType{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.FieldGroupingTemplate,
+		InstanceSelections: []iam.RelatedInstanceSelection{{
+			SystemID: iamtypes.SystemIDCMDB,
+			ID:       iamtypes.FieldGroupingTemplateSelection,
 		}},
 	}
 
-	return []ResourceAction{
+	return []iam.ResourceAction{
 		{
-			ID:      CreateFieldGroupingTemplate,
-			Name:    ActionIDNameMap[CreateFieldGroupingTemplate],
+			ID:      iamtypes.CreateFieldGroupingTemplate,
+			Name:    ActionIDNameMap[iamtypes.CreateFieldGroupingTemplate],
 			NameEn:  "Create Field Grouping Template",
-			Type:    Create,
+			Type:    iamtypes.Create,
 			Version: 1,
 		},
 		{
-			ID:                   ViewFieldGroupingTemplate,
-			Name:                 ActionIDNameMap[ViewFieldGroupingTemplate],
+			ID:                   iamtypes.ViewFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[iamtypes.ViewFieldGroupingTemplate],
 			NameEn:               "View Field Grouping Template",
-			Type:                 View,
-			RelatedResourceTypes: []RelateResourceType{templateResource},
+			Type:                 iamtypes.View,
+			RelatedResourceTypes: []iam.RelateResourceType{templateResource},
 			Version:              1,
 		},
 		{
-			ID:                   EditFieldGroupingTemplate,
-			Name:                 ActionIDNameMap[EditFieldGroupingTemplate],
+			ID:                   iamtypes.EditFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[iamtypes.EditFieldGroupingTemplate],
 			NameEn:               "Edit Field Grouping Template",
-			Type:                 Edit,
-			RelatedResourceTypes: []RelateResourceType{templateResource},
-			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
+			Type:                 iamtypes.Edit,
+			RelatedResourceTypes: []iam.RelateResourceType{templateResource},
+			RelatedActions:       []iamtypes.ActionID{iamtypes.ViewFieldGroupingTemplate},
 			Version:              1,
 		},
 		{
-			ID:                   DeleteFieldGroupingTemplate,
-			Name:                 ActionIDNameMap[DeleteFieldGroupingTemplate],
+			ID:                   iamtypes.DeleteFieldGroupingTemplate,
+			Name:                 ActionIDNameMap[iamtypes.DeleteFieldGroupingTemplate],
 			NameEn:               "Delete Field Grouping Template",
-			Type:                 Delete,
-			RelatedResourceTypes: []RelateResourceType{templateResource},
-			RelatedActions:       []ActionID{ViewFieldGroupingTemplate},
+			Type:                 iamtypes.Delete,
+			RelatedResourceTypes: []iam.RelateResourceType{templateResource},
+			RelatedActions:       []iamtypes.ActionID{iamtypes.ViewFieldGroupingTemplate},
 			Version:              1,
 		},
 	}
 }
 
-func genIDRuleActions() []ResourceAction {
-	return []ResourceAction{
+func genIDRuleActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
-			ID:      EditIDRuleIncrID,
-			Name:    ActionIDNameMap[EditIDRuleIncrID],
+			ID:      iamtypes.EditIDRuleIncrID,
+			Name:    ActionIDNameMap[iamtypes.EditIDRuleIncrID],
 			NameEn:  "Edit ID Rule",
-			Type:    Edit,
+			Type:    iamtypes.Edit,
 			Version: 1,
 		},
 	}
 }
 
-func genFullSyncCondActions() []ResourceAction {
-	return []ResourceAction{
+func genFullSyncCondActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
-			ID:      CreateFullSyncCond,
-			Name:    ActionIDNameMap[CreateFullSyncCond],
+			ID:      iamtypes.CreateFullSyncCond,
+			Name:    ActionIDNameMap[iamtypes.CreateFullSyncCond],
 			NameEn:  "Create Full Sync Cond",
-			Type:    Create,
+			Type:    iamtypes.Create,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      EditFullSyncCond,
-			Name:    ActionIDNameMap[EditFullSyncCond],
+			ID:      iamtypes.EditFullSyncCond,
+			Name:    ActionIDNameMap[iamtypes.EditFullSyncCond],
 			NameEn:  "Edit Full Sync Cond",
-			Type:    Edit,
+			Type:    iamtypes.Edit,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      DeleteFullSyncCond,
-			Name:    ActionIDNameMap[DeleteFullSyncCond],
+			ID:      iamtypes.DeleteFullSyncCond,
+			Name:    ActionIDNameMap[iamtypes.DeleteFullSyncCond],
 			NameEn:  "Delete Full Sync Cond",
-			Type:    Delete,
+			Type:    iamtypes.Delete,
 			Version: 1,
 			Hidden:  true,
 		},
 		{
-			ID:      ViewFullSyncCond,
-			Name:    ActionIDNameMap[ViewFullSyncCond],
+			ID:      iamtypes.ViewFullSyncCond,
+			Name:    ActionIDNameMap[iamtypes.ViewFullSyncCond],
 			NameEn:  "View Full Sync Cond",
-			Type:    View,
+			Type:    iamtypes.View,
 			Version: 1,
 			Hidden:  true,
 		},
 	}
 }
 
-func genCacheActions() []ResourceAction {
-	return []ResourceAction{
+func genCacheActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
-			ID:     ViewGeneralCache,
-			Name:   ActionIDNameMap[ViewGeneralCache],
+			ID:     iamtypes.ViewGeneralCache,
+			Name:   ActionIDNameMap[iamtypes.ViewGeneralCache],
 			NameEn: "View General Resource Cache",
-			Type:   View,
-			RelatedResourceTypes: []RelateResourceType{{
-				SystemID: SystemIDCMDB,
-				ID:       GeneralCache,
-				InstanceSelections: []RelatedInstanceSelection{{
-					SystemID: SystemIDCMDB,
-					ID:       GeneralCacheSelection,
+			Type:   iamtypes.View,
+			RelatedResourceTypes: []iam.RelateResourceType{{
+				SystemID: iamtypes.SystemIDCMDB,
+				ID:       iamtypes.GeneralCache,
+				InstanceSelections: []iam.RelatedInstanceSelection{{
+					SystemID: iamtypes.SystemIDCMDB,
+					ID:       iamtypes.GeneralCacheSelection,
 				}},
 			}},
 			Version: 1,
@@ -1667,31 +1555,31 @@ func genCacheActions() []ResourceAction {
 	}
 }
 
-func genTenantSetActions() []ResourceAction {
-	tenantSetResource := RelateResourceType{
-		SystemID: SystemIDCMDB,
-		ID:       TenantSet,
-		InstanceSelections: []RelatedInstanceSelection{{
-			SystemID: SystemIDCMDB,
-			ID:       TenantSetSelection,
+func genTenantSetActions() []iam.ResourceAction {
+	tenantSetResource := iam.RelateResourceType{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.TenantSet,
+		InstanceSelections: []iam.RelatedInstanceSelection{{
+			SystemID: iamtypes.SystemIDCMDB,
+			ID:       iamtypes.TenantSetSelection,
 		}},
 	}
 
-	return []ResourceAction{
+	return []iam.ResourceAction{
 		{
-			ID:                   ViewTenantSet,
-			Name:                 ActionIDNameMap[ViewTenantSet],
+			ID:                   iamtypes.ViewTenantSet,
+			Name:                 ActionIDNameMap[iamtypes.ViewTenantSet],
 			NameEn:               "View Tenant Set",
-			Type:                 View,
-			RelatedResourceTypes: []RelateResourceType{tenantSetResource},
+			Type:                 iamtypes.View,
+			RelatedResourceTypes: []iam.RelateResourceType{tenantSetResource},
 			Version:              1,
 			Hidden:               true,
 		}, {
-			ID:                   AccessTenantSet,
-			Name:                 ActionIDNameMap[AccessTenantSet],
+			ID:                   iamtypes.AccessTenantSet,
+			Name:                 ActionIDNameMap[iamtypes.AccessTenantSet],
 			NameEn:               "Access Tenant Set",
-			Type:                 View,
-			RelatedResourceTypes: []RelateResourceType{tenantSetResource},
+			Type:                 iamtypes.View,
+			RelatedResourceTypes: []iam.RelateResourceType{tenantSetResource},
 			Version:              1,
 			Hidden:               true,
 		},

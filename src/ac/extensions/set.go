@@ -30,7 +30,7 @@ import (
  * set instance
  */
 
-func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Header, setIDs ...int64) ([]SetSimplify,
+func (a *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Header, setIDs ...int64) ([]SetSimplify,
 	error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -38,7 +38,7 @@ func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Heade
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKSetIDField).In(setIDs).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, &cond)
+	result, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDSet, &cond)
 	if err != nil {
 		blog.V(3).Infof("get sets by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get sets by id failed, err: %+v", err)
@@ -56,7 +56,7 @@ func (am *AuthManager) collectSetBySetIDs(ctx context.Context, header http.Heade
 	return sets, nil
 }
 
-func (am *AuthManager) extractBusinessIDFromSets(sets ...SetSimplify) (int64, error) {
+func (a *AuthManager) extractBusinessIDFromSets(sets ...SetSimplify) (int64, error) {
 	var businessID int64
 	for idx, set := range sets {
 		bizID := set.BKAppIDField
@@ -70,7 +70,7 @@ func (am *AuthManager) extractBusinessIDFromSets(sets ...SetSimplify) (int64, er
 }
 
 // MakeResourcesBySet TODO
-func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action, businessID int64,
+func (a *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action, businessID int64,
 	sets ...SetSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, set := range sets {
@@ -91,51 +91,51 @@ func (am *AuthManager) MakeResourcesBySet(header http.Header, action meta.Action
 }
 
 // AuthorizeBySetID TODO
-func (am *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeBySetID(ctx context.Context, header http.Header, action meta.Action,
 	ids ...int64) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
 	if len(ids) == 0 {
 		return nil
 	}
-	if !am.RegisterSetEnabled {
+	if !a.RegisterSetEnabled {
 		return nil
 	}
 
-	sets, err := am.collectSetBySetIDs(ctx, header, ids...)
+	sets, err := a.collectSetBySetIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("collect set by id failed, err: %+v", err)
 	}
-	return am.AuthorizeBySet(ctx, header, action, sets...)
+	return a.AuthorizeBySet(ctx, header, action, sets...)
 }
 
 // AuthorizeBySet TODO
-func (am *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeBySet(ctx context.Context, header http.Header, action meta.Action,
 	sets ...SetSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
-	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+	if a.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, sets: %+v, rid: %s", sets, rid)
 		return nil
 	}
-	if !am.RegisterSetEnabled {
+	if !a.RegisterSetEnabled {
 		return nil
 	}
 
 	// extract business id
-	bizID, err := am.extractBusinessIDFromSets(sets...)
+	bizID, err := a.extractBusinessIDFromSets(sets...)
 	if err != nil {
 		return fmt.Errorf("authorize sets failed, extract business id from sets failed, err: %+v", err)
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesBySet(header, action, bizID, sets...)
+	resources := a.MakeResourcesBySet(header, action, bizID, sets...)
 
-	return am.batchAuthorize(ctx, header, resources...)
+	return a.batchAuthorize(ctx, header, resources...)
 }

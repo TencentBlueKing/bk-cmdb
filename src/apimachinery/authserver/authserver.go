@@ -23,12 +23,13 @@ import (
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
 // AuthServerClientInterface TODO
 type AuthServerClientInterface interface {
-	AuthorizeBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error)
-	AuthorizeAnyBatch(ctx context.Context, h http.Header, input *types.AuthBatchOptions) ([]types.Decision, error)
+	AuthorizeBatch(ctx context.Context, h http.Header, input *iam.AuthBatchOptions) ([]types.Decision, error)
+	AuthorizeAnyBatch(ctx context.Context, h http.Header, input *iam.AuthBatchOptions) ([]types.Decision, error)
 	ListAuthorizedResources(ctx context.Context, h http.Header, input meta.ListAuthorizedResourcesParam) (
 		*types.AuthorizeList, error)
 	GetNoAuthSkipUrl(ctx context.Context, h http.Header, input *metadata.IamPermission) (string, error)

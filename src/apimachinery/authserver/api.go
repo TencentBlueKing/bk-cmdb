@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
 type authorizeBatchResp struct {
@@ -29,7 +30,8 @@ type authorizeBatchResp struct {
 
 // AuthorizeBatch TODO
 func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header,
-	input *types.AuthBatchOptions) ([]types.Decision, error) {
+	input *iam.AuthBatchOptions) ([]types.Decision, error) {
+
 	subPath := "/authorize/batch"
 	response := new(authorizeBatchResp)
 
@@ -53,7 +55,8 @@ func (a *authServer) AuthorizeBatch(ctx context.Context, h http.Header,
 
 // AuthorizeAnyBatch TODO
 func (a *authServer) AuthorizeAnyBatch(ctx context.Context, h http.Header,
-	input *types.AuthBatchOptions) ([]types.Decision, error) {
+	input *iam.AuthBatchOptions) ([]types.Decision, error) {
+
 	subPath := "/authorize/any/batch"
 	response := new(authorizeBatchResp)
 

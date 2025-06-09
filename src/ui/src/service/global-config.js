@@ -46,11 +46,27 @@ export const initialConfig = {
 }
 
 /**
- * 更新全局设置
- * @param {Object} globalConfig 全局设置全量集合
+ * 更新全局设置-业务通用
+ * @param {string} type  可选值:backend(更新拓扑层级配置)
+ * @param {Object} config 业务通用参数
  * @returns {Promise}
  */
-export const updateConfig = globalConfig => $http.put('admin/update/system_config/platform_setting', globalConfig)
+export const updateGlobalConfig = (type, config) => $http.put(`admin/update/config/global_config/${type}`, config)
+
+/**
+ * 更新平台配置
+ * @param {string} type  可选值: [id_generator]查询id_generator配置内容
+ * @param {Object} config 设置参数
+ * @returns {Promise}
+ */
+export const updatePlatformConfig = (type, config) => $http.put(`admin/update/config/platform_config/${type}`, config)
+
+/**
+ * 获取当前的平台设置
+ * @param {string} type id_generator(id生成器相关配置)
+ * @returns {Object}
+ */
+export const getCurrentPlatformConfig = async type => await $http.get(`admin/find/config/platform_config/${type}`)
 
 /**
  * 获取当前用户的全局设置
@@ -66,16 +82,15 @@ export const getCurrentConfig = async () => {
   } else {
     publicConfigPromise = getPlatformConfig(initialConfig.publicConfig)
   }
-
-  const [currentConfig, publicConfig] = await Promise.all([
-    $http.get('admin/find/system_config/platform_setting/current'),
+  const [config, publicConfig] = await Promise.all([
+    $http.get('admin/find/config/global_config'), // 获取业务通用，业务空闲池配置
     publicConfigPromise
   ])
 
   setShortcutIcon(publicConfig.favicon)
 
   return {
-    ...currentConfig,
+    ...config,
     site: {
       name: publicConfig.i18n.name,
       separator: titleSeparator
@@ -87,12 +102,6 @@ export const getCurrentConfig = async () => {
     publicConfig
   }
 }
-
-/**
- * 获取默认的全局设置，用来恢复为默认值
- * @returns {Promise}
- */
-export const getDefaultConfig = () => $http.get('admin/find/system_config/platform_setting/initial')
 
 /**
  * 更新空闲机集群

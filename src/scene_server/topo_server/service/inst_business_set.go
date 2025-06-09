@@ -20,7 +20,7 @@ import (
 
 	"configcenter/pkg/filter"
 	"configcenter/pkg/inst/logics"
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -200,7 +200,7 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 			}
 
 			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.BizSet),
+				Type:    string(types.BizSet),
 				ID:      strconv.FormatInt(id, 10),
 				Name:    name,
 				Creator: ctx.Kit.User,

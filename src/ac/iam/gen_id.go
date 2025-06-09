@@ -17,11 +17,14 @@ import (
 	"fmt"
 	"strconv"
 
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
-var genIamResFuncMap = map[meta.ResourceType]func(ActionID, TypeID, *meta.ResourceAttribute) ([]types.Resource, error){
+var genIamResFuncMap = map[meta.ResourceType]func(iamtypes.ActionID, iamtypes.TypeID,
+	*meta.ResourceAttribute) ([]iam.Resource, error){
 	meta.Business:                 genBusinessResource,
 	meta.BizSet:                   genBizSetResource,
 	meta.Project:                  genProjectResource,
@@ -60,9 +63,9 @@ var genIamResFuncMap = map[meta.ResourceType]func(ActionID, TypeID, *meta.Resour
 }
 
 // GenIamResource TODO
-func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {
+func GenIamResource(act iamtypes.ActionID, rscType iamtypes.TypeID, a *meta.ResourceAttribute) ([]iam.Resource, error) {
 	// skip actions do not need to relate to resources
-	if act == Skip {
+	if act == iamtypes.Skip {
 		return genSkipResource(act, rscType, a)
 	}
 
@@ -80,11 +83,11 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 			return genModelAttributeResource(act, rscType, a)
 		}
 	case meta.SystemBase:
-		return make([]types.Resource, 0), nil
+		return make([]iam.Resource, 0), nil
 	case meta.FulltextSearch:
-		return make([]types.Resource, 0), nil
+		return make([]iam.Resource, 0), nil
 	case meta.IDRuleIncrID:
-		return make([]types.Resource, 0), nil
+		return make([]iam.Resource, 0), nil
 	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
 		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
 		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
@@ -104,16 +107,17 @@ func GenIamResource(act ActionID, rscType TypeID, a *meta.ResourceAttribute) ([]
 
 // genBusinessResource TODO
 // generate business related resource id.
-func genBusinessResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genBusinessResource(act iamtypes.ActionID, typ iamtypes.TypeID,
+	attribute *meta.ResourceAttribute) ([]iam.Resource, error) {
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
 	// create business do not related to instance authorize
-	if act == CreateBusiness {
-		return make([]types.Resource, 0), nil
+	if act == iamtypes.CreateBusiness {
+		return make([]iam.Resource, 0), nil
 	}
 
 	// compatible for authorize any
@@ -121,21 +125,23 @@ func genBusinessResource(act ActionID, typ TypeID, attribute *meta.ResourceAttri
 		r.ID = strconv.FormatInt(attribute.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
 // genBizSetResource TODO
 // generate biz set related resource id.
-func genBizSetResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genBizSetResource(act iamtypes.ActionID, typ iamtypes.TypeID, attribute *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
 	// create biz set do not related to instance authorize
-	if act == CreateBizSet {
-		return make([]types.Resource, 0), nil
+	if act == iamtypes.CreateBizSet {
+		return make([]iam.Resource, 0), nil
 	}
 
 	// compatible for authorize any
@@ -143,19 +149,21 @@ func genBizSetResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribu
 		r.ID = strconv.FormatInt(attribute.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genProjectResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genProjectResource(act iamtypes.ActionID, typ iamtypes.TypeID, attribute *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
 	// create project do not related to instance authorize
-	if act == CreateProject {
-		return make([]types.Resource, 0), nil
+	if act == iamtypes.CreateProject {
+		return make([]iam.Resource, 0), nil
 	}
 
 	// compatible for authorize any
@@ -163,13 +171,14 @@ func genProjectResource(act ActionID, typ TypeID, attribute *meta.ResourceAttrib
 		r.ID = strconv.FormatInt(attribute.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genDynamicGroupingResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+func genDynamicGroupingResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) (
+	[]iam.Resource, error) {
 
-	r := types.Resource{
-		System:    SystemIDCMDB,
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
 		Attribute: nil,
 	}
 
@@ -178,262 +187,274 @@ func genDynamicGroupingResource(act ActionID, typ TypeID, att *meta.ResourceAttr
 	}
 
 	// do not related to instance authorize
-	if act == CreateBusinessCustomQuery || act == ViewBusinessResource {
-		r.Type = types.ResourceType(Business)
+	if act == iamtypes.CreateBusinessCustomQuery || act == iamtypes.ViewBusinessResource {
+		r.Type = iam.IamResourceType(iamtypes.Business)
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 	}
 
-	r.Type = types.ResourceType(typ)
+	r.Type = iam.IamResourceType(typ)
 	if len(att.InstanceIDEx) > 0 {
 		r.ID = att.InstanceIDEx
 	}
 
 	// authorize based on business
 	r.Attribute = map[string]interface{}{
-		types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", Business, att.BusinessID)},
+		types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", iamtypes.Business, att.BusinessID)},
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genProcessServiceCategoryResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+func genProcessServiceCategoryResource(_ iamtypes.ActionID, _ iamtypes.TypeID,
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
 
-	r := types.Resource{
-		System:    SystemIDCMDB,
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
 		Attribute: nil,
 	}
 
 	// do not related to instance authorize
-	r.Type = types.ResourceType(Business)
+	r.Type = iam.IamResourceType(iamtypes.Business)
 	if att.BusinessID > 0 {
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genResourceWatch(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+func genResourceWatch(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
 	switch act {
-	case WatchCommonInstanceEvent:
-		r := types.Resource{
-			System:    SystemIDCMDB,
+	case iamtypes.WatchCommonInstanceEvent:
+		r := iam.Resource{
+			System:    iamtypes.SystemIDCMDB,
 			Attribute: nil,
 		}
 
 		// do not related to instance authorize
-		r.Type = types.ResourceType(SysModelEvent)
+		r.Type = iam.IamResourceType(iamtypes.SysModelEvent)
 		if att.InstanceID > 0 {
 			r.ID = strconv.FormatInt(att.InstanceID, 10)
 		}
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 
-	case WatchMainlineInstanceEvent:
-		r := types.Resource{
-			System:    SystemIDCMDB,
+	case iamtypes.WatchMainlineInstanceEvent:
+		r := iam.Resource{
+			System:    iamtypes.SystemIDCMDB,
 			Attribute: nil,
 		}
 
 		// do not related to instance authorize
-		r.Type = types.ResourceType(MainlineModelEvent)
+		r.Type = iam.IamResourceType(iamtypes.MainlineModelEvent)
 		if att.InstanceID > 0 {
 			r.ID = strconv.FormatInt(att.InstanceID, 10)
 		}
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 
-	case WatchInstAsstEvent:
-		r := types.Resource{
-			System:    SystemIDCMDB,
+	case iamtypes.WatchInstAsstEvent:
+		r := iam.Resource{
+			System:    iamtypes.SystemIDCMDB,
 			Attribute: nil,
 		}
 
 		// do not related to instance authorize
-		r.Type = types.ResourceType(InstAsstEvent)
+		r.Type = iam.IamResourceType(iamtypes.InstAsstEvent)
 		if att.InstanceID > 0 {
 			r.ID = strconv.FormatInt(att.InstanceID, 10)
 		}
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 
-	case WatchKubeWorkloadEvent:
-		r := types.Resource{
-			System: SystemIDCMDB,
+	case iamtypes.WatchKubeWorkloadEvent:
+		r := iam.Resource{
+			System: iamtypes.SystemIDCMDB,
 		}
 
-		r.Type = types.ResourceType(KubeWorkloadEvent)
+		r.Type = iam.IamResourceType(iamtypes.KubeWorkloadEvent)
 		if att.InstanceIDEx != "" {
 			r.ID = att.InstanceIDEx
 		}
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 
 	default:
-		return make([]types.Resource, 0), nil
+		return make([]iam.Resource, 0), nil
 	}
 }
 
-func genServiceTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+func genServiceTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID,
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
 
-	r := types.Resource{
-		System:    SystemIDCMDB,
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
 		Attribute: nil,
 	}
 
-	if act == CreateBusinessServiceTemplate {
+	if act == iamtypes.CreateBusinessServiceTemplate {
 		// do not related to instance authorize
 		if att.BusinessID <= 0 {
 			return nil, errors.New("biz id can not be 0")
 		}
-		r.Type = types.ResourceType(Business)
+		r.Type = iam.IamResourceType(iamtypes.Business)
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 	}
 
-	r.Type = types.ResourceType(typ)
+	r.Type = iam.IamResourceType(typ)
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genSetTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
+func genSetTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
 		Attribute: nil,
 	}
 
-	if act == CreateBusinessSetTemplate {
+	if act == iamtypes.CreateBusinessSetTemplate {
 		// do not related to instance authorize
 		if att.BusinessID <= 0 {
 			return nil, errors.New("biz id can not be 0")
 		}
-		r.Type = types.ResourceType(Business)
+		r.Type = iam.IamResourceType(iamtypes.Business)
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 	}
 
-	r.Type = types.ResourceType(typ)
+	r.Type = iam.IamResourceType(typ)
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genAuditLogResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	return make([]types.Resource, 0), nil
+func genAuditLogResource(_ iamtypes.ActionID, typ iamtypes.TypeID, _ *meta.ResourceAttribute) ([]iam.Resource, error) {
+	return make([]iam.Resource, 0), nil
 }
 
-func genPlat(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genPlat(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource, error) {
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
-	if act == CreateCloudArea || act == ViewCloudArea {
-		return make([]types.Resource, 0), nil
+	if act == iamtypes.CreateCloudArea || act == iamtypes.ViewCloudArea {
+		return make([]iam.Resource, 0), nil
 	}
 
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 
 }
 
-func genHostApplyResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
+func genHostApplyResource(_ iamtypes.ActionID, _ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource, error) {
 
-	r := types.Resource{
-		System:    SystemIDCMDB,
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
 		Attribute: nil,
 	}
 
-	r.Type = types.ResourceType(Business)
+	r.Type = iam.IamResourceType(iamtypes.Business)
 	if att.BusinessID > 0 {
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genResourcePoolDirectoryResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genResourcePoolDirectoryResource(act iamtypes.ActionID, typ iamtypes.TypeID,
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
-	if act == CreateResourcePoolDirectory {
-		return make([]types.Resource, 0), nil
+	if act == iamtypes.CreateResourcePoolDirectory {
+		return make([]iam.Resource, 0), nil
 	}
 
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genProcessServiceInstanceResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genProcessServiceInstanceResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
 	// do not related to exact service instance authorize
-	r.Type = types.ResourceType(Business)
+	r.Type = iam.IamResourceType(iamtypes.Business)
 	if att.BusinessID > 0 {
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genBusinessTopologyResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genBusinessTopologyResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
 	// do not related to exact instance authorize
-	r.Type = types.ResourceType(Business)
+	r.Type = iam.IamResourceType(iamtypes.Business)
 	if att.BusinessID > 0 {
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genModelResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genModelResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource, error) {
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
 	// do not related to instance authorize
-	if act == CreateSysModel {
+	if act == iamtypes.CreateSysModel {
+		r.Type = iam.IamResourceType(iamtypes.SysModelGroup)
 		// create model authorized based on it's model group
 		if len(att.Layers) > 0 {
-			r.Type = types.ResourceType(SysModelGroup)
 			r.ID = strconv.FormatInt(att.Layers[0].InstanceID, 10)
-			return []types.Resource{r}, nil
+			return []iam.Resource{r}, nil
 		}
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 	}
 
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genModelRelatedResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genModelRelatedResource(_ iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
@@ -441,53 +462,59 @@ func genModelRelatedResource(_ ActionID, typ TypeID, att *meta.ResourceAttribute
 		return nil, NotEnoughLayer
 	}
 
-	r.Type = types.ResourceType(SysModel)
+	r.Type = iam.IamResourceType(iamtypes.SysModel)
 	r.ID = strconv.FormatInt(att.Layers[0].InstanceID, 10)
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 
 }
 
-func genModelClassificationResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genModelClassificationResource(act iamtypes.ActionID, typ iamtypes.TypeID,
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
 	// create model group do not related to instance authorize
-	if act == CreateModelGroup {
-		return make([]types.Resource, 0), nil
+	if act == iamtypes.CreateModelGroup {
+		return make([]iam.Resource, 0), nil
 	}
 
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genAssociationTypeResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genAssociationTypeResource(act iamtypes.ActionID, typ iamtypes.TypeID,
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
-	if act == CreateAssociationType {
-		return make([]types.Resource, 0), nil
+	if act == iamtypes.CreateAssociationType {
+		return make([]iam.Resource, 0), nil
 	}
 
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(SysModel),
+func genModelAttributeResource(_ iamtypes.ActionID, _ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(iamtypes.SysModel),
 		Attribute: nil,
 	}
 
@@ -497,188 +524,136 @@ func genModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute
 
 	r.ID = strconv.FormatInt(att.Layers[0].InstanceID, 10)
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genSkipResource(_ ActionID, _ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	return make([]types.Resource, 0), nil
+func genSkipResource(_ iamtypes.ActionID, _ iamtypes.TypeID, _ *meta.ResourceAttribute) ([]iam.Resource, error) {
+	return make([]iam.Resource, 0), nil
 }
 
-func genGlobalConfigResource(_ ActionID, _ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	return make([]types.Resource, 0), nil
+func genGlobalConfigResource(_ iamtypes.ActionID, _ iamtypes.TypeID, _ *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+	return make([]iam.Resource, 0), nil
 }
 
-func genBusinessLayerResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	return make([]types.Resource, 0), nil
+func genBusinessLayerResource(_ iamtypes.ActionID, typ iamtypes.TypeID, _ *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+	return make([]iam.Resource, 0), nil
 }
 
-func genModelTopologyViewResource(_ ActionID, typ TypeID, _ *meta.ResourceAttribute) ([]types.Resource, error) {
-	return make([]types.Resource, 0), nil
+func genModelTopologyViewResource(_ iamtypes.ActionID, typ iamtypes.TypeID,
+	_ *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+	return make([]iam.Resource, 0), nil
 }
 
-func genHostInstanceResource(act ActionID, typ TypeID, a *meta.ResourceAttribute) ([]types.Resource, error) {
+func getHostTransferResource(types []iam.IamResourceType, a *meta.ResourceAttribute) ([]iam.Resource, error) {
+
+	if len(a.Layers) != 2 {
+		return nil, NotEnoughLayer
+	}
+	resources := make([]iam.Resource, 2)
+	resources[0] = iam.Resource{
+		System: iamtypes.SystemIDCMDB,
+		Type:   types[0],
+		ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
+	}
+	resources[1] = iam.Resource{
+		System: iamtypes.SystemIDCMDB,
+		Type:   types[1],
+		ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
+	}
+
+	return resources, nil
+}
+
+func genHostInstanceResource(act iamtypes.ActionID, typ iamtypes.TypeID, a *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
 
 	// find host instances
-	if act == Skip {
-		r := types.Resource{
-			System:    SystemIDCMDB,
-			Type:      types.ResourceType(typ),
-			Attribute: nil,
-		}
-		return []types.Resource{r}, nil
+	if act == iamtypes.Skip {
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(typ), Attribute: nil}
+		return []iam.Resource{r}, nil
 	}
 
 	// transfer resource pool's host to it's another directory.
-	if act == ResourcePoolHostTransferToDirectory {
-		if len(a.Layers) != 2 {
-			return nil, NotEnoughLayer
-		}
-
-		resources := make([]types.Resource, 2)
-		resources[0] = types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(SysHostRscPoolDirectory),
-			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
-		}
-
-		resources[1] = types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(SysResourcePoolDirectory),
-			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
-		}
-
-		return resources, nil
+	if act == iamtypes.ResourcePoolHostTransferToDirectory {
+		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
+			iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
+		return getHostTransferResource(types, a)
 	}
 
 	// transfer host in resource pool to business
-	if act == ResourcePoolHostTransferToBusiness {
-		if len(a.Layers) != 2 {
-			return nil, NotEnoughLayer
-		}
-
-		resources := make([]types.Resource, 2)
-		resources[0] = types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(SysHostRscPoolDirectory),
-			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
-		}
-
-		resources[1] = types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(Business),
-			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
-		}
-
-		return resources, nil
+	if act == iamtypes.ResourcePoolHostTransferToBusiness {
+		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.SysHostRscPoolDirectory),
+			iam.IamResourceType(iamtypes.Business)}
+		return getHostTransferResource(types, a)
 	}
 
 	// transfer host from business to resource pool
-	if act == BusinessHostTransferToResourcePool {
-		if len(a.Layers) != 2 {
-			return nil, NotEnoughLayer
-		}
-
-		resources := make([]types.Resource, 2)
-		resources[0] = types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(Business),
-			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
-		}
-
-		resources[1] = types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(SysResourcePoolDirectory),
-			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
-		}
-
-		return resources, nil
+	if act == iamtypes.BusinessHostTransferToResourcePool {
+		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.Business),
+			iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
+		return getHostTransferResource(types, a)
 	}
 
 	// transfer host from one business to another
-	if act == HostTransferAcrossBusiness {
-		if len(a.Layers) != 2 {
-			return nil, NotEnoughLayer
-		}
-
-		resources := make([]types.Resource, 2)
-		resources[0] = types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(BusinessForHostTrans),
-			ID:     strconv.FormatInt(a.Layers[0].InstanceID, 10),
-		}
-
-		resources[1] = types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(Business),
-			ID:     strconv.FormatInt(a.Layers[1].InstanceID, 10),
-		}
-
-		return resources, nil
+	if act == iamtypes.HostTransferAcrossBusiness {
+		types := []iam.IamResourceType{iam.IamResourceType(iamtypes.BusinessForHostTrans),
+			iam.IamResourceType(iamtypes.Business)}
+		return getHostTransferResource(types, a)
 	}
 
 	// import host
-	if act == CreateResourcePoolHost {
-		r := types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(SysResourcePoolDirectory),
-		}
+	if act == iamtypes.CreateResourcePoolHost {
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(iamtypes.SysResourcePoolDirectory)}
 		if len(a.Layers) > 0 {
 			r.ID = strconv.FormatInt(a.Layers[0].InstanceID, 10)
 		}
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 	}
 
 	// edit or delete resource pool host instances
-	if act == EditResourcePoolHost || act == DeleteResourcePoolHost {
-		r := types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(typ),
-		}
+	if act == iamtypes.EditResourcePoolHost || act == iamtypes.DeleteResourcePoolHost {
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(typ)}
 		if a.InstanceID > 0 {
 			r.ID = strconv.FormatInt(a.InstanceID, 10)
 		}
 		if len(a.Layers) > 0 {
-			r.Attribute = map[string]interface{}{
-				types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", SysHostRscPoolDirectory, a.Layers[0].InstanceID)},
-			}
+			r.Attribute = map[string]interface{}{types.IamPathKey: []string{
+				fmt.Sprintf("/%s,%d/", iamtypes.SysHostRscPoolDirectory, a.Layers[0].InstanceID)}}
 		}
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 	}
 
 	// edit business host
-	if act == EditBusinessHost {
-		r := types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(typ),
-		}
+	if act == iamtypes.EditBusinessHost {
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(typ)}
 		if a.InstanceID > 0 {
 			r.ID = strconv.FormatInt(a.InstanceID, 10)
 		}
 		if len(a.Layers) > 0 {
-			r.Attribute = map[string]interface{}{
-				types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", Business, a.Layers[0].InstanceID)},
-			}
+			r.Attribute = map[string]interface{}{types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", iamtypes.Business,
+				a.Layers[0].InstanceID)}}
 		}
-		return []types.Resource{r}, nil
+		return []iam.Resource{r}, nil
 	}
 
 	// find business host
-	if act == ViewBusinessResource {
-		r := types.Resource{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(Business),
-			ID:     strconv.FormatInt(a.BusinessID, 10),
-		}
-		return []types.Resource{r}, nil
+	if act == iamtypes.ViewBusinessResource {
+		r := iam.Resource{System: iamtypes.SystemIDCMDB, Type: iam.IamResourceType(iamtypes.Business),
+			ID: strconv.FormatInt(a.BusinessID, 10)}
+		return []iam.Resource{r}, nil
 	}
-
-	return []types.Resource{}, nil
+	return []iam.Resource{}, nil
 }
 
-func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(Business),
+func genBizModelAttributeResource(_ iamtypes.ActionID, _ iamtypes.TypeID,
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(iamtypes.Business),
 		Attribute: nil,
 	}
 
@@ -686,80 +661,88 @@ func genBizModelAttributeResource(_ ActionID, _ TypeID, att *meta.ResourceAttrib
 		r.ID = strconv.FormatInt(att.BusinessID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genSysInstanceResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System:    SystemIDCMDB,
-		Type:      types.ResourceType(typ),
+func genSysInstanceResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+	r := iam.Resource{
+		System:    iamtypes.SystemIDCMDB,
+		Type:      iam.IamResourceType(typ),
 		Attribute: nil,
 	}
 
 	// create action do not related to instance authorize
 	if att.Action == meta.Create || att.Action == meta.CreateMany || att.Action == meta.FindMany ||
 		att.Action == meta.Find {
-		return make([]types.Resource, 0), nil
+		return make([]iam.Resource, 0), nil
 	}
 
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genFieldTemplateResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System: SystemIDCMDB,
-		Type:   types.ResourceType(FieldGroupingTemplate),
+func genFieldTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID,
+	att *meta.ResourceAttribute) ([]iam.Resource, error) {
+
+	r := iam.Resource{
+		System: iamtypes.SystemIDCMDB,
+		Type:   iam.IamResourceType(iamtypes.FieldGroupingTemplate),
 	}
 
 	// create action do not related to instance authorize
 	if att.Action == meta.Create || att.Action == meta.CreateMany {
-		return make([]types.Resource, 0), nil
+		return make([]iam.Resource, 0), nil
 	}
 
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genKubeResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	if act == ViewBusinessResource {
+func genKubeResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+	if act == iamtypes.ViewBusinessResource {
 		if att.BusinessID <= 0 {
 			return nil, errors.New("biz id can not be 0")
 		}
 
-		return []types.Resource{{
-			System: SystemIDCMDB,
-			Type:   types.ResourceType(Business),
+		return []iam.Resource{{
+			System: iamtypes.SystemIDCMDB,
+			Type:   iam.IamResourceType(iamtypes.Business),
 			ID:     strconv.FormatInt(att.BusinessID, 10),
 		}}, nil
 	}
 
-	return make([]types.Resource, 0), nil
+	return make([]iam.Resource, 0), nil
 }
 
-func genGeneralCacheResource(act ActionID, typ TypeID, att *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System: SystemIDCMDB,
-		Type:   types.ResourceType(GeneralCache),
+func genGeneralCacheResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *meta.ResourceAttribute) ([]iam.Resource,
+	error) {
+
+	r := iam.Resource{
+		System: iamtypes.SystemIDCMDB,
+		Type:   iam.IamResourceType(iamtypes.GeneralCache),
 	}
 
 	if len(att.InstanceIDEx) > 0 {
 		r.ID = att.InstanceIDEx
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }
 
-func genTenantSetResource(act ActionID, typ TypeID, attribute *meta.ResourceAttribute) ([]types.Resource, error) {
-	r := types.Resource{
-		System: SystemIDCMDB,
-		Type:   types.ResourceType(typ),
+func genTenantSetResource(act iamtypes.ActionID, typ iamtypes.TypeID,
+	attribute *meta.ResourceAttribute) ([]iam.Resource, error) {
+
+	r := iam.Resource{
+		System: iamtypes.SystemIDCMDB,
+		Type:   iam.IamResourceType(typ),
 	}
 
 	// compatible for authorize any
@@ -767,5 +750,5 @@ func genTenantSetResource(act ActionID, typ TypeID, attribute *meta.ResourceAttr
 		r.ID = strconv.FormatInt(attribute.InstanceID, 10)
 	}
 
-	return []types.Resource{r}, nil
+	return []iam.Resource{r}, nil
 }

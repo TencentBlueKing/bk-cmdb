@@ -14,7 +14,6 @@
 package options
 
 import (
-	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -45,6 +44,4 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 // Config TODO
 type Config struct {
 	Mongo *mongo.Config
-	// Auth is auth config
-	Auth iam.AuthConfig
 }

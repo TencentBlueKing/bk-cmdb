@@ -14,7 +14,6 @@
 package options
 
 import (
-	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/cryptor"
@@ -58,7 +57,6 @@ type Config struct {
 	Register   RegisterConfig
 	Redis      redis.Config
 	HostSnapConfig
-	IAM           iam.AuthConfig
 	Crypto        *cryptor.Config
 	ShardingTable ShardingTableConfig
 	// SyncIAMPeriodMinutes the period for sync IAM resources

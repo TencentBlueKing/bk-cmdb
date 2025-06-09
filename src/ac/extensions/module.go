@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -31,7 +31,7 @@ import (
  * module instance
  */
 
-func (am *AuthManager) collectModuleByModuleIDs(ctx context.Context, header http.Header, moduleIDs ...int64) (
+func (a *AuthManager) collectModuleByModuleIDs(ctx context.Context, header http.Header, moduleIDs ...int64) (
 	[]ModuleSimplify, error) {
 
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -42,7 +42,7 @@ func (am *AuthManager) collectModuleByModuleIDs(ctx context.Context, header http
 	cond := metadata.QueryCondition{
 		Condition: condition.CreateCondition().Field(common.BKModuleIDField).In(moduleIDs).ToMapStr(),
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, &cond)
+	result, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDModule, &cond)
 	if err != nil {
 		blog.V(3).Infof("get modules by id failed, err: %+v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get modules by id failed, err: %+v", err)
@@ -59,7 +59,7 @@ func (am *AuthManager) collectModuleByModuleIDs(ctx context.Context, header http
 	return modules, nil
 }
 
-func (am *AuthManager) extractBusinessIDFromModules(modules ...ModuleSimplify) (int64, error) {
+func (a *AuthManager) extractBusinessIDFromModules(modules ...ModuleSimplify) (int64, error) {
 	var businessID int64
 	for idx, module := range modules {
 		bizID := module.BKAppIDField
@@ -73,7 +73,7 @@ func (am *AuthManager) extractBusinessIDFromModules(modules ...ModuleSimplify) (
 }
 
 // MakeResourcesByModule TODO
-func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Action, businessID int64,
+func (a *AuthManager) MakeResourcesByModule(header http.Header, action meta.Action, businessID int64,
 	modules ...ModuleSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, module := range modules {
@@ -94,32 +94,32 @@ func (am *AuthManager) MakeResourcesByModule(header http.Header, action meta.Act
 }
 
 // AuthorizeByModuleID TODO
-func (am *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByModuleID(ctx context.Context, header http.Header, action meta.Action,
 	ids ...int64) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
 	if len(ids) == 0 {
 		return nil
 	}
-	if !am.RegisterModuleEnabled {
+	if !a.RegisterModuleEnabled {
 		return nil
 	}
 
-	modules, err := am.collectModuleByModuleIDs(ctx, header, ids...)
+	modules, err := a.collectModuleByModuleIDs(ctx, header, ids...)
 	if err != nil {
 		return fmt.Errorf("update registered modules failed, get modules by id failed, err: %+v", err)
 	}
-	return am.AuthorizeByModule(ctx, header, action, modules...)
+	return a.AuthorizeByModule(ctx, header, action, modules...)
 }
 
 // GenModuleSetNoPermissionResp TODO
-func (am *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
+func (a *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
 	permission := &metadata.IamPermission{
-		SystemID: iam.SystemIDCMDB,
+		SystemID: types.SystemIDCMDB,
 		Actions: []metadata.IamAction{{
-			ID:                   string(iam.EditBusinessLayer),
+			ID:                   string(types.EditBusinessLayer),
 			RelatedResourceTypes: nil,
 		}},
 	}
@@ -128,34 +128,34 @@ func (am *AuthManager) GenModuleSetNoPermissionResp() *metadata.BaseResp {
 }
 
 // AuthorizeByModule TODO
-func (am *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByModule(ctx context.Context, header http.Header, action meta.Action,
 	modules ...ModuleSimplify) error {
 	rid := util.ExtractRequestIDFromContext(ctx)
 
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
-	if !am.RegisterModuleEnabled {
+	if !a.RegisterModuleEnabled {
 		return nil
 	}
 
 	if len(modules) == 0 {
 		return nil
 	}
-	if am.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+	if a.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
 		blog.V(4).Infof("skip authorization for reading, modules: %+v, rid: %s", modules, rid)
 		return nil
 	}
 
 	// extract business id
-	bizID, err := am.extractBusinessIDFromModules(modules...)
+	bizID, err := a.extractBusinessIDFromModules(modules...)
 	if err != nil {
 		return fmt.Errorf("authorize modules failed, extract business id from modules failed, err: %+v", err)
 	}
 
 	// make auth resources
-	resources := am.MakeResourcesByModule(header, action, bizID, modules...)
+	resources := a.MakeResourcesByModule(header, action, bizID, modules...)
 
-	return am.batchAuthorize(ctx, header, resources...)
+	return a.batchAuthorize(ctx, header, resources...)
 }

@@ -115,7 +115,9 @@
   import store from '@/store'
   import cloneDeep from 'lodash/cloneDeep'
   import isEqual from 'lodash/isEqual'
-  import EventBus from '@/utils/bus'
+  import {
+    getCurrentPlatformConfig
+  } from '@/service/global-config'
 
   const emit = defineEmits(['has-change'])
 
@@ -138,10 +140,11 @@
     emit('has-change', val)
   })
 
-  const initForm = () => {
-    const { idGenerator } = globalConfig.value.config
+  const initForm = async () => {
+    const idGenerator = await getCurrentPlatformConfig('id_generator')
     Object.assign(form, cloneDeep(defaultIdGenerateForm), cloneDeep(idGenerator))
     Object.assign(originForm, cloneDeep(defaultIdGenerateForm), cloneDeep(idGenerator))
+    form.init_id = Object.assign({}, form?.current_id, form?.init_id)
     formRef.value?.clearError()
   }
   const handleSubmit = () => {
@@ -170,8 +173,9 @@
         okText: t('确认提交'),
         cancelText: t('取消'),
         confirmFn: () => {
-          store.dispatch('globalConfig/updateConfig', {
-            idGenerator: submitForm
+          store.dispatch('globalConfig/updatePlatformConfig', {
+            config: { id_generator: submitForm },
+            type: 'id_generator'
           })
             .then(() => {
               initForm()
@@ -193,7 +197,6 @@
 
   onMounted(() => {
     initForm()
-    EventBus.$on('globalConfig/fetched', initForm)
   })
 
 </script>

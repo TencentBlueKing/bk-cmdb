@@ -16,8 +16,8 @@
  */
 import {
   getCurrentConfig,
-  getDefaultConfig,
-  updateConfig,
+  updateGlobalConfig,
+  updatePlatformConfig,
   updateIdleSet,
   createIdleModule,
   updateIdleModule,
@@ -52,8 +52,7 @@ const getters = {
 const unserializeConfig = (remoteData, lang) => {
   const newState = {
     backend: {
-      maxBizTopoLevel: remoteData.backend.max_biz_topo_level,
-      snapshotBizId: remoteData.backend.snapshot_biz_id
+      maxBizTopoLevel: remoteData.backend.max_biz_topo_level
     },
     site: {
       name: remoteData?.site?.name,
@@ -71,13 +70,6 @@ const unserializeConfig = (remoteData, lang) => {
       recycle: remoteData.idle_pool.recycle,
       userModules: unserializeUserModules(remoteData.idle_pool.user_modules) || []
     },
-    idGenerator: {
-      enabled: remoteData?.id_generator?.enabled,
-      step: remoteData?.id_generator?.step,
-      origin_init_id: remoteData?.id_generator?.init_id || {},
-      init_id: Object.assign({}, remoteData?.id_generator?.current_id, remoteData?.id_generator?.init_id),
-      current_id: remoteData?.id_generator?.current_id
-    },
     publicConfig: remoteData.publicConfig
   }
 
@@ -85,15 +77,14 @@ const unserializeConfig = (remoteData, lang) => {
 }
 
 /**
- * 序列化 state 为可传输给后端的数据
- * @param {Object} newConfig 前端 UI state
+ * 序列化 全局配置state 为可传输给后端的数据
+ * @param {Object} newConfig 前端 UI 全局设置state
  * @param {string} lang 当前语种
  */
 const serializeState = (newConfig, lang) => {
   const data = {
     backend: {
       max_biz_topo_level: newConfig.backend.maxBizTopoLevel,
-      snapshot_biz_id: newConfig.backend.snapshotBizId,
     },
     validation_rules: serializeValidationRules(newConfig.validationRules, lang),
     set: newConfig.set,
@@ -103,11 +94,6 @@ const serializeState = (newConfig, lang) => {
       recycle: newConfig.idlePool.recycle,
       user_modules: serializeUserModules(newConfig.idlePool.userModules, lang) || null
     },
-    id_generator: {
-      enabled: newConfig?.idGenerator?.enabled,
-      step: newConfig?.idGenerator?.step,
-      init_id: parseIDGeneratorInitID(newConfig.idGenerator?.init_id),
-    }
   }
 
   return data
@@ -172,14 +158,9 @@ const serializeUserModules = (userModules = []) => userModules?.map(({ moduleKey
   module_name: moduleName
 }))
 
-const parseIDGeneratorInitID = val => (Object.keys(val).length === 0 ? undefined : val)
-
 const mutations = {
   setConfig(state, config) {
     state.config = config
-  },
-  setDefaultConfig(state, config) {
-    state.defaultConfig = config
   },
   setAuth(state, auth) {
     state.auth = auth
@@ -197,19 +178,6 @@ const actions = {
     commit('setConfig', cloneDeep(initialConfig))
   },
   /**
-   * 获取默认配置，用于恢复初始化操作
-   * @returns {Promise}
-   */
-  fetchDefaultConfig({ commit, state }) {
-    return getDefaultConfig()
-      .then((config) => {
-        commit('setDefaultConfig', unserializeConfig(config, state.language))
-      })
-      .catch((err) => {
-        throw Error(`获取默认全局设置出现错误：${err.message}`)
-      })
-  },
-  /**
    * 从后台获取配置，获取配置后会 set 配置到 state 中
    * @returns {Promise}
    */
@@ -221,7 +189,7 @@ const actions = {
       })
       .catch((err) => {
         dispatch('clearConfig')
-        throw Error(`获取全局设置出现错误：${err.message}`)
+        throw Error(`获取设置出现错误：${err.message}`)
       })
       .finally(() => {
         commit('setLoading', false)
@@ -229,21 +197,24 @@ const actions = {
   },
 
   /**
-   * 更新配置到后台，更新配置后会 fetchConfig
-   * @param config 所有设置
+   * 更新业务配置到后台，更新配置后会 fetchConfig
+   * @param type 需要更新的业务类型  可选值: backend(更新拓扑层级配置)
+   * @param config 需要更新的业务配置
    * @returns {Promise}
    */
-  updateConfig({ state, dispatch, commit }, config) {
+  updateGlobalConfig({ state, dispatch, commit }, params) {
     return new Promise(async (resolve, reject) => {
+      const {
+        type,
+        config
+      } = params
       const stateConfig = cloneDeep(state.config)
-      // 默认初始化ID生成器参数下的init_id，因为该参数没改动不传
-      stateConfig.idGenerator.init_id = stateConfig.idGenerator.origin_init_id
       const newConfig = {
         ...stateConfig,
         ...cloneDeep(config)
       }
       commit('setUpdating', true)
-      const [updateErr] = await to(updateConfig(serializeState(newConfig, state.language)))
+      const [updateErr] = await to(updateGlobalConfig(type, serializeState(newConfig, state.language)))
 
       if (updateErr) {
         reject(updateErr)
@@ -257,6 +228,33 @@ const actions = {
         reject(fetchErr)
         commit('setUpdating', false)
         throw Error(fetchErr.message)
+      }
+
+      resolve()
+
+      commit('setUpdating', false)
+    })
+  },
+
+  /**
+   * 更新平台配置到后台，更新配置后会 fetchConfig
+   * @param type 需要更新的业务类型  可选值: [id_generator]查询id_generator配置内容
+   * @param config 需要更新的配置
+   * @returns {Promise}
+   */
+  updatePlatformConfig({ commit }, params) {
+    return new Promise(async (resolve, reject) => {
+      commit('setUpdating', true)
+      const {
+        type,
+        config
+      } = params
+      const [updateErr] = await to(updatePlatformConfig(type, config))
+
+      if (updateErr) {
+        reject(updateErr)
+        commit('setUpdating', false)
+        throw Error(`更新平台设置出现错误：${updateErr.message}`)
       }
 
       resolve()

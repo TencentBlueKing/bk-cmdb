@@ -17,6 +17,7 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -30,8 +31,8 @@ import (
 // TODO: confirm 422 need to be used in which case
 
 // listInstance list instances by condition
-func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, resourceType iam.TypeID, page types.Page) (
-	*types.ListInstanceResult, error) {
+func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, resourceType iamtypes.TypeID,
+	page types.Page) (*types.ListInstanceResult, error) {
 
 	idField := GetResourceIDField(resourceType)
 	nameField := GetResourceNameField(resourceType)
@@ -66,7 +67,7 @@ func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, reso
 }
 
 // searchAuthResource search auth resource instances from database
-func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResourceParam, resourceType iam.TypeID) (
+func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResourceParam, resourceType iamtypes.TypeID) (
 	*metadata.PullResourceResult, error) {
 	if iam.IsIAMSysInstance(resourceType) {
 		objID, err := lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
@@ -99,7 +100,7 @@ func (lgc *Logics) searchAuthResource(kit *rest.Kit, param metadata.PullResource
 }
 
 // ListSystemInstance list system scope instances that have no parent
-func (lgc *Logics) ListSystemInstance(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+func (lgc *Logics) ListSystemInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 	page types.Page, extraCond map[string]interface{}) (*types.ListInstanceResult, error) {
 
 	if filter == nil {
@@ -132,7 +133,7 @@ func (lgc *Logics) ListSystemInstance(kit *rest.Kit, resourceType iam.TypeID, fi
 }
 
 // ListBusinessInstance list business scope instances whose parent is biz, and has parent id field bk_biz_id in its data
-func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
 	cond := make(map[string]interface{})
@@ -151,7 +152,7 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 		return lgc.listInstance(kit, cond, resourceType, page)
 	}
 
-	if filter.Parent.Type != iam.Business {
+	if filter.Parent.Type != iamtypes.Business {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -168,7 +169,7 @@ func (lgc *Logics) ListBusinessInstance(kit *rest.Kit, resourceType iam.TypeID, 
 }
 
 // ListModelInstance list model instances, parent is model
-func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
 	cond := make(map[string]interface{})
@@ -184,7 +185,7 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iam.TypeID, fil
 		return lgc.listInstance(kit, cond, resourceType, page)
 	}
 
-	if filter.Parent.Type != iam.SysInstanceModel {
+	if filter.Parent.Type != iamtypes.SysInstanceModel {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -247,10 +248,10 @@ func (lgc *Logics) getModelObjectIDWithIamParentID(kit *rest.Kit, parentID strin
 }
 
 // ListHostInstance list host instances
-func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
-	if resourceType != iam.Host {
+	if resourceType != iamtypes.Host {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -266,7 +267,7 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 
 	}
 
-	if filter.Parent.Type != iam.SysHostRscPoolDirectory && filter.Parent.Type != iam.Business /* iam.Module */ {
+	if filter.Parent.Type != iamtypes.SysHostRscPoolDirectory && filter.Parent.Type != iamtypes.Business /* iam.Module */ {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -278,7 +279,7 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iam.TypeID, filt
 	}
 
 	var relationReq *metadata.DistinctHostIDByTopoRelationRequest
-	if filter.Parent.Type == iam.Business {
+	if filter.Parent.Type == iamtypes.Business {
 		relationReq = &metadata.DistinctHostIDByTopoRelationRequest{ApplicationIDArr: []int64{parentID}}
 	} else {
 		relationReq = &metadata.DistinctHostIDByTopoRelationRequest{ModuleIDArr: []int64{parentID}}
@@ -478,10 +479,10 @@ func (lgc *Logics) ValidateListInstanceRequest(kit *rest.Kit, req *types.PullRes
 }
 
 // ListSetInstance list biz topo set instances
-func (lgc *Logics) ListSetInstance(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+func (lgc *Logics) ListSetInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
-	if filter == nil || filter.Parent == nil || filter.Parent.Type != iam.Business {
+	if filter == nil || filter.Parent == nil || filter.Parent.Type != iamtypes.Business {
 		return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
 	}
 
@@ -670,10 +671,10 @@ func (lgc *Logics) listSetInstance(kit *rest.Kit, setCond *metadata.QueryConditi
 }
 
 // ListModuleInstance list biz topo module instances
-func (lgc *Logics) ListModuleInstance(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceFilter,
+func (lgc *Logics) ListModuleInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
-	if filter == nil || filter.Parent == nil || filter.Parent.Type != iam.Set {
+	if filter == nil || filter.Parent == nil || filter.Parent.Type != iamtypes.Set {
 		return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
 	}
 

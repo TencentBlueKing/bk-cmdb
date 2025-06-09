@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -28,50 +29,51 @@ import (
 
 // getResourceTableName TODO
 // get resource database table name
-func getResourceTableName(resourceType iam.TypeID) string {
+func getResourceTableName(resourceType iamtypes.TypeID) string {
 	switch resourceType {
-	case iam.Host:
+	case iamtypes.Host:
 		return common.BKTableNameBaseHost
-	case iam.SysModelGroup:
+	case iamtypes.SysModelGroup:
 		return common.BKTableNameObjClassification
-	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.MainlineModelEvent, iam.InstAsstEvent:
+	case iamtypes.SysModel, iamtypes.SysInstanceModel, iamtypes.SysModelEvent, iamtypes.MainlineModelEvent,
+		iamtypes.InstAsstEvent:
 		return common.BKTableNameObjDes
-	case iam.SysAssociationType:
+	case iamtypes.SysAssociationType:
 		return common.BKTableNameAsstDes
-	case iam.SysResourcePoolDirectory, iam.SysHostRscPoolDirectory:
+	case iamtypes.SysResourcePoolDirectory, iamtypes.SysHostRscPoolDirectory:
 		return common.BKTableNameBaseModule
-	case iam.SysCloudArea:
+	case iamtypes.SysCloudArea:
 		return common.BKTableNameBasePlat
-	case iam.Business, iam.BusinessForHostTrans:
+	case iamtypes.Business, iamtypes.BusinessForHostTrans:
 		return common.BKTableNameBaseApp
-	case iam.BizSet:
+	case iamtypes.BizSet:
 		return common.BKTableNameBaseBizSet
-	case iam.BizCustomQuery:
+	case iamtypes.BizCustomQuery:
 		return common.BKTableNameDynamicGroup
-	case iam.BizProcessServiceTemplate:
+	case iamtypes.BizProcessServiceTemplate:
 		return common.BKTableNameServiceTemplate
-	case iam.BizProcessServiceCategory:
+	case iamtypes.BizProcessServiceCategory:
 		return common.BKTableNameServiceCategory
-	case iam.BizProcessServiceInstance:
+	case iamtypes.BizProcessServiceInstance:
 		return common.BKTableNameServiceInstance
-	case iam.BizSetTemplate:
+	case iamtypes.BizSetTemplate:
 		return common.BKTableNameSetTemplate
-	case iam.Project:
+	case iamtypes.Project:
 		return common.BKTableNameBaseProject
-	case iam.FieldGroupingTemplate:
+	case iamtypes.FieldGroupingTemplate:
 		return common.BKTableNameFieldTemplate
-	case iam.Set:
+	case iamtypes.Set:
 		return common.BKTableNameBaseSet
-	case iam.Module:
+	case iamtypes.Module:
 		return common.BKTableNameBaseModule
 	default:
 		return ""
 	}
 }
 
-func isResourceIDStringType(resourceType iam.TypeID) bool {
+func isResourceIDStringType(resourceType iamtypes.TypeID) bool {
 	switch resourceType {
-	case iam.BizCustomQuery:
+	case iamtypes.BizCustomQuery:
 		return true
 	}
 	return false
@@ -79,17 +81,17 @@ func isResourceIDStringType(resourceType iam.TypeID) bool {
 
 // getInstanceResourceObjID TODO
 // get model instance resource's model id
-func getInstanceResourceObjID(resourceType iam.TypeID) string {
+func getInstanceResourceObjID(resourceType iamtypes.TypeID) string {
 	switch resourceType {
-	case iam.Host:
+	case iamtypes.Host:
 		return common.BKInnerObjIDHost
-	case iam.SysCloudArea:
+	case iamtypes.SysCloudArea:
 		return common.BKInnerObjIDPlat
-	case iam.Business, iam.BusinessForHostTrans:
+	case iamtypes.Business, iamtypes.BusinessForHostTrans:
 		return common.BKInnerObjIDApp
-	case iam.BizSet:
+	case iamtypes.BizSet:
 		return common.BKInnerObjIDBizSet
-	case iam.Project:
+	case iamtypes.Project:
 		return common.BKInnerObjIDProject
 	// case iam.Set:
 	//	return common.BKInnerObjIDSet
@@ -121,25 +123,19 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 		return 0, err
 	}
 
-	if len(bizResp.Info) <= 0 {
+	if len(bizResp.Info) != 1 {
 		blog.Errorf("find no resource pool biz, rid: %s", kit.Rid)
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	for _, biz := range bizResp.Info {
-		if util.GetStrByInterface(biz[common.TenantID]) == kit.TenantID {
-			resourcePoolBizID, err = util.GetInt64ByInterface(biz[common.BKAppIDField])
-			if nil != err {
-				blog.ErrorJSON("find resource pool biz failed, parse biz id failed, biz: %s, err: %s, rid: %s",
-					bizResp.Info[0][common.BKAppIDField], err.Error(), kit.Rid)
-				return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
-					common.BKAppIDField, "int", err.Error())
-			}
-			return resourcePoolBizID, nil
-		}
+	resourcePoolBizID, err = util.GetInt64ByInterface(bizResp.Info[0][common.BKAppIDField])
+	if err != nil {
+		blog.Errorf("find resource pool biz failed, parse biz id failed, biz: %v, err: %v, rid: %s",
+			bizResp.Info[0][common.BKAppIDField], err, kit.Rid)
+		return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
+			common.BKAppIDField, "int", err.Error())
 	}
-
-	return 0, kit.CCError.CCError(common.CCErrCommNotFound)
+	return resourcePoolBizID, nil
 }
 
 // getCloudNameMapByIDs get cloud area ID to name map by ID to generate host display name
@@ -225,7 +221,8 @@ func (m *modelIDObjIDMap) set(modelID int64, objID string) {
 }
 
 // GetObjIDFromResourceType get objID from resourceType
-func (lgc *Logics) GetObjIDFromResourceType(ctx context.Context, header http.Header, resourceType iam.TypeID) (string,
+func (lgc *Logics) GetObjIDFromResourceType(ctx context.Context, header http.Header,
+	resourceType iamtypes.TypeID) (string,
 	error) {
 	rid := util.ExtractRequestIDFromContext(ctx)
 

@@ -22,7 +22,7 @@ import (
 	"configcenter/src/ac"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/errors"
+	commonerror "configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/json"
@@ -191,7 +191,7 @@ func (c *Contexts) RespEntityWithError(data interface{}, err error) {
 			}
 			return
 		}
-		t, yes := err.(errors.CCErrorCoder)
+		t, yes := err.(commonerror.CCErrorCoder)
 		var code int
 		var errMsg string
 		if yes {
@@ -261,7 +261,7 @@ func (c *Contexts) RespWithError(err error, errCode int, format string, args ...
 	var code int
 	var errMsg string
 	if err != nil {
-		t, yes := err.(errors.CCErrorCoder)
+		t, yes := err.(commonerror.CCErrorCoder)
 		if yes {
 			code = t.GetCode()
 			errMsg = t.Error()
@@ -304,7 +304,7 @@ func (c *Contexts) RespAutoError(err error) {
 	var code int
 	var errMsg string
 	if err != nil {
-		t, yes := err.(errors.CCErrorCoder)
+		t, yes := err.(commonerror.CCErrorCoder)
 		if yes {
 			code = t.GetCode()
 			errMsg = t.Error()

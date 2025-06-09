@@ -24,11 +24,13 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/topo_server/app/options"
 	"configcenter/src/scene_server/topo_server/logics"
 	"configcenter/src/scene_server/topo_server/service"
 	"configcenter/src/storage/driver/redis"
+	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/elasticsearch"
 )
 
@@ -49,10 +51,6 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
 	}
-	t.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
-	}
 }
 
 // Run main function
@@ -66,7 +64,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	server := new(TopoServer)
 	server.Service = new(service.Service)
-
 	input := &backbone.BackboneParameter{
 		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		ConfigPath:   op.ServConf.ExConfig,
@@ -104,17 +101,20 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		essrv.Client = esClient
 	}
 
+	server.InitClients()
+
 	iamCli := new(iam.IAM)
+	authManager := new(extensions.AuthManager)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(server.Config.Auth, engine.Metric().Registry())
+		iamCli, err = iam.NewIAM()
 		if err != nil {
 			return fmt.Errorf("new iam client failed: %v", err)
 		}
+		authManager = extensions.NewAuthManager(engine.CoreAPI).WithViewer(iamCli)
 	} else {
 		blog.Infof("disable auth center access")
 	}
-	authManager := extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
 	server.Service = &service.Service{
 		Language:    engine.Language,
@@ -150,4 +150,18 @@ func (t *TopoServer) CheckForReadiness() error {
 		return nil
 	}
 	return errors.New("wait for topology server configuration timeout")
+}
+
+// InitClients init apiGW client
+func (s *TopoServer) InitClients() error {
+
+	if auth.EnableAuthorize() {
+		err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), []apigw.ClientType{apigw.Iam})
+		if err != nil {
+			blog.Errorf("init gse api gateway client failed, err: %v", err)
+			return err
+		}
+	}
+
+	return nil
 }

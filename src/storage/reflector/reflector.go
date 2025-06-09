@@ -119,7 +119,9 @@ func (r *Reflector) loopWatch(coll string, w *types.Watcher, cap *Capable) {
 		case types.Invalidate:
 			blog.ErrorJSON("watch collection: %s, received a invalidate event, doc: %s.", coll, event.Document)
 		default:
-			blog.ErrorJSON("watch collection: %s, received a unsupported event type: %s, doc: %s.", coll, event.OperationType, event.Document)
+			blog.ErrorJSON("watch collection: %s, received a unsupported event type: %s, doc: %s.", coll,
+				event.OperationType, event.Document)
+
 		}
 	}
 

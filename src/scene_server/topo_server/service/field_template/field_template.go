@@ -22,7 +22,7 @@ import (
 
 	"configcenter/pkg/filter"
 	filtertools "configcenter/pkg/tools/filter"
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
@@ -341,7 +341,7 @@ func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
 		// register business resource creator action to iam
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.FieldGroupingTemplate),
+				Type:    string(types.FieldGroupingTemplate),
 				ID:      strconv.FormatInt(res.ID, 10),
 				Name:    opt.Name,
 				Creator: ctx.Kit.User,
@@ -455,7 +455,7 @@ func (s *service) CloneFieldTemplate(ctx *rest.Contexts) {
 		// register business resource creator action to iam
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.FieldGroupingTemplate),
+				Type:    string(types.FieldGroupingTemplate),
 				ID:      strconv.FormatInt(res.ID, 10),
 				Name:    opt.Name,
 				Creator: ctx.Kit.User,

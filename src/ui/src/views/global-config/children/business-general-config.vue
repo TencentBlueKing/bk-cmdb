@@ -14,22 +14,6 @@
   <div v-bkloading="{ isLoading: globalConfig.loading }">
     <bk-form ref="bizGeneralFormRef"
       class="config-form" :rules="bizGeneralFormRules" :label-width="labelWidth" :model="bizGeneralForm">
-      <bk-form-item
-        :desc="{
-          width: 400,
-          content: $t('平台配置业务快照名提示')
-        }"
-        :label="$t('业务快照名称')" :icon-offset="bizNameIconOffsetLeft" property="snapshotBizId" required>
-        <business-selector class="option-value snapshot-biz-name"
-          searchable
-          :clearable="false"
-          :placeholder="$t('请选择xx', { name: $t('业务') })"
-          v-model="bizGeneralForm.snapshotBizId">
-        </business-selector>
-        <div class="mb0 f12 color-danger" slot="tip" v-show="showBizNameTip">
-          {{ $t('业务快照名称切换提示') }}
-        </div>
-      </bk-form-item>
       <bk-form-item :label="$t('拓扑最大可建层级')" :icon-offset="topoLevelIconOffsetLeft" property="maxBizTopoLevel" required>
         <bk-input
           class="max-biz-topo-level-input"
@@ -66,21 +50,15 @@
   import cloneDeep from 'lodash/cloneDeep'
   import EventBus from '@/utils/bus'
   import isEqual from 'lodash/isEqual'
-  import BusinessSelector from '@/components/audit-history/audit-business-selector'
 
   export default defineComponent({
     components: {
       SaveButton,
-      BusinessSelector
     },
     setup(props, { emit }) {
       const globalConfig = computed(() => store.state.globalConfig)
       const defaultForm = {
-        snapshotBizId: '',
         maxBizTopoLevel: ''
-      }
-      const originForm = {
-        snapshotBizId: ''
       }
       const bizGeneralForm = reactive(cloneDeep(defaultForm))
       const originBizGeneralForm = reactive(cloneDeep(defaultForm))
@@ -88,7 +66,6 @@
       const labelWidth = computed(() => (language === 'zh_CN' ? 150 : 230))
       const bizNameIconOffsetLeft =  computed(() => (language === 'zh_CN' ? 30 : 10))
       const topoLevelIconOffsetLeft =  computed(() => (language === 'zh_CN' ? 0 : -20))
-      const showBizNameTip = computed(() => bizGeneralForm.snapshotBizId !== originForm.snapshotBizId)
       const hasChange = computed(() => !isEqual(originBizGeneralForm, bizGeneralForm))
 
       watch(() => hasChange.value, (val) => {
@@ -99,7 +76,6 @@
         const { backend } = globalConfig.value.config
         Object.assign(bizGeneralForm, cloneDeep(defaultForm), cloneDeep(backend))
         Object.assign(originBizGeneralForm, cloneDeep(defaultForm), cloneDeep(backend))
-        originForm.snapshotBizId = bizGeneralForm.snapshotBizId
         bizGeneralFormRef.value?.clearError()
       }
 
@@ -113,13 +89,6 @@
       })
 
       const bizGeneralFormRules = {
-        snapshotBizId: [
-          {
-            required: true,
-            message: t('请选择业务'),
-            trigger: 'blur'
-          }
-        ],
         maxBizTopoLevel: [
           {
             required: true,
@@ -131,8 +100,9 @@
 
       const save = () => {
         bizGeneralFormRef.value.validate().then(() => {
-          store.dispatch('globalConfig/updateConfig', {
-            backend: cloneDeep(bizGeneralForm)
+          store.dispatch('globalConfig/updateGlobalConfig', {
+            type: 'backend',
+            config: { backend: cloneDeep(bizGeneralForm) }
           })
             .then(() => {
               initForm()
@@ -161,7 +131,6 @@
         labelWidth,
         bizNameIconOffsetLeft,
         topoLevelIconOffsetLeft,
-        showBizNameTip
       }
     }
   })

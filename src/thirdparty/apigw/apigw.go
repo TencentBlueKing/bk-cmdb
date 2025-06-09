@@ -23,6 +23,7 @@ import (
 	"configcenter/src/thirdparty/apigw/apigwutil"
 	"configcenter/src/thirdparty/apigw/cmdb"
 	"configcenter/src/thirdparty/apigw/gse"
+	"configcenter/src/thirdparty/apigw/iam"
 	"configcenter/src/thirdparty/apigw/login"
 	"configcenter/src/thirdparty/apigw/notice"
 	"configcenter/src/thirdparty/apigw/user"
@@ -37,6 +38,7 @@ type ClientSet interface {
 	Notice() notice.ClientI
 	Login() login.ClientI
 	User() user.ClientI
+	Iam() iam.ClientI
 }
 
 type clientSet struct {
@@ -45,6 +47,7 @@ type clientSet struct {
 	notice notice.ClientI
 	login  login.ClientI
 	user   user.ClientI
+	iam    iam.ClientI
 }
 
 // NewClientSet new api gateway client set
@@ -117,6 +120,13 @@ func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer, n
 		}
 	}
 
+	if _, exists := neededCliMap[Iam]; exists {
+		cs.iam, err = iam.NewClient(options, cs.user)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return cs, nil
 }
 
@@ -145,6 +155,11 @@ func (c *clientSet) User() user.ClientI {
 	return c.user
 }
 
+// Iam returns iam client
+func (c *clientSet) Iam() iam.ClientI {
+	return c.iam
+}
+
 // ClientType is the api gateway client type, used to specify which client is needed
 type ClientType string
 
@@ -159,4 +174,6 @@ const (
 	Login ClientType = "login"
 	// User is the user client type
 	User ClientType = "user"
+	// Iam is the iam client type
+	Iam ClientType = "iam"
 )

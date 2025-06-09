@@ -25,6 +25,7 @@ import (
 // GetCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
 func GetCustomObjects(ctx context.Context, header http.Header, client apimachinery.ClientSetInterface) (
 	[]metadata.Object, error) {
+
 	// get mainline objects
 	assoCond := &metadata.QueryCondition{
 		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},

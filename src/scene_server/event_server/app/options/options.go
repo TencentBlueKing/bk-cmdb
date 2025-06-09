@@ -14,7 +14,6 @@
 package options
 
 import (
-	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
@@ -47,9 +46,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 type Config struct {
 	// Redis is cc redis configs.
 	Redis redis.Config
-
-	// Auth is auth config
-	Auth iam.AuthConfig
 
 	// IdentifierConf host identifier config
 	IdentifierConf *hostidentifier.HostIdentifierConf

@@ -12,21 +12,25 @@
 
 package iam
 
-import "configcenter/src/common/metadata"
+import (
+	iamtypes "configcenter/src/ac/iam/types"
+	"configcenter/src/common/metadata"
+	"configcenter/src/thirdparty/apigw/iam"
+)
 
 // GenerateActionGroups generate all the resource action groups registered to IAM.
-func GenerateActionGroups(objects []metadata.Object) []ActionGroup {
+func GenerateActionGroups(tenantObjects map[string][]metadata.Object) []iam.ActionGroup {
 	ActionGroups := GenerateStaticActionGroups()
 
 	// generate model instance manage action groups, contains model instance related actions which are dynamic
-	ActionGroups = append(ActionGroups, GenModelInstanceManageActionGroups(objects)...)
+	ActionGroups = append(ActionGroups, GenModelInstanceManageActionGroups(tenantObjects)...)
 
 	return ActionGroups
 }
 
 // GenerateStaticActionGroups generate all the static resource action groups.
-func GenerateStaticActionGroups() []ActionGroup {
-	ActionGroups := make([]ActionGroup, 0)
+func GenerateStaticActionGroups() []iam.ActionGroup {
+	ActionGroups := make([]iam.ActionGroup, 0)
 
 	// generate business set manage action groups, contains fulltext search related actions
 	ActionGroups = append(ActionGroups, genFulltextSearchServiceActionGroups()...)
@@ -58,166 +62,106 @@ func GenerateStaticActionGroups() []ActionGroup {
 	return ActionGroups
 }
 
-func genFulltextSearchServiceActionGroups() []ActionGroup {
-	return []ActionGroup{
+func genFulltextSearchServiceActionGroups() []iam.ActionGroup {
+	return []iam.ActionGroup{
 		{
 			Name:   "检索服务",
 			NameEn: "Fulltext Search Service",
-			Actions: []ActionWithID{
+			Actions: []iam.ActionWithID{
 				{
-					ID: UseFulltextSearch,
+					ID: iamtypes.UseFulltextSearch,
 				},
 			},
 		},
 	}
 }
 
-func genBizSetManageActionGroups() []ActionGroup {
-	return []ActionGroup{
+func genBizSetManageActionGroups() []iam.ActionGroup {
+	return []iam.ActionGroup{
 		{
 			Name:   "业务集管理",
 			NameEn: "Business Set Manage",
-			Actions: []ActionWithID{
+			Actions: []iam.ActionWithID{
 				{
-					ID: AccessBizSet,
+					ID: iamtypes.AccessBizSet,
 				},
 			},
 		},
 	}
 }
 
-func genBusinessManageActionGroups() []ActionGroup {
-	return []ActionGroup{
-		{
-			Name:   "业务管理",
-			NameEn: "Business Manage",
-			Actions: []ActionWithID{
-				{
-					ID: ViewBusinessResource,
-				},
-			},
-			SubGroups: []ActionGroup{
+func genBusinessManageActionGroups() []iam.ActionGroup {
+	return []iam.ActionGroup{
+		{Name: "业务管理",
+			NameEn:  "Business Manage",
+			Actions: []iam.ActionWithID{{ID: iamtypes.ViewBusinessResource}},
+			SubGroups: []iam.ActionGroup{
 				{
 					Name:   "业务主机",
 					NameEn: "Business Host",
-					Actions: []ActionWithID{
-						{
-							ID: EditBusinessHost,
-						},
-						{
-							ID: BusinessHostTransferToResourcePool,
-						},
-						{
-							ID: HostTransferAcrossBusiness,
-						},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.EditBusinessHost},
+						{ID: iamtypes.BusinessHostTransferToResourcePool},
+						{ID: iamtypes.HostTransferAcrossBusiness},
 					},
 				},
 				{
 					Name:   "业务拓扑",
 					NameEn: "Business Topology",
-					Actions: []ActionWithID{
-						{
-							ID: CreateBusinessTopology,
-						},
-						{
-							ID: EditBusinessTopology,
-						},
-						{
-							ID: DeleteBusinessTopology,
-						},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.CreateBusinessTopology}, {ID: iamtypes.EditBusinessTopology},
+						{ID: iamtypes.DeleteBusinessTopology},
 					},
 				},
 				{
 					Name:   "服务实例",
 					NameEn: "Service Instance",
-					Actions: []ActionWithID{
-						{
-							ID: CreateBusinessServiceInstance,
-						},
-						{
-							ID: EditBusinessServiceInstance,
-						},
-						{
-							ID: DeleteBusinessServiceInstance,
-						},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.CreateBusinessServiceInstance}, {ID: iamtypes.EditBusinessServiceInstance},
+						{ID: iamtypes.DeleteBusinessServiceInstance},
 					},
 				},
 				{
 					Name:   "服务模版",
 					NameEn: "Service Template",
-					Actions: []ActionWithID{
-						{
-							ID: CreateBusinessServiceTemplate,
-						},
-						{
-							ID: EditBusinessServiceTemplate,
-						},
-						{
-							ID: DeleteBusinessServiceTemplate,
-						},
+					Actions: []iam.ActionWithID{{ID: iamtypes.CreateBusinessServiceTemplate},
+						{ID: iamtypes.EditBusinessServiceTemplate}, {ID: iamtypes.DeleteBusinessServiceTemplate},
 					},
 				},
 				{
 					Name:   "集群模版",
 					NameEn: "Set Template",
-					Actions: []ActionWithID{
-						{
-							ID: CreateBusinessSetTemplate,
-						},
-						{
-							ID: EditBusinessSetTemplate,
-						},
-						{
-							ID: DeleteBusinessSetTemplate,
-						},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.CreateBusinessSetTemplate}, {ID: iamtypes.EditBusinessSetTemplate},
+						{ID: iamtypes.DeleteBusinessSetTemplate},
 					},
 				},
 				{
 					Name:   "服务分类",
 					NameEn: "Service Category",
-					Actions: []ActionWithID{
-						{
-							ID: CreateBusinessServiceCategory,
-						},
-						{
-							ID: EditBusinessServiceCategory,
-						},
-						{
-							ID: DeleteBusinessServiceCategory,
-						},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.CreateBusinessServiceCategory}, {ID: iamtypes.EditBusinessServiceCategory},
+						{ID: iamtypes.DeleteBusinessServiceCategory},
 					},
 				},
 				{
 					Name:   "动态分组",
 					NameEn: "Dynamic Grouping",
-					Actions: []ActionWithID{
-						{
-							ID: CreateBusinessCustomQuery,
-						},
-						{
-							ID: EditBusinessCustomQuery,
-						},
-						{
-							ID: DeleteBusinessCustomQuery,
-						},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.CreateBusinessCustomQuery}, {ID: iamtypes.EditBusinessCustomQuery},
+						{ID: iamtypes.DeleteBusinessCustomQuery},
 					},
 				},
 				{
-					Name:   "业务自定义字段",
-					NameEn: "Business Custom Field",
-					Actions: []ActionWithID{
-						{
-							ID: EditBusinessCustomField,
-						},
-					},
+					Name:    "业务自定义字段",
+					NameEn:  "Business Custom Field",
+					Actions: []iam.ActionWithID{{ID: iamtypes.EditBusinessCustomField}},
 				},
 				{
 					Name:   "主机自动应用",
 					NameEn: "Business Host Apply",
-					Actions: []ActionWithID{
-						{
-							ID: EditBusinessHostApply,
-						},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.EditBusinessHostApply},
 					},
 				},
 			},
@@ -225,271 +169,141 @@ func genBusinessManageActionGroups() []ActionGroup {
 	}
 }
 
-func genResourceManageActionGroups() []ActionGroup {
-	return []ActionGroup{
+func genResourceManageActionGroups() []iam.ActionGroup {
+	return []iam.ActionGroup{
 		{
 			Name:   "资源管理",
 			NameEn: "Resource Manage",
-			SubGroups: []ActionGroup{
+			SubGroups: []iam.ActionGroup{
 				{
 					Name:   "主机池",
 					NameEn: "Host Pool",
-					Actions: []ActionWithID{
-						{
-							ID: ViewResourcePoolHost,
-						},
-						{
-							ID: CreateResourcePoolHost,
-						},
-						{
-							ID: EditResourcePoolHost,
-						},
-						{
-							ID: DeleteResourcePoolHost,
-						},
-						{
-							ID: ResourcePoolHostTransferToBusiness,
-						},
-						{
-							ID: ResourcePoolHostTransferToDirectory,
-						},
-						{
-							ID: CreateResourcePoolDirectory,
-						},
-						{
-							ID: EditResourcePoolDirectory,
-						},
-						{
-							ID: DeleteResourcePoolDirectory,
-						},
-						{
-							ID: ManageHostAgentID,
-						},
-					},
+					Actions: []iam.ActionWithID{{ID: iamtypes.ViewResourcePoolHost},
+						{ID: iamtypes.CreateResourcePoolHost}, {ID: iamtypes.EditResourcePoolHost},
+						{ID: iamtypes.DeleteResourcePoolHost}, {ID: iamtypes.ResourcePoolHostTransferToBusiness},
+						{ID: iamtypes.ResourcePoolHostTransferToDirectory}, {ID: iamtypes.CreateResourcePoolDirectory},
+						{ID: iamtypes.EditResourcePoolDirectory}, {ID: iamtypes.DeleteResourcePoolDirectory},
+						{ID: iamtypes.ManageHostAgentID}},
 				},
 				{
-					Name:   "业务",
-					NameEn: "Business",
-					Actions: []ActionWithID{
-						{
-							ID: CreateBusiness,
-						},
-						{
-							ID: EditBusiness,
-						},
-						{
-							ID: ArchiveBusiness,
-						},
-						{
-							ID: FindBusiness,
-						},
-					},
+					Name: "业务", NameEn: "Business",
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.CreateBusiness}, {ID: iamtypes.EditBusiness}, {ID: iamtypes.ArchiveBusiness},
+						{ID: iamtypes.FindBusiness}}},
+				{
+					Name: "项目", NameEn: "Project",
+					Actions: []iam.ActionWithID{{ID: iamtypes.CreateProject}, {ID: iamtypes.EditProject},
+						{ID: iamtypes.DeleteProject}, {ID: iamtypes.ViewProject}},
 				},
 				{
-					Name:   "项目",
-					NameEn: "Project",
-					Actions: []ActionWithID{
-						{
-							ID: CreateProject,
-						},
-						{
-							ID: EditProject,
-						},
-						{
-							ID: DeleteProject,
-						},
-						{
-							ID: ViewProject,
-						},
-					},
-				},
-				{
-					Name:   "业务集",
-					NameEn: "BizSet",
-					Actions: []ActionWithID{
-						{
-							ID: CreateBizSet,
-						},
-						{
-							ID: EditBizSet,
-						},
-						{
-							ID: DeleteBizSet,
-						},
-						{
-							ID: ViewBizSet,
-						},
-					},
+					Name: "业务集", NameEn: "BizSet",
+					Actions: []iam.ActionWithID{{ID: iamtypes.CreateBizSet}, {ID: iamtypes.EditBizSet},
+						{ID: iamtypes.DeleteBizSet}, {ID: iamtypes.ViewBizSet}},
 				},
 				{
 					Name:   "管控区域",
 					NameEn: "Cloud Area",
-					Actions: []ActionWithID{
-						{
-							ID: ViewCloudArea,
-						},
-						{
-							ID: CreateCloudArea,
-						},
-						{
-							ID: EditCloudArea,
-						},
-						{
-							ID: DeleteCloudArea,
-						},
-					},
+					Actions: []iam.ActionWithID{{ID: iamtypes.ViewCloudArea}, {ID: iamtypes.CreateCloudArea},
+						{ID: iamtypes.EditCloudArea}, {ID: iamtypes.DeleteCloudArea}},
 				},
 				{
 					Name:   "事件监听",
 					NameEn: "Event Watch",
-					Actions: []ActionWithID{
-						{
-							ID: WatchHostEvent,
-						},
-						{
-							ID: WatchHostRelationEvent,
-						},
-						{
-							ID: WatchBizEvent,
-						},
-						{
-							ID: WatchSetEvent,
-						},
-						{
-							ID: WatchModuleEvent,
-						},
-						{
-							ID: WatchProcessEvent,
-						},
-						{
-							ID: WatchCommonInstanceEvent,
-						},
-						{
-							ID: WatchMainlineInstanceEvent,
-						},
-						{
-							ID: WatchInstAsstEvent,
-						},
-						{
-							ID: WatchBizSetEvent,
-						},
-						{
-							ID: WatchPlatEvent,
-						},
-						{
-							ID: WatchKubeClusterEvent,
-						},
-						{
-							ID: WatchKubeNodeEvent,
-						},
-						{
-							ID: WatchKubeNamespaceEvent,
-						},
-						{
-							ID: WatchKubeWorkloadEvent,
-						},
-						{
-							ID: WatchKubePodEvent,
-						},
-						{
-							ID: WatchProjectEvent,
-						},
-					},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.WatchHostEvent}, {ID: iamtypes.WatchHostRelationEvent},
+						{ID: iamtypes.WatchBizEvent}, {ID: iamtypes.WatchSetEvent},
+						{ID: iamtypes.WatchModuleEvent}, {ID: iamtypes.WatchProcessEvent},
+						{ID: iamtypes.WatchCommonInstanceEvent}, {ID: iamtypes.WatchMainlineInstanceEvent},
+						{ID: iamtypes.WatchInstAsstEvent}, {ID: iamtypes.WatchBizSetEvent},
+						{ID: iamtypes.WatchPlatEvent}, {ID: iamtypes.WatchKubeClusterEvent},
+						{ID: iamtypes.WatchKubeNodeEvent}, {ID: iamtypes.WatchKubeNamespaceEvent},
+						{ID: iamtypes.WatchKubeWorkloadEvent}, {ID: iamtypes.WatchKubePodEvent},
+						{ID: iamtypes.WatchProjectEvent}},
 				},
 				{
-					Name:   "全量同步缓存条件",
-					NameEn: "Full Sync Condition",
-					Actions: []ActionWithID{
-						{ID: CreateFullSyncCond},
-						{ID: ViewFullSyncCond},
-						{ID: EditFullSyncCond},
-						{ID: DeleteFullSyncCond},
-					},
-				},
+					Name: "全量同步缓存条件", NameEn: "Full Sync Condition",
+					Actions: []iam.ActionWithID{{ID: iamtypes.CreateFullSyncCond},
+						{ID: iamtypes.ViewFullSyncCond}, {ID: iamtypes.EditFullSyncCond},
+						{ID: iamtypes.DeleteFullSyncCond}}},
 				{
-					Name:   "缓存",
-					NameEn: "Cache",
-					Actions: []ActionWithID{
-						{ID: ViewGeneralCache},
-					},
-				},
+					Name: "缓存", NameEn: "Cache", Actions: []iam.ActionWithID{{ID: iamtypes.ViewGeneralCache}}},
 			},
 		},
 	}
 }
 
-func genModelManageActionGroups() []ActionGroup {
-	return []ActionGroup{
+func genModelManageActionGroups() []iam.ActionGroup {
+	return []iam.ActionGroup{
 		{
 			Name:   "模型管理",
 			NameEn: "Model Manage",
-			SubGroups: []ActionGroup{
+			SubGroups: []iam.ActionGroup{
 				{
 					Name:   "模型分组",
 					NameEn: "Model Group",
-					Actions: []ActionWithID{
-						{ID: CreateModelGroup},
-						{ID: EditModelGroup},
-						{ID: DeleteModelGroup},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.CreateModelGroup},
+						{ID: iamtypes.EditModelGroup},
+						{ID: iamtypes.DeleteModelGroup},
 					},
 				},
 				{
 					Name:   "模型关系",
 					NameEn: "Model Relation",
-					Actions: []ActionWithID{
+					Actions: []iam.ActionWithID{
 						{
-							ID: ViewModelTopo,
+							ID: iamtypes.ViewModelTopo,
 						},
 						{
-							ID: EditBusinessLayer,
+							ID: iamtypes.EditBusinessLayer,
 						},
 						{
-							ID: EditModelTopologyView,
+							ID: iamtypes.EditModelTopologyView,
 						},
 					},
 				},
 				{
 					Name:   "模型",
 					NameEn: "Model",
-					Actions: []ActionWithID{
+					Actions: []iam.ActionWithID{
 						{
-							ID: ViewSysModel,
+							ID: iamtypes.ViewSysModel,
 						},
 						{
-							ID: CreateSysModel,
+							ID: iamtypes.CreateSysModel,
 						},
 						{
-							ID: EditSysModel,
+							ID: iamtypes.EditSysModel,
 						},
 						{
-							ID: DeleteSysModel,
+							ID: iamtypes.DeleteSysModel,
 						},
 					},
 				},
 				{
 					Name:   "关联类型",
 					NameEn: "Association Type",
-					Actions: []ActionWithID{
-						{ID: CreateAssociationType},
-						{ID: EditAssociationType},
-						{ID: DeleteAssociationType},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.CreateAssociationType},
+						{ID: iamtypes.EditAssociationType},
+						{ID: iamtypes.DeleteAssociationType},
 					},
 				},
 				{
 					Name:   "字段组合模板",
 					NameEn: "Field Grouping Template",
-					Actions: []ActionWithID{
-						{ID: CreateFieldGroupingTemplate},
-						{ID: ViewFieldGroupingTemplate},
-						{ID: EditFieldGroupingTemplate},
-						{ID: DeleteFieldGroupingTemplate},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.CreateFieldGroupingTemplate},
+						{ID: iamtypes.ViewFieldGroupingTemplate},
+						{ID: iamtypes.EditFieldGroupingTemplate},
+						{ID: iamtypes.DeleteFieldGroupingTemplate},
 					},
 				},
 				{
 					Name:   "ID规则自增ID",
 					NameEn: "ID Rule Self-increasing ID",
-					Actions: []ActionWithID{
-						{ID: EditIDRuleIncrID},
+					Actions: []iam.ActionWithID{
+						{ID: iamtypes.EditIDRuleIncrID},
 					},
 				},
 			},
@@ -498,16 +312,20 @@ func genModelManageActionGroups() []ActionGroup {
 }
 
 // GenModelInstanceManageActionGroups TODO
-func GenModelInstanceManageActionGroups(objects []metadata.Object) []ActionGroup {
-	if len(objects) == 0 {
-		return make([]ActionGroup, 0)
+func GenModelInstanceManageActionGroups(tenantObjects map[string][]metadata.Object) []iam.ActionGroup {
+
+	if len(tenantObjects) == 0 {
+		return make([]iam.ActionGroup, 0)
 	}
 
-	subGroups := []ActionGroup{}
-	for _, obj := range objects {
-		subGroups = append(subGroups, genDynamicActionSubGroup(obj))
+	subGroups := []iam.ActionGroup{}
+	for _, objects := range tenantObjects {
+		for _, obj := range objects {
+			subGroups = append(subGroups, genDynamicActionSubGroup(obj))
+		}
 	}
-	return []ActionGroup{
+
+	return []iam.ActionGroup{
 		{
 			Name:      "模型实例管理",
 			NameEn:    "Model instance Manage",
@@ -516,77 +334,77 @@ func GenModelInstanceManageActionGroups(objects []metadata.Object) []ActionGroup
 	}
 }
 
-func genContainerManagementActionGroups() []ActionGroup {
-	return []ActionGroup{
+func genContainerManagementActionGroups() []iam.ActionGroup {
+	return []iam.ActionGroup{
 		{
 			Name:   "容器资源管理",
 			NameEn: "Container Management",
-			SubGroups: []ActionGroup{
+			SubGroups: []iam.ActionGroup{
 				{
 					Name:   "容器 Cluster",
 					NameEn: "Container Cluster",
-					Actions: []ActionWithID{
+					Actions: []iam.ActionWithID{
 						{
-							ID: CreateContainerCluster,
+							ID: iamtypes.CreateContainerCluster,
 						},
 						{
-							ID: EditContainerCluster,
+							ID: iamtypes.EditContainerCluster,
 						},
 						{
-							ID: DeleteContainerCluster,
+							ID: iamtypes.DeleteContainerCluster,
 						},
 					},
 				}, {
 					Name:   "容器 Node",
 					NameEn: "Container Node",
-					Actions: []ActionWithID{
+					Actions: []iam.ActionWithID{
 						{
-							ID: CreateContainerNode,
+							ID: iamtypes.CreateContainerNode,
 						},
 						{
-							ID: EditContainerNode,
+							ID: iamtypes.EditContainerNode,
 						},
 						{
-							ID: DeleteContainerNode,
+							ID: iamtypes.DeleteContainerNode,
 						},
 					},
 				}, {
 					Name:   "容器命名空间",
 					NameEn: "Container Namespace",
-					Actions: []ActionWithID{
+					Actions: []iam.ActionWithID{
 						{
-							ID: CreateContainerNamespace,
+							ID: iamtypes.CreateContainerNamespace,
 						},
 						{
-							ID: EditContainerNamespace,
+							ID: iamtypes.EditContainerNamespace,
 						},
 						{
-							ID: DeleteContainerNamespace,
+							ID: iamtypes.DeleteContainerNamespace,
 						},
 					},
 				}, {
 					Name:   "容器工作负载",
 					NameEn: "Container Workload",
-					Actions: []ActionWithID{
+					Actions: []iam.ActionWithID{
 						{
-							ID: CreateContainerWorkload,
+							ID: iamtypes.CreateContainerWorkload,
 						},
 						{
-							ID: EditContainerWorkload,
+							ID: iamtypes.EditContainerWorkload,
 						},
 						{
-							ID: DeleteContainerWorkload,
+							ID: iamtypes.DeleteContainerWorkload,
 						},
 					},
 				}, {
 					Name:   "容器 Pod",
 					NameEn: "Container Pod",
-					Actions: []ActionWithID{
+					Actions: []iam.ActionWithID{
 						{
-							ID: CreateContainerPod,
+							ID: iamtypes.CreateContainerPod,
 						},
 						{
-							ID: DeleteContainerPod,
+							ID: iamtypes.DeleteContainerPod,
 						},
 					},
 				},
@@ -595,18 +413,18 @@ func genContainerManagementActionGroups() []ActionGroup {
 	}
 }
 
-func genOperationStatisticActionGroups() []ActionGroup {
-	return []ActionGroup{
+func genOperationStatisticActionGroups() []iam.ActionGroup {
+	return []iam.ActionGroup{
 		{
 			Name:   "运营统计",
 			NameEn: "Operation Statistic",
-			SubGroups: []ActionGroup{
+			SubGroups: []iam.ActionGroup{
 				{
 					Name:   "操作审计",
 					NameEn: "Operation Audit",
-					Actions: []ActionWithID{
+					Actions: []iam.ActionWithID{
 						{
-							ID: FindAuditLog,
+							ID: iamtypes.FindAuditLog,
 						},
 					},
 				},
@@ -615,18 +433,18 @@ func genOperationStatisticActionGroups() []ActionGroup {
 	}
 }
 
-func genGlobalSettingsActionGroups() []ActionGroup {
-	return []ActionGroup{
+func genGlobalSettingsActionGroups() []iam.ActionGroup {
+	return []iam.ActionGroup{
 		{
 			Name:   "全局设置",
 			NameEn: "Global Settings",
-			SubGroups: []ActionGroup{
+			SubGroups: []iam.ActionGroup{
 				{
 					Name:   "全局设置",
 					NameEn: "Global Settings",
-					Actions: []ActionWithID{
+					Actions: []iam.ActionWithID{
 						{
-							ID: GlobalSettings,
+							ID: iamtypes.GlobalSettings,
 						},
 					},
 				},
@@ -635,14 +453,14 @@ func genGlobalSettingsActionGroups() []ActionGroup {
 	}
 }
 
-func genTenantSetActionGroups() []ActionGroup {
-	return []ActionGroup{
+func genTenantSetActionGroups() []iam.ActionGroup {
+	return []iam.ActionGroup{
 		{
 			Name:   "租户集",
 			NameEn: "Tenant Set",
-			Actions: []ActionWithID{
-				{ID: ViewTenantSet},
-				{ID: AccessTenantSet},
+			Actions: []iam.ActionWithID{
+				{ID: iamtypes.ViewTenantSet},
+				{ID: iamtypes.AccessTenantSet},
 			},
 		},
 	}

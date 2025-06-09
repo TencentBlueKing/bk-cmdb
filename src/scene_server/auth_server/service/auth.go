@@ -16,24 +16,26 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/resource/esb"
+	"configcenter/src/common/resource/apigw"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	apigwiam "configcenter/src/thirdparty/apigw/iam"
 )
 
 // AuthorizeBatch works to check if a user has the authority to operate resources.
 func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
-	opts := new(types.AuthBatchOptions)
+	opts := new(apigwiam.AuthBatchOptions)
 	err := ctx.DecodeInto(opts)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
 	}
 
-	decisions, err := s.authorizer.AuthorizeBatch(ctx.Kit.Ctx, opts)
+	decisions, err := s.authorizer.AuthorizeBatch(ctx.Kit.Ctx, ctx.Kit.Header, opts)
 	if err != nil {
 		blog.ErrorJSON("authorize batch failed, err: %s, ops: %s, rid: %s", err, opts, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -44,7 +46,7 @@ func (s *AuthService) AuthorizeBatch(ctx *rest.Contexts) {
 
 // AuthorizeAnyBatch works to check if a user has any authority for actions.
 func (s *AuthService) AuthorizeAnyBatch(ctx *rest.Contexts) {
-	opts := new(types.AuthBatchOptions)
+	opts := new(apigwiam.AuthBatchOptions)
 	err := ctx.DecodeInto(opts)
 	if err != nil {
 		ctx.RespAutoError(err)
@@ -53,7 +55,7 @@ func (s *AuthService) AuthorizeAnyBatch(ctx *rest.Contexts) {
 
 	blog.InfoJSON("-> authorize any request: %s, rid: %s", opts, ctx.Kit.Rid)
 
-	decisions, err := s.authorizer.AuthorizeAnyBatch(ctx.Kit.Ctx, opts)
+	decisions, err := s.authorizer.AuthorizeAnyBatch(ctx.Kit.Ctx, ctx.Kit.Header, opts)
 	if err != nil {
 		blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, rid: %s", err, opts, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -85,12 +87,12 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	resources := make([]types.Resource, 0)
+	resources := make([]apigwiam.Resource, 0)
 	if input.BizID > 0 {
-		businessPath := "/" + string(iam.Business) + "," + strconv.FormatInt(input.BizID, 10) + "/"
-		resource := types.Resource{
-			System: iam.SystemIDCMDB,
-			Type:   types.ResourceType(*iamResourceType),
+		businessPath := "/" + string(iamtypes.Business) + "," + strconv.FormatInt(input.BizID, 10) + "/"
+		resource := apigwiam.Resource{
+			System: iamtypes.SystemIDCMDB,
+			Type:   apigwiam.IamResourceType(*iamResourceType),
 			Attribute: map[string]interface{}{
 				types.IamPathKey: []string{businessPath},
 			},
@@ -98,18 +100,19 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		resources = append(resources, resource)
 	}
 
-	ops := &types.AuthOptions{
-		System: iam.SystemIDCMDB,
-		Subject: types.Subject{
+	ops := &apigwiam.AuthOptions{
+		System: iamtypes.SystemIDCMDB,
+		Subject: apigwiam.Subject{
 			Type: "user",
 			ID:   input.UserName,
 		},
-		Action: types.Action{
+		Action: apigwiam.Action{
 			ID: string(iamActionID),
 		},
 		Resources: resources,
 	}
-	authorizeList, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ops, types.ResourceType(*iamResourceType))
+	authorizeList, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ctx.Kit.Header, ops,
+		apigwiam.IamResourceType(*iamResourceType))
 	if err != nil {
 		blog.ErrorJSON("ListAuthorizedInstances failed, err: %+v,  ops: %s, input: %s, rid: %s", err, ops,
 			input, ctx.Kit.Rid)
@@ -128,7 +131,7 @@ func (s *AuthService) GetNoAuthSkipUrl(ctx *rest.Contexts) {
 		return
 	}
 
-	url, err := esb.EsbClient().IamSrv().GetNoAuthSkipUrl(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	url, err := apigw.Client().Iam().GetNoAuthSkipUrl(ctx.Kit.Ctx, ctx.Kit.Header, *input)
 	if err != nil {
 		blog.ErrorJSON("GetNoAuthSkipUrl failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -167,9 +170,8 @@ func (s *AuthService) RegisterResourceCreatorAction(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	input.System = iam.SystemIDCMDB
-
-	policies, err := esb.EsbClient().IamSrv().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	input.System = iamtypes.SystemIDCMDB
+	policies, err := apigw.Client().Iam().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, *input)
 	if err != nil {
 		blog.ErrorJSON("register resource creator action failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -187,9 +189,9 @@ func (s *AuthService) BatchRegisterResourceCreatorAction(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
-	input.System = iam.SystemIDCMDB
+	input.System = iamtypes.SystemIDCMDB
 
-	policies, err := esb.EsbClient().IamSrv().BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	policies, err := apigw.Client().Iam().BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, *input)
 	if err != nil {
 		blog.ErrorJSON("register resource creator action failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

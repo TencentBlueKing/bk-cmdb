@@ -21,72 +21,33 @@ import (
 	"reflect"
 	"time"
 
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/authserver"
-	"configcenter/src/apimachinery/flowctrl"
-	"configcenter/src/apimachinery/rest"
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	headerutil "configcenter/src/common/http/header/util"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/lock"
 	"configcenter/src/common/metadata"
-	commonutil "configcenter/src/common/util"
+	apigwcli "configcenter/src/common/resource/apigw"
+	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/storage/dal/redis"
-
-	"github.com/prometheus/client_golang/prometheus"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
 // IAM TODO
 type IAM struct {
-	Client iamClientInterface
+	Client iam.ClientI
 }
 
 // NewIAM new iam client
-func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
-	blog.V(5).Infof("new iam with parameters cfg: %+v", cfg)
-	if !auth.EnableAuthorize() {
-		return new(IAM), nil
-	}
-
-	var tls *util.TLSClientConfig
-	config, err := util.NewTLSClientConfigFromConfig("authServer.authCenter.tls")
-	if err != nil {
-		blog.Infof("get authCenter.tls config error, err: %v", err)
-		return nil, err
-	}
-	tls = &config
-
-	client, err := util.NewClient(tls)
-	if err != nil {
-		return nil, err
-	}
-	c := &util.Capability{
-		Client: client,
-		Discover: &iamDiscovery{
-			servers: cfg.Address,
-		},
-		Throttle: flowctrl.NewRateLimiter(5000, 5000),
-		Mock: util.MockInfo{
-			Mocked: false,
-		},
-		MetricOpts: util.MetricOption{Register: reg},
-	}
-
-	header := http.Header{}
-	header.Set("Content-Type", "application/json")
-	header.Set("Accept", "application/json")
-	header.Set(iamAppCodeHeader, cfg.AppCode)
-	header.Set(iamAppSecretHeader, cfg.AppSecret)
-
+func NewIAM() (*IAM, error) {
 	return &IAM{
-		Client: NewIAMClient(&IAMClientCfg{
-			Config:      cfg,
-			Client:      rest.NewRESTClient(c, ""),
-			BasicHeader: header,
-		}),
+		Client: apigwcli.Client().Iam(),
 	}, nil
 }
 
@@ -94,7 +55,7 @@ func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 func tryLockRegister(redisCli redis.Client, rid string) (lock.Locker, error) {
 	for i := 0; i < 3; i++ {
 		locker := lock.NewLocker(redisCli)
-		locked, err := locker.Lock(RegisterIamLock, 2*time.Minute)
+		locked, err := locker.Lock(iamtypes.RegisterIamLock, 2*time.Minute)
 		if err != nil {
 			blog.Errorf("get register iam lock failed, err: %v, rid: %s", err, rid)
 			time.Sleep(5 * time.Second)
@@ -114,7 +75,7 @@ func tryLockRegister(redisCli redis.Client, rid string) (lock.Locker, error) {
 // RegisterIamOptions defines options to register iam
 type RegisterIamOptions struct {
 	Host    string
-	Objects []metadata.Object
+	Objects map[string][]metadata.Object
 }
 
 /**
@@ -137,7 +98,9 @@ type RegisterIamOptions struct {
 */
 
 // Register cc auth resources to iam
-func (i IAM) Register(ctx context.Context, redisCli redis.Client, opt *RegisterIamOptions, rid string) error {
+func (i IAM) Register(ctx context.Context, h http.Header, redisCli redis.Client, opt *RegisterIamOptions,
+	rid string) error {
+
 	if !auth.EnableAuthorize() {
 		return nil
 	}
@@ -148,121 +111,125 @@ func (i IAM) Register(ctx context.Context, redisCli redis.Client, opt *RegisterI
 	}
 	defer locker.Unlock()
 
-	registeredInfo, err := i.registerSystem(ctx, opt.Host)
+	registeredInfo, err := i.registerSystem(ctx, h, opt.Host)
 	if err != nil {
 		return err
 	}
 
-	objects := opt.Objects
-	newResTypes, updateResTypes, removedResTypeIDs := i.crossCompareResTypes(registeredInfo.ResourceTypes, objects)
+	newResTypes, updateResTypes, removedResTypeIDs := i.crossCompareResTypes(registeredInfo.ResourceTypes,
+		opt.Objects)
 	newInstSelections, updateInstSelections, removedInstSelectionIDs := i.crossCompareInstSelections(
-		registeredInfo.InstanceSelections, objects)
-	newResActions, updateResActions, removedResActionIDs := i.crossCompareResActions(registeredInfo.Actions, objects)
+		registeredInfo.InstanceSelections, opt.Objects)
+	newResActions, updateResActions, removedResActionIDs := i.crossCompareResActions(registeredInfo.Actions,
+		opt.Objects)
 
-	if err = i.removeResActions(ctx, removedResActionIDs, rid); err != nil {
+	if err = i.removeResActions(ctx, h, removedResActionIDs, rid); err != nil {
 		return err
 	}
 
 	for _, resourceType := range updateResTypes {
-		if err = i.Client.UpdateResourcesType(ctx, resourceType); err != nil {
-			blog.ErrorJSON("update resource type(%s) failed, err: %s, rid: %s", resourceType, err, rid)
+		if err = i.Client.UpdateResourcesType(ctx, h, resourceType); err != nil {
+			blog.Errorf("update resource type(%v) failed, err: %v, rid: %s", resourceType, err, rid)
 			return err
 		}
 	}
 
-	if err = i.Client.RegisterResourcesTypes(ctx, newResTypes); err != nil {
-		blog.ErrorJSON("register resource types(%s) failed, err: %s, rid: %s", newResTypes, err, rid)
+	if err = i.Client.RegisterResourcesTypes(ctx, h, newResTypes); err != nil {
+		blog.Errorf("register resource types(%v) failed, err: %v, rid: %s", newResTypes, err, rid)
 		return err
 	}
 
 	for _, instanceSelection := range updateInstSelections {
-		if err = i.Client.UpdateInstanceSelection(ctx, instanceSelection); err != nil {
-			blog.ErrorJSON("update instance selection(%s) failed, err: %s, rid: %s", instanceSelection, err, rid)
+		if err = i.Client.UpdateInstanceSelection(ctx, h, instanceSelection); err != nil {
+			blog.Errorf("update instance selection(%v) failed, err: %v, rid: %s", instanceSelection, err, rid)
 			return err
 		}
 	}
 
-	if err = i.Client.RegisterInstanceSelections(ctx, newInstSelections); err != nil {
-		blog.ErrorJSON("register instance selections(%s) failed, err: %s, rid: %s", newInstSelections, err, rid)
+	if err = i.Client.RegisterInstanceSelections(ctx, h, newInstSelections); err != nil {
+		blog.Errorf("register instance selections(%v) failed, err: %v, rid: %s", newInstSelections, err, rid)
 		return err
 	}
 
 	for _, resourceAction := range updateResActions {
-		if err = i.Client.UpdateAction(ctx, resourceAction); err != nil {
-			blog.ErrorJSON("update resource action(%s) failed, err: %s, rid: %s", resourceAction, err, rid)
+		if err = i.Client.UpdateAction(ctx, h, resourceAction); err != nil {
+			blog.Errorf("update resource action(%v) failed, err: %v, rid: %s", resourceAction, err, rid)
 			return err
 		}
 	}
 
-	if err = i.Client.RegisterActions(ctx, newResActions); err != nil {
-		blog.ErrorJSON("register resource actions(%s) failed, err: %s, rid: %s", newResActions, err, rid)
+	if err = i.Client.RegisterActions(ctx, h, newResActions); err != nil {
+		blog.Errorf("register resource actions(%v) failed, err: %v, rid: %s", newResActions, err, rid)
 		return err
 	}
 
-	if err = i.Client.DeleteInstanceSelections(ctx, removedInstSelectionIDs); err != nil {
-		blog.ErrorJSON("delete instance selections(%s) failed, err: %s, rid: %s", removedInstSelectionIDs, err, rid)
+	if err = i.Client.DeleteInstanceSelections(ctx, h, removedInstSelectionIDs); err != nil {
+		blog.Errorf("delete instance selections(%v) failed, err: %v, rid: %s", removedInstSelectionIDs, err, rid)
 		return err
 	}
 
-	if err = i.Client.DeleteResourcesTypes(ctx, removedResTypeIDs); err != nil {
-		blog.ErrorJSON("delete resource types(%s) failed, err: %s, rid: %s", removedResTypeIDs, err, rid)
+	if err = i.Client.DeleteResourcesTypes(ctx, h, removedResTypeIDs); err != nil {
+		blog.Errorf("delete resource types(%v) failed, err: %v, rid: %s", removedResTypeIDs, err, rid)
 		return err
 	}
 
-	if err := i.registerActionGroups(ctx, registeredInfo, objects, rid); err != nil {
+	if err := i.registerActionGroups(ctx, h, registeredInfo, opt.Objects, rid); err != nil {
+		blog.Errorf("register action groups(%v) failed, err: %v, rid: %s", registeredInfo, err, rid)
 		return err
 	}
 
-	if err := i.registerResCreatorActions(ctx, registeredInfo, rid); err != nil {
+	if err := i.registerResCreatorActions(ctx, h, registeredInfo, rid); err != nil {
+		blog.Errorf("register resCreator actions(%v) failed, tenantID: %s, err: %v, rid: %s", registeredInfo, err, rid)
 		return err
 	}
 
-	if err := i.registerCommonActions(ctx, registeredInfo, rid); err != nil {
+	if err := i.registerCommonActions(ctx, h, registeredInfo, rid); err != nil {
+		blog.Errorf("register common actions(%v) failed, tenantID: %s, err: %v, rid: %s", registeredInfo, err, rid)
 		return err
 	}
+
 	return nil
 }
 
 // registerSystem register cc system to iam
-func (i IAM) registerSystem(ctx context.Context, host string) (*RegisteredSystemInfo, error) {
-	systemResp, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
-	if err != nil && err != ErrNotFound {
+func (i IAM) registerSystem(ctx context.Context, header http.Header, host string) (*iam.RegisteredSystemInfo, error) {
+
+	systemInfo, err := i.Client.GetSystemInfo(ctx, header, []iamtypes.SystemQueryField{})
+	if err != nil && err != iam.ErrNotFound {
 		blog.Errorf("get system info failed, err: %v", err)
 		return nil, err
 	}
 
 	// if iam cmdb system has not been registered, register system
-	if err == ErrNotFound {
-		sys := System{
-			ID:          SystemIDCMDB,
-			Name:        SystemNameCMDB,
-			EnglishName: SystemNameCMDBEn,
-			Clients:     SystemIDCMDB,
-			ProviderConfig: &SysConfig{
+	if err == iam.ErrNotFound {
+		sys := iam.System{
+			ID:          iamtypes.SystemIDCMDB,
+			Name:        iamtypes.SystemNameCMDB,
+			EnglishName: iamtypes.SystemNameCMDBEn,
+			Clients:     iamtypes.SystemIDCMDB,
+			ProviderConfig: &iam.SysConfig{
 				Host: host,
 				Auth: "basic",
 			},
 		}
 
-		if err = i.Client.RegisterSystem(ctx, sys); err != nil {
-			blog.ErrorJSON("register system(%s) failed, err: %s", sys, err)
+		if err = i.Client.RegisterSystem(ctx, header, sys); err != nil {
+			blog.Errorf("register system(%s) failed, err: %v", sys, err)
 			return nil, err
 		}
 
 		blog.V(5).Infof("register new system %+v succeed", sys)
-		return new(RegisteredSystemInfo), nil
+		return new(iam.RegisteredSystemInfo), nil
 	}
 
-	providerConfig := systemResp.Data.BaseInfo.ProviderConfig
-
+	providerConfig := systemInfo.BaseInfo.ProviderConfig
 	if providerConfig == nil || providerConfig.Host != host {
 		// if iam registered cmdb system has no ProviderConfig
 		// or registered host config is different with current host config, update system host config
-		if err = i.Client.UpdateSystemConfig(ctx, &SysConfig{Host: host}); err != nil {
+		if err = i.Client.UpdateSystemConfig(ctx, header, &iam.SysConfig{Host: host}); err != nil {
 			blog.Errorf("update system host %s config failed, err: %v", host, err)
 			return nil, err
 		}
-
 		if providerConfig == nil {
 			blog.V(5).Infof("update system host to %s succeed", host)
 		} else {
@@ -270,7 +237,7 @@ func (i IAM) registerSystem(ctx context.Context, host string) (*RegisteredSystem
 		}
 	}
 
-	return &systemResp.Data, nil
+	return systemInfo, nil
 }
 
 // iamName record iam name and english name to find if name conflicts
@@ -280,36 +247,31 @@ type iamName struct {
 }
 
 // crossCompareResTypes cross compare resource types to get need create/update/delete ones
-func (i IAM) crossCompareResTypes(registeredResourceTypes []ResourceType, objects []metadata.Object) (
-	[]ResourceType, []ResourceType, []TypeID) {
+func (i IAM) crossCompareResTypes(registeredResourceTypes []iam.ResourceType,
+	tenantObjects map[string][]metadata.Object) ([]iam.ResourceType, []iam.ResourceType, []iamtypes.TypeID) {
 
-	registeredResTypeMap := make(map[TypeID]ResourceType)
+	registeredResTypeMap := make(map[iamtypes.TypeID]iam.ResourceType)
 	for _, resourceType := range registeredResourceTypes {
 		registeredResTypeMap[resourceType.ID] = resourceType
 	}
 
 	// record the name and resource type id mapping to get the resource types whose name conflicts
-	resNameMap := make(map[string]TypeID)
-	resNameEnMap := make(map[string]TypeID)
-	updateResPrevNameMap := make(map[TypeID]iamName)
-
-	newResTypes := make([]ResourceType, 0)
-	updateResTypes := make([]ResourceType, 0)
-
-	for _, resourceType := range GenerateResourceTypes(objects) {
+	resNameMap := make(map[string]iamtypes.TypeID)
+	resNameEnMap := make(map[string]iamtypes.TypeID)
+	updateResPrevNameMap := make(map[iamtypes.TypeID]iamName)
+	newResTypes := make([]iam.ResourceType, 0)
+	updateResTypes := make([]iam.ResourceType, 0)
+	for _, resourceType := range GenerateResourceTypes(tenantObjects) {
 		resNameMap[resourceType.Name] = resourceType.ID
 		resNameEnMap[resourceType.NameEn] = resourceType.ID
-
 		// if current resource type is not registered, register it, otherwise, update it if its version is changed
 		registeredResType, exists := registeredResTypeMap[resourceType.ID]
 		if exists {
 			// registered resource type exists in current resource types, should not be removed
 			delete(registeredResTypeMap, resourceType.ID)
-
 			if i.compareResType(registeredResType, resourceType) {
 				continue
 			}
-
 			updateResPrevNameMap[resourceType.ID] = iamName{
 				Name:   registeredResType.Name,
 				NameEn: registeredResType.NameEn,
@@ -317,41 +279,33 @@ func (i IAM) crossCompareResTypes(registeredResourceTypes []ResourceType, object
 			updateResTypes = append(updateResTypes, resourceType)
 			continue
 		}
-
 		newResTypes = append(newResTypes, resourceType)
 	}
-
 	// if to update resource type previous name conflict with a valid one, change its name to an intermediate one first
-	conflictResTypes := make([]ResourceType, 0)
+	conflictResTypes := make([]iam.ResourceType, 0)
 	for _, updateResType := range updateResTypes {
 		prevName := updateResPrevNameMap[updateResType.ID]
 		isConflict := false
-
 		if resNameMap[prevName.Name] != updateResType.ID {
 			isConflict = true
 			updateResType.Name = prevName.Name + "_"
 		}
-
 		if resNameEnMap[prevName.NameEn] != updateResType.ID {
 			isConflict = true
 			updateResType.NameEn = prevName.NameEn + "_"
 		}
-
 		if isConflict {
 			conflictResTypes = append(conflictResTypes, updateResType)
 		}
 	}
-
 	// remove the resource types that are not exist in new resource types
-	removedResTypeIDs := make([]TypeID, len(registeredResTypeMap))
+	removedResTypeIDs := make([]iamtypes.TypeID, len(registeredResTypeMap))
 	idx := 0
 	for resTypeID, resType := range registeredResTypeMap {
 		removedResTypeIDs[idx] = resTypeID
 		idx++
-
 		// if to remove resource type name conflicts with a valid one, change its name to an intermediate one first
 		isConflict := false
-
 		if _, exists := resNameMap[resType.Name]; exists {
 			resType.Name += "_"
 			isConflict = true
@@ -360,7 +314,6 @@ func (i IAM) crossCompareResTypes(registeredResourceTypes []ResourceType, object
 			resType.NameEn += "_"
 			isConflict = true
 		}
-
 		if isConflict {
 			if resType.Version == 0 {
 				resType.Version = 1
@@ -368,12 +321,11 @@ func (i IAM) crossCompareResTypes(registeredResourceTypes []ResourceType, object
 			conflictResTypes = append(conflictResTypes, resType)
 		}
 	}
-
 	return newResTypes, append(conflictResTypes, updateResTypes...), removedResTypeIDs
 }
 
 // compareResType compare if registered resource type that iam returns is the same with the new resource type
-func (i IAM) compareResType(registeredResType, resType ResourceType) bool {
+func (i IAM) compareResType(registeredResType, resType iam.ResourceType) bool {
 	if registeredResType.ID != resType.ID ||
 		registeredResType.Name != resType.Name ||
 		registeredResType.NameEn != resType.NameEn ||
@@ -398,23 +350,24 @@ func (i IAM) compareResType(registeredResType, resType ResourceType) bool {
 }
 
 // crossCompareInstSelections cross compare instance selections to get need create/update/delete ones
-func (i IAM) crossCompareInstSelections(registeredInstanceSelections []InstanceSelection, objects []metadata.Object) (
-	[]InstanceSelection, []InstanceSelection, []InstanceSelectionID) {
+func (i IAM) crossCompareInstSelections(registeredInstanceSelections []iam.InstanceSelection,
+	tenantObjects map[string][]metadata.Object) ([]iam.InstanceSelection, []iam.InstanceSelection,
+	[]iamtypes.InstanceSelectionID) {
 
-	registeredInstSelectionMap := make(map[InstanceSelectionID]InstanceSelection)
+	registeredInstSelectionMap := make(map[iamtypes.InstanceSelectionID]iam.InstanceSelection)
 	for _, instanceSelection := range registeredInstanceSelections {
 		registeredInstSelectionMap[instanceSelection.ID] = instanceSelection
 	}
 
 	// record the name and instance selection id mapping to get the instance selections whose name conflicts
-	selectionNameMap := make(map[string]InstanceSelectionID)
-	selectionNameEnMap := make(map[string]InstanceSelectionID)
-	updateSelectionPrevNameMap := make(map[InstanceSelectionID]iamName)
+	selectionNameMap := make(map[string]iamtypes.InstanceSelectionID)
+	selectionNameEnMap := make(map[string]iamtypes.InstanceSelectionID)
+	updateSelectionPrevNameMap := make(map[iamtypes.InstanceSelectionID]iamName)
 
-	newInstSelections := make([]InstanceSelection, 0)
-	updateInstSelections := make([]InstanceSelection, 0)
+	newInstSelections := make([]iam.InstanceSelection, 0)
+	updateInstSelections := make([]iam.InstanceSelection, 0)
 
-	for _, instanceSelection := range GenerateInstanceSelections(objects) {
+	for _, instanceSelection := range GenerateInstanceSelections(tenantObjects) {
 		selectionNameMap[instanceSelection.Name] = instanceSelection.ID
 		selectionNameEnMap[instanceSelection.NameEn] = instanceSelection.ID
 
@@ -436,41 +389,33 @@ func (i IAM) crossCompareInstSelections(registeredInstanceSelections []InstanceS
 			updateInstSelections = append(updateInstSelections, instanceSelection)
 			continue
 		}
-
 		newInstSelections = append(newInstSelections, instanceSelection)
 	}
-
 	// if to update selection previous name conflict with a valid one, change its name to an intermediate one first
-	conflictSelections := make([]InstanceSelection, 0)
+	conflictSelections := make([]iam.InstanceSelection, 0)
 	for _, updateSelection := range updateInstSelections {
 		prevName := updateSelectionPrevNameMap[updateSelection.ID]
 		isConflict := false
-
 		if selectionNameMap[prevName.Name] != updateSelection.ID {
 			updateSelection.Name = prevName.Name + "_"
 			isConflict = true
 		}
-
 		if selectionNameEnMap[prevName.NameEn] != updateSelection.ID {
 			updateSelection.NameEn = prevName.NameEn + "_"
 			isConflict = true
 		}
-
 		if isConflict {
 			conflictSelections = append(conflictSelections, updateSelection)
 		}
 	}
-
 	// remove the resource types that are not exist in new resource types
-	removedInstSelectionIDs := make([]InstanceSelectionID, len(registeredInstSelectionMap))
+	removedInstSelectionIDs := make([]iamtypes.InstanceSelectionID, len(registeredInstSelectionMap))
 	idx := 0
 	for selectionID, selection := range registeredInstSelectionMap {
 		removedInstSelectionIDs[idx] = selectionID
 		idx++
-
 		// if to remove selection name conflicts with a valid one, change its name to an intermediate one first
 		isConflict := false
-
 		if _, exists := selectionNameMap[selection.Name]; exists {
 			selection.Name += "_"
 			isConflict = true
@@ -479,33 +424,31 @@ func (i IAM) crossCompareInstSelections(registeredInstanceSelections []InstanceS
 			selection.NameEn += "_"
 			isConflict = true
 		}
-
 		if isConflict {
 			conflictSelections = append(conflictSelections, selection)
 		}
 	}
-
 	return newInstSelections, append(conflictSelections, updateInstSelections...), removedInstSelectionIDs
 }
 
 // crossCompareResActions cross compare resource actions to get need create/update/delete ones
-func (i IAM) crossCompareResActions(registeredActions []ResourceAction, objects []metadata.Object) (
-	[]ResourceAction, []ResourceAction, []ActionID) {
+func (i IAM) crossCompareResActions(registeredActions []iam.ResourceAction,
+	tenantObjects map[string][]metadata.Object) ([]iam.ResourceAction, []iam.ResourceAction, []iamtypes.ActionID) {
 
-	registeredResActionMap := make(map[ActionID]ResourceAction)
+	registeredResActionMap := make(map[iamtypes.ActionID]iam.ResourceAction)
 	for _, resourceAction := range registeredActions {
 		registeredResActionMap[resourceAction.ID] = resourceAction
 	}
 
 	// record the name and resource action id mapping to get the instance selections whose name conflicts
-	actionNameMap := make(map[string]ActionID)
-	actionNameEnMap := make(map[string]ActionID)
-	updateActionPrevNameMap := make(map[ActionID]iamName)
+	actionNameMap := make(map[string]iamtypes.ActionID)
+	actionNameEnMap := make(map[string]iamtypes.ActionID)
+	updateActionPrevNameMap := make(map[iamtypes.ActionID]iamName)
 
-	newResActions := make([]ResourceAction, 0)
-	updateResActions := make([]ResourceAction, 0)
+	newResActions := make([]iam.ResourceAction, 0)
+	updateResActions := make([]iam.ResourceAction, 0)
 
-	for _, resourceAction := range GenerateActions(objects) {
+	for _, resourceAction := range GenerateActions(tenantObjects) {
 		actionNameMap[resourceAction.Name] = resourceAction.ID
 		actionNameEnMap[resourceAction.NameEn] = resourceAction.ID
 
@@ -530,7 +473,7 @@ func (i IAM) crossCompareResActions(registeredActions []ResourceAction, objects 
 	}
 
 	// if to update action previous name conflict with a valid one, change its name to an intermediate one first
-	conflictActions := make([]ResourceAction, 0)
+	conflictActions := make([]iam.ResourceAction, 0)
 	for _, updateAction := range updateResActions {
 		prevName := updateActionPrevNameMap[updateAction.ID]
 		isConflict := false
@@ -550,7 +493,7 @@ func (i IAM) crossCompareResActions(registeredActions []ResourceAction, objects 
 		}
 	}
 
-	removedResActionIDs := make([]ActionID, len(registeredResActionMap))
+	removedResActionIDs := make([]iamtypes.ActionID, len(registeredResActionMap))
 	idx := 0
 	for resourceActionID := range registeredResActionMap {
 		removedResActionIDs[idx] = resourceActionID
@@ -561,7 +504,7 @@ func (i IAM) crossCompareResActions(registeredActions []ResourceAction, objects 
 }
 
 // compareResAction compare if registered resource action that iam returns is the same with the new resource action
-func (i IAM) compareResAction(registeredAction, action ResourceAction) bool {
+func (i IAM) compareResAction(registeredAction, action iam.ResourceAction) bool {
 	if registeredAction.ID != action.ID ||
 		registeredAction.Name != action.Name ||
 		registeredAction.NameEn != action.NameEn ||
@@ -600,10 +543,10 @@ func (i IAM) compareResAction(registeredAction, action ResourceAction) bool {
 }
 
 // compareResActionType compare if registered and new resource action's related type are the same
-func (i IAM) compareResActionType(resType RelateResourceType, registeredResType RelateResourceType) bool {
+func (i IAM) compareResActionType(resType iam.RelateResourceType, registeredResType iam.RelateResourceType) bool {
 	// iam default selection mode is "instance"
 	if resType.SelectionMode == "" {
-		resType.SelectionMode = modeInstance
+		resType.SelectionMode = iamtypes.ModeInstance
 	}
 
 	if registeredResType.ID != resType.ID || registeredResType.SelectionMode != resType.SelectionMode {
@@ -638,20 +581,20 @@ func (i IAM) compareResActionType(resType RelateResourceType, registeredResType 
 }
 
 // removeResActions remove resource actions and related policies
-func (i IAM) removeResActions(ctx context.Context, actionIDs []ActionID, rid string) error {
+func (i IAM) removeResActions(ctx context.Context, h http.Header, actionIDs []iamtypes.ActionID, rid string) error {
 	if len(actionIDs) == 0 {
 		return nil
 	}
 
 	// before deleting action, the dependent action policies must be deleted
 	for _, resourceActionID := range actionIDs {
-		if err := i.Client.DeleteActionPolicies(ctx, resourceActionID); err != nil {
+		if err := i.Client.DeleteActionPolicies(ctx, h, resourceActionID); err != nil {
 			blog.Errorf("delete action %s policies failed, err: %v, rid: %s", resourceActionID, err, rid)
 			return err
 		}
 	}
 
-	if err := i.Client.DeleteActions(ctx, actionIDs); err != nil {
+	if err := i.Client.DeleteActions(ctx, h, actionIDs); err != nil {
 		blog.Errorf("delete resource actions(%+v) failed, err: %v, rid: %s", actionIDs, err, rid)
 		return err
 	}
@@ -660,14 +603,14 @@ func (i IAM) removeResActions(ctx context.Context, actionIDs []ActionID, rid str
 }
 
 // registerActionGroups register or update resource action groups
-func (i IAM) registerActionGroups(ctx context.Context, registeredInfo *RegisteredSystemInfo,
-	objects []metadata.Object, rid string) error {
+func (i IAM) registerActionGroups(ctx context.Context, h http.Header, registeredInfo *iam.RegisteredSystemInfo,
+	tenantObjects map[string][]metadata.Object, rid string) error {
 
-	actionGroups := GenerateActionGroups(objects)
+	actionGroups := GenerateActionGroups(tenantObjects)
 
 	if len(registeredInfo.ActionGroups) == 0 {
-		if err := i.Client.RegisterActionGroups(ctx, actionGroups); err != nil {
-			blog.ErrorJSON("register action groups(%s) failed, err: %s, rid: %s", actionGroups, err, rid)
+		if err := i.Client.RegisterActionGroups(ctx, h, actionGroups); err != nil {
+			blog.Errorf("register action groups(%s) failed, err: %s, rid: %s", actionGroups, err, rid)
 			return err
 		}
 		return nil
@@ -677,20 +620,21 @@ func (i IAM) registerActionGroups(ctx context.Context, registeredInfo *Registere
 		return nil
 	}
 
-	if err := i.Client.UpdateActionGroups(ctx, actionGroups); err != nil {
-		blog.ErrorJSON("update action groups(%s) failed, err: %s, rid: %s", actionGroups, err, rid)
+	if err := i.Client.UpdateActionGroups(ctx, h, actionGroups); err != nil {
+		blog.Errorf("update action groups(%s) failed, err: %s, rid: %s", actionGroups, err, rid)
 		return err
 	}
 	return nil
 }
 
 // registerResCreatorActions register or update resource creator actions
-func (i IAM) registerResCreatorActions(ctx context.Context, registeredInfo *RegisteredSystemInfo, rid string) error {
+func (i IAM) registerResCreatorActions(ctx context.Context, h http.Header, registeredInfo *iam.RegisteredSystemInfo,
+	rid string) error {
 	rcActions := GenerateResourceCreatorActions()
 
 	if len(registeredInfo.ResourceCreatorActions.Config) == 0 {
-		if err := i.Client.RegisterResourceCreatorActions(ctx, rcActions); err != nil {
-			blog.ErrorJSON("register resource creator actions(%s) failed, err: %s, rid: %s", rcActions, err, rid)
+		if err := i.Client.RegisterResourceCreatorActions(ctx, h, rcActions); err != nil {
+			blog.Errorf("register resource creator actions(%s) failed, err: %s, rid: %s", rcActions, err, rid)
 			return err
 		}
 		return nil
@@ -700,20 +644,21 @@ func (i IAM) registerResCreatorActions(ctx context.Context, registeredInfo *Regi
 		return nil
 	}
 
-	if err := i.Client.UpdateResourceCreatorActions(ctx, rcActions); err != nil {
-		blog.ErrorJSON("update resource creator actions(%s) failed, err: %s, rid: %s", rcActions, err, rid)
+	if err := i.Client.UpdateResourceCreatorActions(ctx, h, rcActions); err != nil {
+		blog.Errorf("update resource creator actions(%s) failed, err: %s, rid: %s", rcActions, err, rid)
 		return err
 	}
 	return nil
 }
 
 // registerCommonActions register or update common actions
-func (i IAM) registerCommonActions(ctx context.Context, registeredInfo *RegisteredSystemInfo, rid string) error {
+func (i IAM) registerCommonActions(ctx context.Context, h http.Header, registeredInfo *iam.RegisteredSystemInfo,
+	rid string) error {
 	commonActions := GenerateCommonActions()
 
 	if len(registeredInfo.CommonActions) == 0 {
-		if err := i.Client.RegisterCommonActions(ctx, commonActions); err != nil {
-			blog.ErrorJSON("register common actions(%s) failed, err: %s, rid: %s", commonActions, err, rid)
+		if err := i.Client.RegisterCommonActions(ctx, h, commonActions); err != nil {
+			blog.Errorf("register common actions(%s) failed, err: %s, rid: %s", commonActions, err, rid)
 			return err
 		}
 		return nil
@@ -723,8 +668,8 @@ func (i IAM) registerCommonActions(ctx context.Context, registeredInfo *Register
 		return nil
 	}
 
-	if err := i.Client.UpdateCommonActions(ctx, commonActions); err != nil {
-		blog.ErrorJSON("update common actions(%s) failed, err: %s, rid: %s", commonActions, err, rid)
+	if err := i.Client.UpdateCommonActions(ctx, h, commonActions); err != nil {
+		blog.Errorf("update common actions(%s) failed, err: %s, rid: %s", commonActions, err, rid)
 		return err
 	}
 	return nil
@@ -733,14 +678,18 @@ func (i IAM) registerCommonActions(ctx context.Context, registeredInfo *Register
 // SyncIAMSysInstances sync system instances between CMDB and IAM
 // it check the difference of system instances resource between CMDB and IAM
 // if they have difference, sync and make them same
-func (i IAM) SyncIAMSysInstances(ctx context.Context, redisCli redis.Client, objects []metadata.Object) error {
-	rid := commonutil.ExtractRequestIDFromContext(ctx)
+func (i IAM) SyncIAMSysInstances(ctx context.Context, header http.Header, redisCli redis.Client,
+	tenantObjects map[string][]metadata.Object) error {
 
+	rid := util.ExtractRequestIDFromContext(ctx)
 	// validate the objects
-	for _, obj := range objects {
-		if obj.ID == 0 || len(obj.ObjectID) == 0 || len(obj.ObjectName) == 0 {
-			blog.Errorf("sync iam system instances but object(%#v) is invalid, rid: %s", obj, rid)
-			return errors.New("sync iam instances, but object is invalid")
+	for tenantID, objects := range tenantObjects {
+		for _, object := range objects {
+			if object.ID == 0 || len(object.ObjectID) == 0 || len(object.ObjectName) == 0 {
+				blog.Errorf("sync iam system instances but object(%#v) is invalid, tenantID: %s, rid: %s",
+					tenantID, object, rid)
+				return errors.New("sync iam instances, but object is invalid")
+			}
 		}
 	}
 
@@ -749,42 +698,77 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, redisCli redis.Client, obj
 		return err
 	}
 	defer locker.Unlock()
-
-	fields := []SystemQueryField{FieldResourceTypes, FieldActions, FieldActionGroups, FieldInstanceSelections}
-	iamResp, err := i.Client.GetSystemInfo(ctx, fields)
+	fields := []iamtypes.SystemQueryField{iamtypes.FieldResourceTypes, iamtypes.FieldActions,
+		iamtypes.FieldActionGroups, iamtypes.FieldInstanceSelections}
+	iamInfo, err := i.Client.GetSystemInfo(ctx, header, fields)
 	if err != nil {
-		blog.ErrorJSON("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
-			err, fields, rid)
+		blog.Errorf("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s", err, fields, rid)
 		return err
 	}
 
 	// get the cmdb resources
-	cmdbActions := genDynamicActions(objects)
-	cmdbInstanceSelections := genDynamicInstanceSelections(objects)
-	cmdbResourceTypes := genDynamicResourceTypes(objects)
+	cmdbActions := genDynamicActions(tenantObjects)
+	cmdbInstanceSelections := genDynamicInstanceSelections(tenantObjects)
+	cmdbResourceTypes := genDynamicResourceTypes(tenantObjects)
 
 	// compare resources between cmdb and iam
-	addedActions, deletedActions := compareActions(cmdbActions, iamResp.Data.Actions)
+	addedActions, deletedActions := compareActions(cmdbActions, iamInfo.Actions)
 	addedInstanceSelections, deletedInstanceSelections := compareInstanceSelections(cmdbInstanceSelections,
-		iamResp.Data.InstanceSelections)
-	addedResourceTypes, deletedResourceTypes := compareResourceTypes(cmdbResourceTypes, iamResp.Data.ResourceTypes)
-
-	// 因为资源间的依赖关系，删除和更新的顺序为 1.Action 2.InstanceSelection 3.ResourceType
-	// 因为资源间的依赖关系，新建的顺序则反过来为 1.ResourceType 2.InstanceSelection 3.Action
+		iamInfo.InstanceSelections)
+	addedResourceTypes, deletedResourceTypes := compareResourceTypes(cmdbResourceTypes, iamInfo.ResourceTypes)
+	// 因为资源间的依赖关系，删除和更新的顺序为 1.Action 2.InstanceSelection 3.IamResourceType
+	// 因为资源间的依赖关系，新建的顺序则反过来为 1.IamResourceType 2.InstanceSelection 3.Action
 	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
 	// 先删除资源，再新增资源，因为实例视图的名称在系统中是唯一的，如果不先删，同样名称的实例视图将创建失败
 
-	err = i.deleteIamResources(ctx, deletedActions, deletedInstanceSelections, deletedResourceTypes, rid)
+	err = i.deleteIamResources(ctx, header, deletedActions, deletedInstanceSelections, deletedResourceTypes, rid)
 	if err != nil {
 		return err
 	}
 
+	err = i.registerResource(ctx, header, addedResourceTypes, addedInstanceSelections, addedActions)
+	if err != nil {
+		return err
+	}
+
+	// update action_groups in iam, the action groups contains only the existed actions in iam
+	if len(addedActions) > 0 || len(deletedActions) > 0 {
+		actionMap := map[iamtypes.ActionID]struct{}{}
+		for _, action := range iamInfo.Actions {
+			if !isIAMSysInstanceAction(action.ID) {
+				actionMap[action.ID] = struct{}{}
+			}
+		}
+		for _, action := range cmdbActions {
+			actionMap[action.ID] = struct{}{}
+		}
+		cmdbActionGroups := GenerateActionGroups(tenantObjects)
+		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
+
+		// if all exist actions in iam needs no action group(which happens when first initializing), **skip**
+		if len(actualActionGroups) > 0 {
+			blog.Infof("begin update actionGroups, rid: %s", rid)
+			if err = i.Client.UpdateActionGroups(ctx, header, actualActionGroups); err != nil {
+				blog.Errorf("update action groups failed, actionGroups: %v,  err: %v, rid: %s", actualActionGroups, err,
+					rid)
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (i IAM) registerResource(ctx context.Context, header http.Header, addedResourceTypes []iam.ResourceType,
+	addedInstanceSelections []iam.InstanceSelection, addedActions []iam.ResourceAction) error {
+
+	rid := util.ExtractRequestIDFromContext(ctx)
 	// add cmdb ResourceTypes in iam
 	if len(addedResourceTypes) > 0 {
-		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s",
-			len(addedResourceTypes), addedResourceTypes, rid)
-		if err := i.Client.RegisterResourcesTypes(ctx, addedResourceTypes); err != nil {
-			blog.ErrorJSON("sync iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid: %s",
+		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s", len(addedResourceTypes), addedResourceTypes,
+			rid)
+		if err := i.Client.RegisterResourcesTypes(ctx, header, addedResourceTypes); err != nil {
+			blog.Errorf("sync iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid: %s",
 				err, addedResourceTypes, rid)
 			return err
 		}
@@ -794,8 +778,8 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, redisCli redis.Client, obj
 	if len(addedInstanceSelections) > 0 {
 		blog.Infof("begin add instanceSelections, count:%d, detail:%v, rid: %s",
 			len(addedInstanceSelections), addedInstanceSelections, rid)
-		if err := i.Client.RegisterInstanceSelections(ctx, addedInstanceSelections); err != nil {
-			blog.ErrorJSON("sync iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, "+
+		if err := i.Client.RegisterInstanceSelections(ctx, header, addedInstanceSelections); err != nil {
+			blog.Errorf("sync iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, "+
 				"rid: %s", err, addedInstanceSelections, rid)
 			return err
 		}
@@ -804,44 +788,56 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, redisCli redis.Client, obj
 	// add cmdb actions in iam
 	if len(addedActions) > 0 {
 		blog.Infof("begin add actions, count:%d, detail:%v, rid: %s", len(addedActions), addedActions, rid)
-		if err := i.Client.RegisterActions(ctx, addedActions); err != nil {
+		if err := i.Client.RegisterActions(ctx, header, addedActions); err != nil {
 			blog.ErrorJSON("sync iam sysInstances failed, add IAM actions failed, error: %s, actions: %s, rid: %s",
 				err, addedActions, rid)
 			return err
 		}
 	}
-
-	// update action_groups in iam, the action groups contains only the existed actions in iam
-	if len(addedActions) > 0 || len(deletedActions) > 0 {
-		actionMap := map[ActionID]struct{}{}
-		for _, action := range iamResp.Data.Actions {
-			if !isIAMSysInstanceAction(action.ID) {
-				actionMap[action.ID] = struct{}{}
-			}
-		}
-		for _, action := range cmdbActions {
-			actionMap[action.ID] = struct{}{}
-		}
-
-		cmdbActionGroups := GenerateActionGroups(objects)
-		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
-
-		// if all exist actions in iam needs no action group(which happens when first initializing), **skip**
-		if len(actualActionGroups) > 0 {
-			blog.Infof("begin update actionGroups")
-			if err := i.Client.UpdateActionGroups(ctx, actualActionGroups); err != nil {
-				blog.Errorf("update action groups failed, err: %v, actionGroups: %v, rid: %s",
-					err, actualActionGroups, rid)
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
-func (i IAM) deleteIamResources(ctx context.Context, deletedActions []ActionID,
-	deletedInstanceSelections []InstanceSelectionID, deletedResourceTypes []TypeID, rid string) error {
+func (i IAM) registerIamResource(kit *rest.Kit, addedResourceTypes []iam.ResourceType,
+	addedInstanceSelections []iam.InstanceSelection, addedActions []iam.ResourceAction) error {
+
+	// add cmdb ResourceTypes in iam
+	if len(addedResourceTypes) > 0 {
+		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s", len(addedResourceTypes), addedResourceTypes,
+			kit.Rid)
+		if err := i.Client.RegisterResourcesTypes(kit.Ctx, kit.Header, addedResourceTypes); err != nil {
+			blog.Errorf("sync iam sysInstances failed, add resourceType, resourceType: %s, error: %v, rid: %s",
+				addedResourceTypes, err, kit.Rid)
+			return err
+		}
+	}
+
+	// add cmdb InstanceSelections in iam
+	if len(addedInstanceSelections) > 0 {
+		blog.Infof("begin add instanceSelections, count:%d, detail:%v, rid: %s",
+			len(addedInstanceSelections), addedInstanceSelections, kit.Rid)
+		if err := i.Client.RegisterInstanceSelections(kit.Ctx, kit.Header, addedInstanceSelections); err != nil {
+			blog.Errorf("sync iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, "+
+				"rid: %s", err, addedInstanceSelections, kit.Rid)
+			return err
+		}
+	}
+
+	// add cmdb actions in iam
+	if len(addedActions) > 0 {
+		blog.Infof("begin add actions, count: %d, detail: %v, rid: %s", len(addedActions),
+			addedActions, kit.Rid)
+		if err := i.Client.RegisterActions(kit.Ctx, kit.Header, addedActions); err != nil {
+			blog.Errorf("sync iam sysInstances failed, add IAM actions failed, actions: %s, error: %v, rid: %s",
+				addedActions, err, kit.Rid)
+			return err
+		}
+	}
+	return nil
+}
+
+func (i IAM) deleteIamResources(ctx context.Context, header http.Header, deletedActions []iamtypes.ActionID,
+	deletedInstanceSelections []iamtypes.InstanceSelectionID, deletedResourceTypes []iamtypes.TypeID,
+	rid string) error {
 
 	// delete unnecessary actions in iam
 	if len(deletedActions) > 0 {
@@ -849,14 +845,14 @@ func (i IAM) deleteIamResources(ctx context.Context, deletedActions []ActionID,
 
 		// before deleting action, the dependent action policies must be deleted
 		for _, actionID := range deletedActions {
-			if err := i.Client.DeleteActionPolicies(ctx, actionID); err != nil {
+			if err := i.Client.DeleteActionPolicies(ctx, header, actionID); err != nil {
 				blog.Errorf("delete iam action %s policies failed, err: %v, rid: %s", actionID, err, rid)
 				return err
 			}
 		}
 
-		if err := i.Client.DeleteActions(ctx, deletedActions); err != nil {
-			blog.ErrorJSON("delete IAM actions failed, err: %s, actions: %s, rid: %s", err, deletedActions, rid)
+		if err := i.Client.DeleteActions(ctx, header, deletedActions); err != nil {
+			blog.Errorf("delete IAM actions failed, err: %s, actions: %s, rid: %s", err, deletedActions, rid)
 			return err
 		}
 	}
@@ -865,8 +861,8 @@ func (i IAM) deleteIamResources(ctx context.Context, deletedActions []ActionID,
 	if len(deletedInstanceSelections) > 0 {
 		blog.Infof("begin delete instanceSelections, count: %d, detail: %v, rid: %s", len(deletedInstanceSelections),
 			deletedInstanceSelections, rid)
-		if err := i.Client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
-			blog.ErrorJSON("delete instanceSelections failed, err: %s, instanceSelections: %s, rid: %s", err,
+		if err := i.Client.DeleteInstanceSelections(ctx, header, deletedInstanceSelections); err != nil {
+			blog.Errorf("delete instanceSelections failed, err: %s, instanceSelections: %s, rid: %s", err,
 				deletedInstanceSelections, rid)
 			return err
 		}
@@ -876,8 +872,8 @@ func (i IAM) deleteIamResources(ctx context.Context, deletedActions []ActionID,
 	if len(deletedResourceTypes) > 0 {
 		blog.Infof("begin delete resourceTypes, count: %d, detail: %v, rid: %s", len(deletedResourceTypes),
 			deletedResourceTypes, rid)
-		if err := i.Client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
-			blog.ErrorJSON("delete resourceType failed, err: %s, resourceType: %s, rid: %s", err, deletedResourceTypes,
+		if err := i.Client.DeleteResourcesTypes(ctx, header, deletedResourceTypes); err != nil {
+			blog.Errorf("delete resourceType failed, err: %s, resourceType: %s, rid: %s", err, deletedResourceTypes,
 				rid)
 			return err
 		}
@@ -886,15 +882,17 @@ func (i IAM) deleteIamResources(ctx context.Context, deletedActions []ActionID,
 }
 
 // getActionGroupWithExistAction get action groups that has actions that exists in iam
-func getActionGroupWithExistAction(cmdbActionGroups []ActionGroup, actionMap map[ActionID]struct{}) []ActionGroup {
-	actualActionGroups := make([]ActionGroup, 0)
+func getActionGroupWithExistAction(cmdbActionGroups []iam.ActionGroup,
+	actionMap map[iamtypes.ActionID]struct{}) []iam.ActionGroup {
+
+	actualActionGroups := make([]iam.ActionGroup, 0)
 
 	for _, actionGroup := range cmdbActionGroups {
-		actualActionGroup := ActionGroup{
+		actualActionGroup := iam.ActionGroup{
 			Name:      actionGroup.Name,
 			NameEn:    actionGroup.NameEn,
-			SubGroups: make([]ActionGroup, 0),
-			Actions:   make([]ActionWithID, 0),
+			SubGroups: make([]iam.ActionGroup, 0),
+			Actions:   make([]iam.ActionWithID, 0),
 		}
 
 		for _, action := range actionGroup.Actions {
@@ -915,122 +913,116 @@ func getActionGroupWithExistAction(cmdbActionGroups []ActionGroup, actionMap map
 
 // DeleteCMDBResource delete unnecessary CMDB resource from IAM
 // it will  delete the resource if it exists on IAM
-func (i IAM) DeleteCMDBResource(ctx context.Context, param *DeleteCMDBResourceParam, objects []metadata.Object) error {
-	rid := commonutil.ExtractRequestIDFromContext(ctx)
+func (i IAM) DeleteCMDBResource(ctx context.Context, param *iamtypes.DeleteCMDBResourceParam,
+	tenantObjects map[string][]metadata.Object) error {
 
-	fields := []SystemQueryField{FieldResourceTypes,
-		FieldActions, FieldActionGroups, FieldInstanceSelections}
-	iamResp, err := i.Client.GetSystemInfo(ctx, fields)
+	rid := util.ExtractRequestIDFromContext(ctx)
+	header := headerutil.GenDefaultHeader()
+	httpheader.SetRid(header, rid)
+
+	fields := []iamtypes.SystemQueryField{iamtypes.FieldResourceTypes, iamtypes.FieldActions,
+		iamtypes.FieldActionGroups, iamtypes.FieldInstanceSelections}
+	iamInfo, err := i.Client.GetSystemInfo(ctx, header, fields)
 	if err != nil {
-		blog.ErrorJSON("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
+		blog.Errorf("sync iam sysInstances failed, get system info error: %s, fields: %s, rid: %s",
 			err, fields, rid)
 		return err
 	}
-
 	// get deleted actions
-	deletedActions := getDeletedActions(param.ActionIDs, iamResp.Data.Actions)
+	deletedActions := getDeletedActions(param.ActionIDs, iamInfo.Actions)
 	deletedInstanceSelections := getDeletedInstanceSelections(param.InstanceSelectionIDs,
-		iamResp.Data.InstanceSelections)
-	deletedResourceTypes := getDeletedResourceTypes(param.TypeIDs, iamResp.Data.ResourceTypes)
+		iamInfo.InstanceSelections)
+	deletedResourceTypes := getDeletedResourceTypes(param.TypeIDs, iamInfo.ResourceTypes)
 
-	// 因为资源间的依赖关系，删除的顺序为 1.Action 2.InstanceSelection 3.ResourceType
+	// 因为资源间的依赖关系，删除的顺序为 1.Action 2.InstanceSelection 3.IamResourceType
 	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
-
 	// delete unnecessary actions in iam
 	if len(deletedActions) > 0 {
 		// before deleting action, the dependent action policies must be deleted
 		for _, actionID := range deletedActions {
-			if err = i.Client.DeleteActionPolicies(ctx, actionID); err != nil {
-				blog.ErrorJSON("delete cmdb resource failed, delete action %s policies err: %s, rid: %s",
+			if err = i.Client.DeleteActionPolicies(ctx, header, actionID); err != nil {
+				blog.Errorf("delete cmdb resource failed, delete action %s policies err: %s, rid: %s",
 					actionID, err, rid)
 				return err
 			}
 		}
-
 		blog.Infof("begin delete actions, count:%d, detail:%v, rid: %s", len(deletedActions), deletedActions, rid)
-		if err := i.Client.DeleteActions(ctx, deletedActions); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, delete IAM actions error: %s, actions: %s, rid: %s",
+		if err := i.Client.DeleteActions(ctx, header, deletedActions); err != nil {
+			blog.Errorf("delete cmdb resource failed, delete IAM actions error: %s, actions: %s, rid: %s",
 				err, deletedActions, rid)
 			return err
 		}
 	}
-
 	// delete unnecessary InstanceSelections in iam
 	if len(deletedInstanceSelections) > 0 {
 		blog.Infof("begin delete instanceSelections, count:%d, detail:%v, rid: %s",
 			len(deletedInstanceSelections), deletedInstanceSelections, rid)
-		if err := i.Client.DeleteInstanceSelections(ctx, deletedInstanceSelections); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, delete instanceSelections error: %s, instanceSelections: %s,"+
+		if err := i.Client.DeleteInstanceSelections(ctx, header, deletedInstanceSelections); err != nil {
+			blog.Errorf("delete cmdb resource failed, delete instanceSelections error: %s, instanceSelections: %s,"+
 				"rid: %s", err, deletedInstanceSelections, rid)
 			return err
 		}
 	}
-
 	// delete unnecessary ResourceTypes in iam
 	if len(deletedResourceTypes) > 0 {
 		blog.Infof("begin delete resourceTypes, count:%d, detail:%v, rid: %s",
 			len(deletedResourceTypes), deletedResourceTypes, rid)
-		if err := i.Client.DeleteResourcesTypes(ctx, deletedResourceTypes); err != nil {
-			blog.ErrorJSON("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, "+
+		if err := i.Client.DeleteResourcesTypes(ctx, header, deletedResourceTypes); err != nil {
+			blog.Errorf("delete cmdb resource failed, delete resourceType error: %s, resourceType: %s, "+
 				"rid: %s", err, deletedResourceTypes, rid)
 			return err
 		}
 	}
-
 	// update action_groups in iam
 	if len(deletedActions) > 0 {
-		actionMap := map[ActionID]struct{}{}
-		for _, action := range iamResp.Data.Actions {
+		actionMap := map[iamtypes.ActionID]struct{}{}
+		for _, action := range iamInfo.Actions {
 			actionMap[action.ID] = struct{}{}
 		}
-
 		for _, action := range deletedActions {
 			delete(actionMap, action)
 		}
-
-		cmdbActionGroups := GenerateActionGroups(objects)
+		cmdbActionGroups := GenerateActionGroups(tenantObjects)
 		actualActionGroups := getActionGroupWithExistAction(cmdbActionGroups, actionMap)
-
 		if len(actualActionGroups) > 0 {
 			blog.Infof("begin update action groups")
-			if err := i.Client.UpdateActionGroups(ctx, actualActionGroups); err != nil {
+			if err := i.Client.UpdateActionGroups(ctx, header, actualActionGroups); err != nil {
 				blog.Errorf("update action groups(%+v) after delete cmdb resource from iam failed, err: %v, rid: %s",
 					actualActionGroups, err, rid)
 				return err
 			}
 		}
 	}
-
 	return nil
 }
 
 // RegisterToIAM register to iam
-func (i IAM) RegisterToIAM(ctx context.Context, host string) error {
-	rid := commonutil.ExtractRequestIDFromContext(ctx)
+func (i IAM) RegisterToIAM(ctx context.Context, header http.Header, host string) error {
+	rid := util.ExtractRequestIDFromContext(ctx)
 
-	_, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	_, err := i.Client.GetSystemInfo(ctx, header, []iamtypes.SystemQueryField{})
 	if err == nil {
 		return nil
 	}
 
-	if err != ErrNotFound {
+	if err != iam.ErrNotFound {
 		blog.Errorf("get system info failed, error: %v, rid: %s", err, rid)
 		return err
 	}
 
 	// if iam cmdb system has not been registered, register system
-	sys := System{
-		ID:          SystemIDCMDB,
-		Name:        SystemNameCMDB,
-		EnglishName: SystemNameCMDBEn,
-		Clients:     SystemIDCMDB,
-		ProviderConfig: &SysConfig{
+	sys := iam.System{
+		ID:          iamtypes.SystemIDCMDB,
+		Name:        iamtypes.SystemNameCMDB,
+		EnglishName: iamtypes.SystemNameCMDBEn,
+		Clients:     iamtypes.SystemIDCMDB,
+		ProviderConfig: &iam.SysConfig{
 			Host: host,
 			Auth: "basic",
 		},
 	}
-	if err = i.Client.RegisterSystem(ctx, sys); err != nil {
-		blog.ErrorJSON("register system %s failed, error: %v, rid: %s", sys, err, rid)
+	if err = i.Client.RegisterSystem(ctx, header, sys); err != nil {
+		blog.Errorf("register system %s failed, error: %v, rid: %s", sys, err, rid)
 		return err
 	}
 	blog.V(5).Infof("register new system %+v succeed", sys)
@@ -1039,15 +1031,16 @@ func (i IAM) RegisterToIAM(ctx context.Context, host string) error {
 
 // IsRegisteredToIAM checks if cmdb is registered to iam or not
 func (i IAM) IsRegisteredToIAM(ctx context.Context) (bool, error) {
-	rid := commonutil.ExtractRequestIDFromContext(ctx)
+	rid := util.ExtractRequestIDFromContext(ctx)
 
-	_, err := i.Client.GetSystemInfo(ctx, []SystemQueryField{})
+	header := headerutil.GenDefaultHeader()
+	_, err := i.Client.GetSystemInfo(ctx, header, []iamtypes.SystemQueryField{})
 
 	if err == nil {
 		return true, nil
 	}
 
-	if err != ErrNotFound {
+	if err != iam.ErrNotFound {
 		blog.Errorf("get system info failed, error: %v, rid: %s", err, rid)
 		return false, err
 	}
@@ -1057,9 +1050,9 @@ func (i IAM) IsRegisteredToIAM(ctx context.Context) (bool, error) {
 }
 
 // getDeletedActions get deleted actions
-func getDeletedActions(cmdbActionIDs []ActionID, iamActions []ResourceAction) []ActionID {
-	deletedActions := make([]ActionID, 0)
-	iamActionMap := map[ActionID]struct{}{}
+func getDeletedActions(cmdbActionIDs []iamtypes.ActionID, iamActions []iam.ResourceAction) []iamtypes.ActionID {
+	deletedActions := make([]iamtypes.ActionID, 0)
+	iamActionMap := map[iamtypes.ActionID]struct{}{}
 	for _, action := range iamActions {
 		iamActionMap[action.ID] = struct{}{}
 	}
@@ -1073,10 +1066,10 @@ func getDeletedActions(cmdbActionIDs []ActionID, iamActions []ResourceAction) []
 }
 
 // getDeletedInstanceSelections get deleted instance selections
-func getDeletedInstanceSelections(cmdbInstanceSelectionIDs []InstanceSelectionID,
-	iamInstanceSelections []InstanceSelection) []InstanceSelectionID {
-	deletedInstanceSelections := make([]InstanceSelectionID, 0)
-	iamInstanceSelectionMap := map[InstanceSelectionID]struct{}{}
+func getDeletedInstanceSelections(cmdbInstanceSelectionIDs []iamtypes.InstanceSelectionID,
+	iamInstanceSelections []iam.InstanceSelection) []iamtypes.InstanceSelectionID {
+	deletedInstanceSelections := make([]iamtypes.InstanceSelectionID, 0)
+	iamInstanceSelectionMap := map[iamtypes.InstanceSelectionID]struct{}{}
 	for _, instanceSelection := range iamInstanceSelections {
 		iamInstanceSelectionMap[instanceSelection.ID] = struct{}{}
 	}
@@ -1090,9 +1083,9 @@ func getDeletedInstanceSelections(cmdbInstanceSelectionIDs []InstanceSelectionID
 }
 
 // getDeletedResourceTypes get deleted resource types
-func getDeletedResourceTypes(cmdbTypeIDs []TypeID, iamResourceTypes []ResourceType) []TypeID {
-	deletedResourceTypes := make([]TypeID, 0)
-	iamResourceTypeMap := map[TypeID]struct{}{}
+func getDeletedResourceTypes(cmdbTypeIDs []iamtypes.TypeID, iamResourceTypes []iam.ResourceType) []iamtypes.TypeID {
+	deletedResourceTypes := make([]iamtypes.TypeID, 0)
+	iamResourceTypeMap := map[iamtypes.TypeID]struct{}{}
 	for _, resourceType := range iamResourceTypes {
 		iamResourceTypeMap[resourceType.ID] = struct{}{}
 	}
@@ -1106,9 +1099,9 @@ func getDeletedResourceTypes(cmdbTypeIDs []TypeID, iamResourceTypes []ResourceTy
 }
 
 // compareActions compare actions between cmdb and iam
-func compareActions(cmdbActions []ResourceAction, iamActions []ResourceAction) (
-	addedActions []ResourceAction, deletedActionIDs []ActionID) {
-	iamActionMap := map[ActionID]struct{}{}
+func compareActions(cmdbActions []iam.ResourceAction, iamActions []iam.ResourceAction) (
+	addedActions []iam.ResourceAction, deletedActionIDs []iamtypes.ActionID) {
+	iamActionMap := map[iamtypes.ActionID]struct{}{}
 
 	for _, action := range iamActions {
 		if isIAMSysInstanceAction(action.ID) {
@@ -1132,10 +1125,10 @@ func compareActions(cmdbActions []ResourceAction, iamActions []ResourceAction) (
 }
 
 // compareInstanceSelections compare instanceSelections between cmdb and iam
-func compareInstanceSelections(cmdbInstanceSelections []InstanceSelection,
-	iamInstanceSelections []InstanceSelection) (addInstanceSelection []InstanceSelection,
-	deletedInstanceSelectionIDs []InstanceSelectionID) {
-	iamInstanceSelectionMap := map[InstanceSelectionID]struct{}{}
+func compareInstanceSelections(cmdbInstanceSelections []iam.InstanceSelection,
+	iamInstanceSelections []iam.InstanceSelection) (addInstanceSelection []iam.InstanceSelection,
+	deletedInstanceSelectionIDs []iamtypes.InstanceSelectionID) {
+	iamInstanceSelectionMap := map[iamtypes.InstanceSelectionID]struct{}{}
 
 	for _, instanceSelection := range iamInstanceSelections {
 		if isIAMSysInstanceSelection(instanceSelection.ID) {
@@ -1159,9 +1152,9 @@ func compareInstanceSelections(cmdbInstanceSelections []InstanceSelection,
 }
 
 // compareResourceTypes compare resourceTypes between cmdb and iam
-func compareResourceTypes(cmdbResourceTypes []ResourceType, iamResourceTypes []ResourceType) (
-	addedResourceTypes []ResourceType, deletedTypeIDs []TypeID) {
-	iamResourceTypeMap := map[TypeID]struct{}{}
+func compareResourceTypes(cmdbResourceTypes []iam.ResourceType, iamResourceTypes []iam.ResourceType) (
+	addedResourceTypes []iam.ResourceType, deletedTypeIDs []iamtypes.TypeID) {
+	iamResourceTypeMap := map[iamtypes.TypeID]struct{}{}
 
 	for _, resourceType := range iamResourceTypes {
 		if IsIAMSysInstance(resourceType.ID) {
@@ -1228,16 +1221,14 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 	if exact {
 		authDecisions, err = a.authClientSet.AuthorizeBatch(ctx, h, opts)
 		if err != nil {
-			blog.ErrorJSON("authorize batch failed, err: %s, ops: %s, resources: %s, rid: %s",
-				err, opts, resources,
-				rid)
+			blog.Errorf("authorize batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources, rid)
 			return nil, err
 		}
 	} else {
 		authDecisions, err = a.authClientSet.AuthorizeAnyBatch(ctx, h, opts)
 		if err != nil {
-			blog.ErrorJSON("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s",
-				err, opts, resources, rid)
+			blog.Errorf("authorize any batch failed, err: %s, ops: %s, resources: %s, rid: %s", err, opts, resources,
+				rid)
 			return nil, err
 		}
 
@@ -1257,7 +1248,7 @@ func (a *authorizer) authorizeBatch(ctx context.Context, h http.Header, exact bo
 }
 
 func parseAttributesToBatchOptions(rid string, user meta.UserInfo,
-	resources ...meta.ResourceAttribute) (*types.AuthBatchOptions, []types.Decision, error) {
+	resources ...meta.ResourceAttribute) (*iam.AuthBatchOptions, []types.Decision, error) {
 	if !auth.EnableAuthorize() {
 		decisions := make([]types.Decision, len(resources))
 		for i := range decisions {
@@ -1266,7 +1257,7 @@ func parseAttributesToBatchOptions(rid string, user meta.UserInfo,
 		return nil, decisions, nil
 	}
 
-	authBatchArr := make([]*types.AuthBatch, 0)
+	authBatchArr := make([]*iam.AuthBatch, 0)
 	decisions := make([]types.Decision, len(resources))
 	for index, resource := range resources {
 
@@ -1284,14 +1275,14 @@ func parseAttributesToBatchOptions(rid string, user meta.UserInfo,
 		}
 
 		// this resource should be skipped, do not need to verify in auth center.
-		if action == Skip {
+		if action == iamtypes.Skip {
 			decisions[index].Authorized = true
 			blog.V(5).Infof("skip authorization for resource: %+v, rid: %s", resource, rid)
 			continue
 		}
 
-		authBatchArr = append(authBatchArr, &types.AuthBatch{
-			Action:    types.Action{ID: string(action)},
+		authBatchArr = append(authBatchArr, &iam.AuthBatch{
+			Action:    iam.Action{ID: string(action)},
 			Resources: resources,
 		})
 	}
@@ -1301,9 +1292,9 @@ func parseAttributesToBatchOptions(rid string, user meta.UserInfo,
 		return nil, decisions, nil
 	}
 
-	ops := &types.AuthBatchOptions{
-		System: SystemIDCMDB,
-		Subject: types.Subject{
+	ops := &iam.AuthBatchOptions{
+		System: iamtypes.SystemIDCMDB,
+		Subject: iam.Subject{
 			Type: "user",
 			ID:   user.UserName,
 		},

@@ -24,7 +24,7 @@
           <IdlePoolConfig v-if="activeTabName === 'idle-pool-config'" @has-change="handleHasValChange"></IdlePoolConfig>
         </div>
       </bk-tab-panel>
-      <bk-tab-panel name="id-generate" :label="$t('ID生成器')">
+      <bk-tab-panel name="id-generate" :label="$t('ID生成器')" v-if="showIDGenerate">
         <div class="config-container">
           <IDGenerate v-if="activeTabName === 'id-generate'" @has-change="handleHasValChange"></IDGenerate>
         </div>
@@ -34,7 +34,7 @@
 </template>
 
 <script>
-  import { ref, watch, onMounted, h } from 'vue'
+  import { ref, watch, onMounted, h, computed } from 'vue'
   import { t } from '@/i18n'
   import { $bkInfo } from '@/magicbox/index.js'
   import BusinessGneralConfig from './children/business-general-config.vue'
@@ -77,6 +77,8 @@
         queryStore.set('tab', activeTabName.value)
       })
 
+      const showIDGenerate = computed(() => !(window.Site.enableMultiTenantMode && window.Site.tenantId !== 'system'))
+
       const handleHasValChange = (val) => {
         hasChange.value = val
       }
@@ -112,7 +114,8 @@
         hasChange,
         beforeLeave,
         handleHasValChange,
-        hanldeBeforeToggle
+        hanldeBeforeToggle,
+        showIDGenerate
       }
     },
     beforeRouteLeave(to, from, next) {

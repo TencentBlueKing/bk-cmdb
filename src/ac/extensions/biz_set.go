@@ -32,7 +32,7 @@ import (
 )
 
 // collectBizSetByIDs get biz set data by ids
-func (am *AuthManager) collectBizSetByIDs(ctx context.Context, header http.Header, rid string, bizSetIDs ...int64) (
+func (a *AuthManager) collectBizSetByIDs(ctx context.Context, header http.Header, rid string, bizSetIDs ...int64) (
 	[]BizSetSimplify, error) {
 
 	// unique ids so that we can be aware of invalid id if query result length not equal ids's length
@@ -47,7 +47,7 @@ func (am *AuthManager) collectBizSetByIDs(ctx context.Context, header http.Heade
 		Fields:         []string{common.BKBizSetIDField, common.BKBizSetNameField},
 		DisableCounter: true,
 	}
-	result, err := am.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDBizSet, &cond)
+	result, err := a.clientSet.CoreService().Instance().ReadInstance(ctx, header, common.BKInnerObjIDBizSet, &cond)
 	if err != nil {
 		blog.Errorf("get biz set by id failed, err: %v, rid: %s", err, rid)
 		return nil, fmt.Errorf("get biz set by id failed, err: %v", err)
@@ -70,7 +70,7 @@ func (am *AuthManager) collectBizSetByIDs(ctx context.Context, header http.Heade
 }
 
 // makeResourcesByBizSet make resources by biz set
-func (am *AuthManager) makeResourcesByBizSet(header http.Header, action meta.Action,
+func (a *AuthManager) makeResourcesByBizSet(header http.Header, action meta.Action,
 	bizSets ...BizSetSimplify) []meta.ResourceAttribute {
 	resources := make([]meta.ResourceAttribute, 0)
 	for _, bizSet := range bizSets {
@@ -90,10 +90,10 @@ func (am *AuthManager) makeResourcesByBizSet(header http.Header, action meta.Act
 }
 
 // authorizeByBizSet authorize by biz set
-func (am *AuthManager) authorizeByBizSet(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) authorizeByBizSet(ctx context.Context, header http.Header, action meta.Action,
 	bizSets ...BizSetSimplify) error {
 
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
@@ -102,24 +102,24 @@ func (am *AuthManager) authorizeByBizSet(ctx context.Context, header http.Header
 	}
 
 	// make auth resources
-	resources := am.makeResourcesByBizSet(header, action, bizSets...)
+	resources := a.makeResourcesByBizSet(header, action, bizSets...)
 
-	return am.batchAuthorize(ctx, header, resources...)
+	return a.batchAuthorize(ctx, header, resources...)
 }
 
 // AuthorizeByBizSetID authorize by biz set id
-func (am *AuthManager) AuthorizeByBizSetID(ctx context.Context, header http.Header, action meta.Action,
+func (a *AuthManager) AuthorizeByBizSetID(ctx context.Context, header http.Header, action meta.Action,
 	bizSetIDs ...int64) error {
-	if !am.Enabled() {
+	if !a.Enabled() {
 		return nil
 	}
 
 	rid := util.ExtractRequestIDFromContext(ctx)
-	bizSets, err := am.collectBizSetByIDs(ctx, header, rid, bizSetIDs...)
+	bizSets, err := a.collectBizSetByIDs(ctx, header, rid, bizSetIDs...)
 	if err != nil {
 		blog.Errorf("get biz set data by id failed, err: %v, rid: %s", err, rid)
 		return fmt.Errorf("authorize biz set failed, get biz set by id failed, err: %v", err)
 	}
 
-	return am.authorizeByBizSet(ctx, header, action, bizSets...)
+	return a.authorizeByBizSet(ctx, header, action, bizSets...)
 }

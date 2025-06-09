@@ -36,16 +36,21 @@ type AuthManager struct {
 }
 
 // NewAuthManager TODO
-func NewAuthManager(clientSet apimachinery.ClientSetInterface, iamCli *iam.IAM) *AuthManager {
+func NewAuthManager(clientSet apimachinery.ClientSetInterface) *AuthManager {
 	return &AuthManager{
 		clientSet:                    clientSet,
 		Authorizer:                   iam.NewAuthorizer(clientSet),
-		Viewer:                       iam.NewViewer(clientSet, iamCli),
 		RegisterModuleEnabled:        false,
 		RegisterSetEnabled:           false,
 		SkipReadAuthorization:        true,
 		RegisterAuditCategoryEnabled: false,
 	}
+}
+
+// WithViewer get AuthManager with viewer
+func (a *AuthManager) WithViewer(iamCli *iam.IAM) *AuthManager {
+	a.Viewer = iam.NewViewer(a.clientSet, iamCli)
+	return a
 }
 
 // InstanceSimplify TODO

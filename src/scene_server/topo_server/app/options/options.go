@@ -14,7 +14,6 @@
 package options
 
 import (
-	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/redis"
@@ -30,12 +29,12 @@ type ServerOption struct {
 
 // Config TODO
 type Config struct {
-	BusinessTopoLevelMax int `json:"level.businessTopoMax"`
-	// Auth is auth config
-	Auth      iam.AuthConfig
-	Redis     redis.Config
-	ConfigMap map[string]string
-	Es        elasticsearch.EsConfig
+	BusinessTopoLevelMax  int `json:"level.businessTopoMax"`
+	Redis                 redis.Config
+	ConfigMap             map[string]string
+	Es                    elasticsearch.EsConfig
+	DisableVerifyTenant   bool
+	EnableMultiTenantMode bool
 }
 
 // NewServerOption TODO

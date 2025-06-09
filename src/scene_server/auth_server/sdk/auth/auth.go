@@ -16,33 +16,34 @@ package auth
 import (
 	"context"
 	"errors"
-	"fmt"
+	"net/http"
 
-	"configcenter/src/scene_server/auth_server/sdk/client"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
 // Authorizer TODO
 type Authorizer interface {
 	// Authorize TODO
 	// check if a user's operate resource is already authorized or not.
-	Authorize(ctx context.Context, opts *types.AuthOptions) (*types.Decision, error)
+	Authorize(ctx context.Context, header http.Header, opts *iam.AuthOptions) (*types.Decision, error)
 
 	// AuthorizeBatch TODO
 	// check if a user's operate resources is authorized or not batch.
 	// Note: being authorized resources must be the same resource.
-	AuthorizeBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error)
+	AuthorizeBatch(ctx context.Context, header http.Header, opts *iam.AuthBatchOptions) ([]*types.Decision, error)
 
 	// AuthorizeAnyBatch TODO
 	// check if a user have any authority of the operate actions batch.
-	AuthorizeAnyBatch(ctx context.Context, opts *types.AuthBatchOptions) ([]*types.Decision, error)
+	AuthorizeAnyBatch(ctx context.Context, header http.Header, opts *iam.AuthBatchOptions) ([]*types.Decision, error)
 
 	// ListAuthorizedInstances TODO
 	// list a user's all the authorized resource instance list with an action.
 	// Note: opts.Resources is not required.
 	// the returned list may be huge, we do not do result paging
-	ListAuthorizedInstances(ctx context.Context, opts *types.AuthOptions, resourceType types.ResourceType) (
-		*types.AuthorizeList, error)
+	ListAuthorizedInstances(ctx context.Context, header http.Header, opts *iam.AuthOptions,
+		resourceType iam.IamResourceType) (*iam.AuthorizeList, error)
 }
 
 // ResourceFetcher TODO
@@ -54,20 +55,14 @@ type ResourceFetcher interface {
 }
 
 // NewAuth TODO
-func NewAuth(conf types.Config, fetcher ResourceFetcher) (Authorizer, error) {
+func NewAuth(fetcher ResourceFetcher) (Authorizer, error) {
 
 	if fetcher == nil {
 		return nil, errors.New("fetcher can not be nil")
 	}
 
-	// initialize iam client.
-	iam, err := client.NewClient(conf.Iam, conf.Options)
-	if err != nil {
-		return nil, fmt.Errorf("new iam client failed, err: %v", err)
-	}
-
 	return &Authorize{
-		iam:     iam,
+		iam:     apigwcli.Client().Iam(),
 		fetcher: fetcher,
 	}, nil
 }

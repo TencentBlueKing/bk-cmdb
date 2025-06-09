@@ -19,19 +19,18 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/apimachinery/util"
+	commonauth "configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
-	"configcenter/src/common/resource/esb"
+	apigwcli "configcenter/src/common/resource/apigw"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/auth_server/app/options"
 	"configcenter/src/scene_server/auth_server/logics"
 	"configcenter/src/scene_server/auth_server/sdk/auth"
-	"configcenter/src/scene_server/auth_server/sdk/client"
-	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/service"
+	"configcenter/src/thirdparty/apigw"
 )
 
 // Run TODO
@@ -54,6 +53,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new backbone failed, err: %v", err)
 	}
 
+	if !commonauth.EnableAuthorize() {
+		blog.Errorf("enable auth is false, can not run auth server")
+		return fmt.Errorf("enable auth is false, can not run auth server")
+	}
+
 	authServer.Core = engine
 	for {
 		if authServer.Config == nil {
@@ -62,40 +66,19 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			continue
 		}
 
-		authConf := authServer.Config.Auth
-		iamConf := sdktypes.IamConfig{
-			Address:   authConf.Address,
-			AppCode:   authConf.AppCode,
-			AppSecret: authConf.AppSecret,
-			SystemID:  authConf.SystemID,
-			TLS:       authServer.Config.TLS,
-		}
-		opt := sdktypes.Options{
-			Metric: engine.Metric().Registry(),
-		}
-
-		iamCli, err := client.NewClient(iamConf, opt)
-		if err != nil {
-			blog.Errorf("new iam client, err: %s", err.Error())
+		if err = authServer.InitClients(); err != nil {
+			blog.Errorf("init apiGW clients failed, err: %v", err)
 			return err
 		}
-
 		lgc := logics.NewLogics(engine.CoreAPI)
-		authConfig := sdktypes.Config{
-			Iam:     iamConf,
-			Options: opt,
-		}
-		authorizer, err := auth.NewAuth(authConfig, lgc)
+		authorizer, err := auth.NewAuth(lgc)
 		if err != nil {
 			return fmt.Errorf("new authorize failed, err: %v", err)
 		}
 
-		authServer.Service = service.NewAuthService(engine, iamCli, lgc, authorizer)
+		authServer.Service = service.NewAuthService(engine, apigwcli.Client().Iam(), lgc, authorizer)
 		break
 	}
-
-	// init esb client
-	esb.InitEsbClient(nil)
 
 	err = backbone.StartServer(ctx, cancel, engine, authServer.Service.WebService(), true)
 	if err != nil {
@@ -128,18 +111,22 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 		}
 		blog.InfoJSON("config updated: \n%s", string(current.ConfigData))
 		var err error
-		a.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-		if err != nil {
-			blog.Warnf("parse auth center config failed: %v", err)
-		}
 
 		a.Config.TLS, err = util.NewTLSClientConfigFromConfig("authServer")
 		if err != nil {
 			blog.Warnf("parse auth center tls config failed: %v", err)
 		}
-
-		if esbConfig, err := esb.ParseEsbConfig(); err == nil {
-			esb.UpdateEsbConfig(*esbConfig)
-		}
 	}
+}
+
+// InitClients init apiGW client
+func (s *AuthServer) InitClients() error {
+
+	err := apigwcli.Init("apiGW", s.Core.Metric().Registry(), []apigw.ClientType{apigw.Iam})
+	if err != nil {
+		blog.Errorf("init gse api gateway client failed, err: %v", err)
+		return err
+	}
+
+	return nil
 }

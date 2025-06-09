@@ -51,6 +51,7 @@ const dev = {
     SHARED_RES_URL: JSON.stringify(''),
     TENANT_ID: JSON.stringify(''),
     USER_MANAGE_URL: JSON.stringify(''),
+    ENABLE_MULTI_TENANT_MODE: JSON.stringify(''),
   }),
 
   // Paths
@@ -154,6 +155,7 @@ module.exports = {
       SHARED_RES_URL: '{{.bkSharedResUrl}}',
       TENANT_ID: '{{.tenantId}}',
       USER_MANAGE_URL: '{{.userManageUrl}}',
+      ENABLE_MULTI_TENANT_MODE: '{{.enableMultiTenantMode}}'
     }),
 
     // Template for index.html

@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
-	apiutil "configcenter/src/apimachinery/util"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -35,9 +33,6 @@ import (
 	svc "configcenter/src/scene_server/datacollection/service"
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/redis"
-	"configcenter/src/thirdparty/esbserver"
-	"configcenter/src/thirdparty/esbserver/esbutil"
-
 	"github.com/Shopify/sarama"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -63,12 +58,6 @@ type DataCollectionConfig struct {
 
 	// SnapKafka snap kafka configs.
 	SnapKafka kafka.Config
-
-	// ESB blueking ESB configs.
-	Esb esbutil.EsbConfig
-
-	// Auth is auth config
-	Auth iam.AuthConfig
 
 	// SnapReportMode hostsnap report mode
 	SnapReportMode string
@@ -176,10 +165,6 @@ func (c *DataCollection) OnHostConfigUpdate(prev, curr cc.ProcessConfig) {
 		}
 
 		blog.V(3).Infof("DataCollection| on host config update event: \n%s", string(curr.ConfigData))
-		// ESB configs.
-		c.config.Esb.Addrs, _ = cc.String("esb.addr")
-		c.config.Esb.AppCode, _ = cc.String("esb.appCode")
-		c.config.Esb.AppSecret, _ = cc.String("esb.appSecret")
 	}
 }
 
@@ -225,7 +210,6 @@ func (c *DataCollection) initConfigs() error {
 		}
 	}
 
-	c.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
 	if err != nil {
 		blog.Warnf("parse auth center config failed: %v", err)
 	}
@@ -235,26 +219,6 @@ func (c *DataCollection) initConfigs() error {
 
 // initModules inits modules for new DataCollection server.
 func (c *DataCollection) initModules() error {
-	// create blueking ESB client.
-	tlsConfig, err := apiutil.NewTLSClientConfigFromConfig("esb")
-	if err != nil {
-		return err
-	}
-	apiMachineryConfig := &apiutil.APIMachineryConfig{
-		QPS:       1000,
-		Burst:     1000,
-		TLSConfig: &tlsConfig,
-	}
-
-	esb, err := esbserver.NewEsb(apiMachineryConfig, nil, /* you can update it by a chan here */
-		&c.config.Esb, c.engine.Metric().Registry())
-	if err != nil {
-		return fmt.Errorf("create ESB client, %+v", err)
-	}
-	blog.Info("DataCollection| init modules, create ESB success[%+v]", c.config.Esb)
-
-	// build logics comm.
-	c.service.SetLogics(esb)
 
 	// connect to cc main redis.
 	redisCli, err := redis.NewFromConfig(c.config.CCRedis)
@@ -302,17 +266,12 @@ func (c *DataCollection) initModules() error {
 		}
 	}
 
-	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(c.config.Auth, c.engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("new iam client failed: %v", err)
-		}
+		c.authManager = extensions.NewAuthManager(c.engine.CoreAPI)
 	} else {
 		blog.Infof("disable auth center access")
 	}
-	c.authManager = extensions.NewAuthManager(c.engine.CoreAPI, iamCli)
 
 	return nil
 }

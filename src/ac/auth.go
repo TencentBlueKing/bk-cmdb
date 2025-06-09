@@ -18,7 +18,6 @@ import (
 	"errors"
 	"net/http"
 
-	"configcenter/src/ac/iam"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/types"
@@ -28,27 +27,14 @@ import (
 // NoAuthorizeError TODO
 var NoAuthorizeError = errors.New("no authorize")
 
-// AuthInterface TODO
-type AuthInterface interface {
-	// RegisterSystem register CMDB system to IAM
-	RegisterSystem(ctx context.Context, host string, objects []metadata.Object) error
-	// SyncIAMSysInstances sync system instances between CMDB and IAM
-	SyncIAMSysInstances(ctx context.Context, objects []metadata.Object) error
-	// DeleteCMDBResource delete unnecessary CMDB resource from IAM
-	DeleteCMDBResource(ctx context.Context, param *iam.DeleteCMDBResourceParam, objects []metadata.Object) error
-}
-
 // Viewer is a interface to operate iam view
 type Viewer interface {
 	// CreateView create iam view for objects
-	CreateView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
-		rid string) error
+	CreateView(ctx context.Context, h http.Header, objects []metadata.Object, redisCli redis.Client, rid string) error
 	// DeleteView delete iam view for objects
-	DeleteView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
-		rid string) error
+	DeleteView(ctx context.Context, h http.Header, objects []metadata.Object, redisCli redis.Client, rid string) error
 	// UpdateView update iam view for objects
-	UpdateView(ctx context.Context, header http.Header, objects []metadata.Object, redisCli redis.Client,
-		rid string) error
+	UpdateView(ctx context.Context, h http.Header, objects []metadata.Object, redisCli redis.Client, rid string) error
 }
 
 // AuthorizeInterface TODO

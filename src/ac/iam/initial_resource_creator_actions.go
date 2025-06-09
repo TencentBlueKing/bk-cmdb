@@ -12,196 +12,84 @@
 
 package iam
 
+import (
+	"configcenter/src/ac/iam/types"
+	"configcenter/src/thirdparty/apigw/iam"
+)
+
 // GenerateResourceCreatorActions generate all the resource creator actions registered to IAM.
-func GenerateResourceCreatorActions() ResourceCreatorActions {
-	return ResourceCreatorActions{
-		Config: []ResourceCreatorAction{
+func GenerateResourceCreatorActions() iam.ResourceCreatorActions {
+	return iam.ResourceCreatorActions{
+		Config: []iam.ResourceCreatorAction{
 			{
-				ResourceID: SysResourcePoolDirectory,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditResourcePoolDirectory,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteResourcePoolDirectory,
-						IsRequired: false,
-					},
-				},
+				ResourceID: types.SysResourcePoolDirectory,
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditResourcePoolDirectory, IsRequired: false},
+					{ID: types.DeleteResourcePoolDirectory, IsRequired: false}}, SubResourceTypes: nil},
+			{
+				ResourceID: types.Business,
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditBusiness, IsRequired: false},
+					{ID: types.ArchiveBusiness, IsRequired: false}, {ID: types.FindBusiness, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 			{
-				ResourceID: Business,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditBusiness,
-						IsRequired: false,
-					},
-					{
-						ID:         ArchiveBusiness,
-						IsRequired: false,
-					},
-					{
-						ID:         FindBusiness,
-						IsRequired: false,
-					},
-				},
+				ResourceID: types.SysCloudArea,
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditCloudArea, IsRequired: false},
+					{ID: types.DeleteCloudArea, IsRequired: false}}, SubResourceTypes: nil},
+			{
+				ResourceID: types.SysModelGroup,
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditModelGroup, IsRequired: false},
+					{ID: types.DeleteModelGroup, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 			{
-				ResourceID: SysCloudArea,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditCloudArea,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteCloudArea,
-						IsRequired: false,
-					},
-				},
+				ResourceID: types.SysModel,
+				Actions: []iam.CreatorRelatedAction{{ID: types.ViewSysModel, IsRequired: false},
+					{ID: types.EditSysModel, IsRequired: false},
+					{ID: types.DeleteSysModel, IsRequired: false}}, SubResourceTypes: nil},
+			{
+				ResourceID: types.SysAssociationType,
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditAssociationType, IsRequired: false},
+					{ID: types.DeleteAssociationType, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 			{
-				ResourceID: SysModelGroup,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditModelGroup,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteModelGroup,
-						IsRequired: false,
-					},
-				},
+				ResourceID: types.BizProcessServiceTemplate,
+				Actions: []iam.CreatorRelatedAction{
+					{ID: types.EditBusinessServiceTemplate, IsRequired: false},
+					{ID: types.DeleteBusinessServiceTemplate, IsRequired: false},
+				}, SubResourceTypes: nil,
+			},
+			{
+				ResourceID: types.BizSetTemplate,
+				Actions: []iam.CreatorRelatedAction{
+					{ID: types.EditBusinessSetTemplate, IsRequired: false},
+					{ID: types.DeleteBusinessSetTemplate, IsRequired: false},
+				}, SubResourceTypes: nil,
+			},
+			{
+				ResourceID: types.BizCustomQuery,
+				Actions: []iam.CreatorRelatedAction{
+					{ID: types.EditBusinessCustomQuery, IsRequired: false},
+					{ID: types.DeleteBusinessCustomQuery, IsRequired: false},
+				}, SubResourceTypes: nil,
+			},
+			{
+				ResourceID: types.FieldGroupingTemplate,
+				Actions: []iam.CreatorRelatedAction{
+					{ID: types.EditFieldGroupingTemplate, IsRequired: false},
+					{ID: types.DeleteFieldGroupingTemplate, IsRequired: false},
+					{ID: types.ViewFieldGroupingTemplate, IsRequired: false},
+				}, SubResourceTypes: nil,
+			},
+			{
+				ResourceID: types.BizSet, Actions: []iam.CreatorRelatedAction{{ID: types.EditBizSet, IsRequired: false},
+					{ID: types.DeleteBizSet, IsRequired: false}, {ID: types.ViewBizSet, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 			{
-				ResourceID: SysModel,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         ViewSysModel,
-						IsRequired: false,
-					},
-					{
-						ID:         EditSysModel,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteSysModel,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
-				ResourceID: SysAssociationType,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditAssociationType,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteAssociationType,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
-				ResourceID: BizProcessServiceTemplate,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditBusinessServiceTemplate,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteBusinessServiceTemplate,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
-				ResourceID: BizSetTemplate,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditBusinessSetTemplate,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteBusinessSetTemplate,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
-				ResourceID: BizCustomQuery,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditBusinessCustomQuery,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteBusinessCustomQuery,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
-				ResourceID: FieldGroupingTemplate,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditFieldGroupingTemplate,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteFieldGroupingTemplate,
-						IsRequired: false,
-					},
-					{
-						ID:         ViewFieldGroupingTemplate,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
-				ResourceID: BizSet,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditBizSet,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteBizSet,
-						IsRequired: false,
-					},
-					{
-						ID:         ViewBizSet,
-						IsRequired: false,
-					},
-				},
-				SubResourceTypes: nil,
-			},
-			{
-				ResourceID: Project,
-				Actions: []CreatorRelatedAction{
-					{
-						ID:         EditProject,
-						IsRequired: false,
-					},
-					{
-						ID:         DeleteProject,
-						IsRequired: false,
-					},
-					{
-						ID:         ViewProject,
-						IsRequired: false,
-					},
-				},
+				ResourceID: types.Project,
+				Actions: []iam.CreatorRelatedAction{{ID: types.EditProject, IsRequired: false},
+					{ID: types.DeleteProject, IsRequired: false}, {ID: types.ViewProject, IsRequired: false}},
 				SubResourceTypes: nil,
 			},
 		},

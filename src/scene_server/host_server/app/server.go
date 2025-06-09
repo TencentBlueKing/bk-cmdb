@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -44,14 +43,12 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	service := new(hostsvc.Service)
 	hostSrv := new(HostServer)
-
 	input := &backbone.BackboneParameter{
 		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: hostSrv.onHostConfigUpdate,
 		SrvInfo:      svrInfo,
 	}
-
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
 		blog.Errorf("new backbone failed, err: %v", err)
@@ -70,6 +67,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		blog.Infof("waiting config timeout.")
 		return errors.New("configuration item not found")
 	}
+	service.Config = hostSrv.Config
 
 	hostSrv.Config.Redis, err = engine.WithRedis()
 	if err != nil {
@@ -82,37 +80,26 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
 
-	hostSrv.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
-	}
-
-	iamCli := new(iam.IAM)
+	authManager := new(extensions.AuthManager)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(hostSrv.Config.Auth, engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("new iam client failed: %v", err)
-		}
+		authManager = extensions.NewAuthManager(engine.CoreAPI)
 	} else {
 		blog.Infof("disable auth center access")
 	}
-	authManager := extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
 	service.AuthManager = authManager
 	service.Engine = engine
-	service.Config = hostSrv.Config
 	service.CacheDB = cacheDB
 	service.Logic = logics.NewLogics(engine, cacheDB, authManager)
-	hostSrv.Core = engine
 	hostSrv.Service = service
+	hostSrv.Core = engine
 
 	err = backbone.StartServer(ctx, cancel, engine, service.WebService(), true)
 	if err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err
 	}
-
 	select {
 	case <-ctx.Done():
 	}

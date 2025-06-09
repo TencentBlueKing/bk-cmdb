@@ -14,8 +14,10 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"configcenter/pkg/tenant/logics"
 	aciam "configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -39,9 +41,14 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-	if !auth.EnableAuthorize() {
-		blog.Warnf("received iam initialization request, but auth not enabled, rid: %s", rid)
-		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+
+	if !logics.ValidatePlatformTenantMode(kit.TenantID, s.Config.EnableMultiTenantMode) {
+		blog.Errorf("non-system tenant register auth account, tenantID: %s, rid: %s", kit.TenantID, kit.Rid)
+		result := &metadata.RespError{
+			Msg:     fmt.Errorf("non-system tenant register auth account, tenantID: %s", kit.TenantID),
+			ErrCode: common.CCErrAPICheckTenantInvalid,
+		}
+		_ = resp.WriteError(http.StatusOK, result)
 		return
 	}
 
@@ -75,7 +82,7 @@ func (s *Service) InitAuthCenter(req *restful.Request, resp *restful.Response) {
 		Host:    param.Host,
 		Objects: models,
 	}
-	if err := s.iam.Register(s.ctx, s.cache, opt, rid); err != nil {
+	if err := s.iam.Register(kit.Ctx, kit.Header, s.cache, opt, kit.Rid); err != nil {
 		blog.Errorf("init iam failed, err: %+v, rid: %s", err, rid)
 		result := &metadata.RespError{
 			Msg: defErr.CCErrorf(common.CCErrCommInitAuthCenterFailed, err.Error()),
@@ -103,11 +110,16 @@ func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Respon
 	}
 
 	rHeader := req.Request.Header
-	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	if !auth.EnableAuthorize() {
-		blog.Warnf("received iam register request, but auth not enabled, rid: %s", rid)
-		_ = resp.WriteEntity(metadata.NewSuccessResp(nil))
+	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
+
+	if !logics.ValidatePlatformTenantMode(kit.TenantID, s.Config.EnableMultiTenantMode) {
+		blog.Errorf("non-system tenant register auth account, tenantID: %s, rid: %s", kit.TenantID, kit.Rid)
+		result := &metadata.RespError{
+			Msg:     fmt.Errorf("non-system tenant register auth account, tenantID: %s", kit.TenantID),
+			ErrCode: common.CCErrAPICheckTenantInvalid,
+		}
+		_ = resp.WriteError(http.StatusOK, result)
 		return
 	}
 
@@ -115,21 +127,21 @@ func (s *Service) RegisterAuthAccount(req *restful.Request, resp *restful.Respon
 		Host string `json:"host"`
 	}{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&param); err != nil {
-		blog.Errorf("register iam failed with decode body err: %v, rid:%s", err, rid)
+		blog.Errorf("register iam failed with decode body err: %v, rid:%s", err, kit.Rid)
 		_ = resp.WriteError(http.StatusBadRequest,
 			&metadata.RespError{Msg: defErr.CCError(common.CCErrCommJSONUnmarshalFailed)})
 		return
 	}
 
 	if param.Host == "" {
-		blog.Errorf("register iam host not set, rid:%s", rid)
+		blog.Errorf("register iam host not set, rid:%s", kit.Rid)
 		_ = resp.WriteError(http.StatusBadRequest,
 			&metadata.RespError{Msg: defErr.CCErrorf(common.CCErrCommParamsNeedSet, "host")})
 		return
 	}
 
-	if err := s.iam.RegisterToIAM(s.ctx, param.Host); err != nil {
-		blog.Errorf("register cmdb to iam failed, err: %v, rid: %s", err, rid)
+	if err := s.iam.RegisterToIAM(kit.Ctx, kit.Header, param.Host); err != nil {
+		blog.Errorf("register cmdb to iam failed, err: %v, rid: %s", err, kit.Rid)
 		result := &metadata.RespError{
 			Msg: err,
 		}

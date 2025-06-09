@@ -14,11 +14,9 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -84,15 +82,9 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
 	}
 
-	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
-		var rawErr error
-		iamCli, rawErr = iam.NewIAM(cfg.Auth, engine.Metric().Registry())
-		if rawErr != nil {
-			return fmt.Errorf("new iam client failed: %v", rawErr)
-		}
+		s.authManager = extensions.NewAuthManager(engine.CoreAPI)
 	}
-	s.authManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
 
 	taskScheduler, err := scheduler.New(mongodb.Dal(), mongodb.Dal("watch"), engine.ServiceManageInterface)
 	if err != nil {

@@ -20,21 +20,10 @@ type BaseResp struct {
 	Message string `json:"message"`
 }
 
-// GetPolicyOption TODO
-type GetPolicyOption AuthOptions
-
 // GetPolicyResp TODO
 type GetPolicyResp struct {
 	BaseResp `json:",inline"`
 	Data     *operator.Policy `json:"data"`
-}
-
-// ListPolicyOptions TODO
-type ListPolicyOptions struct {
-	System    string     `json:"system"`
-	Subject   Subject    `json:"subject"`
-	Actions   []Action   `json:"actions"`
-	Resources []Resource `json:"resources"`
 }
 
 // ListPolicyResp TODO

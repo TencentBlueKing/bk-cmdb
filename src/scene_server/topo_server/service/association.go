@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"configcenter/pkg/inst/logics"
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -667,7 +667,7 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 		// register association type resource creator action to iam
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.SysAssociationType),
+				Type:    string(types.SysAssociationType),
 				ID:      strconv.FormatInt(int64(ret.Created.ID), 10),
 				Name:    request.AssociationKindName,
 				Creator: ctx.Kit.User,

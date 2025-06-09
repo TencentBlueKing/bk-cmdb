@@ -17,7 +17,7 @@ import (
 	"strconv"
 
 	"configcenter/src/ac"
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/apimachinery"
 	"configcenter/src/common"
@@ -205,18 +205,18 @@ func (s *Service) CreateObject(ctx *rest.Contexts) {
 		}
 
 		if auth.EnableAuthorize() {
-			objects := []metadata.Object{*rsp}
 			iamInstances := []metadata.IamInstanceWithCreator{{
-				Type:    string(iam.SysModel),
+				Type:    string(types.SysModel),
 				ID:      strconv.FormatInt(rsp.ID, 10),
 				Name:    rsp.ObjectName,
 				Creator: ctx.Kit.User,
 			}}
 
-			err = s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, objects, iamInstances, redis.Client())
+			err = s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, []metadata.Object{*rsp}, iamInstances,
+				redis.Client())
 			if err != nil {
-				blog.ErrorJSON("create object on iam failed, objects: %s, iam instances: %s, err: %s, rid: %s",
-					objects, iamInstances, err, ctx.Kit.Rid)
+				blog.Errorf("create object on iam failed, objects: %v, iam instances: %v, err: %s, rid: %s", *rsp,
+					iamInstances, err, ctx.Kit.Rid)
 				return err
 			}
 		}
@@ -325,7 +325,8 @@ func (s *Service) UpdateObject(ctx *rest.Contexts) {
 			}
 
 			objects := []metadata.Object{resp.Info[0]}
-			err = s.AuthManager.Viewer.UpdateView(ctx.Kit.Ctx, ctx.Kit.Header, objects, redis.Client(), ctx.Kit.Rid)
+			err = s.AuthManager.Viewer.UpdateView(ctx.Kit.Ctx, ctx.Kit.Header, objects, redis.Client(),
+				ctx.Kit.Rid)
 			if err != nil {
 				blog.Errorf("update view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -369,10 +370,10 @@ func (s *Service) DeleteObject(ctx *rest.Contexts) {
 	if auth.EnableAuthorize() {
 		// delete iam view
 		// if some errors occur, the sync iam task will delete the iam view in the end
-		objects := []metadata.Object{*obj}
 		// use new transaction, need a new header
 		ctx.Kit.Header = ctx.Kit.NewHeader()
-		err = s.AuthManager.Viewer.DeleteView(ctx.Kit.Ctx, ctx.Kit.Header, objects, redis.Client(), ctx.Kit.Rid)
+		err = s.AuthManager.Viewer.DeleteView(ctx.Kit.Ctx, ctx.Kit.Header, []metadata.Object{*obj}, redis.Client(),
+			ctx.Kit.Rid)
 		if err != nil {
 			blog.Errorf("delete view failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 		}
@@ -519,13 +520,15 @@ func (s *Service) CreateManyObject(ctx *rest.Contexts) {
 			iamInstances := make([]metadata.IamInstanceWithCreator, 0)
 			for _, obj := range rsp {
 				iamInstances = append(iamInstances, metadata.IamInstanceWithCreator{
-					Type:    string(iam.SysModel),
+					Type:    string(types.SysModel),
 					ID:      strconv.FormatInt(obj.ID, 10),
 					Name:    obj.ObjectName,
 					Creator: ctx.Kit.User,
 				})
 			}
-			err := s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, rsp, iamInstances, redis.Client())
+
+			err := s.AuthManager.CreateObjectOnIAM(ctx.Kit.Ctx, ctx.Kit.Header, rsp, iamInstances,
+				redis.Client())
 			if err != nil {
 				blog.Errorf("create object on iam failed, objects: %v, iam instances: %v, err: %v, rid: %s",
 					rsp, iamInstances, err, ctx.Kit.Rid)

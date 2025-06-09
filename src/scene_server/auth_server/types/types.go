@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
@@ -59,16 +59,16 @@ type Method string
 
 // PullResourceReq TODO
 type PullResourceReq struct {
-	Type   iam.TypeID  `json:"type"`
-	Method Method      `json:"method"`
-	Filter interface{} `json:"filter,omitempty"`
-	Page   Page        `json:"page,omitempty"`
+	Type   iamtypes.TypeID `json:"type"`
+	Method Method          `json:"method"`
+	Filter interface{}     `json:"filter,omitempty"`
+	Page   Page            `json:"page,omitempty"`
 }
 
 // UnmarshalJSON TODO
 func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 	data := struct {
-		Type   iam.TypeID      `json:"type"`
+		Type   iamtypes.TypeID `json:"type"`
 		Method Method          `json:"method"`
 		Filter json.RawMessage `json:"filter,omitempty"`
 		Page   Page            `json:"page,omitempty"`
@@ -151,14 +151,14 @@ type ListInstanceFilter struct {
 
 // ParentFilter TODO
 type ParentFilter struct {
-	Type iam.TypeID `json:"type"`
-	ID   string     `json:"id"`
+	Type iamtypes.TypeID `json:"type"`
+	ID   string          `json:"id"`
 }
 
 // ResourceTypeChainFilter TODO
 type ResourceTypeChainFilter struct {
-	SystemID string     `json:"system_id"`
-	ID       iam.TypeID `json:"id"`
+	SystemID string          `json:"system_id"`
+	ID       iamtypes.TypeID `json:"id"`
 }
 
 // FetchInstanceInfoFilter TODO
@@ -206,23 +206,23 @@ type InstanceResource struct {
 
 // InstancePath TODO
 type InstancePath struct {
-	Type        iam.TypeID `json:"type"`
-	ID          string     `json:"id"`
-	DisplayName string     `json:"display_name"`
+	Type        iamtypes.TypeID `json:"type"`
+	ID          string          `json:"id"`
+	DisplayName string          `json:"display_name"`
 }
 
 // ResourcePullMethod iam resource pull callback methods
 type ResourcePullMethod struct {
-	ListAttr      func(kit *rest.Kit, resourceType iam.TypeID) ([]AttrResource, error)
-	ListAttrValue func(kit *rest.Kit, resourceType iam.TypeID, filter *ListAttrValueFilter, page Page) (
+	ListAttr      func(kit *rest.Kit, resourceType iamtypes.TypeID) ([]AttrResource, error)
+	ListAttrValue func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *ListAttrValueFilter, page Page) (
 		*ListAttrValueResult, error)
 
-	ListInstance func(kit *rest.Kit, resourceType iam.TypeID, filter *ListInstanceFilter, page Page) (
+	ListInstance func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *ListInstanceFilter, page Page) (
 		*ListInstanceResult, error)
 
-	FetchInstanceInfo func(kit *rest.Kit, resourceType iam.TypeID, filter *FetchInstanceInfoFilter) (
+	FetchInstanceInfo func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *FetchInstanceInfoFilter) (
 		[]map[string]interface{}, error)
 
-	ListInstanceByPolicy func(kit *rest.Kit, resourceType iam.TypeID, filter *ListInstanceByPolicyFilter, page Page) (
-		*ListInstanceResult, error)
+	ListInstanceByPolicy func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *ListInstanceByPolicyFilter,
+		page Page) (*ListInstanceResult, error)
 }

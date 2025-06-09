@@ -12,284 +12,92 @@
 
 package iam
 
-import "configcenter/src/common/metadata"
+import (
+	iamtypes "configcenter/src/ac/iam/types"
+	"configcenter/src/common/metadata"
+	"configcenter/src/thirdparty/apigw/iam"
+)
 
 var (
-	businessChain = ResourceChain{
-		SystemID: SystemIDCMDB,
-		ID:       Business,
+	businessChain = iam.ResourceChain{
+		SystemID: iamtypes.SystemIDCMDB,
+		ID:       iamtypes.Business,
 	}
 )
 
 // GenerateInstanceSelections generate all the instance selections registered to IAM.
-func GenerateInstanceSelections(models []metadata.Object) []InstanceSelection {
+func GenerateInstanceSelections(tenantObjects map[string][]metadata.Object) []iam.InstanceSelection {
 	instSelections := GenerateStaticInstanceSelections()
-	instSelections = append(instSelections, genDynamicInstanceSelections(models)...)
+	instSelections = append(instSelections, genDynamicInstanceSelections(tenantObjects)...)
 	return instSelections
 }
 
 // GenerateStaticInstanceSelections TODO
-func GenerateStaticInstanceSelections() []InstanceSelection {
-	return []InstanceSelection{
-		{
-			ID:                BusinessSelection,
-			Name:              "业务列表",
-			NameEn:            "Business List",
-			ResourceTypeChain: []ResourceChain{businessChain},
-		},
-		{
-			ID:     BizSetSelection,
-			Name:   "业务集列表",
-			NameEn: "Business Set List",
-			ResourceTypeChain: []ResourceChain{{
-				SystemID: SystemIDCMDB,
-				ID:       BizSet,
-			}},
-		},
-		{
-			ID:     ProjectSelection,
-			Name:   "项目列表",
-			NameEn: "Project List",
-			ResourceTypeChain: []ResourceChain{{
-				SystemID: SystemIDCMDB,
-				ID:       Project,
-			}},
-		},
-		{
-			ID:     BusinessHostTransferSelection,
-			Name:   "业务主机选择",
-			NameEn: "Business",
-			ResourceTypeChain: []ResourceChain{{
-				SystemID: SystemIDCMDB,
-				ID:       BusinessForHostTrans,
-			}},
-		},
-		{
-			ID:     SysResourcePoolDirectorySelection,
-			Name:   "主机池目录列表",
-			NameEn: "Host Pool Directory List",
-			ResourceTypeChain: []ResourceChain{{
-				SystemID: SystemIDCMDB,
-				ID:       SysResourcePoolDirectory,
-			}},
-		},
-		{
-			ID:     SysHostRscPoolDirectorySelection,
-			Name:   "主机池主机选择",
-			NameEn: "Host Pool Directory",
-			ResourceTypeChain: []ResourceChain{{
-				SystemID: SystemIDCMDB,
-				ID:       SysHostRscPoolDirectory,
-			}},
-		},
-		{
-			ID:     BizHostInstanceSelection,
-			Name:   "业务主机列表",
-			NameEn: "Business Host List",
-			ResourceTypeChain: []ResourceChain{
+func GenerateStaticInstanceSelections() []iam.InstanceSelection {
+	return []iam.InstanceSelection{
+		{ID: iamtypes.BusinessSelection, Name: "业务列表", NameEn: "Business List",
+			ResourceTypeChain: []iam.ResourceChain{businessChain}},
+		{ID: iamtypes.BizSetSelection, Name: "业务集列表", NameEn: "Business Set List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.BizSet}}},
+		{ID: iamtypes.ProjectSelection, Name: "项目列表", NameEn: "Project List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.Project}}},
+		{ID: iamtypes.BusinessHostTransferSelection, Name: "业务主机选择", NameEn: "Business",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB,
+				ID: iamtypes.BusinessForHostTrans}}},
+		{ID: iamtypes.SysResourcePoolDirectorySelection, Name: "主机池目录列表", NameEn: "Host Pool Directory List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB,
+				ID: iamtypes.SysResourcePoolDirectory}}},
+		{ID: iamtypes.SysHostRscPoolDirectorySelection, Name: "主机池主机选择", NameEn: "Host Pool Directory",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB,
+				ID: iamtypes.SysHostRscPoolDirectory}}},
+		{ID: iamtypes.BizHostInstanceSelection, Name: "业务主机列表", NameEn: "Business Host List",
+			ResourceTypeChain: []iam.ResourceChain{
 				// select the business at first.
 				businessChain,
 				// then select the host instances.
-				{
-					SystemID: SystemIDCMDB,
-					ID:       Host,
-				},
-			},
-		},
-		{
-			ID:     BizCustomQuerySelection,
-			Name:   "业务动态分组列表",
-			NameEn: "Business Dynamic Grouping List",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizCustomQuery,
-				},
-			},
-		},
-		{
-			ID:     BizProcessServiceTemplateSelection,
-			Name:   "服务模版列表",
-			NameEn: "Service Template List",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizProcessServiceTemplate,
-				},
-			},
-		},
-		{
-			ID:     BizSetTemplateSelection,
-			Name:   "集群模板列表",
-			NameEn: "Set Template List",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       BizSetTemplate,
-				},
-			},
-		},
-		{
-			ID:     SysHostInstanceSelection,
-			Name:   "主机池主机列表",
-			NameEn: "Host Pool List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysHostRscPoolDirectory,
-				},
-				{
-					SystemID: SystemIDCMDB,
-					ID:       Host,
-				},
-			},
-		},
-		{
-			ID:     SysCloudAreaSelection,
-			Name:   "管控区域列表",
-			NameEn: "Cloud Area List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysCloudArea,
-				},
-			},
-		},
-		{
-			ID:     SysInstanceModelSelection,
-			Name:   "实例模型列表",
-			NameEn: "Instance Model List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysInstanceModel,
-				},
-			},
-		},
-		{
-			ID:     SysModelSelection,
-			Name:   "模型列表",
-			NameEn: "Model List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysModel,
-				},
-			},
-		},
-		{
-			ID:     SysAssociationTypeSelection,
-			Name:   "关联类型",
-			NameEn: "Association Type",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysAssociationType,
-				},
-			},
-		},
-		{
-			ID:     SysModelGroupSelection,
-			Name:   "模型分组",
-			NameEn: "Model Group",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysModelGroup,
-				},
-			},
-		},
-		{
-			ID:     SysModelEventSelection,
-			Name:   "模型事件列表",
-			NameEn: "Model Event List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       SysModelEvent,
-				},
-			},
-		},
-		{
-			ID:     MainlineModelEventSelection,
-			Name:   "自定义拓扑层级列表",
-			NameEn: "Custom Topo Layer Event List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       MainlineModelEvent,
-				},
-			},
-		},
-		{
-			ID:     InstAsstEventSelection,
-			Name:   "实例关联事件列表",
-			NameEn: "Instance Association Event List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       InstAsstEvent,
-				},
-			},
-		},
-		{
-			ID:     KubeWorkloadEventSelection,
-			Name:   "容器工作负载事件列表",
-			NameEn: "Kube Workload Event List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       KubeWorkloadEvent,
-				},
-			},
-		},
-		{
-			ID:     FieldGroupingTemplateSelection,
-			Name:   "字段组合模板列表",
-			NameEn: "Field Grouping Template List",
-			ResourceTypeChain: []ResourceChain{
-				{
-					SystemID: SystemIDCMDB,
-					ID:       FieldGroupingTemplate,
-				},
-			},
-		},
-		{
-			ID:     GeneralCacheSelection,
-			Name:   "通用缓存类型列表",
-			NameEn: "General Resource Cache Type List",
-			ResourceTypeChain: []ResourceChain{{
-				SystemID: SystemIDCMDB,
-				ID:       GeneralCache,
-			}},
-		},
+				{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.Host}}},
+		{ID: iamtypes.BizCustomQuerySelection, Name: "业务动态分组列表", NameEn: "Business Dynamic Grouping List",
+			ResourceTypeChain: []iam.ResourceChain{businessChain,
+				{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.BizCustomQuery}}},
+		{ID: iamtypes.BizProcessServiceTemplateSelection, Name: "服务模版列表", NameEn: "Service Template List",
+			ResourceTypeChain: []iam.ResourceChain{businessChain,
+				{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.BizProcessServiceTemplate}}},
+		{ID: iamtypes.BizSetTemplateSelection, Name: "集群模板列表", NameEn: "Set Template List",
+			ResourceTypeChain: []iam.ResourceChain{businessChain,
+				{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.BizSetTemplate}}},
+		{ID: iamtypes.SysHostInstanceSelection, Name: "主机池主机列表", NameEn: "Host Pool List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB,
+				ID: iamtypes.SysHostRscPoolDirectory},
+				{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.Host}}},
+		{ID: iamtypes.SysCloudAreaSelection, Name: "管控区域列表", NameEn: "Cloud Area List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.SysCloudArea}}},
+		{ID: iamtypes.SysInstanceModelSelection, Name: "实例模型列表", NameEn: "Instance Model List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.SysInstanceModel}}},
+		{ID: iamtypes.SysModelSelection, Name: "模型列表", NameEn: "Model List", ResourceTypeChain: []iam.ResourceChain{
+			{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.SysModel}}},
+		{ID: iamtypes.SysAssociationTypeSelection, Name: "关联类型", NameEn: "Association Type",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.SysAssociationType}}},
+		{ID: iamtypes.SysModelGroupSelection, Name: "模型分组", NameEn: "Model Group",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.SysModelGroup}}},
+		{ID: iamtypes.SysModelEventSelection, Name: "模型事件列表", NameEn: "Model Event List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.SysModelEvent}}},
+		{ID: iamtypes.MainlineModelEventSelection, Name: "自定义拓扑层级列表", NameEn: "Custom Topo Layer Event List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB,
+				ID: iamtypes.MainlineModelEvent}}},
+		{ID: iamtypes.InstAsstEventSelection, Name: "实例关联事件列表", NameEn: "Instance Association Event List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.InstAsstEvent}}},
+		{ID: iamtypes.KubeWorkloadEventSelection, Name: "容器工作负载事件列表", NameEn: "Kube Workload Event List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.KubeWorkloadEvent}}},
+		{ID: iamtypes.FieldGroupingTemplateSelection, Name: "字段组合模板列表", NameEn: "Field Grouping Template List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB,
+				ID: iamtypes.FieldGroupingTemplate}}},
+		{ID: iamtypes.GeneralCacheSelection, Name: "通用缓存类型列表", NameEn: "General Resource Cache Type List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.GeneralCache}}},
 		// only for other system's biz topo instance selection usage, not related to actions
-		{
-			ID:     BizTopoSelection,
-			Name:   "业务拓扑",
-			NameEn: "Business Topology",
-			ResourceTypeChain: []ResourceChain{
-				businessChain,
-				{
-					SystemID: SystemIDCMDB,
-					ID:       Set,
-				}, {
-					SystemID: SystemIDCMDB,
-					ID:       Module,
-				},
-			},
-		},
-		{
-			ID:     TenantSetSelection,
-			Name:   "租户集列表",
-			NameEn: "Tenant Set List",
-			ResourceTypeChain: []ResourceChain{{
-				SystemID: SystemIDCMDB,
-				ID:       TenantSet,
-			}},
-		},
+		{ID: iamtypes.BizTopoSelection, Name: "业务拓扑", NameEn: "Business Topology",
+			ResourceTypeChain: []iam.ResourceChain{businessChain, {SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.Set},
+				{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.Module}}},
+		{ID: iamtypes.TenantSetSelection, Name: "租户集列表", NameEn: "Tenant Set List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.TenantSet}}},
 	}
 }

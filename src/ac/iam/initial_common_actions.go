@@ -12,116 +12,74 @@
 
 package iam
 
+import (
+	"configcenter/src/ac/iam/types"
+	"configcenter/src/thirdparty/apigw/iam"
+)
+
 // GenerateCommonActions generate all the common actions registered to IAM.
-func GenerateCommonActions() []CommonAction {
-	return []CommonAction{
+func GenerateCommonActions() []iam.CommonAction {
+	return []iam.CommonAction{
 		{
 			Name:        "业务运维",
 			EnglishName: "Business Maintainer",
-			Actions: []ActionWithID{
-				{ID: ViewBusinessResource},
-				{ID: EditBusinessHost},
-				{ID: BusinessHostTransferToResourcePool},
-				{ID: CreateBusinessTopology},
-				{ID: EditBusinessTopology},
-				{ID: DeleteBusinessTopology},
-				{ID: CreateBusinessServiceInstance},
-				{ID: EditBusinessServiceInstance},
-				{ID: DeleteBusinessServiceInstance},
-				{ID: CreateBusinessServiceTemplate},
-				{ID: EditBusinessServiceTemplate},
-				{ID: DeleteBusinessServiceTemplate},
-				{ID: CreateBusinessSetTemplate},
-				{ID: EditBusinessSetTemplate},
-				{ID: DeleteBusinessSetTemplate},
-				{ID: CreateBusinessServiceCategory},
-				{ID: EditBusinessServiceCategory},
-				{ID: DeleteBusinessServiceCategory},
-				{ID: CreateBusinessCustomQuery},
-				{ID: EditBusinessCustomQuery},
-				{ID: DeleteBusinessCustomQuery},
-				{ID: EditBusinessCustomField},
-				{ID: EditBusinessHostApply},
-				{ID: FindBusiness},
-			},
+			Actions: []iam.ActionWithID{{ID: types.ViewBusinessResource}, {ID: types.EditBusinessHost},
+				{ID: types.BusinessHostTransferToResourcePool}, {ID: types.CreateBusinessTopology},
+				{ID: types.EditBusinessTopology}, {ID: types.DeleteBusinessTopology},
+				{ID: types.CreateBusinessServiceInstance}, {ID: types.EditBusinessServiceInstance},
+				{ID: types.DeleteBusinessServiceInstance}, {ID: types.CreateBusinessServiceTemplate},
+				{ID: types.EditBusinessServiceTemplate}, {ID: types.DeleteBusinessServiceTemplate},
+				{ID: types.CreateBusinessSetTemplate}, {ID: types.EditBusinessSetTemplate},
+				{ID: types.DeleteBusinessSetTemplate}, {ID: types.CreateBusinessServiceCategory},
+				{ID: types.EditBusinessServiceCategory}, {ID: types.DeleteBusinessServiceCategory},
+				{ID: types.CreateBusinessCustomQuery}, {ID: types.EditBusinessCustomQuery},
+				{ID: types.DeleteBusinessCustomQuery}, {ID: types.EditBusinessCustomField},
+				{ID: types.EditBusinessHostApply}, {ID: types.FindBusiness}},
 		},
 		{
 			Name:        "业务只读",
 			EnglishName: "Business Visitor",
-			Actions: []ActionWithID{
-				{ID: ViewBusinessResource},
-				{ID: FindBusiness},
-			},
+			Actions:     []iam.ActionWithID{{ID: types.ViewBusinessResource}, {ID: types.FindBusiness}},
 		},
 		{
 			Name:        "业务集运维",
 			EnglishName: "Biz-set Maintainer",
-			Actions: []ActionWithID{
-				{ID: AccessBizSet},
-				{ID: DeleteBizSet},
-				{ID: ViewBizSet},
-			},
+			Actions: []iam.ActionWithID{{ID: types.AccessBizSet}, {ID: types.DeleteBizSet},
+				{ID: types.ViewBizSet}},
 		},
 		{
 			Name:        "业务集只读",
 			EnglishName: "Biz-set Visitor",
-			Actions: []ActionWithID{
-				{ID: AccessBizSet},
-				{ID: ViewBizSet},
-			},
+			Actions:     []iam.ActionWithID{{ID: types.AccessBizSet}, {ID: types.ViewBizSet}},
 		},
 		{
 			Name:        "主机资源管理员",
 			EnglishName: "Host Maintainer",
-			Actions: []ActionWithID{
-				{ID: ViewResourcePoolHost},
-				{ID: CreateResourcePoolHost},
-				{ID: EditResourcePoolHost},
-				{ID: DeleteResourcePoolHost},
-				{ID: ResourcePoolHostTransferToBusiness},
-				{ID: ResourcePoolHostTransferToDirectory},
-				{ID: ManageHostAgentID},
-				{ID: CreateResourcePoolDirectory},
-				{ID: EditResourcePoolDirectory},
-				{ID: DeleteResourcePoolDirectory},
-			},
+			Actions: []iam.ActionWithID{{ID: types.ViewResourcePoolHost}, {ID: types.CreateResourcePoolHost},
+				{ID: types.EditResourcePoolHost}, {ID: types.DeleteResourcePoolHost},
+				{ID: types.ResourcePoolHostTransferToBusiness}, {ID: types.ResourcePoolHostTransferToDirectory},
+				{ID: types.ManageHostAgentID}, {ID: types.CreateResourcePoolDirectory},
+				{ID: types.EditResourcePoolDirectory}, {ID: types.DeleteResourcePoolDirectory}},
 		},
 		{
 			Name:        "开发者",
 			EnglishName: "Developer",
-			Actions: []ActionWithID{
-				{ID: WatchHostEvent},
-				{ID: WatchHostRelationEvent},
-				{ID: WatchBizEvent},
-				{ID: WatchSetEvent},
-				{ID: WatchModuleEvent},
-				{ID: WatchProcessEvent},
-				{ID: WatchCommonInstanceEvent},
-			},
+			Actions: []iam.ActionWithID{{ID: types.WatchHostEvent}, {ID: types.WatchHostRelationEvent},
+				{ID: types.WatchBizEvent}, {ID: types.WatchSetEvent}, {ID: types.WatchModuleEvent},
+				{ID: types.WatchProcessEvent}, {ID: types.WatchCommonInstanceEvent}},
 		},
 		{
 			Name:        "模型关系维护人",
 			EnglishName: "Model Maintainer",
-			Actions: []ActionWithID{
-				{ID: CreateModelGroup},
-				{ID: EditModelGroup},
-				{ID: DeleteModelGroup},
-				{ID: EditBusinessLayer},
-				{ID: EditModelTopologyView},
-				{ID: CreateSysModel},
-				{ID: EditSysModel},
-				{ID: DeleteSysModel},
-				{ID: CreateAssociationType},
-				{ID: EditAssociationType},
-				{ID: DeleteAssociationType},
-			},
+			Actions: []iam.ActionWithID{{ID: types.CreateModelGroup}, {ID: types.EditModelGroup},
+				{ID: types.DeleteModelGroup}, {ID: types.EditBusinessLayer}, {ID: types.EditModelTopologyView},
+				{ID: types.CreateSysModel}, {ID: types.EditSysModel}, {ID: types.DeleteSysModel},
+				{ID: types.CreateAssociationType}, {ID: types.EditAssociationType}, {ID: types.DeleteAssociationType}},
 		},
 		{
 			Name:        "审计员",
 			EnglishName: "Auditor",
-			Actions: []ActionWithID{
-				{ID: FindAuditLog},
-			},
+			Actions:     []iam.ActionWithID{{ID: types.FindAuditLog}},
 		},
 	}
 }

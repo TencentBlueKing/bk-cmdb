@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"strings"
 
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
@@ -56,7 +56,7 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 		// register service template resource creator action to iam
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.BizProcessServiceTemplate),
+				Type:    string(types.BizProcessServiceTemplate),
 				ID:      strconv.FormatInt(tpl.ID, 10),
 				Name:    tpl.Name,
 				Creator: ctx.Kit.User,
@@ -136,7 +136,7 @@ func (ps *ProcServer) CreateServiceTemplateAllInfo(ctx *rest.Contexts) {
 		// register service template resource creator action to iam
 		if auth.EnableAuthorize() {
 			iamInstance := metadata.IamInstanceWithCreator{
-				Type:    string(iam.BizProcessServiceTemplate),
+				Type:    string(types.BizProcessServiceTemplate),
 				ID:      strconv.FormatInt(tpl.ID, 10),
 				Name:    tpl.Name,
 				Creator: ctx.Kit.User,

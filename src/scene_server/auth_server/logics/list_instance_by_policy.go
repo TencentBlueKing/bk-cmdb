@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	headerutil "configcenter/src/common/http/header/util"
@@ -31,11 +32,11 @@ import (
 
 // ListInstanceByPolicy TODO
 // list resource instances that user is privileged to access by policy
-func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID,
+func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iamtypes.TypeID,
 	filter *types.ListInstanceByPolicyFilter, page types.Page, extraCond map[string]interface{}) (
 	*types.ListInstanceResult, error) {
 
-	if resourceType == iam.Host {
+	if resourceType == iamtypes.Host {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
@@ -83,10 +84,11 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iam.TypeID,
 }
 
 // ListHostByPolicy list host instances that user is privileged to access by policy
-func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iam.TypeID, filter *types.ListInstanceByPolicyFilter,
+func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iamtypes.TypeID,
+	filter *types.ListInstanceByPolicyFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
-	if resourceType != iam.Host {
+	if resourceType != iamtypes.Host {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
@@ -174,14 +176,17 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 }
 
 // ListInstancesWithAttributes list resource instances that user is privileged to access by policy
-func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) (
-	[]string, error) {
-	resourceType := iam.TypeID(opts.Type)
+func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktypes.ListWithAttributes) ([]string,
+	error) {
+
+	resourceType := iamtypes.TypeID(opts.Type)
 	rid := util.ExtractRequestIDFromContext(ctx)
-	tenantID := util.ExtractOwnerFromContext(ctx)
+	tenantID := util.ExtractTenantIDFromContext(ctx)
 	if tenantID == "" {
-		tenantID = common.BKDefaultTenantID
+		blog.Errorf("request tenant id is empty, rid: %s", rid)
+		return nil, fmt.Errorf("request tenant id is empty")
 	}
+
 	header := headerutil.NewHeaderFromContext(ctx)
 	collection := ""
 	if iam.IsIAMSysInstance(resourceType) {

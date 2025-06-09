@@ -18,13 +18,13 @@ import (
 
 	"configcenter/src/apimachinery/util"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
+	apigwiam "configcenter/src/thirdparty/apigw/iam"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Config TODO
 type Config struct {
-	Iam     IamConfig
 	Options Options
 }
 
@@ -73,86 +73,9 @@ type AuthorizeList struct {
 	IsAny bool `json:"isAny"`
 }
 
-// ResourceType TODO
-type ResourceType string
-
 // Decision describes the authorize decision, have already been authorized(true) or not(false)
 type Decision struct {
 	Authorized bool `json:"authorized"`
-}
-
-// AuthOptions describes a item to be authorized
-type AuthOptions struct {
-	System    string     `json:"system"`
-	Subject   Subject    `json:"subject"`
-	Action    Action     `json:"action"`
-	Resources []Resource `json:"resources"`
-}
-
-// Validate TODO
-func (a AuthOptions) Validate() error {
-	if len(a.System) == 0 {
-		return errors.New("system is empty")
-	}
-
-	if len(a.Subject.Type) == 0 {
-		return errors.New("subject.type is empty")
-	}
-
-	if len(a.Subject.ID) == 0 {
-		return errors.New("subject.id is empty")
-	}
-
-	if len(a.Action.ID) == 0 {
-		return errors.New("action.id is empty")
-	}
-
-	return nil
-}
-
-// AuthBatchOptions TODO
-type AuthBatchOptions struct {
-	System  string       `json:"system"`
-	Subject Subject      `json:"subject"`
-	Batch   []*AuthBatch `json:"batch"`
-}
-
-// Validate TODO
-func (a AuthBatchOptions) Validate() error {
-	if len(a.System) == 0 {
-		return errors.New("system is empty")
-	}
-
-	if len(a.Subject.Type) == 0 {
-		return errors.New("subject.type is empty")
-	}
-
-	if len(a.Subject.ID) == 0 {
-		return errors.New("subject.id is empty")
-	}
-
-	if len(a.Batch) == 0 {
-		return nil
-	}
-
-	for _, b := range a.Batch {
-		if len(b.Action.ID) == 0 {
-			return errors.New("empty action id")
-		}
-	}
-	return nil
-}
-
-// AuthBatch TODO
-type AuthBatch struct {
-	Action    Action     `json:"action"`
-	Resources []Resource `json:"resources"`
-}
-
-// Subject TODO
-type Subject struct {
-	Type ResourceType `json:"type"`
-	ID   string       `json:"id"`
 }
 
 // Action define's the use's action, which is must correspond to the registered action ids in iam.
@@ -164,14 +87,6 @@ type Action struct {
 type ActionPolicy struct {
 	Action Action           `json:"action"`
 	Policy *operator.Policy `json:"condition"`
-}
-
-// Resource defines all the information used to authorize a resource.
-type Resource struct {
-	System    string             `json:"system"`
-	Type      ResourceType       `json:"type"`
-	ID        string             `json:"id"`
-	Attribute ResourceAttributes `json:"attribute"`
 }
 
 // ResourceAttributes is the attributes of resource.
@@ -200,7 +115,7 @@ type ListWithAttributes struct {
 	Operator operator.OperType `json:"op"`
 	// resource instance id list, this list is not required, it also
 	// one of the query filter with Operator.
-	IDList       []string           `json:"ids"`
-	AttrPolicies []*operator.Policy `json:"attr_policies"`
-	Type         ResourceType       `json:"type"`
+	IDList       []string                 `json:"ids"`
+	AttrPolicies []*operator.Policy       `json:"attr_policies"`
+	Type         apigwiam.IamResourceType `json:"type"`
 }

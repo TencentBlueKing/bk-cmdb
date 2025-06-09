@@ -14,7 +14,6 @@
 package options
 
 import (
-	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/storage/dal/mongo"
@@ -33,7 +32,6 @@ type Config struct {
 	Mongo      mongo.Config
 	WatchMongo mongo.Config
 	Redis      redis.Config
-	Auth       iam.AuthConfig
 }
 
 // NewServerOption create a ServerOption object

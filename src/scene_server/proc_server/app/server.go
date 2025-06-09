@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"configcenter/src/ac/extensions"
-	"configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
@@ -67,25 +66,15 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 	procSvr.Config.Mongo = &mongo
+	procSvr.Engine = engine
 
-	procSvr.Config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-	if err != nil {
-		blog.Warnf("parse auth center config failed: %v", err)
-	}
-
-	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(procSvr.Config.Auth, engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("new iam client failed: %v", err)
-		}
+		procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI)
 	} else {
 		blog.Infof("disable auth center access")
 	}
 
-	procSvr.AuthManager = extensions.NewAuthManager(engine.CoreAPI, iamCli)
-	procSvr.Engine = engine
 	procSvr.Logic = &logics.Logic{
 		Engine: procSvr.Engine,
 	}

@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
@@ -107,7 +107,7 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 	// register resource directory resource creator action to iam
 	if auth.EnableAuthorize() {
 		iamInstance := metadata.IamInstanceWithCreator{
-			Type:    string(iam.SysResourcePoolDirectory),
+			Type:    string(types.SysResourcePoolDirectory),
 			ID:      strconv.FormatUint(rsp.Created.ID, 10),
 			Name:    util.GetStrByInterface(readInstanceResult.Info[0][common.BKModuleNameField]),
 			Creator: ctx.Kit.User,

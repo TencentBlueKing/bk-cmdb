@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -40,7 +41,7 @@ const (
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
 func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.Policy,
-	resourceType iam.TypeID) (map[string]interface{}, error) {
+	resourceType iamtypes.TypeID) (map[string]interface{}, error) {
 	if filter == nil || filter.Operator == "" {
 		return nil, nil
 	}
@@ -173,7 +174,7 @@ func (lgc *Logics) parseOtherFilterCond(op operator.OperType, value interface{},
 }
 
 // parseIamPathToMongo parse iam path filter expression to corresponding resource type's mongo query condition
-func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, resourceType iam.TypeID,
+func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, resourceType iamtypes.TypeID,
 	op operator.OperType, value interface{}) (map[string]interface{}, error) {
 	cond, err := parseIamPathCond(op, value)
 	if err != nil {
@@ -182,7 +183,7 @@ func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, 
 
 	// resources except for host has their parent id stored in their instance table(currently all resources only
 	// have one layer TODO support multiple layers if needed)
-	if resourceType != iam.Host {
+	if resourceType != iamtypes.Host {
 		return cond, nil
 	}
 
@@ -305,7 +306,7 @@ func parseIamPathToMongo(iamPath string, op string) (map[string]interface{}, err
 		if idStr == "*" {
 			continue
 		}
-		resourceType := iam.TypeID(typeAndID[0])
+		resourceType := iamtypes.TypeID(typeAndID[0])
 		idField := GetResourceIDField(resourceType)
 		if isResourceIDStringType(resourceType) {
 			cond[idField] = map[string]interface{}{
@@ -362,28 +363,28 @@ func getValueType(value interface{}) string {
 }
 
 // GetResourceIDField get resource id's actual field
-func GetResourceIDField(resourceType iam.TypeID) string {
+func GetResourceIDField(resourceType iamtypes.TypeID) string {
 	switch resourceType {
-	case iam.Host:
+	case iamtypes.Host:
 		return common.BKHostIDField
-	case iam.SysModelGroup, iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.InstAsstEvent,
-		iam.MainlineModelEvent, iam.SysAssociationType, iam.BizCustomQuery, iam.BizProcessServiceTemplate,
-		iam.BizProcessServiceCategory, iam.BizProcessServiceInstance, iam.BizSetTemplate, iam.Project,
-		iam.FieldGroupingTemplate:
+	case iamtypes.SysModelGroup, iamtypes.SysModel, iamtypes.SysInstanceModel, iamtypes.SysModelEvent,
+		iamtypes.InstAsstEvent, iamtypes.MainlineModelEvent, iamtypes.SysAssociationType, iamtypes.BizCustomQuery,
+		iamtypes.BizProcessServiceTemplate, iamtypes.BizProcessServiceCategory, iamtypes.BizProcessServiceInstance,
+		iamtypes.BizSetTemplate, iamtypes.Project, iamtypes.FieldGroupingTemplate:
 		return common.BKFieldID
-	case iam.SysInstance:
+	case iamtypes.SysInstance:
 		return common.BKInstIDField
-	case iam.SysResourcePoolDirectory, iam.SysHostRscPoolDirectory:
+	case iamtypes.SysResourcePoolDirectory, iamtypes.SysHostRscPoolDirectory:
 		return common.BKModuleIDField
-	case iam.SysCloudArea:
+	case iamtypes.SysCloudArea:
 		return common.BKCloudIDField
-	case iam.Business, iam.BusinessForHostTrans:
+	case iamtypes.Business, iamtypes.BusinessForHostTrans:
 		return common.BKAppIDField
-	case iam.BizSet:
+	case iamtypes.BizSet:
 		return common.BKBizSetIDField
-	case iam.Set:
+	case iamtypes.Set:
 		return common.BKSetIDField
-	case iam.Module:
+	case iamtypes.Module:
 		return common.BKModuleIDField
 	default:
 		if iam.IsIAMSysInstance(resourceType) {
@@ -394,32 +395,33 @@ func GetResourceIDField(resourceType iam.TypeID) string {
 }
 
 // GetResourceNameField get resource display name's actual field
-func GetResourceNameField(resourceType iam.TypeID) string {
+func GetResourceNameField(resourceType iamtypes.TypeID) string {
 	switch resourceType {
-	case iam.Host:
+	case iamtypes.Host:
 		return common.BKHostInnerIPField
-	case iam.SysModelGroup:
+	case iamtypes.SysModelGroup:
 		return common.BKClassificationNameField
-	case iam.SysModel, iam.SysInstanceModel, iam.SysModelEvent, iam.MainlineModelEvent, iam.InstAsstEvent:
+	case iamtypes.SysModel, iamtypes.SysInstanceModel, iamtypes.SysModelEvent, iamtypes.MainlineModelEvent,
+		iamtypes.InstAsstEvent:
 		return common.BKObjNameField
-	case iam.SysAssociationType:
+	case iamtypes.SysAssociationType:
 		return common.AssociationKindNameField
-	case iam.SysResourcePoolDirectory, iam.SysHostRscPoolDirectory:
+	case iamtypes.SysResourcePoolDirectory, iamtypes.SysHostRscPoolDirectory:
 		return common.BKModuleNameField
-	case iam.SysCloudArea:
+	case iamtypes.SysCloudArea:
 		return common.BKCloudNameField
-	case iam.Business, iam.BusinessForHostTrans:
+	case iamtypes.Business, iamtypes.BusinessForHostTrans:
 		return common.BKAppNameField
-	case iam.BizSet:
+	case iamtypes.BizSet:
 		return common.BKBizSetNameField
-	case iam.BizCustomQuery, iam.BizProcessServiceTemplate, iam.BizProcessServiceCategory,
-		iam.BizProcessServiceInstance, iam.BizSetTemplate, iam.FieldGroupingTemplate:
+	case iamtypes.BizCustomQuery, iamtypes.BizProcessServiceTemplate, iamtypes.BizProcessServiceCategory,
+		iamtypes.BizProcessServiceInstance, iamtypes.BizSetTemplate, iamtypes.FieldGroupingTemplate:
 		return common.BKFieldName
-	case iam.Project:
+	case iamtypes.Project:
 		return common.BKProjectNameField
-	case iam.Set:
+	case iamtypes.Set:
 		return common.BKSetNameField
-	case iam.Module:
+	case iamtypes.Module:
 		return common.BKModuleNameField
 	default:
 		if iam.IsIAMSysInstance(resourceType) {

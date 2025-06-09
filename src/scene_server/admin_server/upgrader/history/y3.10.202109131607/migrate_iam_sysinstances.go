@@ -19,26 +19,31 @@ import (
 	"strconv"
 
 	iamtype "configcenter/src/ac/iam"
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/resource/esb"
+	"configcenter/src/common/resource/apigw"
 	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb/instancemapping"
+	apigwiam "configcenter/src/thirdparty/apigw/iam"
 )
 
 // migrateIAMSysInstances migrate iam system instances
 func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client, iam *iamtype.IAM,
 	conf *history.Config) error {
+
 	if !auth.EnableAuthorize() {
 		return nil
 	}
+	header := headerutil.GenDefaultHeader()
 
 	// for the first installation, cmdb is not registered to iam,
 	// skip migrate iam system instances
@@ -87,24 +92,25 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 		return err
 	}
 
+	tenantID := httpheader.GetTenantID(header)
 	// add new system instances
-	if err := iam.SyncIAMSysInstances(ctx, cache, convertTenantObject(objects)); err != nil {
+	if err := iam.SyncIAMSysInstances(ctx, header, cache, convertTenantObjectMap(tenantID, objects)); err != nil {
 		blog.Errorf("sync iam system instances failed, err: %v", err)
 		return err
 	}
 
-	fields := []iamtype.SystemQueryField{iamtype.FieldActions}
-	iamResp, err := iam.Client.GetSystemInfo(ctx, fields)
+	fields := []types.SystemQueryField{types.FieldActions}
+	iamInfo, err := iam.Client.GetSystemInfo(ctx, header, fields)
 	if err != nil {
 		blog.Errorf("get system info failed, error: %v", err)
 		return err
 	}
-	iamActionMap := make(map[iamtype.ActionID]struct{})
-	for _, action := range iamResp.Data.Actions {
+	iamActionMap := make(map[types.ActionID]struct{})
+	for _, action := range iamInfo.Actions {
 		iamActionMap[action.ID] = struct{}{}
 	}
 	// migrate instance auth policies
-	instanceActions := []iamtype.ActionID{"create_sys_instance", "edit_sys_instance", "delete_sys_instance"}
+	instanceActions := []types.ActionID{"create_sys_instance", "edit_sys_instance", "delete_sys_instance"}
 	for _, action := range instanceActions {
 		if _, ok := iamActionMap[action]; !ok {
 			continue
@@ -116,8 +122,8 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 	}
 
 	// delete the old cmdb resource
-	param := &iamtype.DeleteCMDBResourceParam{
-		ActionIDs: []iamtype.ActionID{
+	param := &types.DeleteCMDBResourceParam{
+		ActionIDs: []types.ActionID{
 			"create_sys_instance",
 			"edit_sys_instance",
 			"delete_sys_instance",
@@ -127,40 +133,41 @@ func migrateIAMSysInstances(ctx context.Context, db dal.RDB, cache redis.Client,
 			"find_event_subscription",
 			"watch_set_template_event",
 		},
-		InstanceSelectionIDs: []iamtype.InstanceSelectionID{"sys_instance", "sys_event_pushing"},
-		TypeIDs:              []iamtype.TypeID{"sys_instance", "sys_event_pushing"},
+		InstanceSelectionIDs: []types.InstanceSelectionID{"sys_instance", "sys_event_pushing"},
+		TypeIDs:              []types.TypeID{"sys_instance", "sys_event_pushing"},
 	}
-	return iam.DeleteCMDBResource(ctx, param, convertTenantObject(objects))
+	return iam.DeleteCMDBResource(ctx, param, convertTenantObject(tenantID, objects))
 }
 
-func migrateModelInstancePermission(ctx context.Context, action iamtype.ActionID, db dal.DB, iam *iamtype.IAM,
+func migrateModelInstancePermission(ctx context.Context, action types.ActionID, db dal.DB, iam *iamtype.IAM,
 	objects []Object) error {
 
 	var timestamp, pageSize int64 = 0, 500
 
 	for page := 1; ; page++ {
-		listPoliciesParam := &iamtype.ListPoliciesParams{
+		listPoliciesParam := &apigwiam.ListPoliciesParams{
 			ActionID:  action,
 			Page:      int64(page),
 			PageSize:  pageSize,
 			Timestamp: timestamp,
 		}
 
-		listPoliciesResp, err := iam.Client.ListPolicies(ctx, listPoliciesParam)
+		header := headerutil.GenDefaultHeader()
+		listPoliciesData, err := iam.Client.ListPolicies(ctx, header, listPoliciesParam)
 		if err != nil {
 			blog.Errorf("list %s policies failed, page: %d, timestamp: %d, error: %v", action, page, timestamp, err)
 			return err
 		}
 
-		if listPoliciesResp.Metadata.System != iamtype.SystemIDCMDB {
-			blog.Errorf("list %s policies, but system id %s does not match", action, listPoliciesResp.Metadata.System)
+		if listPoliciesData.Metadata.System != types.SystemIDCMDB {
+			blog.Errorf("list %s policies, but system id %s does not match", action, listPoliciesData.Metadata.System)
 			return errors.New("system id does not match")
 		}
 
-		timestamp = listPoliciesResp.Metadata.Timestamp
+		timestamp = listPoliciesData.Metadata.Timestamp
 
-		policyIDs := make([]int64, len(listPoliciesResp.Results))
-		for idx, policyRes := range listPoliciesResp.Results {
+		policyIDs := make([]int64, len(listPoliciesData.Results))
+		for idx, policyRes := range listPoliciesData.Results {
 			if err := migrateModelInstancePolicy(ctx, action, db, policyRes, objects); err != nil {
 				blog.ErrorJSON("migrate %s policies %s failed, error: %s", action, policyRes, err)
 				return err
@@ -170,14 +177,14 @@ func migrateModelInstancePermission(ctx context.Context, action iamtype.ActionID
 
 		blog.Infof("successfully migrate policies: %+v", policyIDs)
 
-		if len(listPoliciesResp.Results) < page {
+		if len(listPoliciesData.Results) < page {
 			return nil
 		}
 	}
 }
 
-func migrateModelInstancePolicy(ctx context.Context, action iamtype.ActionID, db dal.DB,
-	policyRes iamtype.PolicyResult, objects []Object) error {
+func migrateModelInstancePolicy(ctx context.Context, action types.ActionID, db dal.DB,
+	policyRes apigwiam.PolicyResult, objects []Object) error {
 
 	objectIDs := make([]int64, len(objects))
 	objMap := make(map[int64]Object)
@@ -253,14 +260,14 @@ func migrateModelInstancePolicy(ctx context.Context, action iamtype.ActionID, db
 }
 
 func grantAuthForInstances(ctx context.Context, objInstIDs []int64, db dal.DB,
-	policyRes iamtype.PolicyResult, action iamtype.ActionID, object Object) error {
+	policyRes apigwiam.PolicyResult, action types.ActionID, object Object) error {
 
 	instanceFilter := map[string]interface{}{
 		common.BKInstIDField: map[string]interface{}{common.BKDBIN: objInstIDs},
 	}
 
 	// get instance names by ids
-	instances := make([]iamtype.SimplifiedInstance, 0)
+	instances := make([]SimplifiedInstance, 0)
 	if err := db.Table(common.GetObjectInstTableName(object.ObjectID, object.OwnerID)).Find(instanceFilter).
 		Fields(common.BKInstIDField, common.BKInstNameField).All(ctx, &instances); err != nil {
 		blog.Errorf("get instances failed, error: %v, instIDs: %+v", err, objInstIDs)
@@ -305,15 +312,15 @@ func grantAuthForInstances(ctx context.Context, objInstIDs []int64, db dal.DB,
 	return nil
 }
 
-func batchGrantInstanceAuth(ctx context.Context, subject iamtype.PolicySubject, expiredAt int64,
-	actionID iamtype.ActionID, instances []metadata.IamInstance, objectID int64) error {
+func batchGrantInstanceAuth(ctx context.Context, subject apigwiam.PolicySubject, expiredAt int64,
+	actionID types.ActionID, instances []metadata.IamInstance, objectID int64) error {
 
 	header := http.Header{}
 	httpheader.SetUser(header, common.CCSystemOperatorUserName)
 	req := &metadata.IamBatchOperateInstanceAuthReq{
 		Asynchronous: false,
 		Operate:      metadata.IamGrantOperation,
-		System:       iamtype.SystemIDCMDB,
+		System:       types.SystemIDCMDB,
 		Actions:      []metadata.ActionWithID{{ID: convertOldInstanceAction(actionID, objectID)}},
 		Subject: metadata.IamSubject{
 			Type: subject.Type,
@@ -325,7 +332,7 @@ func batchGrantInstanceAuth(ctx context.Context, subject iamtype.PolicySubject, 
 	// create model instance is related to no resources
 	if actionID == "create_sys_instance" {
 		req.Resources = make([]metadata.IamInstances, 0)
-		_, err := esb.EsbClient().IamSrv().BatchOperateInstanceAuth(ctx, header, req)
+		_, err := apigw.Client().Iam().BatchOperateInstanceAuth(ctx, header, req)
 		if err != nil {
 			blog.ErrorJSON("batch register instance auth failed, err: %s, input: %s", err, req)
 			return err
@@ -334,7 +341,7 @@ func batchGrantInstanceAuth(ctx context.Context, subject iamtype.PolicySubject, 
 	}
 
 	req.Resources = []metadata.IamInstances{{
-		System:    iamtype.SystemIDCMDB,
+		System:    types.SystemIDCMDB,
 		Type:      string(iamtype.GenIAMDynamicResTypeID(objectID)),
 		Instances: make([]metadata.IamInstance, 0),
 	}}
@@ -344,7 +351,7 @@ func batchGrantInstanceAuth(ctx context.Context, subject iamtype.PolicySubject, 
 		req.Resources[0].Instances = instances
 	}
 
-	_, err := esb.EsbClient().IamSrv().BatchOperateInstanceAuth(ctx, header, req)
+	_, err := apigw.Client().Iam().BatchOperateInstanceAuth(ctx, header, req)
 	if err != nil {
 		blog.ErrorJSON("batch register instance auth failed, err: %s, input: %s", err, req)
 		return err
@@ -353,14 +360,14 @@ func batchGrantInstanceAuth(ctx context.Context, subject iamtype.PolicySubject, 
 }
 
 // convertOldInstanceAction convert old form of iam instance action to the new form
-func convertOldInstanceAction(actionID iamtype.ActionID, id int64) string {
+func convertOldInstanceAction(actionID types.ActionID, id int64) string {
 	switch actionID {
 	case "create_sys_instance":
-		return string(iamtype.GenDynamicActionID(iamtype.Create, id))
+		return string(iamtype.GenDynamicActionID(types.Create, id))
 	case "edit_sys_instance":
-		return string(iamtype.GenDynamicActionID(iamtype.Edit, id))
+		return string(iamtype.GenDynamicActionID(types.Edit, id))
 	case "delete_sys_instance":
-		return string(iamtype.GenDynamicActionID(iamtype.Delete, id))
+		return string(iamtype.GenDynamicActionID(types.Delete, id))
 	}
 	return ""
 }
@@ -421,7 +428,9 @@ type AssociationOnDeleteAction string
 // AssociationMapping TODO
 type AssociationMapping string
 
-func convertTenantObject(objs []Object) []metadata.Object {
+func convertTenantObject(tenantID string, objs []Object) map[string][]metadata.Object {
+
+	tenantObjects := make(map[string][]metadata.Object)
 	objects := make([]metadata.Object, 0)
 	for _, obj := range objs {
 		metaObj := metadata.Object{
@@ -443,5 +452,41 @@ func convertTenantObject(objs []Object) []metadata.Object {
 		}
 		objects = append(objects, metaObj)
 	}
-	return objects
+
+	tenantObjects[tenantID] = objects
+	return tenantObjects
+}
+
+func convertTenantObjectMap(tenantID string, objs []Object) map[string][]metadata.Object {
+
+	allTenantsObjects := make(map[string][]metadata.Object)
+	objects := make([]metadata.Object, 0)
+	for _, obj := range objs {
+		metaObj := metadata.Object{
+			ID:            obj.ID,
+			ObjCls:        obj.ObjCls,
+			ObjIcon:       obj.ObjIcon,
+			ObjectID:      obj.ObjectID,
+			ObjectName:    obj.ObjectName,
+			IsHidden:      obj.IsHidden,
+			IsPre:         obj.IsPre,
+			IsPaused:      obj.IsPaused,
+			Position:      obj.Position,
+			Description:   obj.Description,
+			Creator:       obj.Creator,
+			Modifier:      obj.Modifier,
+			CreateTime:    obj.CreateTime,
+			LastTime:      obj.LastTime,
+			ObjSortNumber: obj.ObjSortNumber,
+		}
+		objects = append(objects, metaObj)
+	}
+	allTenantsObjects[tenantID] = objects
+	return allTenantsObjects
+}
+
+// SimplifiedInstance simplified instance with only id and name
+type SimplifiedInstance struct {
+	InstanceID   int64  `json:"bk_inst_id" bson:"bk_inst_id"`
+	InstanceName string `json:"bk_inst_name" bson:"bk_inst_name"`
 }

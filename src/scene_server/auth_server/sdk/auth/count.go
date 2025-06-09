@@ -19,10 +19,11 @@ import (
 
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
-func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourceType types.ResourceType) (
-	*types.AuthorizeList, error) {
+func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourceType iam.IamResourceType) (
+	*iam.AuthorizeList, error) {
 
 	if hasIamPath(p) {
 		return nil, errors.New("policy content has _bk_iam_path_, not support for now")
@@ -44,7 +45,7 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 
 	case operator.Any:
 		//  if the operator is any,set isAny flag is true.
-		return &types.AuthorizeList{IsAny: true}, nil
+		return &iam.AuthorizeList{IsAny: true}, nil
 
 	default:
 		fv, can := p.Element.(*operator.FieldValue)
@@ -59,7 +60,7 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 				return nil, err
 			}
 
-			return &types.AuthorizeList{Ids: ids}, nil
+			return &iam.AuthorizeList{Ids: ids}, nil
 
 		} else {
 			// TODO: cause we do not support _bk_iam_path_ field for now
@@ -75,7 +76,7 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 				return nil, fmt.Errorf("list instance with %s attribute failed, err: %v", p.Operator, err)
 			}
 
-			return &types.AuthorizeList{Ids: ids}, nil
+			return &iam.AuthorizeList{Ids: ids}, nil
 		}
 
 	}
@@ -140,15 +141,15 @@ func preAnalyzeContent(op operator.OperType, content *operator.Content) error {
 // countContent TODO
 // count all the resource ids according to the operator and content, eg policies.
 func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content,
-	resourceType types.ResourceType) (idList *types.AuthorizeList, err error) {
+	resourceType iam.IamResourceType) (idList *iam.AuthorizeList, err error) {
 
 	err = preAnalyzeContent(op, content)
 	if err != nil {
 		return nil, err
 	}
 	allAttrPolicies := make([]*operator.Policy, 0)
-	allList := make([]types.AuthorizeList, 0)
-	idList = new(types.AuthorizeList)
+	allList := make([]iam.AuthorizeList, 0)
+	idList = new(iam.AuthorizeList)
 
 	for _, policy := range content.Content {
 		switch policy.Operator {
@@ -179,7 +180,7 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 				if err != nil {
 					return nil, err
 				}
-				allList = append(allList, types.AuthorizeList{Ids: list})
+				allList = append(allList, iam.AuthorizeList{Ids: list})
 
 			} else {
 				// TODO: cause we do not support _bk_iam_path_ field for now
@@ -201,13 +202,13 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OperType, cont
 			return nil, fmt.Errorf("list instance with any attribute failed, err: %v", err)
 		}
 
-		allList = append(allList, types.AuthorizeList{Ids: ids})
+		allList = append(allList, iam.AuthorizeList{Ids: ids})
 	}
 
 	return calculateSet(op, allList)
 }
 
-func calculateSetForAnd(sets []types.AuthorizeList, cnt int) (*types.AuthorizeList, error) {
+func calculateSetForAnd(sets []iam.AuthorizeList, cnt int) (*iam.AuthorizeList, error) {
 
 	if cnt == 1 {
 		return &sets[0], nil
@@ -233,7 +234,7 @@ func calculateSetForAnd(sets []types.AuthorizeList, cnt int) (*types.AuthorizeLi
 	}
 	// if all the sets's isAny is true ,set the isAny flag is true.
 	if !baseFlag {
-		return &types.AuthorizeList{IsAny: true}, nil
+		return &iam.AuthorizeList{IsAny: true}, nil
 	}
 	for _, base := range sets[idBase].Ids {
 
@@ -265,10 +266,10 @@ func calculateSetForAnd(sets []types.AuthorizeList, cnt int) (*types.AuthorizeLi
 			set = append(set, base)
 		}
 	}
-	return &types.AuthorizeList{Ids: set}, nil
+	return &iam.AuthorizeList{Ids: set}, nil
 }
 
-func calculateSetForOr(sets []types.AuthorizeList, cnt int) (*types.AuthorizeList, error) {
+func calculateSetForOr(sets []iam.AuthorizeList, cnt int) (*iam.AuthorizeList, error) {
 	if cnt == 1 {
 		return &sets[0], nil
 	}
@@ -277,7 +278,7 @@ func calculateSetForOr(sets []types.AuthorizeList, cnt int) (*types.AuthorizeLis
 	for _, set := range sets {
 		// op is "OR" and the set's isAny is true,return flag true.
 		if set.IsAny {
-			return &types.AuthorizeList{IsAny: true}, nil
+			return &iam.AuthorizeList{IsAny: true}, nil
 		}
 
 		for _, ele := range set.Ids {
@@ -290,19 +291,19 @@ func calculateSetForOr(sets []types.AuthorizeList, cnt int) (*types.AuthorizeLis
 		set = append(set, ele)
 	}
 
-	return &types.AuthorizeList{Ids: set}, nil
+	return &iam.AuthorizeList{Ids: set}, nil
 
 }
 
 // calculateSet : put the authorized instance ID into the Ids, op must be one of And or Or.
-func calculateSet(op operator.OperType, sets []types.AuthorizeList) (*types.AuthorizeList, error) {
+func calculateSet(op operator.OperType, sets []iam.AuthorizeList) (*iam.AuthorizeList, error) {
 	if sets == nil {
 		return nil, errors.New("sets can not be nil")
 	}
 
 	cnt := len(sets)
 	if cnt == 0 {
-		return &types.AuthorizeList{}, nil
+		return &iam.AuthorizeList{}, nil
 	}
 
 	switch op {

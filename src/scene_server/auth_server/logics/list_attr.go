@@ -14,6 +14,7 @@ package logics
 
 import (
 	"configcenter/src/ac/iam"
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -22,7 +23,7 @@ import (
 )
 
 // ListAttr list enumeration and list type attributes of instance type resource
-func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iam.TypeID) ([]types.AttrResource, error) {
+func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iamtypes.TypeID) ([]types.AttrResource, error) {
 	attrs := make([]types.AttrResource, 0)
 	objID := getInstanceResourceObjID(resourceType)
 	if objID == "" && !iam.IsIAMSysInstance(resourceType) {

@@ -161,12 +161,6 @@ func (es *EventServer) initConfigs() error {
 		return fmt.Errorf("init cc redis configs, %+v", err)
 	}
 
-	es.config.Auth, err = iam.ParseConfigFromKV("authServer", nil)
-	if err != nil {
-		blog.Errorf("parse auth center config failed: %v", err)
-		return err
-	}
-
 	identifierConf, err := hostidentifier.ParseIdentifierConf()
 	if err != nil {
 		blog.Errorf("parse eventServer host identifier config error, err: %v", err)
@@ -216,17 +210,12 @@ func (es *EventServer) initModules() error {
 	// initialize auth authorizer
 	es.service.SetAuthorizer(iam.NewAuthorizer(es.engine.CoreAPI))
 
-	iamCli := new(iam.IAM)
 	if auth.EnableAuthorize() {
 		blog.Info("enable auth center access")
-		iamCli, err = iam.NewIAM(es.config.Auth, es.engine.Metric().Registry())
-		if err != nil {
-			return fmt.Errorf("new iam client failed: %v", err)
-		}
+		es.service.AuthManager = extensions.NewAuthManager(es.engine.CoreAPI)
 	} else {
 		blog.Infof("disable auth center access")
 	}
-	es.service.AuthManager = extensions.NewAuthManager(es.engine.CoreAPI, iamCli)
 
 	// initialize tenant manager
 	if err = logics.InitTenant(es.engine.CoreAPI); err != nil {

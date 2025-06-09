@@ -17,19 +17,20 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
-	"configcenter/src/scene_server/auth_server/sdk/types"
+	"configcenter/src/thirdparty/apigw/iam"
 )
 
 // NotEnoughLayer TODO
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
 // AdaptAuthOptions TODO
-func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, []types.Resource, error) {
+func AdaptAuthOptions(a *meta.ResourceAttribute) (types.ActionID, []iam.Resource, error) {
 
-	var action ActionID
+	var action types.ActionID
 
 	action, err := ConvertResourceAction(a.Type, a.Action, a.BusinessID)
 	if err != nil {
@@ -50,74 +51,74 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (ActionID, []types.Resource, er
 	return action, resource, nil
 }
 
-var ccIamResTypeMap = map[meta.ResourceType]TypeID{
-	meta.Business:                 Business,
-	meta.BizSet:                   BizSet,
-	meta.Project:                  Project,
-	meta.Model:                    SysModel,
-	meta.ModelUnique:              SysModel,
-	meta.ModelAttributeGroup:      SysModel,
-	meta.ModelModule:              BizTopology,
-	meta.ModelSet:                 BizTopology,
-	meta.MainlineInstance:         BizTopology,
-	meta.MainlineInstanceTopology: BizTopology,
-	meta.MainlineModel:            TypeID(""),
-	meta.ModelTopology:            TypeID(""),
-	meta.ModelClassification:      SysModelGroup,
-	meta.AssociationType:          SysAssociationType,
-	meta.ModelAssociation:         SysModel,
-	meta.MainlineModelTopology:    TypeID(""),
-	meta.ModelInstanceTopology:    SkipType,
-	meta.CloudAreaInstance:        SysCloudArea,
-	meta.HostInstance:             Host,
-	meta.HostFavorite:             SkipType,
-	meta.Process:                  BizProcessServiceInstance,
-	meta.DynamicGrouping:          BizCustomQuery,
-	meta.AuditLog:                 SysAuditLog,
-	meta.SystemBase:               TypeID(""),
-	meta.UserCustom:               UserCustom,
-	meta.ProcessServiceTemplate:   BizProcessServiceTemplate,
-	meta.ProcessServiceCategory:   BizProcessServiceCategory,
-	meta.ProcessServiceInstance:   BizProcessServiceInstance,
-	meta.BizTopology:              BizTopology,
-	meta.SetTemplate:              BizSetTemplate,
-	meta.HostApply:                BizHostApply,
-	meta.ResourcePoolDirectory:    SysResourcePoolDirectory,
-	meta.EventWatch:               SysEventWatch,
-	meta.ConfigAdmin:              TypeID(""),
-	meta.SystemConfig:             TypeID(""),
-	meta.KubeCluster:              TypeID(""),
-	meta.KubeNode:                 TypeID(""),
-	meta.KubeNamespace:            TypeID(""),
-	meta.KubeWorkload:             TypeID(""),
-	meta.KubeDeployment:           TypeID(""),
-	meta.KubeStatefulSet:          TypeID(""),
-	meta.KubeDaemonSet:            TypeID(""),
-	meta.KubeGameStatefulSet:      TypeID(""),
-	meta.KubeGameDeployment:       TypeID(""),
-	meta.KubeCronJob:              TypeID(""),
-	meta.KubeJob:                  TypeID(""),
-	meta.KubePodWorkload:          TypeID(""),
-	meta.KubePod:                  TypeID(""),
-	meta.KubeContainer:            TypeID(""),
-	meta.FieldTemplate:            FieldGroupingTemplate,
-	meta.FulltextSearch:           TypeID(""),
-	meta.IDRuleIncrID:             TypeID(""),
-	meta.FullSyncCond:             TypeID(""),
-	meta.GeneralCache:             GeneralCache,
-	meta.TenantSet:                TenantSet,
+var ccIamResTypeMap = map[meta.ResourceType]types.TypeID{
+	meta.Business:                 types.Business,
+	meta.BizSet:                   types.BizSet,
+	meta.Project:                  types.Project,
+	meta.Model:                    types.SysModel,
+	meta.ModelUnique:              types.SysModel,
+	meta.ModelAttributeGroup:      types.SysModel,
+	meta.ModelModule:              types.BizTopology,
+	meta.ModelSet:                 types.BizTopology,
+	meta.MainlineInstance:         types.BizTopology,
+	meta.MainlineInstanceTopology: types.BizTopology,
+	meta.MainlineModel:            types.TypeID(""),
+	meta.ModelTopology:            types.TypeID(""),
+	meta.ModelClassification:      types.SysModelGroup,
+	meta.AssociationType:          types.SysAssociationType,
+	meta.ModelAssociation:         types.SysModel,
+	meta.MainlineModelTopology:    types.TypeID(""),
+	meta.ModelInstanceTopology:    types.SkipType,
+	meta.CloudAreaInstance:        types.SysCloudArea,
+	meta.HostInstance:             types.Host,
+	meta.HostFavorite:             types.SkipType,
+	meta.Process:                  types.BizProcessServiceInstance,
+	meta.DynamicGrouping:          types.BizCustomQuery,
+	meta.AuditLog:                 types.SysAuditLog,
+	meta.SystemBase:               types.TypeID(""),
+	meta.UserCustom:               types.UserCustom,
+	meta.ProcessServiceTemplate:   types.BizProcessServiceTemplate,
+	meta.ProcessServiceCategory:   types.BizProcessServiceCategory,
+	meta.ProcessServiceInstance:   types.BizProcessServiceInstance,
+	meta.BizTopology:              types.BizTopology,
+	meta.SetTemplate:              types.BizSetTemplate,
+	meta.HostApply:                types.BizHostApply,
+	meta.ResourcePoolDirectory:    types.SysResourcePoolDirectory,
+	meta.EventWatch:               types.SysEventWatch,
+	meta.ConfigAdmin:              types.TypeID(""),
+	meta.SystemConfig:             types.TypeID(""),
+	meta.KubeCluster:              types.TypeID(""),
+	meta.KubeNode:                 types.TypeID(""),
+	meta.KubeNamespace:            types.TypeID(""),
+	meta.KubeWorkload:             types.TypeID(""),
+	meta.KubeDeployment:           types.TypeID(""),
+	meta.KubeStatefulSet:          types.TypeID(""),
+	meta.KubeDaemonSet:            types.TypeID(""),
+	meta.KubeGameStatefulSet:      types.TypeID(""),
+	meta.KubeGameDeployment:       types.TypeID(""),
+	meta.KubeCronJob:              types.TypeID(""),
+	meta.KubeJob:                  types.TypeID(""),
+	meta.KubePodWorkload:          types.TypeID(""),
+	meta.KubePod:                  types.TypeID(""),
+	meta.KubeContainer:            types.TypeID(""),
+	meta.FieldTemplate:            types.FieldGroupingTemplate,
+	meta.FulltextSearch:           types.TypeID(""),
+	meta.IDRuleIncrID:             types.TypeID(""),
+	meta.FullSyncCond:             types.TypeID(""),
+	meta.GeneralCache:             types.GeneralCache,
+	meta.TenantSet:                types.TenantSet,
 }
 
 // ConvertResourceType convert resource type from CMDB to IAM
-func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*TypeID, error) {
-	var iamResourceType TypeID
+func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*types.TypeID, error) {
+	var iamResourceType types.TypeID
 
 	switch resourceType {
 	case meta.ModelAttribute:
 		if businessID > 0 {
-			iamResourceType = BizCustomField
+			iamResourceType = types.BizCustomField
 		} else {
-			iamResourceType = SysModel
+			iamResourceType = types.SysModel
 		}
 		return &iamResourceType, nil
 	case meta.NetDataCollector:
@@ -130,7 +131,7 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 	}
 
 	if IsCMDBSysInstance(resourceType) {
-		iamResourceType = TypeID(resourceType)
+		iamResourceType = types.TypeID(resourceType)
 		return &iamResourceType, nil
 	}
 
@@ -138,9 +139,10 @@ func ConvertResourceType(resourceType meta.ResourceType, businessID int64) (*Typ
 }
 
 // ConvertResourceAction convert resource action from CMDB to IAM
-func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, businessID int64) (ActionID, error) {
+func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, businessID int64) (types.ActionID,
+	error) {
 	if action == meta.SkipAction {
-		return Skip, nil
+		return types.Skip, nil
 	}
 
 	convertAction := action
@@ -160,24 +162,24 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 		switch convertAction {
 		case meta.Delete, meta.Update, meta.Create:
 			if businessID > 0 {
-				return EditBusinessCustomField, nil
+				return types.EditBusinessCustomField, nil
 			} else {
-				return EditSysModel, nil
+				return types.EditSysModel, nil
 			}
 		}
 	case meta.HostInstance:
 		switch convertAction {
 		case meta.Update:
 			if businessID > 0 {
-				return EditBusinessHost, nil
+				return types.EditBusinessHost, nil
 			} else {
-				return EditResourcePoolHost, nil
+				return types.EditResourcePoolHost, nil
 			}
 		case meta.Find:
 			if businessID > 0 {
-				return ViewBusinessResource, nil
+				return types.ViewBusinessResource, nil
 			} else {
-				return ViewResourcePoolHost, nil
+				return types.ViewResourcePoolHost, nil
 			}
 		}
 	}
@@ -188,407 +190,407 @@ func ConvertResourceAction(resourceType meta.ResourceType, action meta.Action, b
 
 	if _, exist := resourceActionMap[resourceType]; exist {
 		actionID, ok := resourceActionMap[resourceType][convertAction]
-		if ok && actionID != Unsupported {
+		if ok && actionID != types.Unsupported {
 			return actionID, nil
 		}
 	}
 
-	return Unsupported, fmt.Errorf("unsupported type %s action: %s", resourceType, action)
+	return types.Unsupported, fmt.Errorf("unsupported type %s action: %s", resourceType, action)
 }
 
 // ConvertSysInstanceActionID convert system instances action from CMDB to IAM
-func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Action) (ActionID, error) {
-	var actionType ActionType
+func ConvertSysInstanceActionID(resourceType meta.ResourceType, action meta.Action) (types.ActionID, error) {
+	var actionType types.ActionType
 	switch action {
 	case meta.Create:
-		actionType = Create
+		actionType = types.Create
 	case meta.Update:
-		actionType = Edit
+		actionType = types.Edit
 	case meta.Delete:
-		actionType = Delete
+		actionType = types.Delete
 	case meta.Find:
-		actionType = View
+		actionType = types.View
 	default:
-		return Unsupported, fmt.Errorf("unsupported action: %s", action)
+		return types.Unsupported, fmt.Errorf("unsupported action: %s", action)
 	}
 	id := strings.TrimPrefix(string(resourceType), meta.CMDBSysInstTypePrefix)
 	if _, err := strconv.ParseInt(id, 10, 64); err != nil {
-		return Unsupported, fmt.Errorf("unsupported resource type: %s", resourceType)
+		return types.Unsupported, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
-	return ActionID(fmt.Sprintf("%s_%s%s", actionType, IAMSysInstTypePrefix, id)), nil
+	return types.ActionID(fmt.Sprintf("%s_%s%s", actionType, types.IAMSysInstTypePrefix, id)), nil
 }
 
-var resourceActionMap = map[meta.ResourceType]map[meta.Action]ActionID{
+var resourceActionMap = map[meta.ResourceType]map[meta.Action]types.ActionID{
 	meta.ModelAttributeGroup: {
-		meta.Delete:   EditSysModel,
-		meta.Update:   EditSysModel,
-		meta.Create:   EditSysModel,
-		meta.Find:     ViewSysModel,
-		meta.FindMany: ViewSysModel,
+		meta.Delete:   types.EditSysModel,
+		meta.Update:   types.EditSysModel,
+		meta.Create:   types.EditSysModel,
+		meta.Find:     types.ViewSysModel,
+		meta.FindMany: types.ViewSysModel,
 	},
 	meta.ModelUnique: {
-		meta.Delete:   EditSysModel,
-		meta.Update:   EditSysModel,
-		meta.Create:   EditSysModel,
-		meta.Find:     ViewSysModel,
-		meta.FindMany: ViewSysModel,
+		meta.Delete:   types.EditSysModel,
+		meta.Update:   types.EditSysModel,
+		meta.Create:   types.EditSysModel,
+		meta.Find:     types.ViewSysModel,
+		meta.FindMany: types.ViewSysModel,
 	},
 	meta.Business: {
-		meta.Archive:              ArchiveBusiness,
-		meta.Create:               CreateBusiness,
-		meta.Update:               EditBusiness,
-		meta.Find:                 FindBusiness,
-		meta.ViewBusinessResource: ViewBusinessResource,
+		meta.Archive:              types.ArchiveBusiness,
+		meta.Create:               types.CreateBusiness,
+		meta.Update:               types.EditBusiness,
+		meta.Find:                 types.FindBusiness,
+		meta.ViewBusinessResource: types.ViewBusinessResource,
 	},
 	meta.BizSet: {
-		meta.Create:       CreateBizSet,
-		meta.Update:       EditBizSet,
-		meta.Delete:       DeleteBizSet,
-		meta.Find:         ViewBizSet,
-		meta.AccessBizSet: AccessBizSet,
+		meta.Create:       types.CreateBizSet,
+		meta.Update:       types.EditBizSet,
+		meta.Delete:       types.DeleteBizSet,
+		meta.Find:         types.ViewBizSet,
+		meta.AccessBizSet: types.AccessBizSet,
 	},
 	meta.DynamicGrouping: {
-		meta.Delete:   DeleteBusinessCustomQuery,
-		meta.Update:   EditBusinessCustomQuery,
-		meta.Create:   CreateBusinessCustomQuery,
-		meta.Find:     ViewBusinessResource,
-		meta.FindMany: ViewBusinessResource,
-		meta.Execute:  ViewBusinessResource,
+		meta.Delete:   types.DeleteBusinessCustomQuery,
+		meta.Update:   types.EditBusinessCustomQuery,
+		meta.Create:   types.CreateBusinessCustomQuery,
+		meta.Find:     types.ViewBusinessResource,
+		meta.FindMany: types.ViewBusinessResource,
+		meta.Execute:  types.ViewBusinessResource,
 	},
 	meta.MainlineModel: {
-		meta.Find:   Skip,
-		meta.Create: EditBusinessLayer,
-		meta.Delete: EditBusinessLayer,
+		meta.Find:   types.Skip,
+		meta.Create: types.EditBusinessLayer,
+		meta.Delete: types.EditBusinessLayer,
 	},
 	meta.ModelTopology: {
-		meta.Find:              EditModelTopologyView,
-		meta.Update:            EditModelTopologyView,
-		meta.ModelTopologyView: ViewModelTopo,
+		meta.Find:              types.EditModelTopologyView,
+		meta.Update:            types.EditModelTopologyView,
+		meta.ModelTopologyView: types.ViewModelTopo,
 	},
 	meta.MainlineModelTopology: {
-		meta.Find: Skip,
+		meta.Find: types.Skip,
 	},
 	meta.Process: {
-		meta.Find:   Skip,
-		meta.Create: EditBusinessServiceInstance,
-		meta.Delete: EditBusinessServiceInstance,
-		meta.Update: EditBusinessServiceInstance,
+		meta.Find:   types.Skip,
+		meta.Create: types.EditBusinessServiceInstance,
+		meta.Delete: types.EditBusinessServiceInstance,
+		meta.Update: types.EditBusinessServiceInstance,
 	},
 	meta.HostInstance: {
-		meta.MoveResPoolHostToBizIdleModule: ResourcePoolHostTransferToBusiness,
-		meta.MoveResPoolHostToDirectory:     ResourcePoolHostTransferToDirectory,
-		meta.MoveBizHostFromModuleToResPool: BusinessHostTransferToResourcePool,
-		meta.AddHostToResourcePool:          CreateResourcePoolHost,
-		meta.Create:                         CreateResourcePoolHost,
-		meta.Delete:                         DeleteResourcePoolHost,
-		meta.MoveHostToAnotherBizModule:     HostTransferAcrossBusiness,
-		meta.Find:                           ViewResourcePoolHost,
-		meta.FindMany:                       ViewResourcePoolHost,
-		meta.ManageHostAgentID:              ManageHostAgentID,
+		meta.MoveResPoolHostToBizIdleModule: types.ResourcePoolHostTransferToBusiness,
+		meta.MoveResPoolHostToDirectory:     types.ResourcePoolHostTransferToDirectory,
+		meta.MoveBizHostFromModuleToResPool: types.BusinessHostTransferToResourcePool,
+		meta.AddHostToResourcePool:          types.CreateResourcePoolHost,
+		meta.Create:                         types.CreateResourcePoolHost,
+		meta.Delete:                         types.DeleteResourcePoolHost,
+		meta.MoveHostToAnotherBizModule:     types.HostTransferAcrossBusiness,
+		meta.Find:                           types.ViewResourcePoolHost,
+		meta.FindMany:                       types.ViewResourcePoolHost,
+		meta.ManageHostAgentID:              types.ManageHostAgentID,
 	},
 	meta.ProcessServiceCategory: {
-		meta.Delete: DeleteBusinessServiceCategory,
-		meta.Update: EditBusinessServiceCategory,
-		meta.Create: CreateBusinessServiceCategory,
-		meta.Find:   Skip,
+		meta.Delete: types.DeleteBusinessServiceCategory,
+		meta.Update: types.EditBusinessServiceCategory,
+		meta.Create: types.CreateBusinessServiceCategory,
+		meta.Find:   types.Skip,
 	},
 	meta.ProcessServiceInstance: {
-		meta.Delete:   DeleteBusinessServiceInstance,
-		meta.Update:   EditBusinessServiceInstance,
-		meta.Create:   CreateBusinessServiceInstance,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Delete:   types.DeleteBusinessServiceInstance,
+		meta.Update:   types.EditBusinessServiceInstance,
+		meta.Create:   types.CreateBusinessServiceInstance,
+		meta.Find:     types.Skip,
+		meta.FindMany: types.Skip,
 	},
 	meta.ProcessServiceTemplate: {
-		meta.Delete:   DeleteBusinessServiceTemplate,
-		meta.Update:   EditBusinessServiceTemplate,
-		meta.Create:   CreateBusinessServiceTemplate,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Delete:   types.DeleteBusinessServiceTemplate,
+		meta.Update:   types.EditBusinessServiceTemplate,
+		meta.Create:   types.CreateBusinessServiceTemplate,
+		meta.Find:     types.Skip,
+		meta.FindMany: types.Skip,
 	},
 	meta.SetTemplate: {
-		meta.Delete:   DeleteBusinessSetTemplate,
-		meta.Update:   EditBusinessSetTemplate,
-		meta.Create:   CreateBusinessSetTemplate,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Delete:   types.DeleteBusinessSetTemplate,
+		meta.Update:   types.EditBusinessSetTemplate,
+		meta.Create:   types.CreateBusinessSetTemplate,
+		meta.Find:     types.Skip,
+		meta.FindMany: types.Skip,
 	},
 	meta.ModelModule: {
-		meta.Delete:   DeleteBusinessTopology,
-		meta.Update:   EditBusinessTopology,
-		meta.Create:   CreateBusinessTopology,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Delete:   types.DeleteBusinessTopology,
+		meta.Update:   types.EditBusinessTopology,
+		meta.Create:   types.CreateBusinessTopology,
+		meta.Find:     types.Skip,
+		meta.FindMany: types.Skip,
 	},
 	meta.ModelSet: {
-		meta.Delete:   DeleteBusinessTopology,
-		meta.Update:   EditBusinessTopology,
-		meta.Create:   CreateBusinessTopology,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Delete:   types.DeleteBusinessTopology,
+		meta.Update:   types.EditBusinessTopology,
+		meta.Create:   types.CreateBusinessTopology,
+		meta.Find:     types.Skip,
+		meta.FindMany: types.Skip,
 	},
 	meta.MainlineInstance: {
-		meta.Delete:   DeleteBusinessTopology,
-		meta.Update:   EditBusinessTopology,
-		meta.Create:   CreateBusinessTopology,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Delete:   types.DeleteBusinessTopology,
+		meta.Update:   types.EditBusinessTopology,
+		meta.Create:   types.CreateBusinessTopology,
+		meta.Find:     types.Skip,
+		meta.FindMany: types.Skip,
 	},
 	meta.MainlineInstanceTopology: {
-		meta.Delete: Skip,
-		meta.Update: Skip,
-		meta.Create: Skip,
-		meta.Find:   Skip,
+		meta.Delete: types.Skip,
+		meta.Update: types.Skip,
+		meta.Create: types.Skip,
+		meta.Find:   types.Skip,
 	},
 	meta.HostApply: {
-		meta.Create:           EditBusinessHostApply,
-		meta.Update:           EditBusinessHostApply,
-		meta.Delete:           EditBusinessHostApply,
-		meta.Find:             Skip,
-		meta.DefaultHostApply: ViewBusinessResource,
+		meta.Create:           types.EditBusinessHostApply,
+		meta.Update:           types.EditBusinessHostApply,
+		meta.Delete:           types.EditBusinessHostApply,
+		meta.Find:             types.Skip,
+		meta.DefaultHostApply: types.ViewBusinessResource,
 	},
 	meta.ResourcePoolDirectory: {
-		meta.Delete:                DeleteResourcePoolDirectory,
-		meta.Update:                EditResourcePoolDirectory,
-		meta.Create:                CreateResourcePoolDirectory,
-		meta.AddHostToResourcePool: CreateResourcePoolHost,
-		meta.Find:                  Skip,
+		meta.Delete:                types.DeleteResourcePoolDirectory,
+		meta.Update:                types.EditResourcePoolDirectory,
+		meta.Create:                types.CreateResourcePoolDirectory,
+		meta.AddHostToResourcePool: types.CreateResourcePoolHost,
+		meta.Find:                  types.Skip,
 	},
 	meta.CloudAreaInstance: {
-		meta.Delete:   DeleteCloudArea,
-		meta.Update:   EditCloudArea,
-		meta.Create:   CreateCloudArea,
-		meta.Find:     ViewCloudArea,
-		meta.FindMany: ViewCloudArea,
+		meta.Delete:   types.DeleteCloudArea,
+		meta.Update:   types.EditCloudArea,
+		meta.Create:   types.CreateCloudArea,
+		meta.Find:     types.ViewCloudArea,
+		meta.FindMany: types.ViewCloudArea,
 	},
 	meta.Model: {
-		meta.Delete:   DeleteSysModel,
-		meta.Update:   EditSysModel,
-		meta.Create:   CreateSysModel,
-		meta.Find:     ViewSysModel,
-		meta.FindMany: ViewSysModel,
+		meta.Delete:   types.DeleteSysModel,
+		meta.Update:   types.EditSysModel,
+		meta.Create:   types.CreateSysModel,
+		meta.Find:     types.ViewSysModel,
+		meta.FindMany: types.ViewSysModel,
 	},
 	meta.AssociationType: {
-		meta.Delete:   DeleteAssociationType,
-		meta.Update:   EditAssociationType,
-		meta.Create:   CreateAssociationType,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Delete:   types.DeleteAssociationType,
+		meta.Update:   types.EditAssociationType,
+		meta.Create:   types.CreateAssociationType,
+		meta.Find:     types.Skip,
+		meta.FindMany: types.Skip,
 	},
 	meta.ModelClassification: {
-		meta.Delete:   DeleteModelGroup,
-		meta.Update:   EditModelGroup,
-		meta.Create:   CreateModelGroup,
-		meta.Find:     Skip,
-		meta.FindMany: Skip,
+		meta.Delete:   types.DeleteModelGroup,
+		meta.Update:   types.EditModelGroup,
+		meta.Create:   types.CreateModelGroup,
+		meta.Find:     types.Skip,
+		meta.FindMany: types.Skip,
 	},
 	meta.AuditLog: {
-		meta.Find:     FindAuditLog,
-		meta.FindMany: FindAuditLog,
+		meta.Find:     types.FindAuditLog,
+		meta.FindMany: types.FindAuditLog,
 	},
 	meta.SystemBase: {
-		meta.ModelTopologyView:      EditModelTopologyView,
-		meta.ModelTopologyOperation: EditBusinessLayer,
+		meta.ModelTopologyView:      types.EditModelTopologyView,
+		meta.ModelTopologyOperation: types.EditBusinessLayer,
 	},
 	meta.EventWatch: {
-		meta.WatchHost:             WatchHostEvent,
-		meta.WatchHostRelation:     WatchHostRelationEvent,
-		meta.WatchBiz:              WatchBizEvent,
-		meta.WatchSet:              WatchSetEvent,
-		meta.WatchModule:           WatchModuleEvent,
-		meta.WatchProcess:          WatchProcessEvent,
-		meta.WatchCommonInstance:   WatchCommonInstanceEvent,
-		meta.WatchMainlineInstance: WatchMainlineInstanceEvent,
-		meta.WatchInstAsst:         WatchInstAsstEvent,
-		meta.WatchBizSet:           WatchBizSetEvent,
-		meta.WatchPlat:             WatchPlatEvent,
-		meta.WatchKubeCluster:      WatchKubeClusterEvent,
-		meta.WatchKubeNode:         WatchKubeNodeEvent,
-		meta.WatchKubeNamespace:    WatchKubeNamespaceEvent,
-		meta.WatchKubeWorkload:     WatchKubeWorkloadEvent,
-		meta.WatchKubePod:          WatchKubePodEvent,
-		meta.WatchProject:          WatchProjectEvent,
+		meta.WatchHost:             types.WatchHostEvent,
+		meta.WatchHostRelation:     types.WatchHostRelationEvent,
+		meta.WatchBiz:              types.WatchBizEvent,
+		meta.WatchSet:              types.WatchSetEvent,
+		meta.WatchModule:           types.WatchModuleEvent,
+		meta.WatchProcess:          types.WatchProcessEvent,
+		meta.WatchCommonInstance:   types.WatchCommonInstanceEvent,
+		meta.WatchMainlineInstance: types.WatchMainlineInstanceEvent,
+		meta.WatchInstAsst:         types.WatchInstAsstEvent,
+		meta.WatchBizSet:           types.WatchBizSetEvent,
+		meta.WatchPlat:             types.WatchPlatEvent,
+		meta.WatchKubeCluster:      types.WatchKubeClusterEvent,
+		meta.WatchKubeNode:         types.WatchKubeNodeEvent,
+		meta.WatchKubeNamespace:    types.WatchKubeNamespaceEvent,
+		meta.WatchKubeWorkload:     types.WatchKubeWorkloadEvent,
+		meta.WatchKubePod:          types.WatchKubePodEvent,
+		meta.WatchProject:          types.WatchProjectEvent,
 	},
 	meta.UserCustom: {
-		meta.Find:   Skip,
-		meta.Update: Skip,
-		meta.Delete: Skip,
-		meta.Create: Skip,
+		meta.Find:   types.Skip,
+		meta.Update: types.Skip,
+		meta.Delete: types.Skip,
+		meta.Create: types.Skip,
 	},
 	meta.ModelAssociation: {
-		meta.Find:     ViewSysModel,
-		meta.FindMany: ViewSysModel,
-		meta.Update:   EditSysModel,
-		meta.Delete:   EditSysModel,
-		meta.Create:   EditSysModel,
+		meta.Find:     types.ViewSysModel,
+		meta.FindMany: types.ViewSysModel,
+		meta.Update:   types.EditSysModel,
+		meta.Delete:   types.EditSysModel,
+		meta.Create:   types.EditSysModel,
 	},
 	meta.ModelInstanceTopology: {
-		meta.Find:   Skip,
-		meta.Update: Skip,
-		meta.Delete: Skip,
-		meta.Create: Skip,
+		meta.Find:   types.Skip,
+		meta.Update: types.Skip,
+		meta.Delete: types.Skip,
+		meta.Create: types.Skip,
 	},
 	meta.ModelAttribute: {
-		meta.Find:   ViewSysModel,
-		meta.Update: EditSysModel,
-		meta.Delete: DeleteSysModel,
-		meta.Create: CreateSysModel,
+		meta.Find:   types.ViewSysModel,
+		meta.Update: types.EditSysModel,
+		meta.Delete: types.DeleteSysModel,
+		meta.Create: types.CreateSysModel,
 	},
 	meta.HostFavorite: {
-		meta.Find:   Skip,
-		meta.Update: Skip,
-		meta.Delete: Skip,
-		meta.Create: Skip,
+		meta.Find:   types.Skip,
+		meta.Update: types.Skip,
+		meta.Delete: types.Skip,
+		meta.Create: types.Skip,
 	},
 
 	meta.ProcessTemplate: {
-		meta.Find:   Skip,
-		meta.Delete: DeleteBusinessServiceTemplate,
-		meta.Update: EditBusinessServiceTemplate,
-		meta.Create: CreateBusinessServiceTemplate,
+		meta.Find:   types.Skip,
+		meta.Delete: types.DeleteBusinessServiceTemplate,
+		meta.Update: types.EditBusinessServiceTemplate,
+		meta.Create: types.CreateBusinessServiceTemplate,
 	},
 	meta.BizTopology: {
-		meta.Find:   Skip,
-		meta.Update: EditBusinessTopology,
-		meta.Delete: DeleteBusinessTopology,
-		meta.Create: CreateBusinessTopology,
+		meta.Find:   types.Skip,
+		meta.Update: types.EditBusinessTopology,
+		meta.Delete: types.DeleteBusinessTopology,
+		meta.Create: types.CreateBusinessTopology,
 	},
 	// unsupported resource actions for now
 	meta.NetDataCollector: {
-		meta.Find:   Unsupported,
-		meta.Update: Unsupported,
-		meta.Delete: Unsupported,
-		meta.Create: Unsupported,
+		meta.Find:   types.Unsupported,
+		meta.Update: types.Unsupported,
+		meta.Delete: types.Unsupported,
+		meta.Create: types.Unsupported,
 	},
 	meta.InstallBK: {
-		meta.Update: Skip,
+		meta.Update: types.Skip,
 	},
 	// TODO: confirm this
 	meta.SystemConfig: {
-		meta.FindMany: Skip,
-		meta.Find:     Skip,
-		meta.Update:   Skip,
-		meta.Delete:   Skip,
-		meta.Create:   Skip,
+		meta.FindMany: types.Skip,
+		meta.Find:     types.Skip,
+		meta.Update:   types.Skip,
+		meta.Delete:   types.Skip,
+		meta.Create:   types.Skip,
 	},
 	meta.ConfigAdmin: {
 
 		// reuse GlobalSettings permissions
-		meta.Find:   Skip,
-		meta.Update: GlobalSettings,
-		meta.Delete: Unsupported,
-		meta.Create: Unsupported,
+		meta.Find:   types.Skip,
+		meta.Update: types.GlobalSettings,
+		meta.Delete: types.Unsupported,
+		meta.Create: types.Unsupported,
 	},
 	meta.KubeCluster: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerCluster,
-		meta.Delete: DeleteContainerCluster,
-		meta.Create: CreateContainerCluster,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerCluster,
+		meta.Delete: types.DeleteContainerCluster,
+		meta.Create: types.CreateContainerCluster,
 	},
 	meta.KubeNode: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerNode,
-		meta.Delete: DeleteContainerNode,
-		meta.Create: CreateContainerNode,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerNode,
+		meta.Delete: types.DeleteContainerNode,
+		meta.Create: types.CreateContainerNode,
 	},
 	meta.KubeNamespace: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerNamespace,
-		meta.Delete: DeleteContainerNamespace,
-		meta.Create: CreateContainerNamespace,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerNamespace,
+		meta.Delete: types.DeleteContainerNamespace,
+		meta.Create: types.CreateContainerNamespace,
 	},
 	meta.KubeWorkload: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerWorkload,
-		meta.Delete: DeleteContainerWorkload,
-		meta.Create: CreateContainerWorkload,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubeDeployment: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerWorkload,
-		meta.Delete: DeleteContainerWorkload,
-		meta.Create: CreateContainerWorkload,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubeStatefulSet: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerWorkload,
-		meta.Delete: DeleteContainerWorkload,
-		meta.Create: CreateContainerWorkload,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubeDaemonSet: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerWorkload,
-		meta.Delete: DeleteContainerWorkload,
-		meta.Create: CreateContainerWorkload,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubeGameStatefulSet: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerWorkload,
-		meta.Delete: DeleteContainerWorkload,
-		meta.Create: CreateContainerWorkload,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubeGameDeployment: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerWorkload,
-		meta.Delete: DeleteContainerWorkload,
-		meta.Create: CreateContainerWorkload,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubeCronJob: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerWorkload,
-		meta.Delete: DeleteContainerWorkload,
-		meta.Create: CreateContainerWorkload,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubeJob: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerWorkload,
-		meta.Delete: DeleteContainerWorkload,
-		meta.Create: CreateContainerWorkload,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubePodWorkload: {
-		meta.Find:   ViewBusinessResource,
-		meta.Update: EditContainerWorkload,
-		meta.Delete: DeleteContainerWorkload,
-		meta.Create: CreateContainerWorkload,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubePod: {
-		meta.Find:   ViewBusinessResource,
-		meta.Delete: DeleteContainerPod,
-		meta.Create: CreateContainerPod,
+		meta.Find:   types.ViewBusinessResource,
+		meta.Delete: types.DeleteContainerPod,
+		meta.Create: types.CreateContainerPod,
 	},
 	meta.KubeContainer: {
-		meta.Find: ViewBusinessResource,
+		meta.Find: types.ViewBusinessResource,
 	},
 	meta.Project: {
-		meta.Find:   ViewProject,
-		meta.Update: EditProject,
-		meta.Delete: DeleteProject,
-		meta.Create: CreateProject,
+		meta.Find:   types.ViewProject,
+		meta.Update: types.EditProject,
+		meta.Delete: types.DeleteProject,
+		meta.Create: types.CreateProject,
 	},
 	meta.FulltextSearch: {
-		meta.Find: UseFulltextSearch,
+		meta.Find: types.UseFulltextSearch,
 	},
 	meta.FieldTemplate: {
-		meta.Create: CreateFieldGroupingTemplate,
-		meta.Find:   ViewFieldGroupingTemplate,
-		meta.Update: EditFieldGroupingTemplate,
-		meta.Delete: DeleteFieldGroupingTemplate,
+		meta.Create: types.CreateFieldGroupingTemplate,
+		meta.Find:   types.ViewFieldGroupingTemplate,
+		meta.Update: types.EditFieldGroupingTemplate,
+		meta.Delete: types.DeleteFieldGroupingTemplate,
 	},
 	meta.IDRuleIncrID: {
-		meta.Update: EditIDRuleIncrID,
+		meta.Update: types.EditIDRuleIncrID,
 	},
 	meta.FullSyncCond: {
-		meta.Create: CreateFullSyncCond,
-		meta.Find:   ViewFullSyncCond,
-		meta.Update: EditFullSyncCond,
-		meta.Delete: DeleteFullSyncCond,
+		meta.Create: types.CreateFullSyncCond,
+		meta.Find:   types.ViewFullSyncCond,
+		meta.Update: types.EditFullSyncCond,
+		meta.Delete: types.DeleteFullSyncCond,
 	},
 	meta.GeneralCache: {
-		meta.Find: ViewGeneralCache,
+		meta.Find: types.ViewGeneralCache,
 	},
 	meta.TenantSet: {
-		meta.Find:            ViewTenantSet,
-		meta.AccessTenantSet: AccessTenantSet,
+		meta.Find:            types.ViewTenantSet,
+		meta.AccessTenantSet: types.AccessTenantSet,
 	},
 }
 
@@ -608,7 +610,7 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 			}
 			instances = append(instances, metadata.IamResourceInstance{
 				Type:     typeAndID[0],
-				TypeName: ResourceTypeIDMap[TypeID(typeAndID[0])],
+				TypeName: ResourceTypeIDMap[types.TypeID(typeAndID[0])],
 				ID:       id,
 			})
 		}
@@ -617,8 +619,8 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 }
 
 // GenIAMDynamicResTypeID 生成IAM侧资源的的dynamic resource typeID
-func GenIAMDynamicResTypeID(modelID int64) TypeID {
-	return TypeID(fmt.Sprintf("%s%d", IAMSysInstTypePrefix, modelID))
+func GenIAMDynamicResTypeID(modelID int64) types.TypeID {
+	return types.TypeID(fmt.Sprintf("%s%d", types.IAMSysInstTypePrefix, modelID))
 }
 
 // GenCMDBDynamicResType 生成CMDB侧资源的的dynamic resourceType
@@ -627,13 +629,13 @@ func GenCMDBDynamicResType(modelID int64) meta.ResourceType {
 }
 
 // genDynamicResourceType generate dynamic resourceType
-func genDynamicResourceType(obj metadata.Object) ResourceType {
-	return ResourceType{
+func genDynamicResourceType(tenantID string, obj metadata.Object) iam.ResourceType {
+	return iam.ResourceType{
 		ID:      GenIAMDynamicResTypeID(obj.ID),
 		Name:    obj.ObjectName,
 		NameEn:  obj.ObjectID,
 		Parents: nil,
-		ProviderConfig: ResourceConfig{
+		ProviderConfig: iam.ResourceConfig{
 			Path: "/auth/v3/find/resource",
 		},
 		Version: 1,
@@ -641,45 +643,53 @@ func genDynamicResourceType(obj metadata.Object) ResourceType {
 }
 
 // genDynamicResourceTypes generate dynamic resourceTypes
-func genDynamicResourceTypes(objects []metadata.Object) []ResourceType {
-	resourceTypes := make([]ResourceType, 0)
-	for _, obj := range objects {
-		resourceTypes = append(resourceTypes, genDynamicResourceType(obj))
+func genDynamicResourceTypes(tenantObjects map[string][]metadata.Object) []iam.ResourceType {
+	resourceTypes := make([]iam.ResourceType, 0)
+
+	for tenantID, objects := range tenantObjects {
+		for _, obj := range objects {
+			resourceTypes = append(resourceTypes, genDynamicResourceType(tenantID, obj))
+		}
 	}
+
 	return resourceTypes
 }
 
 // genIAMDynamicInstanceSelection generate IAM dynamic instanceSelection
-func genIAMDynamicInstanceSelection(modelID int64) InstanceSelectionID {
-	return InstanceSelectionID(fmt.Sprintf("%s%d", IAMSysInstTypePrefix, modelID))
+func genIAMDynamicInstanceSelection(modelID int64) types.InstanceSelectionID {
+	return types.InstanceSelectionID(fmt.Sprintf("%s%d", types.IAMSysInstTypePrefix, modelID))
 }
 
 // genDynamicInstanceSelection generate dynamic instanceSelection
-func genDynamicInstanceSelection(obj metadata.Object) InstanceSelection {
-	return InstanceSelection{
+func genDynamicInstanceSelection(obj metadata.Object) iam.InstanceSelection {
+	return iam.InstanceSelection{
 		ID:     genIAMDynamicInstanceSelection(obj.ID),
 		Name:   obj.ObjectName,
 		NameEn: obj.ObjectID,
-		ResourceTypeChain: []ResourceChain{{
-			SystemID: SystemIDCMDB,
+		ResourceTypeChain: []iam.ResourceChain{{
+			SystemID: types.SystemIDCMDB,
 			ID:       GenIAMDynamicResTypeID(obj.ID),
 		}},
 	}
 }
 
 // genDynamicInstanceSelections generate dynamic instanceSelections
-func genDynamicInstanceSelections(objects []metadata.Object) []InstanceSelection {
-	instanceSelections := make([]InstanceSelection, 0)
-	for _, obj := range objects {
-		instanceSelections = append(instanceSelections, genDynamicInstanceSelection(obj))
+func genDynamicInstanceSelections(tenantObjects map[string][]metadata.Object) []iam.InstanceSelection {
+	instanceSelections := make([]iam.InstanceSelection, 0)
+
+	for _, objects := range tenantObjects {
+		for _, obj := range objects {
+			instanceSelections = append(instanceSelections, genDynamicInstanceSelection(obj))
+		}
 	}
+
 	return instanceSelections
 }
 
 // genDynamicAction generate dynamic action
 // Note: view action must be in the first place
-func genDynamicAction(obj metadata.Object) []DynamicAction {
-	return []DynamicAction{
+func genDynamicAction(obj metadata.Object) []types.DynamicAction {
+	return []types.DynamicAction{
 		genDynamicViewAction(obj),
 		genDynamicCreateAction(obj),
 		genDynamicEditAction(obj),
@@ -688,58 +698,58 @@ func genDynamicAction(obj metadata.Object) []DynamicAction {
 }
 
 // GenDynamicActionID generate dynamic ActionID
-func GenDynamicActionID(actionType ActionType, modelID int64) ActionID {
-	return ActionID(fmt.Sprintf("%s_%s%d", actionType, IAMSysInstTypePrefix, modelID))
+func GenDynamicActionID(actionType types.ActionType, modelID int64) types.ActionID {
+	return types.ActionID(fmt.Sprintf("%s_%s%d", actionType, types.IAMSysInstTypePrefix, modelID))
 }
 
 // genDynamicViewAction generate dynamic view action
-func genDynamicViewAction(obj metadata.Object) DynamicAction {
-	return DynamicAction{
-		ActionID:     GenDynamicActionID(View, obj.ID),
-		ActionType:   View,
+func genDynamicViewAction(obj metadata.Object) types.DynamicAction {
+	return types.DynamicAction{
+		ActionID:     GenDynamicActionID(types.View, obj.ID),
+		ActionType:   types.View,
 		ActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "查看"),
 		ActionNameEN: fmt.Sprintf("%s %s %s", "view", obj.ObjectID, "instance"),
 	}
 }
 
 // genDynamicCreateAction generate dynamic create action
-func genDynamicCreateAction(obj metadata.Object) DynamicAction {
-	return DynamicAction{
-		ActionID:     GenDynamicActionID(Create, obj.ID),
-		ActionType:   Create,
+func genDynamicCreateAction(obj metadata.Object) types.DynamicAction {
+	return types.DynamicAction{
+		ActionID:     GenDynamicActionID(types.Create, obj.ID),
+		ActionType:   types.Create,
 		ActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "新建"),
 		ActionNameEN: fmt.Sprintf("%s %s %s", "create", obj.ObjectID, "instance"),
 	}
 }
 
 // genDynamicEditAction generate dynamic edit action
-func genDynamicEditAction(obj metadata.Object) DynamicAction {
-	return DynamicAction{
-		ActionID:     GenDynamicActionID(Edit, obj.ID),
-		ActionType:   Edit,
+func genDynamicEditAction(obj metadata.Object) types.DynamicAction {
+	return types.DynamicAction{
+		ActionID:     GenDynamicActionID(types.Edit, obj.ID),
+		ActionType:   types.Edit,
 		ActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "编辑"),
 		ActionNameEN: fmt.Sprintf("%s %s %s", "edit", obj.ObjectID, "instance"),
 	}
 }
 
 // genDynamicDeleteAction generate dynamic delete action
-func genDynamicDeleteAction(obj metadata.Object) DynamicAction {
-	return DynamicAction{
-		ActionID:     GenDynamicActionID(Delete, obj.ID),
-		ActionType:   Delete,
+func genDynamicDeleteAction(obj metadata.Object) types.DynamicAction {
+	return types.DynamicAction{
+		ActionID:     GenDynamicActionID(types.Delete, obj.ID),
+		ActionType:   types.Delete,
 		ActionNameCN: fmt.Sprintf("%s%s%s", obj.ObjectName, "实例", "删除"),
 		ActionNameEN: fmt.Sprintf("%s %s %s", "delete", obj.ObjectID, "instance"),
 	}
 }
 
 // genDynamicActionSubGroup 动态的按模型生成动作分组作为‘模型实例管理’分组的subGroup
-func genDynamicActionSubGroup(obj metadata.Object) ActionGroup {
+func genDynamicActionSubGroup(obj metadata.Object) iam.ActionGroup {
 	actions := genDynamicAction(obj)
-	actionWithIDs := make([]ActionWithID, len(actions))
+	actionWithIDs := make([]iam.ActionWithID, len(actions))
 	for idx, action := range actions {
-		actionWithIDs[idx] = ActionWithID{ID: action.ActionID}
+		actionWithIDs[idx] = iam.ActionWithID{ID: action.ActionID}
 	}
-	return ActionGroup{
+	return iam.ActionGroup{
 		Name:    obj.ObjectName,
 		NameEn:  obj.ObjectID,
 		Actions: actionWithIDs,
@@ -747,9 +757,9 @@ func genDynamicActionSubGroup(obj metadata.Object) ActionGroup {
 }
 
 // genDynamicActionIDs generate dynamic model actionIDs
-func genDynamicActionIDs(object metadata.Object) []ActionID {
+func genDynamicActionIDs(object metadata.Object) []types.ActionID {
 	actions := genDynamicAction(object)
-	actionIDs := make([]ActionID, len(actions))
+	actionIDs := make([]types.ActionID, len(actions))
 	for idx, action := range actions {
 		actionIDs[idx] = action.ActionID
 	}
@@ -757,74 +767,76 @@ func genDynamicActionIDs(object metadata.Object) []ActionID {
 }
 
 // genDynamicActions generate dynamic model actions
-func genDynamicActions(objects []metadata.Object) []ResourceAction {
-	resActions := make([]ResourceAction, 0)
-	for _, obj := range objects {
-		relatedResource := []RelateResourceType{
-			{
-				SystemID:    SystemIDCMDB,
-				ID:          GenIAMDynamicResTypeID(obj.ID),
-				NameAlias:   "",
-				NameAliasEn: "",
-				Scope:       nil,
-				// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
-				SelectionMode: modeAll,
-				InstanceSelections: []RelatedInstanceSelection{{
-					SystemID: SystemIDCMDB,
-					ID:       genIAMDynamicInstanceSelection(obj.ID),
-				}},
-			},
-		}
+func genDynamicActions(tenantObjects map[string][]metadata.Object) []iam.ResourceAction {
+	resActions := make([]iam.ResourceAction, 0)
+	for _, objects := range tenantObjects {
+		for _, obj := range objects {
+			relatedResource := []iam.RelateResourceType{
+				{
+					SystemID:    types.SystemIDCMDB,
+					ID:          GenIAMDynamicResTypeID(obj.ID),
+					NameAlias:   "",
+					NameAliasEn: "",
+					Scope:       nil,
+					// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
+					SelectionMode: types.ModeAll,
+					InstanceSelections: []iam.RelatedInstanceSelection{{
+						SystemID: types.SystemIDCMDB,
+						ID:       genIAMDynamicInstanceSelection(obj.ID),
+					}},
+				},
+			}
 
-		actions := genDynamicAction(obj)
-		var relatedActions []ActionID
-		for _, action := range actions {
-			switch action.ActionType {
-			case View:
-				resActions = append(resActions, ResourceAction{
-					ID:                   action.ActionID,
-					Name:                 action.ActionNameCN,
-					NameEn:               action.ActionNameEN,
-					Type:                 View,
-					RelatedActions:       nil,
-					RelatedResourceTypes: nil,
-					Version:              1,
-				})
-				relatedActions = []ActionID{action.ActionID}
+			actions := genDynamicAction(obj)
+			var relatedActions []types.ActionID
+			for _, action := range actions {
+				switch action.ActionType {
+				case types.View:
+					resActions = append(resActions, iam.ResourceAction{
+						ID:                   action.ActionID,
+						Name:                 action.ActionNameCN,
+						NameEn:               action.ActionNameEN,
+						Type:                 types.View,
+						RelatedActions:       nil,
+						RelatedResourceTypes: nil,
+						Version:              1,
+					})
+					relatedActions = []types.ActionID{action.ActionID}
 
-			case Create:
-				resActions = append(resActions, ResourceAction{
-					ID:                   action.ActionID,
-					Name:                 action.ActionNameCN,
-					NameEn:               action.ActionNameEN,
-					Type:                 Create,
-					RelatedResourceTypes: nil,
-					RelatedActions:       nil,
-					Version:              1,
-				})
-			case Edit:
-				resActions = append(resActions, ResourceAction{
-					ID:                   action.ActionID,
-					Name:                 action.ActionNameCN,
-					NameEn:               action.ActionNameEN,
-					Type:                 Edit,
-					RelatedActions:       relatedActions,
-					Version:              1,
-					RelatedResourceTypes: relatedResource,
-				})
+				case types.Create:
+					resActions = append(resActions, iam.ResourceAction{
+						ID:                   action.ActionID,
+						Name:                 action.ActionNameCN,
+						NameEn:               action.ActionNameEN,
+						Type:                 types.Create,
+						RelatedResourceTypes: nil,
+						RelatedActions:       nil,
+						Version:              1,
+					})
+				case types.Edit:
+					resActions = append(resActions, iam.ResourceAction{
+						ID:                   action.ActionID,
+						Name:                 action.ActionNameCN,
+						NameEn:               action.ActionNameEN,
+						Type:                 types.Edit,
+						RelatedActions:       relatedActions,
+						Version:              1,
+						RelatedResourceTypes: relatedResource,
+					})
 
-			case Delete:
-				resActions = append(resActions, ResourceAction{
-					ID:                   action.ActionID,
-					Name:                 action.ActionNameCN,
-					NameEn:               action.ActionNameEN,
-					Type:                 Delete,
-					RelatedResourceTypes: relatedResource,
-					RelatedActions:       relatedActions,
-					Version:              1,
-				})
-			default:
-				return nil
+				case types.Delete:
+					resActions = append(resActions, iam.ResourceAction{
+						ID:                   action.ActionID,
+						Name:                 action.ActionNameCN,
+						NameEn:               action.ActionNameEN,
+						Type:                 types.Delete,
+						RelatedResourceTypes: relatedResource,
+						RelatedActions:       relatedActions,
+						Version:              1,
+					})
+				default:
+					return nil
+				}
 			}
 		}
 	}
@@ -833,8 +845,8 @@ func genDynamicActions(objects []metadata.Object) []ResourceAction {
 }
 
 // IsIAMSysInstance judge whether the resource type is a system instance in iam resource
-func IsIAMSysInstance(resourceType TypeID) bool {
-	return strings.HasPrefix(string(resourceType), IAMSysInstTypePrefix)
+func IsIAMSysInstance(resourceType types.TypeID) bool {
+	return strings.HasPrefix(string(resourceType), types.IAMSysInstTypePrefix)
 }
 
 // IsCMDBSysInstance judge whether the resource type is a system instance in cmdb resource
@@ -843,22 +855,22 @@ func IsCMDBSysInstance(resourceType meta.ResourceType) bool {
 }
 
 // isIAMSysInstanceSelection judge whether the instance selection is a system instance selection in iam resource
-func isIAMSysInstanceSelection(instanceSelectionID InstanceSelectionID) bool {
-	return strings.Contains(string(instanceSelectionID), IAMSysInstTypePrefix)
+func isIAMSysInstanceSelection(instanceSelectionID types.InstanceSelectionID) bool {
+	return strings.Contains(string(instanceSelectionID), types.IAMSysInstTypePrefix)
 }
 
 // isIAMSysInstanceAction judge whether the action is a system instance action in iam resource
-func isIAMSysInstanceAction(actionID ActionID) bool {
-	return strings.Contains(string(actionID), IAMSysInstTypePrefix)
+func isIAMSysInstanceAction(actionID types.ActionID) bool {
+	return strings.Contains(string(actionID), types.IAMSysInstTypePrefix)
 }
 
 // GetModelIDFromIamSysInstance get model id from iam system instance
-func GetModelIDFromIamSysInstance(resourceType TypeID) (int64, error) {
+func GetModelIDFromIamSysInstance(resourceType types.TypeID) (int64, error) {
 	if !IsIAMSysInstance(resourceType) {
 		return 0, fmt.Errorf("resourceType %s is not an iam system instance, it must start with prefix %s",
-			resourceType, IAMSysInstTypePrefix)
+			resourceType, types.IAMSysInstTypePrefix)
 	}
-	modelIDStr := strings.TrimPrefix(string(resourceType), IAMSysInstTypePrefix)
+	modelIDStr := strings.TrimPrefix(string(resourceType), types.IAMSysInstTypePrefix)
 	modelID, err := strconv.ParseInt(modelIDStr, 10, 64)
 	if err != nil {
 		blog.ErrorJSON("modelID convert to int64 failed, err:%s, input:%s", err, modelID)
@@ -870,7 +882,7 @@ func GetModelIDFromIamSysInstance(resourceType TypeID) (int64, error) {
 }
 
 // GetActionTypeFromIAMSysInstance get action type from iam system instance
-func GetActionTypeFromIAMSysInstance(actionID ActionID) ActionType {
+func GetActionTypeFromIAMSysInstance(actionID types.ActionID) types.ActionType {
 	actionIDStr := string(actionID)
-	return ActionType(actionIDStr[:strings.Index(actionIDStr, "_")])
+	return types.ActionType(actionIDStr[:strings.Index(actionIDStr, "_")])
 }

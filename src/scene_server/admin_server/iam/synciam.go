@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"configcenter/pkg/tenant"
+	"configcenter/pkg/tenant/tools"
 	iamcli "configcenter/src/ac/iam"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
@@ -70,7 +71,7 @@ func (s *syncor) SetDB(db dal.Dal) {
 
 // newHeader 创建IAM同步需要的header
 func newHeader() http.Header {
-	header := headerutil.BuildHeader(common.BKIAMSyncUser, common.BKSuperTenantID)
+	header := headerutil.BuildHeader(common.BKIAMSyncUser, tools.GetDefaultTenant())
 	httpheader.SetLanguage(header, "cn")
 	return header
 }
@@ -138,7 +139,7 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, redisCli redis.Client, lgc *logics.
 			continue
 		}
 
-		if err := iamCli.SyncIAMSysInstances(kit.Ctx, redisCli, objects); err != nil {
+		if err := iamCli.SyncIAMSysInstances(kit.Ctx, kit.Header, redisCli, objects); err != nil {
 			blog.Errorf("sync iam failed, sync iam system instances err: %s ,rid: %s", err, kit.Rid)
 			time.Sleep(time.Duration(s.SyncIAMPeriodMinutes) * time.Minute)
 			continue
@@ -150,16 +151,17 @@ func (s *syncor) SyncIAM(iamCli *iamcli.IAM, redisCli redis.Client, lgc *logics.
 }
 
 // GetCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
-func GetCustomObjects(kit *rest.Kit, db dal.Dal) ([]metadata.Object, error) {
-	allObjs := make([]metadata.Object, 0)
+func GetCustomObjects(kit *rest.Kit, db dal.Dal) (map[string][]metadata.Object, error) {
+	allObjs := make(map[string][]metadata.Object, 0)
 
 	err := tenant.ExecForAllTenants(func(tenantID string) error {
-		objects, err := GetTenantCustomObjects(kit.Ctx, db.Shard(kit.ShardOpts()))
+		newTenantKit := kit.NewKit().WithTenant(tenantID)
+		objects, err := GetTenantCustomObjects(newTenantKit, db.Shard(newTenantKit.ShardOpts()))
 		if err != nil {
 			blog.Errorf("get %s custom objects failed, err: %v", tenantID, err)
 			return err
 		}
-		allObjs = append(allObjs, objects...)
+		allObjs[tenantID] = objects
 		return nil
 	})
 
@@ -167,16 +169,16 @@ func GetCustomObjects(kit *rest.Kit, db dal.Dal) ([]metadata.Object, error) {
 }
 
 // GetTenantCustomObjects get all custom objects(without inner and mainline objects that authorize separately)
-func GetTenantCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, error) {
+func GetTenantCustomObjects(kit *rest.Kit, db dal.DB) ([]metadata.Object, error) {
 	// get mainline objects
 	associations := make([]metadata.Association, 0)
 	filter := mapstr.MapStr{
 		common.AssociationKindIDField: common.AssociationKindMainline,
 	}
 
-	err := db.Table(common.BKTableNameObjAsst).Find(filter).Fields(common.BKObjIDField).All(ctx, &associations)
+	err := db.Table(common.BKTableNameObjAsst).Find(filter).Fields(common.BKObjIDField).All(kit.Ctx, &associations)
 	if err != nil {
-		blog.Errorf("get mainline associations failed, err: %v", err)
+		blog.Errorf("get mainline associations failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
@@ -199,15 +201,15 @@ func GetTenantCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, 
 			common.BKDBNIN: excludeObjIDs,
 		},
 	}
-	if err := db.Table(common.BKTableNameObjDes).Find(condition).All(ctx, &objects); err != nil {
-		blog.Errorf("get all custom objects failed, err: %v", err)
+	if err := db.Table(common.BKTableNameObjDes).Find(condition).All(kit.Ctx, &objects); err != nil {
+		blog.Errorf("get all custom objects failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 
 	// 表格字段类型的object不注册到权限中心，这里需要将他们过滤出来
-	cnt, err := db.Table(common.BKTableNameModelQuoteRelation).Find(nil).Count(ctx)
+	cnt, err := db.Table(common.BKTableNameModelQuoteRelation).Find(nil).Count(kit.Ctx)
 	if err != nil {
-		blog.Errorf("count cc_ModelQuoteRelation failed, err: %v", err)
+		blog.Errorf("count cc_ModelQuoteRelation failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 	if cnt == 0 {
@@ -218,9 +220,9 @@ func GetTenantCustomObjects(ctx context.Context, db dal.DB) ([]metadata.Object, 
 	for i := uint64(0); i < cnt; i += common.BKMaxLimitSize {
 		relations := make([]metadata.ModelQuoteRelation, 0)
 		err = db.Table(common.BKTableNameModelQuoteRelation).Find(nil).Start(i).Limit(common.BKMaxLimitSize).
-			Fields(common.BKDestModelField).All(ctx, &relations)
+			Fields(common.BKDestModelField).All(kit.Ctx, &relations)
 		if err != nil {
-			blog.Errorf("list model quote relations failed, err: %v", err)
+			blog.Errorf("list model quote relations failed, err: %v, rid: %s", err, kit.Rid)
 			return nil, err
 		}
 
