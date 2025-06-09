@@ -15,7 +15,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cache
+// Package logics is the custom resource cache logics
+package logics
 
 import (
 	"fmt"
@@ -36,6 +37,14 @@ type Key struct {
 	ttl time.Duration
 }
 
+// NewKey new custom resource cache key
+func NewKey(resType types.ResType, ttl time.Duration) Key {
+	return Key{
+		resType: resType,
+		ttl:     ttl,
+	}
+}
+
 // Type returns the cache key's type
 func (k Key) Type() types.ResType {
 	return k.resType
@@ -48,5 +57,5 @@ func (k Key) TTL() time.Duration {
 
 // Key is the redis key to store the custom resource cache data
 func (k Key) Key(tenantID, key string) string {
-	return fmt.Sprintf("%s:%s:%s", Namespace, k.resType, key)
+	return fmt.Sprintf("%s:%s:%s:%s", Namespace, k.resType, tenantID, key)
 }

@@ -999,3 +999,19 @@ func (s *cacheService) authorizeListGeneralCache(kit *rest.Kit, res general.ResT
 
 	return nil, true, nil
 }
+
+// GetUUIDByObj get object uuid by objID
+func (s *cacheService) GetUUIDByObj(cts *rest.Contexts) {
+	objID := cts.Request.PathParameter(common.BKObjIDField)
+	if len(objID) == 0 {
+		cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKObjIDField))
+		return
+	}
+
+	uuid, err := s.cacheSet.Custom.GetUUIDByObj(cts.Kit, objID)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	cts.RespEntity(uuid)
+}

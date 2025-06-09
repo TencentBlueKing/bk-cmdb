@@ -146,5 +146,10 @@ func initResource(cacheSvr *CacheServer) error {
 		return cacheRrr
 	}
 
+	if err = mongodb.Dal().InitTxnManager(redis.Client()); err != nil {
+		blog.Errorf("init txn manager failed, err: %v", err)
+		return err
+	}
+
 	return nil
 }

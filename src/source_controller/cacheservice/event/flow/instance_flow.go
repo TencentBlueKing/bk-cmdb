@@ -22,10 +22,12 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/watch"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/object"
 	"configcenter/src/source_controller/cacheservice/event"
 	"configcenter/src/storage/dal/mongo/sharding"
 	ccRedis "configcenter/src/storage/dal/redis"
@@ -332,25 +334,25 @@ func (f *InstanceFlow) convertTableInstEvent(es []*types.Event, rid string) ([]*
 		return es, nil
 	}
 
-	tenantObjIDInstIDsMap := make(map[string]map[string][]int64)
-	tenantObjIDsMap := make(map[string][]string)
+	tenantUUIDInstIDsMap := make(map[string]map[string][]int64)
+	tenantUUIDsMap := make(map[string][]string)
 	instIDEventMap := make(map[int64]*types.Event)
 	instIDIndexMap := make(map[int64]int)
 	for index, e := range es {
-		objID, err := common.GetInstObjIDByTableName(e.ParsedColl, e.TenantID)
+		uuid, err := common.GetObjectUUIDByTableName(e.ParsedColl)
 		if err != nil {
 			blog.Errorf("collection name is illegal, err: %v, rid: %s", err, rid)
 			return nil, err
 		}
-		tenantObjIDsMap[e.TenantID] = append(tenantObjIDsMap[e.TenantID], objID)
+		tenantUUIDsMap[e.TenantID] = append(tenantUUIDsMap[e.TenantID], uuid)
 
 		instID := gjson.Get(string(e.DocBytes), common.BKInstIDField).Int()
 
-		_, exists := tenantObjIDInstIDsMap[e.TenantID]
+		_, exists := tenantUUIDInstIDsMap[e.TenantID]
 		if !exists {
-			tenantObjIDInstIDsMap[e.TenantID] = make(map[string][]int64)
+			tenantUUIDInstIDsMap[e.TenantID] = make(map[string][]int64)
 		}
-		tenantObjIDInstIDsMap[e.TenantID][objID] = append(tenantObjIDInstIDsMap[e.TenantID][objID], instID)
+		tenantUUIDInstIDsMap[e.TenantID][uuid] = append(tenantUUIDInstIDsMap[e.TenantID][uuid], instID)
 
 		instIDIndexMap[instID] = index
 		instIDEventMap[instID] = e
@@ -358,10 +360,10 @@ func (f *InstanceFlow) convertTableInstEvent(es []*types.Event, rid string) ([]*
 
 	notContainTableInstEventsMap := make(map[int]*types.Event)
 	srcObjIDInstIDsMap := make(map[string]map[string][]int64)
-	for tenantID, objIDs := range tenantObjIDsMap {
+	for tenantID, uuids := range tenantUUIDsMap {
 		modelQuoteRel := make([]metadata.ModelQuoteRelation, 0)
 		queryCond := mapstr.MapStr{
-			common.BKDestModelField: mapstr.MapStr{common.BKDBIN: objIDs},
+			common.BKDestModelUUIDField: mapstr.MapStr{common.BKDBIN: uuids},
 		}
 		err := mongodb.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(common.BKTableNameModelQuoteRelation).
 			Find(queryCond).All(context.TODO(), &modelQuoteRel)
@@ -378,13 +380,13 @@ func (f *InstanceFlow) convertTableInstEvent(es []*types.Event, rid string) ([]*
 			if rel.PropertyID == "" {
 				return nil, fmt.Errorf("table field property id is illegal, rel: %v", modelQuoteRel)
 			}
-			objSrcObjIDMap[rel.DestModel] = rel.SrcModel
+			objSrcObjIDMap[rel.DestModelUUID] = rel.SrcModel
 		}
 
-		for _, objID := range objIDs {
-			srcObjID, exists := objSrcObjIDMap[objID]
+		for _, uuid := range uuids {
+			srcObjID, exists := objSrcObjIDMap[uuid]
 			if !exists {
-				for _, instID := range tenantObjIDInstIDsMap[tenantID][objID] {
+				for _, instID := range tenantUUIDInstIDsMap[tenantID][uuid] {
 					notContainTableInstEventsMap[instIDIndexMap[instID]] = instIDEventMap[instID]
 				}
 				continue
@@ -395,7 +397,7 @@ func (f *InstanceFlow) convertTableInstEvent(es []*types.Event, rid string) ([]*
 				srcObjIDInstIDsMap[tenantID] = make(map[string][]int64)
 			}
 			srcObjIDInstIDsMap[tenantID][srcObjID] = append(srcObjIDInstIDsMap[tenantID][srcObjID],
-				tenantObjIDInstIDsMap[tenantID][objID]...)
+				tenantUUIDInstIDsMap[tenantID][uuid]...)
 		}
 	}
 
@@ -406,12 +408,17 @@ func (f *InstanceFlow) convertToInstEvents(es map[int]*types.Event, srcObjIDInst
 	instIDEventMap map[int64]*types.Event, instIDIndexMap map[int64]int, rid string) ([]*types.Event, error) {
 
 	for tenantID, objInstIDMap := range srcObjIDInstIDsMap {
+		kit := rest.NewKit().WithTenant(tenantID).WithRid(rid)
 		for objID, instIDs := range objInstIDMap {
 			if len(instIDs) == 0 {
 				continue
 			}
 
-			tableName := common.GetInstTableName(objID, tenantID)
+			tableName, err := object.GetInstTableNameByObjID(kit, objID)
+			if err != nil {
+				return nil, err
+			}
+
 			filter := mapstr.MapStr{
 				common.GetInstIDField(objID): mapstr.MapStr{
 					common.BKDBIN: util.IntArrayUnique(instIDs),
@@ -419,7 +426,7 @@ func (f *InstanceFlow) convertToInstEvents(es map[int]*types.Event, srcObjIDInst
 			}
 			findOpts := dbtypes.NewFindOpts().SetWithObjectID(true)
 			insts := make([]mapStrWithOid, 0)
-			err := mongodb.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(tableName).Find(filter, findOpts).
+			err = mongodb.Shard(sharding.NewShardOpts().WithTenant(tenantID)).Table(tableName).Find(filter, findOpts).
 				All(context.TODO(), &insts)
 			if err != nil {
 				blog.Errorf("get src model inst failed, err: %v, rid: %s", err, rid)

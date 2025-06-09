@@ -316,15 +316,15 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iamtypes.TypeID,
 			Limit: common.BKNoLimit,
 		},
 	}
-	objID, err := lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
+	obj, err := lgc.GetObjFromResourceType(kit.Ctx, kit.Header, resourceType)
 	if err != nil {
 		blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
 			err, resourceType, kit.Rid)
 		return nil, err
 	}
-	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, objID, query)
+	result, err := lgc.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, obj.ObjectID, query)
 	if err != nil {
-		blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", objID, ids, err, kit.Rid)
+		blog.Errorf("read object %s instances by ids(%+v) failed, err: %v, rid: %s", obj.ObjectID, ids, err, kit.Rid)
 		return nil, err
 	}
 

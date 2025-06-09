@@ -54,6 +54,8 @@ const (
 	PodLabelValueType ResType = "pod_label_value"
 	// SharedNsAsstBizType is the shared namespace to associated biz type
 	SharedNsAsstBizType ResType = "shared_ns_asst_biz"
+	// ObjUUIDType is the objID to uuid type
+	ObjUUIDType ResType = "obj_uuid"
 )
 
 const (

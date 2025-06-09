@@ -24,27 +24,28 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	kubetypes "configcenter/src/kube/types"
-	"configcenter/src/source_controller/cacheservice/cache/custom/cache/kube"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/object"
 	streamtypes "configcenter/src/storage/stream/types"
 )
 
-// watchSharedNsRel watch shared namespace relation event
-func (w *Watcher) watchSharedNsRel() error {
-	watcher := &sharedNsRelWatcher{
-		cache: w.cacheSet.SharedNsRel,
+// watchObject watch object event
+func (w *Watcher) watchObject() error {
+	watcher := &objectWatcher{
+		cache: w.cacheSet.Object,
 	}
 
 	opt := &watchOptions{
-		watchType: SharedNsRelWatchType,
+		watchType: ObjectWatchType,
 		watchOpts: &streamtypes.WatchCollOptions{
+			OperationType: []streamtypes.OperType{streamtypes.Insert, streamtypes.Delete},
 			CollectionOptions: streamtypes.CollectionOptions{
-				EventStruct: new(kubetypes.NsSharedClusterRel),
+				EventStruct: new(metadata.Object),
 				CollectionFilter: &streamtypes.CollectionFilter{
-					Regex: fmt.Sprintf("_%s$", kubetypes.BKTableNameNsSharedClusterRel),
+					Regex: fmt.Sprintf("_%s$", common.BKTableNameObjDes),
 				},
-				Fields: []string{kubetypes.BKNamespaceIDField, kubetypes.BKAsstBizIDField},
+				Fields: []string{common.BKObjIDField, metadata.ModelFieldObjUUID},
 			},
 		},
 		doBatch: watcher.doBatch,
@@ -57,19 +58,19 @@ func (w *Watcher) watchSharedNsRel() error {
 
 	if !tokenExists {
 		rid := util.GenerateRID()
-		blog.Infof("token not exists, start init all shared namespace relation cache task, rid: %s", rid)
-		go w.cacheSet.SharedNsRel.RefreshSharedNsRel(rid)
+		blog.Infof("token not exists, start init all object cache task, rid: %s", rid)
+		go w.cacheSet.Object.RefreshCache(rid)
 	}
 
 	return nil
 }
 
-type sharedNsRelWatcher struct {
-	cache *kube.SharedNsRelCache
+type objectWatcher struct {
+	cache *object.ObjectCache
 }
 
-// doBatch batch handle shared namespace relation event for cache
-func (w *sharedNsRelWatcher) doBatch(dbInfo *streamtypes.DBInfo, es []*streamtypes.Event) bool {
+// doBatch batch handle object event for cache
+func (w *objectWatcher) doBatch(dbInfo *streamtypes.DBInfo, es []*streamtypes.Event) bool {
 	if len(es) == 0 {
 		return false
 	}
@@ -77,28 +78,37 @@ func (w *sharedNsRelWatcher) doBatch(dbInfo *streamtypes.DBInfo, es []*streamtyp
 	kit := rest.NewKit().WithCtx(util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)).
 		WithRid(es[0].ID())
 
-	nsAsstBizMap := make(map[string]map[int64]int64)
-	delNsIDsMap := make(map[string][]int64)
+	objUUIDMap := make(map[string]map[string]string)
+	delObjIDsMap := make(map[string][]string)
 
 	for idx := range es {
 		one := es[idx]
 
 		tenantID := one.TenantID
-		rel := one.Document.(*kubetypes.NsSharedClusterRel)
+		obj := one.Document.(*metadata.Object)
 
 		switch one.OperationType {
 		case streamtypes.Insert:
-			_, exists := nsAsstBizMap[tenantID]
+			_, exists := objUUIDMap[tenantID]
 			if !exists {
-				nsAsstBizMap[tenantID] = make(map[int64]int64)
+				objUUIDMap[tenantID] = make(map[string]string)
 			}
-			nsAsstBizMap[tenantID][rel.NamespaceID] = rel.AsstBizID
+			objUUIDMap[tenantID][obj.ObjectID] = obj.UUID
 
 		case streamtypes.Delete:
-			delNsIDsMap[tenantID] = append(delNsIDsMap[tenantID], rel.NamespaceID)
+			objMap, exists := objUUIDMap[tenantID]
+			if exists {
+				_, ok := objMap[obj.ObjectID]
+				if ok {
+					delete(objMap, obj.ObjectID)
+				}
+				continue
+			}
+
+			delObjIDsMap[tenantID] = append(delObjIDsMap[tenantID], obj.ObjectID)
 
 		default:
-			// shared namespace relation can not be updated, so we only need to handle insert and delete event
+			// object uuid can not be updated, so we only need to handle insert and delete event
 			continue
 		}
 
@@ -106,17 +116,17 @@ func (w *sharedNsRelWatcher) doBatch(dbInfo *streamtypes.DBInfo, es []*streamtyp
 			one.Collection, one.Oid, one.ClusterTime.String(), one.OperationType, kit.Rid)
 	}
 
-	for tenantID, nsAsstBizInfo := range nsAsstBizMap {
+	for tenantID, objMap := range objUUIDMap {
 		kit = kit.WithTenant(tenantID)
-		err := w.cache.UpdateAsstBiz(kit, nsAsstBizInfo)
+		err := w.cache.UpdateObjUUIDCache(kit, objMap)
 		if err != nil {
 			return true
 		}
 	}
 
-	for tenantID, delNsIDs := range delNsIDsMap {
+	for tenantID, delObjIDs := range delObjIDsMap {
 		kit = kit.WithTenant(tenantID)
-		err := w.cache.DeleteAsstBiz(kit, delNsIDs)
+		err := w.cache.DeleteObjUUIDCache(kit, delObjIDs)
 		if err != nil {
 			return true
 		}

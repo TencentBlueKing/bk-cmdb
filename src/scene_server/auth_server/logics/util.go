@@ -199,44 +199,45 @@ func (lgc *Logics) GetModelsIDNameMap(kit *rest.Kit, modelIDs []int64) (map[int6
 // modelIDObjIDMap is a concurrent safe type
 type modelIDObjIDMap struct {
 	sync.RWMutex
-	data map[int64]string
+	data map[int64]metadata.Object
 }
 
 // modelObjIDMap is map whose key is modelID , value is objID
 // eg : {7:"bk_switch"}
 var modelObjIDMap = &modelIDObjIDMap{
-	data: make(map[int64]string),
+	data: make(map[int64]metadata.Object),
 }
 
-func (m *modelIDObjIDMap) get(objID int64) string {
+func (m *modelIDObjIDMap) get(modelID int64) (metadata.Object, bool) {
 	m.RLock()
 	defer m.RUnlock()
-	return m.data[objID]
+	obj, ok := m.data[modelID]
+	return obj, ok
 }
 
-func (m *modelIDObjIDMap) set(modelID int64, objID string) {
+func (m *modelIDObjIDMap) set(modelID int64, obj metadata.Object) {
 	m.Lock()
 	defer m.Unlock()
-	m.data[modelID] = objID
+	m.data[modelID] = obj
 }
 
-// GetObjIDFromResourceType get objID from resourceType
-func (lgc *Logics) GetObjIDFromResourceType(ctx context.Context, header http.Header,
-	resourceType iamtypes.TypeID) (string,
-	error) {
+// GetObjFromResourceType get objID from resourceType
+func (lgc *Logics) GetObjFromResourceType(ctx context.Context, header http.Header, resourceType iamtypes.TypeID) (
+	metadata.Object, error) {
+
 	rid := util.ExtractRequestIDFromContext(ctx)
 
 	modelID, err := iam.GetModelIDFromIamSysInstance(resourceType)
 	if err != nil {
-		return "", err
+		return metadata.Object{}, err
 	}
 
-	if objID := modelObjIDMap.get(modelID); objID != "" {
-		return objID, nil
+	if obj, ok := modelObjIDMap.get(modelID); ok {
+		return obj, nil
 	}
 
 	cond := &metadata.QueryCondition{
-		Fields: []string{common.BKObjIDField, common.BKFieldID},
+		Fields: []string{common.BKObjIDField, metadata.ModelFieldObjUUID},
 		Page:   metadata.BasePage{Limit: common.BKNoLimit},
 		Condition: map[string]interface{}{
 			common.BKFieldID: modelID,
@@ -246,17 +247,17 @@ func (lgc *Logics) GetObjIDFromResourceType(ctx context.Context, header http.Hea
 	resp, err := lgc.CoreAPI.CoreService().Model().ReadModel(ctx, header, cond)
 	if err != nil {
 		blog.ErrorJSON("get model failed, err:%s, cond:%s, rid:%s", err, cond, rid)
-		return "", fmt.Errorf("get model failed, err: %+v", err)
+		return metadata.Object{}, fmt.Errorf("get model failed, err: %+v", err)
 	}
 	if len(resp.Info) == 0 {
 		blog.ErrorJSON("get model failed, no model was found, cond:%s, rid:%s", cond, rid)
-		return "", fmt.Errorf("get model failed, no model was found")
+		return metadata.Object{}, fmt.Errorf("get model failed, no model was found")
 	}
 
 	for _, item := range resp.Info {
-		modelObjIDMap.set(item.ID, item.ObjectID)
-		return item.ObjectID, nil
+		modelObjIDMap.set(item.ID, item)
+		return item, nil
 	}
 
-	return modelObjIDMap.get(modelID), nil
+	return metadata.Object{}, nil
 }

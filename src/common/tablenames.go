@@ -191,16 +191,6 @@ const (
 	BKObjectInstAsstShardingTablePrefix = BKTableNameInstAsst + "_"
 )
 
-// GetObjectInstAsstTableName return the object instance association table name. TODO remove after cache-service and iam
-func GetObjectInstAsstTableName(objID, tenantID string) string {
-	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstAsstShardingTablePrefix, tenantID, TableSpecifierPublic, objID)
-}
-
-// GetObjectInstTableName return the object instance table name. TODO remove after cache-service and iam
-func GetObjectInstTableName(objID, tenantID string) string {
-	return fmt.Sprintf("%s%s_%s_%s", BKObjectInstShardingTablePrefix, tenantID, TableSpecifierPublic, objID)
-}
-
 // GetObjInstTableName return the object instance table name.
 // example: ObjectBase_{uuid}, such as 'ObjectBase_d0hcqvfk9a52rli3fuq0'
 func GetObjInstTableName(uuid string) string {
@@ -213,15 +203,12 @@ func GetObjInstAsstTableName(uuid string) string {
 	return fmt.Sprintf("%s%s", BKObjectInstAsstShardingTablePrefix, uuid)
 }
 
-// GetObjectInstObjIDByTableName get objID by table name. TODO remove after cache-service and iam
-func GetObjectInstObjIDByTableName(collectionName, tenantID string) (string, error) {
-	prefix := fmt.Sprintf("%s%s_", BKObjectInstShardingTablePrefix, tenantID)
-	suffix := strings.TrimPrefix(collectionName, prefix)
-	suffixSlice := strings.Split(suffix, "_")
-	if len(suffixSlice) <= 1 {
-		return "", fmt.Errorf("collection name is error, collection name: %s", collectionName)
+// GetObjectUUIDByTableName get uuid by object sharding table name.
+func GetObjectUUIDByTableName(collectionName string) (string, error) {
+	if !IsObjectInstShardingTable(collectionName) {
+		return "", fmt.Errorf("%s is not an object instance sharding table", collectionName)
 	}
-	return strings.Join(suffixSlice[1:], "_"), nil
+	return strings.TrimPrefix(collectionName, BKObjectInstShardingTablePrefix), nil
 }
 
 // IsObjectShardingTable returns if the target table is an object sharding table, include
@@ -275,30 +262,6 @@ func GetInnerInstTableName(objID string) string {
 		return BKTableNameBasePlat
 	}
 	return ""
-}
-
-// GetInstObjIDByTableName get objID by table name. TODO remove after cache-service and iam
-func GetInstObjIDByTableName(collectionName, tenantID string) (string, error) {
-	switch collectionName {
-	case BKTableNameBaseApp:
-		return BKInnerObjIDApp, nil
-	case BKTableNameBaseBizSet:
-		return BKInnerObjIDBizSet, nil
-	case BKTableNameBaseProject:
-		return BKInnerObjIDProject, nil
-	case BKTableNameBaseSet:
-		return BKInnerObjIDSet, nil
-	case BKTableNameBaseModule:
-		return BKInnerObjIDModule, nil
-	case BKTableNameBaseHost:
-		return BKInnerObjIDHost, nil
-	case BKTableNameBaseProcess:
-		return BKInnerObjIDProc, nil
-	case BKTableNameBasePlat:
-		return BKInnerObjIDPlat, nil
-	default:
-		return GetObjectInstObjIDByTableName(collectionName, tenantID)
-	}
 }
 
 var platformTableMap = map[string]struct{}{

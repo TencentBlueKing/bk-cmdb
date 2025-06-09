@@ -445,10 +445,6 @@ func (s *coreService) initCommon(web *restful.WebService) {
 		Handler: s.GetDistinctCount})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/group/related/{kind}/resource/by_ids",
 		Handler: s.GroupRelResByIDs})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/core/uuid/{bk_obj_id}",
-		Handler: s.SearchUUIDByObj})
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/core/obj/{uuid}",
-		Handler: s.SearchObjByUUID})
 
 	utility.AddToRestfulWebService(web)
 }

@@ -13,6 +13,7 @@
 package host
 
 import (
+	"configcenter/pkg/inst/logics"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -22,7 +23,9 @@ import (
 // Identifier TODO
 func (hm *hostManager) Identifier(kit *rest.Kit, input *metadata.SearchHostIdentifierParam) ([]metadata.HostIdentifier,
 	error) {
-	identifier := identifier.NewIdentifier(hm.clientSet)
+	identifier := identifier.NewIdentifier(func(kit *rest.Kit, objID string) (string, error) {
+		return logics.GetObjInstAsstTableFromCache(kit, hm.clientSet, objID)
+	})
 	host, err := identifier.Identifier(kit, input.HostIDs)
 	if err != nil {
 		blog.Errorf("get host identifier failed. input: %v, err: %v, rid: %s", input, err, kit.Rid)

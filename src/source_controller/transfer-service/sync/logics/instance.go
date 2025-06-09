@@ -41,8 +41,8 @@ func newObjInstLogics(conf *resLogicsConfig) *objInstLogics {
 		dataWithIDLogics: newDataWithIDLogics(conf, &dataWithIDLgc[mapstr.MapStr]{
 			idField: common.BKInstIDField,
 			table: func(subRes string) string {
-				// right now only sync object instance from table of the default supplier account
-				return common.GetObjectInstTableName(subRes, common.BKDefaultTenantID)
+				// TODO subRes is objID, use logics.GetObjInstTableFromCache to get the actual table name
+				return common.GetObjInstTableName(subRes)
 			},
 			parseData: parseMapStr,
 			getID:     getMapStrID,
@@ -134,8 +134,8 @@ func (o *objInstLogics) DeleteData(kit *util.Kit, subRes string, data any) error
 var instAsstLgc = &dataWithIDLgc[metadata.InstAsst]{
 	idField: common.BKFieldID,
 	table: func(subRes string) string {
-		// right now only sync object association from table of the default supplier account
-		return common.GetObjectInstAsstTableName(subRes, common.BKDefaultTenantID)
+		// TODO subRes is objID, use logics.GetObjInstTableFromCache to get the actual table name
+		return common.GetObjInstTableName(subRes)
 	},
 	parseData: func(data metadata.InstAsst, _, _ *options.InnerDataIDConf) (metadata.InstAsst, error) {
 		return data, nil
@@ -154,8 +154,8 @@ var instAsstLgc = &dataWithIDLgc[metadata.InstAsst]{
 var quotedInstLgc = &dataWithIDLgc[mapstr.MapStr]{
 	idField: common.BKFieldID,
 	table: func(subRes string) string {
-		// right now only sync quoted instance from table of the default supplier account
-		return common.GetInstTableName(subRes, common.BKDefaultTenantID)
+		// TODO subRes is objID, use logics.GetObjInstTableFromCache to get the actual table name
+		return common.GetObjInstTableName(subRes)
 	},
 	parseData: parseMapStr,
 	getID:     getMapStrID,

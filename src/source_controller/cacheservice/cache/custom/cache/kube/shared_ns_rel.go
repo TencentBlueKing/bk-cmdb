@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cache
+package kube
 
 import (
 	"context"
@@ -33,6 +33,7 @@ import (
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	kubetypes "configcenter/src/kube/types"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/logics"
 	"configcenter/src/source_controller/cacheservice/cache/custom/types"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/redis"
@@ -41,14 +42,14 @@ import (
 // SharedNsRelCache is shared namespace relation cache
 type SharedNsRelCache struct {
 	isMaster       discovery.ServiceManageInterface
-	nsAsstBizCache *StrCache
+	nsAsstBizCache *logics.StrCache
 }
 
 // NewSharedNsRelCache new shared namespace relation cache
 func NewSharedNsRelCache(isMaster discovery.ServiceManageInterface) *SharedNsRelCache {
 	return &SharedNsRelCache{
 		isMaster:       isMaster,
-		nsAsstBizCache: NewStrCache(Key{resType: types.SharedNsAsstBizType, ttl: 6 * time.Hour}),
+		nsAsstBizCache: logics.NewStrCache(logics.NewKey(types.SharedNsAsstBizType, 6*time.Hour)),
 	}
 }
 
@@ -120,7 +121,7 @@ func (c *SharedNsRelCache) DeleteAsstBiz(kit *rest.Kit, nsIDs []int64) error {
 // RefreshSharedNsRel refresh shared namespace relation key and value cache
 func (c *SharedNsRelCache) RefreshSharedNsRel(rid string) error {
 	// lock refresh shared namespace relation cache operation, returns error if it is already locked
-	lockKey := fmt.Sprintf("%s:shared_ns_rel_refresh:lock", Namespace)
+	lockKey := fmt.Sprintf("%s:shared_ns_rel_refresh:lock", logics.Namespace)
 
 	locker := lock.NewLocker(redis.Client())
 	locked, err := locker.Lock(lock.StrFormat(lockKey), 10*time.Minute)
@@ -174,8 +175,8 @@ func (c *SharedNsRelCache) getAllSharedNsRel(kit *rest.Kit) ([]kubetypes.NsShare
 	for {
 		relations := make([]kubetypes.NsSharedClusterRel, 0)
 		err := mongodb.Shard(kit.ShardOpts()).Table(kubetypes.BKTableNameNsSharedClusterRel).Find(cond).
-			Sort(kubetypes.BKNamespaceIDField).Fields(kubetypes.BKNamespaceIDField, kubetypes.BKAsstBizIDField).
-			All(kit.Ctx, &relations)
+			Sort(kubetypes.BKNamespaceIDField).Limit(types.DBPage).Fields(kubetypes.BKNamespaceIDField,
+			kubetypes.BKAsstBizIDField).All(kit.Ctx, &relations)
 		if err != nil {
 			blog.Errorf("list kube shared namespace rel failed, err: %v, cond: %+v, rid: %v", err, cond, kit.Rid)
 			return nil, err
@@ -192,8 +193,8 @@ func (c *SharedNsRelCache) getAllSharedNsRel(kit *rest.Kit) ([]kubetypes.NsShare
 	return all, nil
 }
 
-// loopRefreshCache loop refresh shared namespace relation key and value cache every day at 3am
-func (c *SharedNsRelCache) loopRefreshCache() {
+// LoopRefreshCache loop refresh shared namespace relation key and value cache every day at 3am
+func (c *SharedNsRelCache) LoopRefreshCache() {
 	for {
 		time.Sleep(2 * time.Hour)
 

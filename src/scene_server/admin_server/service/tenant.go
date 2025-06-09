@@ -228,7 +228,7 @@ func addDefaultArea(kit *rest.Kit, db local.DB) error {
 }
 
 func addResPoolData(kit *rest.Kit, db local.DB, objID string, data mapstr.MapStr) (int64, error) {
-	table := common.GetInstTableName(objID, kit.TenantID)
+	table := common.GetInnerInstTableName(objID)
 	idField := common.GetInstIDField(objID)
 
 	cond := mapstr.MapStr{common.BKDefaultField: data[common.BKDefaultField]}

@@ -42,13 +42,13 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iamtypes.Typ
 
 	collection := ""
 	if iam.IsIAMSysInstance(resourceType) {
-		objID, err := lgc.GetObjIDFromResourceType(kit.Ctx, kit.Header, resourceType)
+		obj, err := lgc.GetObjFromResourceType(kit.Ctx, kit.Header, resourceType)
 		if err != nil {
 			blog.ErrorJSON("get object id from resource type failed, error: %s, resource type: %s, rid: %s",
 				err, resourceType, kit.Rid)
 			return nil, err
 		}
-		collection = common.GetObjectInstTableName(objID, kit.TenantID)
+		collection = common.GetObjInstTableName(obj.UUID)
 	} else {
 		collection = getResourceTableName(resourceType)
 	}
@@ -190,12 +190,12 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	header := headerutil.NewHeaderFromContext(ctx)
 	collection := ""
 	if iam.IsIAMSysInstance(resourceType) {
-		objID, err := lgc.GetObjIDFromResourceType(ctx, header, resourceType)
+		obj, err := lgc.GetObjFromResourceType(ctx, header, resourceType)
 		if err != nil {
 			blog.Errorf("get object id from resource type(%s) failed, err: %v, rid: %s", resourceType, err, rid)
 			return nil, err
 		}
-		collection = common.GetObjectInstTableName(objID, tenantID)
+		collection = common.GetObjInstTableName(obj.UUID)
 	} else {
 		collection = getResourceTableName(resourceType)
 	}

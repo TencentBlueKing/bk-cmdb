@@ -26,7 +26,7 @@ import (
 
 // Interface for object cache
 type Interface interface {
-	GetUUIDByObj(ctx context.Context, h http.Header, objName string) (string, error)
+	GetUUIDByObj(ctx context.Context, h http.Header, objID string) (string, error)
 }
 
 // NewCacheClient returns a new object cache client
