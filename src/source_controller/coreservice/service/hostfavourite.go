@@ -253,7 +253,7 @@ func (s *coreService) GetHostFavouriteByID(ctx *rest.Contexts) {
 	ID := ctx.Request.PathParameter("id")
 	user := ctx.Request.PathParameter("user")
 	if "" == ID || "0" == ID {
-		blog.Errorf("get host favourite, but id is emtpy, rid: %s", ctx.Kit.Rid)
+		blog.Errorf("get host favourite, but id is empty, rid: %s", ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsNeedSet))
 		return
 	}
