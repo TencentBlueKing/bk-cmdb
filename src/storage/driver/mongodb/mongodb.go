@@ -158,74 +158,9 @@ func SetWatchCli(prefix string, config *mongo.Config, cryptoConf *cryptor.Config
 	return nil
 }
 
-// 暂时不支持热更新，所以没有加锁
-// TODO remove this after all mongodb clients use sharding
-var (
-	dbMap = make(map[string]dal.DB)
-
-	// 在并发的情况下，这里存在panic的问题
-	lastInitErr   errors.CCErrorCoder
-	lastConfigErr errors.CCErrorCoder
-)
-
-// Client  get default error
-func Client(prefix ...string) dal.DB {
-	var pre string
-	if len(prefix) > 0 {
-		pre = prefix[0]
-	}
-	return dbMap[pre]
-}
-
-// Table 获取操作db table的对象
-func Table(name string) dbType.Table {
-	return Client().Table(name)
-}
-
-// InitClient init mongodb client
-func InitClient(prefix string, config *mongo.Config) errors.CCErrorCoder {
-	lastInitErr = nil
-	var dbErr error
-	dbMap[prefix], dbErr = local.NewMgo(config.GetMongoConf(), time.Minute)
-	if dbErr != nil {
-		blog.Errorf("failed to connect the mongo server, error info is %s", dbErr.Error())
-		lastInitErr = errors.NewCCError(common.CCErrCommResourceInitFailed,
-			"'"+prefix+".mongodb' initialization failed")
-		return lastInitErr
-	}
-	return nil
-}
-
 // Healthz check db health status
 func Healthz() []metric.HealthItem {
-	items := make([]metric.HealthItem, 0)
-
-	for prefix, db := range dbMap {
-		if db == nil {
-			items = append(items, metric.HealthItem{
-				IsHealthy: false,
-				Message:   prefix + " db not initialized",
-				Name:      types.CCFunctionalityMongo,
-			})
-			continue
-		}
-
-		if err := db.Ping(); err != nil {
-			items = append(items, metric.HealthItem{
-				IsHealthy: false,
-				Message:   prefix + " db connect error. err: " + err.Error(),
-				Name:      types.CCFunctionalityMongo,
-			})
-			continue
-		}
-
-		items = append(items, metric.HealthItem{
-			IsHealthy: true,
-			Name:      types.CCFunctionalityMongo,
-		})
-	}
-
-	return append(items, mongoInst.Healthz()...)
+	return mongoInst.Healthz()
 }
 
 // IsDuplicatedError check duplicated error

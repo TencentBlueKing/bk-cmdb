@@ -13,20 +13,13 @@
 ```
 
 
-Client 获取db client 
+Dal 获取dal实例
 
-Table  获取对应name 的table 对象
- 
-ParseConfig  获取db的配置
+Shard  获取db client
 
-InitClient   根据配置初始化db 连接
- 
-Validate  预留函数，暂未启用
+SetShardingCli   根据配置初始化db连接
 
-UpdateConfig 预留函数，暂未启用
+SetWatchCli   根据配置初始化watch db连接
 
 Healthz 健康检查函数
-
-TBxxx 获取对应的table 对象
- 
 ```

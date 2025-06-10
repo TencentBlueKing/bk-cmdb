@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/source_controller/transfer-service/app/options"
 	"configcenter/src/source_controller/transfer-service/service"
@@ -91,6 +92,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 
 	svr.Core = engine
+	errors.SetGlobalCCError(engine.CCErr)
 
 	if err = svr.initResource(op.ExSyncConfFile); err != nil {
 		return err
@@ -161,10 +163,14 @@ func (s *TransferService) initResource(exSyncConfFile string) error {
 		return fmt.Errorf("sync config is invalid, err: %v", err)
 	}
 
-	if s.Config.Sync.Role != options.SyncRoleDest {
-		return nil
+	if err = s.parseExSyncConf(exSyncConfFile, err); err != nil {
+		return err
 	}
 
+	return nil
+}
+
+func (s *TransferService) parseExSyncConf(exSyncConfFile string, err error) error {
 	if exSyncConfFile == "" {
 		return fmt.Errorf("extra sync config file path is not set")
 	}
@@ -177,14 +183,25 @@ func (s *TransferService) initResource(exSyncConfFile string) error {
 		return fmt.Errorf("read dest extra sync config failed, err: %v", err)
 	}
 
-	s.Config.DestExConf = new(options.DestExSyncConf)
-	if err = parser.Unmarshal(s.Config.DestExConf); err != nil {
-		return fmt.Errorf("parse dest extra sync config failed, err: %v", err)
-	}
+	switch s.Config.Sync.Role {
+	case options.SyncRoleSrc:
+		s.Config.SrcExConf = new(options.SrcExSyncConf)
+		if err = parser.Unmarshal(s.Config.SrcExConf); err != nil {
+			return fmt.Errorf("parse src extra sync config failed, err: %v", err)
+		}
 
-	if err = s.Config.DestExConf.Validate(); err != nil {
-		return fmt.Errorf("dest extra sync config is invalid, err: %v", err)
-	}
+		if err = s.Config.SrcExConf.Validate(); err != nil {
+			return fmt.Errorf("src extra sync config is invalid, err: %v", err)
+		}
+	case options.SyncRoleDest:
+		s.Config.DestExConf = new(options.DestExSyncConf)
+		if err = parser.Unmarshal(s.Config.DestExConf); err != nil {
+			return fmt.Errorf("parse dest extra sync config failed, err: %v", err)
+		}
 
+		if err = s.Config.DestExConf.Validate(); err != nil {
+			return fmt.Errorf("dest extra sync config is invalid, err: %v", err)
+		}
+	}
 	return nil
 }

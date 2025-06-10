@@ -53,15 +53,17 @@ type PullSyncDataRes struct {
 
 // FullSyncTransData is the full sync transfer data
 type FullSyncTransData struct {
-	Name  string           `json:"name"`
-	Start map[string]int64 `json:"start"`
-	End   map[string]int64 `json:"end"`
-	Data  any              `json:"data"`
+	Name     string           `json:"name"`
+	TenantID string           `json:"tenant_id"`
+	Start    map[string]int64 `json:"start"`
+	End      map[string]int64 `json:"end"`
+	Data     any              `json:"data"`
 }
 
 // IncrSyncTransData is the incremental sync transfer data
 type IncrSyncTransData struct {
 	Name       string                       `json:"name"`
+	TenantID   string                       `json:"tenant_id"`
 	UpsertInfo map[string][]json.RawMessage `json:"upsert_info"`
 	DeleteInfo map[string][]json.RawMessage `json:"delete_info"`
 }

@@ -20,14 +20,15 @@ package logics
 import (
 	"fmt"
 
+	"configcenter/pkg/inst/logics"
 	"configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/source_controller/transfer-service/app/options"
-	"configcenter/src/source_controller/transfer-service/sync/util"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
@@ -38,12 +39,8 @@ type objInstLogics struct {
 
 func newObjInstLogics(conf *resLogicsConfig) *objInstLogics {
 	return &objInstLogics{
-		dataWithIDLogics: newDataWithIDLogics(conf, &dataWithIDLgc[mapstr.MapStr]{
-			idField: common.BKInstIDField,
-			table: func(subRes string) string {
-				// TODO subRes is objID, use logics.GetObjInstTableFromCache to get the actual table name
-				return common.GetObjInstTableName(subRes)
-			},
+		dataWithIDLogics: newObjInstDataLogics(conf, &dataWithIDLgc[mapstr.MapStr]{
+			idField:   common.BKInstIDField,
 			parseData: parseMapStr,
 			getID:     getMapStrID,
 			getRelatedIDs: func(subRes string, data mapstr.MapStr) (map[types.ResType][]int64, error) {
@@ -57,8 +54,21 @@ func newObjInstLogics(conf *resLogicsConfig) *objInstLogics {
 	}
 }
 
+func newObjInstDataLogics[T any](conf *resLogicsConfig, lgc *dataWithIDLgc[T]) *dataWithIDLogics[T] {
+	lgc.table = func(kit *rest.Kit, subRes string) (string, error) {
+		objUUID, err := logics.GetObjUUIDFromCache(kit, conf.cacheCli, subRes)
+		if err != nil {
+			blog.Errorf("get obj %s uuid from cache failed, err: %v, rid: %s", subRes, err, kit.Rid)
+			return "", err
+		}
+		return common.GetObjInstTableName(objUUID), nil
+	}
+
+	return newDataWithIDLogics(conf, lgc)
+}
+
 // InsertData insert data
-func (o *objInstLogics) InsertData(kit *util.Kit, subRes string, data any) error {
+func (o *objInstLogics) InsertData(kit *rest.Kit, subRes string, data any) error {
 	dataArr, ok := data.([]DataWithID[mapstr.MapStr])
 	if !ok {
 		return fmt.Errorf("data type %T is invalid", data)
@@ -80,14 +90,19 @@ func (o *objInstLogics) InsertData(kit *util.Kit, subRes string, data any) error
 		})
 	}
 
-	table := o.table(subRes)
-	err := mongodb.Client().Table(table).Insert(kit.Ctx, insertData)
-	if err != nil && !mongodb.Client().IsDuplicatedError(err) {
+	table, err := o.table(kit, subRes)
+	if err != nil {
+		blog.Errorf("get %s table by sub res %s failed, err: %v, rid: %s", o.resType, subRes, err, kit.Rid)
+		return err
+	}
+
+	err = mongodb.Shard(kit.ShardOpts()).Table(table).Insert(kit.Ctx, insertData)
+	if err != nil && !mongodb.IsDuplicatedError(err) {
 		blog.Errorf("insert %s data(%+v) failed, err: %v, rid: %s", table, insertData, err, kit.Rid)
 		return err
 	}
 
-	if err = instancemapping.Create(kit.Ctx, mappings); err != nil {
+	if err = instancemapping.Create(kit, mappings); err != nil {
 		blog.Errorf("create object instance mappings(%+v) failed, err: %v, rid: %s", mappings, err, kit.Rid)
 		return err
 	}
@@ -95,7 +110,7 @@ func (o *objInstLogics) InsertData(kit *util.Kit, subRes string, data any) error
 }
 
 // DeleteData delete data
-func (o *objInstLogics) DeleteData(kit *util.Kit, subRes string, data any) error {
+func (o *objInstLogics) DeleteData(kit *rest.Kit, subRes string, data any) error {
 	var ids []int64
 	switch val := data.(type) {
 	case []int64:
@@ -113,7 +128,7 @@ func (o *objInstLogics) DeleteData(kit *util.Kit, subRes string, data any) error
 		return nil
 	}
 
-	if err := instancemapping.Delete(kit.Ctx, ids); err != nil {
+	if err := instancemapping.Delete(kit, ids); err != nil {
 		blog.Errorf("delete object instance mapping failed, err: %v, inst ids: %+v, rid: %s", err, ids, kit.Rid)
 		return err
 	}
@@ -122,8 +137,13 @@ func (o *objInstLogics) DeleteData(kit *util.Kit, subRes string, data any) error
 		common.BKInstIDField: mapstr.MapStr{common.BKDBIN: ids},
 	}
 
-	table := o.table(subRes)
-	err := mongodb.Client().Table(table).Delete(kit.Ctx, cond)
+	table, err := o.table(kit, subRes)
+	if err != nil {
+		blog.Errorf("get %s table by sub res %s failed, err: %v, rid: %s", o.resType, subRes, err, kit.Rid)
+		return err
+	}
+
+	err = mongodb.Shard(kit.ShardOpts()).Table(table).Delete(kit.Ctx, cond)
 	if err != nil {
 		blog.Errorf("delete %s data failed, err: %v, cond: %+v, rid: %s", table, err, cond, kit.Rid)
 		return err
@@ -133,10 +153,6 @@ func (o *objInstLogics) DeleteData(kit *util.Kit, subRes string, data any) error
 
 var instAsstLgc = &dataWithIDLgc[metadata.InstAsst]{
 	idField: common.BKFieldID,
-	table: func(subRes string) string {
-		// TODO subRes is objID, use logics.GetObjInstTableFromCache to get the actual table name
-		return common.GetObjInstTableName(subRes)
-	},
 	parseData: func(data metadata.InstAsst, _, _ *options.InnerDataIDConf) (metadata.InstAsst, error) {
 		return data, nil
 	},
@@ -151,12 +167,21 @@ var instAsstLgc = &dataWithIDLgc[metadata.InstAsst]{
 	},
 }
 
+func newInstAsstDataLogics[T any](conf *resLogicsConfig, lgc *dataWithIDLgc[T]) *dataWithIDLogics[T] {
+	lgc.table = func(kit *rest.Kit, subRes string) (string, error) {
+		objUUID, err := logics.GetObjUUIDFromCache(kit, conf.cacheCli, subRes)
+		if err != nil {
+			blog.Errorf("get obj %s uuid from cache failed, err: %v, rid: %s", subRes, err, kit.Rid)
+			return "", err
+		}
+		return common.GetObjInstAsstTableName(objUUID), nil
+	}
+
+	return newDataWithIDLogics(conf, lgc)
+}
+
 var quotedInstLgc = &dataWithIDLgc[mapstr.MapStr]{
-	idField: common.BKFieldID,
-	table: func(subRes string) string {
-		// TODO subRes is objID, use logics.GetObjInstTableFromCache to get the actual table name
-		return common.GetObjInstTableName(subRes)
-	},
+	idField:   common.BKFieldID,
 	parseData: parseMapStr,
 	getID:     getMapStrID,
 	getRelatedIDs: func(subRes string, data mapstr.MapStr) (map[types.ResType][]int64, error) {

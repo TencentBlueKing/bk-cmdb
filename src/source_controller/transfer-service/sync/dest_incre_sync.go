@@ -23,7 +23,7 @@ import (
 
 	"configcenter/pkg/synchronize/types"
 	"configcenter/src/common/blog"
-	"configcenter/src/source_controller/transfer-service/sync/util"
+	"configcenter/src/common/http/rest"
 )
 
 // loopPullIncrSyncData loop pull incremental sync data
@@ -56,7 +56,7 @@ func (s *Syncer) loopPullIncrSyncData(resType types.ResType) {
 
 // pullIncrSyncData pull incremental sync data for one resource
 func (s *resSyncer) pullIncrSyncData(ack bool) (bool, error) {
-	kit := util.NewKit()
+	kit := rest.NewKit()
 	resType := s.lgc.ResType()
 	blog.Infof("start pull %s incr sync data, rid: %s", resType, kit.Rid)
 
@@ -84,9 +84,11 @@ func (s *resSyncer) pullIncrSyncData(ack bool) (bool, error) {
 		return false, err
 	}
 
+	kit = kit.WithTenant(syncData.TenantID).WithRid(kit.Rid + "-" + syncData.TenantID)
+
 	// delete data
 	for subRes, rawData := range syncData.DeleteInfo {
-		dataArr, err := s.lgc.ParseDataArr(syncData.Name, subRes, rawData, kit.Rid)
+		dataArr, err := s.lgc.ParseDataArr(kit, syncData.Name, subRes, rawData)
 		if err != nil {
 			blog.Errorf("parse %s-%s incr sync data(%+v) failed, err: %v, rid: %s", s.lgc.ResType(), subRes, rawData,
 				err, kit.Rid)
@@ -101,7 +103,7 @@ func (s *resSyncer) pullIncrSyncData(ack bool) (bool, error) {
 
 	// cross compare data from two environments of the same interval
 	for subRes, rawData := range syncData.UpsertInfo {
-		dataArr, err := s.lgc.ParseDataArr(syncData.Name, subRes, rawData, kit.Rid)
+		dataArr, err := s.lgc.ParseDataArr(kit, syncData.Name, subRes, rawData)
 		if err != nil {
 			blog.Errorf("parse %s-%s incr sync data(%+v) failed, err: %v, rid: %s", s.lgc.ResType(), subRes, rawData,
 				err, kit.Rid)

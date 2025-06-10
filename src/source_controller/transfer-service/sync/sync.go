@@ -29,6 +29,7 @@ import (
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	meta "configcenter/src/common/metadata"
 	"configcenter/src/source_controller/transfer-service/app/options"
 	"configcenter/src/source_controller/transfer-service/sync/logics"
 	"configcenter/src/source_controller/transfer-service/sync/medium"
@@ -39,7 +40,6 @@ import (
 	"configcenter/src/storage/stream/task"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/tidwall/gjson"
 )
 
 // Syncer is cmdb data syncer
@@ -49,6 +49,7 @@ type Syncer struct {
 	metadata     *metadata.Metadata
 	resSyncerMap map[types.ResType]*resSyncer
 	tasks        []*task.Task
+	tenantMap    map[string]string
 }
 
 // NewSyncer new cmdb data syncer
@@ -60,16 +61,16 @@ func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface,
 	}
 
 	// check if id generator is enabled, can only start syncing when id generator is enabled
-	configAdminCond := map[string]interface{}{"_id": common.ConfigAdminID}
-	configAdminData := make(map[string]string)
+	configAdminCond := map[string]interface{}{common.BKFieldDBID: common.PlatformConfig}
+	configAdminData := new(meta.PlatformConfig)
 	err := mongodb.Shard(sharding.NewShardOpts().WithIgnoreTenant()).Table(common.BKTableNameSystem).
-		Find(configAdminCond).Fields(common.ConfigAdminValueField).One(context.Background(), &configAdminData)
+		Find(configAdminCond).Fields(meta.IDGeneratorConfig).One(context.Background(), &configAdminData)
 	if err != nil {
 		blog.Errorf("get config admin data failed, err: %v, cond: %+v", err, configAdminCond)
 		return nil, err
 	}
 
-	if !gjson.Get(configAdminData[common.ConfigAdminValueField], "id_generator.enabled").Bool() {
+	if !configAdminData.IDGenerator.Enabled {
 		blog.Infof("config admin id generator is not enabled, do not sync cmdb data")
 		return &Syncer{enableSync: false}, nil
 	}
@@ -88,6 +89,7 @@ func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface,
 
 	idRuleMap, srcInnerIDMap := parseDestExConf(conf)
 	resLgcMap := logics.New(&logics.LogicsConfig{
+		CacheCli:      cacheCli,
 		Metadata:      meta,
 		IDRuleMap:     idRuleMap,
 		SrcInnerIDMap: srcInnerIDMap,
@@ -122,10 +124,10 @@ func NewSyncer(conf *options.Config, isMaster discovery.ServiceManageInterface,
 }
 
 func parseDestExConf(conf *options.Config) (map[types.ResType]map[string][]options.IDRuleInfo,
-	map[string]*options.InnerDataIDConf) {
+	map[string]map[string]*options.InnerDataIDConf) {
 
 	idRuleMap := make(map[types.ResType]map[string][]options.IDRuleInfo)
-	innerDataIDMap := make(map[string]*options.InnerDataIDConf)
+	innerDataIDMap := make(map[string]map[string]*options.InnerDataIDConf)
 	if conf.DestExConf == nil {
 		return idRuleMap, innerDataIDMap
 	}
@@ -159,7 +161,12 @@ func parseDestExConf(conf *options.Config) (map[types.ResType]map[string][]optio
 
 	// parse inner data id config into map[src env name]inner data id info
 	for i, innerIDInfo := range conf.DestExConf.InnerDataID {
-		innerDataIDMap[innerIDInfo.Name] = &conf.DestExConf.InnerDataID[i]
+		tenantInnerDataIDMap, exists := innerDataIDMap[innerIDInfo.Name]
+		if !exists {
+			tenantInnerDataIDMap = make(map[string]*options.InnerDataIDConf)
+		}
+		tenantInnerDataIDMap[innerIDInfo.TenantID] = &conf.DestExConf.InnerDataID[i]
+		innerDataIDMap[innerIDInfo.Name] = tenantInnerDataIDMap
 	}
 
 	return idRuleMap, innerDataIDMap
@@ -170,13 +177,14 @@ func (s *Syncer) run(conf *options.Config, transMedium medium.ClientI,
 
 	switch conf.Sync.Role {
 	case options.SyncRoleSrc:
+		s.tenantMap = conf.SrcExConf.SrcToDestTenantMap
 		go s.loopPushFullSyncData(time.Duration(conf.Sync.SyncIntervalHours) * time.Hour)
 
 		if !conf.Sync.EnableIncrSync {
 			return nil
 		}
 
-		watcher, err := watch.New(conf.Sync.Name, s.isMaster, s.metadata, cacheCli, transMedium)
+		watcher, err := watch.New(conf.Sync.Name, s.tenantMap, s.isMaster, s.metadata, cacheCli, transMedium)
 		if err != nil {
 			blog.Errorf("new watcher failed, err: %v", err)
 			return err

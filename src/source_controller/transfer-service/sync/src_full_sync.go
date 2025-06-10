@@ -23,6 +23,7 @@ import (
 	"configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/lock"
 	"configcenter/src/source_controller/transfer-service/sync/util"
 	"configcenter/src/storage/driver/redis"
@@ -47,35 +48,39 @@ func (s *Syncer) loopPushFullSyncData(interval time.Duration) {
 			continue
 		}
 
-		var objIDs, quotedObjIDs []string
-		util.RetryWrapper(3, func() (bool, error) {
-			objIDs, quotedObjIDs, err = s.metadata.GetCommonObjIDs()
-			if err != nil {
-				blog.Errorf("get object ids failed, err: %v", err)
-				return true, err
-			}
-			return false, nil
-		})
+		for srcTenant, destTenant := range s.tenantMap {
+			kit := rest.NewKit().WithTenant(srcTenant)
 
-		for _, resType := range types.ListAllResType() {
-			syncer := s.resSyncerMap[resType]
+			var objIDs, quotedObjIDs []string
+			util.RetryWrapper(3, func() (bool, error) {
+				objIDs, quotedObjIDs, err = s.metadata.GetCommonObjIDs(kit)
+				if err != nil {
+					blog.Errorf("get object ids failed, err: %v", err)
+					return true, err
+				}
+				return false, nil
+			})
 
-			switch resType {
-			case types.ObjectInstance:
-				for _, objID := range objIDs {
-					syncer.pushFullSyncData(objID)
+			for _, resType := range types.ListAllResType() {
+				syncer := s.resSyncerMap[resType]
+
+				switch resType {
+				case types.ObjectInstance:
+					for _, objID := range objIDs {
+						syncer.pushFullSyncData(kit, objID, destTenant)
+					}
+				case types.InstAsst:
+					// TODO 目前没有同步业务相关的关联，因为现在产品形态是不支持的，后续如果需要支持的话实例关联同步都需要调整
+					for _, objID := range append(objIDs, common.BKInnerObjIDHost) {
+						syncer.pushFullSyncData(kit, objID, destTenant)
+					}
+				case types.QuotedInstance:
+					for _, objID := range quotedObjIDs {
+						syncer.pushFullSyncData(kit, objID, destTenant)
+					}
+				default:
+					syncer.pushFullSyncData(kit, "", destTenant)
 				}
-			case types.InstAsst:
-				// TODO 目前没有同步业务相关的关联，因为现在产品形态是不支持的，后续如果需要支持的话实例关联同步都需要调整
-				for _, objID := range append(objIDs, common.BKInnerObjIDHost) {
-					syncer.pushFullSyncData(objID)
-				}
-			case types.QuotedInstance:
-				for _, objID := range quotedObjIDs {
-					syncer.pushFullSyncData(objID)
-				}
-			default:
-				syncer.pushFullSyncData("")
 			}
 		}
 
@@ -86,8 +91,7 @@ func (s *Syncer) loopPushFullSyncData(interval time.Duration) {
 }
 
 // pushFullSyncData push full sync data for one resource
-func (s *resSyncer) pushFullSyncData(subRes string) {
-	kit := util.NewKit()
+func (s *resSyncer) pushFullSyncData(kit *rest.Kit, subRes, destTenant string) {
 	startTime := time.Now()
 	blog.Infof("start push %s-%s full sync data, start time: %s, rid: %s", s.lgc.ResType(), subRes, startTime, kit.Rid)
 
@@ -99,7 +103,7 @@ func (s *resSyncer) pushFullSyncData(subRes string) {
 		var nextStart map[string]int64
 
 		util.RetryWrapper(3, func() (bool, error) {
-			isAll, nextStart, err = s.doOnePushFullSyncDataStep(kit, subRes, start, nil)
+			isAll, nextStart, err = s.doOnePushFullSyncDataStep(kit, subRes, destTenant, start, nil)
 			if err != nil {
 				blog.Errorf("try %s-%s full sync step failed, err: %v, start: %+v, rid: %s", s.lgc.ResType(), subRes,
 					err, start, kit.Rid)
@@ -116,8 +120,8 @@ func (s *resSyncer) pushFullSyncData(subRes string) {
 }
 
 // doOnePushFullSyncDataStep do one push full sync data step
-func (s *resSyncer) doOnePushFullSyncDataStep(kit *util.Kit, subRes string, start, end map[string]int64) (bool,
-	map[string]int64, error) {
+func (s *resSyncer) doOnePushFullSyncDataStep(kit *rest.Kit, subRes, destTenant string, start, end map[string]int64) (
+	bool, map[string]int64, error) {
 
 	// list data from the start index
 	listOpt := &types.ListDataOpt{
@@ -149,10 +153,11 @@ func (s *resSyncer) doOnePushFullSyncDataStep(kit *util.Kit, subRes string, star
 		SubRes:      subRes,
 		IsIncrement: false,
 		Data: &types.FullSyncTransData{
-			Name:  s.name,
-			Start: start,
-			End:   syncEnd,
-			Data:  info.Data,
+			Name:     s.name,
+			TenantID: destTenant,
+			Start:    start,
+			End:      syncEnd,
+			Data:     info.Data,
 		},
 	}
 	err = s.transMedium.PushSyncData(kit.Ctx, kit.Header, pushOpt)

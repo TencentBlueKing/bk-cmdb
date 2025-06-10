@@ -38,7 +38,7 @@ func (s *Service) SyncCmdbData(cts *rest.Contexts) {
 		return
 	}
 
-	blog.Infof("start sync cmdb data, opt: %+v, rid: %s", opt, cts.Kit.Rid)
+	blog.Infof("start sync cmdb data, tenant: %s, opt: %+v, rid: %s", opt, cts.Kit.TenantID, cts.Kit.Rid)
 
 	cts.Kit.Ctx = context.Background()
 	go func() {
@@ -47,7 +47,7 @@ func (s *Service) SyncCmdbData(cts *rest.Contexts) {
 			blog.Errorf("sync cmdb data failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
 			return
 		}
-		blog.Infof("finished sync cmdb data, opt: %+v, rid: %s", opt, cts.Kit.Rid)
+		blog.Infof("finished sync cmdb data, tenant: %s, opt: %+v, rid: %s", cts.Kit.TenantID, opt, cts.Kit.Rid)
 	}()
 
 	cts.RespEntity(nil)

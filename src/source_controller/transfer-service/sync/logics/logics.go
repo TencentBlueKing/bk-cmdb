@@ -20,22 +20,23 @@ package logics
 
 import (
 	"configcenter/pkg/synchronize/types"
+	"configcenter/src/apimachinery/cacheservice"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/source_controller/transfer-service/app/options"
 	"configcenter/src/source_controller/transfer-service/sync/metadata"
-	"configcenter/src/source_controller/transfer-service/sync/util"
 )
 
 // Logics is the resource sync logics interface
 type Logics interface {
 	ResType() types.ResType
-	ParseDataArr(env, subRes string, data any, rid string) (any, error)
-	ListData(kit *util.Kit, opt *types.ListDataOpt) (*types.ListDataRes, error)
-	CompareData(kit *util.Kit, subRes string, srcInfo *types.FullSyncTransData, destInfo *types.ListDataRes) (
+	ParseDataArr(kit *rest.Kit, env, subRes string, data any) (any, error)
+	ListData(kit *rest.Kit, opt *types.ListDataOpt) (*types.ListDataRes, error)
+	CompareData(kit *rest.Kit, subRes string, srcInfo *types.FullSyncTransData, destInfo *types.ListDataRes) (
 		*types.CompDataRes, error)
-	ClassifyUpsertData(kit *util.Kit, subRes string, upsertData any) (any, any, error)
-	InsertData(kit *util.Kit, subRes string, data any) error
-	UpdateData(kit *util.Kit, subRes string, data any) error
-	DeleteData(kit *util.Kit, subRes string, data any) error
+	ClassifyUpsertData(kit *rest.Kit, subRes string, upsertData any) (any, any, error)
+	InsertData(kit *rest.Kit, subRes string, data any) error
+	UpdateData(kit *rest.Kit, subRes string, data any) error
+	DeleteData(kit *rest.Kit, subRes string, data any) error
 }
 
 // New creates a new resource type to resource sync logics map
@@ -47,11 +48,11 @@ func New(conf *LogicsConfig) map[types.ResType]Logics {
 		types.Host:            newDataWithIDLogics(conf.genResLgcConf(types.Host), hostLgc),
 		types.HostRelation:    newRelationLogics(conf.genResLgcConf(types.HostRelation), hostRelLgc),
 		types.ObjectInstance:  newObjInstLogics(conf.genResLgcConf(types.ObjectInstance)),
-		types.InstAsst:        newDataWithIDLogics(conf.genResLgcConf(types.InstAsst), instAsstLgc),
+		types.InstAsst:        newInstAsstDataLogics(conf.genResLgcConf(types.InstAsst), instAsstLgc),
 		types.ServiceInstance: newDataWithIDLogics(conf.genResLgcConf(types.ServiceInstance), serviceInstLgc),
 		types.Process:         newDataWithIDLogics(conf.genResLgcConf(types.Process), procLgc),
 		types.ProcessRelation: newRelationLogics(conf.genResLgcConf(types.ProcessRelation), procRelLgc),
-		types.QuotedInstance:  newDataWithIDLogics(conf.genResLgcConf(types.QuotedInstance), quotedInstLgc),
+		types.QuotedInstance:  newObjInstDataLogics(conf.genResLgcConf(types.QuotedInstance), quotedInstLgc),
 	}
 
 	return lgcMap
@@ -59,14 +60,18 @@ func New(conf *LogicsConfig) map[types.ResType]Logics {
 
 // LogicsConfig is the cmdb resource sync logics config
 type LogicsConfig struct {
-	Metadata      *metadata.Metadata
-	IDRuleMap     map[types.ResType]map[string][]options.IDRuleInfo
-	SrcInnerIDMap map[string]*options.InnerDataIDConf
+	CacheCli cacheservice.CacheServiceClientInterface
+	Metadata *metadata.Metadata
+	// IDRuleMap is map[res type]map[src env name]id rules
+	IDRuleMap map[types.ResType]map[string][]options.IDRuleInfo
+	// SrcInnerIDMap is map[src env name]map[tenant id]inner id config
+	SrcInnerIDMap map[string]map[string]*options.InnerDataIDConf
 }
 
 func (c *LogicsConfig) genResLgcConf(resType types.ResType) *resLogicsConfig {
 	return &resLogicsConfig{
 		resType:       resType,
+		cacheCli:      c.CacheCli,
 		metadata:      c.Metadata,
 		idRuleMap:     c.IDRuleMap,
 		srcInnerIDMap: c.SrcInnerIDMap,
@@ -76,9 +81,10 @@ func (c *LogicsConfig) genResLgcConf(resType types.ResType) *resLogicsConfig {
 // resLogicsConfig is the cmdb resource sync logics config
 type resLogicsConfig struct {
 	resType       types.ResType
+	cacheCli      cacheservice.CacheServiceClientInterface
 	metadata      *metadata.Metadata
 	idRuleMap     map[types.ResType]map[string][]options.IDRuleInfo
-	srcInnerIDMap map[string]*options.InnerDataIDConf
+	srcInnerIDMap map[string]map[string]*options.InnerDataIDConf
 }
 
 // ResType get resource type

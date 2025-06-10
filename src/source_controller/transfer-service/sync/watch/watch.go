@@ -20,7 +20,6 @@ package watch
 
 import (
 	"context"
-	"time"
 
 	"configcenter/pkg/synchronize/types"
 	"configcenter/src/apimachinery/cacheservice"
@@ -28,10 +27,10 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/transfer-service/sync/medium"
 	syncmeta "configcenter/src/source_controller/transfer-service/sync/metadata"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/task"
 )
@@ -44,39 +43,36 @@ type Watcher struct {
 	cacheCli      cacheservice.CacheServiceClientInterface
 	transMedium   medium.ClientI
 	tokenHandlers map[types.ResType]*tokenHandler
+	tenantMap     map[string]string
 }
 
 // New new cmdb data syncer event watcher
-func New(name string, isMaster discovery.ServiceManageInterface, meta *syncmeta.Metadata,
+func New(name string, tenantMap map[string]string, isMaster discovery.ServiceManageInterface, meta *syncmeta.Metadata,
 	cacheCli cacheservice.CacheServiceClientInterface, transMedium medium.ClientI) (*Watcher, error) {
 
-	// create cmdb data syncer event watch token table
+	// create cmdb data syncer event watch token and cursor table
 	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-	exists, err := mongodb.Client("watch").HasTable(ctx, tokenTable)
+
+	err := mongodb.Dal("watch").ExecForAllDB(func(db local.DB) error {
+		for _, table := range []string{tokenTable, cursorTable} {
+			exists, err := db.HasTable(ctx, table)
+			if err != nil {
+				blog.Errorf("check if %s table exists failed, err: %v", table, err)
+				return err
+			}
+
+			if !exists {
+				err = db.CreateTable(ctx, table)
+				if err != nil && !mongodb.IsDuplicatedError(err) {
+					blog.Errorf("create %s table failed, err: %v", table, err)
+					return err
+				}
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		blog.Errorf("check if %s table exists failed, err: %v", tokenTable, err)
 		return nil, err
-	}
-
-	if !exists {
-		err = mongodb.Client("watch").CreateTable(ctx, tokenTable)
-		if err != nil && !mongodb.IsDuplicatedError(err) {
-			blog.Errorf("create %s table failed, err: %v", tokenTable, err)
-			return nil, err
-		}
-
-		for _, resType := range types.ListAllResTypeForIncrSync() {
-			token := &cursorInfo{
-				Resource:    resType,
-				StartAtTime: &metadata.Time{Time: time.Now()},
-			}
-
-			err = mongodb.Client("watch").Table(tokenTable).Insert(ctx, token)
-			if err != nil && !mongodb.IsDuplicatedError(err) {
-				blog.Errorf("init %s watch token failed, data: %+v, err: %v", resType, token, err)
-				return nil, err
-			}
-		}
 	}
 
 	// generate cmdb data syncer event watcher
@@ -87,6 +83,7 @@ func New(name string, isMaster discovery.ServiceManageInterface, meta *syncmeta.
 		cacheCli:      cacheCli,
 		transMedium:   transMedium,
 		tokenHandlers: make(map[types.ResType]*tokenHandler),
+		tenantMap:     tenantMap,
 	}
 
 	for _, resType := range types.ListAllResTypeForIncrSync() {
@@ -103,14 +100,11 @@ func (w *Watcher) Watch() ([]*task.Task, error) {
 		cursorTypes, exists := resTypeCursorMap[resType]
 		if exists {
 			for _, cursorType := range cursorTypes {
-				kit := rest.NewKit()
-				go w.watchAPI(kit, resType, cursorType)
+				for tenantID := range w.tenantMap {
+					kit := rest.NewKit().WithTenant(tenantID)
+					go w.watchAPI(kit, resType, cursorType)
+				}
 			}
-			continue
-		}
-
-		_, exists = resTypeWatchOptMap[resType]
-		if !exists {
 			continue
 		}
 

@@ -13,8 +13,6 @@
 package instancemapping
 
 import (
-	"context"
-
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
@@ -70,7 +68,7 @@ func GetInstanceObjectMapping(kit *rest.Kit, ids []int64) ([]metadata.ObjectMapp
 		}
 		rows := make([]metadata.ObjectMapping, 0)
 		// 看不到事务中未提交的数据
-		if err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(filter).All(context.Background(), &rows); err != nil {
+		if err := mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(filter).All(kit.Ctx, &rows); err != nil {
 			return nil, err
 		}
 
@@ -81,16 +79,16 @@ func GetInstanceObjectMapping(kit *rest.Kit, ids []int64) ([]metadata.ObjectMapp
 }
 
 // Create 新加实例id与模型id的对应关系就， ctx 是为了保证事务， doc 为数组的时候表示插入多条数据
-func Create(ctx context.Context, doc interface{}) error {
-	return mongodb.Table(tableName).Insert(ctx, doc)
+func Create(kit *rest.Kit, doc interface{}) error {
+	return mongodb.Shard(kit.ShardOpts()).Table(tableName).Insert(kit.Ctx, doc)
 }
 
 // Delete 移除实例id与模型id的对应关系，ctx 是为了保证事务
-func Delete(ctx context.Context, ids []int64) error {
+func Delete(kit *rest.Kit, ids []int64) error {
 	filter := map[string]interface{}{
 		common.BKInstIDField: map[string]interface{}{
 			common.BKDBIN: ids,
 		},
 	}
-	return mongodb.Table(tableName).Delete(ctx, filter)
+	return mongodb.Shard(kit.ShardOpts()).Table(tableName).Delete(kit.Ctx, filter)
 }

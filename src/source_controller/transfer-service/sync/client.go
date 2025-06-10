@@ -28,7 +28,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/lock"
 	commonutil "configcenter/src/common/util"
-	"configcenter/src/source_controller/transfer-service/sync/util"
 	"configcenter/src/storage/driver/redis"
 )
 
@@ -36,6 +35,14 @@ import (
 func (s *Syncer) SyncCmdbData(kit *rest.Kit, opt *types.SyncCmdbDataOption) error {
 	if !s.enableSync {
 		return errors.New("sync is disabled")
+	}
+
+	if len(s.tenantMap) == 0 {
+		return errors.New("src tenant to dest tenant map is empty")
+	}
+	destTenant, exists := s.tenantMap[kit.TenantID]
+	if !exists {
+		return errors.New("src tenant is invalid")
 	}
 
 	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
@@ -62,8 +69,7 @@ func (s *Syncer) SyncCmdbData(kit *rest.Kit, opt *types.SyncCmdbDataOption) erro
 
 	blog.Infof("start sync cmdb data, opt: %+v, rid: %s", *opt, kit.Rid)
 
-	kt := util.ConvertKit(kit)
-	kt.Ctx = commonutil.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
+	kit.Ctx = commonutil.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 
 	go func() {
 		defer locker.Unlock()
@@ -78,7 +84,7 @@ func (s *Syncer) SyncCmdbData(kit *rest.Kit, opt *types.SyncCmdbDataOption) erro
 		var err error
 
 		for !isAll {
-			isAll, start, err = syncer.doOnePushFullSyncDataStep(kt, opt.SubRes, start, end)
+			isAll, start, err = syncer.doOnePushFullSyncDataStep(kit, opt.SubRes, destTenant, start, end)
 			if err != nil {
 				blog.Errorf("sync %s-%s full sync step failed, err: %v, start: %+v, end: %+v, rid: %s", opt.ResType,
 					opt.SubRes, err, start, end, kit.Rid)

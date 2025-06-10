@@ -157,7 +157,7 @@ func (w *Watcher) doWatchAPI(kit *rest.Kit, resType types.ResType, opt *watch.Wa
 			continue
 		}
 
-		eventInfo, needSync := w.metadata.ParseEventDetail(event.EventType, resType, oid, json.RawMessage(detail))
+		eventInfo, needSync := w.metadata.ParseEventDetail(kit, event.EventType, resType, oid, json.RawMessage(detail))
 		if !needSync {
 			continue
 		}
@@ -205,6 +205,7 @@ func (w *Watcher) pushSyncData(kit *rest.Kit, events []*types.EventInfo) error {
 			IsIncrement: true,
 			Data: &types.IncrSyncTransData{
 				Name:       w.name,
+				TenantID:   w.tenantMap[kit.TenantID],
 				UpsertInfo: upsertInfo,
 				DeleteInfo: deleteInfo,
 			},

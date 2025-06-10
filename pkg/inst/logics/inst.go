@@ -18,9 +18,10 @@
 package logics
 
 import (
-	"fmt"
+	"errors"
 
 	"configcenter/src/apimachinery"
+	"configcenter/src/apimachinery/cacheservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -30,15 +31,17 @@ import (
 )
 
 // GetObjUUIDFromCache get object uuid by object id from cache
-func GetObjUUIDFromCache(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, objID string) (string, error) {
-	if clientSet == nil {
-		blog.Errorf("client set is nil, rid: %s", kit.Rid)
-		return "", fmt.Errorf("client set is nil")
+func GetObjUUIDFromCache(kit *rest.Kit, cacheClient cacheservice.CacheServiceClientInterface, objID string) (string,
+	error) {
+
+	if cacheClient == nil {
+		blog.Errorf("cache client is nil, rid: %s", kit.Rid)
+		return "", errors.New("cache client is nil")
 	}
 
-	uuid, err := clientSet.CacheService().Cache().Object().GetUUIDByObj(kit.Ctx, kit.Header, objID)
+	uuid, err := cacheClient.Cache().Object().GetUUIDByObj(kit.Ctx, kit.Header, objID)
 	if err != nil {
-		blog.Errorf("get object %s uuid failed from core service, err: %v, rid: %s", objID, err, kit.Rid)
+		blog.Errorf("get object %s uuid from cache service failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return "", err
 	}
 
@@ -78,9 +81,9 @@ func GetObjInstTableFromCache(kit *rest.Kit, clientSet apimachinery.ClientSetInt
 		return common.GetInnerInstTableName(objID), nil
 	}
 
-	objUUID, err := GetObjUUIDFromCache(kit, clientSet, objID)
+	objUUID, err := GetObjUUIDFromCache(kit, clientSet.CacheService(), objID)
 	if err != nil {
-		blog.Errorf("get object uuid failed from db, err: %v", err)
+		blog.Errorf("get object %s uuid from cache failed, err: %v, rid: %s", objID, err, kit.Rid)
 		return "", err
 	}
 
@@ -102,7 +105,7 @@ func GetObjInstAsstTableFromDB(kit *rest.Kit, db local.DB, objID string) (string
 func GetObjInstAsstTableFromCache(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, objID string) (
 	string, error) {
 
-	objUUID, err := GetObjUUIDFromCache(kit, clientSet, objID)
+	objUUID, err := GetObjUUIDFromCache(kit, clientSet.CacheService(), objID)
 	if err != nil {
 		blog.Errorf("get object uuid %s failed, object: %s, err: %v, rid: %s", objID, err, kit.Rid)
 		return "", err

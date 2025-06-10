@@ -20,6 +20,7 @@ package logics
 import (
 	"configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	commonutil "configcenter/src/common/util"
@@ -29,8 +30,8 @@ import (
 var (
 	hostLgc = &dataWithIDLgc[metadata.HostMapStr]{
 		idField: common.BKHostIDField,
-		table: func(subRes string) string {
-			return common.BKTableNameBaseHost
+		table: func(kit *rest.Kit, subRes string) (string, error) {
+			return common.BKTableNameBaseHost, nil
 		},
 		parseData: func(data metadata.HostMapStr, _, _ *options.InnerDataIDConf) (metadata.HostMapStr, error) {
 			// convert host special string field(ip and operator) to array

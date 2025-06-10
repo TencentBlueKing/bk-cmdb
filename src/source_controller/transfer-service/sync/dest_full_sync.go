@@ -22,9 +22,12 @@ import (
 	"time"
 
 	"configcenter/pkg/synchronize/types"
+	"configcenter/pkg/tenant"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/lock"
+	commonutil "configcenter/src/common/util"
 	"configcenter/src/source_controller/transfer-service/sync/util"
 	"configcenter/src/storage/driver/redis"
 )
@@ -49,16 +52,21 @@ func (s *Syncer) loopPullFullSyncData() {
 			continue
 		}
 
-		// get object ids for object instance resource sync
+		// get all object ids for object instance resource sync
 		var objIDs, quotedObjIDs []string
-		util.RetryWrapper(3, func() (bool, error) {
-			objIDs, quotedObjIDs, err = s.metadata.GetCommonObjIDs()
-			if err != nil {
-				blog.Errorf("get object ids failed, err: %v", err)
-				return true, err
-			}
-			return false, nil
-		})
+		for _, tenantInfo := range tenant.GetAllTenants() {
+			kit := rest.NewKit().WithTenant(tenantInfo.TenantID)
+			util.RetryWrapper(3, func() (bool, error) {
+				objIDs, quotedObjIDs, err = s.metadata.GetCommonObjIDs(kit)
+				if err != nil {
+					blog.Errorf("get object ids failed, err: %v", err)
+					return true, err
+				}
+				return false, nil
+			})
+		}
+		objIDs = commonutil.StrArrayUnique(objIDs)
+		quotedObjIDs = commonutil.StrArrayUnique(quotedObjIDs)
 
 		for _, resType := range types.ListAllResType() {
 			syncer := s.resSyncerMap[resType]
@@ -90,7 +98,7 @@ func (s *Syncer) loopPullFullSyncData() {
 
 // pullFullSyncData pull full sync data for one resource
 func (s *resSyncer) pullFullSyncData(subRes string, ack bool) {
-	kit := util.NewKit()
+	kit := rest.NewKit()
 	startTime := time.Now()
 	blog.Infof("start pull %s-%s full sync data, start time: %s, rid: %s", s.lgc.ResType(), subRes, startTime, kit.Rid)
 
@@ -114,7 +122,7 @@ func (s *resSyncer) pullFullSyncData(subRes string, ack bool) {
 }
 
 // doOnePullFullSyncDataStep do one pull full sync data step
-func (s *resSyncer) doOnePullFullSyncDataStep(kit *util.Kit, subRes string, ack bool) (bool, error) {
+func (s *resSyncer) doOnePullFullSyncDataStep(kit *rest.Kit, subRes string, ack bool) (bool, error) {
 	// pull full sync data from transfer medium
 	pullOpt := &types.PullSyncDataOpt{
 		ResType:     s.lgc.ResType(),
@@ -143,7 +151,9 @@ func (s *resSyncer) doOnePullFullSyncDataStep(kit *util.Kit, subRes string, ack 
 		return syncInfo.Total != 0, nil
 	}
 
-	dataArr, err := s.lgc.ParseDataArr(syncData.Name, subRes, rawDataArr, kit.Rid)
+	kit = kit.WithTenant(syncData.TenantID).WithRid(kit.Rid + "-" + syncData.TenantID)
+
+	dataArr, err := s.lgc.ParseDataArr(kit, syncData.Name, subRes, rawDataArr)
 	if err != nil {
 		blog.Errorf("parse %s-%s full sync data(%+v) failed, err: %v, rid: %s", s.lgc.ResType(), subRes, rawDataArr,
 			err, kit.Rid)
@@ -176,7 +186,7 @@ func (s *resSyncer) doOnePullFullSyncDataStep(kit *util.Kit, subRes string, ack 
 }
 
 // handleFullSyncData handle full sync data
-func (s *resSyncer) handleFullSyncData(kit *util.Kit, subRes string, syncData *types.FullSyncTransData) (
+func (s *resSyncer) handleFullSyncData(kit *rest.Kit, subRes string, syncData *types.FullSyncTransData) (
 	bool, map[string]int64, any, error) {
 
 	resType := s.lgc.ResType()

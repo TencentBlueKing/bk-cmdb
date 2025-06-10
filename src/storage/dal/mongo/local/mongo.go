@@ -247,7 +247,7 @@ func (c *Mongo) InitIDGenerator(ctx context.Context) (int, error) {
 	idGenConf.IDGenerator.InitID = nil
 
 	data := map[string]interface{}{
-		metadata.IDGeneratorConfig: idGenConf,
+		metadata.IDGeneratorConfig: idGenConf.IDGenerator,
 		common.LastTimeField:       time.Now(),
 	}
 

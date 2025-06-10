@@ -23,6 +23,7 @@ import (
 	"configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	commonutil "configcenter/src/common/util"
 	"configcenter/src/source_controller/transfer-service/app/options"
@@ -39,7 +40,7 @@ type dataWithIDLogics[T any] struct {
 
 type dataWithIDLgc[T any] struct {
 	idField       string
-	table         func(subRes string) string
+	table         func(kit *rest.Kit, subRes string) (string, error)
 	parseData     func(data T, srcIDConf, destIDConf *options.InnerDataIDConf) (T, error)
 	getID         func(data T, idField string) (int64, error)
 	getRelatedIDs func(subRes string, data T) (map[types.ResType][]int64, error)
@@ -59,26 +60,31 @@ type DataWithID[T any] struct {
 }
 
 // ParseDataArr parse data array to actual type
-func (l *dataWithIDLogics[T]) ParseDataArr(env, subRes string, data any, rid string) (any, error) {
-	arr, err := convertDataArr[T](data, rid)
+func (l *dataWithIDLogics[T]) ParseDataArr(kit *rest.Kit, env, subRes string, data any) (any, error) {
+	arr, err := convertDataArr[T](data, kit.Rid)
 	if err != nil {
 		return DataWithID[T]{}, err
 	}
 
-	return l.convertToDataWithIDArr(true, env, subRes, arr, rid), nil
+	return l.convertToDataWithIDArr(kit, true, env, subRes, arr), nil
 }
 
-func (l *dataWithIDLogics[T]) convertToDataWithIDArr(isSrc bool, srcEnv, subRes string, arr []T,
-	rid string) []DataWithID[T] {
+func (l *dataWithIDLogics[T]) convertToDataWithIDArr(kit *rest.Kit, isSrc bool, srcEnv, subRes string,
+	arr []T) []DataWithID[T] {
 
 	res := make([]DataWithID[T], 0)
 	for _, val := range arr {
 		// convert src data into dest data
 		if isSrc {
 			var err error
-			val, err = l.parseData(val, l.srcInnerIDMap[srcEnv], l.metadata.InnerIDInfo)
+			var srcIDConf *options.InnerDataIDConf
+			tenantIDConf, exists := l.srcInnerIDMap[srcEnv]
+			if exists {
+				srcIDConf = tenantIDConf[kit.TenantID]
+			}
+			val, err = l.parseData(val, srcIDConf, l.metadata.InnerIDInfo[kit.TenantID])
 			if err != nil {
-				blog.Errorf("parse %s data failed, skip it, err: %v, data: %+v, rid: %s", l.resType, err, val, rid)
+				blog.Errorf("parse %s data failed, skip it, err: %v, data: %+v, rid: %s", l.resType, err, val, kit.Rid)
 				continue
 			}
 		}
@@ -86,7 +92,7 @@ func (l *dataWithIDLogics[T]) convertToDataWithIDArr(isSrc bool, srcEnv, subRes 
 		// check if the data matches the id rule, do not sync if not matches
 		id, err := l.getID(val, l.idField)
 		if err != nil {
-			blog.Errorf("get %s data id failed, skip it, err: %v, data: %+v, rid: %s", l.resType, err, val, rid)
+			blog.Errorf("get %s data id failed, skip it, err: %v, data: %+v, rid: %s", l.resType, err, val, kit.Rid)
 			continue
 		}
 
@@ -94,7 +100,7 @@ func (l *dataWithIDLogics[T]) convertToDataWithIDArr(isSrc bool, srcEnv, subRes 
 		if l.getRelatedIDs != nil {
 			relIDMap, err := l.getRelatedIDs(subRes, val)
 			if err != nil {
-				blog.Errorf("get data(%+v) related ids failed, skip it, err: %v, rid: %s", val, err, rid)
+				blog.Errorf("get data(%+v) related ids failed, skip it, err: %v, rid: %s", val, err, kit.Rid)
 				continue
 			}
 			idMap = relIDMap
@@ -114,7 +120,7 @@ func (l *dataWithIDLogics[T]) convertToDataWithIDArr(isSrc bool, srcEnv, subRes 
 }
 
 // ListData list data
-func (l *dataWithIDLogics[T]) ListData(kit *util.Kit, opt *types.ListDataOpt) (*types.ListDataRes, error) {
+func (l *dataWithIDLogics[T]) ListData(kit *rest.Kit, opt *types.ListDataOpt) (*types.ListDataRes, error) {
 	// generate id condition by start and end options
 	idCond := mapstr.MapStr{common.BKDBGT: 0}
 	if len(opt.Start) > 0 {
@@ -125,15 +131,20 @@ func (l *dataWithIDLogics[T]) ListData(kit *util.Kit, opt *types.ListDataOpt) (*
 		idCond[common.BKDBLTE] = opt.End[l.idField]
 	}
 
-	cond := l.metadata.AddListCond(l.resType, mapstr.MapStr{
+	cond := l.metadata.AddListCond(kit, l.resType, mapstr.MapStr{
 		l.idField: idCond,
 	})
 
 	// list data from db
 	dataArr := make([]T, 0)
-	table := l.table(opt.SubRes)
-	err := mongodb.Client().Table(table).Find(cond).Sort(l.idField).Limit(common.BKMaxLimitSize).All(kit.Ctx, &dataArr)
+	table, err := l.table(kit, opt.SubRes)
 	if err != nil {
+		blog.Errorf("get %s table by sub res %s failed, err: %v, rid: %s", l.resType, opt.SubRes, err, kit.Rid)
+		return nil, err
+	}
+
+	if err = mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond).Sort(l.idField).Limit(common.BKMaxLimitSize).
+		All(kit.Ctx, &dataArr); err != nil {
 		blog.Errorf("list %s data failed, err: %v, cond: %+v, rid: %s", l.resType, err, cond, kit.Rid)
 		return nil, err
 	}
@@ -168,7 +179,7 @@ func (l *dataWithIDLogics[T]) ListData(kit *util.Kit, opt *types.ListDataOpt) (*
 }
 
 // CompareData compare src data with dest data, returns diff data and remaining src data
-func (l *dataWithIDLogics[T]) CompareData(kit *util.Kit, subRes string, srcInfo *types.FullSyncTransData,
+func (l *dataWithIDLogics[T]) CompareData(kit *rest.Kit, subRes string, srcInfo *types.FullSyncTransData,
 	destInfo *types.ListDataRes) (*types.CompDataRes, error) {
 
 	srcDataArr, ok := srcInfo.Data.([]DataWithID[T])
@@ -179,7 +190,7 @@ func (l *dataWithIDLogics[T]) CompareData(kit *util.Kit, subRes string, srcInfo 
 	if !ok {
 		return nil, fmt.Errorf("dest data type %T is invalid", destInfo.Data)
 	}
-	destDataArr := l.convertToDataWithIDArr(false, srcInfo.Name, subRes, destDataInfo, kit.Rid)
+	destDataArr := l.convertToDataWithIDArr(kit, false, srcInfo.Name, subRes, destDataInfo)
 
 	// separate src data into id->data map that are in the interval and remaining data that are not in the interval
 	srcDataMap := make(map[int64]DataWithID[T])
@@ -223,7 +234,7 @@ func (l *dataWithIDLogics[T]) CompareData(kit *util.Kit, subRes string, srcInfo 
 }
 
 // ClassifyUpsertData classify upsert data into insert and update data
-func (l *dataWithIDLogics[T]) ClassifyUpsertData(kit *util.Kit, subRes string, upsertData any) (any, any, error) {
+func (l *dataWithIDLogics[T]) ClassifyUpsertData(kit *rest.Kit, subRes string, upsertData any) (any, any, error) {
 	dataArr, ok := upsertData.([]DataWithID[T])
 	if !ok {
 		return nil, nil, fmt.Errorf("upsert data type %T is invalid", upsertData)
@@ -241,8 +252,13 @@ func (l *dataWithIDLogics[T]) ClassifyUpsertData(kit *util.Kit, subRes string, u
 	}
 
 	cond := mapstr.MapStr{l.idField: mapstr.MapStr{common.BKDBIN: ids}}
-	table := l.table(subRes)
-	rawIDs, err := mongodb.Client().Table(table).Distinct(kit.Ctx, l.idField, cond)
+	table, err := l.table(kit, subRes)
+	if err != nil {
+		blog.Errorf("get %s table by sub res %s failed, err: %v, rid: %s", l.resType, subRes, err, kit.Rid)
+		return nil, nil, err
+	}
+
+	rawIDs, err := mongodb.Shard(kit.ShardOpts()).Table(table).Distinct(kit.Ctx, l.idField, cond)
 	if err != nil {
 		blog.Errorf("get exist %s ids failed, err: %v, rid: %s", table, err, kit.Rid)
 		return nil, nil, err
@@ -276,7 +292,7 @@ func (l *dataWithIDLogics[T]) ClassifyUpsertData(kit *util.Kit, subRes string, u
 }
 
 // InsertData insert data
-func (l *dataWithIDLogics[T]) InsertData(kit *util.Kit, subRes string, data any) error {
+func (l *dataWithIDLogics[T]) InsertData(kit *rest.Kit, subRes string, data any) error {
 	dataArr, ok := data.([]DataWithID[T])
 	if !ok {
 		return fmt.Errorf("data type %T is invalid", data)
@@ -291,9 +307,14 @@ func (l *dataWithIDLogics[T]) InsertData(kit *util.Kit, subRes string, data any)
 		insertData[i] = info.Data
 	}
 
-	table := l.table(subRes)
-	err := mongodb.Client().Table(table).Insert(kit.Ctx, insertData)
-	if err != nil && !mongodb.Client().IsDuplicatedError(err) {
+	table, err := l.table(kit, subRes)
+	if err != nil {
+		blog.Errorf("get %s table by sub res %s failed, err: %v, rid: %s", l.resType, subRes, err, kit.Rid)
+		return err
+	}
+
+	err = mongodb.Shard(kit.ShardOpts()).Table(table).Insert(kit.Ctx, insertData)
+	if err != nil && !mongodb.IsDuplicatedError(err) {
 		blog.Errorf("insert %s data(%+v) failed, err: %v, rid: %s", table, insertData, err, kit.Rid)
 		return err
 	}
@@ -301,7 +322,7 @@ func (l *dataWithIDLogics[T]) InsertData(kit *util.Kit, subRes string, data any)
 }
 
 // UpdateData update data
-func (l *dataWithIDLogics[T]) UpdateData(kit *util.Kit, subRes string, data any) error {
+func (l *dataWithIDLogics[T]) UpdateData(kit *rest.Kit, subRes string, data any) error {
 	dataArr, ok := data.([]DataWithID[T])
 	if !ok {
 		return fmt.Errorf("data type %T is invalid", data)
@@ -311,11 +332,16 @@ func (l *dataWithIDLogics[T]) UpdateData(kit *util.Kit, subRes string, data any)
 		return nil
 	}
 
-	table := l.table(subRes)
+	table, err := l.table(kit, subRes)
+	if err != nil {
+		blog.Errorf("get %s table by sub res %s failed, err: %v, rid: %s", l.resType, subRes, err, kit.Rid)
+		return err
+	}
+
 	for _, info := range dataArr {
 		cond := mapstr.MapStr{l.idField: info.ID}
-		err := mongodb.Client().Table(table).Update(kit.Ctx, cond, info.Data)
-		if err != nil && !mongodb.Client().IsDuplicatedError(err) {
+		err = mongodb.Shard(kit.ShardOpts()).Table(table).Update(kit.Ctx, cond, info.Data)
+		if err != nil && !mongodb.IsDuplicatedError(err) {
 			blog.Errorf("update %s data(%+v) failed, err: %v, rid: %s", table, info, err, kit.Rid)
 			return err
 		}
@@ -324,7 +350,7 @@ func (l *dataWithIDLogics[T]) UpdateData(kit *util.Kit, subRes string, data any)
 }
 
 // DeleteData delete data
-func (l *dataWithIDLogics[T]) DeleteData(kit *util.Kit, subRes string, data any) error {
+func (l *dataWithIDLogics[T]) DeleteData(kit *rest.Kit, subRes string, data any) error {
 	var ids []int64
 	switch val := data.(type) {
 	case []int64:
@@ -346,9 +372,13 @@ func (l *dataWithIDLogics[T]) DeleteData(kit *util.Kit, subRes string, data any)
 		l.idField: mapstr.MapStr{common.BKDBIN: ids},
 	}
 
-	table := l.table(subRes)
-	err := mongodb.Client().Table(table).Delete(kit.Ctx, cond)
+	table, err := l.table(kit, subRes)
 	if err != nil {
+		blog.Errorf("get %s table by sub res %s failed, err: %v, rid: %s", l.resType, subRes, err, kit.Rid)
+		return err
+	}
+
+	if err = mongodb.Shard(kit.ShardOpts()).Table(table).Delete(kit.Ctx, cond); err != nil {
 		blog.Errorf("delete %s data failed, err: %v, cond: %+v, rid: %s", table, err, cond, kit.Rid)
 		return err
 	}

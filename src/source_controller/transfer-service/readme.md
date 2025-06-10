@@ -44,10 +44,18 @@ transferService:
 启动参数：
 ```
 源环境：
-./cmdb_transferservice --addrport=${服务监听地址} --regdiscv=${zk地址} --logtostderr=${是否把日志输出到stderr} --log-dir=${日志存放路径} --v=${日志级别}
+./cmdb_transferservice --sync-config=${CMDB同步服务额外配置} --addrport=${服务监听地址} --regdiscv=${zk地址} --logtostderr=${是否把日志输出到stderr} --log-dir=${日志存放路径} --v=${日志级别}
 
 目标环境：
 ./cmdb_transferservice --sync-config=${CMDB同步服务额外配置} --addrport=${服务监听地址} --regdiscv=${zk地址} --logtostderr=${是否把日志输出到stderr} --log-dir=${日志存放路径} --v=${日志级别}
+```
+
+源环境的sync-config启动参数指定的CMDB同步服务额外配置文件示例：
+```
+# 源环境租户到目标环境租户的映射关系，仅将配置中的源环境租户的数据同步到目标环境的指定租户中
+srcToDestTenantMap:
+  tenant1: tenant2
+  tenant3: tenant4
 ```
 
 目标环境的sync-config启动参数指定的CMDB同步服务额外配置文件示例，其中主机资源的ID生成规则配置与上述ID生成规则示例一致：
@@ -154,6 +162,8 @@ idRules:
 innerDataID:
   - # 源环境同步服务的名称
     name: srcEnv1
+    # 目标环境租户ID
+    tenantID: tenant2
     # 主机池ID信息
     hostPool:
       # 主机池业务ID
@@ -164,6 +174,8 @@ innerDataID:
       module: 1
   - # 源环境同步服务的名称
     name: srcEnv2
+    # 目标环境租户ID
+    tenantID: tenant2
     # 主机池ID信息
     hostPool:
       # 主机池业务ID
@@ -174,6 +186,8 @@ innerDataID:
       module: 3
   - # 源环境同步服务的名称
     name: srcEnv3
+    # 目标环境租户ID
+    tenantID: tenant4
     # 主机池ID信息
     hostPool:
       # 主机池业务ID
@@ -188,11 +202,12 @@ innerDataID:
 
 ### 前置准备
 需要通过管理手段保证以下几点：
-1. 源和目标环境的模型、模型字段、业务自定义字段、唯一校验、模型分组、关联类型、模型关联、自定义层级、管控区域、服务分类等不需要同步的被依赖数据必须保持一致，如果不一致可能导致数据同步失败或产生脏数据
-2. 开始同步后不可以新增或删除自定义层级，否则会导致业务拓扑数据同步失败
-3. 源和目标环境中的数据必须保证唯一键不重复，如果唯一校验冲突则会导致数据同步失败
-4. 源和目标环境的版本需要保持一致，如果不一致则可能导致同步的数据格式不一致
-5. 需要保证参与同步的所有环境中除了系统内置数据之外需要同步的资源的ID都不可以重复
+1. 源和目标环境中需要同步的租户在同步前必须存在，否则会导致数据同步失败
+2. 源和目标环境中互相对应的租户的模型、模型字段、业务自定义字段、唯一校验、模型分组、关联类型、模型关联、自定义层级、管控区域、服务分类等不需要同步的被依赖数据必须保持一致，如果不一致可能导致数据同步失败或产生脏数据
+3. 开始同步后不可以新增或删除自定义层级，否则会导致业务拓扑数据同步失败
+4. 源和目标环境中的数据必须保证唯一键不重复，如果唯一校验冲突则会导致数据同步失败
+5. 源和目标环境的版本需要保持一致，如果不一致则可能导致同步的数据格式不一致
+6. 需要保证参与同步的所有环境中除了系统内置数据之外需要同步的资源的ID都不可以重复
 
 ### 操作流程
 
@@ -206,6 +221,7 @@ innerDataID:
 - 仅支持从一个环境单向同步到另一个环境，不支持双向同步
 - 源环境的数据仅以源环境为准，同步时如果目标环境对源环境同步的数据进行了操作则按源环境的数据直接覆盖
 - 蓝鲸业务的业务拓扑、主机、服务实例、进程等资源均不同步
+- 源环境的额外同步配置中需要配置所有需要同步的源环境租户ID到目标环境租户ID的映射关系，没有配置的租户数据不会进行同步，且如果配置有误可能会导致同步的数据错误
 - 目标环境的额外同步配置中需要配置所有源环境的ID生成规则和内置数据ID信息，没有配置的源环境数据不会进行同步，且如果配置有误可能会导致同步的数据错误
 
 ### ID生成器更新操作指引
@@ -261,12 +277,15 @@ POST /api/sync/publish
    "resource_type": "object_instance",
    "sub_resource": "bk_switch",
    "is_increment": false,
-   "data": [
-       {
-           "bk_inst_id": 1,
-           "bk_inst_name": "xxx"
-       }
-   ]
+   "data": {
+      "tenant_id": "tenant1",
+      "data": [
+         {
+            "bk_inst_id": 1,
+            "bk_inst_name": "xxx"
+         }
+      ]
+   }
 }
 ```
 
@@ -322,6 +341,7 @@ POST /api/sync/consume
     "data": {
         "total": 1000,
         "info": {
+              "tenant_id": "tenant1",
               "bk_obj_id": "bk_switch",
               "bk_inst_id": 100
         }

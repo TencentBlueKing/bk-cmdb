@@ -23,6 +23,7 @@ import (
 	"sort"
 
 	"configcenter/pkg/synchronize/types"
+	"configcenter/pkg/tenant"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 )
@@ -31,6 +32,7 @@ import (
 type Config struct {
 	Sync       *SyncConfig
 	DestExConf *DestExSyncConf
+	SrcExConf  *SrcExSyncConf
 	Mongo      mongo.Config
 	WatchMongo mongo.Config
 	Redis      redis.Config
@@ -88,6 +90,34 @@ const (
 	// SyncRoleDest is the role of the destination cmdb
 	SyncRoleDest SyncRole = "dest"
 )
+
+// SrcExSyncConf is the source cmdb transfer service extra sync config
+type SrcExSyncConf struct {
+	SrcToDestTenantMap map[string]string `mapstructure:"srcToDestTenantMap"`
+}
+
+// Validate SrcExSyncConf
+func (s *SrcExSyncConf) Validate() error {
+	if len(s.SrcToDestTenantMap) == 0 {
+		return errors.New("src to dest tenant map is not set")
+	}
+
+	destTenantMap := make(map[string]struct{})
+	for srcTenant, destTenant := range s.SrcToDestTenantMap {
+		// check if src tenant exists
+		if _, exists := tenant.GetTenant(srcTenant); !exists {
+			return fmt.Errorf("src tenant: %s is invalid", srcTenant)
+		}
+
+		// check if dest tenant is duplicated
+		if _, exists := destTenantMap[destTenant]; exists {
+			return fmt.Errorf("dest tenant: %s is duplicated", destTenant)
+		}
+		destTenantMap[destTenant] = struct{}{}
+	}
+
+	return nil
+}
 
 // DestExSyncConf is the destination cmdb transfer service extra sync config
 type DestExSyncConf struct {
@@ -252,6 +282,8 @@ func (s *IDRuleInfo) Validate() error {
 type InnerDataIDConf struct {
 	// Name is the source cmdb transfer service name
 	Name string `mapstructure:"name"`
+	// TenantID is the target cmdb tenant id
+	TenantID string `mapstructure:"tenantID"`
 	// HostPool is the source cmdb host pool id info
 	HostPool *HostPoolInfo `mapstructure:"hostPool"`
 }
@@ -260,6 +292,10 @@ type InnerDataIDConf struct {
 func (s *InnerDataIDConf) Validate() error {
 	if s.Name == "" {
 		return errors.New("inner data id info service name is not set")
+	}
+
+	if s.TenantID == "" {
+		return errors.New("inner data id info tenant id is not set")
 	}
 
 	return nil

@@ -19,6 +19,7 @@ package logics
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/transfer-service/app/options"
@@ -27,8 +28,8 @@ import (
 var (
 	bizLgc = &dataWithIDLgc[mapstr.MapStr]{
 		idField: common.BKAppIDField,
-		table: func(_ string) string {
-			return common.BKTableNameBaseApp
+		table: func(_ *rest.Kit, _ string) (string, error) {
+			return common.BKTableNameBaseApp, nil
 		},
 		parseData: parseMapStr,
 		getID:     getMapStrID,
@@ -36,8 +37,8 @@ var (
 
 	setLgc = &dataWithIDLgc[mapstr.MapStr]{
 		idField: common.BKSetIDField,
-		table: func(_ string) string {
-			return common.BKTableNameBaseSet
+		table: func(_ *rest.Kit, _ string) (string, error) {
+			return common.BKTableNameBaseSet, nil
 		},
 		parseData: func(data mapstr.MapStr, srcIDConf, destIDConf *options.InnerDataIDConf) (mapstr.MapStr, error) {
 			// do not sync set template id
@@ -64,8 +65,8 @@ var (
 
 	moduleLgc = &dataWithIDLgc[mapstr.MapStr]{
 		idField: common.BKModuleIDField,
-		table: func(_ string) string {
-			return common.BKTableNameBaseModule
+		table: func(_ *rest.Kit, _ string) (string, error) {
+			return common.BKTableNameBaseModule, nil
 		},
 		parseData: func(data mapstr.MapStr, srcIDConf, destIDConf *options.InnerDataIDConf) (mapstr.MapStr, error) {
 			// do not sync set & service template id

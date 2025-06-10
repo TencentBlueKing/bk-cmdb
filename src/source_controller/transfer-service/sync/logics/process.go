@@ -20,6 +20,7 @@ package logics
 import (
 	"configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/source_controller/transfer-service/app/options"
@@ -28,8 +29,8 @@ import (
 var (
 	serviceInstLgc = &dataWithIDLgc[metadata.ServiceInstance]{
 		idField: common.BKFieldID,
-		table: func(_ string) string {
-			return common.BKTableNameServiceInstance
+		table: func(_ *rest.Kit, _ string) (string, error) {
+			return common.BKTableNameServiceInstance, nil
 		},
 		parseData: func(data metadata.ServiceInstance, _, _ *options.InnerDataIDConf) (metadata.ServiceInstance,
 			error) {
@@ -47,8 +48,8 @@ var (
 
 	procLgc = &dataWithIDLgc[mapstr.MapStr]{
 		idField: common.BKProcessIDField,
-		table: func(_ string) string {
-			return common.BKTableNameBaseProcess
+		table: func(_ *rest.Kit, _ string) (string, error) {
+			return common.BKTableNameBaseProcess, nil
 		},
 		parseData:     parseMapStr,
 		getID:         getMapStrID,

@@ -24,6 +24,7 @@ import (
 	"configcenter/pkg/synchronize/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/source_controller/transfer-service/app/options"
 	"configcenter/src/source_controller/transfer-service/sync/util"
@@ -62,26 +63,31 @@ type RelationData[T any] struct {
 }
 
 // ParseDataArr parse data array to actual type
-func (l *relationLogics[T]) ParseDataArr(env, subRes string, data any, rid string) (any, error) {
-	arr, err := convertDataArr[T](data, rid)
+func (l *relationLogics[T]) ParseDataArr(kit *rest.Kit, env, subRes string, data any) (any, error) {
+	arr, err := convertDataArr[T](data, kit.Rid)
 	if err != nil {
 		return DataWithID[T]{}, err
 	}
 
-	return l.convertToRelationDataArr(true, env, subRes, arr, rid), nil
+	return l.convertToRelationDataArr(kit, true, env, subRes, arr), nil
 }
 
-func (l *relationLogics[T]) convertToRelationDataArr(isSrc bool, srcEnv, subRes string, arr []T,
-	rid string) []RelationData[T] {
+func (l *relationLogics[T]) convertToRelationDataArr(kit *rest.Kit, isSrc bool, srcEnv, subRes string,
+	arr []T) []RelationData[T] {
 
 	res := make([]RelationData[T], 0)
 	for _, val := range arr {
 		// convert src data into dest data
 		if isSrc {
 			var err error
-			val, err = l.parseData(val, l.srcInnerIDMap[srcEnv], l.metadata.InnerIDInfo)
+			var srcIDConf *options.InnerDataIDConf
+			tenantIDConf, exists := l.srcInnerIDMap[srcEnv]
+			if exists {
+				srcIDConf = tenantIDConf[kit.TenantID]
+			}
+			val, err = l.parseData(val, srcIDConf, l.metadata.InnerIDInfo[kit.TenantID])
 			if err != nil {
-				blog.Errorf("parse %s data failed, skip it, err: %v, data: %+v, rid: %s", l.resType, err, val, rid)
+				blog.Errorf("parse %s data failed, skip it, err: %v, data: %+v, rid: %s", l.resType, err, val, kit.Rid)
 				continue
 			}
 		}
@@ -89,13 +95,13 @@ func (l *relationLogics[T]) convertToRelationDataArr(isSrc bool, srcEnv, subRes 
 		// check if the data matches the id rule, do not sync if not matches
 		ids, err := l.getIDs(val, l.idFields)
 		if err != nil {
-			blog.Errorf("get %s related ids failed, skip it, err: %v, data: %+v, rid: %s", l.resType, err, val, rid)
+			blog.Errorf("get %s related ids failed, skip it, err: %v, data: %+v, rid: %s", l.resType, err, val, kit.Rid)
 			continue
 		}
 
 		idMap, err := l.getRelatedIDs(subRes, val)
 		if err != nil {
-			blog.Errorf("get relation(%+v) related ids failed, skip it, err: %v, rid: %s", val, err, rid)
+			blog.Errorf("get relation(%+v) related ids failed, skip it, err: %v, rid: %s", val, err, kit.Rid)
 			continue
 		}
 
@@ -112,7 +118,7 @@ func (l *relationLogics[T]) convertToRelationDataArr(isSrc bool, srcEnv, subRes 
 }
 
 // ListData list data
-func (l *relationLogics[T]) ListData(kit *util.Kit, opt *types.ListDataOpt) (*types.ListDataRes, error) {
+func (l *relationLogics[T]) ListData(kit *rest.Kit, opt *types.ListDataOpt) (*types.ListDataRes, error) {
 	// generate id condition by start and end options
 	andConds := make([]mapstr.MapStr, 0)
 	if len(opt.Start) > 0 {
@@ -141,13 +147,13 @@ func (l *relationLogics[T]) ListData(kit *util.Kit, opt *types.ListDataOpt) (*ty
 	if len(andConds) > 0 {
 		cond[common.BKDBAND] = andConds
 	}
-	cond = l.metadata.AddListCond(l.resType, cond)
+	cond = l.metadata.AddListCond(kit, l.resType, cond)
 
 	// list data from db
 	dataArr := make([]T, 0)
 	table := l.table(opt.SubRes)
-	err := mongodb.Client().Table(table).Find(cond).Sort(fmt.Sprintf("%s:1,%s:1", l.idFields[0], l.idFields[1])).
-		Limit(common.BKMaxLimitSize).All(kit.Ctx, &dataArr)
+	err := mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond).Sort(fmt.Sprintf("%s:1,%s:1", l.idFields[0],
+		l.idFields[1])).Limit(common.BKMaxLimitSize).All(kit.Ctx, &dataArr)
 	if err != nil {
 		blog.Errorf("list %s relation failed, err: %v, cond: %+v, rid: %s", l.resType, err, cond, kit.Rid)
 		return nil, err
@@ -186,7 +192,7 @@ func (l *relationLogics[T]) ListData(kit *util.Kit, opt *types.ListDataOpt) (*ty
 }
 
 // CompareData compare src data with dest data, returns diff data and remaining src data
-func (l *relationLogics[T]) CompareData(kit *util.Kit, subRes string, src *types.FullSyncTransData,
+func (l *relationLogics[T]) CompareData(kit *rest.Kit, subRes string, src *types.FullSyncTransData,
 	dest *types.ListDataRes) (*types.CompDataRes, error) {
 
 	srcDataArr, ok := src.Data.([]RelationData[T])
@@ -198,7 +204,7 @@ func (l *relationLogics[T]) CompareData(kit *util.Kit, subRes string, src *types
 		return nil, fmt.Errorf("dest data type %T is invalid", dest.Data)
 	}
 	// convert data to RelationData type
-	destDataArr := l.convertToRelationDataArr(false, src.Name, subRes, destDataInfo, kit.Rid)
+	destDataArr := l.convertToRelationDataArr(kit, false, src.Name, subRes, destDataInfo)
 
 	// separate src data into id->data map that are in the interval and remaining data that are not in the interval
 	srcDataMap := make(map[[2]int64]RelationData[T])
@@ -240,7 +246,7 @@ func (l *relationLogics[T]) CompareData(kit *util.Kit, subRes string, src *types
 }
 
 // ClassifyUpsertData classify relation upsert data into insert data and exist data
-func (l *relationLogics[T]) ClassifyUpsertData(kit *util.Kit, subRes string, upsertData any) (any, any, error) {
+func (l *relationLogics[T]) ClassifyUpsertData(kit *rest.Kit, subRes string, upsertData any) (any, any, error) {
 	dataArr, ok := upsertData.([]RelationData[T])
 	if !ok {
 		return nil, nil, fmt.Errorf("upsert data type %T is invalid", upsertData)
@@ -269,7 +275,7 @@ func (l *relationLogics[T]) ClassifyUpsertData(kit *util.Kit, subRes string, ups
 	// check if relation exists, only insert the not exist relations
 	table := l.table(subRes)
 	relations := make([]T, 0)
-	err := mongodb.Client().Table(table).Find(cond).Fields(l.idFields[:]...).All(kit.Ctx, &relations)
+	err := mongodb.Shard(kit.ShardOpts()).Table(table).Find(cond).Fields(l.idFields[:]...).All(kit.Ctx, &relations)
 	if err != nil {
 		blog.Errorf("get exist %s ids failed, err: %v, rid: %s", table, err, kit.Rid)
 		return nil, nil, err
@@ -300,7 +306,7 @@ func (l *relationLogics[T]) ClassifyUpsertData(kit *util.Kit, subRes string, ups
 }
 
 // InsertData insert data
-func (l *relationLogics[T]) InsertData(kit *util.Kit, subRes string, data any) error {
+func (l *relationLogics[T]) InsertData(kit *rest.Kit, subRes string, data any) error {
 	dataArr, ok := data.([]RelationData[T])
 	if !ok {
 		return fmt.Errorf("data type %T is invalid", data)
@@ -316,8 +322,8 @@ func (l *relationLogics[T]) InsertData(kit *util.Kit, subRes string, data any) e
 	}
 
 	table := l.table(subRes)
-	err := mongodb.Client().Table(table).Insert(kit.Ctx, insertData)
-	if err != nil && !mongodb.Client().IsDuplicatedError(err) {
+	err := mongodb.Shard(kit.ShardOpts()).Table(table).Insert(kit.Ctx, insertData)
+	if err != nil && !mongodb.IsDuplicatedError(err) {
 		blog.Errorf("insert %s data(%+v) failed, err: %v, rid: %s", table, insertData, err, kit.Rid)
 		return err
 	}
@@ -325,12 +331,12 @@ func (l *relationLogics[T]) InsertData(kit *util.Kit, subRes string, data any) e
 }
 
 // UpdateData relation can not be updated, skip these data
-func (l *relationLogics[T]) UpdateData(kit *util.Kit, subRes string, data any) error {
+func (l *relationLogics[T]) UpdateData(kit *rest.Kit, subRes string, data any) error {
 	return nil
 }
 
 // DeleteData delete data
-func (l *relationLogics[T]) DeleteData(kit *util.Kit, subRes string, data any) error {
+func (l *relationLogics[T]) DeleteData(kit *rest.Kit, subRes string, data any) error {
 	var idMap map[int64][]int64
 	switch val := data.(type) {
 	case map[int64][]int64:
@@ -361,7 +367,7 @@ func (l *relationLogics[T]) DeleteData(kit *util.Kit, subRes string, data any) e
 	}
 
 	table := l.table(subRes)
-	err := mongodb.Client().Table(table).Delete(kit.Ctx, cond)
+	err := mongodb.Shard(kit.ShardOpts()).Table(table).Delete(kit.Ctx, cond)
 	if err != nil {
 		blog.Errorf("delete %s data failed, err: %v, cond: %+v, rid: %s", table, err, cond, kit.Rid)
 		return err

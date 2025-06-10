@@ -19,6 +19,7 @@ package watch
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	synctypes "configcenter/pkg/synchronize/types"
@@ -30,26 +31,18 @@ import (
 	"configcenter/src/storage/stream/types"
 )
 
-// resTypeWatchOptMap is cmdb data sync resource type to db watch options map
-var resTypeWatchOptMap = map[synctypes.ResType]*types.WatchCollOptions{
-	synctypes.ServiceInstance: {
-		CollectionOptions: types.CollectionOptions{
-			CollectionFilter: &types.CollectionFilter{
-				Regex: fmt.Sprintf("_%s$", common.BKTableNameServiceInstance),
-			},
-			EventStruct: new(metadata.ServiceInstance),
-		},
-	},
-}
-
 // watchDB watch db events for resource that are not watched by flow
 func (w *Watcher) watchDB(resType synctypes.ResType) (*task.Task, error) {
+	collOpts, err := w.genWatchCollOptions(resType)
+	if err != nil {
+		return nil, err
+	}
 	handler := w.tokenHandlers[resType]
 
 	opts := &types.LoopBatchTaskOptions{
 		WatchTaskOptions: &types.WatchTaskOptions{
 			Name:         string(resType),
-			CollOpts:     resTypeWatchOptMap[resType],
+			CollOpts:     collOpts,
 			TokenHandler: handler,
 			RetryOptions: &types.RetryOptions{
 				MaxRetryCount: 3,
@@ -67,24 +60,47 @@ func (w *Watcher) watchDB(resType synctypes.ResType) (*task.Task, error) {
 	return task.NewLoopBatchTask(opts)
 }
 
+func (w *Watcher) genWatchCollOptions(resType synctypes.ResType) (*types.WatchCollOptions, error) {
+	switch resType {
+	case synctypes.ServiceInstance:
+		collections := make([]string, 0)
+		for tenantID := range w.tenantMap {
+			collections = append(collections, common.GenTenantTableName(tenantID, common.BKTableNameServiceInstance))
+		}
+		return &types.WatchCollOptions{
+			CollectionOptions: types.CollectionOptions{
+				CollectionFilter: &types.CollectionFilter{
+					Regex: strings.Join(collections, "|"),
+				},
+				EventStruct: new(metadata.ServiceInstance),
+			},
+		}, nil
+	}
+	return nil, fmt.Errorf("not supported watch db resType: %s", resType)
+}
+
 // handleDBEvents handle db events
 func (w *Watcher) handleDBEvents(resType synctypes.ResType, es []*types.Event) bool {
 	kit := rest.NewKit()
 
-	eventInfos := make([]*synctypes.EventInfo, 0)
+	tenantEventInfos := make(map[string][]*synctypes.EventInfo, 0)
 	for _, e := range es {
+		kit = kit.WithTenant(e.TenantID)
 		eventType := watch.ConvertOperateType(e.OperationType)
-		eventInfo, needSync := w.metadata.ParseEventDetail(eventType, resType, e.Oid, e.DocBytes)
+		eventInfo, needSync := w.metadata.ParseEventDetail(kit, eventType, resType, e.Oid, e.DocBytes)
 		if !needSync {
 			continue
 		}
-		eventInfos = append(eventInfos, eventInfo)
+		tenantEventInfos[e.TenantID] = append(tenantEventInfos[e.TenantID], eventInfo)
 	}
 
 	// push incremental sync data to transfer medium
-	err := w.pushSyncData(kit, eventInfos)
-	if err != nil {
-		return true
+	for tenantID, eventInfos := range tenantEventInfos {
+		kit = kit.WithTenant(tenantID)
+		err := w.pushSyncData(kit, eventInfos)
+		if err != nil {
+			return true
+		}
 	}
 
 	return false
