@@ -105,6 +105,11 @@ func (d *MockDiscovery) CacheService() Interface {
 	return &mockServer{}
 }
 
+// SyncServer is the discover interface of sync server
+func (d *MockDiscovery) SyncServer() Interface {
+	return &mockServer{}
+}
+
 // IsMaster TODO
 func (d *MockDiscovery) IsMaster() bool {
 	return true

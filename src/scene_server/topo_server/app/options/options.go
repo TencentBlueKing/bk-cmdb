@@ -32,7 +32,7 @@ type Config struct {
 	BusinessTopoLevelMax  int `json:"level.businessTopoMax"`
 	Redis                 redis.Config
 	ConfigMap             map[string]string
-	Es                    elasticsearch.EsConfig
+	Es                    *elasticsearch.EsConfig
 	DisableVerifyTenant   bool
 	EnableMultiTenantMode bool
 }

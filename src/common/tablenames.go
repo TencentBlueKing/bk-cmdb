@@ -129,6 +129,8 @@ const (
 
 	// BKTableNameCacheWatchToken is the cache event watch token table
 	BKTableNameCacheWatchToken = "CacheWatchToken"
+	// BKTableNameSyncWatchToken is the sync-server event watch token table
+	BKTableNameSyncWatchToken = "SyncWatchToken"
 
 	// BKTableNameDefaultAreaHost is used to store the default area host and ensure that IP is not repeated.
 	BKTableNameDefaultAreaHost = "DefaultAreaHost"
@@ -283,6 +285,7 @@ var platformTableMap = map[string]struct{}{
 	"SrcSyncDataCursor":           {},
 	BKTableNameGlobalConfig:       {},
 	BKTableNameDefaultAreaHost:    {},
+	BKTableNameSyncWatchToken:     {},
 }
 
 // IsPlatformTable returns if the target table is a platform table

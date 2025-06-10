@@ -47,7 +47,7 @@ func (t *TopoServer) onTopoConfigUpdate(previous, current cc.ProcessConfig) {
 	blog.Infof("the new cfg:%#v the origin cfg:%#v", t.Config, string(current.ConfigData))
 
 	var err error
-	t.Config.Es, err = elasticsearch.ParseConfigFromKV("es", nil)
+	t.Config.Es, err = elasticsearch.ParseConfig("es")
 	if err != nil {
 		blog.Warnf("parse es config failed: %v", err)
 	}
@@ -93,12 +93,11 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	essrv := new(elasticsearch.EsSrv)
 	if server.Config.Es.FullTextSearch == "on" {
-		esClient, err := elasticsearch.NewEsClient(server.Config.Es)
+		essrv, err = elasticsearch.NewEsClient(server.Config.Es)
 		if err != nil {
-			blog.Errorf("failed to create elastic search client, err:%s", err.Error())
+			blog.Errorf("failed to create elastic search client, err: %v", err)
 			return fmt.Errorf("new es client failed, err: %v", err)
 		}
-		essrv.Client = esClient
 	}
 
 	server.InitClients()

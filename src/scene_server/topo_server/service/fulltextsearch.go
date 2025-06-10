@@ -225,9 +225,6 @@ func (f *FullTextSearchFilter) Validate() error {
 
 // FullTextSearchReq is fulltext search request.
 type FullTextSearchReq struct {
-	// TenantID supplier account.
-	TenantID string `json:"tenant_id"`
-
 	// BizID business id.
 	BizID string `json:"bk_biz_id"`
 
@@ -241,6 +238,8 @@ type FullTextSearchReq struct {
 	SubResource *FullTextSearchFilter `json:"sub_resource"`
 	// QueryString elastic query_string keyword.
 	QueryString string `json:"query_string"`
+	// IsExactSearch defines whether the fulltext search is case-sensitive exact search.
+	IsExactSearch bool `json:"is_exact_search"`
 
 	// Page search page settings.
 	Page *Page `json:"page"`
@@ -259,7 +258,11 @@ func (r *FullTextSearchReq) Validate() error {
 
 	// escape special characters.
 	rawString := strings.Trim(r.QueryString, "*")
-	r.QueryString = "*" + esSpecialCharactersRegex.ReplaceAllString(rawString, `\$1`) + "*"
+	queryString := esSpecialCharactersRegex.ReplaceAllString(rawString, `\$1`)
+	if !r.IsExactSearch {
+		queryString = "*" + queryString + "*"
+	}
+	r.QueryString = queryString
 
 	// check query_string length in UTF-8 encoding.
 	utf8Length := utf8.RuneCountInString(rawString)
@@ -352,7 +355,7 @@ func (r *FullTextSearchFilter) generateESQueryConditions() []*FullTextSearchCond
 }
 
 // GenerateESQuery returns the elastic query for main search and sub-count searches.
-func (r *FullTextSearchReq) GenerateESQuery() (elastic.Query, []string, []*FullTextSearchESQuery) {
+func (r *FullTextSearchReq) GenerateESQuery(kit *rest.Kit) (elastic.Query, []string, []*FullTextSearchESQuery) {
 	// elastic query conditions for each model or instance.
 	var (
 		// main search use objIdCond firstly.
@@ -378,15 +381,17 @@ func (r *FullTextSearchReq) GenerateESQuery() (elastic.Query, []string, []*FullT
 	// main query.
 	query := elastic.NewBoolQuery()
 	queryConditions := make(map[string][]interface{})
-	if len(r.TenantID) != 0 {
-		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyTenantID, r.TenantID))
-	}
+	query.Must(elastic.NewMatchQuery(metadata.IndexPropertyTenantID, kit.TenantID))
 	if len(r.BizID) != 0 {
 		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
 	}
 	// NOTE: 搜索文档同时支持属性和表格属性的keyword搜索
+	keywordField := metadata.IndexPropertyKeywords + ".lowercase"
+	if r.IsExactSearch {
+		keywordField = metadata.IndexPropertyKeywords
+	}
 	stringQuery := elastic.NewQueryStringQuery(r.QueryString).
-		Field(metadata.IndexPropertyKeywords).
+		Field(keywordField).
 		Field(tableFulltextRegex)
 
 	query.Must(stringQuery)
@@ -410,9 +415,7 @@ func (r *FullTextSearchReq) GenerateESQuery() (elastic.Query, []string, []*FullT
 	// sub aggregations query.
 	for _, condFilter := range filterCond {
 		boolQuery := elastic.NewBoolQuery()
-		if len(r.TenantID) != 0 {
-			boolQuery.Must(elastic.NewMatchQuery(metadata.IndexPropertyTenantID, r.TenantID))
-		}
+		boolQuery.Must(elastic.NewMatchQuery(metadata.IndexPropertyTenantID, kit.TenantID))
 		if len(r.BizID) != 0 {
 			boolQuery.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
 		}
@@ -759,7 +762,7 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	}
 
 	// generate elastic query.
-	esQuery, indexes, subCountQueries := request.GenerateESQuery()
+	esQuery, indexes, subCountQueries := request.GenerateESQuery(ctx.Kit)
 
 	mainESQuery, err := esQuery.Source()
 	if err != nil {

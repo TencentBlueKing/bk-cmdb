@@ -160,7 +160,7 @@ var quotedInstLgc = &dataWithIDLgc[mapstr.MapStr]{
 	parseData: parseMapStr,
 	getID:     getMapStrID,
 	getRelatedIDs: func(subRes string, data mapstr.MapStr) (map[types.ResType][]int64, error) {
-		srcObjID := metadata.GetModelQuoteSrcObjID(subRes)
+		_, srcObjID, _ := metadata.ParseModelQuoteDestObjID(subRes)
 		instID, err := commonutil.GetInt64ByInterface(data[common.BKInstIDField])
 		if err != nil {
 			return nil, err

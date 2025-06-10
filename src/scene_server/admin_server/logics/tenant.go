@@ -65,7 +65,7 @@ func RefreshTenants(coreAPI apimachinery.ClientSetInterface, db dal.Dal) error {
 	tenant.SetTenant(tenants)
 
 	needRefreshServer := []string{commontypes.CC_MODULE_APISERVER, commontypes.CC_MODULE_TASK,
-		commontypes.CC_MODULE_CACHESERVICE, commontypes.CC_MODULE_EVENTSERVER}
+		commontypes.CC_MODULE_CACHESERVICE, commontypes.CC_MODULE_EVENTSERVER, commontypes.CC_MODULE_SYNC}
 	for _, module := range needRefreshServer {
 		_, err = coreAPI.Refresh().RefreshTenant(module)
 		if err != nil {

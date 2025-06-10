@@ -38,6 +38,10 @@ func (r *refresh) RefreshTenant(moduleName string) ([]types.Tenant, error) {
 		r.capability.Discover = r.disc.TaskServer()
 	case commontypes.CC_MODULE_CACHESERVICE:
 		r.capability.Discover = r.disc.CacheService()
+	case commontypes.CC_MODULE_EVENTSERVER:
+		r.capability.Discover = r.disc.EventServer()
+	case commontypes.CC_MODULE_SYNC:
+		r.capability.Discover = r.disc.SyncServer()
 	default:
 		return nil, fmt.Errorf("unsupported refresh module: %s", moduleName)
 	}

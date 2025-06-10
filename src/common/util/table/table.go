@@ -60,6 +60,9 @@ var delArchiveCollMap = map[string]struct{}{
 	kubetypes.BKTableNameBasePod:            {},
 	kubetypes.BKTableNameBaseContainer:      {},
 	kubetypes.BKTableNameNsSharedClusterRel: {},
+
+	common.BKTableNameObjDes:    {},
+	common.BKTableNameObjAttDes: {},
 }
 
 // NeedPreImageTable check if table needs to enable change stream pre-image

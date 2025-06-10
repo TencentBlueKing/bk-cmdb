@@ -185,16 +185,16 @@ func GenerateModelQuoteObjID(srcModel, propertyID string) string {
 	return "bk_" + srcModel + modelQuoteSpecifier + propertyID
 }
 
-// GetModelQuoteSrcObjID get the src obj id by referenced obj id
-func GetModelQuoteSrcObjID(destModel string) string {
+// ParseModelQuoteDestObjID get the src obj id and property id by referenced obj id by dest object id
+func ParseModelQuoteDestObjID(destModel string) (bool, string, string) {
 	if !strings.HasPrefix(destModel, "bk_") {
-		return destModel
+		return false, destModel, ""
 	}
 	parts := strings.Split(strings.TrimPrefix(destModel, "bk_"), modelQuoteSpecifier)
 	if len(parts) != 2 {
-		return destModel
+		return false, destModel, ""
 	}
-	return parts[0]
+	return true, parts[0], parts[1]
 }
 
 // GenerateModelQuoteObjName generate the obj name referenced by the model.

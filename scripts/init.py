@@ -174,6 +174,11 @@ watch:
 #  address: 127.0.0.1
 #  appCode: bk_cmdb
 #  appSecret: 123456
+#syncServer:
+#  fullTextSearch:
+#    enableSync: false
+#	 indexShardNum: 1
+#	 indexReplicaNum: 1
 
 #elasticsearch配置
 es:
@@ -404,6 +409,17 @@ transferService:
   # 传输介质地址
   transferMediumAddress:
     - transfer.example.com
+
+# syncServer相关配置
+syncServer:
+  # 全文检索同步相关配置
+  fullTextSearch:
+    # 是否开启全文检索同步, 默认为false
+    enableSync: false
+    # ES索引拥有的主分片数量
+    indexShardNum: 1
+    # ES索引每个主分片拥有的副本数量
+    indexReplicaNum: 1
     '''
 
     template = FileTemplate(common_file_template_str)
@@ -731,6 +747,7 @@ def main(argv):
         "cmdb_operationserver": 60011,
         "cmdb_taskserver": 60012,
         "cmdb_authserver": 60014,
+        "cmdb_syncserver": 60015,
         "cmdb_cacheservice": 50010,
         "cmdb_transferservice": 50011
     }

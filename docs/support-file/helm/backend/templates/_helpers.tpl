@@ -78,6 +78,10 @@ app: "{{ template "bk-cmdb.name" . }}"
   {{- printf "%s-core" (include "bk-cmdb.fullname" .) -}}
 {{- end -}}
 
+{{- define "bk-cmdb.syncserver" -}}
+  {{- printf "%s-sync" (include "bk-cmdb.fullname" .) -}}
+{{- end -}}
+
 {{- define "bk-cmdb.ingress" -}}
   {{- printf "%s-ingress" (include "bk-cmdb.fullname" .) -}}
 {{- end -}}

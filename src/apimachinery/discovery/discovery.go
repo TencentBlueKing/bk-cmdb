@@ -45,6 +45,7 @@ type DiscoveryInterface interface {
 	AuthServer() Interface
 	Server(name string) Interface
 	CacheService() Interface
+	SyncServer() Interface
 	ServiceManageInterface
 }
 
@@ -76,6 +77,12 @@ func NewServiceDiscovery(client *zk.ZkClient, env string) (DiscoveryInterface, e
 
 		// other service do not need to discover transfer service
 		if component == types.CC_MODULE_TRANSFERSERVICE && curServiceName != types.CC_MODULE_TRANSFERSERVICE {
+			continue
+		}
+
+		// other service do not need to discover sync service
+		if component == types.CC_MODULE_SYNC && curServiceName != types.CC_MODULE_SYNC &&
+			curServiceName != types.CC_MODULE_MIGRATE {
 			continue
 		}
 
@@ -158,6 +165,11 @@ func (d *discover) AuthServer() Interface {
 // CacheService TODO
 func (d *discover) CacheService() Interface {
 	return d.servers[types.CC_MODULE_CACHESERVICE]
+}
+
+// SyncServer is the discover interface of sync server
+func (d *discover) SyncServer() Interface {
+	return d.servers[types.CC_MODULE_SYNC]
 }
 
 // IsMaster check whether current is master

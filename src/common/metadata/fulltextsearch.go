@@ -101,11 +101,6 @@ const (
 	TablePropertyName = "tables"
 )
 
-// ignore  resource pool
-
-// ResourcePool TODO
-const ResourcePool = "资源池"
-
 // ESIndexMetaSettings elasticsearch index settings.
 type ESIndexMetaSettings struct {
 	// Shards number of index shards as string type.
@@ -113,6 +108,20 @@ type ESIndexMetaSettings struct {
 
 	// Replicas number of index document replicas as string type.
 	Replicas string `json:"number_of_replicas"`
+
+	Analysis ESIndexAnalysisSettings `json:"analysis"`
+}
+
+// ESIndexAnalysisSettings elasticsearch index analysis settings.
+type ESIndexAnalysisSettings struct {
+	Normalizer map[string]ESIndexNormalizerSettings `json:"normalizer"`
+}
+
+// ESIndexNormalizerSettings elasticsearch index normalizer settings.
+type ESIndexNormalizerSettings struct {
+	Type       string   `json:"type"`
+	CharFilter []string `json:"char_filter"`
+	Filter     []string `json:"filter"`
 }
 
 // ESIndexMetaMappings elasticsearch index mappings.
@@ -124,7 +133,14 @@ type ESIndexMetaMappings struct {
 // ESIndexMetaMappingsProperty elasticsearch index mappings property.
 type ESIndexMetaMappingsProperty struct {
 	// PropertyType elastic index property type. Support 'keyword' 'text'.
-	PropertyType string `json:"type"`
+	PropertyType string                              `json:"type"`
+	Fields       map[string]ESIndexMetaMappingsField `json:"fields,omitempty"`
+}
+
+// ESIndexMetaMappingsField elasticsearch index mappings field.
+type ESIndexMetaMappingsField struct {
+	Type       string `json:"type"`
+	Normalizer string `json:"normalizer,omitempty"`
 }
 
 // ESIndexMetadata is elasticsearch index settings.

@@ -6,7 +6,6 @@
 * Redis   >= 3.2.11
 * MongoDB >= 4.2
 * Elasticsearch >= 7.0.0 (用于全文检索功能)
-* Monstache >= 6.0.0 (用于全文检索功能)
 
 ## CMDB 微服务进程清单
 
@@ -28,11 +27,12 @@
 * cmdb_toposerver
 * cmdb_datacollection
 * cmdb_operationserver
-* cmdb_synchronizeserver
 * cmdb_taskserver
+* cmdb_syncserver
 
 ### 4. 资源管理服务进程
 
+* cmdb_cacheservice
 * cmdb_coreservice
 
 ---
@@ -206,6 +206,7 @@ MongoDB官方资料：
 
 如果想部署高可用可扩展的ES，可参考官方文档[ES-Guide](https://www.elastic.co/guide/index.html)
 
+CMDB提供场景层服务`cmdb_syncserver`用于将MongoDB中的数据同步到Elasticsearch中。阅读[同步服务文档](../../src/scene_server/sync_server/readme.md)，按照指引进行全文检索同步配置。
 
 ### 8. 部署CMDB
 
@@ -222,7 +223,7 @@ drwxr-xr-x 4 root root  4096 Jun 18 15:24 cmdb_eventserver
 drwxr-xr-x 5 root root  4096 Jun 18 15:24 cmdb_hostserver
 drwxr-xr-x 4 root root  4096 Jun 18 15:24 cmdb_operationserver
 drwxr-xr-x 5 root root  4096 Jun 18 15:24 cmdb_procserver
-drwxr-xr-x 3 root root  4096 Jun 18 10:33 cmdb_synchronizeserver
+drwxr-xr-x 3 root root  4096 Jun 18 10:33 cmdb_syncserver
 drwxr-xr-x 5 root root  4096 Jun 18 15:24 cmdb_taskserver
 drwxr-xr-x 4 root root  4096 Jun 18 15:24 cmdb_toposerver
 drwxr-xr-x 4 root root  4096 Jun 18 15:24 cmdb_webserver
@@ -241,31 +242,31 @@ drwxr-xr-x 7 root root  4096 Jun 18 10:33 web
 
 各目录代表的服务及职责：
 
-| 目标                   | 类型       | 用途描述                                                     |
-| ---------------------- | ---------- | ------------------------------------------------------------ |
-| cmdb_adminserver       | server     | 负责系统数据的初始化以及配置管理工作                         |
-| cmdb_apiserver         | server     | 场景层服务，api 服务                                         |
-| cmdb_coreservice       | server     | 资源管理层，提供原子接口服务                                 |
-| cmdb_datacollection    | server     | 场景层服务，数据采集服务                                     |
-| cmdb_eventserver       | server     | 场景层服务，事件推送服务                                     |
-| cmdb_hostserver        | server     | 场景层服务，主机数据维护                                     |
-| cmdb_operationserver   | server     | 场景层服务，提供与运营统计相关功能服务                       |
-| cmdb_procserver        | server     | 场景层服务，负责进程数据的维护                               |
-| cmdb_synchronizeserver | server     | 场景层服务，数据同步服务                                     |
-| cmdb_taskserver        | server     | 场景层服务，异步任务管理服务                                 |
-| cmdb_toposerver        | server     | 场景层服务，负责模型的定义以及主机、业务、模块及进程等实例数据的维护 |
-| cmdb_webserver         | server     | web server 服务子目录                                        |
-| docker                 | Dockerfile | 各服务的Dockerfile模板                                       |
-| image.sh               | script     | 用于制作Docker镜像                                           |
+| 目标                     | 类型         | 用途描述                                        |
+|------------------------|------------|---------------------------------------------|
+| cmdb_adminserver       | server     | 负责系统数据的初始化以及配置管理工作                          |
+| cmdb_apiserver         | server     | 场景层服务，api 服务                                |
+| cmdb_coreservice       | server     | 资源管理层，提供原子接口服务                              |
+| cmdb_datacollection    | server     | 场景层服务，数据采集服务                                |
+| cmdb_eventserver       | server     | 场景层服务，事件推送服务                                |
+| cmdb_hostserver        | server     | 场景层服务，主机数据维护                                |
+| cmdb_operationserver   | server     | 场景层服务，提供与运营统计相关功能服务                         |
+| cmdb_procserver        | server     | 场景层服务，负责进程数据的维护                             |
+| cmdb_syncserver        | server     | 场景层服务，负责cmdb与第三方组件的数据同步                     |
+| cmdb_taskserver        | server     | 场景层服务，异步任务管理服务                              |
+| cmdb_toposerver        | server     | 场景层服务，负责模型的定义以及主机、业务、模块及进程等实例数据的维护          |
+| cmdb_webserver         | server     | web server 服务子目录                            |
+| docker                 | Dockerfile | 各服务的Dockerfile模板                            |
+| image.sh               | script     | 用于制作Docker镜像                                |
 | init.py                | script     | 用于初始化服务及配置项，在需要重置服务配置的时候也可以运行此脚本，按照提示输入配置参数 |
-| init_db.sh             | script     | 初始化数据库的数据                                           |
-| ip.py                  | script     | 查询主机真实的IP脚本                                         |
-| restart.sh             | script     | 用于重启所有服务                                             |
-| start.sh               | script     | 用于启动所有服务                                             |
-| stop.sh                | script     | 用于停止所有服务                                             |
-| tool_ctl               | ctl        | 管理小工具                                                   |
-| upgrade.sh             | script     | 用于全量升级服务进程                                         |
-| web                    | ui         | CMDB UI 页面                                                 |
+| init_db.sh             | script     | 初始化数据库的数据                                   |
+| ip.py                  | script     | 查询主机真实的IP脚本                                 |
+| restart.sh             | script     | 用于重启所有服务                                    |
+| start.sh               | script     | 用于启动所有服务                                    |
+| stop.sh                | script     | 用于停止所有服务                                    |
+| tool_ctl               | ctl        | 管理小工具                                       |
+| upgrade.sh             | script     | 用于全量升级服务进程                                  |
+| web                    | ui         | CMDB UI 页面                                  |
 
 ### 9. 初始化
 
@@ -456,18 +457,6 @@ redis:
    #以下几个redis配置为datacollection模块所需的配置,用于接收第三方提供的数据
    #接收主机信息数据的redis
    snap:
-      host: 127.0.0.1:6379
-      pwd: "cc"
-      sentinelPwd: ""
-      database: "0"
-   #接收模型实例数据的redis
-   discover:
-      host: 127.0.0.1:6379
-      pwd: "cc"
-      sentinelPwd: ""
-      database: "0"
-   #接受硬件数据的redis
-   netcollect:
       host: 127.0.0.1:6379
       pwd: "cc"
       sentinelPwd: ""
