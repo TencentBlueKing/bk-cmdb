@@ -39,7 +39,8 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.11.0
 	github.com/stretchr/testify v1.8.4
-	github.com/tidwall/gjson v1.14.1
+	github.com/tidwall/gjson v1.14.2
+	github.com/tidwall/sjson v1.2.5
 	github.com/xdg-go/scram v1.1.2
 	github.com/xuri/excelize/v2 v2.7.1
 	go.mongodb.org/mongo-driver v1.17.1
@@ -49,12 +50,14 @@ require (
 	go.opentelemetry.io/otel v1.19.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.17.0
 	go.opentelemetry.io/otel/sdk v1.19.0
-	golang.org/x/text v0.17.0
+	golang.org/x/text v0.17.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/client-go v0.24.2
 	stathat.com/c/consistent v1.0.0
 )
+
+require github.com/mozillazg/go-pinyin v0.20.0
 
 require (
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect

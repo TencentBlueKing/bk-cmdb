@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/ssl"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
 
@@ -1446,5 +1447,54 @@ func TestDistinct(t *testing.T) {
 		results, err := util.SliceInterfaceToBool(ret)
 		require.NoError(t, err, "convert to []bool error")
 		require.Equal(t, []bool{false, true}, results)
+	}
+}
+
+func dbClientWithTLS(t *testing.T) *Mongo {
+	uri := os.Getenv("MONGOURI")
+	mongoConfig := MongoConf{
+		MaxOpenConns: 1000,
+		MaxIdleConns: 100,
+		URI:          uri,
+		RsName:       "rs0",
+		TLS: &ssl.TLSClientConfig{
+			InsecureSkipVerify: os.Getenv("MONTOTLSSKIIPVERIFY") == "true",
+			CertFile:           os.Getenv("MONGOTLSCERT"),
+			KeyFile:            os.Getenv("MONGOTLSKEY"),
+			CAFile:             os.Getenv("MONGOTLSCA"),
+		},
+	}
+	db, err := NewMgo(mongoConfig, time.Second*5)
+	require.NoError(t, err)
+	err = db.Ping()
+	require.NoError(t, err)
+	return db
+}
+
+func TestConnectWithTLS(t *testing.T) {
+	ctx := context.Background()
+	db := dbClientWithTLS(t)
+	tableName := "tmp_test_table_operate"
+
+	exist, err := db.HasTable(ctx, tableName)
+	require.NoError(t, err)
+	if !exist {
+		err := db.CreateTable(ctx, tableName)
+		require.NoError(t, err)
+	}
+	exist, err = db.HasTable(ctx, tableName)
+	require.NoError(t, err)
+	if !exist {
+		t.Errorf("table %s not exist", tableName)
+		return
+	}
+
+	err = db.DropTable(ctx, tableName)
+	require.NoError(t, err)
+
+	exist, err = db.HasTable(ctx, tableName)
+	require.NoError(t, err)
+	if exist {
+		t.Errorf("drop table %s, table already exist", tableName)
 	}
 }

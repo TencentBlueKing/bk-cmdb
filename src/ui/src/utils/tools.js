@@ -463,10 +463,7 @@ export function transformHostSearchParams(params) {
     item.condition.forEach((field) => {
       const { bk_obj_id: objId } = item
       const { operator, value } = field
-      if (objId !== BUILTIN_MODELS.HOST) {
-        // 主机接口参数condition特殊处理 非host情况下： 1. 操作符为$regex处理成contains_s  2. 操作符为contains处理成$regex
-        field.operator = transformNoHostOperator(operator)
-      }
+      field.operator = getOperator(objId, operator)
       if (['$in', '$nin', '$multilike'].includes(operator) && !Array.isArray(value)) {
         field.value = value.split(/\n|;|；|,|，/).filter(str => str.trim().length)
           .map(str => str.trim())
@@ -474,6 +471,14 @@ export function transformHostSearchParams(params) {
     })
   })
   return transformedParams
+}
+
+export function getOperator(objId, operator) {
+  if (objId !== BUILTIN_MODELS.HOST) {
+    // 主机接口参数condition特殊处理 非host情况下： 1. 操作符为$regex处理成contains_s  2. 操作符为contains处理成$regex
+    return transformNoHostOperator(operator)
+  }
+  return operator
 }
 
 const transformNoHostOperator = operator => TRANSFORM_SPECIAL_HANDLE_OPERATOR?.[operator] ?? operator

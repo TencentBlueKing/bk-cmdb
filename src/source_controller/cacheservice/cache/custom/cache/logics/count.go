@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cache
+package logics
 
 import (
 	"strconv"
@@ -36,6 +36,11 @@ func NewCountCache(key Key) *CountCache {
 	return &CountCache{
 		key: key,
 	}
+}
+
+// Key returns the cache key
+func (c *CountCache) Key() Key {
+	return c.key
 }
 
 // GetDataList get data list by cache key

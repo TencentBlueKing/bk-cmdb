@@ -14,13 +14,17 @@
 package zkclient
 
 import (
+	"crypto/tls"
 	// "bcs/bcs-common/common/blog"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 	"sync"
 	"time"
+
+	"configcenter/src/common/ssl"
 
 	"github.com/go-zookeeper/zk"
 )
@@ -116,17 +120,19 @@ type ZkClient struct {
 	ZkHost       []string
 	ZkConn       *zk.Conn
 	zkAcl        []zk.ACL
+	zkTLS        *ssl.TLSClientConfig
 	zkConnClosed bool
 	sync.Mutex
 	closeLock sync.Mutex
 }
 
 // NewZkClient TODO
-func NewZkClient(host []string) *ZkClient {
+func NewZkClient(host []string, tlsConf *ssl.TLSClientConfig) *ZkClient {
 	c := ZkClient{
 		ZkHost: host[:],
 		ZkConn: nil,
 		zkAcl:  zk.DigestACL(zk.PermAll, AUTH_USER, AUTH_PWD),
+		zkTLS:  tlsConf,
 	}
 
 	return &c
@@ -149,7 +155,19 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 		z.Close()
 	}
 
-	c, _, err := zk.Connect(z.ZkHost, sessionTimeOut)
+	var c *zk.Conn
+	tlsConfig, useTLS, err := ssl.NewTLSConfigFromConf(z.zkTLS)
+	if err != nil {
+		return fmt.Errorf("failed to create TLS config: %v", err)
+	}
+	if useTLS {
+		tlsDialer := zk.WithDialer(func(network, address string, timeout time.Duration) (net.Conn, error) {
+			return tls.Dial(network, address, tlsConfig)
+		})
+		c, _, err = zk.Connect(z.ZkHost, sessionTimeOut, tlsDialer)
+	} else {
+		c, _, err = zk.Connect(z.ZkHost, sessionTimeOut)
+	}
 	if err != nil {
 		return err
 	}

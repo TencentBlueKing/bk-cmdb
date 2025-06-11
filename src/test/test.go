@@ -30,6 +30,7 @@ import (
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/mongo/sharding"
+	"configcenter/src/storage/dal/redis"
 	"configcenter/src/test/run"
 	testutil "configcenter/src/test/util"
 
@@ -42,6 +43,7 @@ var tConfig TestConfig
 var reportUrl string
 var reportDir string
 var db dal.Dal
+var redisClient redis.Client
 
 // TestConfig TODO
 type TestConfig struct {
@@ -88,7 +90,7 @@ func init() {
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
-	client := zk.NewZkClient(tConfig.ZkAddr, 40*time.Second)
+	client := zk.NewZkClient(tConfig.ZkAddr, 40*time.Second, nil)
 	var err error
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
@@ -131,6 +133,14 @@ func init() {
 	// wait for get the apiserver address.
 	time.Sleep(1 * time.Second)
 	fmt.Println("**** initialize clientSet success ***")
+
+	redisCfg := redis.Config{
+		Address:  tConfig.RedisCfg.RedisAddress,
+		Password: tConfig.RedisCfg.RedisPasswd,
+		Database: "0",
+	}
+	redisClient, err = redis.NewFromConfig(redisCfg)
+	Expect(err).Should(BeNil())
 }
 
 // GetClientSet TODO
@@ -191,6 +201,9 @@ func ClearDatabase() {
 			Expect(err).Should(BeNil())
 		}
 	}
+
+	err = redisClient.FlushDB(context.Background()).Err()
+	Expect(err).Should(BeNil())
 
 	err = adminClient.Migrate(context.Background(), GetHeader())
 	Expect(err).Should(BeNil())

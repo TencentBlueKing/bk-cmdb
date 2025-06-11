@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"configcenter/pkg/tenant/tools"
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
@@ -47,7 +48,8 @@ const (
 )
 
 // ValidLogin valid the user login status
-func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.HandlerFunc {
+func ValidLogin(config options.Config, disc discovery.DiscoveryInterface,
+	apiCli apiserver.ApiServerClientInterface) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		rid := httpheader.GetRid(c.Request.Header)
@@ -63,7 +65,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			return
 		}
 
-		if isAuthed(c, config) {
+		if isAuthed(c, config, apiCli) {
 			handleAuthedReq(c, config, path1, disc, rid)
 			return
 		}
@@ -76,7 +78,7 @@ func ValidLogin(config options.Config, disc discovery.DiscoveryInterface) gin.Ha
 			return
 		}
 
-		user := user.NewUser(config, Engine, CacheCli)
+		user := user.NewUser(config, Engine, CacheCli, apiCli)
 		url := user.GetLoginUrl(c)
 		c.Redirect(302, url)
 		c.Abort()
@@ -157,9 +159,9 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 }
 
 // isAuthed check user is authed
-func isAuthed(c *gin.Context, config options.Config) bool {
+func isAuthed(c *gin.Context, config options.Config, apiCli apiserver.ApiServerClientInterface) bool {
 	rid := httpheader.GetRid(c.Request.Header)
-	user := user.NewUser(config, Engine, CacheCli)
+	user := user.NewUser(config, Engine, CacheCli, apiCli)
 	session := sessions.Default(c)
 
 	// check bk_token

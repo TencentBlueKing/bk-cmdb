@@ -15,6 +15,7 @@ package y3_10_202109131607
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -268,8 +269,9 @@ func grantAuthForInstances(ctx context.Context, objInstIDs []int64, db dal.DB,
 
 	// get instance names by ids
 	instances := make([]SimplifiedInstance, 0)
-	if err := db.Table(common.GetObjectInstTableName(object.ObjectID, object.OwnerID)).Find(instanceFilter).
-		Fields(common.BKInstIDField, common.BKInstNameField).All(ctx, &instances); err != nil {
+	tableName := fmt.Sprintf("cc_ObjectBase_%s_pub_%s", object.OwnerID, object.ObjectID)
+	if err := db.Table(tableName).Find(instanceFilter).Fields(common.BKInstIDField, common.BKInstNameField).
+		All(ctx, &instances); err != nil {
 		blog.Errorf("get instances failed, error: %v, instIDs: %+v", err, objInstIDs)
 		return err
 	}

@@ -85,6 +85,12 @@
         return BUILTIN_MODELS.HOST
       }
     },
+    watch: {
+      activeTab(val) {
+        const scope = RouterQuery.get('scope', '1')
+        if (scope !== val) RouterQuery.set('scope', val)
+      }
+    },
     methods: {
       handleRefresh() {
         const { resourceHost, resourceDirectory } = this.$refs

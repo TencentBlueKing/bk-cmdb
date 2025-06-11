@@ -43,7 +43,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: apiSvr.onApiServerConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover, TLSConfig: op.ServConf.GetTLSClientConf()},
 		SrvInfo:      svrInfo,
 	}
 
@@ -68,7 +68,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return err
 	}
 
-	config, err := util.NewTLSClientConfigFromConfig("tls")
+	config, err := cc.NewTLSClientConfigFromConfig("tls")
 	if err != nil {
 		blog.Errorf("get tls config error, err: %v", err)
 		return err

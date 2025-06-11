@@ -18,18 +18,25 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/common/ssl"
+
 	"github.com/spf13/pflag"
 )
 
 // CCAPIConfig define configuration of ccapi server
 type CCAPIConfig struct {
-	AddrPort    string
-	RegDiscover string
-	RegisterIP  string
-	ExConfig    string
-	Environment string
-	Qps         int64
-	Burst       int64
+	AddrPort                string
+	RegDiscover             string
+	RegDiscoverCaFile       string
+	RegDiscoverCertFile     string
+	RegDiscoverKeyFile      string
+	RegDiscoverSkipVerify   bool
+	RegDiscoverCertPassword string
+	RegisterIP              string
+	ExConfig                string
+	Environment             string
+	Qps                     int64
+	Burst                   int64
 }
 
 // NewCCAPIConfig create ccapi config object
@@ -68,6 +75,17 @@ func (conf *CCAPIConfig) GetPort() (uint, error) {
 		return getIPV6Port(addrPort)
 	}
 	return getIPV4Port(addrPort)
+}
+
+// GetTLSClientConf transfer the regDiscover tls config to TLSClientConfig
+func (conf *CCAPIConfig) GetTLSClientConf() *ssl.TLSClientConfig {
+	return &ssl.TLSClientConfig{
+		InsecureSkipVerify: conf.RegDiscoverSkipVerify,
+		CertFile:           conf.RegDiscoverCertFile,
+		KeyFile:            conf.RegDiscoverKeyFile,
+		CAFile:             conf.RegDiscoverCaFile,
+		Password:           conf.RegDiscoverCertPassword,
+	}
 }
 
 func checkAddrPort(addrPort string) error {
@@ -116,6 +134,11 @@ func getPortFunc(addrPort string) (uint, error) {
 func (conf *CCAPIConfig) AddFlags(fs *pflag.FlagSet, defaultAddrPort string) {
 	fs.StringVar(&conf.AddrPort, "addrport", defaultAddrPort, "The ip address and port for the serve on")
 	fs.StringVar(&conf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
+	fs.StringVar(&conf.RegDiscoverCaFile, "regdiscv-cafile", "", "register and discover server ca file path")
+	fs.StringVar(&conf.RegDiscoverCertFile, "regdiscv-certfile", "", "register and discover server cert file")
+	fs.StringVar(&conf.RegDiscoverCertPassword, "regdiscv-certpassword", "", "register and discover server cert password")
+	fs.StringVar(&conf.RegDiscoverKeyFile, "regdiscv-keyfile", "", "register and discover server key file")
+	fs.BoolVar(&conf.RegDiscoverSkipVerify, "regdiscv-skipverify", true, "register and discover server skip ca verify")
 	fs.StringVar(&conf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
 	fs.StringVar(&conf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.StringVar(&conf.Environment, "env", "", "the environment of the server, used for service discovery")

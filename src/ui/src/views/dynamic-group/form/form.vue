@@ -162,7 +162,9 @@
   import ConditionPicker from '@/components/condition-picker'
   import { DYNAMIC_GROUP_COND_TYPES } from '@/dictionary/dynamic-group'
   import { getConditionSelect, updatePropertySelect } from '@/utils/util'
-  import queryBuilderOperator, { QUERY_OPERATOR, OPERATOR_ECHO } from '@/utils/query-builder-operator'
+  import queryBuilderOperator, { QUERY_OPERATOR, OPERATOR_ECHO, OPERATOR_SPECIAL_ECHO, TRANSFORM_DYNAMIC_SET_OPERATOR } from '@/utils/query-builder-operator'
+  import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+  import { getOperator } from '@/utils/tools'
 
   const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
   export default {
@@ -349,12 +351,12 @@
               requestId: this.request.details
             }
           })
-          const transformedDetails = this.transformDetails(details)
-          const { name, bk_obj_id: modelId } = transformedDetails
+          const { name, bk_obj_id: modelId } = details
           this.originFormData.name = name
           this.originFormData.bk_obj_id = modelId
           this.formData.name = name
           this.formData.bk_obj_id = modelId
+          const transformedDetails = this.transformDetails(details)
           this.details = transformedDetails
           this.$nextTick(this.setDetailsSelectedProperties)
           setTimeout(() => {
@@ -380,7 +382,13 @@
               ? IMMUTABLE : VARIABLE
             const realCondition = (data.condition || []).reduce((accumulator, current) => {
               current.conditionType = conditionType
-              if ([queryBuilderOperator(CONTAINS), queryBuilderOperator(CONTAINS_CS)].includes(current.operator)) {
+              // 根据当前业务的customOperatorTypeMap逻辑来看，在查询对象为主机时候，需要对非主机属性字段进行转换回显
+              if (this.formData.bk_obj_id === BUILTIN_MODELS.HOST && data.bk_obj_id !== BUILTIN_MODELS.HOST) {
+                current.operator = OPERATOR_SPECIAL_ECHO[current.operator]
+                accumulator.push(current)
+              } else if ([queryBuilderOperator(CONTAINS), queryBuilderOperator(CONTAINS_CS)]
+                .includes(current.operator)) {
+                // 其他情况操作符为contains/contains(cs)情况回显
                 current.operator = OPERATOR_ECHO[current.operator]
                 accumulator.push(current)
               } else if (['$gte', '$lte'].includes(current.operator)) {
@@ -627,12 +635,22 @@
         })
       },
       // 在动态分组保存/编辑时候，$contains和$contains_s去掉$符号
-      parseDynamicOperator(operator) {
+      parseDynamicOperator(operator, objId) {
+        let newOperator = operator
         const { CONTAINS, CONTAINS_CS } = QUERY_OPERATOR
+
         if ([CONTAINS, CONTAINS_CS].includes(operator)) {
-          return operator.replace('$', '')
+          newOperator = operator.replace('$', '')
         }
-        return operator
+        // 如果当前动态分组对象是集群，需要对参数$regex转换成contains
+        if (this.formData.bk_obj_id === BUILTIN_MODELS.SET) {
+          return TRANSFORM_DYNAMIC_SET_OPERATOR[newOperator] ?? newOperator
+        }
+        // 如果当前动态分组是主机，对于参数为非host得情况进行转换
+        if (this.formData.bk_obj_id === BUILTIN_MODELS.HOST) {
+          return getOperator(objId, newOperator)
+        }
+        return newOperator
       },
       getSubmitCondition() {
         const baseConditionMap = {
@@ -673,7 +691,7 @@
           } else {
             submitCondition.push({
               field: property.bk_property_id,
-              operator: this.parseDynamicOperator(operator),
+              operator: this.parseDynamicOperator(operator, property.bk_obj_id),
               value
             })
           }

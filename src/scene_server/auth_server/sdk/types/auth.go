@@ -16,7 +16,7 @@ import (
 	"errors"
 	"fmt"
 
-	"configcenter/src/apimachinery/util"
+	"configcenter/src/common/ssl"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	apigwiam "configcenter/src/thirdparty/apigw/iam"
 
@@ -39,7 +39,7 @@ type IamConfig struct {
 	// the system id which used in auth center.
 	SystemID string
 	// http TLS config
-	TLS util.TLSClientConfig
+	TLS ssl.TLSClientConfig
 }
 
 // Validate TODO

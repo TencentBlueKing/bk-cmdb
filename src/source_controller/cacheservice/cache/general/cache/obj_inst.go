@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/object"
 	"configcenter/src/source_controller/cacheservice/cache/general/types"
 	"configcenter/src/storage/driver/mongodb/instancemapping"
 )
@@ -38,7 +39,7 @@ func init() {
 
 // getObjInstTable get object instance table by objID and tenant account
 func getObjInstTable(kit *rest.Kit, filter *types.BasicFilter) (string, error) {
-	return common.GetInstTableName(filter.SubRes, kit.TenantID), nil
+	return object.GetInstTableNameByObjID(kit, filter.SubRes)
 }
 
 func parseObjInstData(data dataWithTenant[mapstr.MapStr]) (*basicInfo, error) {

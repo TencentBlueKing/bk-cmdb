@@ -40,6 +40,8 @@ const (
 type ModelQuoteRelation struct {
 	// DestModel derived model
 	DestModel string `json:"dest_model" bson:"dest_model"`
+	// DestModel derived model uuid
+	DestModelUUID string `json:"dest_model_uuid" bson:"dest_model_uuid"`
 	// SrcModel source model, such as a tabular model
 	SrcModel string `json:"src_model" bson:"src_model"`
 	// PropertyID model attribute id

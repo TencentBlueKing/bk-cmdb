@@ -24,6 +24,7 @@ import (
 
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/types"
 
 	"github.com/emicklei/go-restful/v3"
@@ -183,6 +184,11 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 		if !utf8.ValidString(uri) {
 			blog.Errorf("uri: %s not utf-8", uri)
 			return
+		}
+
+		if s.conf.ProcessName == types.CC_MODULE_APISERVER && httpheader.GetBkJWT(r.Header) == "" {
+			// compatible for legacy header
+			r.Header = headerutil.ConvertLegacyHeader(r.Header)
 		}
 
 		appCode := httpheader.GetAppCode(r.Header)

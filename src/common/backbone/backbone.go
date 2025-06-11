@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/pkg/tenant/tools"
 	"configcenter/src/apimachinery"
 	"configcenter/src/apimachinery/discovery"
 	"configcenter/src/apimachinery/util"
@@ -31,6 +32,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
+	"configcenter/src/common/ssl"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
@@ -56,10 +58,11 @@ type BackboneParameter struct {
 	SrvRegdiscv
 }
 
-func newSvcManagerClient(ctx context.Context, svcManagerAddr string) (*zk.ZkClient, error) {
+func newSvcManagerClient(ctx context.Context, svcManagerAddr string,
+	tlsConfig *ssl.TLSClientConfig) (*zk.ZkClient, error) {
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(svcManagerAddr, 40*time.Second)
+		client := zk.NewZkClient(svcManagerAddr, 40*time.Second, tlsConfig)
 		if err = client.Start(); err != nil {
 			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
 			time.Sleep(time.Second * 2)
@@ -161,51 +164,9 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	}
 
 	if !input.Disable {
-		client, err := newSvcManagerClient(ctx, input.Regdiscv)
-		if err != nil {
-			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
-		}
-		serviceDiscovery, err := discovery.NewServiceDiscovery(client, input.SrvInfo.Environment)
-		if err != nil {
-			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
-		}
-		disc, err := NewServiceRegister(client)
-		if err != nil {
-			return nil, fmt.Errorf("new service discover failed, err:%v", err)
-		}
-
-		engine.client = client
-		engine.discovery = serviceDiscovery
-		engine.ServiceManageInterface = serviceDiscovery
-		engine.SvcDisc = disc
-
-		// add default configcenter
-		zkdisc := crd.NewZkRegDiscover(client)
-		configCenter := &cc.ConfigCenter{
-			Type:               common.BKDefaultConfigCenter,
-			ConfigCenterDetail: zkdisc,
-		}
-		cc.AddConfigCenter(configCenter)
-
-		tlsConf, err := getTLSConf()
-		if err != nil {
-			blog.Errorf("get tls config error, err: %v", err)
-			return nil, err
-		}
-		engine.apiMachineryConfig = &util.APIMachineryConfig{
-			QPS:       1000,
-			Burst:     2000,
-			TLSConfig: tlsConf,
-		}
-
-		machinery, err := newApiMachinery(serviceDiscovery, engine.apiMachineryConfig)
+		engine, err = initServiceDiscovery(ctx, input, engine)
 		if err != nil {
 			return nil, err
-		}
-		engine.CoreAPI = machinery
-
-		if err = handleNotice(ctx, client.Client(), input.SrvInfo.Instance()); err != nil {
-			return nil, fmt.Errorf("handle notice failed, err: %v", err)
 		}
 	}
 
@@ -215,6 +176,10 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	if err = cc.NewConfigCenter(ctx, currentConfigCenter, input.ConfigPath, handler); err != nil {
 		return nil, fmt.Errorf("new config center failed, err: %v", err)
 	}
+
+	// init default tenant
+	enableMultiTenantMode, _ := cc.Bool("tenant.enableMultiTenantMode")
+	tools.InitDefaultTenant(enableMultiTenantMode)
 
 	if err := monitor.InitMonitor(); err != nil {
 		return nil, fmt.Errorf("init monitor failed, err: %v", err)
@@ -228,6 +193,56 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 		return nil, fmt.Errorf("init tracer failed, err: %v", err)
 	}
 
+	return engine, nil
+}
+
+func initServiceDiscovery(ctx context.Context, input *BackboneParameter, engine *Engine) (*Engine, error) {
+	client, err := newSvcManagerClient(ctx, input.Regdiscv, input.TLSConfig)
+	if err != nil {
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+	}
+	serviceDiscovery, err := discovery.NewServiceDiscovery(client, input.SrvInfo.Environment)
+	if err != nil {
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+	}
+	disc, err := NewServiceRegister(client)
+	if err != nil {
+		return nil, fmt.Errorf("new service discover failed, err:%v", err)
+	}
+
+	engine.client = client
+	engine.discovery = serviceDiscovery
+	engine.ServiceManageInterface = serviceDiscovery
+	engine.SvcDisc = disc
+
+	// add default configcenter
+	zkdisc := crd.NewZkRegDiscover(client)
+	configCenter := &cc.ConfigCenter{
+		Type:               common.BKDefaultConfigCenter,
+		ConfigCenterDetail: zkdisc,
+	}
+	cc.AddConfigCenter(configCenter)
+
+	tlsConf, err := getTLSConf()
+	if err != nil {
+		blog.Errorf("get tls config error, err: %v", err)
+		return nil, err
+	}
+	engine.apiMachineryConfig = &util.APIMachineryConfig{
+		QPS:       1000,
+		Burst:     2000,
+		TLSConfig: tlsConf,
+	}
+
+	machinery, err := newApiMachinery(serviceDiscovery, engine.apiMachineryConfig)
+	if err != nil {
+		return nil, err
+	}
+	engine.CoreAPI = machinery
+
+	if err = handleNotice(ctx, client.Client(), input.SrvInfo.Instance()); err != nil {
+		return nil, fmt.Errorf("handle notice failed, err: %v", err)
+	}
 	return engine, nil
 }
 
@@ -288,6 +303,8 @@ type SrvRegdiscv struct {
 	Regdiscv string
 	// Disable disable service registration discovery
 	Disable bool
+	// TLS config
+	TLSConfig *ssl.TLSClientConfig
 }
 
 // Discovery return discovery
@@ -406,12 +423,12 @@ func (e *Engine) GetSrvInfo() *types.ServerInfo {
 	return e.srvInfo
 }
 
-func getTLSConf() (*util.TLSClientConfig, error) {
-	config, err := util.NewTLSClientConfigFromConfig("tls")
+func getTLSConf() (*ssl.TLSClientConfig, error) {
+	config, err := cc.NewTLSClientConfigFromConfig("tls")
 	return &config, err
 }
 
-func isTLS(config *util.TLSClientConfig) bool {
+func isTLS(config *ssl.TLSClientConfig) bool {
 	if config == nil || len(config.CertFile) == 0 || len(config.KeyFile) == 0 {
 		return false
 	}

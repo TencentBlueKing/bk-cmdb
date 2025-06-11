@@ -85,6 +85,9 @@ func (s *cacheService) initCache(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/refresh/general/resource/detail/by_ids",
 		Handler: s.RefreshGeneralResDetailByIDs})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/cache/uuid/by_object/{bk_obj_id}",
+		Handler: s.GetUUIDByObj})
+
 	utility.AddToRestfulWebService(web)
 }
 

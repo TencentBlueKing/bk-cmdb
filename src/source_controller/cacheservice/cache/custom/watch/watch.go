@@ -27,6 +27,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/logics"
 	tokenhandler "configcenter/src/source_controller/cacheservice/cache/token-handler"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/storage/stream/task"
@@ -54,6 +55,10 @@ func Init(cacheSet *cache.CacheSet) (*Watcher, error) {
 		return nil, err
 	}
 
+	if err := watcher.watchObject(); err != nil {
+		return nil, err
+	}
+
 	return watcher, nil
 }
 
@@ -76,12 +81,14 @@ const (
 	PodLabelWatchType WatchType = "pod_label"
 	// SharedNsRelWatchType is the shared namespace relation watch type
 	SharedNsRelWatchType WatchType = "shared_namespace_relation"
+	// ObjectWatchType is the object watch type
+	ObjectWatchType WatchType = "object"
 )
 
 // watchCustomResource watch custom resource
 func (w *Watcher) watchCustomResource(opt *watchOptions) (bool, error) {
 	ctx := util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
-	name := fmt.Sprintf("%s:%s", cache.Namespace, opt.watchType)
+	name := fmt.Sprintf("%s:%s", logics.Namespace, opt.watchType)
 
 	tokenHandler := tokenhandler.NewSingleTokenHandler(name)
 

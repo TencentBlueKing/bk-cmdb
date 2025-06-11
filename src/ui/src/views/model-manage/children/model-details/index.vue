@@ -99,7 +99,7 @@
                   {{$t('所属分组')}}
                 </span>
                 <editable-field
-                  class="model-group-name-edit"
+                  class="model-group-name-edit no-expand"
                   :editing.sync="modelGroupIsEditing"
                   v-model="activeModel.bk_classification_id"
                   :label="modelClassificationName"
@@ -110,6 +110,7 @@
                   font-size="12px"
                   style="width: calc(100% - 60px)"
                   :options="classifications
+                    .filter(item => !item.bk_ishidden)
                     .map(item => ({ id: item.bk_classification_id, name: item.bk_classification_name }))"
                 >
                 </editable-field>

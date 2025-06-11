@@ -160,7 +160,7 @@
 </template>
 
 <script>
-  import { computed, defineComponent, reactive, ref, watch, watchEffect } from 'vue'
+  import { computed, defineComponent, reactive, ref, watch, watchEffect, nextTick } from 'vue'
   import { t } from '@/i18n'
   import { OPERATION } from '@/dictionary/iam-auth'
   import { $bkInfo, $success, $error } from '@/magicbox/index.js'
@@ -387,7 +387,11 @@
       )
 
       const handleUpdateHeader = (header) => {
-        table.header = header
+        // 数组length在没有变化时候，需要先清空数组在赋值。否则表头无法实时更新
+        table.header = []
+        nextTick(() => {
+          table.header = header
+        })
       }
 
       const handleSortChange = (sort) => {

@@ -1,0 +1,22 @@
+{{- $redisTypes := dict "redis" "redis" "snapshotRedis" "snapshot-redis" }}
+
+{{- range $redisType, $prefix := $redisTypes }}
+{{- $certData := index $.Values.redisCert $redisType }}
+{{- if or $certData.ca $certData.cert $certData.key }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "bk-cmdb.fullname" $ }}-{{ $prefix }}-certs
+data:
+  {{- if $certData.ca }}
+  {{ $prefix }}.ca: {{ $certData.ca | b64dec | quote }}
+  {{- end }}
+  {{- if $certData.cert }}
+  {{ $prefix }}.cert: {{ $certData.cert | b64dec | quote }}
+  {{- end }}
+  {{- if $certData.key }}
+  {{ $prefix }}.key: {{ $certData.key | b64dec | quote }}
+  {{- end }}
+---
+{{- end }}
+{{- end }} 

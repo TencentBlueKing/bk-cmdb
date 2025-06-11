@@ -17,11 +17,21 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"configcenter/src/common/ssl"
+)
+
+var (
+	certFile           = ""
+	keyFile            = ""
+	caFile             = ""
+	password           = ""
+	insecureSkipVerify = true
 )
 
 func TestDataValue(t *testing.T) {
 	fmt.Println("TEST Data Value")
-	zkClient := NewZkClient([]string{"127.0.0.1:2181"})
+	zkClient := NewZkClient([]string{"127.0.0.1:2181"}, nil)
 
 	defer zkClient.Close()
 
@@ -73,7 +83,7 @@ func TestZkLock(t *testing.T) {
 func Test_WatchChildren(t *testing.T) {
 	t.Log("----- start test WatchChildren -----")
 
-	zkClient := NewZkClient([]string{"127.0.0.1:2181"})
+	zkClient := NewZkClient([]string{"127.0.0.1:2181"}, nil)
 
 	err := zkClient.Connect()
 	if err != nil {
@@ -117,4 +127,47 @@ func Test_WatchChildren(t *testing.T) {
 
 	t.Logf("----- end test WatchChildren -----")
 
+}
+
+func TestDataValueWithTLS(t *testing.T) {
+	fmt.Println("TEST Data Value With TLS")
+	zkClient := NewZkClient([]string{"127.0.0.1:2281"}, &ssl.TLSClientConfig{
+		InsecureSkipVerify: insecureSkipVerify,
+		CertFile:           certFile,
+		KeyFile:            keyFile,
+		CAFile:             caFile,
+		Password:           password,
+	})
+
+	defer zkClient.Close()
+
+	err := zkClient.Connect()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if err = zkClient.Create("/data1", []byte("DATA")); err != nil {
+		fmt.Println(err)
+	}
+
+	result, err := zkClient.Get("/data1")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(result)
+
+	if err = zkClient.Create("/data1/ip/act", []byte("act")); err != nil {
+		fmt.Println(err)
+	}
+
+	result, err = zkClient.Get("/data1/ip/act")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(result)
 }

@@ -20,6 +20,8 @@ package local
 import (
 	"context"
 	"time"
+
+	"configcenter/src/common/ssl"
 )
 
 // MongoConf is mongodb config
@@ -34,6 +36,8 @@ type MongoConf struct {
 	SocketTimeout int    `bson:"socket_timeout"`
 
 	DisableInsert bool `bson:"-"`
+
+	TLS *ssl.TLSClientConfig
 }
 
 // Validate mongodb config

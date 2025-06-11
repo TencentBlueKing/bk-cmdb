@@ -27,13 +27,12 @@ import (
 )
 
 // GetUUIDByObj get object uuid by object id
-func (obj *objCache) GetUUIDByObj(ctx context.Context, h http.Header, objName string) (string,
-	error) {
+func (obj *objCache) GetUUIDByObj(ctx context.Context, h http.Header, objID string) (string, error) {
 	resp := new(metadata.ObjetUUIDResp)
 
 	err := obj.client.Post().
 		WithContext(ctx).
-		SubResourcef("/find/cache/uuid/by_object/%s", objName).
+		SubResourcef("/find/cache/uuid/by_object/%s", objID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

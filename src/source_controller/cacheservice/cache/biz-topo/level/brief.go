@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/util"
 	nlgc "configcenter/src/source_controller/cacheservice/cache/biz-topo/logics/node"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/object"
 	"configcenter/src/storage/driver/mongodb"
 )
 
@@ -132,7 +133,10 @@ func (l *briefTopoLevel) getMainlineObjMap(kit *rest.Kit) (map[string]string, er
 }
 
 func (l *briefTopoLevel) getBriefTopoNodesByObj(kit *rest.Kit, bizID int64, objID string) ([]types.Node, error) {
-	tableName := common.GetInstTableName(objID, kit.TenantID)
+	tableName, err := object.GetInstTableNameByObjID(kit, objID)
+	if err != nil {
+		return nil, err
+	}
 	cond := mapstr.MapStr{common.BKAppIDField: bizID}
 
 	idField := common.GetInstIDField(objID)

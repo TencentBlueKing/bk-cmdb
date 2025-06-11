@@ -14,9 +14,9 @@
 package options
 
 import (
-	"configcenter/src/apimachinery/util"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
+	"configcenter/src/common/ssl"
 
 	"github.com/spf13/pflag"
 )
@@ -43,5 +43,5 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 // Config TODO
 type Config struct {
-	TLS util.TLSClientConfig
+	TLS  ssl.TLSClientConfig
 }

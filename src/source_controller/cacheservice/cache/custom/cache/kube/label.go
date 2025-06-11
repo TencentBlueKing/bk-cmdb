@@ -15,7 +15,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cache
+// Package kube is the kube cache
+package kube
 
 import (
 	"context"
@@ -35,6 +36,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	kubetypes "configcenter/src/kube/types"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/logics"
 	"configcenter/src/source_controller/cacheservice/cache/custom/types"
 	"configcenter/src/source_controller/cacheservice/cache/tools"
 	"configcenter/src/storage/driver/mongodb"
@@ -44,16 +46,16 @@ import (
 // PodLabelCache is pod label cache
 type PodLabelCache struct {
 	isMaster   discovery.ServiceManageInterface
-	keyCache   *CountCache
-	valueCache *CountCache
+	keyCache   *logics.CountCache
+	valueCache *logics.CountCache
 }
 
 // NewPodLabelCache new pod label cache
 func NewPodLabelCache(isMaster discovery.ServiceManageInterface) *PodLabelCache {
 	return &PodLabelCache{
 		isMaster:   isMaster,
-		keyCache:   NewCountCache(Key{resType: types.PodLabelKeyType, ttl: 3 * 24 * time.Hour}),
-		valueCache: NewCountCache(Key{resType: types.PodLabelValueType, ttl: 3 * 24 * time.Hour}),
+		keyCache:   logics.NewCountCache(logics.NewKey(types.PodLabelKeyType, 3*24*time.Hour)),
+		valueCache: logics.NewCountCache(logics.NewKey(types.PodLabelValueType, 3*24*time.Hour)),
 	}
 }
 
@@ -71,7 +73,7 @@ func (c *PodLabelCache) genValueRedisKey(bizID int64, key string) string {
 func (c *PodLabelCache) GetKeys(kit *rest.Kit, bizID int64) ([]string, error) {
 	redisKey := c.genKeyRedisKey(bizID)
 
-	existRes, err := redis.Client().Exists(kit.Ctx, c.keyCache.key.Key(kit.TenantID, redisKey)).Result()
+	existRes, err := redis.Client().Exists(kit.Ctx, c.keyCache.Key().Key(kit.TenantID, redisKey)).Result()
 	if err != nil {
 		blog.Errorf("check if biz %d pod label cache exists failed, err: %v, rid: %s", bizID, err, kit.Rid)
 		return nil, err
@@ -107,7 +109,8 @@ func (c *PodLabelCache) GetKeys(kit *rest.Kit, bizID int64) ([]string, error) {
 
 // GetValues get biz pod label values for specified key
 func (c *PodLabelCache) GetValues(kit *rest.Kit, bizID int64, key string) ([]string, error) {
-	existRes, err := redis.Client().Exists(kit.Ctx, c.keyCache.key.Key(kit.TenantID, c.genKeyRedisKey(bizID))).Result()
+	existRes, err := redis.Client().Exists(kit.Ctx,
+		c.keyCache.Key().Key(kit.TenantID, c.genKeyRedisKey(bizID))).Result()
 	if err != nil {
 		blog.Errorf("check if biz %d pod label cache exists failed, err: %v, rid: %s", bizID, err, kit.Rid)
 		return nil, err
@@ -244,7 +247,7 @@ func (c *PodLabelCache) RefreshPodLabel(kit *rest.Kit, opt *RefreshPodLabelOpt) 
 	}
 
 	// lock refresh pod label key and value cache operation, returns error if it is already locked
-	lockKey := fmt.Sprintf("%s:pod_label_refresh:lock:%d", Namespace, opt.BizID)
+	lockKey := fmt.Sprintf("%s:pod_label_refresh:lock:%d", logics.Namespace, opt.BizID)
 
 	locker := lock.NewLocker(redis.Client())
 	locked, err := locker.Lock(lock.StrFormat(lockKey), 5*time.Minute)
@@ -355,8 +358,8 @@ func (c *PodLabelCache) getBizPodLabelCountInfo(kit *rest.Kit, bizID int64) (map
 	return keyCntMap, keyValueCntMap, nil
 }
 
-// loopRefreshCache loop refresh pod label key and value cache every day at 3am
-func (c *PodLabelCache) loopRefreshCache() {
+// LoopRefreshCache loop refresh pod label key and value cache every day at 3am
+func (c *PodLabelCache) LoopRefreshCache() {
 	lastRefreshTime := -1
 
 	for {

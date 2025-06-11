@@ -53,7 +53,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: webSvr.onServerConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover, TLSConfig: op.ServConf.GetTLSClientConf()},
 		SrvInfo:      svrInfo,
 	}
 	if op.DeploymentMethod == common.BluekingDeployment {
@@ -112,12 +112,12 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 	if webSvr.Config.Redis.MasterName == "" {
 		// MasterName 为空，表示使用直连redis 。 使用Host,Port 做链接redis参数
 		service.Session, redisErr = redis.NewRedisStore(10, "tcp", webSvr.Config.Redis.Address,
-			webSvr.Config.Redis.Password, []byte("secret"))
+			webSvr.Config.Redis.Password, webSvr.Config.Redis.TLSConfig, []byte("secret"))
 	} else {
 		// MasterName 不为空，表示使用哨兵模式的redis。MasterName 是Master标记
 		address := strings.Split(webSvr.Config.Redis.Address, ";")
 		service.Session, redisErr = redis.NewRedisStoreWithSentinel(address, 10, webSvr.Config.Redis.MasterName, "tcp",
-			webSvr.Config.Redis.Password, webSvr.Config.Redis.SentinelPassword, []byte("secret"))
+			webSvr.Config.Redis.Password, webSvr.Config.Redis.SentinelPassword, webSvr.Config.Redis.TLSConfig, []byte("secret"))
 	}
 	if redisErr != nil {
 		return nil, fmt.Errorf("create new redis store failed, err: %v", redisErr)
@@ -156,10 +156,10 @@ func initWebService(webSvr *WebServer, engine *backbone.Engine) (*websvc.Service
 			return nil, fmt.Errorf("init api gateway client error, err: %v", err)
 		}
 	}
+
 	// init api client
 	switch webSvr.Config.DeploymentMethod {
 	case common.BluekingDeployment:
-
 		cmdbCli := apigwcli.Client().Cmdb()
 		headerWrapper := rest.HeaderWrapper(cmdbCli.SetApiGWAuthHeader)
 		baseUrlWrapper := rest.BaseUrlWrapper(fmt.Sprintf("/api/%s/", webcomm.API_VERSION))

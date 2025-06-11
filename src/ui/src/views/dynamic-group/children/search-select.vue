@@ -14,7 +14,6 @@
   import { computed, ref, watch } from 'vue'
   import { t } from '@/i18n'
   import { useStore } from '@/store'
-  import { escapeRegexChar } from '@/utils/util'
   import useSearchUser from '@/hooks/use-search-user'
 
   const props = defineProps({
@@ -92,7 +91,7 @@
   const fetchDynamicGroup = async (val, menu) => {
     const params = {
       condition: {
-        [menu.id]: escapeRegexChar(val)
+        [menu.id]: val
       },
       page: {
         start: 0,

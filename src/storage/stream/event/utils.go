@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
+	"configcenter/src/common/util"
 	"configcenter/src/storage/stream/types"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -163,10 +164,10 @@ func parseCollOpts(collOpts map[string]types.WatchCollOptions) *parsedCollOptsIn
 		// select all operation type if any options needs all types, otherwise, return types specified by all options
 		collOpTypes, exists := info.collOpTypeMap[regex]
 		if !exists || len(collOpTypes) != 0 {
-			if opt.OperationType == nil {
+			if len(opt.OperationType) == 0 {
 				info.collOpTypeMap[regex] = make([]types.OperType, 0)
 			} else {
-				info.collOpTypeMap[regex] = append(collOpTypes, *opt.OperationType)
+				info.collOpTypeMap[regex] = append(collOpTypes, opt.OperationType...)
 			}
 		}
 
@@ -199,7 +200,8 @@ func genWatchFilter(collCondMap map[string]*filter.Expression, collOpTypeMap map
 		filters := bson.D{{Key: "ns.coll", Value: bson.M{common.BKDBLIKE: regex}}}
 
 		if len(collOpTypeMap[regex]) > 0 {
-			filters = append(filters, bson.E{Key: "operationType", Value: bson.M{common.BKDBIN: collOpTypeMap[regex]}})
+			opTypes := util.ArrUnique(collOpTypeMap[regex])
+			filters = append(filters, bson.E{Key: "operationType", Value: bson.M{common.BKDBIN: opTypes}})
 		}
 
 		if cond != nil {

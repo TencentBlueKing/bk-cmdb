@@ -51,7 +51,7 @@ func (d *MockDiscovery) TopoServer() Interface {
 }
 
 // DataCollect TODO
-func (d *MockDiscovery) DataCollect() Interface {
+func (d *MockDiscovery) DataCollect() ServerDiscoverI {
 	return &mockServer{}
 }
 
@@ -129,5 +129,15 @@ func (*mockServer) IsMaster(string) bool {
 
 // GetServersChan TODO
 func (s *mockServer) GetServersChan() chan []string {
+	return nil
+}
+
+// GetServersForHash mock
+func (s *mockServer) GetServersForHash() ([]string, error) {
+	return []string{"http://127.0.0.1:8080"}, nil
+}
+
+// GetServersChanForHash mock
+func (s *mockServer) GetServersChanForHash() chan []string {
 	return nil
 }

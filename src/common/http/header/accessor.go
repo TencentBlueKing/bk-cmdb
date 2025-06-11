@@ -25,7 +25,11 @@ import (
 
 // GetRid get request id from http header
 func GetRid(header http.Header) string {
-	return header.Get(BkRidHeader)
+	if rid := header.Get(BkRidHeader); rid != "" {
+		return rid
+	}
+	// get request id from apigw rid header if not set
+	return header.Get(BkApigwRidHeader)
 }
 
 // GetBkJWT get blueking api gateway jwt info from http header
@@ -40,7 +44,13 @@ func GetAppCode(header http.Header) string {
 
 // GetUser get username from http header
 func GetUser(header http.Header) string {
-	return header.Get(UserHeader)
+	if user := header.Get(UserHeader); user != "" {
+		return user
+	}
+	if user := header.Get("BK_User"); user != "" {
+		return user
+	}
+	return ""
 }
 
 // GetUserToken get blueking user token from http header
@@ -83,6 +93,11 @@ func GetTXTimeout(header http.Header) string {
 	return header.Get(common.TransactionTimeoutHeader)
 }
 
+// GetTXTenant get transaction tenantID from http header
+func GetTXTenant(header http.Header) string {
+	return header.Get(common.TransactionTenantIDHeader)
+}
+
 // SetRid set request id to http header
 func SetRid(header http.Header, value string) {
 	header.Set(BkRidHeader, value)
@@ -107,6 +122,7 @@ func SetAppCode(header http.Header, value string) {
 // SetUser set username to http header
 func SetUser(header http.Header, value string) {
 	header.Set(UserHeader, value)
+	header.Set("BK_User", value)
 }
 
 // SetUserToken set blueking user token to http header
@@ -147,6 +163,11 @@ func SetTXId(header http.Header, value string) {
 // SetTXTimeout set transaction timeout to http header
 func SetTXTimeout(header http.Header, value string) {
 	header.Set(common.TransactionTimeoutHeader, value)
+}
+
+// SetTXTenant set transaction tenant id to http header
+func SetTXTenant(header http.Header, value string) {
+	header.Set(common.TransactionTenantIDHeader, value)
 }
 
 // AddRid add request id to http header

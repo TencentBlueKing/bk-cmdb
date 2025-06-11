@@ -42,12 +42,16 @@ type RespError struct {
 func (r *RespError) Error() string {
 	br := new(Response)
 	br.Code = r.ErrCode
-	if nil != r.Msg {
-		if ccErr, ok := (r.Msg).(errors.CCErrorCoder); ok {
-			br.Code = ccErr.GetCode()
-			br.ErrMsg = ccErr.Error()
-		} else {
+	if r.Msg != nil {
+		switch v := (r.Msg).(type) {
+		case errors.CCErrorCoder:
+			br.Code = v.GetCode()
+			br.ErrMsg = v.Error()
+		case *RespError:
+			return v.Error()
+		default:
 			br.ErrMsg = r.Msg.Error()
+			br.Code = common.CCErrorUnknownOrUnrecognizedError
 		}
 	}
 	br.Data = r.Data

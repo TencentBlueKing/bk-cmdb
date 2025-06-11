@@ -37,7 +37,7 @@ type DiscoveryInterface interface {
 	HostServer() Interface
 	ProcServer() Interface
 	TopoServer() Interface
-	DataCollect() Interface
+	DataCollect() ServerDiscoverI
 	GseProcServer() Interface
 	CoreService() Interface
 	OperationServer() Interface
@@ -126,7 +126,7 @@ func (d *discover) TopoServer() Interface {
 }
 
 // DataCollect TODO
-func (d *discover) DataCollect() Interface {
+func (d *discover) DataCollect() ServerDiscoverI {
 	return d.servers[types.CC_MODULE_DATACOLLECTION]
 }
 

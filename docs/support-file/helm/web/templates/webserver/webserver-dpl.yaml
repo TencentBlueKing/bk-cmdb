@@ -26,6 +26,8 @@ spec:
         {{ toYaml .Values.webserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecretName }}
       {{- if .Values.webserver.hostNetwork }}
       hostNetwork: true
       {{- end }}
@@ -44,8 +46,10 @@ spec:
         {{- if .Values.webserver.command.logDir }}
         - --log-dir={{ .Values.webserver.command.logDir }}
         {{- end }}
+        - --regdiscv={{ .Values.configAndServiceCenter.addr }}
         - --v={{ .Values.webserver.command.logLevel }}
         - --logtostderr={{ .Values.webserver.command.logToStdErr }}
+        {{ include "cmdb.configAndServiceCenter.certCommand" . | nindent 8 }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -86,12 +90,25 @@ spec:
           - name: configures
             mountPath: {{ .Values.webserver.configDir }}
           {{- end }}
+          {{- if or .Values.redisCert.redis.ca .Values.redisCert.redis.cert .Values.redisCert.redis.key }}
+          - name: redis-cert
+            mountPath: {{ .Values.certPath}}/redis
+          {{- end }}
+          {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.webserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-webserver-configures
         {{- end }}
+        {{- if or .Values.redisCert.redis.ca .Values.redisCert.redis.cert .Values.redisCert.redis.key }}
+        - name: redis-cert
+          configMap:
+            name: "{{ template "bk-cmdb.fullname" $ }}-web-redis-certs"
+        {{- end }}
+        {{- include "cmdb.mongodb.certVolume" . | nindent 8 }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 8 }}
 
       {{- with .Values.webserver.nodeSelector }}
       nodeSelector:

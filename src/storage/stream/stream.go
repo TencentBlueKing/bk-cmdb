@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	"configcenter/src/common/ssl"
 	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/stream/event"
 	"configcenter/src/storage/stream/types"
@@ -58,6 +59,13 @@ func newEvent(conf local.MongoConf) (*event.Event, error) {
 		MinPoolSize:    &conf.MaxIdleConns,
 		ConnectTimeout: &timeout,
 		ReplicaSet:     &conf.RsName,
+	}
+	tlsConf, useTLS, err := ssl.NewTLSConfigFromConf(conf.TLS)
+	if nil != err {
+		return nil, err
+	}
+	if useTLS {
+		conOpt.TLSConfig = tlsConf
 	}
 
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(conf.URI), &conOpt)

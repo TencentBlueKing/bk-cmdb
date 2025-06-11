@@ -555,11 +555,15 @@
         })
       },
       updateTableHeader(properties) {
-        this.table.header = properties.map(property => ({
-          id: property.bk_property_id,
-          name: this.$tools.getHeaderPropertyName(property),
-          property
-        }))
+        // 数组length在没有变化时候，需要先清空数组在赋值。否则表头无法实时更新
+        this.table.header = []
+        this.$nextTick(() => {
+          this.table.header = properties.map(property => ({
+            id: property.bk_property_id,
+            name: this.$tools.getHeaderPropertyName(property),
+            property
+          }))
+        })
       },
       renderVisibleList() {
         const { limit, current } = this.table.pagination

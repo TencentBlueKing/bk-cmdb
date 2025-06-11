@@ -36,7 +36,7 @@ func GetObjUUIDFromCache(kit *rest.Kit, clientSet apimachinery.ClientSetInterfac
 		return "", fmt.Errorf("client set is nil")
 	}
 
-	uuid, err := clientSet.CoreService().Object().GetUUIDByObj(kit.Ctx, kit.Header, objID)
+	uuid, err := clientSet.CacheService().Cache().Object().GetUUIDByObj(kit.Ctx, kit.Header, objID)
 	if err != nil {
 		blog.Errorf("get object %s uuid failed from core service, err: %v, rid: %s", objID, err, kit.Rid)
 		return "", err

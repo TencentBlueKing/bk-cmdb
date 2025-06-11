@@ -69,7 +69,6 @@ type Object struct {
 	Position      string `field:"position" json:"position" bson:"position" mapstructure:"position"`
 	Description   string `field:"description" json:"description" bson:"description" mapstructure:"description"`
 	Creator       string `field:"creator" json:"creator" bson:"creator" mapstructure:"creator"`
-	TenantID      string `field:"tenant_id" json:"tenant_id" bson:"tenant_id" mapstructure:"tenant_id"`
 	Modifier      string `field:"modifier" json:"modifier" bson:"modifier" mapstructure:"modifier"`
 	CreateTime    *Time  `field:"create_time" json:"create_time" bson:"create_time" mapstructure:"create_time"`
 	LastTime      *Time  `field:"last_time" json:"last_time" bson:"last_time" mapstructure:"last_time"`

@@ -20,24 +20,29 @@ package cache
 
 import (
 	"configcenter/src/apimachinery/discovery"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/kube"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/object"
 )
 
 // CacheSet is the set of custom resource caches
 type CacheSet struct {
-	Label       *PodLabelCache
-	SharedNsRel *SharedNsRelCache
+	Label       *kube.PodLabelCache
+	SharedNsRel *kube.SharedNsRelCache
+	Object      *object.ObjectCache
 }
 
 // New CacheSet
 func New(isMaster discovery.ServiceManageInterface) *CacheSet {
 	return &CacheSet{
-		Label:       NewPodLabelCache(isMaster),
-		SharedNsRel: NewSharedNsRelCache(isMaster),
+		Label:       kube.NewPodLabelCache(isMaster),
+		SharedNsRel: kube.NewSharedNsRelCache(isMaster),
+		Object:      object.NewObjectCache(isMaster),
 	}
 }
 
 // LoopRefreshCache loop refresh all caches
 func (c *CacheSet) LoopRefreshCache() {
-	go c.Label.loopRefreshCache()
-	go c.SharedNsRel.loopRefreshCache()
+	go c.Label.LoopRefreshCache()
+	go c.SharedNsRel.LoopRefreshCache()
+	go c.Object.LoopRefreshCache()
 }

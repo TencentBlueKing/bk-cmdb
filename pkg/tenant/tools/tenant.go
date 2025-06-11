@@ -21,17 +21,20 @@ import (
 	"fmt"
 
 	"configcenter/src/common"
-	cc "configcenter/src/common/backbone/configcenter"
 )
+
+var defaultTenant = common.BKSingleTenantID
+
+// InitDefaultTenant init default tenant
+func InitDefaultTenant(enableMultiTenantMode bool) {
+	if enableMultiTenantMode {
+		defaultTenant = common.BKDefaultTenantID
+	}
+}
 
 // GetDefaultTenant get default tenant
 func GetDefaultTenant() string {
-	enableMultiTenant, _ := cc.Bool("tenant.enableMultiTenantMode")
-	if enableMultiTenant {
-		return common.BKDefaultTenantID
-	}
-
-	return common.BKSingleTenantID
+	return defaultTenant
 }
 
 // ValidateDisableTenantMode validate disable multi-tenant mode

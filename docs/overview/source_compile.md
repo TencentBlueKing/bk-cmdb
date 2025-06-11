@@ -4,7 +4,7 @@
 
 ## 编译环境
 
-- golang >= 1.17
+- golang >= 1.20
 
 - python >= 2.7.5
 
@@ -129,19 +129,11 @@ make package
 
 ### Docker 镜像制作
 
-解压cmdb.tar.gz，进入cmdb目录执行以下命令：
+执行打包后进入归档包存放位置，解压cmdb.tar.gz，进入cmdb目录执行以下命令：
 
 ``` shell
-./image.sh -i <base_image>
+./image.sh
 ```
-
-**示例：**
-
-```shell
-./image.sh -i linux:latest
-```
-
-**注：-i 参数后面配置的参数是基础镜像，基础镜像可以自己制作，也可以使用公共镜像。**
 
 ## 编译问题及解决
 

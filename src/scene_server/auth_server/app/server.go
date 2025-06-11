@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/apimachinery/util"
 	commonauth "configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
@@ -45,8 +44,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: authServer.onAuthConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
-		SrvInfo:      svrInfo,
+		SrvRegdiscv: backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover,
+			TLSConfig: op.ServConf.GetTLSClientConf()},
+		SrvInfo: svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {
@@ -112,7 +112,7 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 		blog.InfoJSON("config updated: \n%s", string(current.ConfigData))
 		var err error
 
-		a.Config.TLS, err = util.NewTLSClientConfigFromConfig("authServer")
+		a.Config.TLS, err = cc.NewTLSClientConfigFromConfig("authServer")
 		if err != nil {
 			blog.Warnf("parse auth center tls config failed: %v", err)
 		}

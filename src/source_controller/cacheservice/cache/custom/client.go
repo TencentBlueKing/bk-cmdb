@@ -24,7 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
-	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/kube"
 	"configcenter/src/source_controller/cacheservice/cache/custom/types"
 )
 
@@ -64,7 +64,7 @@ func (c *Cache) RefreshPodLabel(kit *rest.Kit, opt *types.RefreshPodLabelOption)
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "opt")
 	}
 
-	refreshOpt := &cache.RefreshPodLabelOpt{BizID: opt.BizID}
+	refreshOpt := &kube.RefreshPodLabelOpt{BizID: opt.BizID}
 
 	go func() {
 		blog.Infof("start refresh biz: %d pod label cache, rid: %s", opt.BizID, kit.Rid)
@@ -77,4 +77,9 @@ func (c *Cache) RefreshPodLabel(kit *rest.Kit, opt *types.RefreshPodLabelOption)
 	}()
 
 	return nil
+}
+
+// GetUUIDByObj get object uuid by objID
+func (c *Cache) GetUUIDByObj(kit *rest.Kit, objID string) (string, error) {
+	return c.cacheSet.Object.GetUUIDByObj(kit, objID)
 }

@@ -698,20 +698,21 @@ func (a *attribute) CreateTableObjectAttribute(kit *rest.Kit, data *metadata.Att
 		return nil, err
 	}
 
-	if err := a.createModelQuoteRelation(kit, data.ObjectID, data.PropertyID); err != nil {
+	if err := a.createModelQuoteRelation(kit, data.ObjectID, tableObjUUID, data.PropertyID); err != nil {
 		return nil, err
 	}
 
 	return data, nil
 }
 
-func (a *attribute) createModelQuoteRelation(kit *rest.Kit, objectID, propertyID string) error {
+func (a *attribute) createModelQuoteRelation(kit *rest.Kit, objectID, uuid, propertyID string) error {
 
 	relation := metadata.ModelQuoteRelation{
-		DestModel:  metadata.GenerateModelQuoteObjID(objectID, propertyID),
-		SrcModel:   objectID,
-		PropertyID: propertyID,
-		Type:       common.ModelQuoteType(common.FieldTypeInnerTable),
+		DestModel:     metadata.GenerateModelQuoteObjID(objectID, propertyID),
+		DestModelUUID: uuid,
+		SrcModel:      objectID,
+		PropertyID:    propertyID,
+		Type:          common.ModelQuoteType(common.FieldTypeInnerTable),
 	}
 
 	if cErr := a.clientSet.CoreService().ModelQuote().CreateModelQuoteRelation(kit.Ctx, kit.Header,

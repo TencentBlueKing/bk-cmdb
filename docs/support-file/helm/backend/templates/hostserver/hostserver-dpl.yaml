@@ -26,6 +26,7 @@ spec:
         {{ toYaml .Values.hostserver.podAnnotations | indent 8 }}
       {{- end }}
     spec:
+      {{- include "cmdb.imagePullSecrets" . | nindent 6 }}
       containers:
       - name: hostserver
         image: {{ .Values.image.registry }}/{{ .Values.hostserver.image.repository }}:v{{ default .Chart.AppVersion .Values.hostserver.image.tag }}
@@ -46,6 +47,7 @@ spec:
         - --logtostderr={{ .Values.hostserver.command.logToStdErr }}
         - "--enable-auth"
         - {{ .Values.iam.auth.enabled | quote }}
+        {{- include "cmdb.configAndServiceCenter.certCommand" . | nindent 8 }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -86,12 +88,16 @@ spec:
           - name: configures
             mountPath: {{ .Values.hostserver.configDir }}
           {{- end }}
+          {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.hostserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-hostserver-configures
         {{- end }}
+        {{- include "cmdb.redis.certVolume" . | nindent 6 }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
 
       {{- with .Values.hostserver.nodeSelector }}
       nodeSelector:
@@ -100,7 +106,7 @@ spec:
 
       {{- with .Values.hostserver.affinity }}
       affinity:
-        {{ toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
 
       {{- with .Values.hostserver.tolerations }}

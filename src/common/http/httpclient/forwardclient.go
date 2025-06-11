@@ -20,7 +20,7 @@ import (
 	"net/url"
 	"time"
 
-	"configcenter/src/apimachinery/util"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 
 	"github.com/emicklei/go-restful/v3"
@@ -83,7 +83,7 @@ func ReqHttp(req *restful.Request, url, method string, body []byte) (string, err
 // ProxyHttp TODO
 // porxy http
 func ProxyHttp(c *gin.Context, addr string) {
-	tlsConf, err := util.GetClientTLSConfig("tls")
+	tlsConf, err := cc.GetClientTLSConfig("tls")
 	if err != nil {
 		c.Writer.Write([]byte(err.Error()))
 		blog.Errorf("get tls config error, err: %v", err)

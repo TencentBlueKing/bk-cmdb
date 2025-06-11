@@ -25,6 +25,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/ssl"
 	"configcenter/src/common/util/table"
 	"configcenter/src/storage/dal/types"
 
@@ -137,6 +138,13 @@ func NewMongoClient(isMaster bool, uuid string, config *MongoConf, timeout time.
 		RetryWrites:     &disableWriteRetry,
 		MaxConnIdleTime: &maxConnIdleTime,
 		AppName:         &appName,
+	}
+	tlsConf, useTLS, err := ssl.NewTLSConfigFromConf(config.TLS)
+	if err != nil {
+		return nil, fmt.Errorf("new tls config failed: %v", err)
+	}
+	if useTLS {
+		conOpt.TLSConfig = tlsConf
 	}
 
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(config.URI), &conOpt)

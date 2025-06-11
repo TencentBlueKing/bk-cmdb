@@ -14,6 +14,7 @@ package configcenter
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"os"
@@ -28,6 +29,7 @@ import (
 	"configcenter/src/common/cryptor"
 	ccerr "configcenter/src/common/errors"
 	"configcenter/src/common/language"
+	"configcenter/src/common/ssl"
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
@@ -273,6 +275,12 @@ func Redis(prefix string) (redis.Config, error) {
 		return redis.Config{}, errors.New("can't find redis configuration")
 	}
 
+	tlsConf, err := NewTLSClientConfigFromConfig(prefix + ".tls")
+	if err != nil {
+		blog.Errorf("fail to get redis tls configuration")
+		return redis.Config{}, err
+	}
+
 	return redis.Config{
 		Address:          parser.getString(prefix + ".host"),
 		Password:         parser.getString(prefix + ".pwd"),
@@ -281,6 +289,7 @@ func Redis(prefix string) (redis.Config, error) {
 		SentinelPassword: parser.getString(prefix + ".sentinelPwd"),
 		Enable:           parser.getString(prefix + ".enable"),
 		MaxOpenConns:     parser.getInt(prefix + ".maxOpenConns"),
+		TLSConfig:        &tlsConf,
 	}, nil
 }
 
@@ -303,6 +312,11 @@ func Mongo(prefix string) (mongo.Config, error) {
 		return mongo.Config{}, errors.New("can't find mongo configuration")
 	}
 
+	tlsClientConfig, err := NewTLSClientConfigFromConfig(prefix + ".tls")
+	if err != nil {
+		return mongo.Config{}, err
+	}
+
 	c := mongo.Config{
 		Address:   parser.getString(prefix + ".host"),
 		Port:      parser.getString(prefix + ".port"),
@@ -311,6 +325,7 @@ func Mongo(prefix string) (mongo.Config, error) {
 		Database:  parser.getString(prefix + ".database"),
 		Mechanism: parser.getString(prefix + ".mechanism"),
 		RsName:    parser.getString(prefix + ".rsName"),
+		TLSConf:   &tlsClientConfig,
 	}
 
 	if c.RsName == "" {
@@ -577,6 +592,14 @@ func getKeyValueParser(key string) (*viperParser, error) {
 		return extraParser, nil
 	}
 
+	if redisParser != nil && redisParser.isSet(key) {
+		return redisParser, nil
+	}
+
+	if mongodbParser != nil && mongodbParser.isSet(key) {
+		return mongodbParser, nil
+	}
+
 	return nil, fmt.Errorf("%s key's config not found", key)
 }
 
@@ -658,4 +681,57 @@ func (vp *viperParser) isConfigBoolType(path string) bool {
 
 func (vp *viperParser) unmarshalKey(key string, val interface{}) error {
 	return vp.parser.UnmarshalKey(key, val)
+}
+
+// NewTLSClientConfigFromConfig new config about tls client config
+func NewTLSClientConfigFromConfig(prefix string) (ssl.TLSClientConfig, error) {
+	tlsConfig := ssl.TLSClientConfig{}
+
+	skipVerifyKey := fmt.Sprintf("%s.insecureSkipVerify", prefix)
+	if val, err := String(skipVerifyKey); err == nil {
+		skipVerifyVal := val
+		if skipVerifyVal == "true" {
+			tlsConfig.InsecureSkipVerify = true
+		}
+	}
+
+	certFileKey := fmt.Sprintf("%s.certFile", prefix)
+	if val, err := String(certFileKey); err == nil {
+		tlsConfig.CertFile = val
+	}
+
+	keyFileKey := fmt.Sprintf("%s.keyFile", prefix)
+	if val, err := String(keyFileKey); err == nil {
+		tlsConfig.KeyFile = val
+	}
+
+	caFileKey := fmt.Sprintf("%s.caFile", prefix)
+	if val, err := String(caFileKey); err == nil {
+		tlsConfig.CAFile = val
+	}
+
+	passwordKey := fmt.Sprintf("%s.password", prefix)
+	if val, err := String(passwordKey); err == nil {
+		tlsConfig.Password = val
+	}
+
+	return tlsConfig, nil
+}
+
+// GetClientTLSConfig get client tls config
+func GetClientTLSConfig(prefix string) (*tls.Config, error) {
+	config, err := NewTLSClientConfigFromConfig(prefix)
+	if err != nil {
+		return nil, err
+	}
+	tlsConf := &tls.Config{InsecureSkipVerify: config.InsecureSkipVerify}
+
+	if len(config.CAFile) != 0 && len(config.CertFile) != 0 && len(config.KeyFile) != 0 {
+		tlsConf, err = ssl.ClientTLSConfVerity(config.CAFile, config.CertFile, config.KeyFile, config.Password)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return tlsConf, nil
 }

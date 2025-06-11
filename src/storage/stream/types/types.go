@@ -237,7 +237,7 @@ type WatchCollOptions struct {
 	// OperationType describe which kind of operation you want to watch,
 	// such as an "insert" operation or a "replace" operation.
 	// If you don't set, it will means watch  all kinds of operations.
-	OperationType *OperType
+	OperationType []OperType
 
 	CollectionOptions
 }

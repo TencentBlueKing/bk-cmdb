@@ -32,7 +32,7 @@ import (
 	nodelgc "configcenter/src/source_controller/cacheservice/cache/biz-topo/logics/node"
 	topolgc "configcenter/src/source_controller/cacheservice/cache/biz-topo/logics/topo"
 	"configcenter/src/source_controller/cacheservice/cache/biz-topo/types"
-	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/kube"
 	tokenhandler "configcenter/src/source_controller/cacheservice/cache/token-handler"
 	dbtypes "configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
@@ -45,7 +45,7 @@ import (
 type kubeWatcher struct {
 	watcher       *Watcher
 	cacheKey      key.Key
-	sharedNsCache *cache.SharedNsRelCache
+	sharedNsCache *kube.SharedNsRelCache
 }
 
 func (w *Watcher) watchKube() error {

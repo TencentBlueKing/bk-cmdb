@@ -23,7 +23,7 @@ import (
 )
 
 // NewClient create a new http client
-func NewClient(c *TLSClientConfig, conf ...ExtraClientConfig) (*http.Client, error) {
+func NewClient(c *ssl.TLSClientConfig, conf ...ExtraClientConfig) (*http.Client, error) {
 	tlsConf := new(tls.Config)
 	if c != nil && len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
 		var err error

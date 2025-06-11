@@ -127,3 +127,47 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
     {{- printf "%s" .Values.bkComponentApiUrl -}}
   {{- end -}}
 {{- end -}}
+
+{{- define "cmdb.mongodb.certVolumeMount" -}}
+{{- if or .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.ca }}
+- name: mongodb-certs
+  mountPath: {{ .Values.certPath }}/mongodb
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.mongodb.certVolume" -}}
+{{- if or .Values.mongodbCert.mongodb.cert .Values.mongodbCert.mongodb.key .Values.mongodbCert.mongodb.ca }}
+- name: mongodb-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" . }}-mongodb-certs
+{{- end }}
+{{- end -}}
+
+{{- define  "cmdb.configAndServiceCenter.certVolumeMount" -}}
+{{- if or .Values.zookeeperCert.cert .Values.zookeeperCert.key .Values.zookeeperCert.ca }}
+- name: zookeeper-certs
+  mountPath: {{ .Values.certPath }}/zookeeper
+{{- end }}
+{{- end -}}
+
+{{- define  "cmdb.configAndServiceCenter.certVolume" -}}
+{{- if or .Values.zookeeperCert.cert .Values.zookeeperCert.key .Values.zookeeperCert.ca }}
+- name: zookeeper-certs
+  configMap:
+    name: {{ template "bk-cmdb.fullname" $ }}-zookeeper-certs
+{{- end }}
+{{- end }}
+
+{{- define "cmdb.configAndServiceCenter.certCommand" -}}
+{{- if .Values.zookeeperCert.ca }}
+- --regdiscv-cafile={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.caFile }}
+- --regdiscv-skipverify={{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}
+{{- end }}
+{{- if and .Values.zookeeperCert.cert .Values.zookeeperCert.key }}
+- --regdiscv-certfile={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.certFile }}
+- --regdiscv-keyfile={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.keyFile }}
+{{- end }}
+{{- if .Values.configAndServiceCenter.tls.password }}
+- --regdiscv-certpassword={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.password }}
+{{- end }}
+{{- end -}}

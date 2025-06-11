@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"strings"
 
+	"configcenter/src/common/ssl"
 	"configcenter/src/storage/dal/mongo/local"
 )
 
@@ -43,18 +44,19 @@ const (
 
 // Config config
 type Config struct {
-	Connect       string `json:"connect,omitempty"`
-	Address       string `json:"address"`
-	User          string `json:"user"`
-	Password      string `json:"password,omitempty"`
-	Port          string `json:"port"`
-	Database      string `json:"database"`
-	Mechanism     string `json:"mechanism"`
-	MaxOpenConns  uint64 `json:"max_open_conns"`
-	MaxIdleConns  uint64 `json:"max_idle_conns"`
-	RsName        string `json:"rs_name"`
-	SocketTimeout int    `json:"socket_timeout"`
-	DisableInsert bool   `json:"-"`
+	Connect       string               `json:"connect,omitempty"`
+	Address       string               `json:"address"`
+	User          string               `json:"user"`
+	Password      string               `json:"password,omitempty"`
+	Port          string               `json:"port"`
+	Database      string               `json:"database"`
+	Mechanism     string               `json:"mechanism"`
+	MaxOpenConns  uint64               `json:"max_open_conns"`
+	MaxIdleConns  uint64               `json:"max_idle_conns"`
+	RsName        string               `json:"rs_name"`
+	SocketTimeout int                  `json:"socket_timeout"`
+	DisableInsert bool                 `json:"-"`
+	TLSConf       *ssl.TLSClientConfig `json:"tls_conf"`
 }
 
 // BuildURI return mongo uri according to  https://docs.mongodb.com/manual/reference/connection-string/
@@ -83,5 +85,6 @@ func (c Config) GetMongoConf() local.MongoConf {
 		RsName:        c.RsName,
 		SocketTimeout: c.SocketTimeout,
 		DisableInsert: c.DisableInsert,
+		TLS:           c.TLSConf,
 	}
 }

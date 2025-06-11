@@ -137,7 +137,6 @@ func queryModel(t *testing.T, client *httpclient.HttpClient, modelID, classID st
 	require.Equal(t, modelResult.Data.Count, int64(len(modelResult.Data.Info)))
 	for _, item := range modelResult.Data.Info {
 		require.NotEqual(t, int64(0), item.Spec.ID)
-		require.NotEmpty(t, item.Spec.TenantID)
 		require.NotEmpty(t, item.Spec.ObjectID)
 		require.NotEmpty(t, item.Spec.ObjCls)
 		require.NotNil(t, item.Spec.CreateTime)

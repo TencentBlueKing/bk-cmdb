@@ -140,7 +140,7 @@ func (s *Service) SearchBusinessTopoWithStatistics(ctx *rest.Contexts) {
 		withDefault = true
 	}
 
-	resp, err := s.searchBusinessTopo(ctx.Kit, bizID, true, withDefault)
+	resp, err := s.searchBusinessTopo(ctx.Kit, bizID, true, withDefault, true)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -161,7 +161,12 @@ func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
 		withDefault = true
 	}
 
-	resp, err := s.searchBusinessTopo(ctx.Kit, bizID, false, withDefault)
+	needSort := false
+	if ctx.Request.QueryParameter("need_sort") == "true" {
+		needSort = true
+	}
+
+	resp, err := s.searchBusinessTopo(ctx.Kit, bizID, false, withDefault, needSort)
 	if nil != err {
 		ctx.RespAutoError(err)
 		return
@@ -170,7 +175,7 @@ func (s *Service) SearchBusinessTopo(ctx *rest.Contexts) {
 }
 
 // searchBusinessTopo search the business topo, sort by topo instance name
-func (s *Service) searchBusinessTopo(kit *rest.Kit, bizID int64, withStatistics, withDefault bool) (
+func (s *Service) searchBusinessTopo(kit *rest.Kit, bizID int64, withStatistics, withDefault, needSort bool) (
 	[]*metadata.TopoInstRst, error) {
 
 	topoInstRst, err := s.Logics.InstAssociationOperation().SearchMainlineAssociationInstTopo(kit,
@@ -180,7 +185,9 @@ func (s *Service) searchBusinessTopo(kit *rest.Kit, bizID int64, withStatistics,
 	}
 
 	// sort before response
-	SortTopoInst(topoInstRst)
+	if needSort {
+		SortTopoInst(topoInstRst)
+	}
 
 	return topoInstRst, nil
 }

@@ -18,14 +18,15 @@
 package cmdb
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	ccjson "configcenter/src/common/json"
 	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/apigw/apigwutil"
 
@@ -39,7 +40,7 @@ func (c *cmdb) Client() rest.ClientInterface {
 
 // SetApiGWAuthHeader set authorization header by api gateway config
 func (c *cmdb) SetApiGWAuthHeader(header http.Header) http.Header {
-	return apigwutil.SetApiGWAuthHeader(c.service.Config, header)
+	return apigwutil.SetApiGWAuthHeader(c.service.Config, util.CloneHeader(header))
 }
 
 // Proxy cmdb api gateway request
@@ -73,30 +74,26 @@ func (c *cmdb) Proxy(req *http.Request, rw http.ResponseWriter) {
 
 	// parse api gateway response format to cmdb inner response format
 	if gjson.GetBytes(resp, common.BkAPIErrorCode).Exists() {
-		buf := bytes.NewBuffer([]byte{'{'})
-
-		gjson.ParseBytes(resp).ForEach(func(key, value gjson.Result) bool {
-			keyStr := key.String()
-			switch keyStr {
-			case common.BkAPIErrorCode:
-				keyStr = common.HTTPBKAPIErrorCode
-			case common.BkAPIErrorMessage:
-				keyStr = common.HTTPBKAPIErrorMessage
-			}
-
-			buf.WriteByte('"')
-			buf.WriteString(keyStr)
-			buf.WriteString(`":`)
-			buf.WriteString(value.Raw)
-			buf.WriteByte(',')
-			return true
-		})
-
-		buf.WriteByte('}')
-		resp = buf.Bytes()
+		keyMap := map[string]string{
+			common.BkAPIErrorCode:    common.HTTPBKAPIErrorCode,
+			common.BkAPIErrorMessage: common.HTTPBKAPIErrorMessage,
+		}
+		var err error
+		resp, err = ccjson.ReplaceJsonKey(resp, keyMap)
+		if err != nil {
+			blog.Errorf("replace resp(%s) key failed, err: %v", string(resp), err)
+			rw.Write([]byte(err.Error()))
+			return
+		}
 	}
 
 	rw.WriteHeader(result.StatusCode)
 	util.CopyHeader(result.Header, rw.Header())
-	rw.Write(resp)
+	rw.Header().Set("Content-Length", strconv.Itoa(len(resp)))
+	_, err := rw.Write(resp)
+	if err != nil {
+		blog.Errorf("write cmdb api gateway response %s failed, err: %v", string(resp), err)
+		rw.Write([]byte(err.Error()))
+		return
+	}
 }

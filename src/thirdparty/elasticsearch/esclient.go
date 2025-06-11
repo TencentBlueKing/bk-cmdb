@@ -2,13 +2,11 @@ package elasticsearch
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
-	apiutil "configcenter/src/apimachinery/util"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
@@ -31,19 +29,14 @@ func NewEsClient(esConf EsConfig) (*elastic.Client, error) {
 	client := &elastic.Client{}
 	var err error
 	if strings.HasPrefix(esConf.EsUrl, "https://") {
-		tlsConfig := new(tls.Config)
-		tlsConfig.InsecureSkipVerify = esConf.TLSClientConfig.InsecureSkipVerify
-		if !tlsConfig.InsecureSkipVerify && len(esConf.TLSClientConfig.CAFile) != 0 && len(esConf.TLSClientConfig.CertFile) != 0 && len(esConf.TLSClientConfig.KeyFile) != 0 {
-			var err error
-			tlsConfig, err = ssl.ClientTLSConfVerity(esConf.TLSClientConfig.CAFile, esConf.TLSClientConfig.CertFile,
-				esConf.TLSClientConfig.KeyFile, esConf.TLSClientConfig.Password)
-			if err != nil {
-				return nil, err
-			}
-		}
 		// if use https tls or else, config httpClient first
-		tr := &http.Transport{
-			TLSClientConfig: tlsConfig,
+		tr := &http.Transport{}
+		tlsConf, useTLS, err := ssl.NewTLSConfigFromConf(&esConf.TLSClientConfig)
+		if err != nil {
+			return nil, err
+		}
+		if useTLS {
+			tr.TLSClientConfig = tlsConf
 		}
 		httpClient.Transport = tr
 		client, err = elastic.NewClient(
@@ -129,7 +122,7 @@ type EsConfig struct {
 	EsUrl           string
 	EsUser          string
 	EsPassword      string
-	TLSClientConfig apiutil.TLSClientConfig
+	TLSClientConfig ssl.TLSClientConfig
 }
 
 // ParseConfigFromKV returns a new config
@@ -146,6 +139,6 @@ func ParseConfigFromKV(prefix string, configMap map[string]string) (EsConfig, er
 		EsPassword:     pwd,
 	}
 	var err error
-	conf.TLSClientConfig, err = apiutil.NewTLSClientConfigFromConfig(prefix)
+	conf.TLSClientConfig, err = cc.NewTLSClientConfigFromConfig(prefix + ".tls")
 	return conf, err
 }

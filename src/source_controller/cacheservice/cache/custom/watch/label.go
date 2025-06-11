@@ -27,7 +27,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	kubetypes "configcenter/src/kube/types"
-	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/kube"
 	streamtypes "configcenter/src/storage/stream/types"
 )
 
@@ -68,8 +68,8 @@ func (w *Watcher) watchPodLabel() error {
 }
 
 type podLabelWatcher struct {
-	labelCache    *cache.PodLabelCache
-	sharedNsCache *cache.SharedNsRelCache
+	labelCache    *kube.PodLabelCache
+	sharedNsCache *kube.SharedNsRelCache
 }
 
 // doBatch batch handle pod event for label key and value cache

@@ -90,6 +90,20 @@ enterprise:
 	cp -R ${DOCS_DIR}/apidoc/apigw/bin  $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs
 	cp -R ${DOCS_DIR}/apidoc/apigw/backend/en  $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/apidocs
 	cp -R ${DOCS_DIR}/apidoc/apigw/backend/zh  $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/apidocs
+	cp -R ${DOCS_DIR}/apidoc/apigw/open/zh/* $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/apidocs/zh
+	cp -R ${DOCS_DIR}/apidoc/apigw/open/en/* $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/apidocs/en
+	tail -n +10 ${DOCS_DIR}/apidoc/apigw/open/bk_apigw_resources_bk-cmdb.yaml >> $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/resources.yaml
+	for file in ${DOCS_DIR}/apidoc/apigw/open/zh/*; do \
+		cp $$file $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/apidocs/zh/open_$$(basename $$file); \
+	done
+	for file in ${DOCS_DIR}/apidoc/apigw/open/en/*; do \
+		cp $$file $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/apidocs/en/open_$$(basename $$file); \
+	done
+	tail -n +10 ${DOCS_DIR}/apidoc/apigw/open/bk_apigw_resources_bk-cmdb.yaml | \
+	sed -e 's|  /api/v3/|  /api/v3/open/|g' \
+		-e 's|isPublic: false|isPublic: true|g' \
+		-e 's|userVerifiedRequired: false|userVerifiedRequired: true|g' \
+		-e 's|operationId: |operationId: open_|g' >> $(SOURCE_ROOT)/bin/enterprise/cmdb/apidocs/resources.yaml
 
 .PHONY:clean
 clean:

@@ -832,7 +832,8 @@ const (
 	// BKSrcModelField source model field in model relationship table.
 	BKSrcModelField = "src_model"
 	// BKDestModelField destination model field in the model relationship table.
-	BKDestModelField = "dest_model"
+	BKDestModelField     = "dest_model"
+	BKDestModelUUIDField = "dest_model_uuid"
 
 	// ObjectIDField the object id field, it is an int type field and is used to associate with the model
 	ObjectIDField = "object_id"
@@ -1272,8 +1273,9 @@ const (
 
 // transaction related
 const (
-	TransactionIdHeader      = "cc_transaction_id_string"
-	TransactionTimeoutHeader = "cc_transaction_timeout"
+	TransactionIdHeader       = "cc_transaction_id_string"
+	TransactionTimeoutHeader  = "cc_transaction_timeout"
+	TransactionTenantIDHeader = "cc_transaction_tenant_id"
 
 	// mongodb default transaction timeout is 1 minute.
 	TransactionDefaultTimeout = 2 * time.Minute

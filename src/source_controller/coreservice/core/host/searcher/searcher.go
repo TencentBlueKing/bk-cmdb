@@ -14,7 +14,10 @@
 package searcher
 
 import (
+	"context"
+	"fmt"
 	"strings"
+	"time"
 
 	"configcenter/src/apimachinery/cacheservice/cache/host"
 	"configcenter/src/common"
@@ -23,6 +26,7 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/storage/driver/redis"
 )
 
 // Searcher TODO
@@ -107,24 +111,45 @@ func (s *Searcher) ListHosts(kit *rest.Kit, option metadata.ListHosts) (*metadat
 
 func (s *Searcher) listHostIDsByRelation(kit *rest.Kit, option *metadata.ListHosts) (bool, []interface{}, error) {
 	relationFilter := map[string]interface{}{}
+	var cacheKey string
 	if option.BizID != 0 {
 		relationFilter[common.BKAppIDField] = option.BizID
+		cacheKey = fmt.Sprintf("%sbiz_host_ids:%d", common.BKCacheKeyV3Prefix, option.BizID)
 	}
 
 	if len(option.ModuleIDs) != 0 {
 		relationFilter[common.BKModuleIDField] = map[string]interface{}{
 			common.BKDBIN: option.ModuleIDs,
 		}
+		cacheKey = ""
 	}
 
 	if len(option.SetIDs) != 0 {
 		relationFilter[common.BKSetIDField] = map[string]interface{}{
 			common.BKDBIN: option.SetIDs,
 		}
+		cacheKey = ""
 	}
 
 	if len(relationFilter) == 0 {
 		return false, make([]interface{}, 0), nil
+	}
+
+	// get biz host ids from cache
+	if cacheKey != "" {
+		hostIDsCache, err := redis.Client().Get(context.Background(), cacheKey).Result()
+		if err == nil {
+			hostIDs := make([]interface{}, 0)
+			err = json.UnmarshalFromString(hostIDsCache, &hostIDs)
+			if err == nil {
+				return true, hostIDs, nil
+			}
+			blog.Errorf("unmarshal host ids from cache(%s) failed, err: %v, rid: %s", hostIDsCache, err, kit.Rid)
+		}
+
+		if !redis.IsNilErr(err) {
+			blog.Errorf("get biz host ids from redis failed, key: %s, err: %v, rid: %s", cacheKey, err, kit.Rid)
+		}
 	}
 
 	hostIDs, err := mongodb.Shard(kit.ShardOpts()).Table(common.BKTableNameModuleHostConfig).Distinct(kit.Ctx,
@@ -132,6 +157,24 @@ func (s *Searcher) listHostIDsByRelation(kit *rest.Kit, option *metadata.ListHos
 	if err != nil {
 		blog.Errorf("get host ids by relation failed, filter: %+v, err: %v, rid: %s", relationFilter, err, kit.Rid)
 		return false, nil, err
+	}
+
+	// set biz host ids to cache
+	if cacheKey != "" {
+		// default cache expiration is 2s, we set the expiration to 10s for big bizs with more than 5w hosts
+		expiration := 2 * time.Second
+		if len(hostIDs) > 50000 {
+			expiration = 10 * time.Second
+		}
+
+		hostIDCache, err := json.MarshalToString(hostIDs)
+		if err != nil {
+			blog.Errorf("marshal host ids(%+v) failed, err: %v, rid: %s", hostIDs, err, kit.Rid)
+			return true, hostIDs, nil
+		}
+		if err = redis.Client().Set(context.Background(), cacheKey, hostIDCache, expiration).Err(); err != nil {
+			blog.Errorf("set biz host ids to redis failed, key: %s, err: %v, rid: %s", cacheKey, err, kit.Rid)
+		}
 	}
 
 	return true, hostIDs, nil

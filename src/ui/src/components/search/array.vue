@@ -19,6 +19,7 @@
       v-model="localValue"
       v-bind="$attrs"
       :list="[]"
+      :paste-fn="handlePasteFn"
       @removeAll="() => $emit('clear')"
       @click.native="handleToggle(true)"
       @blur="handleToggle(false, ...arguments)"
@@ -47,6 +48,10 @@
       fuzzy: {
         type: Boolean,
         default: undefined
+      },
+      isPasteSplit: {
+        type: Boolean,
+        default: false
       }
     },
     computed: {
@@ -66,36 +71,15 @@
         }
       }
     },
-    watch: {
-      multiple: {
-        immediate: true,
-        handler(multiple) {
-          multiple ? this.addPasteEvent() : this.removePasteEvent()
-        }
-      }
-    },
-    beforeDestroy() {
-      this.removePasteEvent()
-    },
     methods: {
-      async addPasteEvent() {
-        await this.$nextTick()
-        const { tagInput } = this.$refs
-        if (!tagInput) return
-        tagInput.$refs.input.addEventListener('paste', this.handlePaste)
-      },
-      async removePasteEvent() {
-        await this.$nextTick()
-        const { tagInput } = this.$refs
-        if (!tagInput) return
-        tagInput.$refs.input.removeEventListener('paste', this.handlePaste)
-      },
-      handlePaste(event) {
-        const text = event.clipboardData.getData('text')
-        const values = text.split(/,|;|\n/).map(value => value.trim())
-          .filter(value => value.length)
-        const value = [...new Set([...this.localValue, ...values])]
-        this.localValue = value
+      handlePasteFn(value) {
+        if (!value) return
+        let val = [value]
+        if (this.isPasteSplit && this.multiple) {
+          val = (value.split(/,|;|\n/)).map(value => value.trim())
+            .filter(value => value.length)
+        }
+        this.localValue = [...new Set([...this.localValue, ...val])]
       },
       handleInputChange(value) {
         this.$emit('inputchange', value)

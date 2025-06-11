@@ -22,10 +22,12 @@ global:
 ## bk-cmdb image parameters
 ## @param image.registry bk-cmdb image registry
 ## @param image.pullPolicy bk-cmdb image pull policy
+## @param image.pullSecretName bk-cmdb image pull secret name
 ##
 image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
+  pullSecretName: ""
 
 ## @section bk-cmdb webserver parameters
 ##
@@ -375,8 +377,31 @@ web:
 
 ## @section bk-cmdb config and service center parameters
 ##
-# configAndServiceCenter:
-#   addr:
+configAndServiceCenter:
+  addr:
+  tls:
+    insecureSkipVerify: true
+    caFile: "zookeeper/zk.ca"
+    certFile: "zookeeper/zk.cert"
+    keyFile: "zookeeper/zk.key"
+    password:
+
+## @section mongodbCert parameters
+##
+mongodbCert:
+  mongodb:
+    ## @param mongodbCert.ca CA certificate for mongodb connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param mongodbCert.cert client certificate mongodb connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param mongodbCert.key client key for network collect mongodb connection
+    ## key content encoded in base64
+    ##
+    key: ""
 
 ## @section mongodb parameters
 ##
@@ -445,6 +470,49 @@ mongodb:
     ## mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
     ##
     socketTimeoutSeconds: 10
+    ## @param mongodb.externalMongodb.tls mongodb tls config
+    tls:
+      ## @param mongodb.externalMongodb.tls.caFile redis TLS CA file
+      ## Certificate file name, will be combined with certPath
+      ##
+      caFile: "mongodb/mongodb.ca"
+      ## @param mongodb.externalMongodb.tls.certFile redis TLS cert file
+      ## Certificate file name, will be combined with certPath
+      ##
+      certFile: "mongodb/mongodb.cert"
+      ## @param mongodb.externalMongodb.tls.keyFile redis TLS key file
+      ## Key file name, will be combined with certPath
+      ##
+      keyFile: "mongodb/mongodb.key"
+      ## @param mongodb.externalMongodb.tls.pemFile redis TLS pem file
+      ## Combined certificate and key file name, will be combined with certPath
+      ##
+      pemFile: "mongodb/mongodb.pem"
+      ## @param mongodb.externalMongodb.tls.insecureSkipVerify mongodb TLS insecure skip verify
+      ##
+      insecureSkipVerify: true
+
+## @param certPath cert path.
+##
+certPath: "/data/cmdb/cert"
+
+## @section redis certificates parameters
+##
+redisCert:
+  ## redis main instance certificates
+  redis:
+    ## @param redisCert.redis.ca CA certificate for redis connection
+    ## certificate content encoded in base64
+    ##
+    ca: ""
+    ## @param redisCert.redis.cert client certificate for redis connection
+    ## certificate content encoded in base64
+    ##
+    cert: ""
+    ## @param redisCert.redis.key client key for redis connection
+    ## key content encoded in base64
+    ##
+    key: ""
 
 ## @section redis parameters
 ##
@@ -489,6 +557,21 @@ redis:
     ## @param redis.redis.masterName external redis master name
     ##
     masterName:
+    ## @param redis.redis.tls external redis TLS config
+    ## 
+    tls:
+      ## @param redis.redis.tls.caFile redis TLS CA file
+      ##
+      caFile: "redis/redis.ca"
+      ## @param redis.redis.tls.certFile redis TLS cert file
+      ##
+      certFile: "redis/redis.cert"
+      ## @param redis.redis.tls.keyFile redis TLS key file
+      ##
+      keyFile: "redis/redis.key"
+      ## @param redis.redis.tls.insecureSkipVerify redis TLS insecure skip verify
+      ## 
+      insecureSkipVerify: true
 
 ## @section ServiceMonitor parameters
 ##
@@ -520,3 +603,8 @@ bkLogConfig:
   std:
     enabled: false
     dataId: 1
+
+zookeeperCert:
+  ca: ""
+  cert: ""
+  key: ""

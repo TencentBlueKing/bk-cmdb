@@ -120,7 +120,7 @@ func NewDataCollection(ctx context.Context, op *options.ServerOption) (*DataColl
 	engine, err := backbone.NewBackbone(ctx, &backbone.BackboneParameter{
 		ConfigUpdate: newDataCollection.OnHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
+		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover, TLSConfig: op.ServConf.GetTLSClientConf()},
 		SrvInfo:      svrInfo,
 	})
 	if err != nil {
@@ -131,7 +131,7 @@ func NewDataCollection(ctx context.Context, op *options.ServerOption) (*DataColl
 	errors.SetGlobalCCError(engine.CCErr)
 
 	// set hash.
-	newDataCollection.hash = collections.NewHash(svrInfo.RegisterIP, svrInfo.Port, engine.Discovery())
+	newDataCollection.hash = collections.NewHash(svrInfo.UUID, engine.Discovery())
 
 	// set backbone engine.
 	newDataCollection.engine = engine

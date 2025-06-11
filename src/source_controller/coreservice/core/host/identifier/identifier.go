@@ -16,8 +16,6 @@ package identifier
 import (
 	"strconv"
 
-	"configcenter/pkg/inst/logics"
-	"configcenter/src/apimachinery"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
@@ -37,11 +35,11 @@ type Identifier struct {
 	modulehosts      map[int64][]metadata.ModuleHost
 	asstMap          map[string]string
 	layers           map[string]map[int64]metadata.MainlineInstInfo
-	clientSet        apimachinery.ClientSetInterface
+	getObjInstTable  func(kit *rest.Kit, objID string) (string, error)
 }
 
 // NewIdentifier TODO
-func NewIdentifier(clientSet apimachinery.ClientSetInterface) *Identifier {
+func NewIdentifier(getObjInstTable func(kit *rest.Kit, objID string) (string, error)) *Identifier {
 	dbQuery := hostutil.NewDBExecQuery()
 	return &Identifier{
 		dbQuery:          dbQuery,
@@ -50,7 +48,7 @@ func NewIdentifier(clientSet apimachinery.ClientSetInterface) *Identifier {
 		modulehosts:      make(map[int64][]metadata.ModuleHost),
 		asstMap:          make(map[string]string),
 		layers:           make(map[string]map[int64]metadata.MainlineInstInfo),
-		clientSet:        clientSet,
+		getObjInstTable:  getObjInstTable,
 	}
 }
 
@@ -275,7 +273,7 @@ func (i *Identifier) findHostLayerInfo(kit *rest.Kit) error {
 		layers := make([]metadata.MainlineInstInfo, 0)
 		cond := condition.CreateCondition().Field(common.BKInstIDField).In(parentIDs)
 		cond.Field(common.BKObjIDField).Eq(curObj)
-		tableName, err := logics.GetObjInstTableFromCache(kit, i.clientSet, curObj)
+		tableName, err := i.getObjInstTable(kit, curObj)
 		if err != nil {
 			blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", curObj, err, kit.Rid)
 			return err

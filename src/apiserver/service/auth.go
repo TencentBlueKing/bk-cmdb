@@ -39,16 +39,14 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 
 	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
+		s.RespError(req, resp, http.StatusBadRequest, defErr.CCError(common.CCErrCommInappropriateVisitToIAM))
 		return
 	}
 
 	body := metadata.AuthBathVerifyRequest{}
 	if err := json.NewDecoder(req.Request.Body).Decode(&body); err != nil {
 		blog.Errorf("get user's resource auth verify status, but decode body failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		s.RespError(req, resp, http.StatusBadRequest, defErr.CCError(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 	user := meta.UserInfo{
@@ -93,8 +91,8 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		verifyResults, err := s.authorizer.AuthorizeBatch(ctx, pheader, user, needExactAuthAttrs...)
 		if err != nil {
 			blog.Errorf("authorize batch failed, err: %v, attrs: %+v, rid: %s", err, needExactAuthAttrs, rid)
-			resp.WriteError(http.StatusInternalServerError,
-				&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
+			s.RespError(req, resp, http.StatusInternalServerError,
+				defErr.CCErrorf(common.CCErrAPIGetUserResourceAuthStatusFailed))
 			return
 		}
 		index := 0
@@ -111,8 +109,8 @@ func (s *service) AuthVerify(req *restful.Request, resp *restful.Response) {
 		verifyResults, err := s.authorizer.AuthorizeAnyBatch(ctx, pheader, user, attrs...)
 		if err != nil {
 			blog.Errorf("authorize any batch failed, err: %v, attrs: %+v, rid: %s", err, attrs, rid)
-			resp.WriteError(http.StatusInternalServerError,
-				&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetUserResourceAuthStatusFailed)})
+			s.RespError(req, resp, http.StatusInternalServerError,
+				defErr.CCErrorf(common.CCErrAPIGetUserResourceAuthStatusFailed))
 			return
 		}
 		index := 0
@@ -136,8 +134,7 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 
 	if auth.EnableAuthorize() == false {
 		blog.Errorf("inappropriate calling, auth is disabled, rid: %s", rid)
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommInappropriateVisitToIAM)})
+		s.RespError(req, resp, http.StatusBadRequest, defErr.CCError(common.CCErrCommInappropriateVisitToIAM))
 		return
 	}
 
@@ -153,8 +150,8 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	authorizedResources, err := s.authorizer.ListAuthorizedResources(req.Request.Context(), pheader, authInput)
 	if err != nil {
 		blog.Errorf("get user: %s authorized business list failed, err: %v, rid: %s", userInfo.UserName, err, rid)
-		resp.WriteError(http.StatusInternalServerError,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
+		s.RespError(req, resp, http.StatusInternalServerError,
+			defErr.CCError(common.CCErrAPIGetAuthorizedAppListFromAuthFailed))
 		return
 	}
 	input := params.SearchParams{}
@@ -166,8 +163,8 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 			bizID, err := strconv.ParseInt(resourceID, 10, 64)
 			if err != nil {
 				blog.Errorf("parse bizID(%s) failed, err: %v, rid: %s", bizID, err, rid)
-				resp.WriteError(http.StatusInternalServerError,
-					&metadata.RespError{Msg: defErr.Errorf(common.CCErrCommParamsNeedInt, common.BKAppIDField)})
+				s.RespError(req, resp, http.StatusInternalServerError,
+					defErr.CCErrorf(common.CCErrCommParamsNeedInt, common.BKAppIDField))
 				return
 			}
 			appIDList = append(appIDList, bizID)
@@ -187,16 +184,15 @@ func (s *service) GetAnyAuthorizedAppList(req *restful.Request, resp *restful.Re
 	if err != nil {
 		blog.Errorf("get authorized business list, auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",
 			authorizedResources.IsAny, appIDList, err, rid)
-		resp.WriteError(http.StatusInternalServerError,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
+		s.RespError(req, resp, http.StatusInternalServerError,
+			defErr.CCError(common.CCErrAPIGetAuthorizedAppListFromAuthFailed))
 		return
 	}
 
 	if !result.Result {
 		blog.Errorf("get authorized business list,auth anyFlag is: %v, but get apps[%v] failed, err: %v, rid: %s",
 			authorizedResources.IsAny, appIDList, result.ErrMsg, rid)
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrAPIGetAuthorizedAppListFromAuthFailed)})
+		s.RespError(req, resp, http.StatusBadRequest, defErr.CCError(common.CCErrAPIGetAuthorizedAppListFromAuthFailed))
 		return
 	}
 
@@ -214,16 +210,14 @@ func (s *service) GetUserNoAuthSkipURL(req *restful.Request, resp *restful.Respo
 	err := json.NewDecoder(req.Request.Body).Decode(p)
 	if err != nil {
 		blog.Errorf("get user's skip url when no auth, but decode request failed, err: %v, rid: %s", err, rid)
-		resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrCommJSONUnmarshalFailed)})
+		s.RespError(req, resp, http.StatusBadRequest, defErr.CCError(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 
 	url, err := s.authorizer.GetNoAuthSkipUrl(req.Request.Context(), reqHeader, p)
 	if err != nil {
 		blog.Errorf("get user's skip url when no auth, but request to auth center failed, err: %v, rid: %s", err, rid)
-		_ = resp.WriteError(http.StatusBadRequest,
-			&metadata.RespError{Msg: defErr.Error(common.CCErrGetNoAuthSkipURLFailed)})
+		s.RespError(req, resp, http.StatusBadRequest, defErr.CCError(common.CCErrGetNoAuthSkipURLFailed))
 		return
 	}
 

@@ -26,7 +26,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/util"
 	kubetypes "configcenter/src/kube/types"
-	"configcenter/src/source_controller/cacheservice/cache/custom/cache"
+	"configcenter/src/source_controller/cacheservice/cache/custom/cache/kube"
 	streamtypes "configcenter/src/storage/stream/types"
 )
 
@@ -65,7 +65,7 @@ func (w *Watcher) watchSharedNsRel() error {
 }
 
 type sharedNsRelWatcher struct {
-	cache *cache.SharedNsRelCache
+	cache *kube.SharedNsRelCache
 }
 
 // doBatch batch handle shared namespace relation event for cache

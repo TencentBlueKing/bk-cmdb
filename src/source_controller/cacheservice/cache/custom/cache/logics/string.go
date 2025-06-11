@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cache
+package logics
 
 import (
 	"errors"
@@ -88,7 +88,7 @@ func (c *StrCache) BatchUpdate(kit *rest.Kit, dataMap map[string]interface{}) er
 	defer pip.Close()
 
 	for key, data := range dataMap {
-		pip.Set(c.key.Key(kit.TenantID, key), data, c.key.ttl)
+		pip.Set(c.key.Key(kit.TenantID, key), data, c.key.TTL())
 	}
 
 	_, err := pip.Exec()
@@ -129,7 +129,7 @@ func (c *StrCache) Refresh(kit *rest.Kit, match string, dataMap map[string]inter
 	for key, data := range dataMap {
 		redisKey := c.key.Key(kit.TenantID, key)
 		keyDataMap[redisKey] = data
-		pip.Set(redisKey, data, c.key.ttl)
+		pip.Set(redisKey, data, c.key.TTL())
 	}
 
 	match = c.key.Key(kit.TenantID, match)

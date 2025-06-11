@@ -22,6 +22,13 @@ import (
 	"configcenter/src/common/types"
 )
 
+// ServerDiscoverI is an interface to get all servers
+type ServerDiscoverI interface {
+	Interface
+	GetServersForHash() ([]string, error)
+	GetServersChanForHash() chan []string
+}
+
 func newServerDiscover(disc *registerdiscover.RegDiscover, path, name, env string) (*server, error) {
 	discoverChan, eventErr := disc.DiscoverService(path)
 	if nil != eventErr {
@@ -35,6 +42,8 @@ func newServerDiscover(disc *registerdiscover.RegDiscover, path, name, env strin
 		servers:      make([]*types.ServerInfo, 0),
 		discoverChan: discoverChan,
 		serversChan:  make(chan []string, 1),
+		allSvrUUIDs:  make([]string, 0),
+		svrUUIDsChan: make(chan []string, 1),
 	}
 
 	svr.run()
@@ -52,6 +61,8 @@ type server struct {
 	master       *types.ServerInfo
 	discoverChan <-chan *registerdiscover.DiscoverEvent
 	serversChan  chan []string
+	allSvrUUIDs  []string
+	svrUUIDsChan chan []string
 }
 
 // GetServers TODO
@@ -127,6 +138,7 @@ func (s *server) resetServer() {
 	s.Lock()
 	defer s.Unlock()
 	s.servers = make([]*types.ServerInfo, 0)
+	s.allSvrUUIDs = make([]string, 0)
 	s.master = nil
 }
 
@@ -137,6 +149,14 @@ func (s *server) setServersChan() {
 		<-s.serversChan
 	}
 	s.serversChan <- s.getInstances()
+
+	// send all server uuids to allSvrUUIDs channel
+	for len(s.svrUUIDsChan) >= 1 {
+		<-s.svrUUIDsChan
+	}
+	s.RLock()
+	defer s.RUnlock()
+	s.svrUUIDsChan <- s.allSvrUUIDs
 }
 
 // GetServersChan 获取zk上最新的服务节点信息channel
@@ -157,6 +177,7 @@ func (s *server) getInstances() []string {
 
 func (s *server) updateServer(svrs []string) {
 	servers := make([]*types.ServerInfo, 0)
+	allSvrUUIDs := make([]string, 0)
 	var master *types.ServerInfo
 
 	for _, svr := range svrs {
@@ -180,6 +201,7 @@ func (s *server) updateServer(svrs []string) {
 			continue
 		}
 
+		allSvrUUIDs = append(allSvrUUIDs, server.UUID)
 		if server.Environment == s.environment {
 			servers = append(servers, server)
 		}
@@ -190,9 +212,22 @@ func (s *server) updateServer(svrs []string) {
 
 	s.Lock()
 	s.servers = servers
+	s.allSvrUUIDs = allSvrUUIDs
 	s.master = master
 	s.Unlock()
 	if blog.V(5) {
 		blog.InfoJSON("update component with new server instance %s about path: %s", servers, s.path)
 	}
+}
+
+// GetServersForHash get server uuids from all environments for consistent hash
+func (s *server) GetServersForHash() ([]string, error) {
+	s.RLock()
+	defer s.RUnlock()
+	return s.allSvrUUIDs, nil
+}
+
+// GetServersChanForHash get channel of server uuids from all environments for consistent hash
+func (s *server) GetServersChanForHash() chan []string {
+	return s.svrUUIDsChan
 }

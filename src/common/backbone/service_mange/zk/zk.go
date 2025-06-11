@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"configcenter/src/common/ssl"
 	"configcenter/src/common/zkclient"
 )
 
@@ -31,10 +32,10 @@ type ZkClient struct {
 }
 
 // NewZkClient create a object of ZkClient
-func NewZkClient(zkAddress string, timeOut time.Duration) *ZkClient {
+func NewZkClient(zkAddress string, timeOut time.Duration, tlsConfig *ssl.TLSClientConfig) *ZkClient {
 	zkAddresses := strings.Split(zkAddress, ",")
 	return &ZkClient{
-		zkCli:          zkclient.NewZkClient(zkAddresses),
+		zkCli:          zkclient.NewZkClient(zkAddresses, tlsConfig),
 		sessionTimeOut: timeOut,
 	}
 }

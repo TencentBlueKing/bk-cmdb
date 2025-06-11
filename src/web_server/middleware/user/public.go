@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 
 	"configcenter/pkg/tenant/tools"
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/blog"
@@ -34,6 +35,7 @@ type publicUser struct {
 	config   options.Config
 	engine   *backbone.Engine
 	cacheCli redis.Client
+	apiCli   apiserver.ApiServerClientInterface
 }
 
 // LoginUser  user login

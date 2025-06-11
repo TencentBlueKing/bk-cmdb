@@ -14,6 +14,7 @@
 package user
 
 import (
+	"configcenter/src/apimachinery/apiserver"
 	"configcenter/src/common/backbone"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/metadata"
@@ -35,6 +36,8 @@ type LoginInterface interface {
 }
 
 // NewUser return user instance by type
-func NewUser(config options.Config, engine *backbone.Engine, cacheCli redis.Client) LoginInterface {
-	return &publicUser{config, engine, cacheCli}
+func NewUser(config options.Config, engine *backbone.Engine, cacheCli redis.Client,
+	apiCli apiserver.ApiServerClientInterface) LoginInterface {
+
+	return &publicUser{config, engine, cacheCli, apiCli}
 }

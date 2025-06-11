@@ -131,6 +131,7 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	process.Config.Language.Res, _ = cc.String("language.res")
 	process.Config.Configures.Dir, _ = cc.String("confs.dir")
 	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
+	process.Config.Register.TLS, _ = cc.NewTLSClientConfigFromConfig("registerServer.tls")
 	process.Config.MigrateDataID, _ = cc.Bool("hostsnap.migrateDataID")
 	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
 	process.Config.DisableVerifyTenant, _ = cc.Bool("tenant.disableVerifyTenant")
@@ -195,8 +196,11 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: process.onMigrateConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: process.Config.Register.Address},
-		SrvInfo:      svrInfo,
+		SrvRegdiscv: backbone.SrvRegdiscv{
+			Regdiscv:  process.Config.Register.Address,
+			TLSConfig: &process.Config.Register.TLS,
+		},
+		SrvInfo: svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)
 	if err != nil {

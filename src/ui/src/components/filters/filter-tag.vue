@@ -65,7 +65,8 @@
     },
     watch: {
       selected() {
-        if (!(this.selected.length || this.showIPTag) && FilterStore.activeCollection) FilterStore.setActiveCollection(null)
+        if (!(this.selected.length || this.showIPTag)
+          && FilterStore.activeCollection) FilterStore.setActiveCollection(null)
       }
     },
     methods: {

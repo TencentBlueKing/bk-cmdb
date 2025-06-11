@@ -96,6 +96,8 @@ type Request struct {
 
 	peek bool
 	err  error
+
+	wrappers RequestWrapperChain
 }
 
 // WithMetricDimension TODO
@@ -287,14 +289,19 @@ func (r *Request) checkToleranceLatency(start *time.Time, url, subPath, rid stri
 		httpheader.GetUser(r.headers), r.verb, url, commonUtil.FormatHttpBody(subPath, r.body), rid)
 }
 
-// Do TODO
+// Do http request
 func (r *Request) Do() *Result {
+	for _, wrapper := range r.wrappers {
+		r = wrapper(r)
+	}
+
 	result := new(Result)
 
 	rid := commonUtil.ExtractRequestIDFromContext(r.ctx)
 	if rid == "" {
 		rid = httpheader.GetRid(r.headers)
 	}
+	result.Rid = rid
 
 	if r.err != nil {
 		result.Err = r.err
@@ -346,73 +353,11 @@ func (r *Request) Do() *Result {
 				r.tryThrottle(url)
 			}
 
-			start := time.Now()
-			resp, err := client.Do(req)
-			if err != nil {
-				// "Connection reset by peer" is a special err which in most scenario is a a transient error.
-				// Which means that we can retry it. And so does the GET operation.
-				// While the other "write" operation can not simply retry it again, because they are not idempotent.
-
-				blog.Errorf("[apimachinery] %s %s with body %s, but %v, rid: %s", string(r.verb), url,
-					commonUtil.FormatHttpBody(r.subPath, r.body), err, rid)
-				r.checkToleranceLatency(&start, url, r.subPath, rid)
-				if !isConnectionReset(err) || r.verb != GET {
-					result.Err = err
-					result.Rid = rid
-					return result
-				}
-
-				// retry now
-				time.Sleep(20 * time.Millisecond)
+			var needRetry bool
+			result, needRetry = r.do(client, req, result, rid)
+			if needRetry {
 				continue
-
 			}
-
-			// collect request metrics
-			if r.parent.requestDuration != nil {
-				labels := prometheus.Labels{
-					"handler":     r.subPath,
-					"status_code": strconv.Itoa(result.StatusCode),
-					"dimension":   r.metricDimension,
-				}
-
-				r.parent.requestDuration.With(labels).Observe(float64(time.Since(start) / time.Millisecond))
-			}
-
-			// record latency if needed
-			r.checkToleranceLatency(&start, url, r.subPath, rid)
-
-			var body []byte
-			if resp.Body != nil {
-				data, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					if err == io.ErrUnexpectedEOF {
-						// retry now
-						time.Sleep(20 * time.Millisecond)
-						continue
-					}
-					result.Err = err
-					result.Rid = rid
-					blog.Errorf("[apimachinery] %s %s with body %s, err: %v, rid: %s", string(r.verb), url,
-						commonUtil.FormatHttpBody(r.subPath, r.body), err, rid)
-					return result
-				}
-				body = data
-			}
-
-			if blog.V(4) {
-				blog.V(4).InfoDepthf(2, "[apimachinery] cost: %dms, %s %s with body %s, response status: %s, "+
-					"response body: %s, rid: %s", time.Since(start)/time.Millisecond, string(r.verb), url,
-					commonUtil.FormatHttpBody(r.subPath, r.body), resp.Status,
-					commonUtil.FormatHttpBody(r.subPath, body), rid)
-			}
-
-			result.Body = body
-			result.StatusCode = resp.StatusCode
-			result.Status = resp.Status
-			result.Header = resp.Header
-			result.Rid = rid
-
 			return result
 		}
 
@@ -420,6 +365,74 @@ func (r *Request) Do() *Result {
 
 	result.Err = errors.New("unexpected error")
 	return result
+}
+
+func (r *Request) do(client util.HttpClient, req *http.Request, result *Result, rid string) (*Result, bool) {
+	url := req.URL.String()
+	start := time.Now()
+	resp, err := client.Do(req)
+	if err != nil {
+		// "Connection reset by peer" is a special err which in most scenario is a a transient error.
+		// Which means that we can retry it. And so does the GET operation.
+		// While the other "write" operation can not simply retry it again, because they are not idempotent.
+
+		blog.Errorf("[apimachinery] %s %s with body %s, but %v, rid: %s", string(r.verb), url,
+			commonUtil.FormatHttpBody(r.subPath, r.body), err, rid)
+		r.checkToleranceLatency(&start, url, r.subPath, rid)
+		if !isConnectionReset(err) || r.verb != GET {
+			result.Err = err
+			return result, false
+		}
+
+		// retry now
+		time.Sleep(20 * time.Millisecond)
+		return result, true
+	}
+
+	// collect request metrics
+	if r.parent.requestDuration != nil {
+		labels := prometheus.Labels{
+			"handler":     r.subPath,
+			"status_code": strconv.Itoa(result.StatusCode),
+			"dimension":   r.metricDimension,
+		}
+
+		r.parent.requestDuration.With(labels).Observe(float64(time.Since(start) / time.Millisecond))
+	}
+
+	// record latency if needed
+	r.checkToleranceLatency(&start, url, r.subPath, rid)
+
+	var body []byte
+	if resp.Body != nil {
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			if err == io.ErrUnexpectedEOF {
+				// retry now
+				time.Sleep(20 * time.Millisecond)
+				return result, true
+			}
+			result.Err = err
+			blog.Errorf("[apimachinery] %s %s with body %s, err: %v, rid: %s", string(r.verb), url,
+				commonUtil.FormatHttpBody(r.subPath, r.body), err, rid)
+			return result, false
+		}
+		body = data
+	}
+
+	if blog.V(4) {
+		blog.V(4).InfoDepthf(2, "[apimachinery] cost: %dms, %s %s with body %s, response status: %s, "+
+			"response body: %s, rid: %s", time.Since(start)/time.Millisecond, string(r.verb), url,
+			commonUtil.FormatHttpBody(r.subPath, r.body), resp.Status,
+			commonUtil.FormatHttpBody(r.subPath, body), rid)
+	}
+
+	result.Body = body
+	result.StatusCode = resp.StatusCode
+	result.Status = resp.Status
+	result.Header = resp.Header
+
+	return result, false
 }
 
 const maxLatency = 100 * time.Millisecond
@@ -454,27 +467,15 @@ func (r *Result) IntoCmdbResp(obj interface{}) error {
 	if len(r.Body) != 0 {
 		// parse api gateway response format to cmdb inner response format
 		if gjson.GetBytes(r.Body, common.BkAPIErrorCode).Exists() {
-			buf := bytes.NewBuffer([]byte{'{'})
-
-			gjson.ParseBytes(r.Body).ForEach(func(key, value gjson.Result) bool {
-				keyStr := key.String()
-				switch keyStr {
-				case common.BkAPIErrorCode:
-					keyStr = common.HTTPBKAPIErrorCode
-				case common.BkAPIErrorMessage:
-					keyStr = common.HTTPBKAPIErrorMessage
-				}
-
-				buf.WriteByte('"')
-				buf.WriteString(keyStr)
-				buf.WriteString(`":`)
-				buf.WriteString(value.Raw)
-				buf.WriteByte(',')
-				return true
-			})
-
-			buf.WriteByte('}')
-			r.Body = buf.Bytes()
+			keyMap := map[string]string{
+				common.BkAPIErrorCode:    common.HTTPBKAPIErrorCode,
+				common.BkAPIErrorMessage: common.HTTPBKAPIErrorMessage,
+			}
+			var err error
+			r.Body, err = json.ReplaceJsonKey(r.Body, keyMap)
+			if err != nil {
+				return fmt.Errorf("replace resp(%s) key failed, err: %v", string(r.Body), err)
+			}
 		}
 
 		err := json.Unmarshal(r.Body, obj)

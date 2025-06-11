@@ -71,9 +71,7 @@ type RequestWrapperChain []RequestWrapper
 
 // ProcessRequestWrapperChain process restful request wrapper chain
 func ProcessRequestWrapperChain(req *Request, wrappers RequestWrapperChain) *Request {
-	for _, wrapper := range wrappers {
-		req = wrapper(req)
-	}
+	req.wrappers = wrappers
 	return req
 }
 

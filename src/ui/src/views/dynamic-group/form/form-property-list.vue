@@ -153,10 +153,10 @@
         }
         return {
           ...operatorTypeMap,
-          longchar: [IN, NIN, LIKE, CONTAINS_CS],
-          singlechar: [IN, NIN, LIKE, CONTAINS_CS],
-          array: [IN, NIN, LIKE, CONTAINS_CS],
-          object: [IN, NIN, LIKE, CONTAINS_CS]
+          longchar: [IN, NIN, CONTAINS, CONTAINS_CS],
+          singlechar: [IN, NIN, CONTAINS, CONTAINS_CS],
+          array: [IN, NIN, CONTAINS, CONTAINS_CS],
+          object: [IN, NIN, CONTAINS, CONTAINS_CS]
         }
       },
       operatorSymbolMap() {
