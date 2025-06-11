@@ -103,6 +103,9 @@ type HostClientInterface interface {
 
 	TransferHostResourceDirectory(ctx context.Context, header http.Header,
 		option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
+
+	DelRedDefaultAreaHosts(ctx context.Context, header http.Header,
+		option *metadata.DelRedDefaultAreaHostsOption) errors.CCErrorCoder
 }
 
 // NewHostClientInterface TODO

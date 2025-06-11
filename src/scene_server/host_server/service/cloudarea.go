@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"strconv"
 
 	"configcenter/src/ac/iam/types"
@@ -21,6 +22,7 @@ import (
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
@@ -486,12 +488,59 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 	})
 
 	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
-		return
+		err, isOk := txnErr.(errors.CCErrorCoder)
+		if !isOk || err.GetCode() != common.CCErrCommDuplicateItem {
+			ctx.RespAutoError(txnErr)
+			return
+		}
+
+		newKit := ctx.Kit.NewKit().WithCtx(context.Background()).WithTenant(ctx.Kit.TenantID)
+		if err := s.RemoveRedundantHostByIDs(newKit, input.HostIDs); err != nil {
+			blog.Errorf("remove redundant host failed, err: %v, hostIDs: %+v, rid: %s", err, input.HostIDs, rid)
+			ctx.RespAutoError(err)
+			return
+		}
+
+		// retry change host cloud area
+		txnErr = s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(newKit.Ctx, newKit.Header, func() error {
+			ccErr := s.CoreAPI.CoreService().Host().UpdateHostCloudAreaField(newKit.Ctx, newKit.Header, input)
+			if ccErr != nil {
+				blog.Errorf("update host cloud area failed, input: %s, err: %v, rid: %s", input, ccErr, rid)
+				return ccErr
+			}
+			return nil
+		})
+		if txnErr != nil {
+			ctx.RespAutoError(txnErr)
+			return
+		}
 	}
 
 	// response success
 	ctx.RespEntity(nil)
+}
+
+// RemoveRedundantHostByIDs remove host by hostId which not exist in host table
+func (s *Service) RemoveRedundantHostByIDs(kit *rest.Kit, hostIds []int64) error {
+	newKit := kit.NewKit().WithCtx(context.Background())
+	hosts := make([]meta.DefaultAreaHost, 0)
+	for _, id := range hostIds {
+		hosts = append(hosts, meta.DefaultAreaHost{
+			HostID: id,
+		})
+	}
+
+	defaultAreaHostOption := &metadata.DelRedDefaultAreaHostsOption{
+		Hosts:  hosts,
+		OpType: metadata.OperationByHostID,
+	}
+	err := s.CoreAPI.CoreService().Host().DelRedDefaultAreaHosts(newKit.Ctx, newKit.Header, defaultAreaHostOption)
+	if err != nil {
+		blog.Errorf("remove default area host failed, err: %v, hosts: %+v, rid: %s", err, hosts, kit.Rid)
+		return err
+	}
+
+	return nil
 }
 
 // FindCloudAreaHostCount find host count in every cloudarea

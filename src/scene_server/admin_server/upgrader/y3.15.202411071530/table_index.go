@@ -100,6 +100,7 @@ var platTableIndexesArr = map[string][]daltypes.Index{
 	common.BKTableNameTenantTemplate: templateIndexes,
 	common.BKTableNameTenant:         tenantIndexes,
 	common.BKTableNameGlobalConfig:   globalConfigIndexes,
+	common.BKTableNameDefaultAreaHost: defaultAreaHostIndexes,
 }
 
 var tableInstAsstArr = []string{

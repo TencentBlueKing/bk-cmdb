@@ -65,7 +65,6 @@ func (m *instanceManager) instCnt(kit *rest.Kit, objID string, cond mapstr.MapSt
 // CreateModelInstance TODO
 func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string,
 	inputParam metadata.CreateModelInstance) (*metadata.CreateOneDataResult, error) {
-	rid := util.ExtractRequestIDFromContext(kit.Ctx)
 
 	bizID, err := m.getBizIDFromInstance(kit, objID, inputParam.Data, common.ValidCreate, 0)
 	if err != nil {
@@ -79,7 +78,6 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string,
 			inputParam.Data, kit.Rid)
 		return nil, err
 	}
-
 	tableData := mapstr.New()
 	for key, val := range inputParam.Data {
 		if validator.properties[key].PropertyType == common.FieldTypeInnerTable {
@@ -90,7 +88,7 @@ func (m *instanceManager) CreateModelInstance(kit *rest.Kit, objID string,
 	err = m.validCreateInstanceData(kit, objID, inputParam.Data, validator)
 	if err != nil {
 		blog.Errorf("valid create instance data failed err: %v, objID: %s, data: %#v, rid: %s", err, objID,
-			inputParam.Data, rid)
+			inputParam.Data, kit.Rid)
 		return nil, err
 	}
 

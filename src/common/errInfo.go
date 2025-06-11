@@ -601,6 +601,7 @@ const (
 	CCErrHostGetSnapshotChannelEmpty     = 1106019
 	CCErrHostGetSnapshotChannelClose     = 1106020
 	CCErrHostGetSnapshotBatch            = 1106024
+	CCErrDefaultAreaHostIPExist          = 1106025
 
 	// process controller 1107XXX
 	CCErrProcDeleteProc2Module      = 1107001

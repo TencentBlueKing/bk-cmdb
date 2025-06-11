@@ -638,3 +638,27 @@ func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Head
 	}
 	return resp.Data.IDArr, nil
 }
+
+// DelRedDefaultAreaHosts remove redundant default area host
+func (h *host) DelRedDefaultAreaHosts(ctx context.Context, header http.Header,
+	option *metadata.DelRedDefaultAreaHostsOption) errors.CCErrorCoder {
+
+	resp := new(metadata.BaseResp)
+	subPath := "/delete/default_area/redundant/host"
+
+	err := h.client.Delete().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef(subPath).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+	if err != nil {
+		return errors.CCHttpError
+	}
+	if err := resp.CCError(); err != nil {
+		return err
+	}
+
+	return nil
+}

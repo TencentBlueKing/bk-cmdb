@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/backbone"
 	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
+	commonErr "configcenter/src/common/errors"
 	"configcenter/src/common/types"
 	"configcenter/src/scene_server/task_server/app/options"
 	"configcenter/src/scene_server/task_server/logics"
@@ -43,9 +44,9 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 
 	service := new(tasksvc.Service)
 	taskSrv := new(TaskServer)
-
 	input := &backbone.BackboneParameter{
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover, TLSConfig: op.ServConf.GetTLSClientConf()},
+		SrvRegdiscv: backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover,
+			TLSConfig: op.ServConf.GetTLSClientConf()},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: taskSrv.onHostConfigUpdate,
 		SrvInfo:      svrInfo,
@@ -79,7 +80,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		blog.Errorf("new redis client failed, err: %s", err.Error())
 		return fmt.Errorf("new redis client failed, err: %s", err.Error())
 	}
-
 	taskSrv.Config.Mongo, err = engine.WithMongo()
 	if err != nil {
 		return err
@@ -95,6 +95,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	if initErr := mongodb.Dal().InitTxnManager(cacheDB); initErr != nil {
 		return fmt.Errorf("init txn manager failed, err: %v", initErr)
 	}
+	commonErr.SetGlobalCCError(engine.CCErr)
+	if err = service.SyncDefaultAreaHostTask(engine); err != nil {
+		return err
+	}
 
 	service.Engine = engine
 	service.Config = taskSrv.Config
@@ -102,12 +106,10 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	taskSrv.Core = engine
 	service.Logics = logics.NewLogics(engine.CoreAPI)
 	taskSrv.Service = service
-
 	if err := backbone.StartServer(ctx, cancel, engine, service.WebService(), true); err != nil {
 		blog.Errorf("start backbone failed, err: %+v", err)
 		return err
 	}
-
 	queue := service.NewQueue(taskSrv.taskQueue)
 	queue.Start()
 	select {

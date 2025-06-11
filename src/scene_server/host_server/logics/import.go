@@ -37,7 +37,8 @@ import (
 
 // AddHost TODO
 func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, hostInfos map[int64]map[string]interface{},
-	importType metadata.HostInputType) ([]int64, []string, []string, []string, error) {
+	importType metadata.HostInputType, hostIDMap map[string]int64, existsHostMap map[int64]mapstr.MapStr) ([]int64,
+	[]string, []string, []string, error) {
 
 	toInternalModule, err := lgc.toInternalModule(kit, appID, moduleIDs)
 	if err != nil {
@@ -45,11 +46,6 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, hostIn
 	}
 
 	instance := NewImportInstance(kit, lgc)
-	hostIDMap, existsHostMap, err := instance.ExtractAlreadyExistHosts(kit.Ctx, hostInfos)
-	if err != nil {
-		blog.Errorf("get hosts failed, err:%s, rid:%s", err.Error(), kit.Rid)
-		return nil, nil, nil, nil, err
-	}
 
 	hostIDs := make([]int64, 0)
 	var errMsg, updateErrMsg, successMsg []string
@@ -65,7 +61,7 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, hostIn
 			continue
 		}
 
-		hostID, innerIP, cloudID, existInDB, errInfo := lgc.handleHostParam(ccLang, index, host, hostIDMap)
+		hostID, innerIP, cloudID, existInDB, errInfo := lgc.HandleHostParam(ccLang, index, host, hostIDMap)
 		if errInfo != "" {
 			errMsg = append(errMsg, errInfo)
 			continue
@@ -89,11 +85,14 @@ func (lgc *Logics) AddHost(kit *rest.Kit, appID int64, moduleIDs []int64, hostIn
 				continue
 			}
 		} else {
-			hostID, auditLog, errInfo = instance.addHostInst(kit, ccLang, moduleIDs, cloudID, innerIP, index, host,
+			hostID, auditLog, err = instance.addHostInst(kit, ccLang, moduleIDs, cloudID, innerIP, index, host,
 				appID, toInternalModule)
-			if errInfo != "" {
-				errMsg = append(errMsg, errInfo)
-				continue
+			if err != nil {
+				errMsg = append(errMsg, err.Error())
+				ccCodeErr, isOk := err.(ccErr.CCErrorCoder)
+				if !isOk || ccCodeErr.GetCode() == common.CCErrCommDuplicateItem {
+					return hostIDs, successMsg, updateErrMsg, errMsg, err
+				}
 			}
 			hostIDMap[generateHostCloudKey(innerIP, cloudID)] = hostID
 		}
@@ -144,8 +143,8 @@ func (lgc *Logics) toInternalModule(kit *rest.Kit, appID int64, moduleIDs []int6
 	return isInternalModule, nil
 }
 
-// handleHostParam 处理主机参数,返回：主机id、内网IP、管控区域id、是否已存在于db、错误信息
-func (lgc *Logics) handleHostParam(ccLang language.DefaultCCLanguageIf, index int64, hostInfo map[string]interface{},
+// HandleHostParam 处理主机参数,返回：主机id、内网IP、管控区域id、是否已存在于db、错误信息
+func (lgc *Logics) HandleHostParam(ccLang language.DefaultCCLanguageIf, index int64, hostInfo map[string]interface{},
 	hostIDMap map[string]int64) (int64, string, int64, bool, string) {
 
 	var innerIP string
@@ -217,11 +216,12 @@ func (i *importInstance) updateHostInst(kit *rest.Kit, existsHostInfo mapstr.Map
 // addHostInst 新增主机
 func (i *importInstance) addHostInst(kit *rest.Kit, ccLang language.DefaultCCLanguageIf, moduleIDs []int64,
 	cloudID int64, innerIP string, index int64, hostInfo map[string]interface{}, appID int64, toInternalModule bool) (
-	int64, []metadata.AuditLog, string) {
+	int64, []metadata.AuditLog, error) {
 
 	intHostID, err := i.addHostInstance(cloudID, index, appID, moduleIDs, toInternalModule, hostInfo)
 	if err != nil {
-		return 0, nil, fmt.Errorf(ccLang.Languagef("host_import_add_fail", index, innerIP, err.Error())).Error()
+		blog.Errorf("add host instance failed, hostID: %d, bizID: %d, err: %v, rid: %s", intHostID, appID, err, kit.Rid)
+		return 0, nil, err
 	}
 	hostInfo[common.BKHostIDField] = intHostID
 
@@ -232,9 +232,9 @@ func (i *importInstance) addHostInst(kit *rest.Kit, ccLang language.DefaultCCLan
 	if err != nil {
 		blog.Errorf("generate host audit log failed after create host, hostID: %d, bizID: %d, err: %v, rid: %s",
 			intHostID, appID, err, kit.Rid)
-		return 0, nil, err.Error()
+		return 0, nil, err
 	}
-	return intHostID, auditLog, ""
+	return intHostID, auditLog, nil
 }
 
 // getIpField get ipv4 and ipv6 address, ipv4 and ipv6 address cannot be null at the same time.
@@ -360,6 +360,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64,
 	if err != nil {
 		blog.Errorf("AddHostByExcel failed, GetModuleIDAndIsInternal err:%s, appID:%d, moduleID:%d", err, appID,
 			moduleID)
+		errMsg = append(errMsg, err.Error())
 		return nil, nil, nil, err
 	}
 
@@ -368,6 +369,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64,
 	relRes, err := lgc.getHostRelationDestMsg(kit)
 	if err != nil {
 		blog.Errorf("get object relation failed, err: %v, rid: %s", err, kit.Rid)
+		errMsg = append(errMsg, err.Error())
 		return nil, nil, nil, err
 	}
 
@@ -405,7 +407,7 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64,
 
 		// use new transaction, need a new header
 		kit.Header = kit.NewHeader()
-		_ = lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+		txnErr := lgc.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
 			tableData, err := metadata.GetTableData(host, relRes)
 			if err != nil {
 				errMsg = append(errMsg, ccLang.Languagef("host_import_add_fail", index, innerIP+"/"+innerIPv6,
@@ -456,6 +458,14 @@ func (lgc *Logics) AddHostByExcel(kit *rest.Kit, appID int64, moduleID int64,
 			hostIDs = append(hostIDs, intHostID)
 			return nil
 		})
+
+		if txnErr != nil {
+			ccCodeErr, isOk := txnErr.(ccErr.CCErrorCoder)
+			if !isOk || ccCodeErr.GetCode() == common.CCErrCommDuplicateItem {
+				blog.Errorf("add host failed, duplicate insert, err: %v, rid: %s", txnErr, kit.Rid)
+				return hostIDs, successMsg, errMsg, txnErr
+			}
+		}
 	}
 
 	return hostIDs, successMsg, errMsg, nil
@@ -607,13 +617,16 @@ func (lgc *Logics) AddHostToResourcePool(kit *rest.Kit, hostList metadata.AddHos
 		host[common.BKCloudIDField] = cloudIDVal
 
 		hostID, err := instance.addHostInstance(cloudIDVal, int64(index), bizID, []int64{hostList.Directory},
-			toInternalModule,
-			host)
+			toInternalModule, host)
 		if err != nil {
 			res.Error = append(res.Error, metadata.AddOneHostToResourcePoolResult{
 				Index:    index,
 				ErrorMsg: err.Error(),
 			})
+			ccCodeErr, isOk := err.(ccErr.CCErrorCoder)
+			if !isOk || ccCodeErr.GetCode() == common.CCErrCommDuplicateItem {
+				return nil, nil, err
+			}
 			continue
 		}
 		host[common.BKHostIDField] = hostID
@@ -792,7 +805,7 @@ func (h *importInstance) addHostInstance(cloudID, index, appID int64, moduleIDs 
 	result, err := h.CoreAPI.CoreService().Instance().CreateInstance(h.kit.Ctx, h.kit.Header, common.BKInnerObjIDHost,
 		input)
 	if err != nil {
-		blog.Errorf("addHostInstance http do error,err:%s, input:%+v,rid:%s", err.Error(), host, h.kit.Rid)
+		blog.Errorf("create host instance failed, err: %v, input: %+v, rid:%s", err, host, h.kit.Rid)
 		return 0, err
 	}
 

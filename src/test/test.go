@@ -311,6 +311,10 @@ func DeleteAllHosts() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 	}
+
+	err := db.Shard(sharding.NewShardOpts().WithIgnoreTenant()).Table(common.BKTableNameDefaultAreaHost).Delete(ctx,
+		mapstr.New())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 // DeleteAllObjects delete all non-default objects, used to clean object data without ClearDatabase

@@ -118,7 +118,6 @@ func (s *Service) UpdatePlatformConfig(req *restful.Request, resp *restful.Respo
 			}
 			return
 		}
-
 		if err := s.validateIDGenConf(kit, &config.IDGenerator); err != nil {
 			_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 			return
@@ -138,7 +137,6 @@ func (s *Service) UpdatePlatformConfig(req *restful.Request, resp *restful.Respo
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return
 	}
-
 	err = s.db.Shard(kit.SysShardOpts()).Table(common.BKTableNameSystem).Update(kit.Ctx, cond, updateData)
 	if err != nil {
 		blog.Errorf("update platform config %s failed, err: %v, rid: %s", typeId, err, kit.Rid)
@@ -157,7 +155,6 @@ func (s *Service) UpdatePlatformConfig(req *restful.Request, resp *restful.Respo
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return
 	}
-
 	err = resp.WriteEntity(metadata.NewSuccessResp(fmt.Sprintf("update platform config %s success", typeId)))
 	if err != nil {
 		blog.Errorf("response request url: %s failed, err: %v, rid: %s", req.Request.RequestURI, err, kit.Rid)
@@ -184,8 +181,8 @@ func (s *Service) UpdateGlobalConfig(req *restful.Request, resp *restful.Respons
 	}
 
 	preConf := make(mapstr.MapStr)
-	err := s.db.Shard(kit.ShardOpts()).Table(common.BKTableNameGlobalConfig).Find(mapstr.MapStr{}).Fields(typeId).One(kit.Ctx,
-		&preConf)
+	err := s.db.Shard(kit.ShardOpts()).Table(common.BKTableNameGlobalConfig).Find(mapstr.MapStr{}).Fields(typeId).One(
+		kit.Ctx, &preConf)
 	if err != nil {
 		_ = resp.WriteError(http.StatusOK, &metadata.RespError{Msg: err})
 		return

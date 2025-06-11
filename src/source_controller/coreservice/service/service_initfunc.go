@@ -334,6 +334,9 @@ func (s *coreService) host(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/host/transfer/resource/directory",
 		Handler: s.TransferHostResourceDirectory})
 
+	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/default_area/redundant/host",
+		Handler: s.DelRedundantDefaultAreaHost})
+
 	utility.AddToRestfulWebService(web)
 }
 

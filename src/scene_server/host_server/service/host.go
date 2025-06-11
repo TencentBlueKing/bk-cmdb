@@ -13,6 +13,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,12 +22,14 @@ import (
 	"strings"
 	"sync"
 
+	instlogics "configcenter/pkg/inst/logics"
 	"configcenter/src/ac"
 	"configcenter/src/ac/extensions"
 	authmeta "configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
+	ccErr "configcenter/src/common/errors"
 	ccErrs "configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
@@ -336,26 +339,96 @@ func (s *Service) AddHost(ctx *rest.Contexts) {
 		return
 	}
 
-	retData := make(map[string]interface{})
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		_, success, updateErrRow, errRow, err := s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID}, hostList.HostInfo,
-			hostList.InputType)
+	retData := make(map[string][]string)
+	var txnErr error
+	hostInfos := make([]map[string]interface{}, 0)
+	for _, hostInfo := range hostList.HostInfo {
+		hostInfos = append(hostInfos, hostInfo)
+	}
+
+	instance := logics.NewImportInstance(ctx.Kit, s.Logic)
+	hostIDMap, existsHostMap, err := instance.ExtractAlreadyExistHosts(ctx.Kit.Ctx, hostList.HostInfo)
+	if err != nil {
+		blog.Errorf("get hosts failed, err:%s, rid:%s", err.Error(), ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ccLang := s.Logic.Engine.Language.CreateDefaultCCLanguageIf(httpheader.GetLanguage(ctx.Kit.Header))
+	insertHostInfo := make([]mapstr.MapStr, 0)
+	for index, hostInfo := range hostList.HostInfo {
+		_, _, _, existInDB, errInfo := s.Logic.HandleHostParam(ccLang, index, hostInfo, hostIDMap)
+		if errInfo != "" {
+			blog.Errorf("check host param failed, err: %s, hostInfo: %+v, rid: %s", errInfo, hostInfo, ctx.Kit.Rid)
+			ctx.RespAutoError(fmt.Errorf(errInfo))
+			return
+		}
+
+		if !existInDB {
+			insertHostInfo = append(insertHostInfo, hostInfo)
+		}
+	}
+
+	err = s.retryInsertDuplicateHosts(ctx.Kit, hostInfos, func(kit *rest.Kit) error {
+		retData, txnErr = s.insertHosts(kit, appID, moduleID, hostList, hostIDMap, existsHostMap)
+		return txnErr
+	})
+
+	if err != nil {
+		ctx.RespEntityWithError(retData, err)
+		return
+	}
+
+	ctx.RespEntity(retData)
+}
+
+func (s *Service) retryInsertDuplicateHosts(kit *rest.Kit, hostInfos []map[string]interface{},
+	handler func(kit *rest.Kit) error) error {
+
+	err := handler(kit)
+	ccCodeErr, isOk := err.(ccErr.CCErrorCoder)
+	if !isOk || ccCodeErr.GetCode() != common.CCErrCommDuplicateItem {
+		return err
+	}
+
+	newKit := kit.NewKit().WithCtx(context.Background()).WithTenant(kit.TenantID).WithRid(kit.Rid)
+	removeErr := s.RemoveRedundantHost(newKit, hostInfos)
+	if removeErr != nil {
+		blog.Errorf("remove redundant host failed, err: %v, hostList: %#v, rid: %s", removeErr, hostInfos,
+			kit.Rid)
+		return removeErr
+	}
+
+	err = handler(newKit)
+	return err
+}
+
+func (s *Service) insertHosts(kit *rest.Kit, appID int64, moduleID int64, hostList *meta.HostList,
+	hostIDMap map[string]int64, existsHostMap map[int64]mapstr.MapStr) (map[string][]string, error) {
+
+	retData := map[string][]string{}
+	var success, updateErrRow, errRow []string
+	var err error
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+		_, success, updateErrRow, errRow, err = s.Logic.AddHost(kit, appID, []int64{moduleID},
+			hostList.HostInfo, hostList.InputType, hostIDMap, existsHostMap)
 		if err != nil {
-			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v,input:%+v,rid:%s",
-				success, updateErrRow, err, errRow, hostList, ctx.Kit.Rid)
+			blog.Errorf("add host failed, success: %v, update: %v, err: %v, errRow: %v, input: %+v, rid: %s", success,
+				updateErrRow, err, errRow, hostList, kit.Rid)
 			retData["error"] = errRow
 			retData["update_error"] = updateErrRow
-			return ctx.Kit.CCError.CCError(common.CCErrHostCreateFail)
+			return err
 		}
 		retData["success"] = success
 		return nil
 	})
 
 	if txnErr != nil {
-		ctx.RespEntityWithError(retData, txnErr)
-		return
+		blog.Errorf("add host failed, err: %v, rid: %s", txnErr, kit.Rid)
+		return retData, txnErr
 	}
-	ctx.RespEntity(retData)
+
+	return retData, nil
 }
 
 // AddHostByExcel TODO
@@ -400,17 +473,86 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 	}
 
 	retData := make(map[string]interface{})
-	_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, hostList.HostInfo)
-	retData["success"] = success
-	retData["error"] = errRow
+	hostInfos := make([]map[string]interface{}, 0)
+	for _, hostInfo := range hostList.HostInfo {
+		hostInfos = append(hostInfos, hostInfo)
+	}
+	err := s.retryInsertDuplicateHosts(ctx.Kit, hostInfos, func(kit *rest.Kit) error {
+		_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, hostList.HostInfo)
+		retData["success"] = success
+		retData["error"] = errRow
+
+		return err
+	})
+
 	if err != nil {
-		blog.Errorf("add host failed, success: %v, errRow: %v, err: %v, hostList: %#v, rid: %s", success, errRow, err,
-			hostList, ctx.Kit.Rid)
-		ctx.RespEntityWithError(retData, ctx.Kit.CCError.CCError(common.CCErrHostCreateFail))
+		ctx.RespEntityWithError(retData, err)
 		return
 	}
 
 	ctx.RespEntity(retData)
+}
+
+// RemoveRedundantHost remove host which not exist in host table
+func (s *Service) RemoveRedundantHost(kit *rest.Kit, hostInfo []map[string]interface{}) error {
+	newKit := kit.NewKit().WithCtx(context.Background()).WithTenant(kit.TenantID).WithRid(kit.Rid)
+	hosts := make([]meta.DefaultAreaHost, 0)
+	for _, item := range hostInfo {
+		needDeal, err := instlogics.IsDefaultAreaStaticHost(item)
+		if err != nil {
+			return err
+		}
+		if !needDeal {
+			continue
+		}
+
+		ip, isIPExist := item[common.BKHostInnerIPField].(string)
+
+		ipv6, isIPV6Exist := item[common.BKHostInnerIPv6Field].(string)
+
+		if !isIPExist && !isIPV6Exist {
+			blog.Errorf("invalid default area host, ip and ipv6 is not exist, rid: %s", kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_host_innerip")
+		}
+
+		host := meta.DefaultAreaHost{}
+		if len(ip) != 0 {
+			ipArr, isStrArrType, err := meta.ConvHostSpecialFieldToArray(common.BKHostInnerIPField, ip)
+			if err != nil || !isStrArrType {
+				blog.Errorf("host inner ip is invalid for array, err: %v, rid: %s", err, kit.Rid)
+				return err
+			}
+
+			host.InnerIP = ipArr
+		}
+		if len(ipv6) != 0 {
+			ipV6Arr, isStrArrType, err := meta.ConvHostSpecialFieldToArray(common.BKHostInnerIPv6Field, ipv6)
+			if err != nil || !isStrArrType {
+				blog.Errorf("host inner ipV6 is invalid for array, err: %v, rid: %s", err, kit.Rid)
+				return err
+			}
+
+			host.InnerIPv6 = ipV6Arr
+		}
+		hosts = append(hosts, host)
+	}
+
+	if len(hosts) == 0 {
+		blog.Errorf("remove default area host, but hosts is empty, rid: %s", kit.Rid)
+		return kit.CCError.CCError(common.CCErrDefaultAreaHostIPExist)
+	}
+
+	delRedDefaultAreaHostOption := &meta.DelRedDefaultAreaHostsOption{
+		Hosts:  hosts,
+		OpType: meta.OperationByIP,
+	}
+	err := s.CoreAPI.CoreService().Host().DelRedDefaultAreaHosts(newKit.Ctx, newKit.Header, delRedDefaultAreaHostOption)
+	if err != nil {
+		blog.Errorf("remove default area host failed, err: %v, hosts: %+v, rid: %s", err, hosts, kit.Rid)
+		return err
+	}
+
+	return nil
 }
 
 // AddHostToResourcePool TODO
@@ -434,79 +576,19 @@ func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommParamsNeedSet))
 		return
 	}
-	_, retData, err := s.Logic.AddHostToResourcePool(ctx.Kit, *hostList)
+
+	retData := new(meta.AddHostToResourcePoolResult)
+	err = s.retryInsertDuplicateHosts(ctx.Kit, hostList.HostInfo, func(kit *rest.Kit) error {
+		_, retData, err = s.Logic.AddHostToResourcePool(ctx.Kit, *hostList)
+		return err
+	})
 
 	if err != nil {
-		blog.ErrorJSON("add host failed, retData: %s, err: %s, input:%s, rid:%s", retData, err, hostList, ctx.Kit.Rid)
 		ctx.RespEntityWithError(retData, err)
 		return
 	}
+
 	ctx.RespEntity(retData)
-}
-
-// AddHostFromAgent TODO
-// Deprecated:
-func (s *Service) AddHostFromAgent(ctx *rest.Contexts) {
-
-	agents := new(meta.AddHostFromAgentHostList)
-	if err := ctx.DecodeInto(&agents); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if len(agents.HostInfo) == 0 {
-		blog.Errorf("add host from agent, but got 0 agents from body.input:%+v,rid:%s", agents, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "HostInfo"))
-		return
-	}
-	appID, err := s.Logic.GetDefaultAppID(ctx.Kit)
-	if err != nil {
-		blog.Errorf("AddHostFromAgent GetDefaultAppID error.input:%#v,rid:%s", agents, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	if 0 == appID {
-		blog.Errorf("add host from agent, but got invalid default appID, err: %v,ownerID:%s,input:%#v,rid:%s", err,
-			ctx.Kit.TenantID, agents, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrAddHostToModule, "business not found"))
-		return
-	}
-
-	opt := hutil.NewOperation().WithDefaultField(int64(common.DefaultResModuleFlag)).WithAppID(appID)
-	moduleID, _, err := s.Logic.GetResourcePoolModuleID(ctx.Kit, opt.MapStr())
-	if err != nil {
-		blog.Errorf("add host from agent , but get module id failed, err: %v,ownerID:%s,input:%+v,rid:%s", err,
-			ctx.Kit.TenantID, agents, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-
-	agents.HostInfo["import_from"] = common.HostAddMethodAgent
-	addHost := make(map[int64]map[string]interface{})
-	addHost[1] = agents.HostInfo
-	var success, updateErrRow, errRow []string
-	retData := make(map[string]interface{})
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, appID, []int64{moduleID}, addHost, "")
-		if err != nil {
-			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v,input:%+v,rid:%s",
-				success, updateErrRow, err, errRow, agents, ctx.Kit.Rid)
-
-			retData["success"] = success
-			retData["error"] = errRow
-			retData["update_error"] = updateErrRow
-			return ctx.Kit.CCError.CCError(common.CCErrHostCreateFail)
-		}
-
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespEntityWithError(retData, txnErr)
-		return
-	}
-	ctx.RespEntity(success)
 }
 
 // SearchHost host query by business condition.
@@ -789,114 +871,6 @@ func (s *Service) UpdateHostPropertyBatch(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
-}
-
-// NewHostSyncAppTopo add new hosts to the business
-// synchronize hosts directly to a module in a business if this host does not exist.
-// otherwise, this operation will only change host's attribute.
-// TODO: used by framework.
-func (s *Service) NewHostSyncAppTopo(ctx *rest.Contexts) {
-
-	hostList := new(meta.HostSyncList)
-	if err := ctx.DecodeInto(&hostList); nil != err {
-		ctx.RespAutoError(err)
-		return
-	}
-
-	if hostList.HostInfo == nil {
-		blog.Errorf("add host, but host info is nil.input:%+v,rid:%s", hostList, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "host_info"))
-		return
-	}
-	if 0 == len(hostList.ModuleID) {
-		blog.Errorf("host sync app  parameters required moduleID,input:%+v,rid:%s", hostList, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKModuleIDField))
-		return
-	}
-
-	if common.BatchHostAddMaxRow < len(hostList.HostInfo) {
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "host_info ",
-			common.BatchHostAddMaxRow))
-		return
-	}
-
-	appConds := map[string]interface{}{
-		common.BKAppIDField: hostList.ApplicationID,
-	}
-
-	appInfo, err := s.Logic.GetAppDetails(ctx.Kit, "", appConds)
-	if nil != err {
-		blog.Errorf("host sync app %d failed, err: %v, input: %+v, rid: %s", hostList.ApplicationID, err, hostList,
-			ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	if len(appInfo) == 0 {
-		blog.Errorf("host sync app %d not found, reply: %+v, input: %+v, rid: %s", hostList.ApplicationID,
-			appInfo, hostList, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrTopoGetAppFailed))
-		return
-	}
-
-	moduleCond := []meta.ConditionItem{
-		{
-			Field:    common.BKModuleIDField,
-			Operator: common.BKDBIN,
-			Value:    hostList.ModuleID,
-		},
-	}
-	if len(hostList.ModuleID) > 1 {
-		moduleCond = append(moduleCond, meta.ConditionItem{
-			Field:    common.BKDefaultField,
-			Operator: common.BKDBEQ,
-			Value:    common.DefaultFlagDefaultValue,
-		})
-	}
-	// srvData.lgc..NewHostSyncValidModule(req, data.ApplicationID, data.ModuleID, m.CC.ObjCtrl())
-	moduleIDS, err := s.Logic.GetModuleIDByCond(ctx.Kit, meta.ConditionWithTime{Condition: moduleCond})
-	if err != nil {
-		blog.Errorf("get module id by condition failed, err: %v, input: %+v, rid: %s", err, hostList, ctx.Kit.Rid)
-		ctx.RespAutoError(err)
-		return
-	}
-	if len(moduleIDS) != len(hostList.ModuleID) {
-		blog.Errorf("not found part module: source:%v, db:%v, rid: %s", hostList.ModuleID, moduleIDS, ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrHostModuleIDNotFoundORHasMultipleInnerModuleIDFailed))
-		return
-	}
-
-	// auth: check authorization
-	if err := s.AuthManager.AuthorizeCreateHost(ctx.Kit.Ctx, ctx.Kit.Header, hostList.ApplicationID); err != nil {
-		blog.Errorf("check add hosts authorization failed, business: %d, err: %v, rid: %s", hostList.ApplicationID, err,
-			ctx.Kit.Rid)
-		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommAuthorizeFailed))
-		return
-	}
-
-	retData := make(map[string]interface{})
-	var success, updateErrRow, errRow []string
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		var err error
-		_, success, updateErrRow, errRow, err = s.Logic.AddHost(ctx.Kit, hostList.ApplicationID, hostList.ModuleID,
-			hostList.HostInfo, common.InputTypeApiNewHostSync)
-		if err != nil {
-			blog.Errorf("add host failed, success: %v, update: %v, err: %v, %v, rid: %s",
-				success, updateErrRow, err, errRow, ctx.Kit.Rid)
-
-			retData["success"] = success
-			retData["error"] = errRow
-			retData["update_error"] = updateErrRow
-			return ctx.Kit.CCError.CCError(common.CCErrHostCreateFail)
-		}
-
-		return nil
-	})
-
-	if txnErr != nil {
-		ctx.RespEntityWithError(retData, txnErr)
-		return
-	}
-	ctx.RespEntity(success)
 }
 
 // MoveSetHost2IdleModule bk_set_id and bk_module_id cannot be empty at the same time
@@ -1510,17 +1484,27 @@ func (s *Service) AddHostToBusinessIdle(ctx *rest.Contexts) {
 	}
 
 	var hostIDs []int64
-	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-		hostIDs, err = s.Logic.AddHosts(ctx.Kit, input.ApplicationID, moduleID, input.HostList)
-		if err != nil {
-			blog.Errorf("add host failed, input: %v, err: %v, rid:%s", input.HostList, err, ctx.Kit.Rid)
-			return err
-		}
-		return nil
+
+	result := make([]map[string]interface{}, 0)
+	for _, item := range input.HostList {
+		converted := map[string]interface{}(item)
+		result = append(result, converted)
+	}
+	err = s.retryInsertDuplicateHosts(ctx.Kit, result, func(kit *rest.Kit) error {
+		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+			hostIDs, err = s.Logic.AddHosts(ctx.Kit, input.ApplicationID, moduleID, input.HostList)
+			if err != nil {
+				blog.Errorf("add host failed, input: %v, err: %v, rid:%s", input.HostList, err, ctx.Kit.Rid)
+				return err
+			}
+			return nil
+		})
+
+		return txnErr
 	})
 
-	if txnErr != nil {
-		ctx.RespAutoError(txnErr)
+	if err != nil {
+		ctx.RespAutoError(err)
 		return
 	}
 

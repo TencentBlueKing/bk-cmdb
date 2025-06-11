@@ -20,6 +20,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/driver/mongodb"
@@ -39,8 +40,22 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit,
 		return err
 	}
 
-	if err := validHost(kit, input.CloudID, input.HostIDs); err != nil {
+	originalDefaultAreaHosts, insertDefaultAreaHosts, err := validHost(kit, input.CloudID, input.HostIDs)
+	if err != nil {
 		return err
+	}
+
+	if len(insertDefaultAreaHosts) > 0 {
+		if err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Insert(kit.Ctx,
+			insertDefaultAreaHosts); err != nil {
+			blog.Errorf("insert default area host failed, hosts: %v, err: %v, rid: %s", insertDefaultAreaHosts, err,
+				kit.Rid)
+
+			if mongodb.IsDuplicatedError(err) {
+				return kit.CCError.CCError(common.CCErrCommDuplicateItem)
+			}
+			return kit.CCError.CCError(common.CCErrCommDBInsertFailed)
+		}
 	}
 
 	updateFilter := map[string]interface{}{
@@ -57,6 +72,21 @@ func (hm *hostManager) UpdateHostCloudAreaField(kit *rest.Kit,
 			err, kit.Rid)
 		return kit.CCError.CCError(common.CCErrCommDBUpdateFailed)
 	}
+
+	if len(originalDefaultAreaHosts) > 0 {
+		deleteCond := mapstr.MapStr{
+			common.BKHostIDField: map[string]interface{}{
+				common.BKDBIN: originalDefaultAreaHosts,
+			},
+			common.TenantID: kit.TenantID,
+		}
+		if err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Delete(kit.Ctx,
+			deleteCond); err != nil {
+			blog.Errorf("delete default area host failed, filter: %v, err: %v, rid: %s", deleteCond, err, kit.Rid)
+			return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
+		}
+	}
+
 	return nil
 }
 
@@ -85,7 +115,9 @@ func validCloudID(kit *rest.Kit, cloudID int64) errors.CCErrorCoder {
 	return nil
 }
 
-func validHost(kit *rest.Kit, cloudID int64, hostIDs []int64) errors.CCErrorCoder {
+func validHost(kit *rest.Kit, cloudID int64, hostIDs []int64) ([]int64, []metadata.DefaultAreaHost,
+	errors.CCErrorCoder) {
+
 	// step1. validate bk_host_ids is exist
 	hostFilter := map[string]interface{}{
 		common.BKHostIDField: map[string]interface{}{
@@ -100,37 +132,148 @@ func validHost(kit *rest.Kit, cloudID int64, hostIDs []int64) errors.CCErrorCode
 		All(kit.Ctx, &hostSimplify)
 	if err != nil {
 		blog.Errorf("find host failed, option: %v, err: %v, rid: %s", hostFilter, err, kit.Rid)
-		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+		return nil, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 	if len(hostIDs) != len(hostSimplify) {
 		blog.Errorf("some hosts not found, hostIDs: %v, hosts: %v, rid: %s", hostIDs, hostSimplify, kit.Rid)
-		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+		return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
 	}
 
-	// step2. validate when addressing is static,
+	// step2. validate when addressing is static, get insert and remove default area hosts
 	// unique of bk_cloud_id + bk_host_innerip and bk_cloud_id + bk_host_innerip_v6
+	originalDefaultAreaHosts, insertDefaultAreaHosts, innerIPv4s, innerIPv6s, parseErr := parseHosts(kit, cloudID,
+		hostSimplify)
+	if parseErr != nil {
+		return nil, nil, parseErr
+	}
+
+	if len(innerIPv4s) > 0 || len(innerIPv6s) > 0 {
+		// step3. validate when addressing is static,
+		// unique of bk_cloud_id + bk_inner_ip and bk_cloud_id + bk_host_innerip_v6 and in database
+		if err := validDuplicatedHostInDB(kit, hostIDs, cloudID, innerIPv4s, innerIPv6s); err != nil {
+			return nil, nil, err
+		}
+	}
+	return originalDefaultAreaHosts, insertDefaultAreaHosts, nil
+}
+
+func parseHosts(kit *rest.Kit, cloudID int64, hosts []metadata.HostMapStr) ([]int64, []metadata.DefaultAreaHost,
+	[]string, []string, errors.CCErrorCoder) {
+
 	innerIPv4s := make([]string, 0)
 	ipv4Map := make(map[string]struct{})
 	innerIPv6s := make([]string, 0)
 	ipv6Map := make(map[string]struct{})
-	for _, item := range hostSimplify {
-		addressing, ok := item[common.BKAddressingField].(string)
-		if !ok {
-			blog.Errorf("host field is invalid, field: %s, host: %v, rid: %s", common.BKAddressingField, item, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
+	originalDefaultAreaHosts := make([]int64, 0)
+	insertDefaultAreaHosts := make([]metadata.DefaultAreaHost, 0)
+	for _, host := range hosts {
+		insertHost := metadata.DefaultAreaHost{}
+		needDeal, hostID, oriCloudID, err := getHostFields(kit, host)
+		if err != nil {
+			return nil, nil, nil, nil, err
 		}
-
-		if addressing != common.BKAddressingStatic {
+		if !needDeal || oriCloudID == cloudID {
 			continue
 		}
 
+		ipv4, ok := host[common.BKHostInnerIPField].(string)
+		if ok {
+			if _, ok := ipv4Map[ipv4]; ok {
+				return nil, nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem,
+					common.BKHostInnerIPField)
+			}
+			ipv4Map[ipv4] = struct{}{}
+			innerIPv4s = append(innerIPv4s, ipv4)
+			ipArr := strings.Split(ipv4, ",")
+			if len(ipArr) > 0 {
+				insertHost.InnerIP = ipArr
+			}
+			insertHost.HostID = hostID
+		}
+
+		ipv6, ok := host[common.BKHostInnerIPv6Field].(string)
+		if ok {
+			if _, ok := ipv6Map[ipv6]; ok {
+				return nil, nil, nil, nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem,
+					common.BKHostInnerIPv6Field)
+			}
+			ipv6Map[ipv6] = struct{}{}
+			innerIPv6s = append(innerIPv6s, ipv6)
+			ipArr := strings.Split(ipv6, ",")
+			if len(ipArr) > 0 {
+				insertHost.InnerIPv6 = ipArr
+			}
+			insertHost.HostID = hostID
+		}
+
+		if hostID != 0 {
+			insertHost.TenantID = kit.TenantID
+			insertDefaultAreaHosts = append(insertDefaultAreaHosts, insertHost)
+		}
+
+		if oriCloudID == common.BKDefaultDirSubArea {
+			originalDefaultAreaHosts = append(originalDefaultAreaHosts, hostID)
+		}
+	}
+
+	if cloudID == common.BKDefaultDirSubArea {
+		return nil, insertDefaultAreaHosts, innerIPv4s, innerIPv6s, nil
+	}
+
+	return originalDefaultAreaHosts, nil, innerIPv4s, innerIPv6s, nil
+}
+
+func getHostFields(kit *rest.Kit, item metadata.HostMapStr) (bool, int64, int64, errors.CCErrorCoder) {
+	addressing, ok := item[common.BKAddressingField].(string)
+	if !ok {
+		blog.Errorf("host field is invalid, field: %s, host: %v, rid: %s", common.BKAddressingField, item, kit.Rid)
+		return false, 0, 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAddressingField)
+	}
+
+	if addressing != common.BKAddressingStatic {
+		return false, 0, 0, nil
+	}
+
+	hostID, ok := item[common.BKHostIDField].(int64)
+	if !ok {
+		return false, 0, 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
+	}
+
+	cloudID, ok := item[common.BKCloudIDField].(int64)
+	if !ok {
+		blog.Errorf("cloudID field is invalid, field: %s, host: %v, rid: %s", common.BKCloudIDField, item, kit.Rid)
+		return false, 0, 0, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKCloudIDField)
+	}
+	return true, hostID, cloudID, nil
+}
+
+func validDefaultAreaHost(kit *rest.Kit, cloudID int64, hostSimplify []metadata.HostMapStr) errors.CCErrorCoder {
+	ipv4Map := make(map[string]struct{})
+	ipv6Map := make(map[string]struct{})
+	defaultAreaHost := make([]metadata.DefaultAreaHost, 0)
+
+	for _, item := range hostSimplify {
+		needDeal, hostID, oriCloudID, err := getHostFields(kit, item)
+		if err != nil {
+			return err
+		}
+		if !needDeal {
+			continue
+		}
+
+		if oriCloudID == cloudID {
+			continue
+		}
+
+		insertHost := metadata.DefaultAreaHost{}
 		ipv4, ok := item[common.BKHostInnerIPField].(string)
 		if ok {
 			if _, ok := ipv4Map[ipv4]; ok {
 				return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPField)
 			}
-			innerIPv4s = append(innerIPv4s, ipv4)
 			ipv4Map[ipv4] = struct{}{}
+			ipArr := strings.Split(ipv4, ",")
+			insertHost.InnerIP = ipArr
 		}
 
 		ipv6, ok := item[common.BKHostInnerIPv6Field].(string)
@@ -138,18 +281,18 @@ func validHost(kit *rest.Kit, cloudID int64, hostIDs []int64) errors.CCErrorCode
 			if _, ok := ipv6Map[ipv6]; ok {
 				return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPv6Field)
 			}
-			innerIPv6s = append(innerIPv6s, ipv6)
 			ipv6Map[ipv6] = struct{}{}
+			ipV6Arr := strings.Split(ipv6, ",")
+			insertHost.InnerIPv6 = ipV6Arr
 		}
+
+		insertHost.HostID = hostID
+		insertHost.CloudID = common.BKDefaultDirSubArea
+		insertHost.TenantID = kit.TenantID
+		defaultAreaHost = append(defaultAreaHost, insertHost)
 	}
 
-	// step3. validate when addressing is static,
-	// unique of bk_cloud_id + bk_inner_ip and bk_cloud_id + bk_host_innerip_v6 and in database
-	if err := validDuplicatedHostInDB(kit, hostIDs, cloudID, innerIPv4s, innerIPv6s); err != nil {
-		return err
-	}
-
-	return nil
+	return insertDefaultAreaHost(kit, defaultAreaHost)
 }
 
 func validDuplicatedHostInDB(kit *rest.Kit, hostIDs []int64, cloudID int64, innerIPv4s []string,
@@ -197,6 +340,23 @@ func validDuplicatedHostInDB(kit *rest.Kit, hostIDs []int64, cloudID int64, inne
 		blog.Errorf("duplicated hosts exits, option: %v, host: %v, rid: %s", dbHostFilter, duplicatedHosts, kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem,
 			common.BKHostInnerIPField+" or "+common.BKHostInnerIPv6Field)
+	}
+
+	return nil
+}
+
+func insertDefaultAreaHost(kit *rest.Kit, defaultAreaHost []metadata.DefaultAreaHost) errors.CCErrorCoder {
+
+	if len(defaultAreaHost) == 0 {
+		return nil
+	}
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Insert(kit.Ctx, defaultAreaHost)
+	if err != nil {
+		blog.Errorf("insert default area host failed, option: %v, err: %v, rid: %s", defaultAreaHost, err, kit.Rid)
+		if mongodb.IsDuplicatedError(err) {
+			return kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, common.BKHostInnerIPField)
+		}
+		return kit.CCError.CCError(common.CCErrCommDBInsertFailed)
 	}
 
 	return nil

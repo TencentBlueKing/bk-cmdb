@@ -541,7 +541,6 @@ func getUniqueKeysStr(keys []metadata.UniqueKey, objID string) string {
 }
 
 func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
-
 	table := common.BKTableNameObjUnique
 	uniqueData, err := getTemplateData[tenanttmp.UniqueKeyTmp](kit, tenanttmp.TemplateTypeUniqueKeys)
 	if err != nil {
@@ -581,7 +580,6 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 				ID:   attrIDMap[getObjPropertyUnique(uniqueData[index].Data.ObjectID, field)],
 			})
 		}
-
 		uniqueStr := getUniqueKeysStr(keys, uniqueData[index].Data.ObjectID)
 		if _, ok := existData[uniqueStr]; ok {
 			continue
@@ -618,7 +616,6 @@ func insertUniqueKeyData(kit *rest.Kit, db local.DB) error {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
-
 	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
@@ -633,31 +630,38 @@ func getSvrCategoryUniqueStr(name string, isSubCategory bool) string {
 	return fmt.Sprintf("%s*0", name)
 }
 
-func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
+func getSvrExistData(kit *rest.Kit, db local.DB) (map[string]int64, error) {
 
-	table := common.BKTableNameServiceCategory
-	svrCategoryTmp, err := getTemplateData[tenanttmp.SvrCategoryTmp](kit, tenanttmp.TemplateTypeServiceCategory)
-	if err != nil {
-		blog.Errorf("get template data failed, err: %v", err)
-		return err
-	}
 	result := make([]metadata.ServiceCategory, 0)
-	err = db.Table(table).Find(mapstr.MapStr{}).Fields(common.BKFieldName, common.BKParentIDField).All(kit.Ctx, &result)
+	err := db.Table(common.BKTableNameServiceCategory).Find(mapstr.MapStr{}).Fields(common.BKFieldName,
+		common.BKParentIDField).All(kit.Ctx, &result)
 	if err != nil {
-		blog.Errorf("get data from table %s failed, err: %v", table, err)
-		return err
+		blog.Errorf("get data from table %s failed, err: %v", common.BKTableNameServiceCategory, err)
+		return nil, err
 	}
 
 	existData := make(map[string]int64, 0)
 	for _, item := range result {
 		existData[getSvrCategoryUniqueStr(item.Name, item.ParentID != 0)] = item.ID
 	}
+	return existData, nil
+}
 
-	insertData := make([]*metadata.ServiceCategory, 0)
+func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
+	table := common.BKTableNameServiceCategory
+	svrCategoryTmp, err := getTemplateData[tenanttmp.SvrCategoryTmp](kit, tenanttmp.TemplateTypeServiceCategory)
+	if err != nil {
+		blog.Errorf("get template data failed, err: %v", err)
+		return err
+	}
+	existData, err := getSvrExistData(kit, db)
+	if err != nil {
+		return err
+	}
+
 	existParent := make(map[string]int64, 0)
 	insertParent := make(map[string]*metadata.ServiceCategory, 0)
 	insertSubCategory := make(map[string][]*metadata.ServiceCategory, 0)
-	// get insert parent category
 	insertCount := 0
 	for _, item := range svrCategoryTmp {
 		uniqueStr := getSvrCategoryUniqueStr(item.Data.Name, item.Data.ParentName != "")
@@ -692,8 +696,21 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 		return err
 	}
 
+	err = insertSvrData(kit, db, insertParent, ids, existParent, insertSubCategory)
+	if err != nil {
+		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
+		return err
+	}
+	return nil
+}
+
+func insertSvrData(kit *rest.Kit, db local.DB, insertParent map[string]*metadata.ServiceCategory, ids []uint64,
+	existParent map[string]int64, insertSubCategory map[string][]*metadata.ServiceCategory) error {
+
+	table := common.BKTableNameServiceCategory
 	idxCount := 0
 	auditLogs := make([]*auditlog.TenantTmpAuditOpts, 0)
+	insertData := make([]*metadata.ServiceCategory, 0)
 	for key := range insertParent {
 		insertParent[key].ID = int64(ids[idxCount])
 		insertParent[key].RootID = int64(ids[idxCount])
@@ -707,7 +724,6 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 			Type:         tenanttmp.TemplateTypeServiceCategory,
 		})
 	}
-
 	for parentName, subValues := range insertSubCategory {
 		for index := range subValues {
 			subValues[index].ID = int64(ids[idxCount])
@@ -724,16 +740,14 @@ func insertSvrCategoryData(kit *rest.Kit, db local.DB) error {
 		}
 	}
 
-	if err = db.Table(table).Insert(kit.Ctx, insertData); err != nil {
+	if err := db.Table(table).Insert(kit.Ctx, insertData); err != nil {
 		blog.Errorf("insert data for table %s failed, err: %v, rid: %s", table, err, kit.Rid)
 		return err
 	}
-
-	if err = addTenantTmpAudit(kit, db, auditLogs); err != nil {
+	if err := addTenantTmpAudit(kit, db, auditLogs); err != nil {
 		blog.Errorf("add audit log failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-
 	return nil
 }
 

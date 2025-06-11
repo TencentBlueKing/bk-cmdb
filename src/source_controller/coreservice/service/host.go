@@ -17,7 +17,9 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/condition"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -256,4 +258,181 @@ func (s *coreService) TransferHostResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+func delRedundantDefaultAreaHostByID(kit *rest.Kit, option []metadata.DefaultAreaHost) error {
+	hostIDs := make([]int64, 0)
+	for _, item := range option {
+		hostIDs = append(hostIDs, item.HostID)
+	}
+
+	hosts := make([]metadata.DefaultAreaHost, 0)
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Find(mapstr.MapStr{
+		common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs}}).All(kit.Ctx, &hosts)
+	if err != nil {
+		return kit.CCError.CCError(common.CCErrCommDBSelectFailed)
+	}
+
+	tenantHostIDMap := make(map[string][]int64)
+	for _, item := range hosts {
+		if _, ok := tenantHostIDMap[item.TenantID]; !ok {
+			tenantHostIDMap[item.TenantID] = make([]int64, 0)
+		}
+		tenantHostIDMap[item.TenantID] = append(tenantHostIDMap[item.TenantID], item.HostID)
+	}
+
+	if err := deleteRedundantHostByConds(kit, tenantHostIDMap); err != nil {
+		blog.Errorf("delete redundant default area host failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// DelRedundantDefaultAreaHost delete redundant default area host
+func (s *coreService) DelRedundantDefaultAreaHost(ctx *rest.Contexts) {
+	option := new(metadata.DelRedDefaultAreaHostsOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	if option.OpType == metadata.OperationByHostID {
+		err := delRedundantDefaultAreaHostByID(ctx.Kit, option.Hosts)
+		if err != nil {
+			ctx.RespAutoError(err)
+			return
+		}
+		ctx.RespEntity(nil)
+	}
+
+	tenantHostMap, err := getRelatedDefaultAreaHost(ctx.Kit, option.Hosts)
+	if err != nil {
+		blog.Errorf("get related default area host failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	err = deleteRedundantHostByConds(ctx.Kit, tenantHostMap)
+	if err != nil {
+		blog.Errorf("delete redundant default area host failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
+// deleteRedundantHostByConds delete redundant host by condition
+func deleteRedundantHostByConds(kit *rest.Kit, tenantHostMap map[string][]int64) error {
+	removeHostIDs := make([]int64, 0)
+	isInsertConflict := false
+	for tenantID, hosts := range tenantHostMap {
+		findCond := make([]mapstr.MapStr, 0)
+		for _, hostID := range hosts {
+			findCond = append(findCond, mapstr.MapStr{
+				common.BKHostIDField: hostID,
+			})
+		}
+		existHosts := make([]metadata.DefaultAreaHost, 0)
+		newKit := kit.NewKit().WithTenant(tenantID)
+		err := mongodb.Shard(newKit.ShardOpts()).Table(common.BKTableNameBaseHost).Find(mapstr.MapStr{
+			condition.BKDBOR: findCond}).All(newKit.Ctx, &existHosts)
+		if err != nil {
+			blog.Errorf("get exist host failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+		if len(existHosts) > 0 {
+			isInsertConflict = true
+		}
+
+		existHostMap := make(map[int64]struct{})
+		for _, host := range existHosts {
+			existHostMap[host.HostID] = struct{}{}
+		}
+
+		for _, hostID := range hosts {
+			if _, ok := existHostMap[hostID]; !ok {
+				removeHostIDs = append(removeHostIDs, hostID)
+			}
+		}
+	}
+
+	if len(removeHostIDs) == 0 {
+		return kit.CCError.CCError(common.CCErrDefaultAreaHostIPExist)
+	}
+
+	cond := mapstr.MapStr{
+		common.BKHostIDField: mapstr.MapStr{
+			condition.BKDBIN: removeHostIDs,
+		},
+	}
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Delete(kit.Ctx, cond)
+	if err != nil {
+		blog.Errorf("delete default area host failed, err: %v, cond: %+v, rid: %s", err, cond, kit.Rid)
+		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
+	}
+
+	if isInsertConflict {
+		return kit.CCError.CCError(common.CCErrCommDBDeleteFailed)
+	}
+	return nil
+}
+
+func getRelatedDefaultAreaHost(kit *rest.Kit, option []metadata.DefaultAreaHost) (
+	map[string][]int64, error) {
+
+	hostConds := getIpCondition(option)
+	results := make([]metadata.DefaultAreaHost, 0)
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Find(mapstr.MapStr{
+		condition.BKDBOR: hostConds}).All(kit.Ctx, &results)
+	if err != nil {
+		blog.Errorf("get default area host failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
+	}
+
+	tenantHostMap := make(map[string][]int64)
+	for _, host := range results {
+		_, exist := tenantHostMap[host.TenantID]
+		if !exist {
+			tenantHostMap[host.TenantID] = make([]int64, 0)
+		}
+		tenantHostMap[host.TenantID] = append(tenantHostMap[host.TenantID], host.HostID)
+	}
+
+	return tenantHostMap, nil
+}
+
+func getIpCondition(hosts []metadata.DefaultAreaHost) []mapstr.MapStr {
+
+	ipArr := make([]string, 0)
+	ipV6Arr := make([]string, 0)
+	for _, host := range hosts {
+		if host.InnerIP != nil {
+			ipArr = append(ipArr, host.InnerIP...)
+		}
+
+		if host.InnerIPv6 != nil {
+			ipV6Arr = append(ipV6Arr, host.InnerIPv6...)
+		}
+	}
+
+	hostConds := make([]mapstr.MapStr, 0)
+	if len(ipArr) > 0 {
+		hostConds = append(hostConds, mapstr.MapStr{
+			common.BKHostInnerIPField: mapstr.MapStr{
+				common.BKDBIN: ipArr,
+			},
+		})
+	}
+
+	if len(ipV6Arr) > 0 {
+		hostConds = append(hostConds, mapstr.MapStr{
+			common.BKHostInnerIPv6Field: mapstr.MapStr{
+				common.BKDBIN: ipV6Arr,
+			},
+		})
+	}
+
+	return hostConds
 }

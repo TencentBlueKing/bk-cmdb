@@ -321,6 +321,15 @@ type TableData struct {
 	SrcModel         string
 }
 
+// DefaultAreaHost default area host
+type DefaultAreaHost struct {
+	InnerIP   []string `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	InnerIPv6 []string `json:"bk_host_innerip_v6" bson:"bk_host_innerip_v6"`
+	CloudID   int64    `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	HostID    int64    `json:"bk_host_id" bson:"bk_host_id"`
+	TenantID  string   `json:"tenant_id" bson:"tenant_id"`
+}
+
 // GetTableData get table data, it will delete origin data table value
 func GetTableData(originData map[string]interface{}, relRes []ModelQuoteRelation) (*TableData, error) {
 

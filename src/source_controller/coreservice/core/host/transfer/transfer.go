@@ -164,6 +164,14 @@ func (t *genericTransfer) DeleteHosts(kit *rest.Kit, hostIDs []int64) error {
 		return kit.CCError.CCErrorf(common.CCErrCommDBDeleteFailed)
 	}
 
+	hostCond[common.TenantID] = kit.TenantID
+	err := mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Delete(kit.Ctx, hostCond)
+	if err != nil {
+		blog.Errorf("delete host failed from default area, err: %s, host ID: %+v, rid: %s", err, hostIDs,
+			kit.Rid)
+		return err
+	}
+
 	return nil
 }
 

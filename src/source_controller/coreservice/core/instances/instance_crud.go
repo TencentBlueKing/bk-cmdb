@@ -28,7 +28,6 @@ import (
 )
 
 func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr.MapStr) ([]uint64, error) {
-
 	instTableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
 	if err != nil {
 		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
@@ -41,7 +40,7 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 	}
 	mappings := make([]mapstr.MapStr, 0)
 	ts := time.Now()
-
+	insertDefaultAreaHosts := make([]mapstr.MapStr, 0)
 	for idx := range params {
 		if objID == common.BKInnerObjIDHost {
 			params[idx], err = metadata.ConvertHostSpecialStringToArray(params[idx])
@@ -49,8 +48,17 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 				blog.Errorf("convert host special string to array failed, err: %v, rid: %s", err, kit.Rid)
 				return nil, err
 			}
-		}
 
+			DefaultAreaHost, isDefaultAreaStaticHost, err := m.validDefaultAreaHost(kit,
+				params[idx], int64(ids[idx]))
+			if err != nil {
+				blog.Errorf("valid default area host failed, err: %v, rid: %s", err, kit.Rid)
+				return nil, err
+			}
+			if isDefaultAreaStaticHost && len(DefaultAreaHost) > 0 {
+				insertDefaultAreaHosts = append(insertDefaultAreaHosts, DefaultAreaHost)
+			}
+		}
 		// build new object instance data.
 		if !valid.IsInnerObject(objID) {
 			params[idx][common.BKObjIDField] = objID
@@ -58,11 +66,9 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 		params[idx].Set(instIDFieldName, ids[idx])
 		params[idx].Set(common.CreateTimeField, ts)
 		params[idx].Set(common.LastTimeField, ts)
-
 		params[idx].Set(common.BKCreatedBy, kit.User)
 		params[idx].Set(common.BKCreatedAt, ts)
 		params[idx].Set(common.BKUpdatedAt, ts)
-
 		if !metadata.IsCommon(objID) {
 			continue
 		}
@@ -70,7 +76,6 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 		mapping := make(mapstr.MapStr, 0)
 		mapping[instIDFieldName] = ids[idx]
 		mapping[common.BKObjIDField] = objID
-
 		mappings = append(mappings, mapping)
 	}
 
@@ -81,7 +86,17 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 			return nil, err
 		}
 	}
-
+	if len(insertDefaultAreaHosts) > 0 {
+		err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Insert(kit.Ctx,
+			insertDefaultAreaHosts)
+		if err != nil {
+			blog.Errorf("save default area host failed, err: %v, rid: %s", err, kit.Rid)
+			if mongodb.IsDuplicatedError(err) {
+				return nil, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem)
+			}
+			return nil, err
+		}
+	}
 	// save object instances.
 	err = mongodb.Shard(kit.ShardOpts()).Table(instTableName).Insert(kit.Ctx, params)
 	if err != nil {
@@ -92,28 +107,43 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 		}
 		return nil, err
 	}
-
 	return ids, nil
 }
 
 func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.MapStr) (uint64, error) {
+	instTableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
+	if err != nil {
+		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
+		return 0, err
+	}
+	ids, err := getSequences(kit, instTableName, 1)
+	if err != nil {
+		return 0, err
+	}
+
 	if objID == common.BKInnerObjIDHost {
 		var err error
 		inputParam, err = metadata.ConvertHostSpecialStringToArray(inputParam)
 		if err != nil {
 			return 0, err
 		}
-	}
+		insertDefaultAreaHost, isDefaultAreaStaticHost, err := m.validDefaultAreaHost(kit, inputParam, int64(ids[0]))
+		if err != nil {
+			blog.Errorf("valid default area host failed, err: %v, rid: %s", err, kit.Rid)
+			return 0, err
+		}
 
-	instTableName, err := logics.GetObjInstTableFromCache(kit, m.clientSet, objID)
-	if err != nil {
-		blog.Errorf("get object(%s) instance table name failed, err: %v, rid: %s", objID, err, kit.Rid)
-		return 0, err
-	}
-
-	ids, err := getSequences(kit, instTableName, 1)
-	if err != nil {
-		return 0, err
+		if isDefaultAreaStaticHost && len(insertDefaultAreaHost) > 0 {
+			err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Insert(kit.Ctx,
+				insertDefaultAreaHost)
+			if err != nil {
+				blog.Errorf("save default area host failed, err: %v, rid: %s", err, kit.Rid)
+				if mongodb.IsDuplicatedError(err) {
+					return 0, kit.CCError.CCErrorf(common.CCErrCommDuplicateItem)
+				}
+				return 0, err
+			}
+		}
 	}
 
 	// build new object instance data.
@@ -148,6 +178,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 	if err != nil {
 		blog.Errorf("save instance error. err: %v, objID: %s, instance: %+v, rid: %s", err, objID, inputParam,
 			kit.Rid)
+
 		if mongodb.IsDuplicatedError(err) {
 			return ids[0], kit.CCError.CCErrorf(common.CCErrCommDuplicateItem, mongodb.GetDuplicateKey(err))
 		}
@@ -280,4 +311,35 @@ func (m *instanceManager) countInstance(kit *rest.Kit, objID string, cond mapstr
 	count, err = mongodb.Shard(kit.ShardOpts()).Table(tableName).Find(cond).Count(kit.Ctx)
 
 	return count, err
+}
+
+// validDefaultAreaHost valid the default area host, ip is not allowed to be duplicated
+func (m *instanceManager) validDefaultAreaHost(kit *rest.Kit, instanceData mapstr.MapStr, hostID int64) (mapstr.MapStr,
+	bool, error) {
+
+	insertData := make(mapstr.MapStr)
+	needDeal, err := logics.IsDefaultAreaStaticHost(instanceData)
+	if err != nil {
+		return insertData, false, err
+	}
+	if !needDeal {
+		return insertData, false, nil
+	}
+
+	ip, isIPExist := instanceData[common.BKHostInnerIPField]
+
+	ipv6, isIPV6Exist := instanceData[common.BKHostInnerIPv6Field]
+
+	if !isIPExist && !isIPV6Exist {
+		blog.Errorf("invalid default area host, ip and ipv6 is not exist, rid: %s", kit.Rid)
+		return nil, false, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_host_innerip")
+	}
+
+	return mapstr.MapStr{
+		common.BKHostIDField:        hostID,
+		common.BKCloudIDField:       common.BKDefaultDirSubArea,
+		common.BKHostInnerIPField:   ip,
+		common.BKHostInnerIPv6Field: ipv6,
+		common.TenantID:             kit.TenantID,
+	}, true, nil
 }

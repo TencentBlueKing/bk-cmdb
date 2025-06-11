@@ -220,7 +220,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 	if cond == nil {
 		return make([]string, 0), nil
 	}
-
 	if len(opts.IDList) > 0 {
 		idCond := make(map[string]interface{})
 		if isResourceIDStringType(resourceType) {
@@ -237,7 +236,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			}
 			idCond[idField] = map[string]interface{}{common.BKDBIN: ids}
 		}
-
 		cond = map[string]interface{}{common.BKDBAND: []map[string]interface{}{idCond, cond}}
 	}
 

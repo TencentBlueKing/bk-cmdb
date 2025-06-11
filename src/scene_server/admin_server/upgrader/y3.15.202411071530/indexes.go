@@ -1876,6 +1876,49 @@ var (
 			Background: true,
 		},
 	}
+	defaultAreaHostIndexes = []types.Index{
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "bkCloudID_bkHostInnerIP",
+			Keys: bson.D{
+				{"bk_cloud_id", 1},
+				{"bk_host_innerip", 1},
+			},
+			Unique:     true,
+			Background: true,
+			PartialFilterExpression: map[string]interface{}{
+				"bk_cloud_id":     map[string]string{common.BKDBType: "number"},
+				"bk_host_innerip": map[string]string{common.BKDBType: "string"},
+			},
+		},
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "bkCloudID_bkHostInnerIPV6",
+			Keys: bson.D{
+				{"bk_cloud_id", 1},
+				{"bk_host_innerip_v6", 1},
+			},
+			Unique:     true,
+			Background: true,
+			PartialFilterExpression: map[string]interface{}{
+				"bk_cloud_id":        map[string]string{common.BKDBType: "number"},
+				"bk_host_innerip_v6": map[string]string{common.BKDBType: "string"},
+			},
+		},
+		{
+			Name: common.CCLogicIndexNamePrefix + "tenantID",
+			Keys: bson.D{
+				{common.TenantID, 1},
+			},
+			Background: true,
+		},
+		{
+			Name: common.CCLogicUniqueIdxNamePrefix + "bkHostID",
+			Keys: bson.D{
+				{"bk_host_id", 1},
+			},
+			Unique:     true,
+			Background: true,
+		},
+	}
 )
 
 var templateIndexes = []types.Index{

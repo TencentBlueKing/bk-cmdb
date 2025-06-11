@@ -522,6 +522,10 @@ func (c *Cache) tryRefreshIDList(kit *rest.Kit, opt *refreshIDListOpt) {
 		return
 	}
 
+	c.refreshIDListBackTask(kit, idListKey, lockKey, opt)
+}
+
+func (c *Cache) refreshIDListBackTask(kit *rest.Kit, idListKey, lockKey string, opt *refreshIDListOpt) {
 	go func() {
 		kit.Ctx = util.SetDBReadPreference(context.Background(), common.SecondaryPreferredMode)
 		blog.V(4).Infof("start refresh %s id list cache %s, rid: %s", c.key.Resource(), idListKey, kit.Rid)
@@ -530,7 +534,7 @@ func (c *Cache) tryRefreshIDList(kit *rest.Kit, opt *refreshIDListOpt) {
 		defer redis.Client().Del(kit.Ctx, lockKey)
 
 		// already get lock, refresh the id list cache now
-		err = c.refreshIDList(kit, opt)
+		err := c.refreshIDList(kit, opt)
 		if err != nil {
 			blog.Errorf("refresh %s id list cache %s failed, err: %v, rid: %s", c.key.Resource(), idListKey, err,
 				kit.Rid)
@@ -547,7 +551,6 @@ func (c *Cache) refreshIDList(kit *rest.Kit, opt *refreshIDListOpt) error {
 
 	idListKey := opt.filterOpt.IDListKey
 	tempKey := c.key.IDListTempKey(idListKey, kit.Rid)
-
 	// set the temp id list key in redis for the event watch to judge which temp id list to write to
 	err := redis.Client().Set(kit.Ctx, c.key.IDListTempKey(idListKey), tempKey,
 		c.withRandomExpireSeconds(opt.ttl)).Err()
@@ -562,7 +565,6 @@ func (c *Cache) refreshIDList(kit *rest.Kit, opt *refreshIDListOpt) error {
 	}()
 
 	blog.V(4).Infof("try to refresh id list %s with temp key: %s, rid: %s", idListKey, tempKey, kit.Rid)
-
 	listOpt := &types.ListDetailOpt{
 		OnlyListID:   true,
 		IDListFilter: opt.filterOpt,
@@ -581,7 +583,6 @@ func (c *Cache) refreshIDList(kit *rest.Kit, opt *refreshIDListOpt) error {
 			break
 		}
 		total += stepLen
-
 		pip := redis.Client().Pipeline()
 		// because the temp key is a random key, so we set an expiry time so that it can be gc,
 		// but we will reset the expiry time when this key is renamed to a normal key.
@@ -593,14 +594,12 @@ func (c *Cache) refreshIDList(kit *rest.Kit, opt *refreshIDListOpt) error {
 					kit.Rid)
 				continue
 			}
-
 			// write to the temp key
 			pip.ZAdd(tempKey, &rawRedis.Z{
 				Score:  score,
 				Member: id,
 			})
 		}
-
 		if _, err = pip.Exec(); err != nil {
 			blog.Errorf("update temp id list %s failed, err: %v, data: %+v, rid: %s", tempKey, err, dbData, kit.Rid)
 			return err
@@ -616,16 +615,21 @@ func (c *Cache) refreshIDList(kit *rest.Kit, opt *refreshIDListOpt) error {
 				kit.Rid)
 			return err
 		}
-
 		listOpt.Page.StartID = info.id
 		listOpt.Page.StartOid = info.oid
 		time.Sleep(50 * time.Millisecond)
 	}
-
 	if total == 0 {
 		return nil
 	}
+	if err = c.deleteIDListTask(kit, idListKey, tempKey, opt); err != nil {
+		return err
+	}
+	blog.V(4).Infof("refresh id list key: %s success, count: %d. rid: %s", idListKey, total, kit.Rid)
+	return nil
+}
 
+func (c *Cache) deleteIDListTask(kit *rest.Kit, idListKey, tempKey string, opt *refreshIDListOpt) error {
 	// if id list exists, we need to delete it
 	exists, err := isIDListExists(kit, idListKey)
 	if err != nil {
@@ -656,8 +660,6 @@ func (c *Cache) refreshIDList(kit *rest.Kit, opt *refreshIDListOpt) error {
 		kit.Ctx = context.Background()
 		go c.deleteIDList(kit, tempOldKey)
 	}
-
-	blog.V(4).Infof("refresh id list key: %s success, count: %d. rid: %s", idListKey, total, kit.Rid)
 	return nil
 }
 

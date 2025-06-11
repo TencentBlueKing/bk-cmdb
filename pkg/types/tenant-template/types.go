@@ -15,7 +15,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tenant_template
+package tenanttemplate
 
 // TenantTemplateType tenant template type
 type TenantTemplateType string

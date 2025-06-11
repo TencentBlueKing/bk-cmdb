@@ -22,6 +22,7 @@
 	"1106022": "Failed to add resource confirm history",
 	"1106023": "Failed to search synchronization history",
 	"1106024": "Query Host Snapshot Batch Failed",
+	"1106025": "Failed to add new default control area host ip conflict with system built-in ip",
 
 	"": ""
 }
