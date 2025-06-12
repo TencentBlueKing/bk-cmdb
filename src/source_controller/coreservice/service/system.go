@@ -13,6 +13,8 @@
 package service
 
 import (
+	"strconv"
+
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
@@ -86,4 +88,42 @@ func (s *coreService) GetHostSnapDataID(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(dataID)
+}
+
+// GetTenantByHostSnapDataID get tenant id by host snap data id
+func (s *coreService) GetTenantByHostSnapDataID(ctx *rest.Contexts) {
+	dataIDStr := ctx.Request.PathParameter("data_id")
+	dataID, err := strconv.ParseInt(dataIDStr, 10, 64)
+	if err != nil {
+		blog.Errorf("parse data id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "data_id"))
+		return
+	}
+	cond := map[string]interface{}{
+		common.BKFieldDBID: "gse_data_id",
+	}
+
+	dataIDInfo := new(metadata.DataIDInfo)
+	err = mongodb.Shard(ctx.Kit.SysShardOpts()).Table(common.BKTableNameSystem).Find(cond).
+		Fields("host_snap").One(ctx.Kit.Ctx, dataIDInfo)
+	if err != nil {
+		blog.Errorf("get host snap data id failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommDBSelectFailed))
+		return
+	}
+
+	if len(dataIDInfo.HostSnap) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+		return
+	}
+
+	for tenant, id := range dataIDInfo.HostSnap {
+		if id == dataID {
+			ctx.RespEntity(tenant)
+			return
+		}
+	}
+
+	ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrCommNotFound))
+	return
 }

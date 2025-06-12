@@ -32,26 +32,8 @@ data:
         caFile: {{ .Values.certPath }}/elasticsearch/{{ .Values.common.es.tls.caFile }}
         {{- end }}
         insecureSkipVerify: {{ .Values.common.es.tls.insecureSkipVerify }}
-    # esb配置
-    esb:
-      addr: {{ .Values.bkComponentApiUrl }}
-      appCode: {{ .Values.common.esb.appCode }}
-      appSecret: {{ .Values.common.esb.appSecret }}
-      insecureSkipVerify: true
-      certFile:
-      keyFile:
-      caFile:
-      password:
     #auth_server专属配置
     authServer:
-      #蓝鲸权限中心地址,可配置多个,用,(逗号)分割
-      address: {{ .Values.bkIamApiUrl }}
-      #cmdb项目在蓝鲸权限中心的应用编码
-      appCode: {{ .Values.common.auth.appCode }}
-      #cmdb项目在蓝鲸权限中心的应用密钥
-      appSecret: {{ .Values.common.auth.appSecret }}
-      #开发商ID
-      supplierID: {{ .Values.common.authServer.supplierID }}
       authCenter:
         # 权限中心tls配置
         tls:
@@ -92,18 +74,6 @@ data:
         rateLimiter:
           qps: {{ .Values.common.datacollection.hostSnapshot.rateLimiter.qps }}
           burst: {{ .Values.common.datacollection.hostSnapshot.rateLimiter.burst }}
-        # 主机快照属性，如cpu,bk_cpu_mhz,bk_disk,bk_mem等数据的处理时间窗口，用于限制在指定周期的前多少分钟可以让请求通过，超过限定时间将不会处理请求。
-        # 它的下一级有三个参数，atTime,checkIntervalHours，windowMinute 当不配置windowMinute，窗口不生效。当配置了windowMinute,至少配置atTime
-        # 或者checkIntervalHours中的一个，否则不生效。当atTime和checkIntervalHours都配置时，取atTime这个配置的语义功能
-        # 如果窗口生效，启动的时候，会先跑完windowMinutes，然后再生效。
-        timeWindow:
-          # atTime，设置一天中，几点开启时间窗口，如配置成14:40，表示14:40开启窗口，如果配置格式不正确，默认值为1:00
-          atTime: {{ .Values.common.datacollection.hostSnapshot.timeWindow.atTime }}
-          # checkIntervalHours，规定每隔几个小时窗口开启，单位为小时，如配置成 3，表示每隔3个小时，开启时间窗口，如果配置格式不正确，默认值为 1
-          checkIntervalHours: {{ .Values.common.datacollection.hostSnapshot.timeWindow.checkIntervalHours }}
-          # windowMinutes，代表开启时间窗口后，多长时间内请求可以通过，单位为分钟。如配置成 60，表示开启窗口时间60分钟内请求可以通过。
-          # 注意：该时间不能大于窗口每次开启的间隔时间，取值范围不能小于等于0，如果配置不正确，默认值为15
-          windowMinutes: {{ .Values.common.datacollection.hostSnapshot.timeWindow.windowMinutes }}
 
     # 监控配置， monitor配置项必须存在
     monitor:
@@ -280,6 +250,7 @@ data:
     tenant:
       # 是否开启多租户模式
       enableMultiTenantMode: {{ .Values.tenant.enableMultiTenantMode }}
+      disableVerifyTenant: {{ .Values.tenant.disableVerifyTenant }}
 
   extra.yaml: |-
     

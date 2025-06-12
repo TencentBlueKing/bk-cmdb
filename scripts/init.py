@@ -372,6 +372,8 @@ apiGW:
   bkNoticeApiGatewayUrl:
   bkCmdbApiGatewayUrl:
   bkLoginApiGatewayUrl:
+  bkIamApiGatewayUrl:
+  bkUserApiGatewayUrl:
   appCode:
   appSecret:
   username:

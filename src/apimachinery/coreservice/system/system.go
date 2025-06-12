@@ -29,6 +29,7 @@ type SystemClientInterface interface {
 		*metadata.GlobalSettingConfig, error)
 	UpdateGlobalConfig(ctx context.Context, h http.Header, typeId string, input interface{}) error
 	GetHostSnapDataID(ctx context.Context, h http.Header) (int64, error)
+	GetTenantBySnapDataID(ctx context.Context, h http.Header, dataID int64) (string, error)
 }
 
 // NewSystemClientInterface TODO

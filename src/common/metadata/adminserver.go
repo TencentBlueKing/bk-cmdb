@@ -44,3 +44,9 @@ type DataIDResp struct {
 	BaseResp `json:",inline"`
 	Data     int64 `json:"data"`
 }
+
+// TenantInfoResp is tenant info response
+type TenantInfoResp struct {
+	BaseResp `json:",inline"`
+	Data     string `json:"data"`
+}

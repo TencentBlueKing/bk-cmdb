@@ -32,7 +32,6 @@ import (
 	"configcenter/src/common/blog"
 	ccErr "configcenter/src/common/errors"
 	httpheader "configcenter/src/common/http/header"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/mapstr"
@@ -76,10 +75,10 @@ type HostSnap struct {
 	redisCli    redis.Client
 	authManager *extensions.AuthManager
 	*backbone.Engine
-	rateLimit flowctrl.RateLimiter
-	filter    *filter
-	ctx       context.Context
-	window    *Window
+	rateLimit       flowctrl.RateLimiter
+	filter          *filter
+	ctx             context.Context
+	hostIDTenantMap map[int64]string
 }
 
 // NewHostSnap new hostsnap
@@ -87,13 +86,13 @@ func NewHostSnap(ctx context.Context, redisCli redis.Client, engine *backbone.En
 	authManager *extensions.AuthManager) *HostSnap {
 	qps, burst := getRateLimiterConfig()
 	h := &HostSnap{
-		redisCli:    redisCli,
-		ctx:         ctx,
-		rateLimit:   flowctrl.NewRateLimiter(int64(qps), int64(burst)),
-		authManager: authManager,
-		Engine:      engine,
-		filter:      newFilter(),
-		window:      newWindow(),
+		redisCli:        redisCli,
+		ctx:             ctx,
+		rateLimit:       flowctrl.NewRateLimiter(int64(qps), int64(burst)),
+		authManager:     authManager,
+		Engine:          engine,
+		filter:          newFilter(),
+		hostIDTenantMap: make(map[int64]string),
 	}
 	return h
 }
@@ -184,7 +183,8 @@ func (h *HostSnap) putDataIntoDelayQueue(rid, msg string) error {
 
 // getBaseInfoFromCollectorsMsg obtain basic information from the reported msg: agentID, ipv4, ipv6, cloudID, and the
 // entire parsed message body.
-func getBaseInfoFromCollectorsMsg(msg *string, rid string) (string, []string, []string, int64, gjson.Result, error) {
+func getBaseInfoFromCollectorsMsg(msg *string, rid string) (string, []string, []string, int64, int64, gjson.Result,
+	error) {
 
 	var data string
 	if !gjson.Get(*msg, "cloudid").Exists() {
@@ -193,14 +193,18 @@ func getBaseInfoFromCollectorsMsg(msg *string, rid string) (string, []string, []
 		data = *msg
 	}
 	val := gjson.Parse(data)
+	if !val.Get("data.apiVer").Exists() || val.Get("data.apiVer").String() < "v1.0" {
+		return "", nil, nil, 0, 0, gjson.Result{}, errors.New("msg api version is invalid")
+	}
+
 	agentID := gjson.Get(*msg, "bk_agent_id").String()
 	cloudID := val.Get("cloudid").Int()
-
+	dataID := val.Get("dataid").Int()
 	ipv4, ipv6 := getIPsFromMsg(&val, agentID, rid)
 	if len(ipv4) == 0 && len(ipv6) == 0 {
-		return "", nil, nil, 0, gjson.Result{}, errors.New("msg has no ipv4 and ipv6 address")
+		return "", nil, nil, 0, 0, gjson.Result{}, errors.New("msg has no ipv4 and ipv6 address")
 	}
-	return agentID, ipv4, ipv6, cloudID, val, nil
+	return agentID, ipv4, ipv6, cloudID, dataID, val, nil
 }
 
 func checkMsgInfoValid(rid, agentID, host string, elements []gjson.Result) error {
@@ -297,21 +301,33 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 		return false, errors.New("message nil")
 	}
 
-	header, rid := newHeaderWithRid()
-
-	agentID, ipv4, ipv6, cloudID, val, err := getBaseInfoFromCollectorsMsg(msg, rid)
+	kit := rest.NewKit()
+	agentID, ipv4, ipv6, cloudID, dataID, val, err := getBaseInfoFromCollectorsMsg(msg, kit.Rid)
 	if err != nil {
-		blog.Errorf("parse base info failed, msg: %s, err: %v, rid: %s", *msg, err, rid)
+		blog.Errorf("parse base info failed, msg: %s, err: %v, rid: %s", *msg, err, kit.Rid)
 		return false, err
 	}
-	host, err := h.getHostDetail(header, rid, agentID, *msg, sourceType, ipv4, cloudID)
+	tenantID, isExist := h.hostIDTenantMap[dataID]
+	if !isExist {
+		tenantID, err = h.CoreAPI.CoreService().System().GetTenantBySnapDataID(h.ctx, kit.Header, dataID)
+		if err != nil {
+			blog.Errorf("get tenant by snap data id failed, data id: %d, err: %v, rid: %s", dataID, err, kit.Rid)
+			return false, err
+		}
+		h.hostIDTenantMap[dataID] = tenantID
+	}
+
+	kit = kit.NewKit().WithTenant(tenantID)
+	httpheader.SetUser(kit.Header, common.CCSystemCollectorUserName)
+
+	host, err := h.getHostDetail(kit.Header, kit.Rid, agentID, *msg, sourceType, ipv4, cloudID)
 	if err != nil {
-		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, rid)
+		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, kit.Rid)
 		return false, err
 	}
 
 	if host == "" {
-		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, rid)
+		blog.Errorf("get host detail failed, agentID: %s, ips: %v, err: %v, rid: %s", agentID, ipv4, err, kit.Rid)
 		return false, errors.New("get host detail failed")
 	}
 
@@ -319,72 +335,42 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 		common.BKAddressingField, common.BKAgentIDField, common.BKHostInnerIPv6Field, common.BKHostOuterIPv6Field}
 	elements := gjson.GetMany(host, fields...)
 
-	if err := checkMsgInfoValid(rid, agentID, host, elements); err != nil {
+	if err := checkMsgInfoValid(kit.Rid, agentID, host, elements); err != nil {
 		return false, err
 	}
 	hostID := elements[0].Int()
 	innerIP := elements[1].String()
 
-	// save host snapshot in redis
-	if !val.Get("data.apiVer").Exists() {
-		h.saveHostsnap(header, &val, hostID)
-	}
-
-	// window restriction on request when no apiVer information reported
-	if !val.Get("data.apiVer").Exists() && !h.window.canPassWindow() {
-		if blog.V(4) {
-			blog.Infof("not within the time window that can pass, skip host snapshot data update, "+
-				"host id: %d, ip: %s, cloud id: %d, rid: %s", hostID, innerIP, cloudID, rid)
-		}
-		return false, nil
-	}
-
-	if h.skipMsg(val, innerIP, rid, hostID, cloudID) {
+	if h.skipMsg(val, innerIP, kit.Rid, hostID, cloudID) {
 		return false, nil
 	}
 
 	updateIPv4, updateIPv6, err := getIPv4AndIPv6UpdateData(elements[3].String(), ipv4, ipv6)
 	if err != nil {
 		blog.Errorf("get host ipv4 and ipv6 update data failed, agentID: %s, ipv4: %v, ipv6: %v, err: %v, rid: %s",
-			agentID, ipv4, ipv6, err, rid)
+			agentID, ipv4, ipv6, err, kit.Rid)
 		return false, err
 	}
 
 	outerIP := elements[2].String()
-
-	setter, raw := make(map[string]interface{}), ""
-
-	if val.Get("data.apiVer").String() >= "v1.0" {
-		setter, raw = parseV10Setter(&val, &hostInfo{innerIPv4: innerIP, outerIPv4: outerIP,
-			innerIPv6: elements[5].String(), outerIPv6: elements[6].String(), addressing: elements[3].String(),
-			updateIPv4: updateIPv4, updateIPv6: updateIPv6})
-	} else {
-		setter, raw = parseSetter(&val, innerIP, outerIP)
-	}
+	setter, raw := parseV10Setter(&val, &hostInfo{innerIPv4: innerIP, outerIPv4: outerIP,
+		innerIPv6: elements[5].String(), outerIPv6: elements[6].String(), addressing: elements[3].String(),
+		updateIPv4: updateIPv4, updateIPv6: updateIPv6})
 
 	// no need to update
 	if !needToUpdate(raw, host, elements[3].String()) {
 		return false, nil
 	}
 
-	// limit request from the old collection plug-in
-	if !val.Get("data.apiVer").Exists() && !h.rateLimit.TryAccept() {
-		blog.Warnf("skip host snapshot data update due to request limit, host id: %d, ip: %s, cloud id: %d, "+
-			"rid: %s", hostID, innerIP, cloudID, rid)
-		return false, nil
-	}
-
 	// limit the request from the new collection plug-in
-	if val.Get("data.apiVer").Exists() {
-		h.rateLimit.Accept()
-	}
+	h.rateLimit.Accept()
 
 	blog.V(5).Infof("snapshot for host changed, need update, host id: %d, ip: %s, cloud id: %d, from %s "+
-		"to %s, rid: %s", hostID, innerIP, cloudID, host, raw, rid)
+		"to %s, rid: %s", hostID, innerIP, cloudID, host, raw, kit.Rid)
 
 	hostOption := updateHostOption{setter: setter, host: host, innerIP: innerIP, hostID: hostID, cloudID: cloudID}
 
-	txnErr := h.updateHostWithColletorMsg(header, rid, hostOption)
+	txnErr := h.updateHostWithColletorMsg(kit.Header, kit.Rid, hostOption)
 	if txnErr != nil {
 		return true, txnErr
 	}
@@ -480,9 +466,6 @@ func (h *HostSnap) updateHostWithColletorMsg(header http.Header, rid string, hos
 
 // skipMsg verify the timestamp to determine whether the host sequence is correct, if it is old message, skip.
 func (h *HostSnap) skipMsg(val gjson.Result, innerIP, rid string, hostID, cloudID int64) bool {
-	if !val.Get("data.apiVer").Exists() {
-		return false
-	}
 
 	key := redisConsumptionCheckPrefix + strconv.FormatInt(hostID, 10)
 	timestamp, err := h.redisCli.Get(context.Background(), key).Result()
@@ -1185,23 +1168,7 @@ func getIPsFromMsg(val *gjson.Result, agentID string, rid string) ([]string, []s
 	//            ]
 	//        }
 
-	//  old format:
-	//   "interface":[
-	//        {
-	//            "addrs":[
-	//                {
-	//                    "addr":"::1/128"
-	//                }
-	//            ]
-	//        }
-	//    ]
-
-	interfaces := make([]gjson.Result, 0)
-	if val.Get("data.apiVer").Exists() && val.Get("data.apiVer").String() >= "v1.0" {
-		interfaces = val.Get("data.net.interface.#.addrs").Array()
-	} else {
-		interfaces = val.Get("data.net.interface.#.addrs.#.addr").Array()
-	}
+	interfaces := val.Get("data.net.interface.#.addrs").Array()
 
 	for _, addrs := range interfaces {
 		for _, addr := range addrs.Array() {
@@ -1244,31 +1211,6 @@ func getIPsFromMsg(val *gjson.Result, agentID string, rid string) ([]string, []s
 		ipv6List = append(ipv6List, ipv6)
 	}
 	return ipv4List, ipv6List
-}
-
-// saveHostsnap save host snapshot in redis
-func (h *HostSnap) saveHostsnap(header http.Header, hostData *gjson.Result, hostID int64) error {
-	rid := httpheader.GetRid(header)
-
-	snapshot, err := ParseHostSnap(hostData)
-	if err != nil {
-		blog.Errorf("saveHostsnap failed, ParseHostSnap err: %v, hostID:%v, rid:%s", err, hostID, rid)
-		return err
-	}
-
-	key := common.RedisSnapKeyPrefix + strconv.FormatInt(hostID, 10)
-	if err := h.redisCli.Set(context.Background(), key, *snapshot, time.Minute*10).Err(); err != nil {
-		blog.Errorf("saveHostsnap failed, set key: %s to redis err: %v, rid: %s", key, err, rid)
-		return err
-	}
-
-	return nil
-}
-
-func newHeaderWithRid() (http.Header, string) {
-	rid := util.GenerateRID()
-	header := headerutil.GenCommonHeader(common.CCSystemCollectorUserName, common.BKDefaultTenantID, rid)
-	return header, rid
 }
 
 // MockMessage TODO
