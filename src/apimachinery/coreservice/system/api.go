@@ -126,7 +126,7 @@ func (s *system) GetHostSnapDataID(ctx context.Context, h http.Header) (int64, e
 // GetTenantBySnapDataID get tenant by snap data id
 func (s *system) GetTenantBySnapDataID(ctx context.Context, h http.Header, dataID int64) (string, error) {
 	resp := new(metadata.TenantInfoResp)
-	subPath := "/find/tenant/data_id/%d"
+	subPath := "/find/host_snap/tenant/data_id/%d"
 
 	err := s.client.Post().
 		WithContext(ctx).

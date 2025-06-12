@@ -12,6 +12,6 @@ then
 fi
 echo "localIp:${localIp}"
 
-curl -X POST -H 'Content-Type:application/json' -H 'X-Bkcmdb-User:migrate' -H 'X-Bk-Tenant-Id:0' http://${localIp}:60004/migrate/v3/migrate/database
+curl -X POST -H 'Content-Type:application/json' -H 'X-Bkcmdb-User:migrate' -H 'X-Bk-Tenant-Id:system' http://${localIp}:60004/migrate/v3/migrate/database
 
 echo ""

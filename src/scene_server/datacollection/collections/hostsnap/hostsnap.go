@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"configcenter/src/ac/extensions"
@@ -78,7 +79,8 @@ type HostSnap struct {
 	rateLimit       flowctrl.RateLimiter
 	filter          *filter
 	ctx             context.Context
-	hostIDTenantMap map[int64]string
+	dataIDTenantMap map[int64]string
+	lock            sync.RWMutex
 }
 
 // NewHostSnap new hostsnap
@@ -92,7 +94,8 @@ func NewHostSnap(ctx context.Context, redisCli redis.Client, engine *backbone.En
 		authManager:     authManager,
 		Engine:          engine,
 		filter:          newFilter(),
-		hostIDTenantMap: make(map[int64]string),
+		dataIDTenantMap: make(map[int64]string),
+		lock:            sync.RWMutex{},
 	}
 	return h
 }
@@ -181,8 +184,8 @@ func (h *HostSnap) putDataIntoDelayQueue(rid, msg string) error {
 	return nil
 }
 
-// getBaseInfoFromCollectorsMsg obtain basic information from the reported msg: agentID, ipv4, ipv6, cloudID, and the
-// entire parsed message body.
+// getBaseInfoFromCollectorsMsg obtain basic information from the reported msg: agentID, ipv4, ipv6, cloudID, dataID,
+// and the entire parsed message body.
 func getBaseInfoFromCollectorsMsg(msg *string, rid string) (string, []string, []string, int64, int64, gjson.Result,
 	error) {
 
@@ -203,6 +206,9 @@ func getBaseInfoFromCollectorsMsg(msg *string, rid string) (string, []string, []
 	ipv4, ipv6 := getIPsFromMsg(&val, agentID, rid)
 	if len(ipv4) == 0 && len(ipv6) == 0 {
 		return "", nil, nil, 0, 0, gjson.Result{}, errors.New("msg has no ipv4 and ipv6 address")
+	}
+	if dataID <= 0 {
+		return "", nil, nil, 0, 0, gjson.Result{}, errors.New("msg dataID is invalid")
 	}
 	return agentID, ipv4, ipv6, cloudID, dataID, val, nil
 }
@@ -307,15 +313,17 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 		blog.Errorf("parse base info failed, msg: %s, err: %v, rid: %s", *msg, err, kit.Rid)
 		return false, err
 	}
-	tenantID, isExist := h.hostIDTenantMap[dataID]
+	h.lock.Lock()
+	tenantID, isExist := h.dataIDTenantMap[dataID]
 	if !isExist {
 		tenantID, err = h.CoreAPI.CoreService().System().GetTenantBySnapDataID(h.ctx, kit.Header, dataID)
 		if err != nil {
 			blog.Errorf("get tenant by snap data id failed, data id: %d, err: %v, rid: %s", dataID, err, kit.Rid)
 			return false, err
 		}
-		h.hostIDTenantMap[dataID] = tenantID
+		h.dataIDTenantMap[dataID] = tenantID
 	}
+	h.lock.Unlock()
 
 	kit = kit.NewKit().WithTenant(tenantID)
 	httpheader.SetUser(kit.Header, common.CCSystemCollectorUserName)
@@ -1158,15 +1166,6 @@ func getIPsFromMsg(val *gjson.Result, agentID string, rid string) ([]string, []s
 			ipv4Map[rootIP] = struct{}{}
 		}
 	}
-	// need to be compatible with the old and new versions of the format
-	// new format:
-	//  "net":{
-	//            "interface":[
-	//                {
-	//                    "addrs":["::1/64", "127.0.0.1/32"]
-	//                }
-	//            ]
-	//        }
 
 	interfaces := val.Get("data.net.interface.#.addrs").Array()
 
@@ -1215,7 +1214,7 @@ func getIPsFromMsg(val *gjson.Result, agentID string, rid string) ([]string, []s
 
 // MockMessage TODO
 const MockMessage = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\":\\\"127.0.0.1\\\"," +
-	"\\\"bizid\\\":0,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\"," +
+	"\\\"bizid\\\":0,\\\"hostid\\\":1,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\"," +
 	"\\\"utctime\\\":\\\"2017-09-19 08:57:07\\\",\\\"country\\\":\\\"Asia\\\",\\\"city\\\":\\\"Shanghai\\\"," +
 	"\\\"cpu\\\":{\\\"cpuinfo\\\":[{\\\"cpu\\\":0,\\\"vendorID\\\":\\\"GenuineIntel\\\",\\\"family\\\":\\\"6\\\"," +
 	"\\\"model\\\":\\\"63\\\",\\\"stepping\\\":2,\\\"physicalID\\\":\\\"0\\\",\\\"coreID\\\":\\\"0\\\"," +

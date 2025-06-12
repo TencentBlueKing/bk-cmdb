@@ -396,7 +396,7 @@ func (s *coreService) ccSystem(web *restful.WebService) {
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host_snap/data_id",
 		Handler: s.GetHostSnapDataID})
 
-	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/tenant/data_id/{data_id}",
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/find/host_snap/tenant/data_id/{data_id}",
 		Handler: s.GetTenantByHostSnapDataID})
 
 	utility.AddToRestfulWebService(web)
