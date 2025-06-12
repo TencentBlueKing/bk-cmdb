@@ -49,14 +49,14 @@ func (m *instanceManager) batchSave(kit *rest.Kit, objID string, params []mapstr
 				return nil, err
 			}
 
-			DefaultAreaHost, isDefaultAreaStaticHost, err := m.validDefaultAreaHost(kit,
+			defaultAreaHost, isDefaultAreaStaticHost, err := m.validDefaultAreaHost(kit,
 				params[idx], int64(ids[idx]))
 			if err != nil {
 				blog.Errorf("valid default area host failed, err: %v, rid: %s", err, kit.Rid)
 				return nil, err
 			}
-			if isDefaultAreaStaticHost && len(DefaultAreaHost) > 0 {
-				insertDefaultAreaHosts = append(insertDefaultAreaHosts, DefaultAreaHost)
+			if isDefaultAreaStaticHost {
+				insertDefaultAreaHosts = append(insertDefaultAreaHosts, defaultAreaHost)
 			}
 		}
 		// build new object instance data.
@@ -133,7 +133,7 @@ func (m *instanceManager) save(kit *rest.Kit, objID string, inputParam mapstr.Ma
 			return 0, err
 		}
 
-		if isDefaultAreaStaticHost && len(insertDefaultAreaHost) > 0 {
+		if isDefaultAreaStaticHost {
 			err = mongodb.Shard(kit.SysShardOpts()).Table(common.BKTableNameDefaultAreaHost).Insert(kit.Ctx,
 				insertDefaultAreaHost)
 			if err != nil {

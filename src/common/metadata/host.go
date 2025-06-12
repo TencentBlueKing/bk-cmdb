@@ -174,7 +174,11 @@ var hostIpv6Fields = map[string]struct{}{
 func ConvertHostSpecialStringToArray(host map[string]interface{}) (map[string]interface{}, error) {
 
 	for _, field := range HostSpecialFields {
-		result, isStringArrType, err := ConvHostSpecialFieldToArray(field, host[field])
+		value, ok := host[field]
+		if !ok {
+			continue
+		}
+		result, isStringArrType, err := ConvHostSpecialFieldToArray(field, value)
 		if err != nil {
 			return nil, err
 		}
@@ -222,8 +226,6 @@ func ConvHostSpecialFieldToArray(field string, value interface{}) ([]string, boo
 	case []interface{}:
 		if len(v) == 0 {
 			return nil, true, nil
-		} else {
-			blog.Errorf("host %s type invalid, value %v", field, value)
 		}
 	case nil:
 	default:

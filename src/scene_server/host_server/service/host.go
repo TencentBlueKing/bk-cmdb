@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -391,7 +390,7 @@ func (s *Service) retryInsertDuplicateHosts(kit *rest.Kit, hostInfos []map[strin
 		return err
 	}
 
-	newKit := kit.NewKit().WithCtx(context.Background()).WithTenant(kit.TenantID).WithRid(kit.Rid)
+	newKit := kit.NewKit()
 	removeErr := s.RemoveRedundantHost(newKit, hostInfos)
 	if removeErr != nil {
 		blog.Errorf("remove redundant host failed, err: %v, hostList: %#v, rid: %s", removeErr, hostInfos,
@@ -478,7 +477,7 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 		hostInfos = append(hostInfos, hostInfo)
 	}
 	err := s.retryInsertDuplicateHosts(ctx.Kit, hostInfos, func(kit *rest.Kit) error {
-		_, success, errRow, err := s.Logic.AddHostByExcel(ctx.Kit, appID, moduleID, hostList.HostInfo)
+		_, success, errRow, err := s.Logic.AddHostByExcel(kit, appID, moduleID, hostList.HostInfo)
 		retData["success"] = success
 		retData["error"] = errRow
 
@@ -495,7 +494,6 @@ func (s *Service) AddHostByExcel(ctx *rest.Contexts) {
 
 // RemoveRedundantHost remove host which not exist in host table
 func (s *Service) RemoveRedundantHost(kit *rest.Kit, hostInfo []map[string]interface{}) error {
-	newKit := kit.NewKit().WithCtx(context.Background()).WithTenant(kit.TenantID).WithRid(kit.Rid)
 	hosts := make([]meta.DefaultAreaHost, 0)
 	for _, item := range hostInfo {
 		needDeal, err := instlogics.IsDefaultAreaStaticHost(item)
@@ -546,7 +544,7 @@ func (s *Service) RemoveRedundantHost(kit *rest.Kit, hostInfo []map[string]inter
 		Hosts:  hosts,
 		OpType: meta.OperationByIP,
 	}
-	err := s.CoreAPI.CoreService().Host().DelRedDefaultAreaHosts(newKit.Ctx, newKit.Header, delRedDefaultAreaHostOption)
+	err := s.CoreAPI.CoreService().Host().DelRedundantDefaultAreaHosts(kit.Ctx, kit.Header, delRedDefaultAreaHostOption)
 	if err != nil {
 		blog.Errorf("remove default area host failed, err: %v, hosts: %+v, rid: %s", err, hosts, kit.Rid)
 		return err
@@ -579,7 +577,7 @@ func (s *Service) AddHostToResourcePool(ctx *rest.Contexts) {
 
 	retData := new(meta.AddHostToResourcePoolResult)
 	err = s.retryInsertDuplicateHosts(ctx.Kit, hostList.HostInfo, func(kit *rest.Kit) error {
-		_, retData, err = s.Logic.AddHostToResourcePool(ctx.Kit, *hostList)
+		_, retData, err = s.Logic.AddHostToResourcePool(kit, *hostList)
 		return err
 	})
 
@@ -1491,8 +1489,8 @@ func (s *Service) AddHostToBusinessIdle(ctx *rest.Contexts) {
 		result = append(result, converted)
 	}
 	err = s.retryInsertDuplicateHosts(ctx.Kit, result, func(kit *rest.Kit) error {
-		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
-			hostIDs, err = s.Logic.AddHosts(ctx.Kit, input.ApplicationID, moduleID, input.HostList)
+		txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(kit.Ctx, kit.Header, func() error {
+			hostIDs, err = s.Logic.AddHosts(kit, input.ApplicationID, moduleID, input.HostList)
 			if err != nil {
 				blog.Errorf("add host failed, input: %v, err: %v, rid:%s", input.HostList, err, ctx.Kit.Rid)
 				return err

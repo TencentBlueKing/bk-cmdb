@@ -13,7 +13,6 @@
 package service
 
 import (
-	"context"
 	"strconv"
 
 	"configcenter/src/ac/iam/types"
@@ -494,7 +493,7 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 			return
 		}
 
-		newKit := ctx.Kit.NewKit().WithCtx(context.Background()).WithTenant(ctx.Kit.TenantID)
+		newKit := ctx.Kit.NewKit()
 		if err := s.RemoveRedundantHostByIDs(newKit, input.HostIDs); err != nil {
 			blog.Errorf("remove redundant host failed, err: %v, hostIDs: %+v, rid: %s", err, input.HostIDs, rid)
 			ctx.RespAutoError(err)
@@ -522,7 +521,6 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 
 // RemoveRedundantHostByIDs remove host by hostId which not exist in host table
 func (s *Service) RemoveRedundantHostByIDs(kit *rest.Kit, hostIds []int64) error {
-	newKit := kit.NewKit().WithCtx(context.Background())
 	hosts := make([]meta.DefaultAreaHost, 0)
 	for _, id := range hostIds {
 		hosts = append(hosts, meta.DefaultAreaHost{
@@ -534,7 +532,7 @@ func (s *Service) RemoveRedundantHostByIDs(kit *rest.Kit, hostIds []int64) error
 		Hosts:  hosts,
 		OpType: metadata.OperationByHostID,
 	}
-	err := s.CoreAPI.CoreService().Host().DelRedDefaultAreaHosts(newKit.Ctx, newKit.Header, defaultAreaHostOption)
+	err := s.CoreAPI.CoreService().Host().DelRedundantDefaultAreaHosts(kit.Ctx, kit.Header, defaultAreaHostOption)
 	if err != nil {
 		blog.Errorf("remove default area host failed, err: %v, hosts: %+v, rid: %s", err, hosts, kit.Rid)
 		return err
