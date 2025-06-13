@@ -82,6 +82,7 @@ type HostSnap struct {
 	tenantDataIDMap *TenantDataID
 }
 
+// TenantDataID struct for tenant dataID map
 type TenantDataID struct {
 	dataIDTenantMap map[int64]string
 	sync.RWMutex
@@ -223,13 +224,15 @@ func getBaseInfoFromCollectorsMsg(msg *string, rid string) (string, []string, []
 	agentID := gjson.Get(*msg, "bk_agent_id").String()
 	cloudID := val.Get("cloudid").Int()
 	dataID := val.Get("dataid").Int()
+	if dataID <= 0 {
+		return "", nil, nil, 0, 0, gjson.Result{}, errors.New("msg dataID is invalid")
+	}
+
 	ipv4, ipv6 := getIPsFromMsg(&val, agentID, rid)
 	if len(ipv4) == 0 && len(ipv6) == 0 {
 		return "", nil, nil, 0, 0, gjson.Result{}, errors.New("msg has no ipv4 and ipv6 address")
 	}
-	if dataID <= 0 {
-		return "", nil, nil, 0, 0, gjson.Result{}, errors.New("msg dataID is invalid")
-	}
+
 	return agentID, ipv4, ipv6, cloudID, dataID, val, nil
 }
 
