@@ -79,8 +79,27 @@ type HostSnap struct {
 	rateLimit       flowctrl.RateLimiter
 	filter          *filter
 	ctx             context.Context
+	tenantDataIDMap *TenantDataID
+}
+
+type TenantDataID struct {
 	dataIDTenantMap map[int64]string
-	lock            sync.RWMutex
+	sync.RWMutex
+}
+
+// GetTenantByDataID get tenant by dataID
+func (t *TenantDataID) GetTenantByDataID(dataID int64) (string, bool) {
+	t.RLock()
+	tenant, exists := t.dataIDTenantMap[dataID]
+	t.RUnlock()
+	return tenant, exists
+}
+
+// SetTenantDataID set tenant dataID info
+func (t *TenantDataID) SetTenantDataID(dataID int64, tenant string) {
+	t.Lock()
+	t.dataIDTenantMap[dataID] = tenant
+	t.Unlock()
 }
 
 // NewHostSnap new hostsnap
@@ -88,14 +107,15 @@ func NewHostSnap(ctx context.Context, redisCli redis.Client, engine *backbone.En
 	authManager *extensions.AuthManager) *HostSnap {
 	qps, burst := getRateLimiterConfig()
 	h := &HostSnap{
-		redisCli:        redisCli,
-		ctx:             ctx,
-		rateLimit:       flowctrl.NewRateLimiter(int64(qps), int64(burst)),
-		authManager:     authManager,
-		Engine:          engine,
-		filter:          newFilter(),
-		dataIDTenantMap: make(map[int64]string),
-		lock:            sync.RWMutex{},
+		redisCli:    redisCli,
+		ctx:         ctx,
+		rateLimit:   flowctrl.NewRateLimiter(int64(qps), int64(burst)),
+		authManager: authManager,
+		Engine:      engine,
+		filter:      newFilter(),
+		tenantDataIDMap: &TenantDataID{
+			dataIDTenantMap: make(map[int64]string),
+		},
 	}
 	return h
 }
@@ -313,17 +333,16 @@ func (h *HostSnap) Analyze(msg *string, sourceType string) (bool, error) {
 		blog.Errorf("parse base info failed, msg: %s, err: %v, rid: %s", *msg, err, kit.Rid)
 		return false, err
 	}
-	h.lock.Lock()
-	tenantID, isExist := h.dataIDTenantMap[dataID]
+
+	tenantID, isExist := h.tenantDataIDMap.GetTenantByDataID(dataID)
 	if !isExist {
 		tenantID, err = h.CoreAPI.CoreService().System().GetTenantBySnapDataID(h.ctx, kit.Header, dataID)
 		if err != nil {
 			blog.Errorf("get tenant by snap data id failed, data id: %d, err: %v, rid: %s", dataID, err, kit.Rid)
 			return false, err
 		}
-		h.dataIDTenantMap[dataID] = tenantID
+		h.tenantDataIDMap.SetTenantDataID(dataID, tenantID)
 	}
-	h.lock.Unlock()
 
 	kit = kit.NewKit().WithTenant(tenantID)
 	httpheader.SetUser(kit.Header, common.CCSystemCollectorUserName)
@@ -1214,7 +1233,7 @@ func getIPsFromMsg(val *gjson.Result, agentID string, rid string) ([]string, []s
 
 // MockMessage TODO
 const MockMessage = "{\"localTime\": \"2017-09-19 16:57:00\", \"data\": \"{\\\"ip\\\":\\\"127.0.0.1\\\"," +
-	"\\\"bizid\\\":0,\\\"hostid\\\":1,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\"," +
+	"\\\"bizid\\\":0,\\\"dataid\\\":1,\\\"cloudid\\\":0,\\\"data\\\":{\\\"timezone\\\":8,\\\"datetime\\\":\\\"2017-09-19 16:57:07\\\"," +
 	"\\\"utctime\\\":\\\"2017-09-19 08:57:07\\\",\\\"country\\\":\\\"Asia\\\",\\\"city\\\":\\\"Shanghai\\\"," +
 	"\\\"cpu\\\":{\\\"cpuinfo\\\":[{\\\"cpu\\\":0,\\\"vendorID\\\":\\\"GenuineIntel\\\",\\\"family\\\":\\\"6\\\"," +
 	"\\\"model\\\":\\\"63\\\",\\\"stepping\\\":2,\\\"physicalID\\\":\\\"0\\\",\\\"coreID\\\":\\\"0\\\"," +
