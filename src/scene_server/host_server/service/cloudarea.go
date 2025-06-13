@@ -521,16 +521,65 @@ func (s *Service) UpdateHostCloudAreaField(ctx *rest.Contexts) {
 
 // RemoveRedundantHostByIDs remove host by hostId which not exist in host table
 func (s *Service) RemoveRedundantHostByIDs(kit *rest.Kit, hostIds []int64) error {
-	hosts := make([]meta.DefaultAreaHost, 0)
-	for _, id := range hostIds {
-		hosts = append(hosts, meta.DefaultAreaHost{
-			HostID: id,
-		})
+
+	hostSearchResults := make([]mapstr.MapStr, 0)
+	for start := 0; start < len(hostIds); start += common.BKMaxLimitSize {
+		var paged []int64
+		if len(hostIds)-start >= common.BKMaxLimitSize {
+			paged = hostIds[start : start+common.BKMaxLimitSize]
+		} else {
+			paged = hostIds[start:len(hostIds)]
+		}
+
+		hostCond := map[string]interface{}{
+			common.BKHostIDField: map[string]interface{}{
+				common.BKDBIN: paged,
+			},
+		}
+		hostResult, err := s.Logic.GetHostInfoByConds(kit, hostCond)
+		if err != nil {
+			blog.Errorf("get host info failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+		hostSearchResults = append(hostSearchResults, hostResult...)
 	}
 
-	defaultAreaHostOption := &metadata.DelRedDefaultAreaHostsOption{
+	hosts := make([]meta.DefaultAreaHost, 0)
+	for _, item := range hostSearchResults {
+		host := meta.DefaultAreaHost{}
+		ip, isIPExist := item[common.BKHostInnerIPField].(string)
+
+		ipv6, isIPV6Exist := item[common.BKHostInnerIPv6Field].(string)
+
+		if !isIPExist && !isIPV6Exist {
+			blog.Errorf("invalid default area host, ip and ipv6 is not exist, rid: %s", kit.Rid)
+			return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "bk_host_innerip")
+		}
+		if len(ip) != 0 {
+			ipArr, err := meta.ConvHostSpecialStrFieldToArray(common.BKHostInnerIPField, ip)
+			if err != nil {
+				blog.Errorf("host inner ip is invalid for array, err: %v, rid: %s", err, kit.Rid)
+				return err
+			}
+
+			host.InnerIP = ipArr
+		}
+		if len(ipv6) != 0 {
+			ipV6Arr, err := meta.ConvHostSpecialStrFieldToArray(common.BKHostInnerIPv6Field, ipv6)
+			if err != nil {
+				blog.Errorf("host inner ipV6 is invalid for array, err: %v, rid: %s", err, kit.Rid)
+				return err
+			}
+
+			host.InnerIPv6 = ipV6Arr
+		}
+		host.TenantID = kit.TenantID
+		hosts = append(hosts, host)
+	}
+
+	defaultAreaHostOption := &metadata.DelRedundantDefaultAreaHostsOption{
 		Hosts:  hosts,
-		OpType: metadata.OperationByHostID,
+		OpType: metadata.OperationByIP,
 	}
 	err := s.CoreAPI.CoreService().Host().DelRedundantDefaultAreaHosts(kit.Ctx, kit.Header, defaultAreaHostOption)
 	if err != nil {

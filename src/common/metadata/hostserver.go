@@ -846,8 +846,8 @@ type CloudAreaHostCountResult struct {
 	Data     []CloudAreaHostCountElem `json:"data"`
 }
 
-// DelRedDefaultAreaHostsOption remove redundant default area hosts option
-type DelRedDefaultAreaHostsOption struct {
+// DelRedundantDefaultAreaHostsOption remove redundant default area hosts option
+type DelRedundantDefaultAreaHostsOption struct {
 	Hosts  []DefaultAreaHost               `json:"hosts"`
 	OpType DelDefaultAreaHostOperationType `json:"type"`
 }

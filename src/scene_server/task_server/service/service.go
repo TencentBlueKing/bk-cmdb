@@ -265,7 +265,7 @@ func (s *Service) syncDefaultAreaHosts(kit *rest.Kit) error {
 				return err
 			}
 			for _, h := range existHosts {
-				delete(hostIDMap, h.BKHostIDField)
+				delete(hostIDMap, h.HostID)
 			}
 
 			redundantHost := make([]int64, 0)

@@ -105,7 +105,7 @@ type HostClientInterface interface {
 		option *metadata.TransferHostResourceDirectory) errors.CCErrorCoder
 
 	DelRedundantDefaultAreaHosts(ctx context.Context, header http.Header,
-		option *metadata.DelRedDefaultAreaHostsOption) errors.CCErrorCoder
+		option *metadata.DelRedundantDefaultAreaHostsOption) errors.CCErrorCoder
 }
 
 // NewHostClientInterface TODO

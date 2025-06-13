@@ -515,8 +515,8 @@ func (s *Service) RemoveRedundantHost(kit *rest.Kit, hostInfo []map[string]inter
 
 		host := meta.DefaultAreaHost{}
 		if len(ip) != 0 {
-			ipArr, isStrArrType, err := meta.ConvHostSpecialFieldToArray(common.BKHostInnerIPField, ip)
-			if err != nil || !isStrArrType {
+			ipArr, err := meta.ConvHostSpecialStrFieldToArray(common.BKHostInnerIPField, ip)
+			if err != nil {
 				blog.Errorf("host inner ip is invalid for array, err: %v, rid: %s", err, kit.Rid)
 				return err
 			}
@@ -524,8 +524,8 @@ func (s *Service) RemoveRedundantHost(kit *rest.Kit, hostInfo []map[string]inter
 			host.InnerIP = ipArr
 		}
 		if len(ipv6) != 0 {
-			ipV6Arr, isStrArrType, err := meta.ConvHostSpecialFieldToArray(common.BKHostInnerIPv6Field, ipv6)
-			if err != nil || !isStrArrType {
+			ipV6Arr, err := meta.ConvHostSpecialStrFieldToArray(common.BKHostInnerIPv6Field, ipv6)
+			if err != nil {
 				blog.Errorf("host inner ipV6 is invalid for array, err: %v, rid: %s", err, kit.Rid)
 				return err
 			}
@@ -540,7 +540,7 @@ func (s *Service) RemoveRedundantHost(kit *rest.Kit, hostInfo []map[string]inter
 		return kit.CCError.CCError(common.CCErrDefaultAreaHostIPExist)
 	}
 
-	delRedDefaultAreaHostOption := &meta.DelRedDefaultAreaHostsOption{
+	delRedDefaultAreaHostOption := &meta.DelRedundantDefaultAreaHostsOption{
 		Hosts:  hosts,
 		OpType: meta.OperationByIP,
 	}

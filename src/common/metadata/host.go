@@ -168,71 +168,69 @@ var hostIpv6Fields = map[string]struct{}{
 	common.BKHostOuterIPv6Field: {},
 }
 
+// ConvHostSpecialStrFieldToArray convert host special string field to array
+func ConvHostSpecialStrFieldToArray(field, value string) ([]string, error) {
+	value = strings.TrimSpace(value)
+	value = strings.Trim(value, ",")
+	if len(value) == 0 {
+		return nil, nil
+	}
+	items := strings.Split(value, ",")
+	if _, ok := hostIpv6Fields[field]; !ok {
+		return items, nil
+
+	}
+	result, err := common.ConvertHostIpv6Val(items)
+	if err != nil {
+		blog.Errorf("convert host ipv6 format failed, err: %v", err)
+		return nil, err
+	}
+	return result, nil
+}
+
 // ConvertHostSpecialStringToArray convert host special string to array
 // convert host ip and operator fields value from string to array
 // NOTICE: if host special value is empty, convert it to null to trespass the unique check, **do not change this logic**
 func ConvertHostSpecialStringToArray(host map[string]interface{}) (map[string]interface{}, error) {
-
+	var err error
 	for _, field := range HostSpecialFields {
 		value, ok := host[field]
 		if !ok {
 			continue
 		}
-		result, isStringArrType, err := ConvHostSpecialFieldToArray(field, value)
-		if err != nil {
-			return nil, err
-		}
+		switch v := value.(type) {
+		case string:
+			result, err := ConvHostSpecialStrFieldToArray(field, v)
+			if err != nil {
+				return nil, err
+			}
+			host[field] = result
 
-		if !isStringArrType {
-			continue
+		case []string:
+			if len(v) == 0 {
+				host[field] = nil
+				continue
+			}
+			if _, ok := hostIpv6Fields[field]; !ok {
+				continue
+			}
+			host[field], err = common.ConvertHostIpv6Val(v)
+			if err != nil {
+				return nil, err
+			}
+
+		case []interface{}:
+			if len(v) == 0 {
+				host[field] = nil
+			} else {
+				blog.Errorf("host %s type invalid, value %v", field, host[field])
+			}
+		case nil:
+		default:
+			blog.Errorf("host %s type invalid, value %v", field, host[field])
 		}
-		host[field] = result
 	}
 	return host, nil
-}
-
-// ConvHostSpecialFieldToArray convert host special field to array
-func ConvHostSpecialFieldToArray(field string, value interface{}) ([]string, bool, error) {
-	switch v := value.(type) {
-	case string:
-		v = strings.TrimSpace(v)
-		v = strings.Trim(v, ",")
-		if len(v) == 0 {
-			return nil, true, nil
-		}
-		items := strings.Split(v, ",")
-		if _, ok := hostIpv6Fields[field]; !ok {
-			return items, true, nil
-		}
-		result, err := common.ConvertHostIpv6Val(items)
-		if err != nil {
-			return nil, false, err
-		}
-		return result, true, nil
-
-	case []string:
-		if len(v) == 0 {
-			return nil, true, nil
-		}
-		if _, ok := hostIpv6Fields[field]; !ok {
-			return v, true, nil
-		}
-		result, err := common.ConvertHostIpv6Val(v)
-		if err != nil {
-			return nil, true, err
-		}
-
-		return result, true, nil
-	case []interface{}:
-		if len(v) == 0 {
-			return nil, true, nil
-		}
-	case nil:
-	default:
-		blog.Errorf("host %s type invalid, value %v", field, value)
-	}
-
-	return nil, false, nil
 }
 
 // GetHostDisplayName get host display name

@@ -22,10 +22,10 @@ import "configcenter/src/common/metadata"
 
 // HostBaseInfo host base info
 type HostBaseInfo struct {
-	BKHostIDField        int64                        `json:"bk_host_id" bson:"bk_host_id"`
-	BKHostNameField      string                       `json:"bk_host_name" bson:"bk_host_name"`
-	BKHostInnerIPField   metadata.StringArrayToString `json:"bk_host_innerip" bson:"bk_host_innerip"`
-	BKHostInnerIPv6Field metadata.StringArrayToString ` json:"bk_host_innerip_v6" bson:"bk_host_innerip_v6"`
-	BKCloudID            int64                        ` json:"bk_cloud_id" bson:"bk_cloud_id"`
-	BKAddressing         string                       ` json:"bk_addressing" bson:"bk_addressing"`
+	HostID        int64                        `json:"bk_host_id" bson:"bk_host_id"`
+	HostName      string                       `json:"bk_host_name" bson:"bk_host_name"`
+	HostInnerIP   metadata.StringArrayToString `json:"bk_host_innerip" bson:"bk_host_innerip"`
+	HostInnerIPv6 metadata.StringArrayToString `json:"bk_host_innerip_v6" bson:"bk_host_innerip_v6"`
+	CloudID       int64                        `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	Addressing    string                       `json:"bk_addressing" bson:"bk_addressing"`
 }
