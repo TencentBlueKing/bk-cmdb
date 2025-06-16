@@ -8624,3 +8624,163 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
+  /api/v3/topo/delete/biz/extra_module:
+    post:
+      operationId: delete_biz_extra_moudle
+      description: delete_biz_extra_moudle
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/topo/delete/biz/extra_module
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        pluginConfigs:
+          - type: bk-rate-limit
+            yaml: |
+              rates:
+                __default:
+                - period: 1
+                  tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/admin/find/config/global_config:
+    get:
+      operationId: get_global_config
+      description: get_global_config
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/admin/find/config/global_config
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        pluginConfigs:
+          - type: bk-rate-limit
+            yaml: |
+              rates:
+                __default:
+                - period: 1
+                  tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/admin/find/config/platform_config/{type}:
+    get:
+      operationId: get_platform_config
+      description: get_platform_config
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v3/admin/find/config/platform_config/{type}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        pluginConfigs:
+          - type: bk-rate-limit
+            yaml: |
+              rates:
+                __default:
+                - period: 1
+                  tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/admin/update/config/global_config/{type}:
+    put:
+      operationId: update_global_config
+      description: update_global_config
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/admin/update/config/global_config/{type}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        pluginConfigs:
+          - type: bk-rate-limit
+            yaml: |
+              rates:
+                __default:
+                - period: 1
+                  tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:
+  /api/v3/admin/update/config/platform_config/{type}:
+    put:
+      operationId: update_platform_config
+      description: update_platform_config
+      tags:
+        - ui
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/admin/update/config/platform_config/{type}
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        pluginConfigs:
+          - type: bk-rate-limit
+            yaml: |
+              rates:
+                __default:
+                - period: 1
+                  tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn:

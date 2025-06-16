@@ -313,16 +313,15 @@ func genModelManageActionGroups() []iam.ActionGroup {
 
 // GenModelInstanceManageActionGroups TODO
 func GenModelInstanceManageActionGroups(tenantObjects map[string][]metadata.Object) []iam.ActionGroup {
-
-	if len(tenantObjects) == 0 {
-		return make([]iam.ActionGroup, 0)
-	}
-
-	subGroups := []iam.ActionGroup{}
+	subGroups := make([]iam.ActionGroup, 0)
 	for _, objects := range tenantObjects {
 		for _, obj := range objects {
 			subGroups = append(subGroups, genDynamicActionSubGroup(obj))
 		}
+	}
+
+	if len(subGroups) == 0 {
+		return make([]iam.ActionGroup, 0)
 	}
 
 	return []iam.ActionGroup{

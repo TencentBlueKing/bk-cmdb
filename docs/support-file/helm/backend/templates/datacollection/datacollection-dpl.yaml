@@ -89,8 +89,6 @@ spec:
           {{- end }}
           {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
           {{- include "cmdb.redis.snapshotCertVolumeMount" . | nindent 10 }}
-          {{- include "cmdb.redis.discoverCertVolumeMount" . | nindent 10 }}
-          {{- include "cmdb.redis.netCollectCertVolumeMount" . | nindent 10 }}
           {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
           {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
       volumes:
@@ -101,8 +99,6 @@ spec:
         {{- end }}
         {{- include "cmdb.redis.certVolume" . | nindent 6 }}
         {{- include "cmdb.redis.snapshotCertVolume" . | nindent 6 }}
-        {{- include "cmdb.redis.discoverCertVolume" . | nindent 6 }}
-        {{- include "cmdb.redis.netCollectCertVolume" . | nindent 6 }}
         {{- include "cmdb.mongodb.certVolume" . | nindent 6 }}
         {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
 
