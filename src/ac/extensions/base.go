@@ -22,7 +22,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sync/atomic"
+	"sync"
 
 	"configcenter/src/ac"
 	"configcenter/src/ac/meta"
@@ -30,6 +30,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -37,7 +38,7 @@ import (
 
 // this variable is used to accelerate the way to check if a business is resource pool
 // business or not.
-var resourcePoolBusinessID int64
+var tenantResPoolBizIDMap sync.Map
 
 // Authorize cc auth resource, returns no permission response(only when not authorized) and if user is authorized
 func (a *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttribute) (
@@ -103,13 +104,20 @@ func (a *AuthManager) Authorize(kit *rest.Kit, resources ...meta.ResourceAttribu
 // getResourcePoolBusinessID to get bizID of resource pool
 // this function is concurrent safe.
 func (a *AuthManager) getResourcePoolBusinessID(ctx context.Context, header http.Header) (int64, error) {
-
 	rid := util.ExtractRequestIDFromContext(ctx)
-	// this operation is concurrent safe
-	if atomic.LoadInt64(&resourcePoolBusinessID) != 0 {
+	tenantID := httpheader.GetTenantID(header)
+
+	rawResPoolBizID, exists := tenantResPoolBizIDMap.Load(tenantID)
+	if exists {
 		// resource pool business id is already set, return directly.
-		return atomic.LoadInt64(&resourcePoolBusinessID), nil
+		resourcePoolBizID, err := util.GetInt64ByInterface(rawResPoolBizID)
+		if err != nil {
+			blog.Errorf("parse %s res pool biz id %v failed, err: %v, rid: %s", tenantID, rawResPoolBizID, err, rid)
+			return 0, err
+		}
+		return resourcePoolBizID, nil
 	}
+
 	// get resource pool business id now.
 	query := &metadata.QueryCondition{
 		Fields: []string{common.BKAppIDField},
@@ -135,7 +143,7 @@ func (a *AuthManager) getResourcePoolBusinessID(ctx context.Context, header http
 		return 0, fmt.Errorf("get resource pool biz id failed, err: %v", err)
 	}
 	// update resource pool business id immediately
-	atomic.StoreInt64(&resourcePoolBusinessID, bizID)
+	tenantResPoolBizIDMap.Store(tenantID, bizID)
 
 	return bizID, nil
 }

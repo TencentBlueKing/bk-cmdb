@@ -600,7 +600,7 @@ func (a *apiServer) SearchCloudArea(ctx context.Context, h http.Header, params m
 	*metadata.SearchDataResult, error) {
 
 	resp := new(metadata.SearchResp)
-	subPath := "/findmany/cloudarea"
+	subPath := "/findmany/cloudarea/web"
 
 	err := a.client.Post().
 		WithContext(ctx).

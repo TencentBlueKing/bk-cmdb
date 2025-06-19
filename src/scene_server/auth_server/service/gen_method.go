@@ -24,109 +24,94 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/logics"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
+type resPullMethodGenerator func(*rest.Kit, *logics.Logics) (types.ResourcePullMethod, error)
+
+var resPullMethodGeneratorMap = map[iamtypes.TypeID]resPullMethodGenerator{
+	iamtypes.Host: func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
+		return types.ResourcePullMethod{
+			ListAttr:             lgc.ListAttr,
+			ListAttrValue:        lgc.ListAttrValue,
+			ListInstance:         lgc.ListHostInstance,
+			FetchInstanceInfo:    lgc.FetchHostInfo,
+			ListInstanceByPolicy: lgc.ListHostByPolicy,
+		}, nil
+	},
+	iamtypes.Business:                  getBusinessMethod,
+	iamtypes.BusinessForHostTrans:      getBusinessMethod,
+	iamtypes.SysCloudArea:              getSysCloudAreaMethod,
+	iamtypes.BizCustomQuery:            getBizInstanceMethod,
+	iamtypes.BizProcessServiceTemplate: getBizInstanceMethod,
+	iamtypes.BizSetTemplate:            getBizInstanceMethod,
+	iamtypes.SysModelGroup: getSystemInstanceMethod(mapstr.MapStr{
+		common.BKClassificationTypeField: mapstr.MapStr{
+			common.BKDBNE: metadata.HiddenType,
+		},
+	}),
+	iamtypes.InstAsstEvent:             getSystemInstanceMethod(nil),
+	iamtypes.BizSet:                    getSystemInstanceMethod(nil),
+	iamtypes.Project:                   getSystemInstanceMethod(nil),
+	iamtypes.FieldGroupingTemplate:     getSystemInstanceMethod(nil),
+	iamtypes.SysModel:                  getModelMethod(iamtypes.SysModel),
+	iamtypes.SysInstanceModel:          getModelMethod(iamtypes.SysInstanceModel),
+	iamtypes.SysModelEvent:             getModelMethod(iamtypes.SysModelEvent),
+	iamtypes.MainlineModelEvent:        getModelMethod(iamtypes.MainlineModelEvent),
+	iamtypes.SysAssociationType:        getSysAssociationTypeMethod,
+	iamtypes.SysResourcePoolDirectory:  getResourcePoolDirectoryMethod,
+	iamtypes.SysHostRscPoolDirectory:   getResourcePoolDirectoryMethod,
+	iamtypes.SysAuditLog:               getNoResourceMethod,
+	iamtypes.BizCustomField:            getNoResourceMethod,
+	iamtypes.BizHostApply:              getNoResourceMethod,
+	iamtypes.BizTopology:               getNoResourceMethod,
+	iamtypes.SysEventWatch:             getNoResourceMethod,
+	iamtypes.BizProcessServiceCategory: getNoResourceMethod,
+	iamtypes.BizProcessServiceInstance: getNoResourceMethod,
+	iamtypes.KubeWorkloadEvent:         genKubeWorkloadEventMethod,
+	iamtypes.GeneralCache:              genGeneralCacheMethod,
+	iamtypes.Set: func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
+		return types.ResourcePullMethod{ListInstance: lgc.ListSetInstance,
+			FetchInstanceInfo: lgc.FetchSetModuleNameInfo}, nil
+	},
+	iamtypes.Module: func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
+		return types.ResourcePullMethod{ListInstance: lgc.ListModuleInstance,
+			FetchInstanceInfo: lgc.FetchSetModuleNameInfo}, nil
+	},
+	iamtypes.TenantSet: genTenantSetMethod,
+}
+
 // genResourcePullMethod generate iam callback methods for input resource type,
 // method not set means not related to this kind of instances
 func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iamtypes.TypeID) (types.ResourcePullMethod,
 	error) {
 
-	switch resourceType {
-	case iamtypes.Host:
-		return types.ResourcePullMethod{
-			ListAttr:             s.lgc.ListAttr,
-			ListAttrValue:        s.lgc.ListAttrValue,
-			ListInstance:         s.lgc.ListHostInstance,
-			FetchInstanceInfo:    s.lgc.FetchHostInfo,
-			ListInstanceByPolicy: s.lgc.ListHostByPolicy,
-		}, nil
-
-	case iamtypes.Business, iamtypes.BusinessForHostTrans:
-		return getBusinessMethod(s.lgc)
-
-	case iamtypes.SysCloudArea:
-		return getSysCloudAreaMethod(s.lgc)
-
-	case iamtypes.BizCustomQuery, iamtypes.BizProcessServiceTemplate, iamtypes.BizSetTemplate:
-		return types.ResourcePullMethod{
-			ListInstance: s.lgc.ListBusinessInstance,
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-				filter *types.FetchInstanceInfoFilter) (
-				[]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
-			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-				filter *types.ListInstanceByPolicyFilter,
-				page types.Page) (result *types.ListInstanceResult, e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
-			},
-		}, nil
-
-	case iamtypes.SysModelGroup, iamtypes.InstAsstEvent, iamtypes.BizSet, iamtypes.Project, iamtypes.FieldGroupingTemplate:
-		return types.ResourcePullMethod{
-			ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
-				page types.Page) (*types.ListInstanceResult, error) {
-				return s.lgc.ListSystemInstance(kit, resourceType, filter, page, nil)
-			},
-			FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-				filter *types.FetchInstanceInfoFilter) (
-				[]map[string]interface{}, error) {
-				return s.lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
-			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-				filter *types.ListInstanceByPolicyFilter,
-				page types.Page) (result *types.ListInstanceResult, e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
-			},
-		}, nil
-
-	case iamtypes.SysModel, iamtypes.SysInstanceModel, iamtypes.SysModelEvent, iamtypes.MainlineModelEvent:
-		return getModelMethod(kit, s.lgc, resourceType)
-
-	case iamtypes.SysAssociationType:
-		return getSysAssociationTypeMethod(s.lgc)
-
-	case iamtypes.SysResourcePoolDirectory, iamtypes.SysHostRscPoolDirectory:
-		return getResourcePoolDirectoryMethod(kit, s.lgc)
-
-	case iamtypes.SysAuditLog, iamtypes.BizCustomField, iamtypes.BizHostApply,
-		iamtypes.BizTopology, iamtypes.SysEventWatch, iamtypes.BizProcessServiceCategory, iamtypes.BizProcessServiceInstance:
-		return types.ResourcePullMethod{}, nil
-	case iamtypes.KubeWorkloadEvent:
-		return s.genKubeWorkloadEventMethod(kit)
-	case iamtypes.GeneralCache:
-		return genGeneralCacheMethod(kit)
-	case iamtypes.Set:
-		return types.ResourcePullMethod{
-			ListInstance: s.lgc.ListSetInstance, FetchInstanceInfo: s.lgc.FetchSetModuleNameInfo}, nil
-	case iamtypes.Module:
-		return types.ResourcePullMethod{ListInstance: s.lgc.ListModuleInstance,
-			FetchInstanceInfo: s.lgc.FetchSetModuleNameInfo}, nil
-	case iamtypes.TenantSet:
-		return genTenantSetMethod()
-	default:
-		if iam.IsIAMSysInstance(resourceType) {
-			return types.ResourcePullMethod{
-				ListAttr:          s.lgc.ListAttr,
-				ListAttrValue:     s.lgc.ListAttrValue,
-				ListInstance:      s.lgc.ListModelInstance,
-				FetchInstanceInfo: s.lgc.FetchObjInstInfo,
-				ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-					filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult,
-					e error) {
-					return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
-				},
-			}, nil
-		}
-		return types.ResourcePullMethod{}, fmt.Errorf("gen method failed: unsupported resource type: %s", resourceType)
+	generator, exists := resPullMethodGeneratorMap[resourceType]
+	if exists {
+		return generator(kit, s.lgc)
 	}
+
+	if iam.IsIAMSysInstance(resourceType) {
+		return types.ResourcePullMethod{
+			ListAttr:          s.lgc.ListAttr,
+			ListAttrValue:     s.lgc.ListAttrValue,
+			ListInstance:      s.lgc.ListModelInstance,
+			FetchInstanceInfo: s.lgc.FetchObjInstInfo,
+			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
+				filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult,
+				e error) {
+				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
+			},
+		}, nil
+	}
+	return types.ResourcePullMethod{}, fmt.Errorf("gen method failed: unsupported resource type: %s", resourceType)
 }
 
-func getBusinessMethod(lgc *logics.Logics) (types.ResourcePullMethod, error) {
+func getBusinessMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	// business instances should not include resource pool business
 	extraCond := map[string]interface{}{
 		common.BKDefaultField: map[string]interface{}{
@@ -153,7 +138,7 @@ func getBusinessMethod(lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	}, nil
 }
 
-func getSysCloudAreaMethod(lgc *logics.Logics) (types.ResourcePullMethod, error) {
+func getSysCloudAreaMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	// cloud area instances should not include default cloud area, since it can't be operated
 	extraCond := map[string]interface{}{
 		common.BKCloudIDField: map[string]interface{}{
@@ -180,72 +165,120 @@ func getSysCloudAreaMethod(lgc *logics.Logics) (types.ResourcePullMethod, error)
 	}, nil
 }
 
-func getModelMethod(kit *rest.Kit, lgc *logics.Logics, resourceType iamtypes.TypeID) (types.ResourcePullMethod, error) {
-	// get mainline objects
-	mainlineOpt := &metadata.QueryCondition{
-		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
-	}
-	asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, mainlineOpt)
-	if err != nil {
-		blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
-		return types.ResourcePullMethod{}, err
-	}
-
-	mainlineObjIDs := make([]string, 0)
-	for _, asst := range asstRes.Info {
-		if metadata.IsCommon(asst.ObjectID) {
-			mainlineObjIDs = append(mainlineObjIDs, asst.ObjectID)
-		}
-	}
-
-	// process and cloud area are temporarily excluded TODO: remove this restriction when they are available for user
-	// instance model is used as parent layer of instances, should exclude host model and mainline model as
-	// they use separate operations
-	excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
-
-	var extraCond map[string]interface{}
-	switch resourceType {
-	case iamtypes.SysModelEvent, iamtypes.SysInstanceModel:
-		excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost, common.BKInnerObjIDApp,
-			common.BKInnerObjIDSet, common.BKInnerObjIDModule)
-		excludedObjIDs = append(excludedObjIDs, mainlineObjIDs...)
-		extraCond = map[string]interface{}{
-			common.BKObjIDField: map[string]interface{}{
-				common.BKDBNIN: excludedObjIDs,
-			},
-		}
-	case iamtypes.MainlineModelEvent:
-		extraCond = map[string]interface{}{
-			common.BKObjIDField: map[string]interface{}{
-				common.BKDBIN: mainlineObjIDs,
-			},
-		}
-	default:
-		extraCond = map[string]interface{}{
-			common.BKObjIDField: map[string]interface{}{
-				common.BKDBNIN: excludedObjIDs,
-			},
-		}
-	}
-
+func getBizInstanceMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	return types.ResourcePullMethod{
-		ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
-			page types.Page) (*types.ListInstanceResult, error) {
-			return lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
-		},
-		FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.FetchInstanceInfoFilter) (
+		ListInstance: lgc.ListBusinessInstance,
+		FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID,
+			filter *types.FetchInstanceInfoFilter) (
 			[]map[string]interface{}, error) {
-			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
+			return lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
 		},
 		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
 			filter *types.ListInstanceByPolicyFilter,
 			page types.Page) (result *types.ListInstanceResult, e error) {
-			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
+			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
 		},
 	}, nil
 }
 
-func getSysAssociationTypeMethod(lgc *logics.Logics) (types.ResourcePullMethod, error) {
+func getSystemInstanceMethod(extraCond map[string]interface{}) resPullMethodGenerator {
+	return func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
+		return types.ResourcePullMethod{
+			ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
+				page types.Page) (*types.ListInstanceResult, error) {
+				return lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
+			},
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID,
+				filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
+				return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
+			},
+			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
+				filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
+				return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
+			},
+		}, nil
+	}
+}
+
+func getModelMethod(resourceType iamtypes.TypeID) resPullMethodGenerator {
+	return func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
+		// get mainline objects
+		mainlineOpt := &metadata.QueryCondition{
+			Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
+		}
+		asstRes, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, mainlineOpt)
+		if err != nil {
+			blog.Errorf("search mainline association failed, err: %v, rid: %s", err, kit.Rid)
+			return types.ResourcePullMethod{}, err
+		}
+
+		mainlineObjIDs := make([]string, 0)
+		for _, asst := range asstRes.Info {
+			if metadata.IsCommon(asst.ObjectID) {
+				mainlineObjIDs = append(mainlineObjIDs, asst.ObjectID)
+			}
+		}
+
+		// process and cloud area are temporarily excluded TODO: remove this restriction when they are available for user
+		// instance model is used as parent layer of instances, should exclude host model and mainline model as
+		// they use separate operations
+		excludedObjIDs := []string{common.BKInnerObjIDProc, common.BKInnerObjIDPlat}
+
+		// get quoted objects
+		quoteOpt := &metadata.CommonQueryOption{
+			Fields: []string{common.BKDestModelField},
+			Page:   metadata.BasePage{Limit: common.BKMaxPageSize},
+		}
+		relRes, err := lgc.CoreAPI.CoreService().ModelQuote().ListModelQuoteRelation(kit.Ctx, kit.Header, quoteOpt)
+		if err != nil {
+			blog.Errorf("list model quote relations failed, err: %v, rid: %s", err, kit.Rid)
+			return types.ResourcePullMethod{}, err
+		}
+
+		for _, res := range relRes.Info {
+			excludedObjIDs = append(excludedObjIDs, res.DestModel)
+		}
+
+		// generate extra condition for resource type
+		var extraCond map[string]interface{}
+		switch resourceType {
+		case iamtypes.SysModelEvent, iamtypes.SysInstanceModel:
+			excludedObjIDs = append(excludedObjIDs, common.BKInnerObjIDHost, common.BKInnerObjIDApp,
+				common.BKInnerObjIDSet, common.BKInnerObjIDModule)
+			excludedObjIDs = append(excludedObjIDs, mainlineObjIDs...)
+			extraCond = map[string]interface{}{
+				common.BKObjIDField: map[string]interface{}{common.BKDBNIN: excludedObjIDs},
+			}
+		case iamtypes.MainlineModelEvent:
+			extraCond = map[string]interface{}{
+				common.BKObjIDField: map[string]interface{}{common.BKDBIN: mainlineObjIDs},
+			}
+		default:
+			extraCond = map[string]interface{}{
+				common.BKObjIDField: map[string]interface{}{common.BKDBNIN: excludedObjIDs},
+			}
+		}
+
+		return types.ResourcePullMethod{
+			ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
+				page types.Page) (*types.ListInstanceResult, error) {
+				return lgc.ListSystemInstance(kit, resourceType, filter, page, extraCond)
+			},
+			FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID,
+				filter *types.FetchInstanceInfoFilter) (
+				[]map[string]interface{}, error) {
+				return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
+			},
+			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
+				filter *types.ListInstanceByPolicyFilter,
+				page types.Page) (result *types.ListInstanceResult, e error) {
+				return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
+			},
+		}, nil
+	}
+}
+
+func getSysAssociationTypeMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	// association types should not include preset ones, since they can't be operated
 	extraCond := map[string]interface{}{
 		common.BKIsPre: map[string]interface{}{
@@ -298,12 +331,16 @@ func getResourcePoolDirectoryMethod(kit *rest.Kit, lgc *logics.Logics) (types.Re
 	}, nil
 }
 
+func getNoResourceMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
+	return types.ResourcePullMethod{}, nil
+}
+
 // kubeWorkloadKinds kube workload kinds
 // TODO define this in kube types folder, and replace the kinds with actual ones, this is only an example
 var kubeWorkloadKinds = []string{"deployment", "statefulSet", "daemonSet"}
 
 // genKubeWorkloadEventMethod generate iam callback methods for iamtypes.KubeWorkloadEvent resource type
-func (s *AuthService) genKubeWorkloadEventMethod(kit *rest.Kit) (types.ResourcePullMethod, error) {
+func genKubeWorkloadEventMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	return types.ResourcePullMethod{
 		ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 			page types.Page) (*types.ListInstanceResult, error) {
@@ -389,7 +426,7 @@ func (s *AuthService) genKubeWorkloadEventMethod(kit *rest.Kit) (types.ResourceP
 	}, nil
 }
 
-func genGeneralCacheMethod(kit *rest.Kit) (types.ResourcePullMethod, error) {
+func genGeneralCacheMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	return types.ResourcePullMethod{
 		ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 			page types.Page) (*types.ListInstanceResult, error) {
@@ -470,7 +507,7 @@ func genGeneralCacheMethod(kit *rest.Kit) (types.ResourcePullMethod, error) {
 	}, nil
 }
 
-func genTenantSetMethod() (types.ResourcePullMethod, error) {
+func genTenantSetMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	return types.ResourcePullMethod{
 		ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 			page types.Page) (*types.ListInstanceResult, error) {

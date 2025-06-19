@@ -102,11 +102,18 @@ func getInstanceResourceObjID(resourceType iamtypes.TypeID) string {
 	}
 }
 
-var resourcePoolBizID int64
+var tenantResPoolBizIDMap sync.Map
 
 // GetResourcePoolBizID search bizID of resource pool
 func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
-	if resourcePoolBizID != 0 {
+	rawResPoolBizID, exists := tenantResPoolBizIDMap.Load(kit.TenantID)
+	if exists {
+		resourcePoolBizID, err := util.GetInt64ByInterface(rawResPoolBizID)
+		if err != nil {
+			blog.Errorf("parse %s resource pool biz id %v failed, err: %v, rid: %s", kit.TenantID, rawResPoolBizID, err,
+				kit.Rid)
+			return 0, err
+		}
 		return resourcePoolBizID, nil
 	}
 
@@ -128,13 +135,16 @@ func (lgc *Logics) GetResourcePoolBizID(kit *rest.Kit) (int64, error) {
 		return 0, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 	}
 
-	resourcePoolBizID, err = util.GetInt64ByInterface(bizResp.Info[0][common.BKAppIDField])
+	resourcePoolBizID, err := util.GetInt64ByInterface(bizResp.Info[0][common.BKAppIDField])
 	if err != nil {
 		blog.Errorf("find resource pool biz failed, parse biz id failed, biz: %v, err: %v, rid: %s",
 			bizResp.Info[0][common.BKAppIDField], err, kit.Rid)
 		return 0, kit.CCError.CCErrorf(common.CCErrCommInstFieldConvertFail, common.BKInnerObjIDApp,
 			common.BKAppIDField, "int", err.Error())
 	}
+
+	tenantResPoolBizIDMap.Store(kit.TenantID, resourcePoolBizID)
+
 	return resourcePoolBizID, nil
 }
 

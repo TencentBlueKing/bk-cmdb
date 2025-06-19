@@ -34,6 +34,8 @@ func (s *Service) initCloudarea(web *restful.WebService) {
 	})
 
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloudarea", Handler: s.FindManyCloudArea})
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloudarea/web",
+		Handler: s.FindManyCloudArea})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/createmany/cloudarea", Handler: s.CreatePlatBatch})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/create/cloudarea", Handler: s.CreatePlat})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/cloudarea/{bk_cloud_id}",
