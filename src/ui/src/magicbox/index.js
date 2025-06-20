@@ -48,26 +48,30 @@ Vue.use(magicbox, {
 export const $error = (message, delay = 3000) => magicbox.bkMessage({
   message,
   delay,
-  theme: 'error'
+  theme: 'error',
+  ellipsisLine: 0
 })
 
 export const $success = (message, delay = 3000) => magicbox.bkMessage({
   message,
   delay,
-  theme: 'success'
+  theme: 'success',
+  ellipsisLine: 0
 })
 
 export const $info = (message, delay = 3000) => magicbox.bkMessage({
   message,
   delay,
-  theme: 'primary'
+  theme: 'primary',
+  ellipsisLine: 0
 })
 
 export const $warn = (message, delay = 3000) => magicbox.bkMessage({
   message,
   delay,
   theme: 'warning',
-  hasCloseIcon: true
+  hasCloseIcon: true,
+  ellipsisLine: 0
 })
 
 export const $bkInfo = magicbox.bkInfoBox
