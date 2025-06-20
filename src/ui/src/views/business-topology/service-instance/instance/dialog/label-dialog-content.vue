@@ -18,6 +18,7 @@
           <input class="cmdb-form-input" type="text"
             ref="tagKey"
             :data-vv-name="'key-' + index"
+            data-vv-validate-on="change"
             v-validate="getValidateRules(index, 'key')"
             v-model="label.key"
             :placeholder="`Key: ${$validator.dictionary.getMessage($i18n.locale, 'instanceTagKey')}`">
@@ -27,6 +28,7 @@
         <div class="label-value" :class="{ 'is-error': errors.has('value-' + index) }">
           <input class="cmdb-form-input" type="text"
             :data-vv-name="'value-' + index"
+            data-vv-validate-on="change"
             v-validate="getValidateRules(index, 'value')"
             v-model="label.value"
             :placeholder="`Value: ${$validator.dictionary.getMessage($i18n.locale, 'instanceTagValue')}`">
