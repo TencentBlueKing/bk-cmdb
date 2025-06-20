@@ -551,6 +551,8 @@
           const headerProperties = this.$tools.getHeaderProperties(this.properties, customColumns, this.columnsConfig.disabledColumns)
           resolve(headerProperties)
         }).then((properties) => {
+          // 在没有设置过项目列的时候，会显示出项目图标字段
+          properties = properties.filter(item => item.bk_property_id !== 'bk_project_icon')
           this.updateTableHeader(properties)
           this.columnsConfig.selected = properties.map(property => property.bk_property_id)
         })
