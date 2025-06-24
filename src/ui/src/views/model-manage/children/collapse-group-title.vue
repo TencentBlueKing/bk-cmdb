@@ -29,14 +29,10 @@
 
 <script>
   import { defineComponent, computed, ref, toRef } from 'vue'
-  import DropdownOptionButton from './dropdown-option-button.vue'
   import has from 'has'
 
   export default defineComponent({
     name: 'CollapseGroupTitle',
-    components: {
-      DropdownOptionButton
-    },
     props: {
       // 标题内容
       title: {

@@ -17,11 +17,11 @@
 
   const props = defineProps({
     commands: {
-        type: Array,
-        default: () => ([])
-      },
-      show: Boolean,
-      target: [Element, null]
+      type: Array,
+      default: () => ([])
+    },
+    show: Boolean,
+    target: [Element, null]
   })
 
   const emit = defineEmits(['hide'])
@@ -54,8 +54,8 @@
     operateModelPopover.instance.show()
   }
 
-  watch(()=> props.show, (val)=> {
-    if(val) showModelOperation()
+  watch(() => props.show, (val) => {
+    if (val) showModelOperation()
   })
 </script>
 

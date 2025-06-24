@@ -53,6 +53,7 @@
   padding: 0 12px;
   font-size: 12px;
   user-select: none;
+  cursor: pointer;
 
   &:hover,
   &.is-active {

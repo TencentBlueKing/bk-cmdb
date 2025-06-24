@@ -325,6 +325,7 @@
                 type="text"
                 class="cmdb-form-input"
                 name="classifyId"
+                :data-vv-name="'classifyId'"
                 :placeholder="$t('请填写英文开头，下划线，数字，英文的组合')"
                 :disabled="groupDialog.isEdit"
                 v-model.trim="groupDialog.data['bk_classification_id']"
@@ -352,6 +353,7 @@
                 type="text"
                 class="cmdb-form-input"
                 name="classifyName"
+                :data-vv-name="'classifyName'"
                 :placeholder="$t('请输入名称')"
                 v-model.trim="groupDialog.data['bk_classification_name']"
                 v-validate="'required|length:128'"
@@ -1076,10 +1078,11 @@
       },
       async saveGroup() {
         try {
-          const res = await Promise.all([
-            this.$validator.validate('classifyId'),
-            this.$validator.validate('classifyName')
-          ])
+          const validations = [this.$validator.validate('classifyName')]
+          if (!this.groupDialog.isEdit) {
+            validations.unshift(this.$validator.validate('classifyId'))
+          }
+          const res = await Promise.all(validations)
           if (res.includes(false)) {
             return
           }
@@ -1098,6 +1101,7 @@
               }
             })
             this.updateClassify({ ...params, ...{ id: this.groupDialog.data.id, isNewClassify: false } })
+            this.$success(this.$t('编辑成功'))
           } else {
             const res = await this.createClassification({
               params,
