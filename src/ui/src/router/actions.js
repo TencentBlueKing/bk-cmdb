@@ -72,7 +72,10 @@ export const redirect = function ({ name, params = {}, query = {}, history = fal
   if (reload) {
     const { href } = router.resolve(to)
     window.location.href = href
-    window.location.reload()
+    // 避免canceled请求错误
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
   } else {
     const { resolved } = router.resolve(to)
     // 注入bizId，未改造的页面跳转，可能会遗漏了bizId的设置
