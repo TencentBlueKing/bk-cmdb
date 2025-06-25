@@ -57,7 +57,7 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.INSTANCE_MODEL]: ['实例模型', 'Instance Model'],
   [IAM_VIEWS.CUSTOM_QUERY]: ['动态分组', 'Custom Query'],
   [IAM_VIEWS.BIZ]: ['业务', 'Business'],
-  [IAM_VIEWS.BIZ_SET]: ['业务集', 'Business Set'],
+  [IAM_VIEWS.BIZ_SET]: ['业务集', 'Business-Set'],
   [IAM_VIEWS.BIZ_FOR_HOST_TRANS]: ['业务', 'Business'],
   [IAM_VIEWS.HOST]: ['主机', 'Host'],
   [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
@@ -796,12 +796,12 @@ export const IAM_ACTIONS = {
   // 业务集
   C_BUSINESS_SET: {
     id: 'create_business_set',
-    name: ['业务集创建', 'Create Business Set'],
+    name: ['业务集创建', 'Create Business-Set'],
     cmdb_action: 'bizSet.create'
   },
   U_BUSINESS_SET: {
     id: 'edit_business_set',
-    name: ['业务集编辑', 'Update Business Set'],
+    name: ['业务集编辑', 'Update Business-Set'],
     cmdb_action: 'bizSet.update',
     relation: [{
       view: IAM_VIEWS.BIZ_SET,
@@ -813,7 +813,7 @@ export const IAM_ACTIONS = {
   },
   R_BUSINESS_SET: {
     id: 'view_business_set',
-    name: ['业务集查看', 'View Business Set'],
+    name: ['业务集查看', 'View Business-Set'],
     cmdb_action: 'bizSet.findMany',
     relation: [{
       view: IAM_VIEWS.BIZ_SET
@@ -824,7 +824,7 @@ export const IAM_ACTIONS = {
   },
   D_BUSINESS_SET: {
     id: 'delete_business_set',
-    name: ['业务集删除', 'Delete Business Set'],
+    name: ['业务集删除', 'Delete Business-Set'],
     cmdb_action: 'bizSet.delete',
     relation: [{
       view: IAM_VIEWS.BIZ_SET,
@@ -1262,7 +1262,7 @@ export const IAM_ACTIONS = {
   // 业务集访问 (用于控制业务导航下业务集选择器的数据)
   R_BIZ_SET_RESOURCE: {
     id: 'access_business_set',
-    name: ['业务集访问', 'Access Business Set'],
+    name: ['业务集访问', 'Access Business-Set'],
     cmdb_action: 'bizSet.accessBizSet',
     relation: [{
       view: IAM_VIEWS.BIZ_SET,

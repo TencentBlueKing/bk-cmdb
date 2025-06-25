@@ -17,7 +17,10 @@
         <h2 class="title">{{title || $t('选择主机')}}</h2>
         <div class="host-list">
           <div class="top-bar">
-            <div class="topo-path">{{ $t('已自动过滤') }}<div class="path" :title="topoPath">{{topoPath}}</div>{{ $t('可选的主机：') }}</div>
+            <div class="topo-path">
+              {{ $t('已自动过滤') }}
+              <div class="path" :title="topoPath">{{topoPath}}</div>{{ $t('可选的主机：') }}
+            </div>
             <div class="search-input">
               <bk-input clearable right-icon="bk-icon icon-search" v-model.trim="keyword"></bk-input>
             </div>
@@ -81,7 +84,7 @@
       </div>
     </div>
     <div class="layout-footer">
-      <div class="tips">注：已存在服务实例的主机，不能再勾选</div>
+      <div class="tips">{{$t('注：已存在服务实例的主机，不能再勾选')}}</div>
       <div>
         <bk-button class="mr10" theme="primary" :disabled="!selected.length" @click="handleNextStep">
           {{confirmText || $t('下一步')}}
