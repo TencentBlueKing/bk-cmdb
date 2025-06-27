@@ -163,7 +163,7 @@ export const updateIdleModule = ({
 export const deleteIdleModule = ({
   moduleKey,
   moduleName
-}) => $http.post('topo/delete/biz/extra_moudle', {
+}) => $http.post('topo/delete/biz/extra_module', {
   module_key: moduleKey,
   module_name: moduleName
 })
