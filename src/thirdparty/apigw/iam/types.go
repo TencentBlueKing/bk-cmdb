@@ -106,6 +106,7 @@ type ResourceType struct {
 	Parents        []Parent       `json:"parents"`
 	ProviderConfig ResourceConfig `json:"provider_config"`
 	Version        int64          `json:"version"`
+	TenantID       string         `json:"tenant_id,omitempty"`
 }
 
 // ResourceConfig TODO
@@ -134,6 +135,7 @@ type ResourceAction struct {
 	RelatedActions       []types.ActionID     `json:"related_actions"`
 	Version              int                  `json:"version"`
 	Hidden               bool                 `json:"hidden"`
+	TenantID             string               `json:"tenant_id,omitempty"`
 }
 
 // RelateResourceType TODO
@@ -194,6 +196,7 @@ type InstanceSelection struct {
 	// unique
 	NameEn            string          `json:"name_en"`
 	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
+	TenantID          string          `json:"tenant_id,omitempty"`
 }
 
 // ResourceChain TODO

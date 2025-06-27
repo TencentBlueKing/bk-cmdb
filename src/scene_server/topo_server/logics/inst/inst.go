@@ -90,8 +90,8 @@ type ObjectWithInsts struct {
 
 // ObjectAssoPair a struct include object msg and association
 type ObjectAssoPair struct {
-	Object    metadata.Object
-	AssocName string
+	Object     metadata.Object
+	AssocNames []string
 }
 
 // ConditionItem subcondition
@@ -1470,10 +1470,9 @@ func (c *commonInst) getAssociatedObjectWithInsts(kit *rest.Kit, objID string, i
 	relation := make(map[int64]int64)
 	result := make([]*ObjectWithInsts, 0)
 	for _, objPair := range objPairs {
-
 		queryCond := &metadata.InstAsstQueryCondition{
 			Cond: metadata.QueryCondition{Condition: mapstr.MapStr{
-				common.AssociationObjAsstIDField: objPair.AssocName,
+				common.AssociationObjAsstIDField: mapstr.MapStr{common.BKDBIN: objPair.AssocNames},
 			}},
 			ObjID: objPair.Object.ObjectID,
 		}
@@ -1553,15 +1552,15 @@ func (c *commonInst) searchAssoObjects(kit *rest.Kit, needChild bool, cond mapst
 		return make([]ObjectAssoPair, 0), nil
 	}
 
-	objAssoMap := make(map[string]metadata.Association, 0)
+	objAssoMap := make(map[string][]metadata.Association, 0)
 	var objIDArray []string
 	for _, asst := range rsp.Info {
 		if needChild {
 			objIDArray = append(objIDArray, asst.AsstObjID)
-			objAssoMap[asst.AsstObjID] = asst
+			objAssoMap[asst.AsstObjID] = append(objAssoMap[asst.AsstObjID], asst)
 		} else {
 			objIDArray = append(objIDArray, asst.ObjectID)
-			objAssoMap[asst.ObjectID] = asst
+			objAssoMap[asst.ObjectID] = append(objAssoMap[asst.ObjectID], asst)
 		}
 	}
 
@@ -1582,9 +1581,13 @@ func (c *commonInst) searchAssoObjects(kit *rest.Kit, needChild bool, cond mapst
 
 	pair := make([]ObjectAssoPair, 0)
 	for _, object := range rspRst.Info {
+		asstNames := make([]string, 0)
+		for _, asst := range objAssoMap[object.ObjectID] {
+			asstNames = append(asstNames, asst.AssociationName)
+		}
 		pair = append(pair, ObjectAssoPair{
-			Object:    object,
-			AssocName: objAssoMap[object.ObjectID].AssociationName,
+			Object:     object,
+			AssocNames: asstNames,
 		})
 	}
 

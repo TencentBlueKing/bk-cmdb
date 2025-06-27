@@ -20,6 +20,7 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 )
@@ -82,42 +83,42 @@ func (a *AuthManager) MakeResourcesByServiceTemplate(header http.Header, action 
 }
 
 // AuthorizeByServiceTemplateID TODO
-func (a *AuthManager) AuthorizeByServiceTemplateID(ctx context.Context, header http.Header, action meta.Action,
-	ids ...int64) error {
+func (a *AuthManager) AuthorizeByServiceTemplateID(kit *rest.Kit, action meta.Action, ids ...int64) (
+	*metadata.BaseResp, bool, error) {
 	if !a.Enabled() {
-		return nil
+		return nil, true, nil
 	}
 
 	if len(ids) == 0 {
-		return nil
+		return nil, true, nil
 	}
 
-	templates, err := a.collectServiceTemplateByIDs(ctx, header, ids...)
+	templates, err := a.collectServiceTemplateByIDs(kit.Ctx, kit.Header, ids...)
 	if err != nil {
-		return fmt.Errorf("get service templates by id failed, err: %+v", err)
+		return nil, true, fmt.Errorf("get service templates by id failed, err: %+v", err)
 	}
-	return a.AuthorizeByServiceTemplates(ctx, header, action, templates...)
+	return a.AuthorizeByServiceTemplates(kit, action, templates...)
 }
 
 // AuthorizeByServiceTemplates TODO
-func (a *AuthManager) AuthorizeByServiceTemplates(ctx context.Context, header http.Header, action meta.Action,
-	templates ...metadata.ServiceTemplate) error {
+func (a *AuthManager) AuthorizeByServiceTemplates(kit *rest.Kit, action meta.Action,
+	templates ...metadata.ServiceTemplate) (*metadata.BaseResp, bool, error) {
+
 	if !a.Enabled() {
-		return nil
+		return nil, true, nil
 	}
 
 	if len(templates) == 0 {
-		return nil
+		return nil, true, nil
 	}
 	// extract business id
 	bizID, err := a.extractBusinessIDFromServiceTemplate(templates...)
 	if err != nil {
-		return fmt.Errorf("authorize service templates failed, extract business id from service templates failed, err: %+v",
-			err)
+		return nil, true, fmt.Errorf("extract business id from service templates failed, err: %v", err)
 	}
 
 	// make auth resources
-	resources := a.MakeResourcesByServiceTemplate(header, action, bizID, templates...)
-
-	return a.batchAuthorize(ctx, header, resources...)
+	resources := a.MakeResourcesByServiceTemplate(kit.Header, action, bizID, templates...)
+	authResp, authorized := a.Authorize(kit, resources...)
+	return authResp, authorized, nil
 }

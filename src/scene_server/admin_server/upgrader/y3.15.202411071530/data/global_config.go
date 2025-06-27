@@ -230,8 +230,8 @@ var InitGlobalConfig = PlatformSettingConfig{
 				Value:       "XlteXCNcLyxcPlw8XHxdKyQ=",
 				Description: "集群/模块/实例名称的验证规则",
 				I18N: I18N{
-					CN: "请输入除 #/,\\\\u003e\\\\u003c| 以外的字符",
-					EN: "Please enter characters other than #/,\\\\u003e\\\\u003c|",
+					CN: "请输入除 #/,><| 以外的字符",
+					EN: "Please enter characters other than #/,><|",
 				},
 			},
 		},

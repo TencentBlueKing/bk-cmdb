@@ -909,6 +909,11 @@ func (sr *SearchResult) setHit(ctx context.Context, searchHit *elastic.SearchHit
 func (sr *SearchResult) dealHighlight(source map[string]interface{}, highlight elastic.SearchHitHighlight,
 	bkBizId, rawString string) {
 
+	if len(highlight) == 0 {
+		sr.Highlight = make(map[string][]string)
+		return
+	}
+
 	isObject := true
 	var bkObjId, oldHighlightObjId string
 	if _, ok := source[metadata.IndexPropertyBKObjID]; ok {

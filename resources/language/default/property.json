@@ -35,6 +35,7 @@
     "module_property_set_template_id": "集群模板ID",
     "module_property_apply_host_property_enabled": "主机属性自动应用",
     "plat_property_bk_status": "状态",
+    "plat_property_bk_status_detail": "状态详情",
     "plat_property_bk_cloud_vendor": "云厂商",
     "plat_property_bk_vpc_id": "VPC唯一标识",
     "plat_property_bk_vpc_name": "VPC名称",

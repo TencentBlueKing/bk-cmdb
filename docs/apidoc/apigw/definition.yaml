@@ -95,6 +95,46 @@ grant_permissions:
     grant_dimension: "resource"
     resource_names:
       - batch_update_host_all_properties
+      - search_business
+      - search_cloud_area
+      - search_biz_inst_topo
+      - get_biz_internal_module
+      - find_topo_node_paths
+      - find_module_batch
+      - list_hosts_without_biz
+      - list_biz_hosts
+      - list_service_template
+      - list_service_instance
+      - list_process_instance
+      - list_proc_template
+      - find_set_batch
+      - search_set
+      - search_module
+      - search_object_attribute
+      - find_host_topo_relation
+      - find_host_biz_relations
+      - batch_update_host
+      - resource_watch
+      - bind_host_agent
+      - unbind_host_agent
+      - add_host_to_business_idle
+      - push_host_identifier
+      - find_host_identifier_push_result
+      - list_service_instance_detail
+      - add_host_to_resource
+      - get_mainline_object_topo
+      - find_host_by_service_template
+      - find_host_by_set_template
+      - list_biz_hosts_topo
+      - update_host_cloud_area_field
+      - search_inst
+      - list_resource_pool_hosts
+      - create_cloud_area
+      - delete_cloud_area
+      - update_cloud_area
+      - update_inst
+      - find_host_by_topo
+      - find_host_service_template
   - bk_app_code: {{ environ.BK_NODEMGR_APP_CODE }}
     grant_dimension: "resource"
     resource_names:

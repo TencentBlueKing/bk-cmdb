@@ -24,6 +24,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/condition"
 	httpheader "configcenter/src/common/http/header"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
@@ -246,6 +247,110 @@ func (a *AuthManager) MakeResourcesByInstances(ctx context.Context, header http.
 		}
 	}
 	return resultResources, nil
+}
+
+// AuthorizeByInstIDs authorize by instance ids, returns auth response if not authorized
+func (a *AuthManager) AuthorizeByInstIDs(kit *rest.Kit, action meta.Action, objID string, ids ...int64) (
+	*metadata.BaseResp, bool, error) {
+
+	if !a.Enabled() {
+		return nil, true, nil
+	}
+
+	if len(ids) == 0 {
+		return nil, true, nil
+	}
+
+	if a.SkipReadAuthorization && (action == meta.Find || action == meta.FindMany) {
+		blog.V(4).Infof("skip authorization for reading, obj: %s, ids: %+v, kit.Rid: %s", objID, ids, kit.Rid)
+		return nil, true, nil
+	}
+
+	var resources []meta.ResourceAttribute
+	var resErr error
+	switch objID {
+	case common.BKInnerObjIDHost:
+		hosts, err := a.collectHostByHostIDs(kit.Ctx, kit.Header, ids...)
+		if err != nil {
+			return nil, true, fmt.Errorf("get hosts by ids: %+v for authorization failed, err: %v", ids, err)
+		}
+		resources, resErr = a.MakeResourcesByHosts(kit.Ctx, kit.Header, action, hosts...)
+	case common.BKInnerObjIDModule:
+		if !a.RegisterModuleEnabled {
+			return nil, true, nil
+		}
+		modules, err := a.collectModuleByModuleIDs(kit.Ctx, kit.Header, ids...)
+		if err != nil {
+			return nil, true, fmt.Errorf("get modules by ids: %+v for authorization failed, err: %v", ids, err)
+		}
+		bizID, err := a.extractBusinessIDFromModules(modules...)
+		if err != nil {
+			return nil, true, fmt.Errorf("extract business id from modules failed, err: %v", err)
+		}
+		resources = a.MakeResourcesByModule(kit.Header, action, bizID, modules...)
+	case common.BKInnerObjIDSet:
+		if !a.RegisterSetEnabled {
+			return nil, true, nil
+		}
+		sets, err := a.collectSetBySetIDs(kit.Ctx, kit.Header, ids...)
+		if err != nil {
+			return nil, true, fmt.Errorf("collect set by id failed, err: %v", err)
+		}
+		bizID, err := a.extractBusinessIDFromSets(sets...)
+		if err != nil {
+			return nil, true, fmt.Errorf("authorize sets failed, extract business id from sets failed, err: %v", err)
+		}
+		resources = a.MakeResourcesBySet(kit.Header, action, bizID, sets...)
+	case common.BKInnerObjIDApp:
+		resources, resErr = a.genBizAuthRes(kit, action, ids)
+	case common.BKInnerObjIDBizSet:
+		bizSets, err := a.collectBizSetByIDs(kit.Ctx, kit.Header, kit.Rid, ids...)
+		if err != nil {
+			return nil, true, fmt.Errorf("get biz set by ids: %+v failed, err: %v", ids, err)
+		}
+		resources = a.makeResourcesByBizSet(kit.Header, action, bizSets...)
+	default:
+		instances, err := a.collectInstancesByRawIDs(kit.Ctx, kit.Header, objID, ids...)
+		if err != nil {
+			return nil, true, fmt.Errorf("get %s instance by ids: %+v for auth failed, err: %v", objID, ids, err)
+		}
+		resources, resErr = a.MakeResourcesByInstances(kit.Ctx, kit.Header, action, instances...)
+	}
+
+	if resErr != nil {
+		blog.Errorf("make resource by %s instances(%+v) failed, err: %+v, kit.Rid: %s", objID, ids, resErr, kit.Rid)
+		return nil, true, fmt.Errorf("make resource by instances failed, err: %v", resErr)
+	}
+
+	authResp, authorized := a.Authorize(kit, resources...)
+	return authResp, authorized, nil
+}
+
+func (a *AuthManager) genBizAuthRes(kit *rest.Kit, action meta.Action, ids []int64) ([]meta.ResourceAttribute, error) {
+	businesses, err := a.collectBusinessByIDs(kit.Ctx, kit.Header, ids...)
+	if err != nil {
+		return nil, fmt.Errorf("authorize businesses failed, get business by id failed, err: %v", err)
+	}
+	resourcePoolBusinessID, err := a.getResourcePoolBusinessID(kit.Ctx, kit.Header)
+	if err != nil {
+		return nil, err
+	}
+
+	bizArr := make([]BusinessSimplify, 0)
+	if action == meta.ViewBusinessResource {
+		for _, biz := range businesses {
+			if biz.BKAppIDField == resourcePoolBusinessID {
+				continue
+			}
+			bizArr = append(bizArr, biz)
+		}
+	} else {
+		bizArr = businesses
+	}
+
+	// make auth resources
+	resources := a.MakeResourcesByBusiness(kit.Header, action, bizArr...)
+	return resources, nil
 }
 
 // AuthorizeByInstanceID TODO

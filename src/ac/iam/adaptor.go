@@ -638,7 +638,8 @@ func genDynamicResourceType(tenantID string, obj metadata.Object) iam.ResourceTy
 		ProviderConfig: iam.ResourceConfig{
 			Path: "/auth/v3/find/resource",
 		},
-		Version: 1,
+		Version:  1,
+		TenantID: tenantID,
 	}
 }
 
@@ -661,7 +662,7 @@ func genIAMDynamicInstanceSelection(modelID int64) types.InstanceSelectionID {
 }
 
 // genDynamicInstanceSelection generate dynamic instanceSelection
-func genDynamicInstanceSelection(obj metadata.Object) iam.InstanceSelection {
+func genDynamicInstanceSelection(tenantID string, obj metadata.Object) iam.InstanceSelection {
 	return iam.InstanceSelection{
 		ID:     genIAMDynamicInstanceSelection(obj.ID),
 		Name:   obj.ObjectName,
@@ -670,6 +671,7 @@ func genDynamicInstanceSelection(obj metadata.Object) iam.InstanceSelection {
 			SystemID: types.SystemIDCMDB,
 			ID:       GenIAMDynamicResTypeID(obj.ID),
 		}},
+		TenantID: tenantID,
 	}
 }
 
@@ -677,9 +679,9 @@ func genDynamicInstanceSelection(obj metadata.Object) iam.InstanceSelection {
 func genDynamicInstanceSelections(tenantObjects map[string][]metadata.Object) []iam.InstanceSelection {
 	instanceSelections := make([]iam.InstanceSelection, 0)
 
-	for _, objects := range tenantObjects {
+	for tenantID, objects := range tenantObjects {
 		for _, obj := range objects {
-			instanceSelections = append(instanceSelections, genDynamicInstanceSelection(obj))
+			instanceSelections = append(instanceSelections, genDynamicInstanceSelection(tenantID, obj))
 		}
 	}
 
@@ -769,15 +771,12 @@ func genDynamicActionIDs(object metadata.Object) []types.ActionID {
 // genDynamicActions generate dynamic model actions
 func genDynamicActions(tenantObjects map[string][]metadata.Object) []iam.ResourceAction {
 	resActions := make([]iam.ResourceAction, 0)
-	for _, objects := range tenantObjects {
+	for tenantID, objects := range tenantObjects {
 		for _, obj := range objects {
 			relatedResource := []iam.RelateResourceType{
 				{
-					SystemID:    types.SystemIDCMDB,
-					ID:          GenIAMDynamicResTypeID(obj.ID),
-					NameAlias:   "",
-					NameAliasEn: "",
-					Scope:       nil,
+					SystemID: types.SystemIDCMDB,
+					ID:       GenIAMDynamicResTypeID(obj.ID),
 					// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
 					SelectionMode: types.ModeAll,
 					InstanceSelections: []iam.RelatedInstanceSelection{{
@@ -793,25 +792,23 @@ func genDynamicActions(tenantObjects map[string][]metadata.Object) []iam.Resourc
 				switch action.ActionType {
 				case types.View:
 					resActions = append(resActions, iam.ResourceAction{
-						ID:                   action.ActionID,
-						Name:                 action.ActionNameCN,
-						NameEn:               action.ActionNameEN,
-						Type:                 types.View,
-						RelatedActions:       nil,
-						RelatedResourceTypes: nil,
-						Version:              1,
+						ID:       action.ActionID,
+						Name:     action.ActionNameCN,
+						NameEn:   action.ActionNameEN,
+						Type:     types.View,
+						Version:  1,
+						TenantID: tenantID,
 					})
 					relatedActions = []types.ActionID{action.ActionID}
 
 				case types.Create:
 					resActions = append(resActions, iam.ResourceAction{
-						ID:                   action.ActionID,
-						Name:                 action.ActionNameCN,
-						NameEn:               action.ActionNameEN,
-						Type:                 types.Create,
-						RelatedResourceTypes: nil,
-						RelatedActions:       nil,
-						Version:              1,
+						ID:       action.ActionID,
+						Name:     action.ActionNameCN,
+						NameEn:   action.ActionNameEN,
+						Type:     types.Create,
+						Version:  1,
+						TenantID: tenantID,
 					})
 				case types.Edit:
 					resActions = append(resActions, iam.ResourceAction{
@@ -822,6 +819,7 @@ func genDynamicActions(tenantObjects map[string][]metadata.Object) []iam.Resourc
 						RelatedActions:       relatedActions,
 						Version:              1,
 						RelatedResourceTypes: relatedResource,
+						TenantID:             tenantID,
 					})
 
 				case types.Delete:
@@ -833,6 +831,7 @@ func genDynamicActions(tenantObjects map[string][]metadata.Object) []iam.Resourc
 						RelatedResourceTypes: relatedResource,
 						RelatedActions:       relatedActions,
 						Version:              1,
+						TenantID:             tenantID,
 					})
 				default:
 					return nil

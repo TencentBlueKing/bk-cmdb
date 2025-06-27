@@ -30,7 +30,7 @@ import (
 
 var (
 	bizSetData = bizSetInst{
-		BizSetName:       "BlueKing",
+		BizSetName:       "All",
 		BizSetMaintainer: "admin",
 		Default:          common.DefaultResBusinessSetFlag,
 		Scope: bizSetScope{

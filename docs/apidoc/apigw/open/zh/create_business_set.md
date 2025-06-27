@@ -56,7 +56,7 @@
     "bk_biz_set_attr":{
         "bk_biz_set_name":"biz_set",
         "bk_biz_set_desc":"xxx",
-        "biz_set_maintainer":"xxx"
+        "bk_biz_maintainer":"xxx"
     },
     "bk_scope":{
         "match_all":false,

@@ -44,10 +44,14 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update,
-		input.ServiceTemplateID); err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed,
-			"authorize by service template id failed, id: %d, err: %v", input.ServiceTemplateID, err)
+	authResp, authorized, err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit, meta.Update,
+		input.ServiceTemplateID)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
 		return
 	}
 
@@ -115,10 +119,14 @@ func (ps *ProcServer) DeleteProcessTemplateBatch(ctx *rest.Contexts) {
 		serviceTemplateIDs = append(serviceTemplateIDs, processTemplate.ServiceTemplateID)
 	}
 
-	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update,
-		serviceTemplateIDs...); err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed,
-			"authorize by service template id failed, id: %+v, err: %+v", serviceTemplateIDs, err)
+	authResp, authorized, authErr := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit, meta.Update,
+		serviceTemplateIDs...)
+	if authErr != nil {
+		ctx.RespAutoError(authErr)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
 		return
 	}
 
@@ -173,10 +181,14 @@ func (ps *ProcServer) UpdateProcessTemplate(ctx *rest.Contexts) {
 		serviceTemplateIDs = append(serviceTemplateIDs, processTemplate.ServiceTemplateID)
 	}
 
-	if err := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit.Ctx, ctx.Kit.Header, meta.Update,
-		serviceTemplateIDs...); err != nil {
-		ctx.RespErrorCodeOnly(common.CCErrCommCheckAuthorizeFailed,
-			"authorize by service template id failed, id: %+v, err: %+v", serviceTemplateIDs, err)
+	authResp, authorized, authErr := ps.AuthManager.AuthorizeByServiceTemplateID(ctx.Kit, meta.Update,
+		serviceTemplateIDs...)
+	if authErr != nil {
+		ctx.RespAutoError(authErr)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
 		return
 	}
 

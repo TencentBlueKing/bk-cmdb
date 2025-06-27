@@ -43,36 +43,15 @@ func (s *Service) BatchCreateQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 
-	// authorize, ** right now use source instance create or update action to authorize, change it when confirmed **
-	instIDs := make([]int64, 0)
-	for _, data := range opt.Data {
-		instIDVal, exists := data[common.BKInstIDField]
-		if !exists {
-			continue
-		}
-
-		instID, err := util.GetInt64ByInterface(instIDVal)
-		if err != nil {
-			cts.RespAutoError(cts.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKInstIDField))
-			return
-		}
-
-		if instID == 0 {
-			continue
-		}
-		instIDs = append(instIDs, instID)
+	// authorize
+	authResp, authorized, err := s.authorizeCreateQuotedInstReq(cts.Kit, opt)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
 	}
-
-	if len(instIDs) > 0 {
-		instIDs = util.IntArrayUnique(instIDs)
-
-		uAuthErr := s.AuthManager.AuthorizeByInstanceID(cts.Kit.Ctx, cts.Kit.Header, meta.Update, opt.ObjID, instIDs...)
-		cAuthErr := s.AuthManager.AuthorizeByInstanceID(cts.Kit.Ctx, cts.Kit.Header, meta.Create, opt.ObjID, instIDs...)
-		if uAuthErr != nil && cAuthErr != nil {
-			blog.Errorf("authorize failed, create err: %v, update err: %v, rid: %s", cAuthErr, uAuthErr, cts.Kit.Rid)
-			cts.RespAutoError(uAuthErr)
-			return
-		}
+	if !authorized {
+		cts.RespNoAuth(authResp)
+		return
 	}
 
 	// get quoted object id
@@ -118,6 +97,35 @@ func (s *Service) BatchCreateQuotedInstance(cts *rest.Contexts) {
 		return
 	}
 	cts.RespEntity(res)
+}
+
+func (s *Service) authorizeCreateQuotedInstReq(kit *rest.Kit, opt *metadata.BatchCreateQuotedInstOption) (
+	*metadata.BaseResp, bool, error) {
+
+	instIDs := make([]int64, 0)
+	for _, data := range opt.Data {
+		instIDVal, exists := data[common.BKInstIDField]
+		if !exists {
+			continue
+		}
+
+		instID, err := util.GetInt64ByInterface(instIDVal)
+		if err != nil {
+			return nil, true, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKInstIDField)
+		}
+
+		if instID == 0 {
+			continue
+		}
+		instIDs = append(instIDs, instID)
+	}
+
+	if len(instIDs) > 0 {
+		instIDs = util.IntArrayUnique(instIDs)
+		return s.AuthManager.AuthorizeByInstIDs(kit, meta.Update, opt.ObjID, instIDs...)
+	}
+
+	return s.AuthManager.HasInstOpAuth(kit, []string{opt.ObjID}, meta.Create)
 }
 
 // ListQuotedInstance list quoted instances.
@@ -183,7 +191,6 @@ func (s *Service) BatchUpdateQuotedInstance(cts *rest.Contexts) {
 		cts.RespAutoError(err)
 		return
 	}
-
 	if err := opt.Validate(); err.ErrCode != 0 {
 		cts.RespAutoError(err.ToCCError(cts.Kit.CCError))
 		return
@@ -214,7 +221,13 @@ func (s *Service) BatchUpdateQuotedInstance(cts *rest.Contexts) {
 	}
 
 	// authorize, ** right now use source instance update action to authorize, change it when confirmed **
-	if err = s.authorizeQuotedInstance(cts.Kit, objID, listRes.Info); err != nil {
+	authResp, authorized, err := s.authorizeQuotedInstance(cts.Kit, opt.ObjID, listRes.Info)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		cts.RespNoAuth(authResp)
 		return
 	}
 
@@ -231,7 +244,6 @@ func (s *Service) BatchUpdateQuotedInstance(cts *rest.Contexts) {
 		CommonFilterOption: filterOpt,
 		Data:               opt.Data,
 	}
-
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(cts.Kit.Ctx, cts.Kit.Header, func() error {
 		// update quoted instances
 		if err = s.Engine.CoreAPI.CoreService().ModelQuote().BatchUpdateQuotedInstance(cts.Kit.Ctx, cts.Kit.Header,
@@ -245,7 +257,6 @@ func (s *Service) BatchUpdateQuotedInstance(cts *rest.Contexts) {
 		if err != nil {
 			return cts.Kit.CCError.Error(common.CCErrAuditSaveLogFailed)
 		}
-
 		return nil
 	})
 
@@ -294,7 +305,13 @@ func (s *Service) BatchDeleteQuotedInstance(cts *rest.Contexts) {
 	}
 
 	// authorize, ** right now use source instance update action to authorize, change it when confirmed **
-	if err = s.authorizeQuotedInstance(cts.Kit, objID, listRes.Info); err != nil {
+	authResp, authorized, err := s.authorizeQuotedInstance(cts.Kit, opt.ObjID, listRes.Info)
+	if err != nil {
+		cts.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		cts.RespNoAuth(authResp)
 		return
 	}
 
@@ -331,28 +348,26 @@ func (s *Service) BatchDeleteQuotedInstance(cts *rest.Contexts) {
 	cts.RespEntity(nil)
 }
 
-func (s *Service) authorizeQuotedInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) error {
+func (s *Service) authorizeQuotedInstance(kit *rest.Kit, objID string, data []mapstr.MapStr) (*metadata.BaseResp, bool,
+	error) {
+
 	instIDs := make([]int64, 0)
 	for _, info := range data {
 		instIDVal, exists := info[common.BKInstIDField]
 		if !exists {
-			continue
+			blog.Errorf("inst id not exists, objID: %s, data: %+v, rid: %s", objID, info, kit.Rid)
+			return nil, true, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKInstIDField)
 		}
 
 		instID, err := util.GetInt64ByInterface(instIDVal)
 		if err != nil {
 			blog.Errorf("parse inst id failed, err: %v, id: %+v, rid: %s", err, instIDVal, kit.Rid)
-			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKInstIDField)
+			return nil, true, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKInstIDField)
 		}
 		instIDs = append(instIDs, instID)
 	}
 
 	instIDs = util.IntArrayUnique(instIDs)
 
-	err := s.AuthManager.AuthorizeByInstanceID(kit.Ctx, kit.Header, meta.Update, objID, instIDs...)
-	if err != nil {
-		blog.Errorf("authorize failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-	return nil
+	return s.AuthManager.AuthorizeByInstIDs(kit, meta.Update, objID, instIDs...)
 }

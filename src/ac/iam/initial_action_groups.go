@@ -13,7 +13,9 @@
 package iam
 
 import (
+	"configcenter/pkg/tenant/tools"
 	iamtypes "configcenter/src/ac/iam/types"
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/apigw/iam"
 )
@@ -311,6 +313,9 @@ func genModelManageActionGroups() []iam.ActionGroup {
 	}
 }
 
+// modelInstManageActionGroupName is the name of the model instance management action group
+const modelInstManageActionGroupName = "模型实例管理"
+
 // GenModelInstanceManageActionGroups TODO
 func GenModelInstanceManageActionGroups(tenantObjects map[string][]metadata.Object) []iam.ActionGroup {
 	subGroups := make([]iam.ActionGroup, 0)
@@ -326,7 +331,7 @@ func GenModelInstanceManageActionGroups(tenantObjects map[string][]metadata.Obje
 
 	return []iam.ActionGroup{
 		{
-			Name:      "模型实例管理",
+			Name:      modelInstManageActionGroupName,
 			NameEn:    "Model instance Manage",
 			SubGroups: subGroups,
 		},
@@ -453,6 +458,10 @@ func genGlobalSettingsActionGroups() []iam.ActionGroup {
 }
 
 func genTenantSetActionGroups() []iam.ActionGroup {
+	if tools.GetDefaultTenant() != common.BKDefaultTenantID {
+		return make([]iam.ActionGroup, 0)
+	}
+
 	return []iam.ActionGroup{
 		{
 			Name:   "租户集",

@@ -383,10 +383,8 @@ func genKubeWorkloadEventMethod(kit *rest.Kit, lgc *logics.Logics) (types.Resour
 					DisplayName: kind,
 				})
 			}
-			return &types.ListInstanceResult{
-				Count:   kindsLen,
-				Results: res,
-			}, nil
+
+			return &types.ListInstanceResult{Count: kindsLen, Results: res}, nil
 		},
 		FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.FetchInstanceInfoFilter) (
 			[]map[string]interface{}, error) {
@@ -409,8 +407,7 @@ func genKubeWorkloadEventMethod(kit *rest.Kit, lgc *logics.Logics) (types.Resour
 			return res, nil
 		},
 		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-			filter *types.ListInstanceByPolicyFilter,
-			page types.Page) (*types.ListInstanceResult, error) {
+			filter *types.ListInstanceByPolicyFilter, page types.Page) (*types.ListInstanceResult, error) {
 			return nil, fmt.Errorf("%s do not support %s", iamtypes.KubeWorkloadEvent, types.ListInstanceByPolicyMethod)
 		},
 	}, nil

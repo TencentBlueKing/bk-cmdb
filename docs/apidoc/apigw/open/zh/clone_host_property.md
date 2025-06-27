@@ -11,7 +11,7 @@
 | bk_org_id   | int    | 是  | 源主机ID    |
 | bk_dst_id   | int    | 是  | 目标主机ID   |
 | bk_biz_id   | int    | 是  | 业务ID     |
-| bk_cloud_id | int    | 否  | 管控区域ID   |
+| bk_cloud_id | int    | 是  | 管控区域ID   |
 
 注： 使用主机内网IP进行克隆与使用主机身份ID进行克隆，这两种方式只能使用期中的一种，不能混用。
 

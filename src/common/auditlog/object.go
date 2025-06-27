@@ -13,6 +13,8 @@
 package auditlog
 
 import (
+	"reflect"
+
 	"configcenter/src/apimachinery/coreservice"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -54,10 +56,28 @@ func (h *objectAuditLog) GenerateAuditLog(parameter *generateAuditCommonParamete
 		return nil, err
 	}
 
+	action := parameter.action
+	if len(parameter.updateFields) > 0 {
+		isPausedVal, exist := parameter.updateFields[metadata.ModelFieldIsPaused]
+		if exist {
+			isPaused, ok := isPausedVal.(bool)
+			if !ok {
+				blog.Errorf("model is paused type: %v is invalid, rid: %s", reflect.TypeOf(isPausedVal), kit.Rid)
+				return nil, kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.ModelFieldIsPaused)
+			}
+
+			if isPaused && !data.IsPaused {
+				action = metadata.AuditPause
+			} else if !isPaused && data.IsPaused {
+				action = metadata.AuditResume
+			}
+		}
+	}
+
 	return &metadata.AuditLog{
 		AuditType:    metadata.ModelType,
 		ResourceType: metadata.ModelRes,
-		Action:       parameter.action,
+		Action:       action,
 		ResourceID:   id,
 		ResourceName: data.ObjectName,
 		OperateFrom:  parameter.operateFrom,

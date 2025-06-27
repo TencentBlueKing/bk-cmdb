@@ -963,6 +963,7 @@ var auditDict = []resourceTypeInfo{
 			actionInfoMap[AuditUpdate],
 			actionInfoMap[AuditArchive],
 			actionInfoMap[AuditRecover],
+			actionInfoMap[AuditDelete],
 		},
 	},
 	{
@@ -1217,6 +1218,7 @@ var auditEnDict = []resourceTypeInfo{
 			actionInfoEnMap[AuditUpdate],
 			actionInfoEnMap[AuditArchive],
 			actionInfoEnMap[AuditRecover],
+			actionInfoMap[AuditDelete],
 		},
 	},
 	{

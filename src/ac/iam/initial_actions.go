@@ -13,7 +13,9 @@
 package iam
 
 import (
+	"configcenter/pkg/tenant/tools"
 	iamtypes "configcenter/src/ac/iam/types"
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/apigw/iam"
 )
@@ -1556,6 +1558,10 @@ func genCacheActions() []iam.ResourceAction {
 }
 
 func genTenantSetActions() []iam.ResourceAction {
+	if tools.GetDefaultTenant() != common.BKDefaultTenantID {
+		return make([]iam.ResourceAction, 0)
+	}
+
 	tenantSetResource := iam.RelateResourceType{
 		SystemID: iamtypes.SystemIDCMDB,
 		ID:       iamtypes.TenantSet,
@@ -1574,6 +1580,7 @@ func genTenantSetActions() []iam.ResourceAction {
 			RelatedResourceTypes: []iam.RelateResourceType{tenantSetResource},
 			Version:              1,
 			Hidden:               true,
+			TenantID:             common.BKDefaultTenantID,
 		}, {
 			ID:                   iamtypes.AccessTenantSet,
 			Name:                 ActionIDNameMap[iamtypes.AccessTenantSet],
@@ -1582,6 +1589,7 @@ func genTenantSetActions() []iam.ResourceAction {
 			RelatedResourceTypes: []iam.RelateResourceType{tenantSetResource},
 			Version:              1,
 			Hidden:               true,
+			TenantID:             common.BKDefaultTenantID,
 		},
 	}
 }

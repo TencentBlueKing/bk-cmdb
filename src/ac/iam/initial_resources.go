@@ -13,7 +13,9 @@
 package iam
 
 import (
+	"configcenter/pkg/tenant/tools"
 	iamtypes "configcenter/src/ac/iam/types"
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/apigw/iam"
 )
@@ -80,6 +82,7 @@ func GenerateStaticResourceTypes() []iam.ResourceType {
 
 	// add public resources
 	resourceTypeList = append(resourceTypeList, genPublicResources()...)
+	resourceTypeList = append(resourceTypeList, genTenantSetResources()...)
 
 	// add business resources
 	resourceTypeList = append(resourceTypeList, genBusinessResources()...)
@@ -472,6 +475,15 @@ func genPublicResources() []iam.ResourceType {
 			},
 			Version: 1,
 		},
+	}
+}
+
+func genTenantSetResources() []iam.ResourceType {
+	if tools.GetDefaultTenant() != common.BKDefaultTenantID {
+		return make([]iam.ResourceType, 0)
+	}
+
+	return []iam.ResourceType{
 		{
 			ID:            iamtypes.TenantSet,
 			Name:          ResourceTypeIDMap[iamtypes.TenantSet],
@@ -482,7 +494,8 @@ func genPublicResources() []iam.ResourceType {
 			ProviderConfig: iam.ResourceConfig{
 				Path: "/auth/v3/find/resource",
 			},
-			Version: 1,
+			Version:  1,
+			TenantID: common.BKDefaultTenantID,
 		},
 	}
 }

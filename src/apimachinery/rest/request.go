@@ -512,8 +512,10 @@ func (r *Result) Into(obj interface{}) error {
 			blog.Errorf("invalid response body, unmarshal json failed, reply:%s, error:%s", r.Body, err.Error())
 			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
-	} else if r.StatusCode >= 300 {
-		return fmt.Errorf("http request failed: %s", r.Status)
+	}
+
+	if r.StatusCode >= 300 {
+		return fmt.Errorf("http request failed: %s, raw body: %s", r.Status, r.Body)
 	}
 	return nil
 }

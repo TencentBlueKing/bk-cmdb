@@ -22,7 +22,6 @@ import (
 	"configcenter/src/common/auth"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
-	commonlgc "configcenter/src/common/logics"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
@@ -75,10 +74,66 @@ func (v *viewer) CreateView(ctx context.Context, h http.Header, objects []metada
 		return err
 	}
 
-	if err = v.updateModelActionGroups(ctx, h, systemInfo.ActionGroups); err != nil {
+	// append new sub action group of these models to action groups
+	if err = v.upsertModelActionGroups(ctx, h, objects, systemInfo); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (v *viewer) upsertModelActionGroups(ctx context.Context, h http.Header, objects []metadata.Object,
+	systemInfo *iam.RegisteredSystemInfo) error {
+
+	actionGroupMap := make(map[string]iam.ActionGroup)
+	actionIDGroupMap := make(map[iamtypes.ActionID]string)
+	for _, obj := range objects {
+		group := genDynamicActionSubGroup(obj)
+		actionGroupMap[group.Name] = group
+		for _, action := range group.Actions {
+			actionIDGroupMap[action.ID] = group.Name
+		}
+	}
+
+	hasModelInstManageActionGroup := false
+	actionGroups := make([]iam.ActionGroup, 0)
+	for _, group := range systemInfo.ActionGroups {
+		if group.Name != modelInstManageActionGroupName {
+			actionGroups = append(actionGroups, group)
+			continue
+		}
+
+		modelInstGroup := iam.ActionGroup{
+			Name:      group.Name,
+			NameEn:    group.NameEn,
+			SubGroups: make([]iam.ActionGroup, 0),
+		}
+
+		hasModelInstManageActionGroup = true
+		for _, subGroup := range group.SubGroups {
+			for _, action := range subGroup.Actions {
+				if groupName, exists := actionIDGroupMap[action.ID]; exists {
+					subGroup = actionGroupMap[groupName]
+					delete(actionGroupMap, groupName)
+					break
+				}
+			}
+			modelInstGroup.SubGroups = append(modelInstGroup.SubGroups, subGroup)
+		}
+		for _, newSubGroup := range actionGroupMap {
+			modelInstGroup.SubGroups = append(modelInstGroup.SubGroups, newSubGroup)
+		}
+		actionGroups = append(actionGroups, modelInstGroup)
+	}
+
+	if !hasModelInstManageActionGroup {
+		tenantObjects := map[string][]metadata.Object{httpheader.GetTenantID(h): objects}
+		actionGroups = append(actionGroups, GenModelInstanceManageActionGroups(tenantObjects)...)
+	}
+
+	if err := v.updateModelActionGroups(ctx, h, actionGroups, systemInfo.ActionGroups); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -116,7 +171,39 @@ func (v *viewer) DeleteView(ctx context.Context, header http.Header, objects []m
 		return err
 	}
 
-	if err = v.updateModelActionGroups(ctx, header, systemInfo.ActionGroups); err != nil {
+	// delete sub action groups of these models from action groups
+	actionGroupMap := make(map[iamtypes.ActionID]struct{})
+	for _, obj := range objects {
+		group := genDynamicActionSubGroup(obj)
+		for _, action := range group.Actions {
+			actionGroupMap[action.ID] = struct{}{}
+		}
+	}
+
+	actionGroups := make([]iam.ActionGroup, 0)
+	for _, group := range systemInfo.ActionGroups {
+		if group.Name == modelInstManageActionGroupName {
+			subGroups := make([]iam.ActionGroup, 0)
+			for _, subGroup := range group.SubGroups {
+				hasMatchingAction := false
+				for _, action := range subGroup.Actions {
+					if _, hasMatchingAction = actionGroupMap[action.ID]; hasMatchingAction {
+						break
+					}
+				}
+				if !hasMatchingAction {
+					subGroups = append(subGroups, subGroup)
+				}
+			}
+			if len(subGroups) == 0 {
+				continue
+			}
+			group.SubGroups = subGroups
+		}
+		actionGroups = append(actionGroups, group)
+	}
+
+	if err = v.updateModelActionGroups(ctx, header, actionGroups, systemInfo.ActionGroups); err != nil {
 		return err
 	}
 
@@ -156,7 +243,8 @@ func (v *viewer) UpdateView(ctx context.Context, header http.Header, objects []m
 		return err
 	}
 
-	if err = v.updateModelActionGroups(ctx, header, systemInfo.ActionGroups); err != nil {
+	// update sub action group of these models to action groups
+	if err = v.upsertModelActionGroups(ctx, header, objects, systemInfo); err != nil {
 		return err
 	}
 
@@ -447,22 +535,13 @@ func (v *viewer) updateModelActions(ctx context.Context, header http.Header, obj
 
 // updateModelActionGroups update actionGroups for models
 // for now, the update api can only support full update, not incremental update
-func (v *viewer) updateModelActionGroups(ctx context.Context, h http.Header, existGroups []iam.ActionGroup) error {
-	rid := util.ExtractRequestIDFromContext(ctx)
-	objects, err := commonlgc.GetCustomObjects(ctx, h, v.client)
-	if err != nil {
-		blog.Errorf("get custom objects failed, err: %v, rid: %s", err, rid)
-		return err
-	}
+func (v *viewer) updateModelActionGroups(ctx context.Context, h http.Header,
+	actionGroups, existGroups []iam.ActionGroup) error {
 
-	tenantID := httpheader.GetTenantID(h)
-	tenantObjects := map[string][]metadata.Object{
-		tenantID: objects,
-	}
-	actionGroups := GenerateActionGroups(tenantObjects)
+	rid := util.ExtractRequestIDFromContext(ctx)
 
 	if len(existGroups) == 0 {
-		if err = v.iam.Client.RegisterActionGroups(ctx, h, actionGroups); err != nil {
+		if err := v.iam.Client.RegisterActionGroups(ctx, h, actionGroups); err != nil {
 			blog.Errorf("register action groups(%s) failed, err: %v, rid: %s", actionGroups, err, rid)
 			return err
 		}
@@ -473,7 +552,7 @@ func (v *viewer) updateModelActionGroups(ctx context.Context, h http.Header, exi
 		return nil
 	}
 
-	if err = v.iam.Client.UpdateActionGroups(ctx, h, actionGroups); err != nil {
+	if err := v.iam.Client.UpdateActionGroups(ctx, h, actionGroups); err != nil {
 		blog.Errorf("update actionGroups failed, error: %v, actionGroups: %+v, rid: %s", err, actionGroups, rid)
 		return err
 	}

@@ -13,7 +13,9 @@
 package iam
 
 import (
+	"configcenter/pkg/tenant/tools"
 	iamtypes "configcenter/src/ac/iam/types"
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/apigw/iam"
 )
@@ -28,6 +30,7 @@ var (
 // GenerateInstanceSelections generate all the instance selections registered to IAM.
 func GenerateInstanceSelections(tenantObjects map[string][]metadata.Object) []iam.InstanceSelection {
 	instSelections := GenerateStaticInstanceSelections()
+	instSelections = append(instSelections, genTenantSetInstanceSelections()...)
 	instSelections = append(instSelections, genDynamicInstanceSelections(tenantObjects)...)
 	return instSelections
 }
@@ -97,7 +100,21 @@ func GenerateStaticInstanceSelections() []iam.InstanceSelection {
 		{ID: iamtypes.BizTopoSelection, Name: "业务拓扑", NameEn: "Business Topology",
 			ResourceTypeChain: []iam.ResourceChain{businessChain, {SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.Set},
 				{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.Module}}},
-		{ID: iamtypes.TenantSetSelection, Name: "租户集列表", NameEn: "Tenant Set List",
-			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.TenantSet}}},
+	}
+}
+
+func genTenantSetInstanceSelections() []iam.InstanceSelection {
+	if tools.GetDefaultTenant() != common.BKDefaultTenantID {
+		return make([]iam.InstanceSelection, 0)
+	}
+
+	return []iam.InstanceSelection{
+		{
+			ID:                iamtypes.TenantSetSelection,
+			Name:              "租户集列表",
+			NameEn:            "Tenant Set List",
+			ResourceTypeChain: []iam.ResourceChain{{SystemID: iamtypes.SystemIDCMDB, ID: iamtypes.TenantSet}},
+			TenantID:          common.BKDefaultTenantID,
+		},
 	}
 }
