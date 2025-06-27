@@ -384,7 +384,7 @@ export function parseIP(list) {
       cloudIdSet.add('')
     } else {
       const matchedV4 = text.split(':')
-      const matchedV6 = text.match(/^(\d+):\[([0-9a-fA-F:.]+)\]$/)
+      const matchedV6 = text.match(/^(-1|\d+):\[([0-9a-fA-F:.]+)\]$/)
       if (matchedV4.length === 2 && isInt(matchedV4[0]) && isIP(matchedV4[1], 4)) {
         const cloudId = Number(matchedV4[0])
         IPv4WithCloudList.push([cloudId, matchedV4[1], 0]) // 0表示不带中括号
