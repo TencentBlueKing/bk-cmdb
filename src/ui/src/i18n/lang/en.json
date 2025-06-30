@@ -1566,7 +1566,7 @@
     "按服务模板": "By Service Template",
     "业务范围选择placeholder": "Please filter the businesses that meet the conditions. If not selected, it will default to all businesses",
     "条件值不能为空": "Condition value cannot be empty",
-    "业务集": "Business-Set@11",
+    "业务集": "Business-Set",
     "业务集列表提示语": "No authorized business-set, you can {auth} or {create}",
     "业务集预览": "Business-Set Preview",
     "共N个业务": "Total {count} businesses",
@@ -1920,5 +1920,6 @@
     "大于1小时前刷新": "Last refreshed more than 1h ago",
     "x分钟前刷新": "Last refreshed {time}m ago",
     "精确匹配": "Exact match",
-    "注：已存在服务实例的主机，不能再勾选": "Note: Hosts with existing service instances cannot be selected"
+    "注：已存在服务实例的主机，不能再勾选": "Note: Hosts with existing service instances cannot be selected",
+    "点击选择组织": "Click to Select Org"
 }

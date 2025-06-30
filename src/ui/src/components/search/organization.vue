@@ -19,7 +19,7 @@
     <bk-tag-input
       v-model="tagInputVal"
       ref="tagInput"
-      placeholder="点击选择组织"
+      :placeholder="$t('点击选择组织')"
       :collapse-tags="true"
       :allow-create="true"
       @focus="handleFocus"
@@ -101,7 +101,7 @@
         return value.map(item => ({ id: item, type: 'org' })) || []
       },
       handleFocus() {
-        this.$refs.organization?.$children[0]?.openEdit()
+        this.$refs.organization?.openEdit()
         this.$refs.tagInput.$refs.input.blur()
       },
       handleDelete() {

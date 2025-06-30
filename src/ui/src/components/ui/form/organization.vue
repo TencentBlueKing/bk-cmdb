@@ -22,6 +22,7 @@
         'organization-hide': hidden
       }
     ]"
+    ref="orgComp"
     v-model="checked"
     :api-base-url="api"
     :tenant-id="tenantId"
@@ -74,6 +75,8 @@
 
   const emit = defineEmits(['on-checked', 'input', 'toggle', 'result-change', 'close', 'confirm'])
 
+  const orgComp = ref(null)
+
   const focused = ref(false)
   const unselected = ref(false)
 
@@ -122,6 +125,9 @@
     // todo 组件支持单选后操作
   })
 
+  defineExpose({
+    openEdit: () => orgComp.value.openEdit()
+  })
 </script>
 
 <script>

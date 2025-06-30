@@ -376,7 +376,7 @@
           const component = this.$refs[`component-${property.bk_property_id}`]
           if (property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
             // 组织类型弹出处理
-            component?.[0]?.$children?.[0]?.openEdit()
+            component?.[0]?.openEdit()
             return
           }
           component?.[0]?.focus()
