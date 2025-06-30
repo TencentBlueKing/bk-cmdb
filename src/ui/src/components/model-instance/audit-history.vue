@@ -54,6 +54,7 @@
 <script>
   import AuditDetails from '@/components/audit-history/details.js'
   import tools from '@/utils/tools'
+  import resourcePoolService from '@/service/resource-pool/index'
 
   const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
   const formatValue = () => ({
@@ -100,10 +101,14 @@
           current: 1,
           limit: 10
         },
-        requestId: Symbol('getList')
+        requestId: Symbol('getList'),
+        resourcePoolBizId: undefined
       }
     },
-    created() {
+    async created() {
+      const resourcePoolData = await resourcePoolService.getBiz()
+      this.resourcePoolBizId = resourcePoolData?.bk_biz_id
+
       this.getAuditDictionary()
       this.getHistory()
     },
@@ -122,7 +127,7 @@
         try {
           const { info, count } = await this.$store.dispatch('audit/getInstList', {
             params: {
-              condition: this.getUsefulConditon(),
+              condition: this.getUsefulCondition(),
               page: {
                 ...this.$tools.getPageParams(this.pagination),
                 sort: '-operation_time'
@@ -146,14 +151,14 @@
           this.history = []
         }
       },
-      getUsefulConditon() {
+      getUsefulCondition() {
         const usefuleCondition = {
           bk_obj_id: this.objId
         }
 
         // 通用模型实例不传，未分配业务主机传1
         if (!isNaN(this.bizId)) {
-          usefuleCondition.bk_biz_id = this.bizId > 0 ? this.bizId : 1
+          usefuleCondition.bk_biz_id = this.bizId > 0 ? this.bizId : this.resourcePoolBizId
         }
 
         Object.keys(this.condition).forEach((key) => {

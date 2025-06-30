@@ -56,6 +56,7 @@
 <script>
   import AuditDetails from '@/components/audit-history/details.js'
   import tools from '@/utils/tools'
+  import resourcePoolService from '@/service/resource-pool/index'
 
   const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
   const formatValue = () => ({
@@ -81,7 +82,8 @@
             }
           }
         },
-        requestId: Symbol('getHistory')
+        requestId: Symbol('getHistory'),
+        resourcePoolBizId: undefined,
       }
     },
     computed: {
@@ -98,8 +100,18 @@
         return this.isHost ? 'host' : 'model_instance'
       },
       bizId() {
-        return this.isHost ? 1 : 0
+        return this.isHost ? this.resourcePoolBizId : 0
       }
+    },
+    beforeRouteEnter(to, from, next) {
+      resourcePoolService.getBiz().then((data) => {
+        next((vm) => {
+          vm.resourcePoolBizId = data?.bk_biz_id
+        })
+      })
+        .catch(() => {
+          next()
+        })
     },
     watch: {
       objId: {
@@ -108,11 +120,18 @@
           const model = this.$store.getters['objectModelClassify/getModelById'](objId) || {}
           this.$store.commit('setTitle', `${model.bk_obj_name} ${this.$t('删除历史')}`)
         }
+      },
+      bizId: {
+        immediate: true,
+        handler(bizId) {
+          if (bizId !== undefined) {
+            this.getHistory()
+          }
+        }
       }
     },
     created() {
       this.getAuditDictionary()
-      this.getHistory()
     },
     methods: {
       async getAuditDictionary() {
@@ -129,7 +148,7 @@
         try {
           const { info, count } = await this.$store.dispatch('audit/getInstList', {
             params: {
-              condition: this.getUsefulConditon(),
+              condition: this.getUsefulCondition(),
               page: {
                 ...this.$tools.getPageParams(this.pagination),
                 sort: '-operation_time'
@@ -153,7 +172,7 @@
           this.history = []
         }
       },
-      getUsefulConditon() {
+      getUsefulCondition() {
         const usefuleCondition = {
           bk_obj_id: this.objId,
           bk_biz_id: this.bizId,
