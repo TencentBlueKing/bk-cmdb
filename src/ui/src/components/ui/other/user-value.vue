@@ -11,7 +11,7 @@
 -->
 
 <template>
-  <bk-user-display-name ref="userDisplayName" :user-id="value"></bk-user-display-name>
+  <bk-user-display-name ref="userDisplayName" :user-id="localValue"></bk-user-display-name>
 </template>
 
 <script>
@@ -25,6 +25,11 @@
     },
     data() {
       return {}
+    },
+    computed: {
+      localValue() {
+        return this.value || ''
+      }
     },
     methods: {
       getCopyValue() {

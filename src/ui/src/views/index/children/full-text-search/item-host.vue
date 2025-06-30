@@ -19,19 +19,30 @@
       <div class="desc-item"
         v-html="`${$t('主机ID')}：${getHighlightValue(data.source.bk_host_id, data)}`">
       </div>
-      <template v-for="(property, childIndex) in properties">
-        <div class="desc-item hl"
-          v-if="data.source[property.bk_property_id]"
-          :key="childIndex"
-          v-html="`${property.bk_property_name}：${getText(property, data)}`">
-        </div>
-      </template>
+      <div v-for="(property, childIndex) in properties" :key="childIndex">
+        <template v-if="data.source[property.bk_property_id]">
+          <div v-if="[PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.OBJUSER].includes(property.bk_property_type)">
+            <div class="property-value">
+              {{ property.bk_property_name }}：
+              <cmdb-property-value
+                class="desc-item hl"
+                :property="property"
+                :value="data.source[property.bk_property_id]">
+              </cmdb-property-value>
+            </div>
+          </div>
+          <div class="desc-item hl" v-else
+            v-html="`${property.bk_property_name}：${getText(property, data)}`">
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
   import { defineComponent, toRefs, computed } from 'vue'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { getText, getHighlightValue } from './use-item.js'
 
   export default defineComponent({
@@ -52,6 +63,7 @@
       const properties = computed(() => propertyMap.value.host)
 
       return {
+        PROPERTY_TYPES,
         properties,
         getText,
         getHighlightValue
@@ -59,3 +71,9 @@
     }
   })
 </script>
+
+<style lang="scss" scoped>
+.property-value {
+  display: flex;
+}
+</style>

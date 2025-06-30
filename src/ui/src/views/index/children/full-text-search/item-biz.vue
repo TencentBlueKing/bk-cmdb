@@ -17,19 +17,30 @@
       <i class="tag-disabled" v-if="data.source.bk_data_status === 'disabled'">{{$t('已归档')}}</i>
     </div>
     <div class="result-desc" v-if="properties" @click="data.linkTo(data.source)">
-      <template v-for="(property, childIndex) in properties">
-        <div class="desc-item hl"
-          :key="childIndex"
-          v-if="data.source[property.bk_property_id]"
-          v-html="`${property.bk_property_name}：${getText(property, data)}`">
-        </div>
-      </template>
+      <div v-for="(property, childIndex) in properties" :key="childIndex">
+        <template v-if="data.source[property.bk_property_id]">
+          <div v-if="[PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.OBJUSER].includes(property.bk_property_type)">
+            <div class="property-value">
+              {{ property.bk_property_name }}：
+              <cmdb-property-value
+                class="desc-item hl"
+                :property="property"
+                :value="data.source[property.bk_property_id]">
+              </cmdb-property-value>
+            </div>
+          </div>
+          <div class="desc-item hl" v-else
+            v-html="`${property.bk_property_name}：${getText(property, data)}`">
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
   import { defineComponent, toRefs, computed } from 'vue'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { getText, getHighlightValue } from './use-item.js'
 
   export default defineComponent({
@@ -50,6 +61,7 @@
       const properties = computed(() => propertyMap.value.biz)
 
       return {
+        PROPERTY_TYPES,
         properties,
         getText,
         getHighlightValue
@@ -57,3 +69,9 @@
     }
   })
 </script>
+
+<style lang="scss" scoped>
+.property-value {
+  display: flex;
+}
+</style>
