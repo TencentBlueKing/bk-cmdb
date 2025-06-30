@@ -115,7 +115,8 @@
         return result
       },
       async initOptions() {
-        const availableProperties = this.configPropertyList.filter(property => property.host_apply_enabled)
+        const availableProperties = this.configPropertyList
+          .filter(property => property.host_apply_enabled && property.bk_property_type !== PROPERTY_TYPES.ORGANIZATION)
         this.searchOptions = availableProperties.map((property) => {
           const type = property.bk_property_type
           const data = { id: property.id, name: property.bk_property_name, type, disabled: false }
