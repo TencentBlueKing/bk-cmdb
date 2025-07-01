@@ -269,19 +269,21 @@
         })
       },
       updateCondition() {
-        const newConditon = {}
+        const newCondition = {}
         const { storageCondition } = this.dynamicGroupForm
         this.properties.forEach((property) => {
           if (has(storageCondition, property.id)) {
-            newConditon[property.id] = storageCondition[property.id]
+            // 修改conditionType为property.conditionType，保证conditionType正确
+            storageCondition[property.id].property.conditionType = property.conditionType
+            newCondition[property.id] = storageCondition[property.id]
           } else {
-            newConditon[property.id] = {
+            newCondition[property.id] = {
               property,
               ...this.getDefaultData(property)
             }
           }
         })
-        this.condition = newConditon
+        this.condition = newCondition
       },
       handleOperatorChange(property, operator) {
         if (operator === QUERY_OPERATOR.RANGE) {
