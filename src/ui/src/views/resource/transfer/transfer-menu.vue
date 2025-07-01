@@ -23,14 +23,24 @@
         <i :class="['bk-icon icon-angle-down', { 'icon-flip': isShow }]"></i>
       </div>
       <ul class="bk-dropdown-list" slot="dropdown-content">
-        <li>
-          <a href="javascript:;" @click="transferToIdleModule">
+        <cmdb-auth tag="li" v-slot="{ disabled: authDisabled }"
+          :auth="[
+            { type: $OPERATION.C_SERVICE_INSTANCE, relation: [uniqueBusinessId] },
+            { type: $OPERATION.U_SERVICE_INSTANCE, relation: [uniqueBusinessId] },
+            { type: $OPERATION.D_SERVICE_INSTANCE, relation: [uniqueBusinessId] }
+          ]">
+          <a href="javascript:;" :class="{ disabled: authDisabled }" @click="transferToIdleModule">
             {{$store.state.globalConfig.config.idlePool.idle}}
           </a>
-        </li>
-        <li>
-          <a href="javascript:;" @click="transferToBizModule">{{$t('业务模块')}}</a>
-        </li>
+        </cmdb-auth>
+        <cmdb-auth tag="li" v-slot="{ disabled: authDisabled }"
+          :auth="[
+            { type: $OPERATION.C_SERVICE_INSTANCE, relation: [uniqueBusinessId] },
+            { type: $OPERATION.U_SERVICE_INSTANCE, relation: [uniqueBusinessId] },
+            { type: $OPERATION.D_SERVICE_INSTANCE, relation: [uniqueBusinessId] }
+          ]">
+          <a href="javascript:;" :class="{ disabled: authDisabled }" @click="transferToBizModule">{{$t('业务模块')}}</a>
+        </cmdb-auth>
         <li><a href="javascript:;" @click="transferToResourcePool">{{$t('主机池')}}</a></li>
         <li>
           <a
@@ -95,6 +105,9 @@
       transferToOtherDisabled() {
         return !HostStore.isAllIdleSet || HostStore.hosts.some(host => host.biz[0].default === 1)
       },
+      uniqueBusinessId() {
+        return HostStore.uniqueBusiness?.bk_biz_id
+      }
     },
     methods: {
       handleMenuToggle(isShow) {
@@ -335,6 +348,7 @@
         padding: 0 15px;
         color: #63656E;
         font-size: 14px;
+        background: #fff;
     }
     .dropdown-trigger-btn.bk-icon {
         font-size: 18px;
