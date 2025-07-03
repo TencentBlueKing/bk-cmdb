@@ -16,7 +16,7 @@
     "lint-fix": "eslint --fix --ext .js,.vue ./src"
   },
   "dependencies": {
-    "@blueking/bk-org-selector": "^0.0.21",
+    "@blueking/bk-org-selector": "0.0.22-beta.1",
     "@blueking/bk-user-display-name": "^1.0.0",
     "@blueking/bk-user-selector": "^0.0.23",
     "@babel/runtime": "^7.27.1",

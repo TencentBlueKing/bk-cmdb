@@ -101,7 +101,7 @@
         return value.map(item => ({ id: item, type: 'org' })) || []
       },
       handleFocus() {
-        this.$refs.organization?.openEdit()
+        this.$refs.organization?.triggerOpen()
         this.$refs.tagInput.$refs.input.blur()
       },
       handleDelete() {

@@ -126,7 +126,13 @@
   })
 
   defineExpose({
-    openEdit: () => orgComp.value.openEdit()
+    openEdit: () => orgComp.value.openEdit(),
+    triggerOpen: () => {
+      const compEl = orgComp.value.$el
+      // 未选择时为选择按钮，有选择结果时为编辑按钮
+      const triggerButton = compEl.querySelector('.bk-org-selector-button') || compEl.querySelector('.org-selector-result-info-edit-container')
+      triggerButton.click()
+    }
   })
 </script>
 
