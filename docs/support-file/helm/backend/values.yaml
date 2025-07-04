@@ -1675,6 +1675,8 @@ apigatewaySync:
   hcmAppCode: "bk_hcm"
   ## 此变量在运维维护的变量中，没有对应的变量
   monitorAppCode: "bk_monitorv3"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  sopsAppCode: "bk-sops"
 
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:

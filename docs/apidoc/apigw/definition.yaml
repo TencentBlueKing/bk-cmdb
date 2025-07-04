@@ -255,6 +255,51 @@ grant_permissions:
       - search_dynamic_group
       - execute_dynamic_group
       - resource_watch
+  - bk_app_code: {{ environ.BK_SOPS_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - search_business
+      - search_cloud_area
+      - list_service_template
+      - get_mainline_object_topo
+      - search_host_lock
+      - search_module
+      - execute_dynamic_group
+      - search_dynamic_group
+      - list_hosts_without_biz
+      - list_biz_hosts
+      - list_biz_hosts_topo
+      - update_set_template
+      - update_set
+      - search_set
+      - batch_update_host
+      - transfer_host_module
+      - update_module
+      - batch_delete_set
+      - search_object_attribute
+      - get_biz_internal_module
+      - find_module_with_relation
+      - transfer_host_to_idlemodule
+      - search_biz_inst_topo
+      - transfer_host_to_resource
+      - transfer_host_to_recyclemodule
+      - transfer_host_to_faultmodule
+      - get_host_base_info
+      - find_module_batch
+      - transfer_sethost_to_idle_module
+      - create_set_template
+      - find_set_batch
+      - transfer_host_to_resourcemodule
+      - create_set
+      - create_module
+      - delete_host_lock
+      - update_host
+      - add_host_lock
+      - list_business_set_topo
+      - list_business_set
+      - find_host_by_topo
+      - list_set_template_related_service_template
+      - list_set_template
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
