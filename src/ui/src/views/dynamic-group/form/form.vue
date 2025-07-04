@@ -384,17 +384,17 @@
               ? IMMUTABLE : VARIABLE
             const realCondition = (data.condition || []).reduce((accumulator, current) => {
               current.conditionType = conditionType
+
               // 根据当前业务的customOperatorTypeMap逻辑来看，在查询对象为主机时候，需要对非主机属性字段进行转换回显
               if (this.formData.bk_obj_id === BUILTIN_MODELS.HOST && data.bk_obj_id !== BUILTIN_MODELS.HOST) {
-                // TODO: 不在OPERATOR_SPECIAL_ECHO中的操作符会得到undefined，比如$in操作符，这里临时修复当不存在时保持原操作符
                 current.operator = OPERATOR_SPECIAL_ECHO[current.operator] || current.operator
-                accumulator.push(current)
               } else if ([queryBuilderOperator(CONTAINS), queryBuilderOperator(CONTAINS_CS)]
                 .includes(current.operator)) {
                 // 其他情况操作符为contains/contains(cs)情况回显
-                current.operator = OPERATOR_ECHO[current.operator]
-                accumulator.push(current)
-              } else if (['$gte', '$lte'].includes(current.operator)) {
+                current.operator = OPERATOR_ECHO[current.operator] || current.operator
+              }
+
+              if (['$gte', '$lte'].includes(current.operator)) {
                 // $gte和$lte，可能是单个field也可能是同一field的范围设置，如果是范围一个field会拆分为两条cond
                 const isRange = data.condition.filter(cond => cond.field === current.field)?.length > 1
 
