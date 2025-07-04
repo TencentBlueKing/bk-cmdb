@@ -15,7 +15,6 @@
     :exclude="false"
     v-model="localValue"
     v-bind="$attrs"
-    :render-tag="renderTag"
     ref="objUserRef"
     @clear="() => $emit('clear')"
     @focus="handleToggle(true)"
@@ -49,22 +48,6 @@
         }
       }
     },
-    methods: {
-      renderTag(h, { _username, _index, user }) {
-        const userSelector = this.$refs.objUserRef?.$refs?.userSelector
-        return h('span', {
-          class: ['user-selector-selected-value', { 'non-existent': !user.id }],
-          directives: [
-            {
-              name: 'bkTooltips',
-              value: {
-                content: this.$t('该人员不存在'),
-                disabled: user.id
-              }
-            }
-          ],
-        }, userSelector?.getDisplayText?.(user))
-      }
-    }
+    methods: {}
   }
 </script>
