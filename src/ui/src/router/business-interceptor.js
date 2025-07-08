@@ -54,14 +54,16 @@ export const before = async function (to, from, next) {
     }
   }
 
+
+  // 业务逻辑中依赖bizSet中的相关ID值，这里只要完成了上面的检查即设置
+  store.commit('bizSet/setBizSetId', from.params.bizSetId || to.params.bizSetId)
+  store.commit('bizSet/setBizId', from.query.bizId || to.query.bizId)
+
   // 记录上一次是否使用的是业务集视图并且保存id值
   const isMatchedBusinessSetView = fromTopRoute?.name === MENU_BUSINESS_SET || toTopRoute?.name === MENU_BUSINESS_SET
   const availableBusinessSetView = isMatchedBusinessSetView && fromTopRoute?.meta?.view !== 'permission'
-
   if (availableBusinessSetView) {
     setBizSetIdToStorage(from.params.bizSetId || to.params.bizSetId)
-    store.commit('bizSet/setBizSetId', from.params.bizSetId || to.params.bizSetId)
-    store.commit('bizSet/setBizId', from.query.bizId || to.query.bizId)
     setBizSetRecentlyUsed(true)
   }
 
