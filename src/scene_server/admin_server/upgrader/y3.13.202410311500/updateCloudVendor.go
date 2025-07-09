@@ -1,8 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
- * Copyright (C) 2017 THL A29 Limited,
- * a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
@@ -72,7 +71,8 @@ var (
 	oldCloudVendors = []string{"AWS", "腾讯云", "GCP", "Azure", "企业私有云", "SalesForce", "Oracle Cloud", "IBM Cloud",
 		"阿里云", "中国电信", "UCloud", "美团云", "金山云", "百度云", "华为云", "首都云"}
 
-	newCloudVendors = []string{"亚马逊云", "腾讯云", "谷歌云", "微软云", "企业私有云", "SalesForce", "Oracle Cloud", "IBM Cloud",
+	newCloudVendors = []string{"亚马逊云", "腾讯云", "谷歌云", "微软云", "企业私有云", "SalesForce", "Oracle Cloud",
+		"IBM Cloud",
 		"阿里云", "中国电信", "UCloud", "美团云", "金山云", "百度云", "华为云", "首都云", "腾讯自研云", "Zenlayer"}
 
 	oldEnumMap = getEnumMap(oldCloudVendors)

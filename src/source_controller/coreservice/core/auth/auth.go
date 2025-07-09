@@ -1,13 +1,17 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the ",License",); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 Tencent. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
 // Package auth TODO
@@ -37,7 +41,8 @@ func New(dbProxy dal.DB) core.AuthOperation {
 }
 
 // SearchAuthResource TODO
-func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64, []map[string]interface{}, errors.CCErrorCoder) {
+func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullResourceParam) (int64,
+	[]map[string]interface{}, errors.CCErrorCoder) {
 	if param.Collection == "" {
 		blog.ErrorJSON("search auth resource in empty mongo collection, param: %s, rid: %s", param, kit.Rid)
 		return 0, nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "collection")
@@ -65,7 +70,8 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 		hosts := make([]metadata.HostMapStr, 0)
 		err = f.Start(uint64(param.Offset)).Limit(uint64(limit)).All(kit.Ctx, &hosts)
 		if err != nil {
-			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param, kit.Rid)
+			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param,
+				kit.Rid)
 			return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 		info = make([]map[string]interface{}, len(hosts))
@@ -76,7 +82,8 @@ func (a *authOperation) SearchAuthResource(kit *rest.Kit, param metadata.PullRes
 		info = make([]map[string]interface{}, 0)
 		err = f.Start(uint64(param.Offset)).Limit(uint64(limit)).All(kit.Ctx, &info)
 		if err != nil {
-			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param, kit.Rid)
+			blog.ErrorJSON("search auth resource failed, error: %s, input param: %s, rid: %s", err.Error(), param,
+				kit.Rid)
 			return 0, nil, kit.CCError.CCError(common.CCErrCommDBSelectFailed)
 		}
 	}

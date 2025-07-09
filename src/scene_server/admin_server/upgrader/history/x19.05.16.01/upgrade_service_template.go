@@ -1,13 +1,17 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 Tencent. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
 package x19_05_16_01
@@ -192,9 +196,11 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 				ownerID = modules[0].SupplierAccount
 			}
 
-			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID, common.BKModuleNameField: moduleName}
+			processMappingInModuleCond := mapstr.MapStr{common.BKAppIDField: bizID,
+				common.BKModuleNameField: moduleName}
 			processMappingInModule := make([]metadata.ProcessModule, 0)
-			if err = db.Table("cc_Proc2Module").Find(processMappingInModuleCond).All(ctx, &processMappingInModule); err != nil {
+			if err = db.Table("cc_Proc2Module").Find(processMappingInModuleCond).All(ctx,
+				&processMappingInModule); err != nil {
 				return err
 			}
 			if len(processMappingInModule) <= 0 {
@@ -337,11 +343,13 @@ func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *upgrader.Conf
 								if hostMap[moduleHost.HostID] == nil {
 									findOpts := &options.FindOptions{}
 									findOpts.SetLimit(1)
-									findOpts.SetProjection(map[string]int{common.BKHostInnerIPField: 1, common.BKHostOuterIPField: 1})
+									findOpts.SetProjection(map[string]int{common.BKHostInnerIPField: 1,
+										common.BKHostOuterIPField: 1})
 									filter := map[string]interface{}{common.BKHostIDField: moduleHost.HostID}
 									host := make(map[string]interface{})
 
-									cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, filter, findOpts)
+									cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx,
+										filter, findOpts)
 									if err != nil {
 										blog.Errorf("find host %d failed, err: %s", moduleHost.HostID, err.Error())
 										return err

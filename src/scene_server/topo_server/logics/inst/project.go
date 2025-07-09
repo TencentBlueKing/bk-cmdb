@@ -1,8 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
- * Copyright (C) 2017 THL A29 Limited,
- * a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
@@ -122,7 +121,8 @@ func (p *project) CreateProject(kit *rest.Kit, data []mapstr.MapStr) ([]int64, e
 			},
 			Creator: kit.User,
 		}
-		_, err = p.authManager.Authorizer.BatchRegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstancesWithCreator)
+		_, err = p.authManager.Authorizer.BatchRegisterResourceCreatorAction(kit.Ctx, kit.Header,
+			iamInstancesWithCreator)
 		if err != nil {
 			blog.Errorf("register created project to iam failed, err: %s, rid: %s", err, kit.Rid)
 			return nil, err

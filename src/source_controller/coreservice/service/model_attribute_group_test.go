@@ -1,13 +1,17 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the ",License",); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 Tencent. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
 package service_test
@@ -40,7 +44,8 @@ func createModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	require.NotNil(t, inputParams)
 	t.Logf("create model attribute group:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/create/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -70,7 +75,8 @@ func setModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, modelID
 	require.NotNil(t, inputParams)
 	t.Logf("set one model attribute group:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/set/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/set/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -98,7 +104,8 @@ func queryModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, model
 	require.NotNil(t, inputParams)
 	t.Logf("read some model attribute group:%s", inputParams)
 
-	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/read/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.POST("http://127.0.0.1:3308/api/v3/read/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -137,7 +144,8 @@ func updateModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	require.NotNil(t, inputParams)
 	t.Logf("update some model attribute group:%s", inputParams)
 
-	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.PUT("http://127.0.0.1:3308/api/v3/update/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -167,7 +175,8 @@ func deleteModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	require.NotNil(t, inputParams)
 	t.Logf("delete some model attribute group:%s", inputParams)
 
-	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model/"+modelID+"/group", defaultHeader, inputParams)
+	dataResult, err := client.DELETE("http://127.0.0.1:3308/api/v3/delete/model/"+modelID+"/group", defaultHeader,
+		inputParams)
 	require.NoError(t, err)
 	require.NotNil(t, dataResult)
 
@@ -183,7 +192,8 @@ func deleteModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, mode
 	t.Logf("delete some model attribute group result:%s", resultStr)
 }
 
-func deleteCascadeModelAttributeGroup(t *testing.T, client *httpclient.HttpClient, modelID, modelAttributeGroupID string) {
+func deleteCascadeModelAttributeGroup(t *testing.T, client *httpclient.HttpClient,
+	modelID, modelAttributeGroupID string) {
 	// TODO
 }
 

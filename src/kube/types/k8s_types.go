@@ -1,8 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
- * Copyright (C) 2017 THL A29 Limited,
- * a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
@@ -100,7 +99,8 @@ type AzureDataDiskKind string
 
 // IP address information for entries in the (plural) PodIPs field.
 // Each entry includes:
-//    IP: An IP address allocated to the pod. Routable at least within the cluster.
+//
+//	IP: An IP address allocated to the pod. Routable at least within the cluster.
 type PodIP struct {
 	// ip is an IP address (IPv4 or IPv6) assigned to the pod
 	IP string `json:"ip,omitempty" bson:"ip"`
@@ -1376,7 +1376,9 @@ type EmptyDirVolumeSource struct {
 // The serialization format is:
 //
 // <quantity>        ::= <signedNumber><suffix>
-//   (Note that <suffix> may be empty, from the "" case in <decimalSI>.)
+//
+//	(Note that <suffix> may be empty, from the "" case in <decimalSI>.)
+//
 // <digit>           ::= 0 | 1 | ... | 9
 // <digits>          ::= <digit> | <digit><digits>
 // <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits>
@@ -1384,9 +1386,13 @@ type EmptyDirVolumeSource struct {
 // <signedNumber>    ::= <number> | <sign><number>
 // <suffix>          ::= <binarySI> | <decimalExponent> | <decimalSI>
 // <binarySI>        ::= Ki | Mi | Gi | Ti | Pi | Ei
-//   (International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
+//
+//	(International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
+//
 // <decimalSI>       ::= m | "" | k | M | G | T | P | E
-//   (Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
+//
+//	(Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
+//
 // <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
 //
 // No matter which of the three exponent forms is used, no quantity may represent
@@ -1401,14 +1407,17 @@ type EmptyDirVolumeSource struct {
 // Before serializing, Quantity will be put in "canonical form".
 // This means that Exponent/suffix will be adjusted up or down (with a
 // corresponding increase or decrease in Mantissa) such that:
-//   a. No precision is lost
-//   b. No fractional digits will be emitted
-//   c. The exponent (or suffix) is as large as possible.
+//
+//	a. No precision is lost
+//	b. No fractional digits will be emitted
+//	c. The exponent (or suffix) is as large as possible.
+//
 // The sign will be omitted unless the number is negative.
 //
 // Examples:
-//   1.5 will be serialized as "1500m"
-//   1.5Gi will be serialized as "1536Mi"
+//
+//	1.5 will be serialized as "1500m"
+//	1.5Gi will be serialized as "1536Mi"
 //
 // Note that the quantity will NEVER be internally represented by a
 // floating point number. That is the whole point of this exercise.
@@ -1465,19 +1474,19 @@ type infDecAmount struct {
 //
 // The mathematical value of a Dec equals:
 //
-//  unscaled * 10**(-scale)
+//	unscaled * 10**(-scale)
 //
 // Note that different Dec representations may have equal mathematical values.
 //
-//  unscaled  scale  String()
-//  -------------------------
-//         0      0    "0"
-//         0      2    "0.00"
-//         0     -2    "0"
-//         1      0    "1"
-//       100      2    "1.00"
-//        10      0   "10"
-//         1     -1   "10"
+//	unscaled  scale  String()
+//	-------------------------
+//	       0      0    "0"
+//	       0      2    "0.00"
+//	       0     -2    "0"
+//	       1      0    "1"
+//	     100      2    "1.00"
+//	      10      0   "10"
+//	       1     -1   "10"
 //
 // The zero value for a Dec represents the value 0 with scale 0.
 //
@@ -1501,7 +1510,6 @@ type infDecAmount struct {
 // QuoRound should be used with a Scale and a Rounder.
 // QuoExact or QuoRound with RoundExact can be used in the special cases when it
 // is known that the result is always a finite decimal.
-//
 type Dec struct {
 	unscaled big.Int
 	scale    Scale

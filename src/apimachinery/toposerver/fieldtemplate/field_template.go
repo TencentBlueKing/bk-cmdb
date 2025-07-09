@@ -1,8 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
- * Copyright (C) 2017 THL A29 Limited,
- * a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
@@ -526,7 +525,8 @@ func (ft FieldTemplate) ListFieldTemplateTasksStatus(ctx context.Context, header
 
 // ListFieldTemplateSyncStatus list field template sync status
 func (ft FieldTemplate) ListFieldTemplateSyncStatus(ctx context.Context, header http.Header,
-	option metadata.ListFieldTmpltSyncStatusOption) (*metadata.ListFieldTmpltSyncStatusResultResp, errors.CCErrorCoder) {
+	option metadata.ListFieldTmpltSyncStatusOption) (*metadata.ListFieldTmpltSyncStatusResultResp,
+	errors.CCErrorCoder) {
 
 	ret := new(metadata.ListFieldTmpltSyncStatusResultResp)
 	subPath := "/find/field_template/sync/status"

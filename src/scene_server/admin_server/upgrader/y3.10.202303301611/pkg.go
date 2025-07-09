@@ -1,8 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
- * Copyright (C) 2017 THL A29 Limited,
- * a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
@@ -38,7 +37,7 @@ func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error)
 	}
 
 	if err = updateHostIPv6AttrOption(ctx, db); err != nil {
-		blog.Errorf("upgrade y3.10.202303301611 update host_outerip_v6  and host_innerip_v6 attr option failed, " +
+		blog.Errorf("upgrade y3.10.202303301611 update host_outerip_v6  and host_innerip_v6 attr option failed, "+
 			"err: %v", err)
 		return err
 	}

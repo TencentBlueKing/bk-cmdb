@@ -1,8 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
- * Copyright (C) 2017 THL A29 Limited,
- * a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
@@ -45,11 +44,13 @@ func NewFlowTokenHandler(key event.Key, watchDB dal.DB, metrics *event.EventMetr
 	}
 }
 
-/* SetLastWatchToken do not set last watch token in the do batch action(set it after events are successfully inserted)
-   when there are several masters watching db event, we use db transaction to avoid inserting duplicate data by setting
-   the last token after the insertion of db chain nodes in one transaction, since we have a unique index on the cursor
-   field, the later one will encounters an error when inserting nodes and roll back without setting the token and watch
-   another round from the last token of the last inserted node, thus ensures the sequence of db chain nodes.
+/*
+SetLastWatchToken do not set last watch token in the do batch action(set it after events are successfully inserted)
+
+	when there are several masters watching db event, we use db transaction to avoid inserting duplicate data by setting
+	the last token after the insertion of db chain nodes in one transaction, since we have a unique index on the cursor
+	field, the later one will encounters an error when inserting nodes and roll back without setting the token and watch
+	another round from the last token of the last inserted node, thus ensures the sequence of db chain nodes.
 */
 func (f *flowTokenHandler) SetLastWatchToken(ctx context.Context, token string) error {
 	return nil

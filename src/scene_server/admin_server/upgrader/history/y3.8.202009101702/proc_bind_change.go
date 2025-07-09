@@ -1,13 +1,17 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 Tencent. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
 package y3_8_202009101702
@@ -52,8 +56,10 @@ func addProcBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Config) err
 	}
 	sort := common.BKPropertyIndexField + ":-1"
 	procAttr := &Attribute{}
-	if err := db.Table(common.BKTableNameObjAttDes).Find(bindIPAttrIdxFilter).Sort(sort).One(ctx, procAttr); err != nil {
-		blog.Errorf("addProcBindIP failed, find proc max property index id failed, filter: %s err: %s", bindIPAttrIdxFilter, err.Error())
+	if err := db.Table(common.BKTableNameObjAttDes).Find(bindIPAttrIdxFilter).Sort(sort).One(ctx,
+		procAttr); err != nil {
+		blog.Errorf("addProcBindIP failed, find proc max property index id failed, filter: %s err: %s",
+			bindIPAttrIdxFilter, err.Error())
 		return err
 	}
 
@@ -216,7 +222,8 @@ func migrateProcTempBindInfo(ctx context.Context, db dal.RDB, conf *upgrader.Con
 }
 
 func clearProcAttrAndGroup(ctx context.Context, db dal.RDB, conf *upgrader.Config) error {
-	delPropertyID := []string{common.BKProcGatewayIP, common.BKProcGatewayPort, common.BKProcGatewayProtocol, common.BKProcGatewayCity, common.BKBindIP, common.BKPort, common.BKProtocol, common.BKProcPortEnable}
+	delPropertyID := []string{common.BKProcGatewayIP, common.BKProcGatewayPort, common.BKProcGatewayProtocol,
+		common.BKProcGatewayCity, common.BKBindIP, common.BKPort, common.BKProtocol, common.BKProcPortEnable}
 
 	delProcAttr := map[string]interface{}{
 		common.BKObjIDField:      common.BKInnerObjIDProc,
@@ -234,7 +241,8 @@ func clearProcAttrAndGroup(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 	}
 	cnt, err := db.Table(common.BKTableNameObjAttDes).Find(proxyGroupAttrFilter).Count(ctx)
 	if err != nil {
-		blog.ErrorJSON("clearProcAttrAndGroup failed, find network proxy  attribute, filter:%s err: %s", proxyGroupAttrFilter, err.Error())
+		blog.ErrorJSON("clearProcAttrAndGroup failed, find network proxy  attribute, filter:%s err: %s",
+			proxyGroupAttrFilter, err.Error())
 		return err
 	}
 	if cnt > 0 {
@@ -245,7 +253,8 @@ func clearProcAttrAndGroup(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 		common.BKPropertyGroupField: "network_proxy",
 	}
 	if err := db.Table(common.BKTableNamePropertyGroup).Delete(ctx, delProxyGroupAttrFilter); err != nil {
-		blog.ErrorJSON("clearProcAttrAndGroup failed, find network proxy  attribute, filter:%s err: %s", delProxyGroupAttrFilter, err.Error())
+		blog.ErrorJSON("clearProcAttrAndGroup failed, find network proxy  attribute, filter:%s err: %s",
+			delProxyGroupAttrFilter, err.Error())
 		return err
 	}
 
@@ -277,12 +286,13 @@ func getSubAttr() []SubAttriubte {
 			IsRequired:    true,
 		},
 		SubAttriubte{
-			PropertyID:    "protocol",
-			PropertyName:  "Protocol",
-			Placeholder:   "service use protocol,",
-			IsEditable:    true,
-			PropertyType:  common.FieldTypeEnum,
-			Option:        []metadata.EnumVal{{ID: "1", Name: "TCP", Type: "text", IsDefault: true}, {ID: "2", Name: "UDP", Type: "text"}},
+			PropertyID:   "protocol",
+			PropertyName: "Protocol",
+			Placeholder:  "service use protocol,",
+			IsEditable:   true,
+			PropertyType: common.FieldTypeEnum,
+			Option: []metadata.EnumVal{{ID: "1", Name: "TCP", Type: "text", IsDefault: true},
+				{ID: "2", Name: "UDP", Type: "text"}},
 			PropertyGroup: common.BKProcBindInfo,
 			IsRequired:    true,
 		},

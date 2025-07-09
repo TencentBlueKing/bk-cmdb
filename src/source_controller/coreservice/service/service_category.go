@@ -1,13 +1,17 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the ",License",); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 Tencent. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
 package service
@@ -42,14 +46,16 @@ func (s *coreService) CreateServiceCategory(ctx *rest.Contexts) {
 func (s *coreService) GetServiceCategory(ctx *rest.Contexts) {
 	serviceCategoryIDStr := ctx.Request.PathParameter(common.BKServiceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
-		blog.Errorf("GetServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField, ctx.Kit.Rid)
+		blog.Errorf("GetServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
 		return
 	}
 
 	serviceCategoryID, err := strconv.ParseInt(serviceCategoryIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("GetServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceCategoryIDField, serviceCategoryIDStr, err, ctx.Kit.Rid)
+		blog.Errorf("GetServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s",
+			common.BKServiceCategoryIDField, serviceCategoryIDStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
 		return
 	}
@@ -88,7 +94,8 @@ func (s *coreService) ListServiceCategories(ctx *rest.Contexts) {
 	}
 
 	if fp.BusinessID == 0 {
-		blog.Errorf("ListServiceCategories failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID, ctx.Kit.Rid)
+		blog.Errorf("ListServiceCategories failed, business id can't be empty, bk_biz_id: %d, rid: %s", fp.BusinessID,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKAppIDField))
 		return
 	}
@@ -103,7 +110,8 @@ func (s *coreService) ListServiceCategories(ctx *rest.Contexts) {
 	// translate
 	for index := range result.Info {
 		if result.Info[index].ServiceCategory.IsBuiltIn {
-			result.Info[index].ServiceCategory.Name = s.TranslateServiceCategory(lang, &result.Info[index].ServiceCategory)
+			result.Info[index].ServiceCategory.Name = s.TranslateServiceCategory(lang,
+				&result.Info[index].ServiceCategory)
 		}
 	}
 	ctx.RespEntity(result)
@@ -113,14 +121,16 @@ func (s *coreService) ListServiceCategories(ctx *rest.Contexts) {
 func (s *coreService) UpdateServiceCategory(ctx *rest.Contexts) {
 	serviceCategoryIDStr := ctx.Request.PathParameter(common.BKServiceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
-		blog.Errorf("UpdateServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField, ctx.Kit.Rid)
+		blog.Errorf("UpdateServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
 		return
 	}
 
 	serviceCategoryID, err := strconv.ParseInt(serviceCategoryIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("UpdateServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceCategoryIDField, serviceCategoryIDStr, err, ctx.Kit.Rid)
+		blog.Errorf("UpdateServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s",
+			common.BKServiceCategoryIDField, serviceCategoryIDStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
 		return
 	}
@@ -145,14 +155,16 @@ func (s *coreService) UpdateServiceCategory(ctx *rest.Contexts) {
 func (s *coreService) DeleteServiceCategory(ctx *rest.Contexts) {
 	serviceCategoryIDStr := ctx.Request.PathParameter(common.BKServiceCategoryIDField)
 	if len(serviceCategoryIDStr) == 0 {
-		blog.Errorf("DeleteServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField, ctx.Kit.Rid)
+		blog.Errorf("DeleteServiceCategory failed, path parameter `%s` empty, rid: %s", common.BKServiceCategoryIDField,
+			ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
 		return
 	}
 
 	serviceCategoryID, err := strconv.ParseInt(serviceCategoryIDStr, 10, 64)
 	if err != nil {
-		blog.Errorf("DeleteServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s", common.BKServiceCategoryIDField, serviceCategoryIDStr, err, ctx.Kit.Rid)
+		blog.Errorf("DeleteServiceCategory failed, convert path parameter %s to int failed, value: %s, err: %v, rid: %s",
+			common.BKServiceCategoryIDField, serviceCategoryIDStr, err, ctx.Kit.Rid)
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKServiceCategoryIDField))
 		return
 	}

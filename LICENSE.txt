@@ -1,5 +1,5 @@
 Tencent is pleased to support the open source community by making 蓝鲸 available.  
-Copyright (C) 2017 THL A29 Limited, a Tencent company.  All rights reserved.
+Copyright (C) 2017 Tencent. All rights reserved.
 If you have downloaded a copy of the 蓝鲸 binary from Tencent, please note that the 蓝鲸 binary is licensed under the MIT License.
 If you have downloaded a copy of the 蓝鲸 source code from Tencent, please note that 蓝鲸 source code is licensed under the MIT License, except for the third-party components listed below which are subject to different license terms.  Your integration of 蓝鲸 into your own projects may require compliance with the MIT License, as well as the other licenses applicable to the third-party components included within 蓝鲸.
 A copy of the MIT License is included in this file.

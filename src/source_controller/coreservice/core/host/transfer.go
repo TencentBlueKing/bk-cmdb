@@ -1,13 +1,17 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the ",License",); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 Tencent. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
 package host
@@ -33,7 +37,8 @@ func (hm *hostManager) TransferToNormalModule(kit *rest.Kit, input *metadata.Hos
 }
 
 // TransferToAnotherBusiness transfer host to another business module
-func (hm *hostManager) TransferToAnotherBusiness(kit *rest.Kit, input *metadata.TransferHostsCrossBusinessRequest) error {
+func (hm *hostManager) TransferToAnotherBusiness(kit *rest.Kit,
+	input *metadata.TransferHostsCrossBusinessRequest) error {
 	return hm.hostTransfer.TransferToAnotherBusiness(kit, input)
 }
 
@@ -49,16 +54,19 @@ func (hm *hostManager) RemoveFromModule(kit *rest.Kit, input *metadata.RemoveHos
 }
 
 // GetHostModuleRelation TODO
-func (hm *hostManager) GetHostModuleRelation(kit *rest.Kit, input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
+func (hm *hostManager) GetHostModuleRelation(kit *rest.Kit,
+	input *metadata.HostModuleRelationRequest) (*metadata.HostConfigData, error) {
 	return hm.hostTransfer.GetHostModuleRelation(kit, input)
 }
 
 // GetDistinctHostIDsByTopoRelation get all  host ids by topology relation condition
-func (hm *hostManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit, input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
+func (hm *hostManager) GetDistinctHostIDsByTopoRelation(kit *rest.Kit,
+	input *metadata.DistinctHostIDByTopoRelationRequest) ([]int64, error) {
 	return hm.hostTransfer.GetDistinctHostIDsByTopoRelation(kit, input)
 }
 
 // TransferResourceDirectory TODO
-func (hm *hostManager) TransferResourceDirectory(kit *rest.Kit, input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
+func (hm *hostManager) TransferResourceDirectory(kit *rest.Kit,
+	input *metadata.TransferHostResourceDirectory) errors.CCErrorCoder {
 	return hm.hostTransfer.TransferResourceDirectory(kit, input)
 }

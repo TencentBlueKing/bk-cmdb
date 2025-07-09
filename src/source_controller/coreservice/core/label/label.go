@@ -1,13 +1,17 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.,
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the ",License",); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an ",AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Tencent is pleased to support the open source community by making
+ * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
+ * Copyright (C) 2017 Tencent. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ * We undertake not to change the open source license (MIT license) applicable
+ * to the current version of the project delivered to anyone in the future.
  */
 
 // Package label TODO
@@ -50,7 +54,8 @@ func (p *labelOperation) AddLabel(kit *rest.Kit, tableName string, option select
 		},
 	}
 	if count, err := mongodb.Client().Table(tableName).Find(countFilter).Count(kit.Ctx); err != nil {
-		blog.ErrorJSON("AddLabel failed, db count instances failed, filter: %s, err: %s, rid: %s", countFilter, err.Error(), kit.Rid)
+		blog.ErrorJSON("AddLabel failed, db count instances failed, filter: %s, err: %s, rid: %s", countFilter,
+			err.Error(), kit.Rid)
 		return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 	} else if count != uint64(len(option.InstanceIDs)) {
 		blog.ErrorJSON("add label failed, some instance not valid, filter: %s, result count: %s, rid: %s",
@@ -64,7 +69,8 @@ func (p *labelOperation) AddLabel(kit *rest.Kit, tableName string, option select
 		}
 		data := &selector.LabelInstance{}
 		if err := mongodb.Client().Table(tableName).Find(filter).One(kit.Ctx, data); err != nil {
-			blog.Errorf("AddLabel failed, get instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, kit.Rid)
+			blog.Errorf("AddLabel failed, get instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err,
+				kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 		if data.Labels != nil {
@@ -73,7 +79,8 @@ func (p *labelOperation) AddLabel(kit *rest.Kit, tableName string, option select
 			data.Labels = option.Labels
 		}
 		if err := mongodb.Client().Table(tableName).Update(kit.Ctx, filter, data); err != nil {
-			blog.Errorf("AddLabel failed, update instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, kit.Rid)
+			blog.Errorf("AddLabel failed, update instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err,
+				kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 		}
 	}
@@ -126,7 +133,8 @@ func (p *labelOperation) UpdateLabel(kit *rest.Kit, tableName string,
 }
 
 // RemoveLabel TODO
-func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option selector.LabelRemoveOption) errors.CCErrorCoder {
+func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string,
+	option selector.LabelRemoveOption) errors.CCErrorCoder {
 	idField := common.GetInstIDField(tableName)
 
 	// check all instance validate
@@ -152,7 +160,8 @@ func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option sel
 		}
 		data := &selector.LabelInstance{}
 		if err := mongodb.Client().Table(tableName).Find(filter).One(kit.Ctx, data); err != nil {
-			blog.Errorf("RemoveLabel failed, get instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, kit.Rid)
+			blog.Errorf("RemoveLabel failed, get instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err,
+				kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBSelectFailed)
 		}
 		if data.Labels != nil {
@@ -161,7 +170,8 @@ func (p *labelOperation) RemoveLabel(kit *rest.Kit, tableName string, option sel
 			data.Labels = make(map[string]string)
 		}
 		if err := mongodb.Client().Table(tableName).Update(kit.Ctx, filter, data); err != nil {
-			blog.Errorf("RemoveLabel failed, update instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID, err, kit.Rid)
+			blog.Errorf("RemoveLabel failed, update instance failed, instanceID: %+v, err: %+v, rid: %s", instanceID,
+				err, kit.Rid)
 			return kit.CCError.CCErrorf(common.CCErrCommDBUpdateFailed)
 		}
 	}
