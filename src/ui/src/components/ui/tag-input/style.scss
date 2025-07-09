@@ -1,6 +1,6 @@
 /*
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -90,7 +90,7 @@
                     margin-left: -24px;
                     border-radius: 50%;
                     box-shadow: 12px 0px 0px 0px #fd6154,
-                            24px 0px 0px 0px #ffb726, 
+                            24px 0px 0px 0px #ffb726,
                             36px 0px 0px 0px #4cd084,
                             48px 0px 0px 0px #57a3f1;
                     animation: tag-input-loading 1s linear infinite;
@@ -118,7 +118,7 @@
             z-index: 1;
             &:hover {
                 color: #979BA5;
-            } 
+            }
         }
     }
     .tag-input-selected {
@@ -195,43 +195,43 @@
 @keyframes tag-input-loading {
    0%{
         box-shadow: 12px 0px 0px 0px #fd6154,
-                    24px 0px 0px 0px #ffb726, 
+                    24px 0px 0px 0px #ffb726,
                     36px 0px 0px 0px #4cd084,
                     48px 0px 0px 0px #57a3f1;
       }
-    14%{ 
+    14%{
         box-shadow: 12px 0px 0px 1px #fd6154,
-                    24px 0px 0px 0px #ffb726, 
+                    24px 0px 0px 0px #ffb726,
                     36px 0px 0px 0px #4cd084,
                     48px 0px 0px 0px #57a3f1;
     }
     28% {
         box-shadow: 12px 0px 0px 2px #fd6154,
-                    24px 0px 0px 1px #ffb726, 
+                    24px 0px 0px 1px #ffb726,
                     36px 0px 0px 0px #4cd084,
                     48px 0px 0px 0px #57a3f1;
     }
     42% {
         box-shadow: 12px 0px 0px 1px #fd6154,
-                    24px 0px 0px 2px #ffb726, 
+                    24px 0px 0px 2px #ffb726,
                     36px 0px 0px 1px #4cd084,
                     48px 0px 0px 0px #57a3f1;
     }
     56%{
         box-shadow: 12px 0px 0px 0px #fd6154,
-                    24px 0px 0px 1px #ffb726, 
+                    24px 0px 0px 1px #ffb726,
                     36px 0px 0px 2px #4cd084,
                     48px 0px 0px 1px #57a3f1;
     }
     70% {
         box-shadow: 12px 0px 0px 0px #fd6154,
-                    24px 0px 0px 0px #ffb726, 
+                    24px 0px 0px 0px #ffb726,
                     36px 0px 0px 1px #4cd084,
                     48px 0px 0px 2px #57a3f1;
     }
     84% {
         box-shadow: 12px 0px 0px 0px #fd6154,
-                    24px 0px 0px 0px #ffb726, 
+                    24px 0px 0px 0px #ffb726,
                     36px 0px 0px 0px #4cd084,
                     48px 0px 0px 1px #57a3f1;
     }

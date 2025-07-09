@@ -1,6 +1,6 @@
 <!--
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -77,7 +77,9 @@
             [CONFIG_MODE.MODULE]: this.getModuleName,
             [CONFIG_MODE.TEMPLATE]: this.getTemplateName
           }
-          title = `${this.$t('编辑')} ${getName[this.mode](this.targetIds[0])}`
+          if (Object.keys(getName).includes(this.mode)) {
+            title = `${this.$t('编辑')} ${getName[this.mode](this.targetIds[0])}`
+          }
         }
         return title
       }

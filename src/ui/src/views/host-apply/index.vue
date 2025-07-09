@@ -1,6 +1,6 @@
 <!--
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -101,7 +101,11 @@
     computed: {
       ...mapGetters('objectBiz', ['bizId']),
       mode() {
-        return this.$route.params.mode ?? CONFIG_MODE.MODULE
+        const { mode } = this.$route.params
+        if (![CONFIG_MODE.MODULE, CONFIG_MODE.TEMPLATE].includes(mode)) {
+          return CONFIG_MODE.MODULE
+        }
+        return mode
       },
       isModuleMode() {
         return this.mode === CONFIG_MODE.MODULE

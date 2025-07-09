@@ -1,6 +1,6 @@
 <!--
  * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2017-2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2017 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
  * http://opensource.org/licenses/MIT
@@ -160,11 +160,11 @@
     computed: {
       ...mapGetters('objectModelClassify', ['getModelById']),
       propertyMap() {
-        const modelPropertyMap = { [this.objId]: this.properties }
+        const modelPropertyMap = new Map()
         const ignoreProperties = [] // 预留，需要忽略的属性
         // eslint-disable-next-line max-len
-        modelPropertyMap[this.objId] = modelPropertyMap[this.objId].filter(property => !ignoreProperties.includes(property.bk_property_id))
-        return modelPropertyMap
+        modelPropertyMap.set(this.objId, this.properties.filter(property => !ignoreProperties.includes(property.bk_property_id)))
+        return Object.fromEntries(modelPropertyMap)
       },
       hasChange() {
         return !isEqual(this.condition, this.originCondition)
