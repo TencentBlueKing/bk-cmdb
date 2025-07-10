@@ -12,8 +12,8 @@
 
 <template>
   <cmdb-form-objuser
-    :exclude="false"
     v-model="localValue"
+    :allow-create="true"
     v-bind="$attrs"
     ref="objUserRef"
     @clear="() => $emit('clear')"

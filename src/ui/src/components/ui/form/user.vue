@@ -21,7 +21,7 @@
       :multiple="multiple"
       :placeholder="localPlaceholder"
       :tenant-id="tenantId"
-      :data-error-handler="errorHandler"
+      :exact-search-key="'login_name'"
       v-bind="selectorMoreProps">
     </bk-user-selector>
   </div>
@@ -30,7 +30,6 @@
 <script>
   import BkUserSelector from '@blueking/bk-user-selector/vue2'
   import { mapGetters } from 'vuex'
-  import { showLoginModal } from '@/utils/login-helper'
   import '@blueking/bk-user-selector/vue2/vue2.css'
 
   export default {
@@ -64,7 +63,7 @@
       localValue: {
         get() {
           if (this.multiple) {
-            return this.value?.split(',') ?? []
+            return (this.value && this.value.length) ? this.value.split(',') : []
           }
           return this.value
         },
@@ -93,10 +92,8 @@
       }
     },
     methods: {
-      errorHandler(res) {
-        if (res.code === 1306000) {
-          showLoginModal()
-        }
+      focus() {
+        this.$el.querySelector('input')?.focus?.()
       }
     }
   }

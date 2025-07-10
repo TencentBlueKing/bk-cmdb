@@ -326,7 +326,7 @@
             component?.[0]?.triggerOpen()
             return
           }
-          component?.[0]?.focus()
+          component?.[0]?.focus?.()
         }, 100)
       },
       handleConfirm(val, property) {

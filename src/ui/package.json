@@ -18,7 +18,7 @@
   "dependencies": {
     "@blueking/bk-org-selector": "0.0.22-beta.1",
     "@blueking/bk-user-display-name": "^1.0.0",
-    "@blueking/bk-user-selector": "^0.0.31-beta.1",
+    "@blueking/bk-user-selector": "^0.0.34",
     "@babel/runtime": "^7.27.1",
     "@blueking/bkui-library": "^0.0.0-beta.6",
     "@blueking/functional-dependency": "^0.0.1-beta.10",
