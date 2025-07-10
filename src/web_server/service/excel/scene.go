@@ -22,6 +22,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -85,7 +86,13 @@ func (s *service) BuildTemplate(c *gin.Context) {
 	// 1. 创建excel模版
 	dir := fmt.Sprintf("%s/template", webCommon.ResourcePath)
 	randNum := rand.Uint32()
-	filePath := fmt.Sprintf("%s/%stemplate-%d-%d.xlsx", dir, objID, time.Now().UnixNano(), randNum)
+	fileName := fmt.Sprintf("%stemplate-%d-%d.xlsx", objID, time.Now().UnixNano(), randNum)
+	filePath, err := filepath.Abs(filepath.Join(dir, fileName))
+	if err != nil || !strings.HasPrefix(filePath, dir) {
+		blog.Errorf("validate file path %s failed, err: %v, rid: %s", filePath, err, kit.Rid)
+		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: "invalid file name"})
+		return
+	}
 
 	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
@@ -335,7 +342,12 @@ func (s *service) ExportObject(c *gin.Context) {
 	objID := c.Param(common.BKObjIDField)
 
 	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
-	filePath := fmt.Sprintf("%s/%d_%s.xlsx", dir, time.Now().UnixNano(), objID)
+	filePath, err := filepath.Abs(filepath.Join(dir, fmt.Sprintf("%d_%s.xlsx", time.Now().UnixNano(), objID)))
+	if err != nil || !strings.HasPrefix(filePath, dir) {
+		blog.Errorf("validate file path %s failed, err: %v, rid: %s", filePath, err, kit.Rid)
+		c.JSON(http.StatusOK, metadata.BaseResp{Code: common.CCErrCommExcelTemplateFailed, ErrMsg: "invalid file name"})
+		return
+	}
 
 	client := &core.Client{ApiClient: s.apiCli}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
