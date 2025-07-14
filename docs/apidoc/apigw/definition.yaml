@@ -134,7 +134,7 @@ grant_permissions:
       - update_cloud_area
       - update_inst
       - find_host_by_topo
-      - find_host_service_template
+      - list_host_service_template_id
   - bk_app_code: {{ environ.BK_NODEMGR_APP_CODE }}
     grant_dimension: "resource"
     resource_names:

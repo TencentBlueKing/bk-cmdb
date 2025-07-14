@@ -21,7 +21,6 @@
       :multiple="multiple"
       :placeholder="localPlaceholder"
       :tenant-id="tenantId"
-      :exact-search-key="'login_name'"
       v-bind="selectorMoreProps">
     </bk-user-selector>
   </div>
