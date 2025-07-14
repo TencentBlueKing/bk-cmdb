@@ -1165,17 +1165,17 @@ func (h *HostSnap) getHostByVal(header http.Header, rid string, cloudID int64, i
 }
 
 func getIPsFromMsg(val *gjson.Result, agentID string, rid string) ([]string, []string) {
-	ipv4Map := make(map[string]struct{})
-	ipv6Map := make(map[string]struct{})
+	ipv4List := make([]string, 0)
+	ipv6List := make([]string, 0)
 
 	rootIP := val.Get("ip").String()
 	rootIP = strings.TrimSpace(rootIP)
 	if rootIP != metadata.IPv4LoopBackIpPrefix && rootIP != metadata.IPv6LoopBackIp &&
 		!strings.HasPrefix(rootIP, metadata.IPv6LinkLocalAddressPrefix) && net.ParseIP(rootIP) != nil {
 		if strings.Contains(rootIP, ":") {
-			ipv6Map[rootIP] = struct{}{}
+			ipv6List = append(ipv6List, rootIP)
 		} else {
-			ipv4Map[rootIP] = struct{}{}
+			ipv4List = append(ipv4List, rootIP)
 		}
 	}
 	// need to be compatible with the old and new versions of the format
@@ -1230,21 +1230,17 @@ func getIPsFromMsg(val *gjson.Result, agentID string, rid string) ([]string, []s
 			}
 
 			if strings.Contains(ip, ":") {
-				ipv6Map[ip] = struct{}{}
-			} else {
-				ipv4Map[ip] = struct{}{}
+				if !util.Contains(ipv6List, ip) {
+					ipv6List = append(ipv6List, ip)
+				}
+				continue
 			}
+
+			if !util.Contains(ipv4List, ip) {
+				ipv4List = append(ipv4List, ip)
+			}
+
 		}
-	}
-
-	ipv4List := make([]string, 0)
-	for ipv4 := range ipv4Map {
-		ipv4List = append(ipv4List, ipv4)
-	}
-
-	ipv6List := make([]string, 0)
-	for ipv6 := range ipv6Map {
-		ipv6List = append(ipv6List, ipv6)
 	}
 	return ipv4List, ipv6List
 }
