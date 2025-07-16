@@ -306,6 +306,14 @@ data:
         # 用于解密根据RFC1423加密的证书密钥的PEM块
         password: {{ .Values.common.apiGW.tls.password }}
 
+    # 审计中心数据上报配置
+    auditCenter:
+      enabled: {{ .Values.common.auditCenter.enabled }}
+      appCode: {{ .Values.common.auditCenter.appCode }}
+      appSecret: {{ .Values.common.auditCenter.appSecret }}
+      endpoint: {{ .Values.common.auditCenter.endpoint }}
+      token: {{ .Values.common.auditCenter.token }}
+
   extra.yaml: |-
     
 

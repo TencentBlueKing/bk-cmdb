@@ -1420,6 +1420,12 @@ common:
       caFile:
       # 用于解密根据RFC1423加密的证书密钥的PEM块
       password:
+  auditCenter:
+    enabled: false
+    appCode:
+    appSecret:
+    endpoint:
+    token:
 
 ## @section zookeeper parameters
 ##

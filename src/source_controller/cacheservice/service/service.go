@@ -34,6 +34,7 @@ import (
 	"configcenter/src/common/rdapi"
 	"configcenter/src/common/webservice/restfulservice"
 	"configcenter/src/source_controller/cacheservice/app/options"
+	"configcenter/src/source_controller/cacheservice/audit"
 	"configcenter/src/source_controller/cacheservice/cache"
 	cacheop "configcenter/src/source_controller/cacheservice/cache"
 	"configcenter/src/source_controller/cacheservice/event/bsrelation"
@@ -69,6 +70,7 @@ type cacheService struct {
 	core        core.Core
 	cacheSet    *cache.ClientSet
 	authManager *extensions.AuthManager
+	audit       *audit.Audit
 }
 
 // SetConfig TODO
@@ -78,11 +80,10 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 	s.cfg = cfg
 	s.engine = engine
 
-	if nil != err {
+	if err != nil {
 		s.err = err
 	}
-
-	if nil != lang {
+	if lang != nil {
 		s.langFactory = make(map[common.LanguageType]language.DefaultCCLanguageIf)
 		s.langFactory[common.Chinese] = lang.CreateDefaultCCLanguageIf(string(common.Chinese))
 		s.langFactory[common.English] = lang.CreateDefaultCCLanguageIf(string(common.English))
@@ -103,7 +104,6 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		blog.Errorf("new loop stream failed, err: %v", loopErr)
 		return loopErr
 	}
-
 	event, eventErr := reflector.NewReflector(s.cfg.Mongo.GetMongoConf())
 	if eventErr != nil {
 		blog.Errorf("new reflector failed, err: %v", eventErr)
@@ -135,8 +135,7 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return dbErr
 	}
 
-	flowErr := flow.NewEvent(watcher, engine.ServiceManageInterface, watchDB, ccDB)
-	if flowErr != nil {
+	if flowErr := flow.NewEvent(watcher, engine.ServiceManageInterface, watchDB, ccDB); flowErr != nil {
 		blog.Errorf("new watch event failed, err: %v", flowErr)
 		return flowErr
 	}
@@ -151,6 +150,9 @@ func (s *cacheService) SetConfig(cfg options.Config, engine *backbone.Engine, er
 		return err
 	}
 
+	if err := audit.RunAuditDataReporting(cfg.Audit, loopW); err != nil {
+		return err
+	}
 	return nil
 }
 

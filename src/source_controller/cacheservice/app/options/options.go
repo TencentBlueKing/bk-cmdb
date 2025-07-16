@@ -21,6 +21,7 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
+	auditconf "configcenter/src/source_controller/cacheservice/audit/config"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 
@@ -38,6 +39,7 @@ type Config struct {
 	WatchMongo mongo.Config
 	Redis      redis.Config
 	Auth       iam.AuthConfig
+	Audit      *auditconf.Config
 }
 
 // NewServerOption create a ServerOption object
