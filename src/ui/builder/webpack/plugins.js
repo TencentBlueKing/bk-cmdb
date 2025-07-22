@@ -18,10 +18,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
 const ProgressBarPlugin = require('progress-bar-webpack-plugin')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+const chalk = require('chalk')
 const ReplaceStaticUrlPlugin = require('../utils/replace-static-url-plugin')
 const GrabAPIPlugin = require('../utils/grab-api-plugin')
-const chalk = require('chalk')
-
+const BuildHashPlugin = require('../utils/build-hash-plugin')
 
 const { isProd, resolveBase, modeValue } = require('../utils')
 const devEnv = require('../config/dev.env')
@@ -95,7 +95,9 @@ const getProdPlugins = config => ([
     ignoreOrder: true
   }),
 
-  new ReplaceStaticUrlPlugin(config.build)
+  new ReplaceStaticUrlPlugin(config.build),
+
+  new BuildHashPlugin()
 ].concat((process.env.ANALYZER || config.build.bundleAnalyzerReport) ? [
   new BundleAnalyzerPlugin()
 ] : []))

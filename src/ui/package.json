@@ -11,6 +11,7 @@
     "build": "node builder/build.js",
     "build:analyzer": "cross-env ANALYZER=true node builder/build.js",
     "start": "npm run dev -- --env",
+    "serve": "node builder/serve.js",
     "lint": "eslint --ext .js,.vue ./src --cache",
     "lint-output": "eslint --ext .js,.vue --output-file ./eslint.html --format html ./src",
     "lint-fix": "eslint --fix --ext .js,.vue ./src"
