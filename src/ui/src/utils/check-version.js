@@ -48,7 +48,7 @@ const hideDialog = (silent = false) => {
 }
 
 const fetchBuildHash = async () => {
-  const response = await fetch(`${STATIC_PATH}${VERSION_FILE}`)
+  const response = await fetch(`${STATIC_PATH}${VERSION_FILE}?_=${Date.now()}`)
 
   if (!response.ok) {
     throw new Error('Failed to get build hash')
