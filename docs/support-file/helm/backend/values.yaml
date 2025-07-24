@@ -1676,7 +1676,11 @@ apigatewaySync:
   ## 此变量在运维维护的变量中，没有对应的变量
   monitorAppCode: "bk_monitorv3"
   ## 此变量在运维维护的变量中，没有对应的变量
-  sopsAppCode: "bk-sops"
+  sopsAppCode: "bk_sops"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  bkDataAppCode: "bk_bkdata"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  bkDataWebAppCode: "bk_dataweb"
 
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:

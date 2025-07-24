@@ -52,6 +52,10 @@ spec:
           value: {{ .Values.apigatewaySync.monitorAppCode }}
         - name: BK_SOPS_APP_CODE
           value: {{ .Values.apigatewaySync.sopsAppCode }}
+        - name: BK_DATA_APP_CODE
+          value: {{ .Values.apigatewaySync.bkDataAppCode }}
+        - name: BK_DATA_WEB_APP_CODE
+          value: {{ .Values.apigatewaySync.bkDataWebAppCode }}
         resources:
           limits:
             cpu: 200m

@@ -188,6 +188,40 @@ grant_permissions:
     resource_names:
       - list_hosts_without_biz
       - list_biz_hosts
+      - find_host_topo_relation
+      - search_cloud_area
+      - find_host_biz_relations
+      - get_biz_internal_module
+      - transfer_host_across_biz
+      - search_business
+      - transfer_host_to_recyclemodule
+      - transfer_host_to_idlemodule
+      - transfer_host_to_resourcemodule
+      - delete_host
+      - search_biz_inst_topo
+      - transfer_host_module
+      - list_kube_cluster
+      - create_kube_cluster
+      - batch_update_kube_cluster
+      - update_kube_cluster_type
+      - batch_delete_kube_cluster
+      - list_kube_namespace
+      - batch_create_kube_namespace
+      - batch_update_kube_namespace
+      - batch_delete_kube_namespace
+      - list_kube_workload
+      - batch_create_kube_workload
+      - batch_update_kube_workload
+      - batch_delete_kube_workload
+      - list_kube_node
+      - batch_create_kube_node
+      - batch_update_kube_node
+      - batch_delete_kube_node
+      - list_kube_pod
+      - list_kube_container
+      - batch_create_kube_pod
+      - batch_delete_kube_pod
+      - batch_delete_kube_cluster
   - bk_app_code: {{ environ.BK_BCS_SYNC_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
@@ -300,6 +334,30 @@ grant_permissions:
       - find_host_by_topo
       - list_set_template_related_service_template
       - list_set_template
+      - list_service_category
+  - bk_app_code: {{ environ.BK_DATA_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - search_business
+      - list_hosts_without_biz
+      - list_biz_hosts
+      - list_biz_hosts_topo
+      - search_biz_inst_topo
+      - get_biz_internal_module
+      - search_cloud_area
+      - search_dynamic_group
+      - execute_dynamic_group
+      - find_host_by_topo
+      - find_host_topo_relation
+      - list_business_set
+      - search_objects
+  - bk_app_code: {{ environ.BK_DATA_WEB_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - search_business
+      - list_biz_hosts
+      - search_biz_inst_topo
+      - search_cloud_area
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
