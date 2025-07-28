@@ -28,6 +28,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/common/valid"
 	"configcenter/src/storage/driver/mongodb"
+	"configcenter/src/common/valid/attribute/manager"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -97,6 +98,13 @@ func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, properties [
 		case common.FieldTypeIDRule:
 			idRuleField = &properties[idx]
 		default:
+			if handle, ok := manager.Get(field.PropertyType); ok {
+				if err := handle.FillLostValue(valData, field.Default, field.Option); err != nil {
+					blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
+						field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
+					return err
+				}
+			}
 			valData[field.PropertyID] = nil
 		}
 	}

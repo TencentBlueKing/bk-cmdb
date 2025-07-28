@@ -32,6 +32,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/util"
+	"configcenter/src/common/valid/attribute/manager"
 
 	"github.com/tidwall/gjson"
 	"go.mongodb.org/mongo-driver/bson"
@@ -205,6 +206,11 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 	default:
 		validator, exists := attrValidatorMap[fieldType]
 		if !exists {
+
+			// 是否为扩展字段类型
+			if handle, ok := manager.Get(fieldType); ok {
+				handle.Validate(ctx, key, fieldType, attribute.Option, data)
+			}
 			rawError = errors.RawErrorInfo{
 				ErrCode: common.CCErrCommUnexpectedFieldType,
 				Args:    []interface{}{fieldType},
