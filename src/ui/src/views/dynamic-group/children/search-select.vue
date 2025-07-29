@@ -118,14 +118,13 @@
 
     let result = []
     if (window.ESB.userManage) {
-      const url = new URL(window.ESB.userManage)
       const params = {
         app_code: 'bk-magicbox',
         page: 1,
         page_size: 100,
         fuzzy_lookups: query
       }
-      const api = `${window.API_HOST}proxy/get/usermanage${url.pathname}`
+      const api = window.ESB.userManage
       const response = await jsonp(api, params)
       if (response.code !== 0) {
         console.error(response?.message)
