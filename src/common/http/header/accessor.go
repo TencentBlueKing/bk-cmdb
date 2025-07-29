@@ -112,8 +112,12 @@ func SetRid(header http.Header, value string) {
 
 // SetBkAuth set blueking api gateway authorization info to http header
 func SetBkAuth(header http.Header, value string) http.Header {
-	header.Set(BkAuthHeader, value)
-	return header
+	h := make(http.Header)
+	for key := range header {
+		h.Set(key, header.Get(key))
+	}
+	h.Set(BkAuthHeader, value)
+	return h
 }
 
 // SetBkJWT set blueking api gateway jwt info to http header

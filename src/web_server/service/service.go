@@ -162,8 +162,6 @@ func (s *Service) initService(ws *gin.Engine) {
 	ws.POST("/regular/verify_regular_express", s.VerifyRegularExpress)
 	ws.POST("/regular/verify_regular_content_batch", s.VerifyRegularContentBatch)
 
-	ws.Any("/proxy/:method/:target/*target_url", s.ProxyRequest)
-
 	// get changelog info
 	ws.POST("findmany/changelog", s.GetVersionList)
 	ws.POST("find/changelog/detail", s.GetVersionDetail)
