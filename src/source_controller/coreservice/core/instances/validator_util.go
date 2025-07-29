@@ -27,8 +27,8 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/common/valid"
-	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/common/valid/attribute/manager"
+	"configcenter/src/storage/driver/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -41,71 +41,10 @@ func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, properties [
 		if ok && (field.PropertyType != common.FieldTypeIDRule || val != "") {
 			continue
 		}
-
-		switch field.PropertyType {
-		case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-			if err := fillLostStringFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeEnum:
-			if err := fillLostEnumFieldValue(ctx, valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeEnumMulti:
-			if err := fillLostEnumMultiFieldValue(ctx, valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeEnumQuote:
-			if err := fillLostEnumQuoteFieldValue(ctx, valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeDate:
-			if err := fillLostDateFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeFloat:
-			if err := fillLostFloatFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeInt:
-			if err := fillLostIntFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeTime:
-			if err := fillLostTimeFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeUser:
-			if err := fillLostUserFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeOrganization:
-			if err := fillLostOrganizationFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeTimeZone:
-			if err := fillLostTimeZoneFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeList:
-			if err := fillLostListFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeBool:
-			if err := fillLostBoolFieldValue(valData, field); err != nil {
-				return err
-			}
-		case common.FieldTypeIDRule:
+		if field.PropertyType == common.FieldTypeIDRule {
 			idRuleField = &properties[idx]
-		default:
-			if handle, ok := manager.Get(field.PropertyType); ok {
-				if err := handle.FillLostValue(valData, field.Default, field.Option); err != nil {
-					blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
-						field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
-					return err
-				}
-			}
-			valData[field.PropertyID] = nil
+		} else if err := fillLostFieldValueItem(ctx, valData, field); err != nil {
+			return err
 		}
 	}
 
@@ -116,6 +55,75 @@ func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, properties [
 		}
 	}
 
+	return nil
+}
+
+// fillLostFieldValueItem fills the lost value for a single field based on its type
+func fillLostFieldValueItem(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) error {
+	switch field.PropertyType {
+	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
+		if err := fillLostStringFieldValue(valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeEnum:
+		if err := fillLostEnumFieldValue(ctx, valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeEnumMulti:
+		if err := fillLostEnumMultiFieldValue(ctx, valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeEnumQuote:
+		if err := fillLostEnumQuoteFieldValue(ctx, valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeDate:
+		if err := fillLostDateFieldValue(valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeFloat:
+		if err := fillLostFloatFieldValue(valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeInt:
+		if err := fillLostIntFieldValue(valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeTime:
+		if err := fillLostTimeFieldValue(valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeUser:
+		if err := fillLostUserFieldValue(valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeOrganization:
+		if err := fillLostOrganizationFieldValue(valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeTimeZone:
+		if err := fillLostTimeZoneFieldValue(valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeList:
+		if err := fillLostListFieldValue(valData, field); err != nil {
+			return err
+		}
+	case common.FieldTypeBool:
+		if err := fillLostBoolFieldValue(valData, field); err != nil {
+			return err
+		}
+
+	default:
+		if handle, ok := manager.Get(field.PropertyType); ok {
+			if err := handle.FillLostValue(valData, field.Default, field.Option); err != nil {
+				blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
+					field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
+				return err
+			}
+		}
+		valData[field.PropertyID] = nil
+	}
 	return nil
 }
 
