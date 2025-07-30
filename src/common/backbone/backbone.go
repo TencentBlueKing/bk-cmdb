@@ -35,6 +35,7 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
+	_ "configcenter/src/common/plugins"
 	"configcenter/src/common/ssl"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
@@ -43,8 +44,6 @@ import (
 	"configcenter/src/thirdparty/monitor"
 
 	"github.com/rs/xid"
-
-	_ "configcenter/src/common/plugins"
 )
 
 // connect svcManager retry connect time
