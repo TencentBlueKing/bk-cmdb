@@ -175,6 +175,7 @@ type CreateObjAttDesResp struct {
 
 // Validate Attribute
 func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key string) errors.RawErrorInfo {
+	rid := util.ExtractRequestIDFromContext(ctx)
 	var attrValidatorMap = map[string]func(context.Context, interface{}, string) errors.RawErrorInfo{
 		common.FieldTypeSingleChar:   attribute.validChar,
 		common.FieldTypeLongChar:     attribute.validLongChar,
@@ -209,16 +210,26 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 
 			// 是否为扩展字段类型
 			if handle, ok := manager.Get(fieldType); ok {
-				handle.Validate(ctx, key, fieldType, attribute.Option, data)
+				if err := handle.Validate(ctx, key, fieldType, attribute.IsRequired, attribute.Option, data); err != nil {
+					blog.Errorf("validate attribute fail, field type: %s, err: %v, rid: %s", fieldType, err, rid)
+					return errors.RawErrorInfo{
+						ErrCode: common.CCErrCommParamsInvalid,
+						Args:    []interface{}{err.Error()},
+					}
+				}
+
+			} else {
+
+				rawError = errors.RawErrorInfo{
+					ErrCode: common.CCErrCommUnexpectedFieldType,
+					Args:    []interface{}{fieldType},
+				}
+				break
 			}
-			rawError = errors.RawErrorInfo{
-				ErrCode: common.CCErrCommUnexpectedFieldType,
-				Args:    []interface{}{fieldType},
-			}
-			break
+		} else {
+			rawError = validator(ctx, data, key)
 		}
 
-		rawError = validator(ctx, data, key)
 	}
 	// 如果出现了问题，并且报错原内容为propertyID，则替换为propertyName。
 	if rawError.ErrCode != 0 {

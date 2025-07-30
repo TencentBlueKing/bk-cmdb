@@ -29,11 +29,11 @@ type Attribute interface {
 	// Transform(kit *rest.Kit，value interface{})(interface{}, error)
 
 	//Validate 实际校验方法
-	Validate(ctx context.Context, objID string, propertyType string, option interface{}, value interface{}) error
+	Validate(ctx context.Context, objID string, propertyType string, required bool, option interface{}, value interface{}) error
 	//FillLostValue 填充默认值
-	FillLostValue(valData mapstr.MapStr, defaultVale, option interface{}) error
+	FillLostValue(ctx context.Context, valData mapstr.MapStr, propertyType string, defaultValue, option interface{}) error
 	//ValidateOption 校验 Option
-	ValidateOption(ctx context.Context, option interface{}, extraOpt interface{}) error
+	ValidateOption(ctx context.Context, option interface{}, defaultVal interface{}) error
 }
 
 // Register attribute type

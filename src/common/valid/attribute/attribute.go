@@ -63,7 +63,7 @@ func ValidPropertyOption(kit *rest.Kit, propertyType string, option interface{},
 		if err := handle.ValidateOption(kit.Ctx, option, extraOpt); err != nil {
 			blog.Errorf("valid property option failed, property type: %s, option: %+v, extra opt: %+v, err: %v, rid: %s",
 				propertyType, option, extraOpt, err, kit.Rid)
-			return err
+			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, err.Error())
 		}
 	}
 

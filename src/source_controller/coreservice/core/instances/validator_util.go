@@ -116,7 +116,7 @@ func fillLostFieldValueItem(ctx context.Context, valData mapstr.MapStr, field me
 
 	default:
 		if handle, ok := manager.Get(field.PropertyType); ok {
-			if err := handle.FillLostValue(valData, field.Default, field.Option); err != nil {
+			if err := handle.FillLostValue(ctx, valData, field.PropertyID, field.Default, field.Option); err != nil {
 				blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
 					field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
 				return err
