@@ -43,6 +43,8 @@ import (
 	"configcenter/src/thirdparty/monitor"
 
 	"github.com/rs/xid"
+
+	_ "configcenter/src/common/plugins"
 )
 
 // connect svcManager retry connect time
