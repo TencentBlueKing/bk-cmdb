@@ -20,6 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -82,39 +84,88 @@ func (e *Event) watch(ctx context.Context, pipeline mongo.Pipeline, streamOption
 		Watch(ctx, pipeline, streamOptions)
 
 	if err != nil && isFatalError(err) {
-		monitor.Collect(&meta.Alarm{
-			Type:   meta.FlowFatalError,
-			Detail: fmt.Sprintf("watch db: %s got a fatal error: %v, skip resume token and retry", err, e.DBName),
-			Module: types2.CC_MODULE_CACHESERVICE,
-		})
-		blog.Errorf("mongodb watch db: %s got a fatal error, skip resume token and retry, err: %v", e.DBName, err)
-		// reset the resume token, because we can not use the former resume token to watch success for now.
-		streamOptions.StartAfter = nil
-		opts.StartAfterToken = nil
-		// cause we have already got a fatal error, we can not try to watch from where we lost.
+		// because we have already got a fatal error, we can not try to watch from where we lost.
 		// so re-watch from 1 minutes ago to avoid lost events.
 		// Note: apparently, we may got duplicate events with this re-watch
 		startAtTime := uint32(time.Now().Unix()) - 60
-		streamOptions.StartAtOperationTime = &primitive.Timestamp{
-			T: startAtTime,
-			I: 0,
-		}
-		opts.StartAtTime = &types.TimeStamp{Sec: startAtTime}
+		return e.handleFatalError(ctx, startAtTime, pipeline, streamOptions, opts, err)
+	}
 
-		if opts.WatchFatalErrorCallback != nil {
-			err := opts.WatchFatalErrorCallback(types.TimeStamp{Sec: startAtTime})
-			if err != nil {
-				blog.Errorf("do watch fatal error callback for db %s failed, err: %v", e.DBName, err)
+	if err != nil && errors.Is(err, os.ErrDeadlineExceeded) {
+		// socket timeout error may be caused by large amount of unneeded events which would take a long time to process
+		// so we re-watch without pipeline and loop until we get an event that matches the coll rule
+		newStream, newStreamErr := e.client.
+			Database(e.database).
+			Watch(ctx, mongo.Pipeline{}, streamOptions)
+		if newStreamErr != nil {
+			blog.Errorf("mongodb watch without pipeline failed with opts: %+v, err: %v", *streamOptions, newStreamErr)
+			return nil, nil, nil, newStreamErr
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				blog.Warnf("received stopped loop watch signal, stop loop next, watch db: %s, db name: %s, err: %v",
+					e.database, e.DBName, ctx.Err())
+				newStream.Close(context.Background())
+				return nil, nil, nil, ctx.Err()
+			default:
+			}
+
+			if !newStream.Next(ctx) {
+				newStream.Close(ctx)
+				return e.handleFatalError(ctx, uint32(time.Now().Unix())-60, pipeline, streamOptions, opts, err)
+			}
+
+			sec, _ := newStream.Current.Lookup("clusterTime").Timestamp()
+			if uint32(time.Now().Unix())-sec > 6*60*60 {
+				continue
+			}
+
+			coll := newStream.Current.Lookup("ns", "coll").StringValue()
+			for _, collOpts := range opts.TaskCollOptsMap {
+				regex := collOpts.CollectionFilter.Regex
+				if regexp.MustCompile(regex).MatchString(coll) {
+					newStream.Close(ctx)
+					return e.handleFatalError(ctx, sec-1, pipeline, streamOptions, opts, err)
+				}
 			}
 		}
-
-		blog.InfoJSON("start watch db %s with pipeline: %s, options: %s, stream options: %s", e.DBName, pipeline,
-			opts, streamOptions)
-
-		stream, err = e.client.
-			Database(e.database).
-			Watch(ctx, pipeline, streamOptions)
 	}
+
+	return stream, streamOptions, opts, err
+}
+
+func (e *Event) handleFatalError(ctx context.Context, sec uint32, pipeline mongo.Pipeline,
+	streamOptions *options.ChangeStreamOptions, opts *types.Options, err error) (*mongo.ChangeStream,
+	*options.ChangeStreamOptions, *types.Options, error) {
+
+	monitor.Collect(&meta.Alarm{
+		Type:   meta.FlowFatalError,
+		Detail: fmt.Sprintf("watch db: %s got a fatal error: %v, skip resume token and retry", err, e.DBName),
+		Module: types2.CC_MODULE_CACHESERVICE,
+	})
+	blog.Errorf("mongodb watch db: %s got a fatal error, skip resume token, retry from %d, err: %v", e.DBName, sec, err)
+
+	// reset the resume token, because we can not use the former resume token to watch success for now.
+	streamOptions.StartAfter = nil
+	opts.StartAfterToken = nil
+	streamOptions.StartAtOperationTime = &primitive.Timestamp{T: sec, I: 0}
+	opts.StartAtTime = &types.TimeStamp{Sec: sec, Nano: 0}
+
+	if opts.WatchFatalErrorCallback != nil {
+		err := opts.WatchFatalErrorCallback(types.TimeStamp{Sec: sec, Nano: 0})
+		if err != nil {
+			blog.Errorf("do watch fatal error callback for db %s failed, err: %v", e.DBName, err)
+		}
+	}
+
+	blog.InfoJSON("start watch db %s with pipeline: %s, options: %s, stream options: %s", e.DBName, pipeline,
+		opts, streamOptions)
+
+	stream, err := e.client.
+		Database(e.database).
+		Watch(ctx, pipeline, streamOptions)
 
 	return stream, streamOptions, opts, err
 }
