@@ -86,14 +86,22 @@ spec:
           - name: configures
             mountPath: {{ .Values.syncserver.configDir }}
           {{- end }}
-          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.redis.certVolumeMount" . | nindent 8 }}
+          {{- include "cmdb.mongodb.certVolumeMount" . | nindent 8 }}
+          {{- include "cmdb.mongodb.watch.certVolumeMount" . | nindent 8 }}
+          {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 8 }}
+          {{- include "cmdb.es.certVolumeMount" . | nindent 8 }}
       volumes:
         {{- if .Values.syncserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-syncserver-configures
         {{- end }}
-        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 8 }}
+        {{- include "cmdb.redis.certVolume" . | nindent 6 }}
+        {{- include "cmdb.mongodb.certVolume" . | nindent 6 }}
+        {{- include "cmdb.mongodb.watch.certVolume" . | nindent 6 }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
+        {{- include "cmdb.es.certVolume" . | nindent 6 }}
 
       {{- with .Values.syncserver.nodeSelector }}
       nodeSelector:

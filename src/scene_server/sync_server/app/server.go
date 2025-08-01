@@ -57,7 +57,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	server := new(SyncServer)
 
 	input := &backbone.BackboneParameter{
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover},
+		SrvRegdiscv: backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover,
+			TLSConfig: op.ServConf.GetTLSClientConf()},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: server.onConfigUpdate,
 		SrvInfo:      svrInfo,
