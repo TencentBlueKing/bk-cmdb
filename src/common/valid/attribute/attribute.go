@@ -319,10 +319,7 @@ func ValidTableFieldOption(kit *rest.Kit, propertyType string, option, defaultVa
 
 	_, exists := validTableFieldType[propertyType]
 	if !exists {
-		if _, exists := manager.Get(propertyType); !exists {
-			return fmt.Errorf("type(%s) is not among the underlying types supported by the table field", propertyType)
-		}
-
+		return fmt.Errorf("type(%s) is not among the underlying types supported by the table field", propertyType)
 	}
 
 	switch propertyType {

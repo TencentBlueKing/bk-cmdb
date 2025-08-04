@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	attrTypeMap = map[string]Attribute{}
+	attrTypeMap = map[string]AttributeTypeI{}
 )
 
-// Attribute interface defines the methods for attribute types
-type Attribute interface {
+// AttributeTypeI interface defines the methods for attribute types
+type AttributeTypeI interface {
 	// Name 展示名字
 	Name() string
 	// DisplayName  类型的唯一名字
@@ -42,7 +42,7 @@ type Attribute interface {
 // it will panic if the attribute name is empty or already exists
 // it is called in init() function of each attribute type file
 // so that all attribute types are registered when the program starts, not at runtime
-func Register(attr Attribute) {
+func Register(attr AttributeTypeI) {
 	if attr == nil {
 		blog.Errorf("register attribute is nil")
 		panic("register attribute is nil")
@@ -62,7 +62,7 @@ func Register(attr Attribute) {
 }
 
 // Get returns the Attribute by name
-func Get(name string) (Attribute, bool) {
+func Get(name string) (AttributeTypeI, bool) {
 	a, ok := attrTypeMap[name]
 	return a, ok
 }

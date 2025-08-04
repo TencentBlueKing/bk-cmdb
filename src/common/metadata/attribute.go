@@ -206,8 +206,9 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		rawError = attribute.validTable(ctx, data, key)
 	default:
 		validator, exists := attrValidatorMap[fieldType]
-		if !exists {
-
+		if exists {
+			rawError = validator(ctx, data, key)
+		} else {
 			// 是否为扩展字段类型
 			if handle, ok := manager.Get(fieldType); ok {
 				if err := handle.Validate(ctx, key, fieldType, attribute.IsRequired, attribute.Option, data); err != nil {
@@ -219,15 +220,11 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 				}
 
 			} else {
-
 				rawError = errors.RawErrorInfo{
 					ErrCode: common.CCErrCommUnexpectedFieldType,
 					Args:    []interface{}{fieldType},
 				}
-				break
 			}
-		} else {
-			rawError = validator(ctx, data, key)
 		}
 
 	}
