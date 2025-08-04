@@ -1,4 +1,4 @@
-// Package register TODO
+// Package register  for attribute type registration and constraint
 package register
 
 import (
@@ -15,24 +15,24 @@ var (
 
 // Attribute interface defines the methods for attribute types
 type Attribute interface {
-	//Name 展示名字
+	// Name 展示名字
 	Name() string
-	//DisplayName  类型的唯一名字
+	// DisplayName  类型的唯一名字
 	DisplayName() string
-	//RealType  common.FieldTypeXXX , 必须是基础之一
+	// RealType  common.FieldTypeXXX , 必须是基础之一
 	RealType() string
 
-	//Info 描述信息
+	// Info 描述信息
 	Info() string
 
 	//  预留暂未使用， 在 Validate 前处理， 做数据转换,
 	// Transform(kit *rest.Kit，value interface{})(interface{}, error)
 
-	//Validate 实际校验方法
+	// Validate 实际校验方法
 	Validate(ctx context.Context, objID string, propertyType string, required bool, option interface{}, value interface{}) error
-	//FillLostValue 填充默认值
-	FillLostValue(ctx context.Context, valData mapstr.MapStr, propertyType string, defaultValue, option interface{}) error
-	//ValidateOption 校验 Option
+	// FillLostValue 填充默认值
+	FillLostValue(ctx context.Context, valData mapstr.MapStr, propertyId string, defaultValue, option interface{}) error
+	// ValidateOption 校验 Option
 	ValidateOption(ctx context.Context, option interface{}, defaultVal interface{}) error
 }
 
