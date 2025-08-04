@@ -35,8 +35,6 @@ import (
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
-	//  for plugin extension  use injection solution
-	_ "configcenter/src/common/plugins"
 	"configcenter/src/common/ssl"
 	"configcenter/src/common/types"
 	"configcenter/src/storage/dal/mongo"
