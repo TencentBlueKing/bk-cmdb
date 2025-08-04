@@ -58,72 +58,51 @@ func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, properties [
 	return nil
 }
 
+var ccSysFieldTypeRela = map[string]func(valData mapstr.MapStr, field metadata.Attribute) error{
+	common.FieldTypeSingleChar:   fillLostStringFieldValue,
+	common.FieldTypeLongChar:     fillLostStringFieldValue,
+	common.FieldTypeDate:         fillLostDateFieldValue,
+	common.FieldTypeFloat:        fillLostFloatFieldValue,
+	common.FieldTypeInt:          fillLostIntFieldValue,
+	common.FieldTypeTime:         fillLostTimeFieldValue,
+	common.FieldTypeUser:         fillLostUserFieldValue,
+	common.FieldTypeOrganization: fillLostOrganizationFieldValue,
+	common.FieldTypeTimeZone:     fillLostTimeZoneFieldValue,
+	common.FieldTypeList:         fillLostListFieldValue,
+	common.FieldTypeBool:         fillLostBoolFieldValue,
+}
+
+var ccSysFieldTypeCtxRela = map[string]func(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) error{
+
+	common.FieldTypeEnum:      fillLostEnumFieldValue,
+	common.FieldTypeEnumMulti: fillLostEnumMultiFieldValue,
+	common.FieldTypeEnumQuote: fillLostEnumQuoteFieldValue,
+}
+
 // fillLostFieldValueItem fills the lost value for a single field based on its type
 func fillLostFieldValueItem(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) error {
-	switch field.PropertyType {
-	case common.FieldTypeSingleChar, common.FieldTypeLongChar:
-		if err := fillLostStringFieldValue(valData, field); err != nil {
+	if fieldLostValueFunc, ok := ccSysFieldTypeRela[field.PropertyType]; ok {
+		if err := fieldLostValueFunc(valData, field); err != nil {
+			blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
+				field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
 			return err
 		}
-	case common.FieldTypeEnum:
-		if err := fillLostEnumFieldValue(ctx, valData, field); err != nil {
+	} else if fieldLostValueCtxFunc, ok := ccSysFieldTypeCtxRela[field.PropertyType]; ok {
+		if err := fieldLostValueCtxFunc(ctx, valData, field); err != nil {
+			blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
+				field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
 			return err
 		}
-	case common.FieldTypeEnumMulti:
-		if err := fillLostEnumMultiFieldValue(ctx, valData, field); err != nil {
+	} else if handle, ok := manager.Get(field.PropertyType); ok {
+		if err := handle.FillLostValue(ctx, valData, field.PropertyID, field.Default, field.Option); err != nil {
+			blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
+				field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
 			return err
 		}
-	case common.FieldTypeEnumQuote:
-		if err := fillLostEnumQuoteFieldValue(ctx, valData, field); err != nil {
-			return err
-		}
-	case common.FieldTypeDate:
-		if err := fillLostDateFieldValue(valData, field); err != nil {
-			return err
-		}
-	case common.FieldTypeFloat:
-		if err := fillLostFloatFieldValue(valData, field); err != nil {
-			return err
-		}
-	case common.FieldTypeInt:
-		if err := fillLostIntFieldValue(valData, field); err != nil {
-			return err
-		}
-	case common.FieldTypeTime:
-		if err := fillLostTimeFieldValue(valData, field); err != nil {
-			return err
-		}
-	case common.FieldTypeUser:
-		if err := fillLostUserFieldValue(valData, field); err != nil {
-			return err
-		}
-	case common.FieldTypeOrganization:
-		if err := fillLostOrganizationFieldValue(valData, field); err != nil {
-			return err
-		}
-	case common.FieldTypeTimeZone:
-		if err := fillLostTimeZoneFieldValue(valData, field); err != nil {
-			return err
-		}
-	case common.FieldTypeList:
-		if err := fillLostListFieldValue(valData, field); err != nil {
-			return err
-		}
-	case common.FieldTypeBool:
-		if err := fillLostBoolFieldValue(valData, field); err != nil {
-			return err
-		}
-
-	default:
-		if handle, ok := manager.Get(field.PropertyType); ok {
-			if err := handle.FillLostValue(ctx, valData, field.PropertyID, field.Default, field.Option); err != nil {
-				blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
-					field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
-				return err
-			}
-		}
+	} else {
 		valData[field.PropertyID] = nil
 	}
+
 	return nil
 }
 
