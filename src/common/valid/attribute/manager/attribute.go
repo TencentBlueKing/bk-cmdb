@@ -1,4 +1,4 @@
-// Package manager TODO
+// Package manager  provides a way to manage attributes in the system.
 package manager
 
 import (

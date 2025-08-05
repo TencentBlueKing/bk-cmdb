@@ -205,26 +205,27 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		// TODO what validation should do on these types
 		rawError = attribute.validTable(ctx, data, key)
 	default:
+		// notice: 注意default 这里的实现逻辑， 用break 做了执行流程的终止。 pr 建议，降低圈复杂度
+
 		validator, exists := attrValidatorMap[fieldType]
 		if exists {
 			rawError = validator(ctx, data, key)
-		} else {
-			// 是否为扩展字段类型
-			if handle, ok := manager.Get(fieldType); ok {
-				if err := handle.Validate(ctx, key, fieldType, attribute.IsRequired, attribute.Option, data); err != nil {
-					blog.Errorf("validate attribute fail, field type: %s, err: %v, rid: %s", fieldType, err, rid)
-					return errors.RawErrorInfo{
-						ErrCode: common.CCErrCommParamsInvalid,
-						Args:    []interface{}{err.Error()},
-					}
-				}
-
-			} else {
-				rawError = errors.RawErrorInfo{
-					ErrCode: common.CCErrCommUnexpectedFieldType,
-					Args:    []interface{}{fieldType},
+			break
+		}
+		// 是否为扩展字段类型
+		if handle, ok := manager.Get(fieldType); ok {
+			if err := handle.Validate(ctx, key, fieldType, attribute.IsRequired, attribute.Option, data); err != nil {
+				blog.Errorf("validate attribute fail, field type: %s, err: %v, rid: %s", fieldType, err, rid)
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrCommParamsInvalid,
+					Args:    []interface{}{err.Error()},
 				}
 			}
+			break
+		}
+		rawError = errors.RawErrorInfo{
+			ErrCode: common.CCErrCommUnexpectedFieldType,
+			Args:    []interface{}{fieldType},
 		}
 
 	}

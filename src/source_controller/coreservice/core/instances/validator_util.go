@@ -43,8 +43,26 @@ func FillLostFieldValue(ctx context.Context, valData mapstr.MapStr, properties [
 		}
 		if field.PropertyType == common.FieldTypeIDRule {
 			idRuleField = &properties[idx]
-		} else if err := fillLostFieldValueItem(ctx, valData, field); err != nil {
-			return err
+		} else if fieldLostValueFunc, ok := ccSysFieldTypeRela[field.PropertyType]; ok {
+			if err := fieldLostValueFunc(valData, field); err != nil {
+				blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
+					field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
+				return err
+			}
+		} else if fieldLostValueCtxFunc, ok := ccSysFieldTypeCtxRela[field.PropertyType]; ok {
+			if err := fieldLostValueCtxFunc(ctx, valData, field); err != nil {
+				blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
+					field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
+				return err
+			}
+		} else if handle, ok := manager.Get(field.PropertyType); ok {
+			if err := handle.FillLostValue(ctx, valData, field.PropertyID, field.Default, field.Option); err != nil {
+				blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
+					field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
+				return err
+			}
+		} else {
+			valData[field.PropertyID] = nil
 		}
 	}
 
@@ -77,33 +95,6 @@ var ccSysFieldTypeCtxRela = map[string]func(ctx context.Context, valData mapstr.
 	common.FieldTypeEnum:      fillLostEnumFieldValue,
 	common.FieldTypeEnumMulti: fillLostEnumMultiFieldValue,
 	common.FieldTypeEnumQuote: fillLostEnumQuoteFieldValue,
-}
-
-// fillLostFieldValueItem fills the lost value for a single field based on its type
-func fillLostFieldValueItem(ctx context.Context, valData mapstr.MapStr, field metadata.Attribute) error {
-	if fieldLostValueFunc, ok := ccSysFieldTypeRela[field.PropertyType]; ok {
-		if err := fieldLostValueFunc(valData, field); err != nil {
-			blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
-				field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
-			return err
-		}
-	} else if fieldLostValueCtxFunc, ok := ccSysFieldTypeCtxRela[field.PropertyType]; ok {
-		if err := fieldLostValueCtxFunc(ctx, valData, field); err != nil {
-			blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
-				field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
-			return err
-		}
-	} else if handle, ok := manager.Get(field.PropertyType); ok {
-		if err := handle.FillLostValue(ctx, valData, field.PropertyID, field.Default, field.Option); err != nil {
-			blog.Errorf("fill lost value failed, property type: %s, field: %+v, err: %v, rid: %s",
-				field.PropertyType, field, err, util.ExtractRequestIDFromContext(ctx))
-			return err
-		}
-	} else {
-		valData[field.PropertyID] = nil
-	}
-
-	return nil
 }
 
 func fillLostStringFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
