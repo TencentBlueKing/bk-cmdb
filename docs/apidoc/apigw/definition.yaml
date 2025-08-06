@@ -5,11 +5,11 @@ spec_version: 1
 release:
   # 发布版本号；
   # 资源配置更新，需更新此版本号才会发布资源版本，此版本号和 sdk 版本号一致，错误设置会影响调用方使用
-  version: 3.14.6
+  version: 3.14.7-alpha1
   # 版本标题
-  title: "3.14.6"
+  title: "3.14.7-alpha1"
   # 版本描述
-  comment: "3.14.6"
+  comment: "3.14.7-alpha1"
 
 # 定义网关基本信息，用于命令 `sync_apigw_config`
 apigateway:
