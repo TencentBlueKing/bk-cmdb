@@ -23,7 +23,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
-	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/admin_server/upgrader/history"
 
@@ -35,15 +34,12 @@ func (s *Service) migrate(req *restful.Request, resp *restful.Response) {
 	rHeader := req.Request.Header
 	rid := httpheader.GetRid(rHeader)
 	defErr := s.CCErr.CreateDefaultCCErrorIf(httpheader.GetLanguage(rHeader))
-	tenantID := common.BKDefaultTenantID
 	updateCfg := &history.Config{
-		TenantID: tenantID,
+		TenantID: "0",
 		User:     common.CCSystemOperatorUserName,
 	}
 
-	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-	preVersion, finishedVersions, err := history.Upgrade(s.ctx, s.db.Shard(kit.SysShardOpts()), s.cache, s.iam,
-		updateCfg)
+	preVersion, finishedVersions, err := history.Upgrade(s.ctx, s.oldMigrateDB, s.cache, s.iam, updateCfg)
 	if err != nil {
 		blog.Errorf("db upgrade failed, err: %v, rid: %s", err, rid)
 		result := &metadata.RespError{

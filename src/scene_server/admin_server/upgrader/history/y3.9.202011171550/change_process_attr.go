@@ -160,9 +160,9 @@ func deleteProcessInstsFields(ctx context.Context, db dal.RDB, conf *history.Con
 		},
 	}
 
-	mongo, ok := db.(*local.Mongo)
+	mongo, ok := db.(*local.OldMongo)
 	if !ok {
-		return fmt.Errorf("db is not *local.Mongo type")
+		return fmt.Errorf("db is not *local.OldMongo type")
 	}
 
 	pageSize := 1000
@@ -217,9 +217,9 @@ func deleteProcessTemplateInstsFields(ctx context.Context, db dal.RDB, conf *his
 		},
 	}
 
-	mongo, ok := db.(*local.Mongo)
+	mongo, ok := db.(*local.OldMongo)
 	if !ok {
-		return fmt.Errorf("db is not *local.Mongo type")
+		return fmt.Errorf("db is not *local.OldMongo type")
 	}
 
 	pageSize := 1000

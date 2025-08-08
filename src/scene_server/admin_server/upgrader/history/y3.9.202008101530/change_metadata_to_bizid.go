@@ -31,9 +31,9 @@ import (
 
 // changeMetadataToBizID transfer field metadata.label.bk_biz_id to bk_biz_id and delete unnecessary metadata
 func changeMetadataToBizID(ctx context.Context, db dal.RDB, conf *history.Config) error {
-	mongo, ok := db.(*local.Mongo)
+	mongo, ok := db.(*local.OldMongo)
 	if !ok {
-		return fmt.Errorf("db is not *local.Mongo type")
+		return fmt.Errorf("db is not *local.OldMongo type")
 	}
 	dbc := mongo.GetDBClient()
 
@@ -57,7 +57,8 @@ func changeMetadataToBizID(ctx context.Context, db dal.RDB, conf *history.Config
 
 		for i := uint64(0); i < count; i += common.BKMaxPageSize {
 			result := make([]ret, 0)
-			err = db.Table(tableName).Find(existsMetadataFilter).Sort("_id").Fields(fields...).Start(uint64(i)).Limit(uint64(common.BKMaxPageSize)).All(ctx, &result)
+			err = db.Table(tableName).Find(existsMetadataFilter).Sort("_id").Fields(fields...).Start(uint64(i)).Limit(uint64(common.BKMaxPageSize)).All(ctx,
+				&result)
 			if err != nil {
 				blog.Errorf("changeMetadataToBizID starting from %d failed, err: %s", i, err)
 				return err
@@ -116,7 +117,8 @@ func changeMetadataToBizID(ctx context.Context, db dal.RDB, conf *history.Config
 				},
 			}
 
-			if _, err := dbc.Database(mongo.GetDBName()).Collection(tableName).UpdateMany(ctx, delMetaFilter, delMetaDoc); err != nil {
+			if _, err := dbc.Database(mongo.GetDBName()).Collection(tableName).UpdateMany(ctx, delMetaFilter,
+				delMetaDoc); err != nil {
 				blog.ErrorJSON("del metadata failed, filter: %s, doc: %s, err: %s", delMetaFilter, delMetaDoc, err)
 				return err
 			}
@@ -133,8 +135,10 @@ func changeMetadataToBizID(ctx context.Context, db dal.RDB, conf *history.Config
 				},
 			}
 
-			if _, err := dbc.Database(mongo.GetDBName()).Collection(tableName).UpdateMany(ctx, delLabelFilter, delLabelDoc); err != nil {
-				blog.ErrorJSON("del metadata.label failed, filter: %s, doc: %s, err: %s", delLabelFilter, delLabelDoc, err)
+			if _, err := dbc.Database(mongo.GetDBName()).Collection(tableName).UpdateMany(ctx, delLabelFilter,
+				delLabelDoc); err != nil {
+				blog.ErrorJSON("del metadata.label failed, filter: %s, doc: %s, err: %s", delLabelFilter, delLabelDoc,
+					err)
 				return err
 			}
 		}

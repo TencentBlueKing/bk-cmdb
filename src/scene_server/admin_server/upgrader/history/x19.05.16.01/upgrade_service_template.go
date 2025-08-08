@@ -145,9 +145,9 @@ type Process struct {
 }
 
 func upgradeServiceTemplate(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
-	mongo, ok := db.(*local.Mongo)
+	mongo, ok := db.(*local.OldMongo)
 	if !ok {
-		return fmt.Errorf("db is not *local.Mongo type")
+		return fmt.Errorf("db is not *local.OldMongo type")
 	}
 	dbc := mongo.GetDBClient()
 

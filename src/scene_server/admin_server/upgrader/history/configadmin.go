@@ -551,6 +551,17 @@ type BackendCfg struct {
 	MaxBizTopoLevel int64  `json:"maxBizTopoLevel"`
 }
 
+// Validate validate the fields of BackendCfg
+func (b BackendCfg) Validate() error {
+	if strings.TrimSpace(b.SnapshotBizName) == "" {
+		return fmt.Errorf("snapshotBizName value can't be empty")
+	}
+	if b.MaxBizTopoLevel < 3 || b.MaxBizTopoLevel > 10 {
+		return fmt.Errorf("maxBizTopoLevel value must in range [3-10]")
+	}
+	return nil
+}
+
 // AdminBackendCfg TODO
 type AdminBackendCfg struct {
 	MaxBizTopoLevel int64 `json:"max_biz_topo_level"`
@@ -574,8 +585,37 @@ type ValidationRulesCfg struct {
 	BusinessTopoInstNames metadata.BusinessTopoInstNamesItem `json:"businessTopoInstNames"`
 }
 
+// Validate the fields of ValidationRulesCfg
+func (v ValidationRulesCfg) Validate() error {
+	vr := reflect.ValueOf(v)
+	vrt := reflect.TypeOf(v)
+	for i := 0; i < vr.NumField(); i++ {
+		field := vr.Field(i)
+		bc := field.FieldByName("BaseCfgItem").Interface().(metadata.BaseCfgItem)
+		bcr := reflect.ValueOf(&bc)
+		funcName := []string{"ValidateValueFormat", "ValidateRegex"}
+		for _, fn := range funcName {
+			vf := bcr.MethodByName(fn)
+			errVal := vf.Call(make([]reflect.Value, 0))
+			if errVal[0].Interface() != nil {
+				return fmt.Errorf("%s %s failed, error:%s", vrt.Field(i).Name, fn,
+					errVal[0].Interface().(error).Error())
+			}
+		}
+	}
+	return nil
+}
+
 // ObjectString used to admin object string Config
 type ObjectString string
+
+// Validate the fields of ObjectString
+func (s ObjectString) Validate() error {
+	if strings.TrimSpace(string(s)) == "" {
+		return fmt.Errorf("site  value can't be empty")
+	}
+	return nil
+}
 
 // GlobalModule Conifg, idleName, FaultName and RecycleName cannot be deleted.
 type GlobalModule struct {
@@ -583,6 +623,20 @@ type GlobalModule struct {
 	FaultName   string                    `json:"fault"`
 	RecycleName string                    `json:"recycle"`
 	UserModules []metadata.UserModuleList `json:"user_modules"`
+}
+
+// Validate validate the fields of IdleModule.
+func (s GlobalModule) Validate() error {
+	if strings.TrimSpace(s.RecycleName) == "" {
+		return fmt.Errorf("site  value can't be empty")
+	}
+	if strings.TrimSpace(s.IdleName) == "" {
+		return fmt.Errorf("separator  value can't be empty")
+	}
+	if strings.TrimSpace(s.FaultName) == "" {
+		return fmt.Errorf("separator  value can't be empty")
+	}
+	return nil
 }
 
 // IDGeneratorConf is id generator config
@@ -662,6 +716,18 @@ type OldAdminBackendCfg struct {
 	MaxBizTopoLevel int64  `json:"max_biz_topo_level"`
 	SnapshotBizName string `json:"snapshot_biz_name"`
 	SnapshotBizID   int64  `json:"snapshot_biz_id"`
+}
+
+// Validate validate the fields of BackendCfg.
+func (o OldAdminBackendCfg) Validate() error {
+	if strings.TrimSpace(o.SnapshotBizName) == "" {
+		return fmt.Errorf("snapshot biz name can't be empty")
+	}
+
+	if o.MaxBizTopoLevel < minBizTopoLevel || o.MaxBizTopoLevel > maxBizTopoLevel {
+		return fmt.Errorf("max biz topo level value must in range [%d-%d]", minBizTopoLevel, maxBizTopoLevel)
+	}
+	return nil
 }
 
 // Validate validate the fields of OldPlatformSettingConfig is illegal .

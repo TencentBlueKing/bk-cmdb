@@ -39,18 +39,20 @@ func changeHostIPAndUserToArray(ctx context.Context, db dal.RDB, conf *history.C
 		blog.Errorf("count hosts failed, err: %s", err.Error())
 		return err
 	}
-	mongo, ok := db.(*local.Mongo)
+	mongo, ok := db.(*local.OldMongo)
 	if !ok {
-		return fmt.Errorf("db is not *local.Mongo type")
+		return fmt.Errorf("db is not *local.OldMongo type")
 	}
 	dbc := mongo.GetDBClient()
-	needChangeFields := []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField, common.BKBakOperatorField}
+	needChangeFields := []string{common.BKHostInnerIPField, common.BKHostOuterIPField, common.BKOperatorField,
+		common.BKBakOperatorField}
 	for i := uint64(0); i < count; i += common.BKMaxPageSize {
 		hosts := make([]map[string]interface{}, 0)
 		findOpts := &options.FindOptions{}
 		findOpts.SetSkip(int64(i))
 		findOpts.SetLimit(common.BKMaxPageSize)
-		cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, bson.M{}, findOpts)
+		cursor, err := dbc.Database(mongo.GetDBName()).Collection(common.BKTableNameBaseHost).Find(ctx, bson.M{},
+			findOpts)
 		if err != nil {
 			blog.Errorf("find hosts starting from %d failed, err: %s", i, err.Error())
 			return err

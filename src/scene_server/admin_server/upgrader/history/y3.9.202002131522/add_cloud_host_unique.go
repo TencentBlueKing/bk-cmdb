@@ -106,9 +106,6 @@ type objectUnique struct {
 	LastTime  time.Time   `json:"last_time" bson:"last_time"`
 }
 
-// Time TODO
-type Time metadata.Time
-
 // Now TODO
 func Now() time.Time {
 	return time.Now().UTC()

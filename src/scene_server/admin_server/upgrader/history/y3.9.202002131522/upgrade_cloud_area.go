@@ -60,9 +60,5 @@ func upgradeCloudArea(ctx context.Context, db dal.RDB, conf *history.Config) err
 
 // CloudMapping cloud mapping
 type CloudMapping struct {
-	CreateTime Time   `json:"create_time" bson:"create_time"`
-	LastTime   Time   `json:"last_time" bson:"lsat_time"`
-	CloudName  string `json:"bk_cloud_name" bson:"bk_cloud_name"`
-	OwnerID    string `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	CloudID    int64  `json:"bk_cloud_id" bson:"bk_cloud_id"`
+	CloudID int64 `json:"bk_cloud_id" bson:"bk_cloud_id"`
 }

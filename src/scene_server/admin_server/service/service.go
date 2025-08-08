@@ -40,6 +40,7 @@ import (
 	"configcenter/src/scene_server/admin_server/configures"
 	"configcenter/src/scene_server/admin_server/logics"
 	"configcenter/src/storage/dal"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/apigw"
 	"configcenter/src/thirdparty/dataid"
@@ -56,6 +57,7 @@ type Service struct {
 	*logics.Logics
 	db           dal.Dal
 	watchDB      dal.Dal
+	oldMigrateDB local.DB
 	cache        redis.Client
 	ctx          context.Context
 	Config       options.Config
@@ -80,6 +82,11 @@ func (s *Service) SetDB(db dal.Dal) {
 // SetWatchDB set watch db
 func (s *Service) SetWatchDB(watchDB dal.Dal) {
 	s.watchDB = watchDB
+}
+
+// SetOldMigrateDB set old migrate db
+func (s *Service) SetOldMigrateDB(oldMigrateDB local.DB) {
+	s.oldMigrateDB = oldMigrateDB
 }
 
 // SetCache TODO

@@ -20,6 +20,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
 
 	iamcli "configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
@@ -33,6 +34,7 @@ import (
 	"configcenter/src/scene_server/admin_server/iam"
 	"configcenter/src/scene_server/admin_server/logics"
 	svc "configcenter/src/scene_server/admin_server/service"
+	"configcenter/src/storage/dal/mongo/local"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/storage/driver/mongodb"
 	"configcenter/src/thirdparty/monitor"
@@ -69,6 +71,12 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		return fmt.Errorf("connect watch mongo server failed, err: %v", err)
 	}
 	process.Service.SetWatchDB(mongodb.Dal("watch"))
+
+	oldMigrateDB, err := local.NewOldMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
+	if err != nil {
+		return fmt.Errorf("new mongodb client for previous version failed, err: %v", err)
+	}
+	process.Service.SetOldMigrateDB(oldMigrateDB)
 
 	cache, err := redis.NewFromConfig(process.Config.Redis)
 	if err != nil {
