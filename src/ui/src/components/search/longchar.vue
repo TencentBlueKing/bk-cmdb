@@ -74,6 +74,7 @@
             .filter(value => value.length)
         }
         this.localValue = [...new Set([...this.localValue, ...val])]
+        return this.localValue
       },
       handleInputChange(value) {
         this.$emit('inputchange', value)

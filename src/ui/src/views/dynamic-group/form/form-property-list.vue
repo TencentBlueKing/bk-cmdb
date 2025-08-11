@@ -43,6 +43,7 @@
               v-validate="'required'"
               @change="handleChange"
               @click.native="handleClick"
+              :is-paste-split="isIPField(property.bk_property_id)"
               :popover-options="{
                 duration: 0,
                 onShown: handleShow,
@@ -190,6 +191,10 @@
       }
     },
     methods: {
+      isIPField(id) {
+        const IPField = ['bk_host_outerip_v6', 'bk_host_innerip_v6', 'bk_host_innerip', 'bk_host_outerip']
+        return IPField.includes(id)
+      },
       handleClick(e) {
         if (~e?.target?.className.indexOf('is-focus')) {
           // select专属
