@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import Vue, { toRef, watch } from 'vue'
+import Vue, { computed, toRef, watch } from 'vue'
 import contentComponent from './export'
 import store from '@/store'
 import i18n from '@/i18n'
@@ -21,6 +21,7 @@ import isEqual from 'lodash/isEqual'
 
 let instance = null
 const [state, { setState, resetState }] = useState()
+const [{ all }] = useTask()
 const [, { reset: resetTask }] = useTask()
 const visible = toRef(state, 'visible')
 const title = toRef(state, 'title')
@@ -46,9 +47,10 @@ watch(visible, (value) => {
   }, 200)
 })
 
-const hasChange = () => !isEqual(state.originFields.value, fields.value) || step.value !== 1 || status.value === 'pending'
+const hasChange = computed(() => !isEqual(state.originFields.value, fields.value) || step.value !== 1 || status.value === 'pending')
+const allFinished = computed(() => all.value.length && all.value.every(task => task.state === 'finished'))
 const beforeClose = () => {
-  if (!hasChange()) {
+  if (!hasChange.value || allFinished.value) {
     return true
   }
   return new Promise((resolve) => {
