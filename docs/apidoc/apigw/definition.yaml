@@ -183,6 +183,7 @@ grant_permissions:
       - update_cloud_area
       - delete_cloud_area
       - update_host_cloud_area_field
+      - list_business_set
   - bk_app_code: {{ environ.BK_BCS_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
@@ -351,6 +352,32 @@ grant_permissions:
       - find_host_topo_relation
       - list_business_set
       - search_objects
+  - bk_app_code: {{ environ.BK_LOG_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - search_business
+      - search_inst_by_object
+      - search_biz_inst_topo
+      - search_module
+      - list_service_category
+      - get_biz_internal_module
+      - search_object_attribute
+      - list_biz_hosts
+      - list_hosts_without_biz
+      - list_biz_hosts_topo
+      - search_cloud_area
+      - find_host_topo_relation
+      - search_set
+      - list_service_template
+      - list_set_template
+      - find_host_by_set_template
+      - find_host_by_service_template
+      - find_module_with_relation
+      - search_dynamic_group
+      - execute_dynamic_group
+      - find_host_by_topo
+      - list_host_total_mainline_topo
+      - find_topo_node_paths
   - bk_app_code: {{ environ.BK_DATA_WEB_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
