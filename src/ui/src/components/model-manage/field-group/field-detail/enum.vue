@@ -201,10 +201,14 @@
         }
       },
       defaultValue(val, old) {
-        // 检测选中值变化，需要修正is_default
+        // 检测选中值变化，需要修正is_default，这里值的类型都是string
         if (val && !isEqual(val, old)) {
           this.enumList.forEach((item) => {
-            item.is_default = val.includes(item.id)
+            if (this.isDefaultCompMultiple && Array.isArray(val)) {
+              item.is_default = val.includes(item.id)
+            } else {
+              item.is_default = val === item.id
+            }
           })
           this.$emit('input', this.enumList)
         }

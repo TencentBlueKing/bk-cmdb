@@ -151,8 +151,9 @@
           :value="defaultValue"
           :property="field">
         </cmdb-property-value>
+        <!-- bool类型字段未设置与默认值false都将显示为false -->
         <span v-else
-          class="property-value">{{defaultValue || '--'}}</span>
+          class="property-value">{{defaultValue ?? '--'}}</span>
       </div>
     </div>
     <template slot="footer" slot-scope="{ sticky }" v-if="canEdit">
