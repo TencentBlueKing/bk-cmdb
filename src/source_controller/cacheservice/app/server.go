@@ -147,9 +147,11 @@ func initResource(cacheSvr *CacheServer) error {
 	}
 
 	cacheSvr.Config.Audit = new(auditconf.Config)
-	if err = cc.UnmarshalKey("auditCenter", cacheSvr.Config.Audit); err != nil {
-		blog.Errorf("parse audit center config failed, err: %v", err)
-		return err
+	if cc.IsExist("auditCenter") {
+		if err = cc.UnmarshalKey("auditCenter", cacheSvr.Config.Audit); err != nil {
+			blog.Errorf("parse audit center config failed, err: %v", err)
+			return err
+		}
 	}
 
 	return nil

@@ -75,6 +75,23 @@ grant_permissions:
       - list_kube_container
       - list_cached_kube_pod_label_key
       - list_cached_kube_pod_label_value
+      - search_biz_inst_topo
+      - get_biz_internal_module
+      - list_biz_hosts
+      - list_hosts_without_biz
+      - find_host_biz_relations
+      - list_biz_hosts_topo
+      - find_module_host_relation
+      - resource_watch
+      - search_business
+      - search_cloud_area
+      - search_object_attribute
+      - find_topo_node_paths
+      - search_dynamic_group
+      - execute_dynamic_group
+      - get_biz_brief_cache_topo
+      - list_business_set
+      - list_business_in_business_set
   - bk_app_code: {{ environ.BK_NODEMAN_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
