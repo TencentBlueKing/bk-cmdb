@@ -37,6 +37,7 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/common/valid"
 	attrvalid "configcenter/src/common/valid/attribute"
+	"configcenter/src/common/valid/attribute/manager"
 	"configcenter/src/storage/dal/types"
 	"configcenter/src/storage/driver/mongodb"
 
@@ -544,7 +545,9 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 
 	if attribute.PropertyType != "" {
 		if _, exists := validAttrPropertyTypes[attribute.PropertyType]; !exists {
-			return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
+			if _, ok := manager.Get(attribute.PropertyType); !ok {
+				return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
+			}
 		}
 	}
 
