@@ -272,6 +272,9 @@ paths:
           - type: bk-rate-limit
             yaml: |
               rates:
+                bk-job2020:
+                - period: 1
+                  tokens: 1500
                 __default:
                 - period: 1
                   tokens: 100
