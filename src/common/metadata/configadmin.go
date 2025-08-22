@@ -539,6 +539,7 @@ type OldPlatformSettingConfig struct {
 	ValidationRules     ValidationRulesCfg `json:"validation_rules"`
 	BuiltInSetName      ObjectString       `json:"set"`
 	BuiltInModuleConfig GlobalModule       `json:"idle_pool"`
+	IDGenerator         IDGeneratorConf    `json:"id_generator"`
 }
 
 // Validate validate the fields of OldPlatformSettingConfig is illegal .

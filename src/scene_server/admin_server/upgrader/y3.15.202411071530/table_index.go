@@ -53,7 +53,6 @@ var tableIndexMap = map[string][]daltypes.Index{
 	common.BKTableNameBasePlat:                   platBaseIndexes,
 	common.BKTableNameBaseSet:                    setBaseIndexes,
 	common.BKTableNameBaseProcess:                processIndexes,
-	common.BKTableNameKubeDelArchive:             kubeDelArchiveIndexes,
 	common.BKTableNameModuleHostConfig:           moduleHostConfigIndexes,
 	common.BKTableNameHostFavorite:               nil,
 	common.BKTableNameUserAPI:                    nil,
@@ -95,11 +94,11 @@ var tableIndexMap = map[string][]daltypes.Index{
 }
 
 var platTableIndexesArr = map[string][]daltypes.Index{
-	common.BKTableNameSystem:         nil,
-	common.BKTableNameIDgenerator:    nil,
-	common.BKTableNameTenantTemplate: templateIndexes,
-	common.BKTableNameTenant:         tenantIndexes,
-	common.BKTableNameGlobalConfig:   globalConfigIndexes,
+	common.BKTableNameSystem:          nil,
+	common.BKTableNameIDgenerator:     nil,
+	common.BKTableNameTenantTemplate:  templateIndexes,
+	common.BKTableNameTenant:          tenantIndexes,
+	common.BKTableNameGlobalConfig:    globalConfigIndexes,
 	common.BKTableNameDefaultAreaHost: defaultAreaHostIndexes,
 }
 

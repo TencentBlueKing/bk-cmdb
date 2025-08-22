@@ -1649,34 +1649,6 @@ var (
 			PartialFilterExpression: map[string]interface{}{"bk_obj_name": map[string]string{common.BKDBType: "string"}},
 		},
 	}
-	kubeDelArchiveIndexes = []types.Index{
-		{
-			Name:                    common.CCLogicUniqueIdxNamePrefix + "coll_oid",
-			Keys:                    bson.D{{"coll", 1}, {"oid", 1}},
-			Unique:                  true,
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "coll",
-			Keys:                    bson.D{{"coll", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "oid",
-			Keys:                    bson.D{{"oid", 1}},
-			Background:              true,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-		{
-			Name:                    common.CCLogicIndexNamePrefix + "time",
-			Keys:                    bson.D{{"time", -1}},
-			Background:              true,
-			ExpireAfterSeconds:      2 * 24 * 60 * 60,
-			PartialFilterExpression: make(map[string]interface{}),
-		},
-	}
 	serviceTemplateIndexes = []types.Index{
 		{
 			Name:                    common.CCLogicIndexNamePrefix + "bkBizID",

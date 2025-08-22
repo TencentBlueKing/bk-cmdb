@@ -19,12 +19,14 @@ package local
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	idgen "configcenter/pkg/id-gen"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util/table"
 	"configcenter/src/storage/dal/types"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -188,8 +190,15 @@ func (c *OldMongo) CreateTable(ctx context.Context, collName string) error {
 
 // RenameTable 更新集合名称
 func (c *OldMongo) RenameTable(ctx context.Context, prevName, currName string) error {
-	prevName = c.addOldCollPrefix(prevName)
-	currName = c.addOldCollPrefix(currName)
+	if !strings.HasPrefix(currName, "cc_") && table.NeedPreImageTable(strings.TrimPrefix(currName, "default_")) {
+		cmd := bson.D{
+			{"collMod", prevName},
+			{"changeStreamPreAndPostImages", bson.M{"enabled": true}},
+		}
+		if err := c.cli.Client().Database(c.GetDBName()).RunCommand(ctx, cmd).Err(); err != nil {
+			return fmt.Errorf("enable change stream pre and post image failed: %v", err)
+		}
+	}
 
 	cmd := bson.D{
 		{"renameCollection", c.cli.DBName() + "." + prevName},

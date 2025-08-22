@@ -504,3 +504,13 @@ func (m *WatchMongo) CommitTransaction(ctx context.Context, cap *metadata.TxnCap
 func (m *WatchMongo) AbortTransaction(context.Context, *metadata.TxnCapable) (bool, error) {
 	return false, fmt.Errorf("watch db do not support transaction")
 }
+
+// NewTenantCli returns the new tenant db client
+func (m *WatchMongo) NewTenantCli(tenant string) (local.DB, string, error) {
+	db, err := local.NewMongo(m.newDataCli, new(local.TxnManager), &local.MongoCliConf{IDGenStep: 1},
+		&local.MongoOptions{Tenant: tenant})
+	if err != nil {
+		return nil, "", err
+	}
+	return db, m.newDataCli.UUID(), nil
+}

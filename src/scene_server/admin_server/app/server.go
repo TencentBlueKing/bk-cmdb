@@ -50,7 +50,6 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	// adminserver conf not depend discovery
 	err = process.ConfigCenter.Start(process.Config.Configures.Dir, process.Config.Errors.Res,
 		process.Config.Language.Res)
-
 	if err != nil {
 		return err
 	}
@@ -72,6 +71,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	}
 	process.Service.SetWatchDB(mongodb.Dal("watch"))
 
+	// init old migrate db for old version migration before v3.15.1, remove this after v3.15.2
 	oldMigrateDB, err := local.NewOldMgo(process.Config.MongoDB.GetMongoConf(), time.Minute)
 	if err != nil {
 		return fmt.Errorf("new mongodb client for previous version failed, err: %v", err)
