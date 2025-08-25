@@ -22,11 +22,11 @@ import (
 	"net/http"
 	"time"
 
+	"configcenter/pkg/tenant/tools"
 	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/backbone"
-	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
@@ -49,17 +49,18 @@ type AuthService struct {
 	iamClient  client.Interface
 	lgc        *logics.Logics
 	authorizer sdkauth.Authorizer
-	Config     *options.Config
+	config     *options.Config
 }
 
 // NewAuthService TODO
 func NewAuthService(engine *backbone.Engine, iamClient client.Interface, lgc *logics.Logics,
-	authorizer sdkauth.Authorizer) *AuthService {
+	authorizer sdkauth.Authorizer, config *options.Config) *AuthService {
 	return &AuthService{
 		engine:     engine,
 		iamClient:  iamClient,
 		lgc:        lgc,
 		authorizer: authorizer,
+		config:     config,
 	}
 }
 
@@ -70,6 +71,15 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 			chain.ProcessFilter(req, resp)
 			return
 		}
+
+		// set tenant id
+		tenantID, err := tools.ValidateDisableTenantMode(httpheader.GetTenantID(req.Request.Header),
+			s.config.EnableMultiTenantMode)
+		if err != nil {
+			_ = resp.WriteAsJson(metadata.BkBaseResp{Code: types.InternalServerErrorCode, Message: err.Error()})
+			return
+		}
+		httpheader.SetTenantID(req.Request.Header, tenantID)
 
 		isAuthorized, err := checkRequestAuthorization(s.iamClient, req.Request)
 		if err != nil {
@@ -104,9 +114,6 @@ func (s *AuthService) checkRequestFromIamFilter() func(req *restful.Request, res
 		httpheader.SetLanguage(req.Request.Header, req.Request.Header.Get("Blueking-Language"))
 
 		req.Request.Header = util.SetHTTPReadPreference(req.Request.Header, common.SecondaryPreferredMode)
-
-		// set supplierID
-		setTenantID(req.Request)
 
 		user := httpheader.GetUser(req.Request.Header)
 		if len(user) == 0 {
@@ -146,18 +153,6 @@ func checkRequestAuthorization(iamClient client.Interface, req *http.Request) (b
 	}
 	blog.Errorf("request password not match system token, rid: %s", rid)
 	return false, nil
-}
-
-// setTenantID set suitable supplier account for the different version type, like ee, oa version
-func setTenantID(req *http.Request) {
-	tenantID := httpheader.GetTenantID(req.Header)
-	if len(tenantID) == 0 {
-		sID, _ := cc.String("authServer.tenantID")
-		if len(sID) == 0 {
-			sID = common.BKDefaultTenantID
-		}
-		httpheader.SetTenantID(req.Header, sID)
-	}
 }
 
 // WebService TODO

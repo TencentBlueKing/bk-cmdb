@@ -47,5 +47,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 // Config TODO
 type Config struct {
-	TLS  ssl.TLSClientConfig
+	TLS                   ssl.TLSClientConfig
+	EnableMultiTenantMode bool
 }

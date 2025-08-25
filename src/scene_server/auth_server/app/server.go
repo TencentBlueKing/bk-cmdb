@@ -80,7 +80,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 			return fmt.Errorf("new authorize failed, err: %v", err)
 		}
 
-		authServer.Service = service.NewAuthService(engine, apigwcli.Client().Iam(), lgc, authorizer)
+		authServer.Service = service.NewAuthService(engine, apigwcli.Client().Iam(), lgc, authorizer, authServer.Config)
 		break
 	}
 
@@ -119,6 +119,13 @@ func (a *AuthServer) onAuthConfigUpdate(previous, current cc.ProcessConfig) {
 		a.Config.TLS, err = cc.NewTLSClientConfigFromConfig("authServer")
 		if err != nil {
 			blog.Warnf("parse auth center tls config failed: %v", err)
+		}
+
+		if cc.IsExist("tenant.enableMultiTenantMode") {
+			a.Config.EnableMultiTenantMode, err = cc.Bool("tenant.enableMultiTenantMode")
+			if err != nil {
+				blog.Warnf("parse auth center tls config failed: %v", err)
+			}
 		}
 	}
 }

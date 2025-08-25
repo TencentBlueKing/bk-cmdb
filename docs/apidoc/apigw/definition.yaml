@@ -135,6 +135,7 @@ grant_permissions:
       - update_inst
       - find_host_by_topo
       - list_host_service_template_id
+      - list_business_set
   - bk_app_code: {{ environ.BK_NODEMGR_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
@@ -183,7 +184,6 @@ grant_permissions:
       - update_cloud_area
       - delete_cloud_area
       - update_host_cloud_area_field
-      - list_business_set
   - bk_app_code: {{ environ.BK_BCS_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
@@ -316,7 +316,6 @@ grant_permissions:
       - find_module_with_relation
       - transfer_host_to_idlemodule
       - search_biz_inst_topo
-      - transfer_host_to_resource
       - transfer_host_to_recyclemodule
       - transfer_host_to_faultmodule
       - get_host_base_info
