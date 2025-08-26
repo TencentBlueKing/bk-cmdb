@@ -2106,7 +2106,7 @@ paths:
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
-        descriptionEn: Add tags to service instance
+        descriptionEn: Add labels to service instance
   /api/v3/deletemany/proc/service_instance/labels:
     delete:
       operationId: remove_label_from_service_instance
@@ -2136,7 +2136,7 @@ paths:
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
-        descriptionEn: Remove tags from service instance
+        descriptionEn: Remove labels from service instance
   /api/v3/create/proc/process_instance:
     post:
       operationId: create_process_instance
@@ -2316,7 +2316,7 @@ paths:
         authConfig:
           userVerifiedRequired: false
         disabledStages: []
-        descriptionEn: Search association object instance basic info
+        descriptionEn: Search object instances base information of a object associated with the given model instance
   /api/v3/updatemany/hosts/cloudarea_field:
     put:
       operationId: update_host_cloud_area_field
