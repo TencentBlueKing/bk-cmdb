@@ -55,7 +55,7 @@ const start = () => {
   const [state] = useState()
   const queue = new Array(Math.ceil(state.count.value / state.limit.value)).fill(null)
     .map((_, index) => ({
-      name: `${state.bk_obj_id.value}_download_${index + 1}`,
+      name: `${state.bk_obj_id.value}_download_${Date.now()}_${index + 1}`,
       state: 'waiting',
       page: {
         start: index * state.limit.value,
