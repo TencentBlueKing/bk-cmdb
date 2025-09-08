@@ -1,5 +1,5 @@
 specVersion: 3
-appVersion: "3.14.7-alpha1"
+appVersion: "3.14.7-alpha2"
 app:
   bkAppCode: "bk_cmdb_saas"
   bkAppName: "蓝鲸配置平台"
