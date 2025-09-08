@@ -1,4 +1,4 @@
-FROM hub.bktencent.com/blueking/centos7-cmdb:base
+FROM mirrors.tencent.com/tencentos/tencentos3-minimal
 ENV container docker
 COPY cmdb_taskserver  /data/cmdb/cmdb_taskserver
 RUN mkdir /data/cmdb/cmdb_taskserver/logs

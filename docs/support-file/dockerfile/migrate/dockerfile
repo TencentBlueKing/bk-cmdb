@@ -1,2 +1,2 @@
-FROM hub.bktencent.com/blueking/centos7-cmdb:base
+FROM mirrors.tencent.com/tencentos/tencentos3-minimal
 RUN yum -y install jq
