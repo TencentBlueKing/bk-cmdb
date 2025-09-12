@@ -107,12 +107,12 @@ func ConvertLegacyHeader(header http.Header) http.Header {
 		httpheader.SetUser(newHeader, header.Get(httpheader.BKHTTPHeaderUser))
 	}
 
+	// if multi tenant mode is not enabled and tenantID = "", set default tenant
 	if httpheader.GetTenantID(header) == "" {
-		tenantID := header.Get(httpheader.BKHTTPTenant)
-		if tenantID == "" {
-			tenantID = header.Get(httpheader.BKHTTPTenantID)
+		tenantID := tools.GetDefaultTenant()
+		if tenantID == common.BKSingleTenantID {
+			httpheader.SetTenantID(newHeader, tenantID)
 		}
-		httpheader.SetTenantID(newHeader, tenantID)
 	}
 
 	if httpheader.GetRid(header) == "" {

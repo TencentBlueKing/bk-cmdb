@@ -24,13 +24,8 @@ const (
 	BKHTTPHeaderUser = "BK_User"
 	// BKHTTPLanguage the language key word
 	BKHTTPLanguage = "HTTP_BLUEKING_LANGUAGE"
-	// BKHTTPTenant ID the tenant
-	BKHTTPTenant = "HTTP_BK_SUPPLIER_ACCOUNT"
-	// BKHTTPTenantID the tenant id
-	BKHTTPTenantID = "HTTP_BLUEKING_SUPPLIER_ID"
 	// BKHTTPRequestAppCode is the blueking app code
 	BKHTTPRequestAppCode = "Bk-App-Code"
-
 	// BKHTTPCCRequestID cc request id cc_request_id
 	BKHTTPCCRequestID = "Cc_Request_Id"
 )

@@ -36,7 +36,7 @@ import (
 
 func checkHTTPAuth(req *restful.Request, defErr errors.DefaultCCErrorIf) (int, string) {
 	if httpheader.GetTenantID(req.Request.Header) == "" {
-		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "owner_id").Error()
+		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "tenant_id").Error()
 	}
 	if httpheader.GetUser(req.Request.Header) == "" {
 		return common.CCErrCommNotAuthItem, defErr.Errorf(common.CCErrCommNotAuthItem, "user").Error()
