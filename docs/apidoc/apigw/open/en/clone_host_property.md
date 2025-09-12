@@ -11,7 +11,7 @@ Clone Host Properties (Permission: Business Host Editing Permission)
 | bk_org_id   | int    | Yes      | Source host ID            |
 | bk_dst_id   | int    | Yes      | Target host ID            |
 | bk_biz_id   | int    | Yes      | Business ID               |
-| bk_cloud_id | int    | No       | Control area ID           |
+| bk_cloud_id | int    | Yes      | Control area ID           |
 
 Note: Cloning using the internal IP of the host and cloning using the identity ID of the host, these two methods can
 only be used separately and cannot be mixed.

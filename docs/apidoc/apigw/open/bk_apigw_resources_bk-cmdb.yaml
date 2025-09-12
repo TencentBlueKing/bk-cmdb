@@ -4467,7 +4467,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v3/inst/search/owner/{bk_supplier_account}/object/{bk_obj_id}
+          path: /api/v3/inst/search/{bk_supplier_account}/{bk_obj_id}
           matchSubpath: false
           timeout: 0
           upstreams: {}

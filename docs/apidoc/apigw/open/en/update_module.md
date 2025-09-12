@@ -2,7 +2,7 @@
 
 Update Module (Permission: Business Topology Editing Permission)
 
-### Parameters
+### URL Parameters
 
 | Name                | Type   | Required | Description       |
 |---------------------|--------|----------|-------------------|
@@ -10,9 +10,8 @@ Update Module (Permission: Business Topology Editing Permission)
 | bk_biz_id           | int    | Yes      | Business ID       |
 | bk_set_id           | int    | Yes      | Cluster ID        |
 | bk_module_id        | int    | Yes      | Module ID         |
-| data                | dict   | Yes      | Module data       |
 
-#### data
+#### Parameters
 
 | Name            | Type   | Required | Description       |
 |-----------------|--------|----------|-------------------|
@@ -21,7 +20,7 @@ Update Module (Permission: Business Topology Editing Permission)
 | operator        | string | No       | Main maintainer   |
 | bk_bak_operator | string | No       | Backup maintainer |
 
-**Note: The data parameter here only explains the system-built editable parameters, and the rest of the parameters to be
+**Note: The parameter here only explains the system-built editable parameters, and the rest of the parameters to be
 filled depend on the user's own defined attribute fields. Modules created through service templates can only be modified
 through service templates.**
 
@@ -29,15 +28,10 @@ through service templates.**
 
 ```json
 {
-    "bk_biz_id": 1,
-    "bk_set_id": 1,
-    "bk_module_id": 1,
-    "data": {
-        "bk_module_name": "test",
-        "bk_module_type": "1",
-        "operator": "admin",
-        "bk_bak_operator": "admin"
-    }
+    "bk_module_name": "test",
+    "bk_module_type": "1",
+    "operator": "admin",
+    "bk_bak_operator": "admin"
 }
 ```
 

@@ -6,6 +6,7 @@
 
 | 参数名称                | 参数类型   | 必选 | 描述            |
 |---------------------|--------|----|---------------|
+| bk_biz_id           | int    | 是  | 业务ID          |
 | process_template_id | int    | 是  | 进程模板ID        |
 | process_property    | object | 是  | 需要更新的进程模板字段信息 |
 

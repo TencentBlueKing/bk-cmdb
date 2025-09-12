@@ -2,7 +2,7 @@
 
 更新模块(权限：业务拓扑编辑权限)
 
-### 输入参数
+### URL输入参数
 
 | 参数名称                | 参数类型   | 必选 | 描述    |
 |---------------------|--------|----|-------|
@@ -10,9 +10,8 @@
 | bk_biz_id           | int    | 是  | 业务id  |
 | bk_set_id           | int    | 是  | 集群id  |
 | bk_module_id        | int    | 是  | 模块id  |
-| data                | dict   | 是  | 模块数据  |
 
-#### data
+#### 输入参数
 
 | 参数名称            | 参数类型   | 必选 | 描述    |
 |-----------------|--------|----|-------|
@@ -21,22 +20,16 @@
 | operator        | string | 否  | 主要维护人 |
 | bk_bak_operator | string | 否  | 备份维护人 |
 
-**注意：此处data参数仅对系统内置可编辑的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段；通过服务模板创建的模块，只能通过服务模板修改
-**
+**注意：此处输入参数仅对系统内置可编辑的参数做了说明，其余需要填写的参数取决于用户自己定义的属性字段；通过服务模板创建的模块，只能通过服务模板修改**
 
 ### 调用示例
 
 ```json
 {
-    "bk_biz_id": 1,
-    "bk_set_id": 1,
-    "bk_module_id": 1,
-    "data": {
-        "bk_module_name": "test",
-        "bk_module_type": "1",
-        "operator": "admin",
-        "bk_bak_operator": "admin"
-    }
+    "bk_module_name": "test",
+    "bk_module_type": "1",
+    "operator": "admin",
+    "bk_bak_operator": "admin"
 }
 ```
 

@@ -37,6 +37,7 @@
     "plat_property_bk_cloud_name": "BK-Network Area",
     "plat_property_bk_supplier_account": "Supplier",
     "plat_property_bk_status": "Status",
+    "plat_property_bk_status_detail": "Status Detail",
     "plat_property_bk_cloud_vendor": "Cloud vendor",
     "plat_property_bk_vpc_id": "VPC ID",
     "plat_property_bk_vpc_name": "VPC name",

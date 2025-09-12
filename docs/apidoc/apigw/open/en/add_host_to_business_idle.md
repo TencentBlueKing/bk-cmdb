@@ -1,7 +1,7 @@
 ### Description
 
 Add hosts to the business idle hosts. This interface ensures that hosts are either added successfully together or fail
-together (v3.10.25+, Permission: Host pool host allocation to business permission)
+together (v3.10.25+, Permission: Edit business host permission)
 
 ### Parameters
 
