@@ -34,4 +34,4 @@ test:
 .PHONY: build
 build:
 	@echo ">> building apiserver"
-	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/bk-cmdb-apiserver cmd/apiserver/*.go
+	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/cmdb_apiserver cmd/api_server/*.go

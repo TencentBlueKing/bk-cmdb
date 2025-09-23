@@ -30,8 +30,8 @@ import (
 	"github.com/oklog/run"
 	"github.com/spf13/cobra"
 
-	"github.com/TencentBlueKing/bk-cmdb/cmd/apiserver/options"
-	"github.com/TencentBlueKing/bk-cmdb/cmd/apiserver/service"
+	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/options"
+	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/service"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
 )

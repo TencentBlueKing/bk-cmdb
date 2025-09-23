@@ -20,7 +20,7 @@ package main
 import (
 	"os"
 
-	"github.com/TencentBlueKing/bk-cmdb/cmd/apiserver/app"
+	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/app"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
 )
 

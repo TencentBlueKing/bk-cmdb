@@ -7,7 +7,7 @@ bk-cmdb
 ├── bin 工具目录
 │   └── lint
 ├── build 项目构建产物
-│   └── bk-cmdb-apiserver
+│   └── cmdb_apiserver
 ├── cmd 服务入口&自身服务业务逻辑
 │   └── apiserver
 │       ├── apiserver.go main入口
