@@ -1028,6 +1028,10 @@ func (sh *searchHost) searchByHostConds() errors.CCError {
 		}
 	}
 
+	return sh.searchHost(condition)
+}
+
+func (sh *searchHost) searchHost(condition map[string]interface{}) error {
 	query := &metadata.QueryInput{
 		Condition:     condition,
 		TimeCondition: sh.conds.hostCond.TimeCondition,

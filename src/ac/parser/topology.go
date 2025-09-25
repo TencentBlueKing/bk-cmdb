@@ -331,31 +331,40 @@ func (ps *parseStream) businessSet() *parseStream {
 		return ps
 	}
 
+	ps = ps.basicBizSetOperations()
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	ps = ps.bizSetListOperations()
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	ps = ps.bizSetTopoOperations()
+	if ps.shouldReturn() {
+		return ps
+	}
+
+	return ps
+}
+
+func (ps *parseStream) basicBizSetOperations() *parseStream {
 	if ps.hitPattern(findBizInBizSetPattern, http.MethodPost) {
 		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
 		if err != nil {
 			ps.err = err
 			return ps
 		}
-
 		bizSetID := bizSetIDVal.Int()
 		if bizSetID <= 0 {
 			ps.err = errors.New("invalid biz set id")
 			return ps
 		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.BizSet,
-					Action:     meta.AccessBizSet,
-					InstanceID: bizSetID,
-				},
-			},
-		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet,
+			Action: meta.AccessBizSet, InstanceID: bizSetID}}}
 		return ps
 	}
-
 	// update biz set, authorize if user has update permission to all of the specified biz set ids
 	if ps.hitPattern(updateBizSetPattern, http.MethodPut) {
 		bizSetIDsVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_ids")
@@ -363,40 +372,28 @@ func (ps *parseStream) businessSet() *parseStream {
 			ps.err = err
 			return ps
 		}
-
 		bizSetIDArr := bizSetIDsVal.Array()
 		if len(bizSetIDArr) == 0 {
 			ps.err = errors.New("bk_biz_set_ids is not set")
 			return ps
 		}
-
 		for _, bizSetIDVal := range bizSetIDArr {
 			bizSetID := bizSetIDVal.Int()
 			if bizSetID <= 0 {
 				ps.err = errors.New("invalid biz set id")
 				return ps
 			}
-
-			ps.Attribute.Resources = []meta.ResourceAttribute{
-				{
-					Basic: meta.Basic{
-						Type:       meta.BizSet,
-						Action:     meta.Update,
-						InstanceID: bizSetID,
-					},
-				},
-			}
+			ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet, Action: meta.Update,
+				InstanceID: bizSetID}}}
 		}
 		return ps
 	}
-
 	if ps.hitPattern(deleteBizSetPattern, http.MethodPost) {
 		bizSetIDsVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_ids")
 		if err != nil {
 			ps.err = err
 			return ps
 		}
-
 		bizSetIDArr := bizSetIDsVal.Array()
 		if len(bizSetIDArr) == 0 {
 			ps.err = errors.New("bk_biz_set_ids is not set")
@@ -406,52 +403,32 @@ func (ps *parseStream) businessSet() *parseStream {
 			ps.err = errors.New("bk_biz_set_ids exceeds maximum length 100")
 			return ps
 		}
-
 		for _, bizSetIDVal := range bizSetIDArr {
 			bizSetID := bizSetIDVal.Int()
 			if bizSetID <= 0 {
 				ps.err = errors.New("invalid biz set id")
 				return ps
 			}
-
-			ps.Attribute.Resources = []meta.ResourceAttribute{
-				{
-					Basic: meta.Basic{
-						Type:       meta.BizSet,
-						Action:     meta.Delete,
-						InstanceID: bizSetID,
-					},
-				},
-			}
+			ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet, Action: meta.Delete,
+				InstanceID: bizSetID}}}
 		}
 		return ps
 	}
-
-	if ps.hitPattern(findBizSetTopoPattern, http.MethodPost) {
-		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
-		if err != nil {
-			ps.err = err
-			return ps
-		}
-
-		bizSetID := bizSetIDVal.Int()
-		if bizSetID <= 0 {
-			ps.err = errors.New("invalid biz set id")
-			return ps
-		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.BizSet,
-					Action:     meta.AccessBizSet,
-					InstanceID: bizSetID,
-				},
-			},
-		}
+	// create business set, this is not a normalize api.
+	if ps.hitPattern(createBizSetPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet, Action: meta.Create}}}
 		return ps
 	}
+	// preview business set
+	if ps.hitPattern(previewBusinessSetPattern, http.MethodPost) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet,
+			Action: meta.SkipAction}}}
+		return ps
+	}
+	return ps
+}
 
+func (ps *parseStream) bizSetListOperations() *parseStream {
 	// find many business set list for the user with any business set resources
 	if ps.hitPattern(findmanyBusinessSetPattern, http.MethodPost) {
 		ps.Attribute.Resources = []meta.ResourceAttribute{
@@ -490,133 +467,81 @@ func (ps *parseStream) businessSet() *parseStream {
 		}
 		return ps
 	}
+	return ps
+}
 
-	// create business set, this is not a normalize api.
-	if ps.hitPattern(createBizSetPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.BizSet,
-					Action: meta.Create,
-				},
-			},
+func (ps *parseStream) bizSetTopoOperations() *parseStream {
+	if ps.hitPattern(findBizSetTopoPattern, http.MethodPost) {
+		bizSetIDVal, err := ps.RequestCtx.getValueFromBody("bk_biz_set_id")
+		if err != nil {
+			ps.err = err
+			return ps
 		}
+		bizSetID := bizSetIDVal.Int()
+		if bizSetID <= 0 {
+			ps.err = errors.New("invalid biz set id")
+			return ps
+		}
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet,
+			Action: meta.AccessBizSet, InstanceID: bizSetID}}}
 		return ps
 	}
-
-	// preview business set
-	if ps.hitPattern(previewBusinessSetPattern, http.MethodPost) {
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:   meta.BizSet,
-					Action: meta.SkipAction,
-				},
-			},
-		}
-		return ps
-	}
-
 	if ps.hitRegexp(listSetInBizSetRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 8 {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-
 		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.BizSet,
-					Action:     meta.AccessBizSet,
-					InstanceID: bizSetID,
-				},
-			},
-		}
-
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet,
+			Action: meta.AccessBizSet, InstanceID: bizSetID}}}
 		return ps
 	}
-
 	if ps.hitRegexp(listModuleInBizSetRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 10 {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-
 		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.BizSet,
-					Action:     meta.AccessBizSet,
-					InstanceID: bizSetID,
-				},
-			},
-		}
-
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet,
+			Action: meta.AccessBizSet, InstanceID: bizSetID}}}
 		return ps
 	}
-
 	if ps.hitRegexp(findBizSetTopoPathRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 8 {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-
 		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[5], err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.BizSet,
-					Action:     meta.AccessBizSet,
-					InstanceID: bizSetID,
-				},
-			},
-		}
-
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet,
+			Action: meta.AccessBizSet, InstanceID: bizSetID}}}
 		return ps
 	}
-
 	if ps.hitRegexp(countTopoHostAndSrvRegexp, http.MethodPost) {
 		if len(ps.RequestCtx.Elements) != 7 {
 			ps.err = fmt.Errorf("get invalid url elements length %d", len(ps.RequestCtx.Elements))
 			return ps
 		}
-
 		bizSetID, err := strconv.ParseInt(ps.RequestCtx.Elements[6], 10, 64)
 		if err != nil {
 			ps.err = fmt.Errorf("get invalid business set id %s, err: %v", ps.RequestCtx.Elements[6], err)
 			return ps
 		}
-
-		ps.Attribute.Resources = []meta.ResourceAttribute{
-			{
-				Basic: meta.Basic{
-					Type:       meta.BizSet,
-					Action:     meta.AccessBizSet,
-					InstanceID: bizSetID,
-				},
-			},
-		}
-
+		ps.Attribute.Resources = []meta.ResourceAttribute{{Basic: meta.Basic{Type: meta.BizSet,
+			Action: meta.AccessBizSet, InstanceID: bizSetID}}}
 		return ps
 	}
-
 	return ps
 }
 

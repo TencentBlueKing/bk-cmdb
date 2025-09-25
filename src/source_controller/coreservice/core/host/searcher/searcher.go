@@ -46,22 +46,18 @@ func New(cacheHost host.Interface) Searcher {
 	}
 }
 
-// ListHosts search host with topo node info and host property
-func (s *Searcher) ListHosts(kit *rest.Kit, option metadata.ListHosts) (*metadata.ListHostResult, error) {
-	if key, err := option.Validate(); err != nil {
-		blog.Errorf("list hosts option %+v is invalid, key: %s, err: %v, rid: %s", option, key, err, kit.Rid)
-		return nil, err
-	}
+func (s *Searcher) buildListHostsFilter(kit *rest.Kit, option metadata.ListHosts) ([]map[string]interface{},
+	[]interface{}, bool, bool, error) {
 
 	needHostIDFilter, hostIDs, err := s.listHostIDsByRelation(kit, &option)
 	if err != nil {
-		return nil, err
+		return nil, nil, false, false, err
 	}
 
 	filters := make([]map[string]interface{}, 0)
 	if needHostIDFilter {
 		if len(hostIDs) == 0 {
-			return &metadata.ListHostResult{Count: 0, Info: make([]map[string]interface{}, 0)}, nil
+			return nil, nil, true, false, nil
 		}
 		filters = append(filters, map[string]interface{}{
 			common.BKHostIDField: map[string]interface{}{common.BKDBIN: hostIDs},
@@ -71,10 +67,28 @@ func (s *Searcher) ListHosts(kit *rest.Kit, option metadata.ListHosts) (*metadat
 	propertyFilter, err := option.GetHostPropertyFilter(kit.Ctx)
 	if err != nil {
 		blog.Errorf("get host property filter failed, filter: %+v, err: %v, rid: %s", option, err, kit.Rid)
-		return nil, err
+		return nil, nil, false, false, err
 	}
 	if len(propertyFilter) > 0 {
 		filters = append(filters, propertyFilter)
+	}
+
+	return filters, hostIDs, false, needHostIDFilter, nil
+}
+
+// ListHosts search host with topo node info and host property
+func (s *Searcher) ListHosts(kit *rest.Kit, option metadata.ListHosts) (*metadata.ListHostResult, error) {
+	if key, err := option.Validate(); err != nil {
+		blog.Errorf("list hosts option %+v is invalid, key: %s, err: %v, rid: %s", option, key, err, kit.Rid)
+		return nil, err
+	}
+
+	filters, hostIDs, noHostsMatched, needHostIDFilter, err := s.buildListHostsFilter(kit, option)
+	if err != nil {
+		return nil, err
+	}
+	if noHostsMatched {
+		return &metadata.ListHostResult{Count: 0, Info: make([]map[string]interface{}, 0)}, nil
 	}
 
 	finalFilter := map[string]interface{}{}

@@ -139,6 +139,11 @@ func (c *DynamicGroupCondition) Validate(attributeMap map[string]string) error {
 		return validAttributeValueType(attrType, c.Value)
 	}
 
+	return c.validateByOperator(operator, attrType, attributeType)
+}
+
+func (c *DynamicGroupCondition) validateByOperator(operator, attrType, attributeType string) error {
+
 	switch operator {
 	case DynamicGroupOperatorEQ, DynamicGroupOperatorNE:
 		return validAttributeValueType(attrType, c.Value)

@@ -390,24 +390,14 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 			return
 		}
 
-		key := common.ApiCacheLimiterRulePrefix + rule.RuleName
-		result, err := s.cache.Eval(context.Background(), setRequestCntTTLScript, []string{key}, rule.TTL).Result()
+		exceedLimit, err := s.checkIfExceedLimit(rule, rid)
 		if err != nil {
-			blog.Errorf("redis Eval failed, key:%s, rule:%#v, err: %v, rid: %s", key, *rule, err, rid)
-			fchain.ProcessFilter(req, resp)
-			return
-		}
-		cnt, ok := result.(int64)
-		if !ok {
-			blog.Errorf("execute setRequestCntTTLScript failed, key:%s, rule:%#v, err: %v, rid: %s",
-				key, *rule, result, rid)
 			fchain.ProcessFilter(req, resp)
 			return
 		}
 
-		if cnt > rule.Limit {
+		if exceedLimit {
 			blog.Errorf("too many requests, matched rule is %#v, rid: %s", *rule, rid)
-
 			s.errorLimiterTotal.With(prometheus.Labels{
 				metrics.LabelAppCode: httpheader.GetAppCode(req.Request.Header),
 				metrics.LabelHandler: req.Request.RequestURI,
@@ -425,6 +415,29 @@ func (s *service) LimiterFilter() func(req *restful.Request, resp *restful.Respo
 		fchain.ProcessFilter(req, resp)
 		return
 	}
+}
+
+// checkIfExceedLimit checks if the request exceeds the rate limit, return true if request should be rejected
+func (s *service) checkIfExceedLimit(rule *metadata.LimiterRule, rid string) (bool, error) {
+
+	key := common.ApiCacheLimiterRulePrefix + rule.RuleName
+	result, err := s.cache.Eval(context.Background(), setRequestCntTTLScript, []string{key}, rule.TTL).Result()
+	if err != nil {
+		blog.Errorf("redis Eval failed, key:%s, rule:%#v, err: %v, rid: %s", key, *rule, err, rid)
+		return false, err
+	}
+
+	cnt, ok := result.(int64)
+	if !ok {
+		blog.Errorf("execute setRequestCntTTLScript failed, key:%s, rule:%#v, result: %v, rid: %s",
+			key, *rule, result, rid)
+		return false, fmt.Errorf("execute setRequestCntTTLScript failed, result: %v", result)
+	}
+
+	if cnt > rule.Limit {
+		return true, nil
+	}
+	return false, nil
 }
 
 // JwtFilter the filter that handles the source of the jwt request

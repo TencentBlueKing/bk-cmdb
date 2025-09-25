@@ -662,6 +662,17 @@ type RelateResourceType struct {
 	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
 }
 
+// SyncRegisterOptions iam sync register options
+type SyncRegisterOptions struct {
+	CmdbActions               []ResourceAction
+	DeletedActions            []ActionID
+	DeletedInstanceSelections []InstanceSelectionID
+	DeletedResourceTypes      []TypeID
+	AddedActions              []ResourceAction
+	AddedInstanceSelections   []InstanceSelection
+	AddedResourceTypes        []ResourceType
+}
+
 // Scope TODO
 type Scope struct {
 	Op      string         `json:"op"`
@@ -710,7 +721,7 @@ const (
 	BusinessHostTransferSelection InstanceSelectionID = "business_host_transfer"
 	// BizSetSelection TODO
 	BizSetSelection InstanceSelectionID = "business_set_list"
-	//ProjectSelection project selection
+	// ProjectSelection project selection
 	ProjectSelection InstanceSelectionID = "project"
 	// BizHostInstanceSelection TODO
 	BizHostInstanceSelection InstanceSelectionID = "biz_host_instance"

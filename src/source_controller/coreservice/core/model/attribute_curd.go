@@ -507,6 +507,7 @@ var validAttrPropertyTypes = map[string]struct{}{
 
 func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadata.Attribute,
 	propertyType string) error {
+
 	language := httpheader.GetLanguage(kit.Header)
 	lang := m.language.CreateDefaultCCLanguageIf(language)
 	if attribute.PropertyID != "" {
@@ -543,6 +544,22 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 		}
 	}
 
+	if err := m.validPropertyType(kit, attribute, propertyType); err != nil {
+		return err
+	}
+
+	if opt, ok := attribute.Option.(string); ok && opt != "" {
+		if common.AttributeOptionMaxLength < utf8.RuneCountInString(opt) {
+			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_option_regex"),
+				common.AttributeOptionMaxLength)
+		}
+	}
+
+	return nil
+}
+
+func (m *modelAttribute) validPropertyType(kit *rest.Kit, attribute metadata.Attribute, propertyType string) error {
+
 	if attribute.PropertyType != "" {
 		if _, exists := validAttrPropertyTypes[attribute.PropertyType]; !exists {
 			if _, ok := manager.Get(attribute.PropertyType); !ok {
@@ -556,13 +573,6 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 
 		if err := m.checkAttributeDefaultValue(kit, attribute, propertyType); err != nil {
 			return err
-		}
-	}
-
-	if opt, ok := attribute.Option.(string); ok && opt != "" {
-		if common.AttributeOptionMaxLength < utf8.RuneCountInString(opt) {
-			return kit.CCError.Errorf(common.CCErrCommValExceedMaxFailed, lang.Language("model_attr_option_regex"),
-				common.AttributeOptionMaxLength)
 		}
 	}
 

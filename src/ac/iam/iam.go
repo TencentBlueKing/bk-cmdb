@@ -779,53 +779,70 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, redisCli redis.Client, obj
 	// 因为资源间的依赖关系，新建的顺序则反过来为 1.ResourceType 2.InstanceSelection 3.Action
 	// ActionGroup依赖于Action，该资源的增删操作始终放在最后
 	// 先删除资源，再新增资源，因为实例视图的名称在系统中是唯一的，如果不先删，同样名称的实例视图将创建失败
+	options := &SyncRegisterOptions{
+		AddedActions:              addedActions,
+		DeletedActions:            deletedActions,
+		AddedInstanceSelections:   addedInstanceSelections,
+		AddedResourceTypes:        addedResourceTypes,
+		DeletedInstanceSelections: deletedInstanceSelections,
+		DeletedResourceTypes:      deletedResourceTypes,
+	}
 
-	err = i.deleteIamResources(ctx, deletedActions, deletedInstanceSelections, deletedResourceTypes, rid)
+	return i.syncRegisterActions(ctx, iamResp, objects, options)
+}
+
+func (i IAM) syncRegisterActions(ctx context.Context, iamResp *SystemResp, objects []metadata.Object,
+	options *SyncRegisterOptions) error {
+
+	rid := commonutil.ExtractRequestIDFromContext(ctx)
+	err := i.deleteIamResources(ctx, options.DeletedActions, options.DeletedInstanceSelections,
+		options.DeletedResourceTypes, rid)
 	if err != nil {
 		return err
 	}
 
 	// add cmdb ResourceTypes in iam
-	if len(addedResourceTypes) > 0 {
+	if len(options.AddedResourceTypes) > 0 {
 		blog.Infof("begin add resourceTypes, count:%d, detail:%v, rid: %s",
-			len(addedResourceTypes), addedResourceTypes, rid)
-		if err := i.Client.RegisterResourcesTypes(ctx, addedResourceTypes); err != nil {
+			len(options.AddedResourceTypes), options.AddedResourceTypes, rid)
+		if err := i.Client.RegisterResourcesTypes(ctx, options.AddedResourceTypes); err != nil {
 			blog.ErrorJSON("sync iam sysInstances failed, add resourceType error: %s, resourceType: %s, rid: %s",
-				err, addedResourceTypes, rid)
+				err, options.AddedResourceTypes, rid)
 			return err
 		}
 	}
 
 	// add cmdb InstanceSelections in iam
-	if len(addedInstanceSelections) > 0 {
+	if len(options.AddedInstanceSelections) > 0 {
 		blog.Infof("begin add instanceSelections, count:%d, detail:%v, rid: %s",
-			len(addedInstanceSelections), addedInstanceSelections, rid)
-		if err := i.Client.RegisterInstanceSelections(ctx, addedInstanceSelections); err != nil {
+			len(options.AddedInstanceSelections), options.AddedInstanceSelections, rid)
+		if err := i.Client.RegisterInstanceSelections(ctx, options.AddedInstanceSelections); err != nil {
 			blog.ErrorJSON("sync iam sysInstances failed, add instanceSelections error: %s, instanceSelections: %s, "+
-				"rid: %s", err, addedInstanceSelections, rid)
+				"rid: %s", err, options.AddedInstanceSelections, rid)
 			return err
 		}
 	}
 
 	// add cmdb actions in iam
-	if len(addedActions) > 0 {
-		blog.Infof("begin add actions, count:%d, detail:%v, rid: %s", len(addedActions), addedActions, rid)
-		if err := i.Client.RegisterActions(ctx, addedActions); err != nil {
+	if len(options.AddedActions) > 0 {
+		blog.Infof("begin add actions, count:%d, detail:%v, rid: %s", len(options.AddedActions), options.AddedActions,
+			rid)
+		if err := i.Client.RegisterActions(ctx, options.AddedActions); err != nil {
 			blog.ErrorJSON("sync iam sysInstances failed, add IAM actions failed, error: %s, actions: %s, rid: %s",
-				err, addedActions, rid)
+				err, options.AddedActions, rid)
 			return err
 		}
 	}
 
 	// update action_groups in iam, the action groups contains only the existed actions in iam
-	if len(addedActions) > 0 || len(deletedActions) > 0 {
+	if len(options.AddedActions) > 0 || len(options.DeletedActions) > 0 {
 		actionMap := map[ActionID]struct{}{}
 		for _, action := range iamResp.Data.Actions {
 			if !isIAMSysInstanceAction(action.ID) {
 				actionMap[action.ID] = struct{}{}
 			}
 		}
-		for _, action := range cmdbActions {
+		for _, action := range options.CmdbActions {
 			actionMap[action.ID] = struct{}{}
 		}
 
@@ -842,7 +859,6 @@ func (i IAM) SyncIAMSysInstances(ctx context.Context, redisCli redis.Client, obj
 			}
 		}
 	}
-
 	return nil
 }
 
