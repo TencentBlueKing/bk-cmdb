@@ -25,7 +25,7 @@ import (
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
+	validator "github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/samber/lo"
@@ -46,7 +46,7 @@ type ValidationError struct {
 
 // Validator 实现了 Validate 接口自定义调用
 type Validator interface {
-	Validate() error
+	Validate(ctx context.Context) error
 }
 
 func (e *ValidationError) getTranslator() ut.Translator {
@@ -59,7 +59,10 @@ func (e *ValidationError) Error() string {
 		return e.rawErr.Error()
 	}
 
-	errs := e.rawErr.(validator.ValidationErrors)
+	errs, ok := e.rawErr.(validator.ValidationErrors)
+	if !ok {
+		return e.rawErr.Error()
+	}
 	// 只返回单个错误
 	for _, ve := range errs {
 		return ve.Translate(e.getTranslator())
@@ -77,7 +80,7 @@ func Struct(ctx context.Context, s any) error {
 
 	// 实现了 Validate 接口自定义调用
 	if v, ok := s.(Validator); ok {
-		return v.Validate()
+		return v.Validate(ctx)
 	}
 
 	return nil

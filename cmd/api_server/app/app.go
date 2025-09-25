@@ -64,9 +64,7 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 	var g run.Group
 
 	router := service.NewRouter()
-	if err := registerHTTPServer(ctx, &g, router, opts); err != nil {
-		return err
-	}
+	registerHTTPServer(ctx, &g, router, opts)
 
 	// 监听信号
 	g.Add(func() error {
@@ -85,7 +83,7 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 	return g.Run()
 }
 
-func registerHTTPServer(_ context.Context, g *run.Group, router http.Handler, opts *options.Options) error { //nolint error alway is nil
+func registerHTTPServer(_ context.Context, g *run.Group, router http.Handler, opts *options.Options) {
 	addr := net.JoinHostPort(opts.Address, strconv.Itoa(opts.Port))
 	svr := http.Server{Addr: addr, Handler: router}
 
@@ -104,6 +102,4 @@ func registerHTTPServer(_ context.Context, g *run.Group, router http.Handler, op
 		}
 		slog.Info("shutdown http server done", "reason", err, "duration", time.Since(st))
 	})
-
-	return nil
 }

@@ -15,9 +15,6 @@ bk-cmdb
 │       ├── etc 命令行配置模版
 │       ├── options 命令行参数
 │       └── service 服务业务逻辑
-│           ├── router.go 路由
-│           ├── service.go 服务定义
-│           └── user.go 业务逻辑
 ├── docs 各类文档
 │   └── developer.md
 ├── go.mod
@@ -36,6 +33,19 @@ bk-cmdb
 │   └── version 版本号
 ├── readme_en.md
 └── readme.md
+```
+
+## 编辑器配置
+
+golang 1.25开启jsonv2需要添加环境变量, 在`.vscode/settings.json`添加如下配置, goroot请跟进实际路径修改
+
+```json
+{
+    "go.goroot": "/opt/go/sdk/go1",
+    "go.toolsEnvVars": {
+        "GOEXPERIMENT": "jsonv2"
+    }
+}
 ```
 
 ## 代码检查&编译

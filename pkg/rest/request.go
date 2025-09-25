@@ -18,7 +18,7 @@ package rest
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -61,6 +61,9 @@ func decodeReq[T any](r *http.Request) (*T, error) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
+	}
+	if len(body) == 0 {
+		return in, nil
 	}
 
 	if err = json.Unmarshal(body, in); err != nil {

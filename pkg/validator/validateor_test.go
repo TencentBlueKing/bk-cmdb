@@ -41,7 +41,7 @@ type testStruct3 struct {
 	Count int    `json:"count" validate:"required,gt=0"`
 }
 
-func (s *testStruct2) Validate() error {
+func (s *testStruct2) Validate(ctx context.Context) error {
 	return fmt.Errorf("hit validate")
 }
 
