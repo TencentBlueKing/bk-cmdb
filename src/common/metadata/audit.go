@@ -39,12 +39,12 @@ type AuditQueryResult struct {
 	Info  []AuditLog `json:"info"`
 }
 
-// CreateAuditLogParam TODO
+// CreateAuditLogParam param for creating audit log
 type CreateAuditLogParam struct {
 	Data []AuditLog `json:"data"`
 }
 
-// AuditQueryInput TODO
+// AuditQueryInput query audit logs input
 type AuditQueryInput struct {
 	Condition AuditQueryCondition `json:"condition"`
 	Page      BasePage            `json:"page,omitempty"`
@@ -75,7 +75,7 @@ func (input *AuditQueryInput) Validate() errors.RawErrorInfo {
 	return errors.RawErrorInfo{}
 }
 
-// AuditQueryCondition TODO
+// AuditQueryCondition query audit logs condition struct
 type AuditQueryCondition struct {
 	AuditType    AuditType       `json:"audit_type"`
 	User         string          `json:"user"`
@@ -107,7 +107,7 @@ func (a *AuditQueryCondition) Validate() error {
 	return nil
 }
 
-// OperationTimeCondition TODO
+// OperationTimeCondition operation time condition struct
 type OperationTimeCondition struct {
 	Start string `json:"start"`
 	End   string `json:"end"`
@@ -174,7 +174,7 @@ type InstAuditCondition struct {
 	ID []int64 `json:"id"`
 }
 
-// AuditLog TODO
+// AuditLog struct for audit log
 type AuditLog struct {
 	ID int64 `json:"id" bson:"id"`
 	// AuditType is a high level abstract of the resource managed by this cmdb.

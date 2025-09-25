@@ -40,7 +40,7 @@ type CloudAccount struct {
 	LastTime    time.Time `json:"last_time" bson:"last_time"`
 }
 
-// Validate TODO
+// Validate account validate
 func (c *CloudAccount) Validate() (rawError errors.RawErrorInfo) {
 	if c.AccountName == "" {
 		return errors.RawErrorInfo{

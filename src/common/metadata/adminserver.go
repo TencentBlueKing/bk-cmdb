@@ -22,13 +22,13 @@ type SysUserConfigItem struct {
 	ExpireAt int64 `json:"expire_at" bson:"expire_at"`
 }
 
-// ResponseSysUserConfigData TODO
+// ResponseSysUserConfigData response data for sys user config
 type ResponseSysUserConfigData struct {
 	RowType        string            `json:"type"`
 	BluekingModify SysUserConfigItem `json:"blueking_modify"`
 }
 
-// ReponseSysUserConfig TODO
+// ReponseSysUserConfig response for sys user config
 type ReponseSysUserConfig struct {
 	BaseResp `json:",inline"`
 	Data     ResponseSysUserConfigData `json:"data"`

@@ -78,8 +78,9 @@ func (h *host) TransferToNormalModule(ctx context.Context, header http.Header, i
 // 如果主机属于空闲机模块，操作失败
 // 如果主机属于故障机模块，操作失败
 // 如果主机不在参数指定的模块中，操作失败
-func (h *host) RemoveFromModule(ctx context.Context, header http.Header,
-	input *metadata.RemoveHostsFromModuleOption) (resp *metadata.OperaterException, err error) {
+func (h *host) RemoveFromModule(ctx context.Context, header http.Header, input *metadata.RemoveHostsFromModuleOption) (
+	resp *metadata.OperaterException, err error) {
+
 	resp = new(metadata.OperaterException)
 	subPath := "/delete/host/host_module_relations"
 
@@ -96,6 +97,7 @@ func (h *host) RemoveFromModule(ctx context.Context, header http.Header,
 // TransferToAnotherBusiness  transfer host to other business module
 func (h *host) TransferToAnotherBusiness(ctx context.Context, header http.Header,
 	input *metadata.TransferHostsCrossBusinessRequest) (resp *metadata.OperaterException, err error) {
+
 	resp = new(metadata.OperaterException)
 	subPath := "/set/module/host/relation/cross/business"
 
@@ -186,6 +188,7 @@ func (h *host) FindIdentifier(ctx context.Context, header http.Header, input *me
 // GetHostByID TODO
 func (h *host) GetHostByID(ctx context.Context, header http.Header, hostID int64) (resp *metadata.HostInstanceResult,
 	err error) {
+
 	resp = new(metadata.HostInstanceResult)
 	subPath := "/find/host/%d"
 
@@ -224,8 +227,9 @@ func (h *host) GetHosts(ctx context.Context, header http.Header, opt *metadata.Q
 }
 
 // LockHost TODO
-func (h *host) LockHost(ctx context.Context, header http.Header,
-	input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error) {
+func (h *host) LockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) (
+	resp *metadata.HostLockResponse, err error) {
+
 	resp = new(metadata.HostLockResponse)
 	subPath := "/find/host/lock"
 
@@ -240,8 +244,9 @@ func (h *host) LockHost(ctx context.Context, header http.Header,
 }
 
 // UnlockHost TODO
-func (h *host) UnlockHost(ctx context.Context, header http.Header,
-	input *metadata.HostLockRequest) (resp *metadata.HostLockResponse, err error) {
+func (h *host) UnlockHost(ctx context.Context, header http.Header, input *metadata.HostLockRequest) (
+	resp *metadata.HostLockResponse, err error) {
+
 	resp = new(metadata.HostLockResponse)
 	subPath := "/delete/host/lock"
 
@@ -256,8 +261,9 @@ func (h *host) UnlockHost(ctx context.Context, header http.Header,
 }
 
 // QueryHostLock TODO
-func (h *host) QueryHostLock(ctx context.Context, header http.Header,
-	input *metadata.QueryHostLockRequest) (resp *metadata.HostLockQueryResponse, err error) {
+func (h *host) QueryHostLock(ctx context.Context, header http.Header, input *metadata.QueryHostLockRequest) (
+	resp *metadata.HostLockQueryResponse, err error) {
+
 	resp = new(metadata.HostLockQueryResponse)
 	subPath := "/findmany/host/lock/search"
 
@@ -272,8 +278,8 @@ func (h *host) QueryHostLock(ctx context.Context, header http.Header,
 }
 
 // CreateDynamicGroup is dynamic group query datas base on conditions action api machinery.
-func (h *host) CreateDynamicGroup(ctx context.Context, header http.Header,
-	data *metadata.DynamicGroup) (resp *metadata.IDResult, err error) {
+func (h *host) CreateDynamicGroup(ctx context.Context, header http.Header, data *metadata.DynamicGroup) (
+	resp *metadata.IDResult, err error) {
 
 	resp = new(metadata.IDResult)
 	subPath := "/create/dynamicgroup"
@@ -289,8 +295,8 @@ func (h *host) CreateDynamicGroup(ctx context.Context, header http.Header,
 }
 
 // UpdateDynamicGroup is dynamic group update action api machinery.
-func (h *host) UpdateDynamicGroup(ctx context.Context, bizID, id string,
-	header http.Header, data map[string]interface{}) (resp *metadata.BaseResp, err error) {
+func (h *host) UpdateDynamicGroup(ctx context.Context, bizID, id string, header http.Header,
+	data map[string]interface{}) (resp *metadata.BaseResp, err error) {
 
 	resp = new(metadata.BaseResp)
 	subPath := "/update/dynamicgroup/%s/%s"
@@ -306,8 +312,8 @@ func (h *host) UpdateDynamicGroup(ctx context.Context, bizID, id string,
 }
 
 // DeleteDynamicGroup is dynamic group delete action api machinery.
-func (h *host) DeleteDynamicGroup(ctx context.Context, bizID, id string,
-	header http.Header) (resp *metadata.BaseResp, err error) {
+func (h *host) DeleteDynamicGroup(ctx context.Context, bizID, id string, header http.Header) (
+	resp *metadata.BaseResp, err error) {
 
 	resp = new(metadata.BaseResp)
 	subPath := "/delete/dynamicgroup/%s/%s"
@@ -323,8 +329,8 @@ func (h *host) DeleteDynamicGroup(ctx context.Context, bizID, id string,
 }
 
 // GetDynamicGroup is dynamic group query detail action api machinery.
-func (h *host) GetDynamicGroup(ctx context.Context, bizID, id string,
-	header http.Header) (resp *metadata.GetDynamicGroupResult, err error) {
+func (h *host) GetDynamicGroup(ctx context.Context, bizID, id string, header http.Header) (
+	resp *metadata.GetDynamicGroupResult, err error) {
 
 	resp = new(metadata.GetDynamicGroupResult)
 	subPath := "/find/dynamicgroup/%s/%s"
@@ -340,8 +346,8 @@ func (h *host) GetDynamicGroup(ctx context.Context, bizID, id string,
 }
 
 // SearchDynamicGroup is dynamic group search action api machinery.
-func (h *host) SearchDynamicGroup(ctx context.Context, header http.Header,
-	opt *metadata.QueryCondition) (resp *metadata.SearchDynamicGroupResult, err error) {
+func (h *host) SearchDynamicGroup(ctx context.Context, header http.Header, opt *metadata.QueryCondition) (
+	resp *metadata.SearchDynamicGroupResult, err error) {
 
 	resp = new(metadata.SearchDynamicGroupResult)
 	subPath := "/findmany/dynamicgroup/search"
@@ -357,8 +363,9 @@ func (h *host) SearchDynamicGroup(ctx context.Context, header http.Header,
 }
 
 // AddUserCustom TODO
-func (h *host) AddUserCustom(ctx context.Context, user string, header http.Header,
-	dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+func (h *host) AddUserCustom(ctx context.Context, user string, header http.Header, dat map[string]interface{}) (
+	resp *metadata.BaseResp, err error) {
+
 	resp = new(metadata.BaseResp)
 	subPath := "/create/usercustom/%s"
 
@@ -375,6 +382,7 @@ func (h *host) AddUserCustom(ctx context.Context, user string, header http.Heade
 // UpdateUserCustomByID TODO
 func (h *host) UpdateUserCustomByID(ctx context.Context, user string, id string, header http.Header,
 	dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+
 	resp = new(metadata.BaseResp)
 	subPath := "/update/usercustom/%s/%s"
 
@@ -389,8 +397,9 @@ func (h *host) UpdateUserCustomByID(ctx context.Context, user string, id string,
 }
 
 // GetUserCustomByUser TODO
-func (h *host) GetUserCustomByUser(ctx context.Context, user string,
-	header http.Header) (resp *metadata.GetUserCustomResult, err error) {
+func (h *host) GetUserCustomByUser(ctx context.Context, user string, header http.Header) (
+	resp *metadata.GetUserCustomResult, err error) {
+
 	resp = new(metadata.GetUserCustomResult)
 	subPath := "/find/usercustom/user/search/%s"
 
@@ -406,6 +415,7 @@ func (h *host) GetUserCustomByUser(ctx context.Context, user string,
 // GetDefaultUserCustom TODO
 func (h *host) GetDefaultUserCustom(ctx context.Context, header http.Header) (resp *metadata.GetUserCustomResult,
 	err error) {
+
 	resp = new(metadata.GetUserCustomResult)
 	subPath := "/find/usercustom/default"
 
@@ -420,8 +430,9 @@ func (h *host) GetDefaultUserCustom(ctx context.Context, header http.Header) (re
 }
 
 // UpdateDefaultUserCustom TODO
-func (h *host) UpdateDefaultUserCustom(ctx context.Context, header http.Header,
-	dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+func (h *host) UpdateDefaultUserCustom(ctx context.Context, header http.Header, dat map[string]interface{}) (
+	resp *metadata.BaseResp, err error) {
+
 	resp = new(metadata.BaseResp)
 
 	err = h.client.Put().
@@ -435,8 +446,9 @@ func (h *host) UpdateDefaultUserCustom(ctx context.Context, header http.Header,
 }
 
 // AddHostFavourite TODO
-func (h *host) AddHostFavourite(ctx context.Context, user string, header http.Header,
-	dat *metadata.FavouriteParms) (resp *metadata.IDResult, err error) {
+func (h *host) AddHostFavourite(ctx context.Context, user string, header http.Header, dat *metadata.FavouriteParms) (
+	resp *metadata.IDResult, err error) {
+
 	resp = new(metadata.IDResult)
 	subPath := "/create/hosts/favorites/%s"
 
@@ -453,6 +465,7 @@ func (h *host) AddHostFavourite(ctx context.Context, user string, header http.He
 // UpdateHostFavouriteByID TODO
 func (h *host) UpdateHostFavouriteByID(ctx context.Context, user string, id string, header http.Header,
 	dat map[string]interface{}) (resp *metadata.BaseResp, err error) {
+
 	resp = new(metadata.BaseResp)
 	subPath := "/update/hosts/favorites/%s/%s"
 
@@ -467,8 +480,9 @@ func (h *host) UpdateHostFavouriteByID(ctx context.Context, user string, id stri
 }
 
 // DeleteHostFavouriteByID TODO
-func (h *host) DeleteHostFavouriteByID(ctx context.Context, user string, id string,
-	header http.Header) (resp *metadata.BaseResp, err error) {
+func (h *host) DeleteHostFavouriteByID(ctx context.Context, user string, id string, header http.Header) (
+	resp *metadata.BaseResp, err error) {
+
 	resp = new(metadata.BaseResp)
 	subPath := "/delete/hosts/favorites/%s/%s"
 
@@ -483,8 +497,9 @@ func (h *host) DeleteHostFavouriteByID(ctx context.Context, user string, id stri
 }
 
 // ListHostFavourites TODO
-func (h *host) ListHostFavourites(ctx context.Context, user string, header http.Header,
-	dat *metadata.QueryInput) (resp *metadata.GetHostFavoriteResult, err error) {
+func (h *host) ListHostFavourites(ctx context.Context, user string, header http.Header, dat *metadata.QueryInput) (
+	resp *metadata.GetHostFavoriteResult, err error) {
+
 	resp = new(metadata.GetHostFavoriteResult)
 	subPath := "/findmany/hosts/favorites/search/%s"
 
@@ -499,8 +514,9 @@ func (h *host) ListHostFavourites(ctx context.Context, user string, header http.
 }
 
 // GetHostFavouriteByID TODO
-func (h *host) GetHostFavouriteByID(ctx context.Context, user string, id string,
-	header http.Header) (resp *metadata.GetHostFavoriteWithIDResult, err error) {
+func (h *host) GetHostFavouriteByID(ctx context.Context, user string, id string, header http.Header) (
+	resp *metadata.GetHostFavoriteWithIDResult, err error) {
+
 	resp = new(metadata.GetHostFavoriteWithIDResult)
 	subPath := "/find/hosts/favorites/search/%s/%s"
 
@@ -514,8 +530,9 @@ func (h *host) GetHostFavouriteByID(ctx context.Context, user string, id string,
 }
 
 // GetHostModulesIDs TODO
-func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header,
-	dat *metadata.ModuleHostConfigParams) (resp *metadata.GetHostModuleIDsResult, err error) {
+func (h *host) GetHostModulesIDs(ctx context.Context, header http.Header, dat *metadata.ModuleHostConfigParams) (
+	resp *metadata.GetHostModuleIDsResult, err error) {
+
 	resp = new(metadata.GetHostModuleIDsResult)
 	subPath := "/findmany/meta/hosts/modules/search"
 
@@ -580,8 +597,9 @@ func (h *host) UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 }
 
 // FindCloudAreaHostCount TODO
-func (h *host) FindCloudAreaHostCount(ctx context.Context, header http.Header,
-	option metadata.CloudAreaHostCount) (resp *metadata.CloudAreaHostCountResult, err error) {
+func (h *host) FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (
+	resp *metadata.CloudAreaHostCountResult, err error) {
+
 	resp = new(metadata.CloudAreaHostCountResult)
 	subPath := "/findmany/cloudarea/hostcount"
 

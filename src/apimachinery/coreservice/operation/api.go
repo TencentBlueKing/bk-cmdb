@@ -8,8 +8,9 @@ import (
 )
 
 // SearchInstCount TODO
-func (s *operation) SearchInstCount(ctx context.Context, h http.Header,
-	data interface{}) (resp *metadata.CoreUint64Response, err error) {
+func (s *operation) SearchInstCount(ctx context.Context, h http.Header, data interface{}) (
+	resp *metadata.CoreUint64Response, err error) {
+
 	resp = new(metadata.CoreUint64Response)
 	subPath := "/find/operation/inst/count"
 
@@ -24,8 +25,9 @@ func (s *operation) SearchInstCount(ctx context.Context, h http.Header,
 }
 
 // SearchChartData TODO
-func (s *operation) SearchChartData(ctx context.Context, h http.Header,
-	data metadata.ChartConfig) (resp *metadata.Response, err error) {
+func (s *operation) SearchChartData(ctx context.Context, h http.Header, data metadata.ChartConfig) (
+	resp *metadata.Response, err error) {
+
 	resp = new(metadata.Response)
 	subPath := "/find/operation/chart/data"
 
@@ -40,8 +42,9 @@ func (s *operation) SearchChartData(ctx context.Context, h http.Header,
 }
 
 // CreateOperationChart TODO
-func (s *operation) CreateOperationChart(ctx context.Context, h http.Header,
-	data interface{}) (resp *metadata.CoreUint64Response, err error) {
+func (s *operation) CreateOperationChart(ctx context.Context, h http.Header, data interface{}) (
+	resp *metadata.CoreUint64Response, err error) {
+
 	resp = new(metadata.CoreUint64Response)
 	subPath := "/create/operation/chart"
 
@@ -58,6 +61,7 @@ func (s *operation) CreateOperationChart(ctx context.Context, h http.Header,
 // DeleteOperationChart TODO
 func (s *operation) DeleteOperationChart(ctx context.Context, h http.Header, id string) (resp *metadata.Response,
 	err error) {
+
 	resp = new(metadata.Response)
 	subPath := "delete/operation/chart/%v"
 
@@ -72,8 +76,9 @@ func (s *operation) DeleteOperationChart(ctx context.Context, h http.Header, id 
 }
 
 // SearchOperationCharts TODO
-func (s *operation) SearchOperationCharts(ctx context.Context, h http.Header,
-	data interface{}) (resp *metadata.SearchChartResponse, err error) {
+func (s *operation) SearchOperationCharts(ctx context.Context, h http.Header, data interface{}) (
+	resp *metadata.SearchChartResponse, err error) {
+
 	resp = new(metadata.SearchChartResponse)
 	subPath := "/findmany/operation/chart"
 
@@ -90,6 +95,7 @@ func (s *operation) SearchOperationCharts(ctx context.Context, h http.Header,
 // UpdateOperationChart TODO
 func (s *operation) UpdateOperationChart(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response,
 	err error) {
+
 	resp = new(metadata.Response)
 	subPath := "update/operation/chart"
 
@@ -106,6 +112,7 @@ func (s *operation) UpdateOperationChart(ctx context.Context, h http.Header, dat
 // SearchTimerChartData TODO
 func (s *operation) SearchTimerChartData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response,
 	err error) {
+
 	resp = new(metadata.Response)
 	subPath := "/find/operation/timer/chart/data"
 
@@ -122,6 +129,7 @@ func (s *operation) SearchTimerChartData(ctx context.Context, h http.Header, dat
 // UpdateChartPosition TODO
 func (s *operation) UpdateChartPosition(ctx context.Context, h http.Header, data interface{}) (resp *metadata.Response,
 	err error) {
+
 	resp = new(metadata.Response)
 	subPath := "/update/operation/chart/position"
 
@@ -136,8 +144,9 @@ func (s *operation) UpdateChartPosition(ctx context.Context, h http.Header, data
 }
 
 // SearchChartCommon TODO
-func (s *operation) SearchChartCommon(ctx context.Context, h http.Header,
-	data interface{}) (resp *metadata.SearchChartCommon, err error) {
+func (s *operation) SearchChartCommon(ctx context.Context, h http.Header, data interface{}) (
+	resp *metadata.SearchChartCommon, err error) {
+
 	resp = new(metadata.SearchChartCommon)
 	subPath := "/find/operation/chart/common"
 
@@ -154,6 +163,7 @@ func (s *operation) SearchChartCommon(ctx context.Context, h http.Header,
 // TimerFreshData TODO
 func (s *operation) TimerFreshData(ctx context.Context, h http.Header, data interface{}) (resp *metadata.BoolResponse,
 	err error) {
+
 	resp = new(metadata.BoolResponse)
 	subPath := "/start/operation/chart/timer"
 
