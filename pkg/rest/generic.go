@@ -100,14 +100,14 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		// 反序列化
 		in, err := decodeReq[Req](r)
 		if err != nil {
-			slog.Error("handle decode request failed", "err", err)
+			slog.Error("handle decode stream request failed", "err", err)
 			_ = render.Render(w, r, APIError(err))
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
-			slog.Error("validate req failed", "err", err)
+			slog.Error("validate stream req failed", "err", err)
 			_ = render.Render(w, r, APIError(err))
 			return
 		}
