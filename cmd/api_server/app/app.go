@@ -29,6 +29,8 @@ import (
 
 	"github.com/oklog/run"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/options"
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/service"
@@ -85,7 +87,9 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 
 func registerHTTPServer(_ context.Context, g *run.Group, router http.Handler, opts *options.Options) {
 	addr := net.JoinHostPort(opts.Address, strconv.Itoa(opts.Port))
-	svr := http.Server{Addr: addr, Handler: router}
+
+	h2cHandler := h2c.NewHandler(router, &http2.Server{})
+	svr := http.Server{Addr: addr, Handler: h2cHandler}
 
 	g.Add(func() error {
 		slog.Info("listening for http requests and metrics", "addr", addr)
