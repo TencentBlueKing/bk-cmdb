@@ -1,0 +1,104 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+issues:
+  # 显示所有 issue
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  # 必须在enable打开才能用
+  enable:
+    - gofmt
+    - gci
+
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/TencentBlueKing/bk-cmdb)
+      custom-order: true
+
+linters:
+  enable:
+    # enable by default
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+    # custom
+    - goconst
+    - goheader
+    - gosec
+    - misspell
+    - nakedret
+    - revive
+    - unconvert
+    - unparam
+
+  settings:
+    # 只开启特定的规则
+    errcheck:
+      exclude-functions:
+        - (*os.File).Close
+        - (io.Closer).Close
+        - (net/http.ResponseWriter).Write
+        - io.Copy
+        - os.RemoveAll
+    govet:
+      enable:
+        - shadow
+    gosec:
+      includes:
+        - G201 # SQL query construction using format string
+        - G202 # SQL query construction using string concatenation
+        - G101 # Look for hard coded credentials
+        - G401 # Detect the usage of DES, RC4, MD5 or SHA1
+        - G402 # Look for bad TLS connection settings
+        - G403 # Ensure minimum RSA key length of 2048 bits
+        - G404 # Insecure random number source (rand)
+        - G504 # Import blocklist: net/http/cgi
+    goheader:
+      values:
+        regexp:
+          YEAR: 20\d\d
+      template: |-
+        * Tencent is pleased to support the open source community by making
+         * 蓝鲸智云 - 配置平台 (BlueKing - CMDB) available.
+         * Copyright (C) {{ YEAR }} Tencent. All rights reserved.
+         * Licensed under the MIT License (the "License");
+         * you may not use this file except in compliance with the License.
+         * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+         * Unless required by applicable law or agreed to in writing,
+         * software distributed under the License is distributed on
+         * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+         * either express or implied. See the License for the
+         * specific language governing permissions and limitations under the License.
+         * We undertake not to change the open source license (MIT license) applicable
+         * to the current version of the project delivered to anyone in the future.
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: line-length-limit
+          arguments:
+            - 160
+        - name: function-length
+          arguments:
+            - 80 # statements
+            - 120 # lines
+        - name: cyclomatic
+          arguments:
+            - 30
+        - name: use-any
+        - name: early-return
+        - name: exported
+          arguments:
+            - checkPrivateReceivers
+            - sayRepetitiveInsteadOfStutters
+        - name: package-comments
