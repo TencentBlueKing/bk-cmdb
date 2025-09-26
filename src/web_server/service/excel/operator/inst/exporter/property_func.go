@@ -61,26 +61,37 @@ func getHandleNumericTypeFunc() handleColPropFunc {
 	}
 }
 
+func createSheetWithData(t *TmplOp, sheet string, rowIdx int, data [][]excel.Cell) error {
+	if err := t.GetExcel().CreateSheet(sheet); err != nil {
+		return err
+	}
+
+	if err := t.GetExcel().StreamingWrite(sheet, rowIdx, data); err != nil {
+		return err
+	}
+
+	if err := t.GetExcel().Flush([]string{sheet}); err != nil {
+		return err
+	}
+
+	if err := t.GetExcel().Save(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func getHandleEnumTypeFunc() handleColPropFunc {
 	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
 		optionArr, ok := property.Option.([]interface{})
 		if ok {
-			if err := t.GetExcel().CreateSheet(property.RefSheet); err != nil {
-				return nil, err
-			}
+
 			data := make([][]excel.Cell, len(optionArr))
 			for idx, name := range getEnumNames(optionArr) {
 				data[idx] = append(data[idx], excel.Cell{Value: name})
 			}
-			if err := t.GetExcel().StreamingWrite(property.RefSheet, core.NameRowIdx, data); err != nil {
-				return nil, err
-			}
 
-			if err := t.GetExcel().Flush([]string{property.RefSheet}); err != nil {
-				return nil, err
-			}
-
-			if err := t.GetExcel().Save(); err != nil {
+			if err := createSheetWithData(t, property.RefSheet, core.NameRowIdx, data); err != nil {
 				return nil, err
 			}
 

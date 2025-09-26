@@ -240,19 +240,7 @@ func (t *TmplOp) handleProperty(colProps []core.ColProp) ([][]excel.Cell, error)
 	// sheet name.
 	enumSheetMap := "枚举字段名映射"
 	if enumIdx > 0 {
-		if err := t.GetExcel().CreateSheet(enumSheetMap); err != nil {
-			return nil, err
-		}
-
-		if err := t.GetExcel().StreamingWrite(enumSheetMap, 0, data); err != nil {
-			return nil, err
-		}
-
-		if err := t.GetExcel().Flush([]string{enumSheetMap}); err != nil {
-			return nil, err
-		}
-
-		if err := t.GetExcel().Save(); err != nil {
+		if err := createSheetWithData(t, enumSheetMap, core.NameRowIdx, data); err != nil {
 			return nil, err
 		}
 	}
