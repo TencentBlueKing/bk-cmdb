@@ -17,6 +17,8 @@
 package exporter
 
 import (
+	"strconv"
+
 	"configcenter/pkg/excel"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -201,9 +203,18 @@ func (t *TmplOp) handleProperty(colProps []core.ColProp) ([][]excel.Cell, error)
 		return nil, err
 	}
 
+	enumIdx := 0
+	data := make([][]excel.Cell, len(colProps))
 	for _, property := range colProps {
 		if property.IsRequire {
 			property.Name = property.Name + ccLang.Language("web_excel_header_required")
+		}
+
+		if property.PropertyType == common.FieldTypeEnumMulti || property.PropertyType == common.FieldTypeEnum {
+			sheetName := "enum_" + strconv.Itoa(enumIdx)
+			data[enumIdx] = []excel.Cell{{Value: sheetName + ":" + property.RefSheet}}
+			property.RefSheet = sheetName
+			enumIdx++
 		}
 
 		handleFunc := getHandleColPropFunc(&property)
@@ -221,6 +232,28 @@ func (t *TmplOp) handleProperty(colProps []core.ColProp) ([][]excel.Cell, error)
 				}
 				header[idx][property.ExcelColIndex+fieldIdx] = field
 			}
+		}
+	}
+
+	// The number of characters in an excel sheet cannot exceed 31; Since the enumeration field name may exceed this
+	// length, a custom sheet name is defined and a new sheet is created to map the enumeration field name to the
+	// sheet name.
+	enumSheetMap := "枚举字段名映射"
+	if enumIdx > 0 {
+		if err := t.GetExcel().CreateSheet(enumSheetMap); err != nil {
+			return nil, err
+		}
+
+		if err := t.GetExcel().StreamingWrite(enumSheetMap, 0, data); err != nil {
+			return nil, err
+		}
+
+		if err := t.GetExcel().Flush([]string{enumSheetMap}); err != nil {
+			return nil, err
+		}
+
+		if err := t.GetExcel().Save(); err != nil {
+			return nil, err
 		}
 	}
 
