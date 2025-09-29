@@ -110,7 +110,7 @@ func getFieldValue(field reflect.Type, tag *Tag, values []string) (reflect.Value
 	}
 
 	// slice类型
-	if field.Kind() == reflect.Slice || field.Kind() == reflect.Array {
+	if field.Kind() == reflect.Slice {
 		typ := field.Elem()
 
 		// []byte 特殊处理

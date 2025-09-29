@@ -26,6 +26,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest/codec"
 )
 
 // reqStruct for rest
@@ -86,7 +88,7 @@ func TestFormDecode(t *testing.T) {
 	assert.Equal(t, []string{"1", "2"}, req.SliceStr)
 }
 
-func TestJsonecode(t *testing.T) {
+func TestJsonDecode(t *testing.T) {
 	header := map[string]string{
 		"age_ptr":      "21",
 		"Content-Type": "application/json",
@@ -102,6 +104,20 @@ func TestJsonecode(t *testing.T) {
 	assert.Equal(t, lo.ToPtr(21), req.AgePtr)
 	assert.Equal(t, []string{"1", "2"}, req.SliceStr)
 	assert.Equal(t, int64(64), req.Page)
+}
+
+func TestDecodeErr(t *testing.T) {
+	header := map[string]string{
+		"age_ptr": "21",
+	}
+
+	// array not support
+	type Req2 struct {
+		SliceStr [1]string `json:"sliceStr" req:"query:slice_str"`
+	}
+	r := newMockRequest(t, http.MethodGet, header, nil)
+	_, err := decodeReq[Req2](r)
+	assert.ErrorIs(t, err, codec.ErrUnsupportedType)
 }
 
 func BenchmarkDecodeReq(b *testing.B) {

@@ -25,6 +25,9 @@ import (
 )
 
 var (
+	// ErrUnsupportedType unsupported parse type
+	ErrUnsupportedType = errors.New("unsupported type")
+
 	parserRegistry = make(map[reflect.Type]Parser)
 	byteType       = reflect.TypeFor[byte]()
 )
@@ -64,7 +67,7 @@ func RegisterParser[T any](p Parser) {
 func ParseValue(rt reflect.Type, s string, opt map[string]string) (reflect.Value, error) {
 	parser, ok := parserRegistry[rt]
 	if !ok {
-		return reflect.Value{}, fmt.Errorf("%w: %v", errors.ErrUnsupported, rt)
+		return reflect.Value{}, fmt.Errorf("%w: %v", ErrUnsupportedType, rt)
 	}
 
 	// 实现自定义初始化
