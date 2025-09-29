@@ -17,8 +17,10 @@
 package rest
 
 import (
+	"bytes"
 	"io"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/samber/lo"
@@ -26,47 +28,90 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// reqStruct for rest
+type reqStruct struct {
+	Org      string   `json:"org" path:"org"`
+	Name     string   `json:"name" query:"name"`
+	Age      int32    `json:"age" form:"age"`
+	Bool     bool     `json:"bool" query:"bool"`
+	AgePtr   *int     `json:"agePtr" header:"age_ptr"`
+	SliceStr []string `json:"sliceStr" query:"slice_str"`
+	Page     int64    `json:"page"`
+}
+
 // newMockRequest creates a new mock request.
-func newMockRequest(t testing.TB, method string, body io.ReadCloser) *http.Request {
-	req, err := http.NewRequest(method, "/vm/xxx?name=alices&age=20&age_ptr=21&slice_str=1&slice_str=2", body)
+func newMockRequest(t testing.TB, method string, header map[string]string, body io.Reader) *http.Request {
+	req, err := http.NewRequest(method, "/{org}/vm/xxx?name=alices&age=20&age_ptr=21&slice_str=1&slice_str=2", body)
+	req.SetPathValue("org", "myOrg")
+	for k, v := range header {
+		req.Header.Set(k, v)
+	}
+	req.Body = io.NopCloser(body)
+
 	require.NoError(t, err)
 	return req
 }
 
 func TestDecode(t *testing.T) {
-	r := newMockRequest(t, http.MethodGet, nil)
-	type Req struct {
-		Name     string   `json:"name" query:"name"`
-		Age      int32    `json:"age" query:"age"`
-		Bool     bool     `json:"bool" query:"bool"`
-		AgePtr   *int     `json:"agePtr" query:"age_ptr"`
-		SliceStr []string `json:"sliceStr" query:"slice_str"`
+	header := map[string]string{
+		"age_ptr": "21",
+	}
+	r := newMockRequest(t, http.MethodGet, header, nil)
+
+	req, err := decodeReq[reqStruct](r)
+	assert.NoError(t, err)
+	assert.Equal(t, "myOrg", req.Org)
+	assert.Equal(t, "alices", req.Name)
+	assert.Equal(t, lo.ToPtr(21), req.AgePtr)
+	assert.Equal(t, []string{"1", "2"}, req.SliceStr)
+}
+
+func TestFormDecode(t *testing.T) {
+	header := map[string]string{
+		"age_ptr":      "21",
+		"Content-Type": "application/x-www-form-urlencoded",
 	}
 
-	req, err := decodeReq[Req](r)
+	formData := url.Values{}
+	formData.Set("age", "20")
+
+	r := newMockRequest(t, http.MethodPost, header, bytes.NewBufferString(formData.Encode()))
+
+	req, err := decodeReq[reqStruct](r)
 	assert.NoError(t, err)
+	assert.Equal(t, "myOrg", req.Org)
 	assert.Equal(t, "alices", req.Name)
 	assert.Equal(t, int32(20), req.Age)
 	assert.Equal(t, lo.ToPtr(21), req.AgePtr)
 	assert.Equal(t, []string{"1", "2"}, req.SliceStr)
 }
 
-func BenchmarkDecodeReq(b *testing.B) {
-	type Req struct {
-		Name     string   `json:"name" query:"name"`
-		Age      int32    `json:"age" query:"age" in:"query=age"`
-		Bool     bool     `json:"bool" query:"bool"`
-		AgePtr   *int     `json:"agePtr" query:"age_ptr"`
-		SliceStr []string `json:"sliceStr" query:"slice_str"`
+func TestJsonecode(t *testing.T) {
+	header := map[string]string{
+		"age_ptr":      "21",
+		"Content-Type": "application/json",
 	}
 
+	jsonData := `{"page": 64}`
+	r := newMockRequest(t, http.MethodPost, header, bytes.NewBufferString(jsonData))
+
+	req, err := decodeReq[reqStruct](r)
+	assert.NoError(t, err)
+	assert.Equal(t, "myOrg", req.Org)
+	assert.Equal(t, "alices", req.Name)
+	assert.Equal(t, lo.ToPtr(21), req.AgePtr)
+	assert.Equal(t, []string{"1", "2"}, req.SliceStr)
+	assert.Equal(t, int64(64), req.Page)
+}
+
+func BenchmarkDecodeReq(b *testing.B) {
 	for b.Loop() {
-		r := newMockRequest(b, http.MethodGet, nil)
-		req, err := decodeReq[Req](r)
+		r := newMockRequest(b, http.MethodGet, nil, nil)
+		req, err := decodeReq[reqStruct](r)
 		if err != nil {
 			b.Fatal(err)
 		}
-		if req.Age != int32(20) {
+		if req.Name != "alices" {
 			b.Fatal("age not equal")
 		}
 	}

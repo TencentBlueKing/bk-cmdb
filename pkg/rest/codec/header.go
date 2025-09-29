@@ -44,7 +44,9 @@ func (c *headerCodec) Decode(field reflect.StructField, fv reflect.Value) error 
 		return err
 	}
 
-	v, ok := c.values[tag.Name]
+	// header统一格式
+	key := http.CanonicalHeaderKey(tag.Name)
+	v, ok := c.values[key]
 	if !ok {
 		return nil
 	}
