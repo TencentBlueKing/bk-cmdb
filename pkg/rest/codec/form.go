@@ -49,22 +49,17 @@ func NewFormCodec(r *http.Request) (*formCodec, error) {
 }
 
 // Decode ...
-func (c *formCodec) Decode(field reflect.StructField, fv reflect.Value) error {
+func (c *formCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Tag) error {
 	if !c.isForm {
 		return nil
 	}
 
-	formTag, ok := field.Tag.Lookup("form")
+	formTag, ok := tag.Option["form"]
 	if !ok {
 		return nil
 	}
 
-	tag, err := ParseTag(formTag)
-	if err != nil {
-		return err
-	}
-
-	v, ok := c.values[tag.Name]
+	v, ok := c.values[formTag]
 	if !ok {
 		return nil
 	}

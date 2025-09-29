@@ -30,12 +30,12 @@ import (
 
 // reqStruct for rest
 type reqStruct struct {
-	Org      string   `json:"org" path:"org"`
-	Name     string   `json:"name" query:"name"`
-	Age      int32    `json:"age" form:"age"`
-	Bool     bool     `json:"bool" query:"bool"`
-	AgePtr   *int     `json:"agePtr" header:"age_ptr"`
-	SliceStr []string `json:"sliceStr" query:"slice_str"`
+	Org      string   `json:"org" req:"path:org"`
+	Name     string   `json:"name" req:"query:name" in:"query=name"`
+	Age      int32    `json:"age" req:"form:age"`
+	Bool     bool     `json:"bool" req:"query:bool"`
+	AgePtr   *int     `json:"agePtr" req:"header:age_ptr"`
+	SliceStr []string `json:"sliceStr" req:"query:slice_str"`
 	Page     int64    `json:"page"`
 }
 
@@ -112,7 +112,7 @@ func BenchmarkDecodeReq(b *testing.B) {
 			b.Fatal(err)
 		}
 		if req.Name != "alices" {
-			b.Fatal("age not equal")
+			b.Fatal("name not equal")
 		}
 	}
 }

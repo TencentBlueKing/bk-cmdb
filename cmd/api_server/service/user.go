@@ -23,11 +23,11 @@ import (
 
 // UserInfoReq 个人信息Req
 type UserInfoReq struct {
-	Username string     `json:"name" query:"name"`
-	Age      *int       `json:"age" query:"age"`
-	Games    *[]*string `json:"games" query:"games"`
-	BirthDay time.Time  `json:"birthday" query:"birthday,format=2006-01-02"`
-	Ko       []byte     `json:"ko" query:"ko"`
+	Username string     `json:"name" req:"query:name"`
+	Age      *int       `json:"age" req:"query:age"`
+	Games    *[]*string `json:"games" req:"query:games"`
+	BirthDay time.Time  `json:"birthday" req:"query:birthday,format:2006-01-02"`
+	Ko       []byte     `json:"ko" req:"query:ko"`
 }
 
 // UserInfoResp 个人信息
@@ -36,7 +36,7 @@ type UserInfoResp struct {
 	Age      int        `json:"age"`
 	Games    *[]*string `json:"games"`
 	Ko       string     `json:"ko"`
-	BirthDay string     `json:"birthday"`
+	BirthDay time.Time  `json:"birthday,format:'2006-01-02'"`
 }
 
 // UserInfo 用户信息
@@ -46,7 +46,7 @@ func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp
 		Age:      *req.Age + 10,
 		Games:    req.Games,
 		Ko:       string(req.Ko),
-		BirthDay: req.BirthDay.String(),
+		BirthDay: req.BirthDay,
 	}
 	return resp, nil
 }

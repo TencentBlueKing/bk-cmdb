@@ -33,19 +33,14 @@ func NewHeaderCodec(r *http.Request) *headerCodec {
 }
 
 // Decode ...
-func (c *headerCodec) Decode(field reflect.StructField, fv reflect.Value) error {
-	headerTag, ok := field.Tag.Lookup("header")
+func (c *headerCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Tag) error {
+	headTag, ok := tag.Option["header"]
 	if !ok {
 		return nil
 	}
 
-	tag, err := ParseTag(headerTag)
-	if err != nil {
-		return err
-	}
-
 	// header统一格式
-	key := http.CanonicalHeaderKey(tag.Name)
+	key := http.CanonicalHeaderKey(headTag)
 	v, ok := c.values[key]
 	if !ok {
 		return nil

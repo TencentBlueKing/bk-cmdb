@@ -22,8 +22,6 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-
-	"github.com/go-chi/render"
 )
 
 // UnaryFunc Unary or ClientStreaming handle function
@@ -53,23 +51,23 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			slog.Error("handle decode request failed", "err", err)
-			_ = render.Render(w, r, APIError(err))
+			_ = APIError(err).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			slog.Error("validate req failed", "err", err)
-			_ = render.Render(w, r, APIError(err))
+			_ = APIError(err).Render(w, r)
 			return
 		}
 
 		out, err := fn(r.Context(), in)
 		if err != nil {
-			_ = render.Render(w, r, APIError(err))
+			_ = APIError(err).Render(w, r)
 			return
 		}
-		_ = render.Render(w, r, APIOK(out))
+		_ = APIOK(out).Render(w, r)
 	}
 	return f
 }
@@ -100,14 +98,14 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			slog.Error("handle decode stream request failed", "err", err)
-			_ = render.Render(w, r, APIError(err))
+			_ = APIError(err).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			slog.Error("validate stream req failed", "err", err)
-			_ = render.Render(w, r, APIError(err))
+			_ = APIError(err).Render(w, r)
 			return
 		}
 
@@ -119,7 +117,7 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 
 		err = fn(in, svr)
 		if err != nil {
-			_ = render.Render(w, r, APIError(err))
+			_ = APIError(err).Render(w, r)
 		}
 	}
 	return f

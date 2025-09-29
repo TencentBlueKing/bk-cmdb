@@ -18,40 +18,65 @@ package codec
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
+)
+
+const (
+	// tagName 结构体tag名称
+	// 格式参考 https://pkg.go.dev/encoding/json/v2#example-package-FormatFlags
+	tagName = "req"
 )
 
 // Tag is a struct tag
 type Tag struct {
-	Name   string
 	Option map[string]string
 }
 
-// ParseTag ...
-func ParseTag(tagStr string) (*Tag, error) {
+func getStructTags(rt reflect.Type) ([]*Tag, error) {
+	tags := make([]*Tag, rt.NumField())
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+		tags[i] = new(Tag)
+
+		// 非导出需要跳过, 无法设置值
+		if !field.IsExported() {
+			continue
+		}
+
+		tagStr, ok := field.Tag.Lookup(tagName)
+		if !ok {
+			continue
+		}
+
+		tag, err := parseTag(tagStr)
+		if err != nil {
+			return nil, err
+		}
+		tags[i] = tag
+	}
+
+	return tags, nil
+}
+
+func parseTag(tagStr string) (*Tag, error) {
+	tagStr = strings.TrimSpace(tagStr)
 	if tagStr == "" {
 		return nil, fmt.Errorf("tag is empty")
 	}
 
-	tagStr = strings.TrimSpace(tagStr)
 	parts := strings.Split(tagStr, ",")
-	name := strings.TrimSpace(parts[0])
-	if name == "" {
-		return nil, fmt.Errorf("tag name is empty")
-	}
-
 	t := &Tag{
-		Name:   name,
 		Option: map[string]string{},
 	}
 
-	for _, part := range parts[1:] {
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
 		if part == "" {
 			return nil, fmt.Errorf("tag option not valid")
 		}
 
-		part = strings.TrimSpace(part)
-		opt := strings.SplitN(part, "=", 2)
+		opt := strings.SplitN(part, ":", 2)
 		key := opt[0]
 		val := ""
 		if len(opt) == 2 {

@@ -17,10 +17,14 @@
 package rest
 
 import (
+	"encoding/json/v2"
 	"net/http"
-
-	"github.com/go-chi/render"
 )
+
+// Renderer interface for managing response payloads.
+type Renderer interface {
+	Render(w http.ResponseWriter, r *http.Request) error
+}
 
 // APIResponse response for api request
 type APIResponse struct {
@@ -32,12 +36,15 @@ type APIResponse struct {
 
 // Render chi render interface implementation
 func (e *APIResponse) Render(w http.ResponseWriter, r *http.Request) error {
-	render.Status(r, e.HTTPCode)
-	return nil
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(e.HTTPCode)
+
+	return json.MarshalWrite(w, e)
 }
 
 // APIOK 正常返回
-func APIOK(data any) render.Renderer {
+func APIOK(data any) Renderer {
 	return &APIResponse{
 		Message:  "request OK",
 		HTTPCode: http.StatusOK,
@@ -47,7 +54,7 @@ func APIOK(data any) render.Renderer {
 }
 
 // APIError 错误返回
-func APIError(err error) render.Renderer {
+func APIError(err error) Renderer {
 	return &APIResponse{
 		Message:  err.Error(),
 		HTTPCode: http.StatusBadRequest,

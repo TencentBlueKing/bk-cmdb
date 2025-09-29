@@ -34,18 +34,13 @@ func NewQueryCodec(r *http.Request) *queryCodec {
 }
 
 // Decode ...
-func (c *queryCodec) Decode(field reflect.StructField, fv reflect.Value) error {
-	queryTag, ok := field.Tag.Lookup("query")
+func (c *queryCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Tag) error {
+	queryTag, ok := tag.Option["query"]
 	if !ok {
 		return nil
 	}
 
-	tag, err := ParseTag(queryTag)
-	if err != nil {
-		return err
-	}
-
-	v, ok := c.values[tag.Name]
+	v, ok := c.values[queryTag]
 	if !ok {
 		return nil
 	}

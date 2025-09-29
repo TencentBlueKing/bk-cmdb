@@ -24,22 +24,18 @@ import (
 )
 
 type pathCodec struct {
-	values    url.Values
-	cachedTag map[string]*Tag
+	values url.Values
 }
 
 // NewPathCodec ...
-func NewPathCodec(r *http.Request, rt reflect.Type) (*pathCodec, error) {
-	c := &pathCodec{cachedTag: make(map[string]*Tag)}
+func NewPathCodec(r *http.Request, rt reflect.Type, tags []*Tag) (*pathCodec, error) {
+	values := makePathValues(r, rt, tags)
 
-	if err := c.makePathValues(r, rt); err != nil {
-		return nil, err
-	}
-
+	c := &pathCodec{values: values}
 	return c, nil
 }
 
-func (c *pathCodec) makePathValues(r *http.Request, rt reflect.Type) error {
+func makePathValues(r *http.Request, rt reflect.Type, tags []*Tag) url.Values {
 	values := url.Values{}
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
@@ -49,34 +45,26 @@ func (c *pathCodec) makePathValues(r *http.Request, rt reflect.Type) error {
 			continue
 		}
 
-		pathTag, ok := field.Tag.Lookup("path")
+		tag := tags[i]
+		pathTag, ok := tag.Option["path"]
 		if !ok {
 			continue
 		}
 
-		tag, err := ParseTag(pathTag)
-		if err != nil {
-			return err
-		}
-		c.cachedTag[pathTag] = tag
-
-		values[tag.Name] = []string{r.PathValue(tag.Name)}
+		values[pathTag] = []string{r.PathValue(pathTag)}
 	}
 
-	c.values = values
-	return nil
+	return values
 }
 
 // Decode ...
-func (c *pathCodec) Decode(field reflect.StructField, fv reflect.Value) error {
-	pathTag, ok := field.Tag.Lookup("path")
+func (c *pathCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Tag) error {
+	pathTag, ok := tag.Option["path"]
 	if !ok {
 		return nil
 	}
 
-	tag := c.cachedTag[pathTag]
-
-	v, ok := c.values[tag.Name]
+	v, ok := c.values[pathTag]
 	if !ok {
 		return nil
 	}
