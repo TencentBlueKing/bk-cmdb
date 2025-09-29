@@ -27,9 +27,9 @@ type pathCodec struct {
 }
 
 // NewPathCodec ...
-func NewPathCodec(r *http.Request, rt reflect.Type) (*pathCodec, error) {
+func NewPathCodec(r *http.Request) *pathCodec {
 	c := &pathCodec{req: r}
-	return c, nil
+	return c
 }
 
 // Decode ...

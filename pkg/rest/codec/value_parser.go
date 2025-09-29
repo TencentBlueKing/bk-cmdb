@@ -26,7 +26,7 @@ import (
 
 var (
 	parserRegistry = make(map[reflect.Type]Parser)
-	byteType       = TypeOf[byte]()
+	byteType       = reflect.TypeFor[byte]()
 )
 
 // Parser defines the interface for converting a string to a reflect.Value
@@ -56,7 +56,7 @@ func (p ParserFunc) Parse(s string) (reflect.Value, error) {
 
 // RegisterParser registers a parser implementation for a specific type T
 func RegisterParser[T any](p Parser) {
-	parserRegistry[TypeOf[T]()] = p
+	parserRegistry[reflect.TypeFor[T]()] = p
 }
 
 // ParseValue converts a string to a value of the specified type using registered parsers

@@ -24,13 +24,6 @@ import (
 	"reflect"
 )
 
-// TypeOf returns the reflect.Type of a given type.
-// e.g. TypeOf[int]() returns reflect.TypeOf(0)
-func TypeOf[T any]() reflect.Type {
-	var zero [0]T
-	return reflect.TypeOf(zero).Elem()
-}
-
 func decodeTo(r *http.Request, val any) error {
 	rt := reflect.TypeOf(val).Elem()
 	rv := reflect.ValueOf(val).Elem()
@@ -46,11 +39,7 @@ func decodeTo(r *http.Request, val any) error {
 		return err
 	}
 
-	pathCodec, err := NewPathCodec(r, rt)
-	if err != nil {
-		return err
-	}
-
+	pathCodec := NewPathCodec(r)
 	queryCodec := NewQueryCodec(r)
 	headerCodec := NewHeaderCodec(r)
 
@@ -91,7 +80,7 @@ func decodeTo(r *http.Request, val any) error {
 
 // Decode 按结构体反序列化Request
 func Decode[T any](r *http.Request) (*T, error) {
-	rt := TypeOf[T]()
+	rt := reflect.TypeFor[T]()
 	if rt.Kind() != reflect.Struct {
 		return nil, errors.New("generic type T must be a struct type")
 	}
