@@ -14,49 +14,69 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package rest
+package codec
 
 import (
-	"context"
+	"fmt"
 	"net/http"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest/codec"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/validator"
+	"net/url"
+	"reflect"
+	"strings"
 )
 
-// decodeReq ...
-func decodeReq[T any](r *http.Request) (*T, error) {
-	in := new(T)
-
-	// http.Request 直接返回
-	if _, ok := any(in).(*http.Request); ok {
-		return any(r).(*T), nil
-	}
-
-	// 空值不需要反序列化
-	if _, ok := any(in).(*EmptyReq); ok {
-		return in, nil
-	}
-
-	in, err := codec.Decode[T](r)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
+type formCodec struct {
+	values url.Values
+	isForm bool
 }
 
-// validate 参数校验
-func validateReq(ctx context.Context, req any) error {
-	// http.Request 直接返回
-	if _, ok := req.(*http.Request); ok {
+// NewFormCodec ...
+func NewFormCodec(r *http.Request) (*formCodec, error) {
+	isForm := false
+
+	contentType := r.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {
+		if err := r.ParseForm(); err != nil {
+			return nil, err
+		}
+		isForm = true
+	}
+
+	c := &formCodec{
+		values: r.PostForm,
+		isForm: isForm,
+	}
+	return c, nil
+}
+
+// Decode ...
+func (c *formCodec) Decode(field reflect.StructField, fv reflect.Value) error {
+	if !c.isForm {
 		return nil
 	}
 
-	// 空值不需要校验
-	if _, ok := req.(*EmptyReq); ok {
+	formTag, ok := field.Tag.Lookup("form")
+	if !ok {
 		return nil
 	}
 
-	return validator.Struct(ctx, req)
+	tag, err := ParseTag(formTag)
+	if err != nil {
+		return err
+	}
+
+	v, ok := c.values[tag.Name]
+	if !ok {
+		return nil
+	}
+
+	rv, err := getFieldValue(field.Type, tag, v)
+	if err != nil {
+		return err
+	}
+	if !rv.IsValid() {
+		return fmt.Errorf("%s not valid", rv)
+	}
+
+	fv.Set(rv)
+	return nil
 }

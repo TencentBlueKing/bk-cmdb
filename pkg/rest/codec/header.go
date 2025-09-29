@@ -14,49 +14,49 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package rest
+package codec
 
 import (
-	"context"
+	"fmt"
 	"net/http"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest/codec"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/validator"
+	"reflect"
 )
 
-// decodeReq ...
-func decodeReq[T any](r *http.Request) (*T, error) {
-	in := new(T)
-
-	// http.Request 直接返回
-	if _, ok := any(in).(*http.Request); ok {
-		return any(r).(*T), nil
-	}
-
-	// 空值不需要反序列化
-	if _, ok := any(in).(*EmptyReq); ok {
-		return in, nil
-	}
-
-	in, err := codec.Decode[T](r)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
+type headerCodec struct {
+	values http.Header
 }
 
-// validate 参数校验
-func validateReq(ctx context.Context, req any) error {
-	// http.Request 直接返回
-	if _, ok := req.(*http.Request); ok {
+// NewHeaderCodec ...
+func NewHeaderCodec(r *http.Request) *headerCodec {
+	c := &headerCodec{values: r.Header}
+	return c
+}
+
+// Decode ...
+func (c *headerCodec) Decode(field reflect.StructField, fv reflect.Value) error {
+	headerTag, ok := field.Tag.Lookup("header")
+	if !ok {
 		return nil
 	}
 
-	// 空值不需要校验
-	if _, ok := req.(*EmptyReq); ok {
+	tag, err := ParseTag(headerTag)
+	if err != nil {
+		return err
+	}
+
+	v, ok := c.values[tag.Name]
+	if !ok {
 		return nil
 	}
 
-	return validator.Struct(ctx, req)
+	rv, err := getFieldValue(field.Type, tag, v)
+	if err != nil {
+		return err
+	}
+	if !rv.IsValid() {
+		return fmt.Errorf("%s not valid", rv)
+	}
+
+	fv.Set(rv)
+	return nil
 }

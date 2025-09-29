@@ -14,49 +14,51 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package rest
+package codec
 
 import (
-	"context"
-	"net/http"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest/codec"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/validator"
+	"fmt"
+	"strings"
 )
 
-// decodeReq ...
-func decodeReq[T any](r *http.Request) (*T, error) {
-	in := new(T)
-
-	// http.Request 直接返回
-	if _, ok := any(in).(*http.Request); ok {
-		return any(r).(*T), nil
-	}
-
-	// 空值不需要反序列化
-	if _, ok := any(in).(*EmptyReq); ok {
-		return in, nil
-	}
-
-	in, err := codec.Decode[T](r)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
+// Tag is a struct tag
+type Tag struct {
+	Name   string
+	Option map[string]string
 }
 
-// validate 参数校验
-func validateReq(ctx context.Context, req any) error {
-	// http.Request 直接返回
-	if _, ok := req.(*http.Request); ok {
-		return nil
+// ParseTag ...
+func ParseTag(tagStr string) (*Tag, error) {
+	if tagStr == "" {
+		return nil, fmt.Errorf("tag is empty")
 	}
 
-	// 空值不需要校验
-	if _, ok := req.(*EmptyReq); ok {
-		return nil
+	tagStr = strings.TrimSpace(tagStr)
+	parts := strings.Split(tagStr, ",")
+	name := strings.TrimSpace(parts[0])
+	if name == "" {
+		return nil, fmt.Errorf("tag name is empty")
 	}
 
-	return validator.Struct(ctx, req)
+	t := &Tag{
+		Name:   name,
+		Option: map[string]string{},
+	}
+
+	for _, part := range parts[1:] {
+		if part == "" {
+			return nil, fmt.Errorf("tag option not valid")
+		}
+
+		part = strings.TrimSpace(part)
+		opt := strings.SplitN(part, "=", 2)
+		key := opt[0]
+		val := ""
+		if len(opt) == 2 {
+			val = opt[1]
+		}
+		t.Option[key] = val
+	}
+
+	return t, nil
 }

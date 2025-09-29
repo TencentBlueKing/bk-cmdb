@@ -43,7 +43,6 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 	handleName := getHandleName(fn)
 
 	f := func(w http.ResponseWriter, r *http.Request) {
-		r.Header.Set("Content-Type", "application/json")
 		st := time.Now()
 		var err error
 		defer func() {

@@ -18,16 +18,35 @@ package service
 
 import (
 	"context"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
+	"time"
 )
+
+// UserInfoReq 个人信息Req
+type UserInfoReq struct {
+	Username string     `json:"name" query:"name"`
+	Age      *int       `json:"age" query:"age"`
+	Games    *[]*string `json:"games" query:"games"`
+	BirthDay time.Time  `json:"birthday" query:"birthday,format=2006-01-02"`
+	Ko       []byte     `json:"ko" query:"ko"`
+}
 
 // UserInfoResp 个人信息
 type UserInfoResp struct {
-	Username string `json:"username"`
+	Username string     `json:"username"`
+	Age      int        `json:"age"`
+	Games    *[]*string `json:"games"`
+	Ko       string     `json:"ko"`
+	BirthDay string     `json:"birthday"`
 }
 
 // UserInfo 用户信息
-func (s *service) UserInfo(ctx context.Context, req *rest.EmptyReq) (*UserInfoResp, error) {
-	return &UserInfoResp{Username: "xxx"}, nil
+func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, error) {
+	resp := &UserInfoResp{
+		Username: req.Username,
+		Age:      *req.Age + 10,
+		Games:    req.Games,
+		Ko:       string(req.Ko),
+		BirthDay: req.BirthDay.String(),
+	}
+	return resp, nil
 }
