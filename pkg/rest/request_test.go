@@ -30,12 +30,12 @@ import (
 
 // reqStruct for rest
 type reqStruct struct {
-	Org      string   `json:"org" req:"path:org"`
+	Org      string   `json:"org" req:"path:org" in:"path=org"`
 	Name     string   `json:"name" req:"query:name" in:"query=name"`
-	Age      int32    `json:"age" req:"form:age"`
-	Bool     bool     `json:"bool" req:"query:bool"`
-	AgePtr   *int     `json:"agePtr" req:"header:age_ptr"`
-	SliceStr []string `json:"sliceStr" req:"query:slice_str"`
+	Age      int32    `json:"age" req:"form:age" in:"form=age"`
+	Bool     bool     `json:"bool" req:"query:bool" in:"query=bool"`
+	AgePtr   *int     `json:"agePtr" req:"header:age_ptr" in:"header=age_ptr"`
+	SliceStr []string `json:"sliceStr" req:"query:slice_str" in:"query=slice_str"`
 	Page     int64    `json:"page"`
 }
 

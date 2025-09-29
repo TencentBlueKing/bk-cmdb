@@ -40,8 +40,8 @@ func (c *queryCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Ta
 		return nil
 	}
 
-	v, ok := c.values[queryTag]
-	if !ok {
+	v := c.values[queryTag]
+	if len(v) == 0 {
 		return nil
 	}
 

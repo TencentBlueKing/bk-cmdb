@@ -18,7 +18,6 @@ package codec
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 )
 
@@ -31,32 +30,6 @@ const (
 // Tag is a struct tag
 type Tag struct {
 	Option map[string]string
-}
-
-func getStructTags(rt reflect.Type) ([]*Tag, error) {
-	tags := make([]*Tag, rt.NumField())
-	for i := 0; i < rt.NumField(); i++ {
-		field := rt.Field(i)
-		tags[i] = new(Tag)
-
-		// 非导出需要跳过, 无法设置值
-		if !field.IsExported() {
-			continue
-		}
-
-		tagStr, ok := field.Tag.Lookup(tagName)
-		if !ok {
-			continue
-		}
-
-		tag, err := parseTag(tagStr)
-		if err != nil {
-			return nil, err
-		}
-		tags[i] = tag
-	}
-
-	return tags, nil
 }
 
 func parseTag(tagStr string) (*Tag, error) {

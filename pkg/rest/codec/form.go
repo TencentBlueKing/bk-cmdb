@@ -59,8 +59,8 @@ func (c *formCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Tag
 		return nil
 	}
 
-	v, ok := c.values[formTag]
-	if !ok {
+	v := c.values[formTag]
+	if len(v) == 0 {
 		return nil
 	}
 

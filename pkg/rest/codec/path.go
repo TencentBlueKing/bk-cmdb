@@ -19,42 +19,17 @@ package codec
 import (
 	"fmt"
 	"net/http"
-	"net/url"
 	"reflect"
 )
 
 type pathCodec struct {
-	values url.Values
+	req *http.Request
 }
 
 // NewPathCodec ...
-func NewPathCodec(r *http.Request, rt reflect.Type, tags []*Tag) (*pathCodec, error) {
-	values := makePathValues(r, rt, tags)
-
-	c := &pathCodec{values: values}
+func NewPathCodec(r *http.Request, rt reflect.Type) (*pathCodec, error) {
+	c := &pathCodec{req: r}
 	return c, nil
-}
-
-func makePathValues(r *http.Request, rt reflect.Type, tags []*Tag) url.Values {
-	values := url.Values{}
-	for i := 0; i < rt.NumField(); i++ {
-		field := rt.Field(i)
-
-		// 非导出需要跳过, 无法设置值
-		if !field.IsExported() {
-			continue
-		}
-
-		tag := tags[i]
-		pathTag, ok := tag.Option["path"]
-		if !ok {
-			continue
-		}
-
-		values[pathTag] = []string{r.PathValue(pathTag)}
-	}
-
-	return values
 }
 
 // Decode ...
@@ -64,12 +39,12 @@ func (c *pathCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Tag
 		return nil
 	}
 
-	v, ok := c.values[pathTag]
-	if !ok {
+	pv := c.req.PathValue(pathTag)
+	if pv == "" {
 		return nil
 	}
 
-	rv, err := getFieldValue(field.Type, tag, v)
+	rv, err := getFieldValue(field.Type, tag, []string{pv})
 	if err != nil {
 		return err
 	}

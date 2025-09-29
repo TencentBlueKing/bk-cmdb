@@ -35,14 +35,9 @@ func decodeTo(r *http.Request, val any) error {
 	rt := reflect.TypeOf(val).Elem()
 	rv := reflect.ValueOf(val).Elem()
 
-	tags, err := getStructTags(rt)
-	if err != nil {
-		return err
-	}
-
 	// json 整个解析
 	jsonCodec := NewJsonCodec(r)
-	if err = jsonCodec.Decode(val); err != nil {
+	if err := jsonCodec.Decode(val); err != nil {
 		return err
 	}
 
@@ -51,7 +46,7 @@ func decodeTo(r *http.Request, val any) error {
 		return err
 	}
 
-	pathCodec, err := NewPathCodec(r, rt, tags)
+	pathCodec, err := NewPathCodec(r, rt)
 	if err != nil {
 		return err
 	}
@@ -67,8 +62,16 @@ func decodeTo(r *http.Request, val any) error {
 			continue
 		}
 
+		tagStr := field.Tag.Get(tagName)
+		if tagStr == "" {
+			continue
+		}
+		tag, err := parseTag(tagStr)
+		if err != nil {
+			return err
+		}
+
 		fv := rv.Field(i)
-		tag := tags[i]
 		if err := formCodec.Decode(field, fv, tag); err != nil {
 			return err
 		}
