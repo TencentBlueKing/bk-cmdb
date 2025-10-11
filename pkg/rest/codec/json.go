@@ -33,8 +33,10 @@ type jsonCodec struct {
 func NewJsonCodec(r *http.Request) *jsonCodec {
 	isJson := false
 
+	// 限制Method, 同ParseForm的一致
 	contentType := r.Header.Get("Content-Type")
-	if strings.HasPrefix(contentType, "application/json") {
+	if (r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH") &&
+		strings.HasPrefix(contentType, "application/json") {
 		isJson = true
 	}
 
@@ -51,11 +53,15 @@ func (j *jsonCodec) Decode(val any) error {
 	if err != nil {
 		return err
 	}
+
+	// body等于空时，可能其他解析场景，直接正常返回
+	// 如果需要判断是否有值，可通过指针处理
 	if len(body) == 0 {
-		return fmt.Errorf("json body is empty")
+		return nil
 	}
+
 	if err := json.Unmarshal(body, val); err != nil {
-		return fmt.Errorf("unmarshal json body: %s", err)
+		return fmt.Errorf("unmarshal json body: %w", err)
 	}
 	return nil
 }

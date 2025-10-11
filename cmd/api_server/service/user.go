@@ -24,7 +24,7 @@ import (
 // UserInfoReq 个人信息Req
 type UserInfoReq struct {
 	Username string     `json:"name" req:"query:name"`
-	Age      *int       `json:"age" req:"query:age"`
+	Age      int        `req:"query:age"`
 	Games    *[]*string `json:"games" req:"query:games"`
 	BirthDay time.Time  `json:"birthday" req:"query:birthday,format:2006-01-02"`
 	Ko       []byte     `json:"ko" req:"query:ko"`
@@ -43,7 +43,7 @@ type UserInfoResp struct {
 func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, error) {
 	resp := &UserInfoResp{
 		Username: req.Username,
-		Age:      *req.Age + 10,
+		Age:      req.Age + 10,
 		Games:    req.Games,
 		Ko:       string(req.Ko),
 		BirthDay: req.BirthDay,

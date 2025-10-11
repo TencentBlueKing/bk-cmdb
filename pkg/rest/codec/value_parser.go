@@ -175,7 +175,7 @@ func (t *Time) New(opt map[string]string) Parser {
 }
 
 func init() {
-	// buildin parser
+	// builtin parser
 	RegisterParser[string](ParserFunc(StringParser))
 	RegisterParser[bool](ParserFunc(BoolParser))
 	RegisterParser[int](Int[int]{0})

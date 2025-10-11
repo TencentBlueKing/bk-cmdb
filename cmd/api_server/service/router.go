@@ -45,7 +45,7 @@ func NewRouter() http.Handler {
 	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 
 	svr := service{}
-	r.Get("/user/info", rest.Handle(svr.UserInfo))
+	r.Post("/user/info", rest.Handle(svr.UserInfo))
 
 	return r
 }

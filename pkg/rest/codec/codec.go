@@ -31,7 +31,7 @@ func decodeTo(r *http.Request, val any) error {
 	// json 整个解析
 	jsonCodec := NewJsonCodec(r)
 	if err := jsonCodec.Decode(val); err != nil {
-		return err
+		return fmt.Errorf("decode json: %w", err)
 	}
 
 	pathCodec := NewPathCodec(r)
@@ -56,10 +56,10 @@ func decodeTo(r *http.Request, val any) error {
 
 		fv := rv.Field(i)
 		if err := queryCodec.Decode(field, fv, tag); err != nil {
-			return err
+			return fmt.Errorf("decode query: %w", err)
 		}
 		if err := pathCodec.Decode(field, fv, tag); err != nil {
-			return err
+			return fmt.Errorf("decode path: %w", err)
 		}
 	}
 
