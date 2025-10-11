@@ -34,14 +34,8 @@ func decodeTo(r *http.Request, val any) error {
 		return err
 	}
 
-	formCodec, err := NewFormCodec(r)
-	if err != nil {
-		return err
-	}
-
 	pathCodec := NewPathCodec(r)
 	queryCodec := NewQueryCodec(r)
-	headerCodec := NewHeaderCodec(r)
 
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
@@ -61,13 +55,7 @@ func decodeTo(r *http.Request, val any) error {
 		}
 
 		fv := rv.Field(i)
-		if err := formCodec.Decode(field, fv, tag); err != nil {
-			return err
-		}
 		if err := queryCodec.Decode(field, fv, tag); err != nil {
-			return err
-		}
-		if err := headerCodec.Decode(field, fv, tag); err != nil {
 			return err
 		}
 		if err := pathCodec.Decode(field, fv, tag); err != nil {
