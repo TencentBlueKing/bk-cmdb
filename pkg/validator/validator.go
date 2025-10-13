@@ -20,7 +20,6 @@ package validator
 import (
 	"context"
 	"reflect"
-	"strings"
 
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/zh"
@@ -29,6 +28,8 @@ import (
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/samber/lo"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
 var (
@@ -87,13 +88,13 @@ func Struct(ctx context.Context, s any) error {
 }
 
 // readableTagName 返回可读的json/req校验字段名称, 唯一性由codec校验
-func readableTagName(fld reflect.StructField) string {
-	name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+func readableTagName(field reflect.StructField) string {
+	name := util.GetTagName(field, "json")
 	if name != "" && name != "-" {
 		return name
 	}
 
-	name = strings.SplitN(fld.Tag.Get("req"), ",", 2)[0]
+	name = util.GetTagName(field, "req")
 	if name != "" && name != "-" {
 		return name
 	}

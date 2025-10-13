@@ -22,7 +22,8 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"strings"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
 func decodeTo(r *http.Request, val any) error {
@@ -86,7 +87,7 @@ type structField struct {
 
 // getStructFields 获取字段列表, 校验json/req的唯一性
 func getStructFields(rt reflect.Type, rv reflect.Value) ([]structField, error) {
-	fields := []structField{}
+	fields := make([]structField, 0)
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
 
@@ -108,7 +109,7 @@ func getStructFields(rt reflect.Type, rv reflect.Value) ([]structField, error) {
 			continue
 		}
 
-		jsonTagName := strings.SplitN(field.Tag.Get("json"), ",", 2)[0]
+		jsonTagName := util.GetTagName(field, "json")
 		if jsonTagName != "" && jsonTagName != "-" {
 			return nil, fmt.Errorf("field[%s] req and json tag are mutually exclusive", field.Name)
 		}
