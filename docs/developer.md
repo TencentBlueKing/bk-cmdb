@@ -99,3 +99,22 @@ func (s *service) Hello(ctx context.Context, req *HelloReq) (*HelloResp, error) 
 	return resp, nil
 }
 ```
+
+## req decode 规则
+rest框架可以对request请求自动解析到业务自定义结构体，定义使用`req`做tag, 使用`in`表示来源，规则如下
+- 语法习惯同社区, 可参考https://pkg.go.dev/encoding/json/v2#example-package-FormatFlags
+- 不能和json同时使用
+- `in`目前支持query/path，不合法的会提示错误
+- time类型支持`format`参数, 格式如`format:2006-01-02`,表示按日期解析
+
+示例如下
+```go
+// UserInfoReq 个人信息Req
+type UserInfoReq struct {
+	Username string     `json:"name" req:"-,in:query"`
+	Age      int        `req:"age,in:query" validate:"required"`
+	Games    *[]*string `json:"games" req:"-"`
+	BirthDay time.Time  `req:"birthday,in:query,format:2006-01-02"`
+	Ko       []byte     `json:"-" req:"ko,in:query"`
+}
+```

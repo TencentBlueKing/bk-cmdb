@@ -101,15 +101,15 @@ func getStructFields(rt reflect.Type, rv reflect.Value) ([]structField, error) {
 		}
 		tag, err := parseTag(reqTagStr)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("field[%s] %w", field.Name, err)
 		}
 		// tag name为空或者-忽略
 		if tag.Name == "" || tag.Name == "-" {
 			continue
 		}
 
-		jsonTagname := strings.SplitN(field.Tag.Get("json"), ",", 2)[0]
-		if jsonTagname != "" && jsonTagname != "-" {
+		jsonTagName := strings.SplitN(field.Tag.Get("json"), ",", 2)[0]
+		if jsonTagName != "" && jsonTagName != "-" {
 			return nil, fmt.Errorf("field[%s] req and json tag are mutually exclusive", field.Name)
 		}
 
