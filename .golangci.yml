@@ -68,7 +68,7 @@ linters:
         regexp:
           YEAR: 20\d\d
       template: |-
-        * Tencent is pleased to support the open source community by making
+        * TencentBlueKing is pleased to support the open source community by making
          * 蓝鲸智云 - 配置平台 (BlueKing - CMDB) available.
          * Copyright (C) {{ YEAR }} Tencent. All rights reserved.
          * Licensed under the MIT License (the "License");
@@ -87,14 +87,14 @@ linters:
       rules:
         - name: line-length-limit
           arguments:
-            - 160
+            - 120
         - name: function-length
           arguments:
             - 80 # statements
-            - 120 # lines
+            - 80 # lines
         - name: cyclomatic
           arguments:
-            - 30
+            - 20
         - name: use-any
         - name: early-return
         - name: exported

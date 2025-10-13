@@ -1,5 +1,5 @@
 /*
- * Tencent is pleased to support the open source community by making
+ * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - CMDB) available.
  * Copyright (C) 2025 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License");
@@ -18,16 +18,35 @@ package service
 
 import (
 	"context"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
+	"time"
 )
+
+// UserInfoReq 个人信息Req
+type UserInfoReq struct {
+	Username string     `json:"name" req:"-,in:query"`
+	Age      int        `req:"age,in:query" validate:"required"`
+	Games    *[]*string `json:"games" req:"-"`
+	BirthDay time.Time  `req:"birthday,in:query,format:2006-01-02"`
+	Ko       []byte     `json:"-" req:"ko,in:query"`
+}
 
 // UserInfoResp 个人信息
 type UserInfoResp struct {
-	Username string `json:"username"`
+	Username string     `json:"username"`
+	Age      int        `json:"age"`
+	Games    *[]*string `json:"games"`
+	Ko       string     `json:"ko"`
+	BirthDay time.Time  `json:"birthday,format:'2006-01-02'"`
 }
 
 // UserInfo 用户信息
-func (s *service) UserInfo(ctx context.Context, req *rest.EmptyReq) (*UserInfoResp, error) {
-	return &UserInfoResp{Username: "xxx"}, nil
+func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, error) {
+	resp := &UserInfoResp{
+		Username: req.Username,
+		Age:      req.Age + 10,
+		Games:    req.Games,
+		Ko:       string(req.Ko),
+		BirthDay: req.BirthDay,
+	}
+	return resp, nil
 }

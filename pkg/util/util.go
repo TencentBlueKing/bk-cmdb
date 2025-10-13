@@ -14,18 +14,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// program apiserver defines the server main entry.
-package main
+// Package util provides common utility functions and helpers for various operations across the project.
+package util
 
 import (
-	"os"
-
-	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/app"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
+	"reflect"
+	"strings"
 )
 
-func main() {
-	command := app.NewAPIServerCommand()
-	code := cli.Run(command)
-	os.Exit(code)
+// GetTagName extracts the first comma-separated value from a struct field's tag.
+// For example, given a tag `json:"name,omitempty"`, it returns "name".
+func GetTagName(field reflect.StructField, tag string) string {
+	name := strings.SplitN(field.Tag.Get(tag), ",", 2)[0]
+	return name
 }

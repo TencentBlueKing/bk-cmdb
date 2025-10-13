@@ -1,5 +1,5 @@
 /*
- * Tencent is pleased to support the open source community by making
+ * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - CMDB) available.
  * Copyright (C) 2025 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License");
@@ -20,7 +20,6 @@ package validator
 import (
 	"context"
 	"reflect"
-	"strings"
 
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/zh"
@@ -29,6 +28,8 @@ import (
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/samber/lo"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
 var (
@@ -86,18 +87,24 @@ func Struct(ctx context.Context, s any) error {
 	return nil
 }
 
-// jsonTagName 优先从 json tag 获取名称
-func jsonTagName(fld reflect.StructField) string {
-	name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
-	if name == "-" {
-		return ""
+// readableTagName 返回可读的json/req校验字段名称, 唯一性由codec校验
+func readableTagName(field reflect.StructField) string {
+	name := util.GetTagName(field, "json")
+	if name != "" && name != "-" {
+		return name
 	}
-	return name
+
+	name = util.GetTagName(field, "req")
+	if name != "" && name != "-" {
+		return name
+	}
+
+	return ""
 }
 
 func init() {
 	validate = validator.New(validator.WithRequiredStructEnabled())
-	validate.RegisterTagNameFunc(jsonTagName)
+	validate.RegisterTagNameFunc(readableTagName)
 
 	// 默认使用英文
 	en := en.New()

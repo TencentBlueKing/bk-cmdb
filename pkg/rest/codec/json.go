@@ -14,49 +14,54 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package rest
+package codec
 
 import (
-	"context"
+	"encoding/json/v2"
+	"fmt"
+	"io"
 	"net/http"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest/codec"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/validator"
+	"strings"
 )
 
-// decodeReq ...
-func decodeReq[T any](r *http.Request) (*T, error) {
-	in := new(T)
-
-	// http.Request 直接返回
-	if _, ok := any(in).(*http.Request); ok {
-		return any(r).(*T), nil
-	}
-
-	// 空值不需要反序列化
-	if _, ok := any(in).(*EmptyReq); ok {
-		return in, nil
-	}
-
-	in, err := codec.Decode[T](r)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
+type jsonCodec struct {
+	isJson bool
+	req    *http.Request
 }
 
-// validate 参数校验
-func validateReq(ctx context.Context, req any) error {
-	// http.Request 直接返回
-	if _, ok := req.(*http.Request); ok {
+// NewJsonCodec ...
+func NewJsonCodec(r *http.Request) *jsonCodec {
+	isJson := false
+
+	// 限制Method, 同ParseForm的一致
+	contentType := r.Header.Get("Content-Type")
+	if (r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH") &&
+		strings.HasPrefix(contentType, "application/json") {
+		isJson = true
+	}
+
+	return &jsonCodec{req: r, isJson: isJson}
+}
+
+// Decode ...
+func (j *jsonCodec) Decode(val any) error {
+	if !j.isJson {
 		return nil
 	}
 
-	// 空值不需要校验
-	if _, ok := req.(*EmptyReq); ok {
+	body, err := io.ReadAll(j.req.Body)
+	if err != nil {
+		return err
+	}
+
+	// body等于空时，可能其他解析场景，直接正常返回
+	// 如果需要判断是否有值，可通过指针处理
+	if len(body) == 0 {
 		return nil
 	}
 
-	return validator.Struct(ctx, req)
+	if err := json.Unmarshal(body, val); err != nil {
+		return fmt.Errorf("unmarshal json body: %w", err)
+	}
+	return nil
 }

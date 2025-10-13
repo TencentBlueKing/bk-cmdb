@@ -1,5 +1,5 @@
 /*
- * Tencent is pleased to support the open source community by making
+ * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - CMDB) available.
  * Copyright (C) 2025 Tencent. All rights reserved.
  * Licensed under the MIT License (the "License");
@@ -45,7 +45,7 @@ func NewRouter() http.Handler {
 	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 
 	svr := service{}
-	r.Get("/user/info", rest.Handle(svr.UserInfo))
+	r.Post("/user/info", rest.Handle(svr.UserInfo))
 
 	return r
 }

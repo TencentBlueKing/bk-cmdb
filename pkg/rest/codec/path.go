@@ -14,18 +14,39 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// program apiserver defines the server main entry.
-package main
+package codec
 
 import (
-	"os"
-
-	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/app"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
+	"fmt"
+	"net/http"
+	"reflect"
 )
 
-func main() {
-	command := app.NewAPIServerCommand()
-	code := cli.Run(command)
-	os.Exit(code)
+type pathCodec struct {
+	req *http.Request
+}
+
+// NewPathCodec ...
+func NewPathCodec(r *http.Request) *pathCodec {
+	c := &pathCodec{req: r}
+	return c
+}
+
+// Decode ...
+func (c *pathCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Tag) error {
+	pv := c.req.PathValue(tag.Name)
+	if pv == "" {
+		return nil
+	}
+
+	rv, err := getFieldValue(field.Type, tag, []string{pv})
+	if err != nil {
+		return err
+	}
+	if !rv.IsValid() {
+		return fmt.Errorf("%s not valid", rv)
+	}
+
+	fv.Set(rv)
+	return nil
 }
