@@ -35,11 +35,7 @@ func NewQueryCodec(r *http.Request) *queryCodec {
 
 // Decode ...
 func (c *queryCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Tag) error {
-	if tag.Query == "" {
-		return nil
-	}
-
-	v := c.values[tag.Query]
+	v := c.values[tag.Name]
 	if len(v) == 0 {
 		return nil
 	}

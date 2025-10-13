@@ -25,14 +25,15 @@ const (
 	// tagName 结构体tag名称
 	// 格式参考 https://pkg.go.dev/encoding/json/v2#example-package-FormatFlags
 	tagName      = "req"
-	queryTagName = "query"
-	pathTagName  = "path"
+	inOptName    = "in"
+	queryOptName = "query"
+	pathOptName  = "path"
 )
 
 // Tag is a struct tag
 type Tag struct {
-	Query  string            // query 参数名称
-	Path   string            // path 参数名称
+	Name   string            // tag name
+	In     string            // query/path参数中
 	Option map[string]string // 自定义参数
 }
 
@@ -43,11 +44,14 @@ func parseTag(tagStr string) (*Tag, error) {
 	}
 
 	parts := strings.Split(tagStr, ",")
+	name := strings.TrimSpace(parts[0])
+
 	t := &Tag{
+		Name:   name,
 		Option: map[string]string{},
 	}
 
-	for _, part := range parts {
+	for _, part := range parts[1:] {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			return nil, fmt.Errorf("tag option not valid")
@@ -60,12 +64,9 @@ func parseTag(tagStr string) (*Tag, error) {
 			val = opt[1]
 		}
 
-		switch key {
-		case queryTagName:
-			t.Query = val
-		case pathTagName:
-			t.Path = val
-		default:
+		if key == inOptName {
+			t.In = val
+		} else {
 			t.Option[key] = val
 		}
 	}

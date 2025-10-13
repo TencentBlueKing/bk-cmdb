@@ -22,45 +22,41 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
 func decodeTo(r *http.Request, val any) error {
 	rt := reflect.TypeOf(val).Elem()
 	rv := reflect.ValueOf(val).Elem()
 
-	// json 整个解析
-	jsonCodec := NewJsonCodec(r)
-	if err := jsonCodec.Decode(val); err != nil {
-		return fmt.Errorf("decode json: %w", err)
+	fields, err := getStructFields(rt, rv)
+	if err != nil {
+		return err
 	}
 
 	pathCodec := NewPathCodec(r)
 	queryCodec := NewQueryCodec(r)
+	for _, f := range fields {
+		switch f.tag.In {
+		case pathOptName:
+			if err := pathCodec.Decode(f.field, f.fv, f.tag); err != nil {
+				return fmt.Errorf("field[%s] decode path: %w", f.field.Name, err)
+			}
+		case queryOptName:
+			if err := queryCodec.Decode(f.field, f.fv, f.tag); err != nil {
+				return fmt.Errorf("field[%s] decode query: %w", f.field.Name, err)
+			}
+		case "":
+			return fmt.Errorf("field[%s] in option is required", f.field.Name)
+		default:
+			return fmt.Errorf("field[%s] in[%s] option not valid", f.field.Name, f.tag.In)
+		}
+	}
 
-	for i := 0; i < rt.NumField(); i++ {
-		field := rt.Field(i)
-
-		// 非导出需要跳过, 无法设置值
-		if !field.IsExported() {
-			continue
-		}
-
-		tagStr := field.Tag.Get(tagName)
-		if tagStr == "" {
-			continue
-		}
-		tag, err := parseTag(tagStr)
-		if err != nil {
-			return err
-		}
-
-		fv := rv.Field(i)
-		if err := queryCodec.Decode(field, fv, tag); err != nil {
-			return fmt.Errorf("decode query: %w", err)
-		}
-		if err := pathCodec.Decode(field, fv, tag); err != nil {
-			return fmt.Errorf("decode path: %w", err)
-		}
+	// json 整个解析
+	jsonCodec := NewJsonCodec(r)
+	if err := jsonCodec.Decode(val); err != nil {
+		return fmt.Errorf("decode json: %w", err)
 	}
 
 	return nil
@@ -76,10 +72,50 @@ func Decode[T any](r *http.Request) (*T, error) {
 	t := new(T)
 	err := decodeTo(r, t)
 	if err != nil {
-		return nil, fmt.Errorf("codec decode: %w", err)
+		return nil, fmt.Errorf("decode req: %w", err)
 	}
 
 	return t, nil
+}
+
+type structField struct {
+	field reflect.StructField // 结构体字段
+	fv    reflect.Value       // 字段的值
+	tag   *Tag                // 字段解析后的req tag
+}
+
+// getStructFields 获取字段列表, 校验json/req的唯一性
+func getStructFields(rt reflect.Type, rv reflect.Value) ([]structField, error) {
+	fields := []structField{}
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+
+		// 非导出需要跳过, 无法设置值
+		if !field.IsExported() {
+			continue
+		}
+
+		reqTagStr := field.Tag.Get(tagName)
+		if reqTagStr == "" {
+			continue
+		}
+		tag, err := parseTag(reqTagStr)
+		if err != nil {
+			return nil, err
+		}
+		// tag name为空或者-忽略
+		if tag.Name == "" || tag.Name == "-" {
+			continue
+		}
+
+		jsonTagname := strings.SplitN(field.Tag.Get("json"), ",", 2)[0]
+		if jsonTagname != "" && jsonTagname != "-" {
+			return nil, fmt.Errorf("field[%s] req and json tag are mutually exclusive", field.Name)
+		}
+
+		fields = append(fields, structField{field: field, fv: rv.Field(i), tag: tag})
+	}
+	return fields, nil
 }
 
 // getFieldValue 获取字段值

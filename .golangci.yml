@@ -87,7 +87,7 @@ linters:
       rules:
         - name: line-length-limit
           arguments:
-            - 160
+            - 120
         - name: function-length
           arguments:
             - 80 # statements

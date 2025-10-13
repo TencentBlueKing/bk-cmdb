@@ -34,11 +34,7 @@ func NewPathCodec(r *http.Request) *pathCodec {
 
 // Decode ...
 func (c *pathCodec) Decode(field reflect.StructField, fv reflect.Value, tag *Tag) error {
-	if tag.Path == "" {
-		return nil
-	}
-
-	pv := c.req.PathValue(tag.Path)
+	pv := c.req.PathValue(tag.Name)
 	if pv == "" {
 		return nil
 	}

@@ -23,11 +23,11 @@ import (
 
 // UserInfoReq 个人信息Req
 type UserInfoReq struct {
-	Username string     `json:"name" req:"query:name"`
-	Age      int        `req:"query:age"`
-	Games    *[]*string `json:"games" req:"query:games"`
-	BirthDay time.Time  `json:"birthday" req:"query:birthday,format:2006-01-02"`
-	Ko       []byte     `json:"ko" req:"query:ko"`
+	Username string     `json:"name" req:"-,in:query"`
+	Age      int        `req:"age,in:query" validate:"required"`
+	Games    *[]*string `json:"games" req:"-"`
+	BirthDay time.Time  `req:"birthday,in:query,format:2006-01-02"`
+	Ko       []byte     `json:"-" req:"ko,in:query"`
 }
 
 // UserInfoResp 个人信息

@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"net/url"
 	"testing"
 
 	"github.com/samber/lo"
@@ -32,12 +31,12 @@ import (
 
 // reqStruct for rest
 type reqStruct struct {
-	Org      string   `json:"org" req:"path:org" in:"path=org"`
-	Name     string   `json:"name" req:"query:name" in:"query=name"`
-	Age      int32    `json:"age" req:"form:age" in:"form=age"`
-	Bool     bool     `json:"bool" req:"query:bool" in:"query=bool"`
-	AgePtr   *int     `json:"agePtr" req:"header:age_ptr" in:"header=age_ptr"`
-	SliceStr []string `json:"sliceStr" req:"query:slice_str" in:"query=slice_str"`
+	Org      string   `json:"-" req:"org,in:path" in:"path=org"`
+	Name     string   `json:"-" req:"name,in:query" in:"query=name"`
+	Age      int32    `json:"age" req:"-,in:form"`
+	Bool     bool     `json:"-" req:"bool,in:query" in:"query=bool"`
+	AgePtr   *int     `json:"-" req:"age_ptr,in:query" in:"query=age_ptr"`
+	SliceStr []string `json:"-" req:"slice_str,in:query" in:"query=slice_str"`
 	Page     int64    `json:"page"`
 }
 
@@ -68,26 +67,6 @@ func TestDecode(t *testing.T) {
 	assert.Equal(t, []string{"1", "2"}, req.SliceStr)
 }
 
-func TestFormDecode(t *testing.T) {
-	header := map[string]string{
-		"age_ptr":      "21",
-		"Content-Type": "application/x-www-form-urlencoded",
-	}
-
-	formData := url.Values{}
-	formData.Set("age", "20")
-
-	r := newMockRequest(t, http.MethodPost, header, bytes.NewBufferString(formData.Encode()))
-
-	req, err := decodeReq[reqStruct](r)
-	assert.NoError(t, err)
-	assert.Equal(t, "myOrg", req.Org)
-	assert.Equal(t, "alices", req.Name)
-	assert.Equal(t, int32(20), req.Age)
-	assert.Equal(t, lo.ToPtr(21), req.AgePtr)
-	assert.Equal(t, []string{"1", "2"}, req.SliceStr)
-}
-
 func TestJsonDecode(t *testing.T) {
 	header := map[string]string{
 		"age_ptr":      "21",
@@ -113,7 +92,7 @@ func TestDecodeErr(t *testing.T) {
 
 	// array not support
 	type Req2 struct {
-		SliceStr [1]string `json:"sliceStr" req:"query:slice_str"`
+		SliceStr [1]string `json:"-" req:"slice_str,in:query"`
 	}
 	r := newMockRequest(t, http.MethodGet, header, nil)
 	_, err := decodeReq[Req2](r)
