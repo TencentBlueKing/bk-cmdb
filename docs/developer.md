@@ -22,6 +22,9 @@ bk-cmdb
 ├── LICENSE.txt
 ├── Makefile
 ├── pkg 公共包
+│   ├── config-center 配置中心，封装了配置文件读取、配置文件变更监听、配置注册与发现逻辑
+│   │   └── config 系统使用的配置类型定义
+│   ├── etcd 封装了etcd相关的配置和操作
 │   ├── healthz 自身服务healthz接口
 │   ├── logger 自定义Contextual&Structured Logger
 │   ├── rest http服务框架
@@ -29,6 +32,8 @@ bk-cmdb
 │   │   └── dao 数据访问对象
 │   ├── runtime
 │   │   └── cli 命令行入口封装
+│   ├── service-discovery 服务注册与发现逻辑封装
+│   │   └── etcd 使用etcd实现服务注册与发现
 │   ├── validator struct参数校验
 │   └── version 版本号
 ├── readme_en.md
