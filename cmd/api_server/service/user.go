@@ -19,6 +19,8 @@ package service
 import (
 	"context"
 	"time"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
 )
 
 // UserInfoReq 个人信息Req
@@ -41,6 +43,7 @@ type UserInfoResp struct {
 
 // UserInfo 用户信息
 func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, error) {
+	logger.Info(ctx, "handle UserInfo")
 	resp := &UserInfoResp{
 		Username: req.Username,
 		Age:      req.Age + 10,

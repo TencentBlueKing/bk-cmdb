@@ -14,39 +14,171 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package logger provider std slog logger
+// Package logger provider the contextual and structured logger, base the golang's slog
 package logger
 
 import (
+	"context"
 	"log/slog"
-	"os"
-	"path/filepath"
-	"strconv"
 )
 
-// Init 初始化 slog
-func Init() {
-	textHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		AddSource:   true,
-		Level:       slog.LevelInfo,
-		ReplaceAttr: ReplaceSourceAttr,
-	})
+// Logger contextual and structured logger
+type Logger interface {
+	With(args ...any) Logger
+	WithGroup(name string) Logger
+	Handler() slog.Handler
 
-	logger := slog.New(textHandler)
-	slog.SetDefault(logger)
+	Trace(ctx context.Context, msg string, args ...any)
+	Debug(ctx context.Context, msg string, args ...any)
+	Info(ctx context.Context, msg string, args ...any)
+	Warn(ctx context.Context, msg string, args ...any)
+	Error(ctx context.Context, err error, msg string, args ...any)
 }
 
-// ReplaceSourceAttr source 格式化为 file:line 格式
-func ReplaceSourceAttr(groups []string, a slog.Attr) slog.Attr {
-	if a.Key != slog.SourceKey {
-		return a
-	}
+// With returns a Logger that includes the given attributes in each output operation.
+func With(args ...any) Logger {
+	return defaultLogger.With(args...)
+}
 
-	src, ok := a.Value.Any().(*slog.Source)
+// WithGroup returns a Logger that starts a group
+func WithGroup(name string) Logger {
+	return defaultLogger.WithGroup(name)
+}
+
+// Depth return a Logger with depth
+func Depth(depth int) Logger {
+	d := -depth
+	return &contextualLogger{logger: defaultLogger.logger, depth: &d}
+}
+
+// Trace logs at LevelTrace with the given context.
+func Trace(ctx context.Context, msg string, args ...any) {
+	defaultLogger.Trace(ctx, msg, args...)
+}
+
+// Debug logs at LevelDebug with the given context.
+func Debug(ctx context.Context, msg string, args ...any) {
+	defaultLogger.Debug(ctx, msg, args...)
+}
+
+// Info logs at LevelInfo with the given context.
+func Info(ctx context.Context, msg string, args ...any) {
+	defaultLogger.Info(ctx, msg, args...)
+}
+
+// Warn logs at LevelWarn with the given context.
+func Warn(ctx context.Context, msg string, args ...any) {
+	defaultLogger.Warn(ctx, msg, args...)
+}
+
+// Error logs at LevelError with the given context.
+func Error(ctx context.Context, err error, msg string, args ...any) {
+	defaultLogger.Error(ctx, err, msg, args...)
+}
+
+type contextualLogger struct {
+	logger *slog.Logger
+	depth  *int
+}
+
+// With returns a Logger that includes the given attributes in each output operation.
+func (l *contextualLogger) With(args ...any) Logger {
+	return &contextualLogger{logger: l.logger.With(args...), depth: l.depth}
+}
+
+// WithGroup returns a Logger that starts a group
+func (l *contextualLogger) WithGroup(name string) Logger {
+	return &contextualLogger{logger: l.logger.WithGroup(name), depth: l.depth}
+}
+
+// Handler returns logger's Handler.
+func (l *contextualLogger) Handler() slog.Handler {
+	return l.logger.Handler()
+}
+
+// Trace logs at LevelInfo with the given context.
+func (l *contextualLogger) Trace(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, LevelTrace, msg, args...)
+}
+
+// Debug logs at LevelInfo with the given context.
+func (l *contextualLogger) Debug(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, slog.LevelDebug, msg, args...)
+}
+
+// Info logs at LevelInfo with the given context.
+func (l *contextualLogger) Info(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, slog.LevelInfo, msg, args...)
+}
+
+// Warn logs at LevelInfo with the given context.
+func (l *contextualLogger) Warn(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, slog.LevelWarn, msg, args...)
+}
+
+// Error logs at LevelInfo with the given context.
+func (l *contextualLogger) Error(ctx context.Context, err error, msg string, args ...any) {
+	args = append(args, slog.String("err", err.Error()))
+	l.Log(ctx, slog.LevelError, msg, args...)
+}
+
+// Log logs at Level with the given context.
+func (l *contextualLogger) Log(ctx context.Context, level slog.Level, msg string, args ...any) {
+	ctx = context.WithValue(ctx, depthCtxKey, l.depth)
+	l.logger.Log(ctx, level, msg, args...)
+}
+
+// New make a new Logger
+func New(h slog.Handler) Logger {
+	return &contextualLogger{logger: slog.New(h)}
+}
+
+// WithAttr 添加自定义属性
+func WithAttr(ctx context.Context, attrs ...slog.Attr) context.Context {
+	rawAttrs, ok := ctx.Value(attrCtxKey).([]slog.Attr)
 	if !ok {
-		return a
+		return context.WithValue(ctx, attrCtxKey, attrs)
 	}
 
-	a.Value = slog.StringValue(filepath.Base(src.File) + ":" + strconv.Itoa(src.Line))
-	return a
+	rawAttrs = append(rawAttrs, attrs...)
+	ctx = context.WithValue(ctx, attrCtxKey, rawAttrs)
+	return ctx
+}
+
+// RidAttr request_id类型Attr
+func RidAttr(rid string) slog.Attr {
+	return slog.String("rid", rid)
+}
+
+// SetDefault make a new Logger and set to default logger
+func SetDefault(h slog.Handler) {
+	defaultLogger = New(h).(*contextualLogger)
+}
+
+// Default get default logger's
+func Default() Logger {
+	return defaultLogger
+}
+
+// GetLevelByName human readable logger level
+func GetLevelByName(name string) slog.Leveler {
+	switch name {
+	case "error":
+		return slog.LevelError
+	case "warn":
+		return slog.LevelWarn
+	case "info":
+		return slog.LevelInfo
+	case "debug":
+		return slog.LevelDebug
+	case "trace":
+		return LevelTrace
+	default:
+		return slog.LevelInfo
+	}
+}
+
+func init() {
+	handler := NewContextualHandler()
+	SetDefault(handler)
 }

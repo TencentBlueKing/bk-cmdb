@@ -25,7 +25,7 @@ ${lint}:
 .PHONY: lint
 lint: ${lint}
 	@echo ${lint}/golangci-lint
-	GOEXPERIMENT=jsonv2 ${lint}/golangci-lint run  ./...
+	GOEXPERIMENT=jsonv2 ${lint}/golangci-lint run ./...
 
 .PHONY: test
 test:
