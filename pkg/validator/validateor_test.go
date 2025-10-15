@@ -46,7 +46,6 @@ func (s *testStruct2) Validate(ctx context.Context) error {
 }
 
 func TestValidate(t *testing.T) {
-
 	d := testStruct{}
 	err := Struct(context.Background(), d)
 	assert.Equal(t, err.Error(), "uid is a required field")

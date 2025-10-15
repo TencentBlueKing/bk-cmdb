@@ -4,3 +4,4 @@
 *.log
 build
 bin
+.idea
