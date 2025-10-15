@@ -29,6 +29,7 @@ bk-cmdb
 │   ├── healthz 自身服务healthz接口
 │   ├── logger 自定义Contextual&Structured Logger
 │   ├── rest http服务框架
+│   ├── i18n 国际化处理
 │   ├── dal 数据访问层
 │   │   └── dao 数据访问对象
 │   ├── filter 查询表达式定义
@@ -38,6 +39,11 @@ bk-cmdb
 │   │   └── etcd 使用etcd实现服务注册与发现
 │   ├── validator struct参数校验
 │   └── version 版本号
+├── resource 资源文件
+│   └── translations 对应国际化翻译文件
+│       └── en/zh等 语言类型定义
+│           ├── error-code 错误码翻译
+│           └── string 内置及其他文本信息翻译
 ├── readme_en.md
 └── readme.md
 ```

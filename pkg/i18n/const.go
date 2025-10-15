@@ -14,39 +14,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package i18n
 
-import (
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/healthz"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
+const (
+	// HTTPCookieLanguage is the blueking language cookie name
+	HTTPCookieLanguage = "blueking_language"
+	// BKHTTPLanguage the language key word
+	BKHTTPLanguage = "blueking-language"
+	// DefaultLanguage the default language
+	DefaultLanguage = CN
 )
 
-// NewRouter ...
-func NewRouter() http.Handler {
-	r := chi.NewRouter()
-	r.Use(i18n.I18NMiddleWare)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+// LanguageType the language type
+type LanguageType string
 
-	r.Get("/healthz", healthz.HealthzHandler)
-	r.Get("/-/healthy", healthz.HealthyHandler)
-	r.Get("/-/ready", healthz.ReadyHandler)
+// naming notations：https://i18ns.com/languagecode.html
+const (
+	// CN Chinese
+	CN LanguageType = "zh"
+	// EN English
+	EN LanguageType = "en"
+)
 
-	// pprof
-	r.Mount("/debug", middleware.Profiler())
+var allLanguages = []LanguageType{CN, EN}
 
-	// metrics 配置
-	r.Get("/metrics", promhttp.Handler().ServeHTTP)
-
-	svr := service{}
-	r.Post("/user/info", rest.Handle(svr.UserInfo))
-
-	return r
+func getAllLanguages() []LanguageType {
+	return allLanguages
 }

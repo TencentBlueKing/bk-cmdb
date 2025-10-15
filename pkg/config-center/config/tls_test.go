@@ -95,7 +95,7 @@ func prepareTLSFiles(t *testing.T) (string, string, string) {
 func writeTempFile(t *testing.T, dir, name string, data []byte) string {
 	path := filepath.Join(dir, name)
 	if err := os.WriteFile(path, data, 0600); err != nil {
-		t.Fatalf("write file %s failed, err: %w", path, err)
+		t.Fatalf("write file %s failed, err: %v", path, err)
 	}
 	return path
 }
