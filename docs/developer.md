@@ -23,7 +23,7 @@ bk-cmdb
 ├── Makefile
 ├── pkg 公共包
 │   ├── healthz 自身服务healthz接口
-│   ├── logger slog初始化
+│   ├── logger 自定义Contextual&Structured Logger
 │   ├── rest http服务框架
 │   ├── dal 数据访问层
 │   │   └── dao 数据访问对象

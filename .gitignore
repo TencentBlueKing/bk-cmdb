@@ -1,5 +1,6 @@
 .DS_Store
 .vscode
 .envrc
+*.log
 build
 bin

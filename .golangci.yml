@@ -2,6 +2,7 @@ version: "2"
 
 run:
   timeout: 5m
+  tests: false # 过滤_test.go文件
 
 issues:
   # 显示所有 issue

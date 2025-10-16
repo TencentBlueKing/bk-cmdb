@@ -21,7 +21,6 @@ import (
 	"context"
 	goflag "flag"
 	"fmt"
-	"log/slog"
 	"net"
 	"net/http"
 	"strconv"
@@ -41,12 +40,14 @@ import (
 // NewAPIServerCommand creates a *cobra.Command object with default parameters
 func NewAPIServerCommand() *cobra.Command {
 	opts := options.NewOptions()
+	handlerOpts := logger.NewHandlerOptions()
 
 	cmd := &cobra.Command{
 		Use:   "apiserver",
 		Short: "A http service for handle unified http request",
 		RunE: func(c *cobra.Command, args []string) error {
-			logger.Init()
+			handler := logger.NewContextualHandler(handlerOpts)
+			logger.SetDefault(handler)
 
 			return runHTTPServer(c.Context(), opts)
 		},
@@ -54,6 +55,7 @@ func NewAPIServerCommand() *cobra.Command {
 
 	fs := cmd.Flags()
 	opts.AddFlags(fs)
+	handlerOpts.AddFlags(fs)
 	fs.AddGoFlagSet(goflag.CommandLine)
 
 	return cmd
@@ -74,7 +76,7 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case s := <-cli.SignalChan:
-			slog.Warn("Signal received", "signal", s)
+			logger.Warn(ctx, "Signal received", "signal", s)
 			return fmt.Errorf("%w %s received", cli.ErrSignal, s)
 		}
 	}, func(err error) {
@@ -85,14 +87,14 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 	return g.Run()
 }
 
-func registerHTTPServer(_ context.Context, g *run.Group, router http.Handler, opts *options.Options) {
+func registerHTTPServer(ctx context.Context, g *run.Group, router http.Handler, opts *options.Options) {
 	addr := net.JoinHostPort(opts.Address, strconv.Itoa(opts.Port))
 
 	h2cHandler := h2c.NewHandler(router, &http2.Server{})
 	svr := http.Server{Addr: addr, Handler: h2cHandler}
 
 	g.Add(func() error {
-		slog.Info("listening for http requests and metrics", "addr", addr)
+		logger.Info(ctx, "listening for http requests and metrics", "addr", addr)
 		return svr.ListenAndServe()
 
 	}, func(err error) {
@@ -101,9 +103,10 @@ func registerHTTPServer(_ context.Context, g *run.Group, router http.Handler, op
 		defer timeoutCancel()
 
 		if e := svr.Shutdown(timeoutCtx); e != nil {
-			slog.Error("shutdown http server with error", "reason", err, "duration", time.Since(st), "err", e)
+			logger.Error(ctx, "shutdown http server with error",
+				"reason", err, "duration", time.Since(st), logger.E(err))
 			return
 		}
-		slog.Info("shutdown http server done", "reason", err, "duration", time.Since(st))
+		logger.Info(ctx, "shutdown http server done", "reason", err, "duration", time.Since(st))
 	})
 }
