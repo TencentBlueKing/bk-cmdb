@@ -17,11 +17,15 @@
 package logger
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"log/slog"
 	"os"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultLogger(t *testing.T) {
@@ -40,7 +44,10 @@ func TestDefaultLogger(t *testing.T) {
 func TestLoggerHandler(t *testing.T) {
 	ctx := context.Background()
 
-	logger := slog.New(NewContextualHandler(WithJsonFormat()))
+	opts := NewHandlerOptions()
+	opts.Format = "json"
+	logger := slog.New(NewContextualHandler(opts))
+
 	logger = logger.With(RidAttr("8e388ed2-ba59-48b7-b213-cf1afd6ac1e9"))
 	logger.InfoContext(ctx, "msg0")
 	logger.InfoContext(ctx, "msg")
@@ -54,11 +61,10 @@ func TestLogger(t *testing.T) {
 	ctx := context.Background()
 	ctx = WithAttr(ctx, RidAttr("8e388ed2-ba59-48b7-b213-cf1afd6ac1e9"))
 
-	h := NewContextualHandler(
-		WithLevel(LevelTrace),
-		WithJsonFormat(),
-		// WithFileOption(FileOption{Filename: "./example.log"}),
-	)
+	opts := &HandlerOptions{Level: getLevelName(LevelTrace), Format: "json", Stdout: true}
+	opts.LogDir = t.TempDir()
+	h := NewContextualHandler(opts)
+
 	SetDefault(h)
 
 	Trace(ctx, "msg0")
@@ -70,12 +76,105 @@ func TestLogger(t *testing.T) {
 
 	ctx = WithAttr(ctx, slog.GroupAttrs("g1", slog.String("w1", "k1")))
 	Depth(0).Trace(ctx, "msg1")
+	Default().Trace(ctx, "msgddd")
 	Depth(0).With("k", "o").WithGroup("m").Trace(ctx, "msg1", "w4", "k4")
 	Depth(1).With("k", "o").WithGroup("m").With("w2", "k2", "w3", "k3").With(slog.Any("", nil)).With().Trace(ctx, "msg1", slog.Any("", "v"))
 }
 
+func TestLoggerAttr(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	baseH := slog.NewTextHandler(buf, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				a.Value = slog.StringValue("test")
+			}
+			return a
+		},
+	})
+
+	h := &contextualHandler{Handler: baseH}
+	logger := slog.New(h)
+	SetDefault(h)
+
+	ctx := context.Background()
+	ctx = WithAttr(ctx, RidAttr("8e388ed2-ba59-48b7-b213-cf1afd6ac1e9"))
+
+	logger.InfoContext(ctx, "test attr")
+	output := buf.String()
+	buf.Reset()
+
+	Info(ctx, "test attr")
+	assert.Equal(t, buf.String(), output)
+	buf.Reset()
+
+	logger = logger.With(slog.GroupAttrs("g1", slog.String("w1", "k1")))
+	logger.With("k", "o").WithGroup("m").InfoContext(ctx, "msg1", "w4", "k4")
+	output = buf.String()
+	buf.Reset()
+
+	With(slog.GroupAttrs("g1", slog.String("w1", "k1"))).With("k", "o").WithGroup("m").Info(ctx, "msg1", "w4", "k4")
+	assert.Equal(t, buf.String(), output)
+}
+
+func TestLoggerDepth(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	baseH := slog.NewTextHandler(buf, &slog.HandlerOptions{
+		AddSource:   true,
+		Level:       slog.LevelInfo,
+		ReplaceAttr: replaceAttr,
+	})
+
+	h := &contextualHandler{Handler: baseH}
+	logger := slog.New(h)
+
+	ctx := context.Background()
+	// 场景1
+	logger.InfoContext(ctx, "test depth")
+	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.Equal(t, 89, len(buf.String()))
+	buf.Reset()
+
+	// 场景2
+	slog.SetDefault(logger)
+	slog.InfoContext(ctx, "test depth")
+	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.Equal(t, 89, len(buf.String()))
+	buf.Reset()
+
+	// 场景3
+	SetDefault(h)
+	Info(ctx, "test depth")
+	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.Equal(t, 89, len(buf.String()))
+	buf.Reset()
+
+	// 场景5
+	Default().Info(ctx, "test depth")
+	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.Equal(t, 89, len(buf.String()))
+	buf.Reset()
+
+	Default().Info(ctx, "test depth")
+	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.Equal(t, 89, len(buf.String()))
+	buf.Reset()
+
+	// 场景6
+	Depth(0).Info(ctx, "test depth")
+	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.Equal(t, 89, len(buf.String()))
+	buf.Reset()
+
+	// 场景7
+	Depth(1).Info(ctx, "test depth")
+	assert.True(t, strings.Contains(buf.String(), "source=logger.go:"))
+	assert.Equal(t, 84, len(buf.String()))
+	buf.Reset()
+}
+
 func BenchmarkLogger(b *testing.B) {
-	textHandler := NewContextualHandler(WithLevel(slog.LevelDebug), WithWriter(io.Discard))
+	textHandler := NewContextualHandler(&HandlerOptions{Level: getLevelName(LevelTrace)})
 	SetDefault(textHandler)
 
 	ctx := context.Background()
@@ -102,7 +201,7 @@ func BenchmarkStdLogger(b *testing.B) {
 }
 
 func BenchmarkLoggerParallel(b *testing.B) {
-	textHandler := NewContextualHandler(WithLevel(LevelTrace), WithWriter(io.Discard))
+	textHandler := NewContextualHandler(&HandlerOptions{Level: getLevelName(LevelTrace)})
 	SetDefault(textHandler)
 
 	ctx := context.Background()

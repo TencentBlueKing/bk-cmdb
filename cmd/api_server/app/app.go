@@ -40,17 +40,22 @@ import (
 // NewAPIServerCommand creates a *cobra.Command object with default parameters
 func NewAPIServerCommand() *cobra.Command {
 	opts := options.NewOptions()
+	handlerOpts := logger.NewHandlerOptions()
 
 	cmd := &cobra.Command{
 		Use:   "apiserver",
 		Short: "A http service for handle unified http request",
 		RunE: func(c *cobra.Command, args []string) error {
+			handler := logger.NewContextualHandler(handlerOpts)
+			logger.SetDefault(handler)
+
 			return runHTTPServer(c.Context(), opts)
 		},
 	}
 
 	fs := cmd.Flags()
 	opts.AddFlags(fs)
+	handlerOpts.AddFlags(fs)
 	fs.AddGoFlagSet(goflag.CommandLine)
 
 	return cmd
@@ -98,7 +103,8 @@ func registerHTTPServer(ctx context.Context, g *run.Group, router http.Handler, 
 		defer timeoutCancel()
 
 		if e := svr.Shutdown(timeoutCtx); e != nil {
-			logger.Error(ctx, err, "shutdown http server with error", "reason", err, "duration", time.Since(st))
+			logger.Error(ctx, "shutdown http server with error",
+				"reason", err, "duration", time.Since(st), logger.E(err))
 			return
 		}
 		logger.Info(ctx, "shutdown http server done", "reason", err, "duration", time.Since(st))

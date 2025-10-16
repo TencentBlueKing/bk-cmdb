@@ -18,13 +18,16 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 
+	"github.com/spf13/pflag"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -38,113 +41,82 @@ const (
 var (
 	attrCtxKey    = ctxKey("logger.attr")
 	depthCtxKey   = ctxKey("logger.depth")
-	defaultLogger = new(contextualLogger)
+	program       = filepath.Base(os.Args[0])
+	defaultLogger *contextualLogger
 )
 
-// FileOption 输出到文件的配置
-type FileOption struct {
-	// Filename is the file to write logs to.  Backup log files will be retained
-	// in the same directory.
-	Filename string `json:"filename" yaml:"filename"`
+// HandlerOptions ...
+type HandlerOptions struct {
+	Level      string // 日志等级,可选 trace, debug, info, warn, error
+	Format     string // 日志格式,可选 text, json
+	Stdout     bool   // 是否输出到标准输出
+	LogDir     string // 日志文件目录
+	MaxSize    int    // 日志文件大小
+	MaxBackups int    // 日志文件保留个数
+}
 
-	// MaxSize is the maximum size in megabytes of the log file before it gets
-	// rotated. It defaults to 100 megabytes.
-	MaxSize int `json:"maxsize" yaml:"maxsize"`
+// AddFlags adds flags to fs and binds them to options.
+func (o *HandlerOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.Level, "log-level", o.Level, "Log filtering level. options: trace|debug|info|warn|error")
+	fs.StringVar(&o.Format, "log-format", o.Format, "Log format to use. options: text|json")
+	fs.BoolVar(&o.Stdout, "log-stdout", o.Stdout, "Log output to stdout")
+	fs.StringVar(&o.LogDir, "log-dir", o.LogDir, "If non-empty, write log files in this directory")
+	fs.IntVar(&o.MaxSize, "log-max-size", o.MaxSize, "Max size (MB) per file")
+	fs.IntVar(&o.MaxBackups, "log-max-backups", o.MaxBackups,
+		"Max backups of file. The oldest will be removed if there is a extra file created")
+}
 
-	// MaxAge is the maximum number of days to retain old log files based on the
-	// timestamp encoded in their filename.  Note that a day is defined as 24
-	// hours and may not exactly correspond to calendar days due to daylight
-	// savings, leap seconds, etc. The default is not to remove old log files
-	// based on age.
-	MaxAge int `json:"maxage" yaml:"maxage"`
-
-	// MaxBackups is the maximum number of old log files to retain.  The default
-	// is to retain all old log files (though MaxAge may still cause them to get
-	// deleted.)
-	MaxBackups int `json:"maxbackups" yaml:"maxbackups"`
-
-	// LocalTime determines if the time used for formatting the timestamps in
-	// backup files is the computer's local time.  The default is to use UTC
-	// time.
-	LocalTime bool `json:"localtime" yaml:"localtime"`
-
-	// Compress determines if the rotated log files should be compressed
-	// using gzip. The default is not to perform compression.
-	Compress bool `json:"compress" yaml:"compress"`
+// NewHandlerOptions returns initialized Options
+func NewHandlerOptions() *HandlerOptions {
+	return &HandlerOptions{
+		Level:      getLevelName(slog.LevelInfo),
+		Format:     "text",
+		Stdout:     true,
+		LogDir:     "",
+		MaxSize:    500,
+		MaxBackups: 6,
+	}
 }
 
 // contextualHandler 支持结构化/上下文的Handler
 type contextualHandler struct {
 	slog.Handler
-	w       io.Writer
-	level   slog.Leveler
-	attr    *groupOrAttrs // 自定义attr
-	fileOpt *FileOption   // 同时输出到文件
-	format  string        // 日志格式text/json
-}
-
-// Option setter for contextualHandler
-type Option func(*contextualHandler)
-
-// WithWriter set handler base writer
-func WithWriter(w io.Writer) Option {
-	return func(h *contextualHandler) {
-		h.w = w
-	}
-}
-
-// WithLevel set handler level
-func WithLevel(level slog.Leveler) Option {
-	return func(h *contextualHandler) {
-		h.level = level
-	}
-}
-
-// WithFileOption set handler FileOption
-func WithFileOption(opt FileOption) Option {
-	return func(h *contextualHandler) {
-		h.fileOpt = &opt
-	}
-}
-
-// WithJsonFormat set output log to json format
-func WithJsonFormat() Option {
-	return func(h *contextualHandler) {
-		h.format = "json"
-	}
+	opts  *HandlerOptions // 自定义参数
+	attrs *groupOrAttrs   // 自定义attr
 }
 
 // NewContextualHandler make a new handler
-func NewContextualHandler(opts ...Option) slog.Handler {
-	h := &contextualHandler{
-		format: "text",
-		w:      os.Stdout,
+func NewContextualHandler(opts *HandlerOptions) slog.Handler {
+	if opts == nil {
+		opts = NewHandlerOptions()
 	}
 
-	for _, opt := range opts {
-		opt(h)
+	ioWriter := io.Discard
+
+	if opts.Stdout {
+		ioWriter = os.Stdout
 	}
 
-	ioWriter := h.w
-	if h.fileOpt != nil && h.fileOpt.Filename != "" {
+	if opts.LogDir != "" {
 		fileWriter := &lumberjack.Logger{
-			Filename:   h.fileOpt.Filename,
-			MaxSize:    h.fileOpt.MaxSize,
-			MaxBackups: h.fileOpt.MaxBackups,
-			MaxAge:     h.fileOpt.MaxAge,
-			LocalTime:  h.fileOpt.LocalTime,
-			Compress:   h.fileOpt.Compress,
+			Filename:   filepath.Join(opts.LogDir, fmt.Sprintf("%s.log", program)),
+			MaxSize:    opts.MaxSize,
+			MaxBackups: opts.MaxBackups,
+			LocalTime:  true,
+			Compress:   false,
 		}
-		ioWriter = io.MultiWriter(h.w, fileWriter)
+
+		ioWriter = io.MultiWriter(ioWriter, fileWriter)
 	}
 
 	slogOpt := &slog.HandlerOptions{
 		AddSource:   true,
-		Level:       h.level,
+		Level:       getLevelByName(opts.Level),
 		ReplaceAttr: replaceAttr,
 	}
 
-	if h.format == "json" {
+	h := &contextualHandler{opts: opts}
+	if opts.Format == "json" {
 		h.Handler = slog.NewJSONHandler(ioWriter, slogOpt)
 	} else {
 		h.Handler = slog.NewTextHandler(ioWriter, slogOpt)
@@ -176,7 +148,7 @@ func (h *contextualHandler) makeRecord(ctx context.Context, r slog.Record) slog.
 	})
 
 	// handler中的attr
-	for g := h.attr; g != nil; g = g.next {
+	for g := h.attrs; g != nil; g = g.next {
 		if g.group != "" {
 			finalAttrs = []slog.Attr{{
 				Key:   g.group,
@@ -196,21 +168,15 @@ func (h *contextualHandler) Handle(ctx context.Context, r slog.Record) error {
 	r = h.makeRecord(ctx, r)
 
 	// slog的入口
-	d, ok := ctx.Value(depthCtxKey).(*int)
+	depth, ok := ctx.Value(depthCtxKey).(int)
 	if !ok {
 		return h.Handler.Handle(ctx, r)
 	}
 
 	// 自定义Logger入口
-	depth := 0
-	if d != nil {
-		// 自定义depth, 需要减去全局函数的一次调用
-		depth = *d - 1
-	}
-
 	// skip ref https://github.com/golang/go/blob/master/src/log/slog/logger.go#L94
 	var pcs [1]uintptr
-	runtime.Callers(7+depth, pcs[:])
+	runtime.Callers(6+depth, pcs[:])
 	(&r).PC = pcs[0]
 
 	return h.Handler.Handle(ctx, r)
@@ -220,7 +186,7 @@ func (h *contextualHandler) Handle(ctx context.Context, r slog.Record) error {
 // both the receiver's attributes and the arguments
 func (h *contextualHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	newH := *h
-	newH.attr = newH.attr.WithAttrs(attrs)
+	newH.attrs = newH.attrs.WithAttrs(attrs)
 	return &newH
 }
 
@@ -228,7 +194,7 @@ func (h *contextualHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 // the receiver's existing groups.
 func (h *contextualHandler) WithGroup(name string) slog.Handler {
 	newH := *h
-	newH.attr = newH.attr.WithGroup(name)
+	newH.attrs = newH.attrs.WithGroup(name)
 	return &newH
 }
 
@@ -252,21 +218,38 @@ func replaceAttr(groups []string, a slog.Attr) slog.Attr {
 			return a
 		}
 
-		switch {
-		case level < slog.LevelDebug:
+		if level < slog.LevelDebug {
 			a.Value = slog.StringValue("TRACE")
-		case level < slog.LevelInfo:
-			a.Value = slog.StringValue("DEBUG")
-		case level < slog.LevelWarn:
-			a.Value = slog.StringValue("INFO")
-		case level < slog.LevelError:
-			a.Value = slog.StringValue("WARNING")
-		default:
-			a.Value = slog.StringValue("ERROR")
 		}
+		return a
 	}
 
 	return a
+}
+
+// getLevelerByName human readable logger level
+func getLevelByName(name string) slog.Level {
+	switch name {
+	case "error":
+		return slog.LevelError
+	case "warn":
+		return slog.LevelWarn
+	case "info":
+		return slog.LevelInfo
+	case "debug":
+		return slog.LevelDebug
+	case "trace":
+		return LevelTrace
+	default:
+		return slog.LevelInfo
+	}
+}
+
+func getLevelName(level slog.Level) string {
+	if level == LevelTrace {
+		return "trace"
+	}
+	return strings.ToLower(level.String())
 }
 
 // groupOrAttrs holds either a group name or a list of slog.Attrs

@@ -32,7 +32,22 @@ type Logger interface {
 	Debug(ctx context.Context, msg string, args ...any)
 	Info(ctx context.Context, msg string, args ...any)
 	Warn(ctx context.Context, msg string, args ...any)
-	Error(ctx context.Context, err error, msg string, args ...any)
+	Error(ctx context.Context, msg string, args ...any)
+}
+
+// SetDefault make a new Logger and set to default logger
+func SetDefault(h slog.Handler) {
+	defaultLogger = newLogger(h, 0)
+}
+
+// Default get default logger's
+func Default() Logger {
+	return defaultLogger
+}
+
+// New make a new Logger
+func New(h slog.Handler) Logger {
+	return newLogger(h, 0)
 }
 
 // With returns a Logger that includes the given attributes in each output operation.
@@ -48,47 +63,51 @@ func WithGroup(name string) Logger {
 // Depth return a Logger with depth
 func Depth(depth int) Logger {
 	d := -depth
-	return &contextualLogger{logger: defaultLogger.logger, depth: &d}
+	return newLogger(defaultLogger.Handler(), d)
 }
 
 // Trace logs at LevelTrace with the given context.
 func Trace(ctx context.Context, msg string, args ...any) {
-	defaultLogger.Trace(ctx, msg, args...)
+	defaultLogger.Log(ctx, LevelTrace, msg, args...)
 }
 
 // Debug logs at LevelDebug with the given context.
 func Debug(ctx context.Context, msg string, args ...any) {
-	defaultLogger.Debug(ctx, msg, args...)
+	defaultLogger.Log(ctx, slog.LevelDebug, msg, args...)
 }
 
 // Info logs at LevelInfo with the given context.
 func Info(ctx context.Context, msg string, args ...any) {
-	defaultLogger.Info(ctx, msg, args...)
+	defaultLogger.Log(ctx, slog.LevelInfo, msg, args...)
 }
 
 // Warn logs at LevelWarn with the given context.
 func Warn(ctx context.Context, msg string, args ...any) {
-	defaultLogger.Warn(ctx, msg, args...)
+	defaultLogger.Log(ctx, slog.LevelWarn, msg, args...)
 }
 
 // Error logs at LevelError with the given context.
-func Error(ctx context.Context, err error, msg string, args ...any) {
-	defaultLogger.Error(ctx, err, msg, args...)
+func Error(ctx context.Context, msg string, args ...any) {
+	defaultLogger.Log(ctx, slog.LevelError, msg, args...)
 }
 
 type contextualLogger struct {
 	logger *slog.Logger
-	depth  *int
+	depth  int
+}
+
+func newLogger(h slog.Handler, depth int) *contextualLogger {
+	return &contextualLogger{logger: slog.New(h), depth: depth}
 }
 
 // With returns a Logger that includes the given attributes in each output operation.
 func (l *contextualLogger) With(args ...any) Logger {
-	return &contextualLogger{logger: l.logger.With(args...), depth: l.depth}
+	return newLogger(l.logger.With(args...).Handler(), l.depth)
 }
 
 // WithGroup returns a Logger that starts a group
 func (l *contextualLogger) WithGroup(name string) Logger {
-	return &contextualLogger{logger: l.logger.WithGroup(name), depth: l.depth}
+	return newLogger(l.logger.WithGroup(name).Handler(), l.depth)
 }
 
 // Handler returns logger's Handler.
@@ -117,8 +136,7 @@ func (l *contextualLogger) Warn(ctx context.Context, msg string, args ...any) {
 }
 
 // Error logs at LevelInfo with the given context.
-func (l *contextualLogger) Error(ctx context.Context, err error, msg string, args ...any) {
-	args = append(args, slog.String("err", err.Error()))
+func (l *contextualLogger) Error(ctx context.Context, msg string, args ...any) {
 	l.Log(ctx, slog.LevelError, msg, args...)
 }
 
@@ -126,11 +144,6 @@ func (l *contextualLogger) Error(ctx context.Context, err error, msg string, arg
 func (l *contextualLogger) Log(ctx context.Context, level slog.Level, msg string, args ...any) {
 	ctx = context.WithValue(ctx, depthCtxKey, l.depth)
 	l.logger.Log(ctx, level, msg, args...)
-}
-
-// New make a new Logger
-func New(h slog.Handler) Logger {
-	return &contextualLogger{logger: slog.New(h)}
 }
 
 // WithAttr 添加自定义属性
@@ -150,35 +163,12 @@ func RidAttr(rid string) slog.Attr {
 	return slog.String("rid", rid)
 }
 
-// SetDefault make a new Logger and set to default logger
-func SetDefault(h slog.Handler) {
-	defaultLogger = New(h).(*contextualLogger)
-}
-
-// Default get default logger's
-func Default() Logger {
-	return defaultLogger
-}
-
-// GetLevelByName human readable logger level
-func GetLevelByName(name string) slog.Leveler {
-	switch name {
-	case "error":
-		return slog.LevelError
-	case "warn":
-		return slog.LevelWarn
-	case "info":
-		return slog.LevelInfo
-	case "debug":
-		return slog.LevelDebug
-	case "trace":
-		return LevelTrace
-	default:
-		return slog.LevelInfo
-	}
+// E error类型Attr
+func E(err error) slog.Attr {
+	return slog.String("err", err.Error())
 }
 
 func init() {
-	handler := NewContextualHandler()
+	handler := NewContextualHandler(NewHandlerOptions())
 	SetDefault(handler)
 }

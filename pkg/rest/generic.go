@@ -57,14 +57,14 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 		// 反序列化
 		in, err := decodeReq[Req](r)
 		if err != nil {
-			logger.Error(ctx, err, "handle decode request failed")
+			logger.Error(ctx, "handle decode request failed", logger.E(err))
 			_ = APIError(err).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
-			logger.Error(ctx, err, "validate req failed")
+			logger.Error(ctx, "validate req failed", logger.E(err))
 			_ = APIError(err).Render(w, r)
 			return
 		}
@@ -106,14 +106,14 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		// 反序列化
 		in, err := decodeReq[Req](r)
 		if err != nil {
-			logger.Error(ctx, err, "handle decode stream request failed")
+			logger.Error(ctx, "handle decode stream request failed", logger.E(err))
 			_ = APIError(err).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
-			logger.Error(ctx, err, "validate stream req failed")
+			logger.Error(ctx, "validate stream req failed", logger.E(err))
 			_ = APIError(err).Render(w, r)
 			return
 		}
