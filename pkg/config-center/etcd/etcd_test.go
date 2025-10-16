@@ -25,9 +25,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	etcdcli "github.com/TencentBlueKing/bk-cmdb/pkg/client/etcd"
 	cc "github.com/TencentBlueKing/bk-cmdb/pkg/config-center"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/etcd"
-	etcdcli "github.com/TencentBlueKing/bk-cmdb/pkg/etcd"
 )
 
 func TestEtcdConfigCenter(t *testing.T) {
@@ -40,7 +40,7 @@ func TestEtcdConfigCenter(t *testing.T) {
 	pgsql := testRegisterEventHandler[pgsqlConf](t, "pgsql")
 
 	// test write initial config
-	writer := cc.NewWriter(registry, tempDir)
+	writer := cc.NewRegistryWriter(registry, tempDir)
 	if err := writer.RunConfigWrite(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -67,14 +67,10 @@ pgsql:
 	// test register event handler for reader
 	apigw := testRegisterEventHandler[apigwConf](t, "apigw")
 	testConf := ""
-	err := cc.RegisterEventHandler("test", func(event *cc.Event) error {
+	err := cc.RegisterBasicEventHandler[string]("test", func(event *cc.Event[string]) error {
 		switch event.Type {
 		case cc.UpsertEvent:
-			var err error
-			testConf, err = cc.ConvertBasic[string](event.Data)
-			if err != nil {
-				t.Fatal(err)
-			}
+			testConf = event.Data
 		case cc.DeleteEvent:
 			testConf = ""
 		}
@@ -204,14 +200,10 @@ func generateRegDisc(t *testing.T) (cc.Registry, cc.Discovery) {
 
 func testRegisterEventHandler[T any](t *testing.T, key string) *T {
 	conf := new(T)
-	err := cc.RegisterEventHandler(key, func(event *cc.Event) error {
+	err := cc.RegisterPtrEventHandler(key, func(event *cc.Event[*T]) error {
 		switch event.Type {
 		case cc.UpsertEvent:
-			upsertData, err := cc.Convert[T](event.Data)
-			if err != nil {
-				t.Fatal(err)
-			}
-			*conf = *upsertData
+			*conf = *event.Data
 		case cc.DeleteEvent:
 			var empty T
 			*conf = empty

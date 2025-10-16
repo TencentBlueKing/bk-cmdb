@@ -30,7 +30,7 @@ import (
 func New(conf *Config) (*clientv3.Client, error) {
 	ctx := context.Background()
 	if err := conf.Validate(); err != nil {
-		logger.Error(ctx, "validate etcd config failed", "conf", conf, "err", err)
+		logger.Error(ctx, "validate etcd config failed", "conf", conf, logger.E(err))
 		return nil, err
 	}
 
@@ -45,7 +45,7 @@ func New(conf *Config) (*clientv3.Client, error) {
 	if conf.TLS != nil {
 		tlsConf, enabled, err := conf.TLS.ToClientConf()
 		if err != nil {
-			logger.Error(ctx, "parse etcd tls config failed", "conf", conf.TLS, "err", err)
+			logger.Error(ctx, "parse etcd tls config failed", "conf", conf.TLS, logger.E(err))
 			return nil, err
 		}
 		if enabled {
@@ -56,7 +56,7 @@ func New(conf *Config) (*clientv3.Client, error) {
 	// new etcd client
 	etcdCli, err := clientv3.New(etcdConf)
 	if err != nil {
-		logger.Error(ctx, "new etcd client failed", "conf", conf, "err", err)
+		logger.Error(ctx, "new etcd client failed", "conf", conf, logger.E(err))
 		return nil, err
 	}
 

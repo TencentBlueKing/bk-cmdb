@@ -18,6 +18,7 @@ package cc
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 
@@ -27,8 +28,8 @@ import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
 )
 
-// Writer is the config writer that reads config from config file and writes to config center.
-type Writer struct {
+// RegistryWriter is the config writer that reads config from config file and writes to config center.
+type RegistryWriter struct {
 	// registry is the config registry that writes config to config center.
 	registry Registry
 	// directory is the config file directory.
@@ -37,9 +38,9 @@ type Writer struct {
 	parser *viperParser
 }
 
-// NewWriter creates a new config writer and starts writing config to config center.
-func NewWriter(registry Registry, directory string) *Writer {
-	return &Writer{
+// NewRegistryWriter creates a new config writer and starts writing config to config center.
+func NewRegistryWriter(registry Registry, directory string) *RegistryWriter {
+	return &RegistryWriter{
 		registry:  registry,
 		directory: directory,
 		parser:    newViperParser(),
@@ -47,12 +48,10 @@ func NewWriter(registry Registry, directory string) *Writer {
 }
 
 // RunConfigWrite starts writing config to config center.
-func (w *Writer) RunConfigWrite(ctx context.Context) error {
+func (w *RegistryWriter) RunConfigWrite(ctx context.Context) error {
 	for _, config := range allConfTypes {
 		// initialize viper parser
 		v := viper.New()
-		v.SetConfigName(config)
-		v.SetConfigType("yaml")
 		v.AddConfigPath(w.directory)
 		w.parser.addParser(config, v)
 
@@ -65,7 +64,7 @@ func (w *Writer) RunConfigWrite(ctx context.Context) error {
 		v.WatchConfig()
 		v.OnConfigChange(func(e fsnotify.Event) {
 			if err := w.WriteConfig(ctx, config); err != nil {
-				logger.Error(ctx, "watch config file change failed", "file", config, "err", err)
+				logger.Error(ctx, "watch config file change failed", "file", config, logger.E(err))
 				return
 			}
 		})
@@ -75,34 +74,35 @@ func (w *Writer) RunConfigWrite(ctx context.Context) error {
 }
 
 // WriteConfig writes config from config file to config center.
-func (w *Writer) WriteConfig(ctx context.Context, fileName string) error {
+func (w *RegistryWriter) WriteConfig(ctx context.Context, conf ConfigType) error {
 	// read config file
-	file, err := os.OpenInRoot(w.directory, fileName+".yaml")
+	file, err := os.OpenInRoot(w.directory, fmt.Sprintf("%s.yaml", conf))
 	if err != nil {
-		logger.Error(ctx, "open config file failed", "err", err, "file", fileName, "dir", w.directory)
+		logger.Error(ctx, "open config file failed", logger.E(err), "file", conf, "dir", w.directory)
 		return err
 	}
 	defer func(file *os.File) {
 		if err = file.Close(); err != nil {
-			logger.Error(ctx, "close config file failed", "file", fileName, "err", err)
+			logger.Error(ctx, "close config file failed", "file", conf, logger.E(err))
 		}
 	}(file)
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		logger.Error(ctx, "read config file failed", "file", fileName, "dir", w.directory, "err", err)
+		logger.Error(ctx, "read config file failed", "file", conf, "dir", w.directory, logger.E(err))
 		return err
 	}
 
 	// write config to config center
-	path := getConfigRegisterPath(fileName)
+	path := getConfigRegisterPath(conf)
 	if err = w.registry.Write(ctx, path, data); err != nil {
-		logger.Error(ctx, "write config to config center failed", "err", err, "path", path, "data", string(data))
+		logger.Error(ctx, "write config to config center failed", logger.E(err), "path", path, "data", string(data))
 		return err
 	}
 
 	// parse config file data
-	if err = w.parser.parseConfigData(ctx, fileName, data); err != nil {
+	if err = w.parser.parseConfigData(ctx, conf, data); err != nil {
+		logger.Error(ctx, "parse config data failed", "conf", conf, "data", data, logger.E(err))
 		return err
 	}
 

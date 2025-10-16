@@ -20,8 +20,10 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
+	"strconv"
 
-	"github.com/rs/xid"
+	"github.com/google/uuid"
 )
 
 // ServiceName represents the service name.
@@ -93,7 +95,7 @@ func (s *ServerInfo) Validate() error {
 	}
 
 	if len(s.UUID) == 0 {
-		s.UUID = xid.New().String()
+		s.UUID = uuid.New().String()
 	}
 
 	return nil
@@ -104,7 +106,7 @@ func (s *ServerInfo) RegisterAddress() string {
 	if s == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s://%s:%d", s.Scheme, s.RegisterIP, s.Port)
+	return fmt.Sprintf("%s://%s", s.Scheme, net.JoinHostPort(s.RegisterIP, strconv.Itoa(int(s.Port))))
 }
 
 // Instance get the instance identifier of the server.
@@ -112,5 +114,5 @@ func (s *ServerInfo) Instance() string {
 	if s == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s:%d", s.IP, s.Port)
+	return net.JoinHostPort(s.IP, strconv.Itoa(int(s.Port)))
 }

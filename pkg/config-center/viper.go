@@ -19,12 +19,10 @@ package cc
 import (
 	"bytes"
 	"context"
-	"encoding/json/v2"
 	"fmt"
 	"maps"
 	"reflect"
 
-	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
@@ -33,55 +31,57 @@ import (
 // viperParser is the config files parser that use viper to parse config.
 type viperParser struct {
 	// parsers are the config files related viper instances.
-	parsers map[string]*viper.Viper
+	parsers map[ConfigType]*viper.Viper
 	// prevData are the previous config data.
-	prevData map[string]map[string]any
+	prevData map[ConfigType]map[string]any
 	// eventHandlers are the config change event handlers.
-	eventHandlers map[string]EventHandler
+	eventHandlers map[string]EventHandler[any]
 }
 
 // newViperParser create a new viperParser.
 func newViperParser() *viperParser {
 	return &viperParser{
-		parsers:       make(map[string]*viper.Viper),
-		prevData:      make(map[string]map[string]any),
+		parsers:       make(map[ConfigType]*viper.Viper),
+		prevData:      make(map[ConfigType]map[string]any),
 		eventHandlers: maps.Clone(eventHandlers),
 	}
 }
 
 // addParser add a viper instance to viperParser.
-func (p *viperParser) addParser(fileName string, v *viper.Viper) {
-	p.parsers[fileName] = v
-	p.prevData[fileName] = make(map[string]any)
+func (p *viperParser) addParser(conf ConfigType, v *viper.Viper) {
+	v.SetConfigName(string(conf))
+	v.SetConfigType("yaml")
+	p.parsers[conf] = v
+	p.prevData[conf] = make(map[string]any)
 }
 
 // parseConfigData use viper to parse config data
-func (p *viperParser) parseConfigData(ctx context.Context, fileName string, data []byte) error {
-	logger.Trace(ctx, "start parsing config", "conf", fileName, "data", string(data))
+func (p *viperParser) parseConfigData(ctx context.Context, conf ConfigType, data []byte) error {
+	logger.Trace(ctx, "start parsing config", "conf", conf, "data", string(data))
 
-	v, ok := p.parsers[fileName]
+	v, ok := p.parsers[conf]
 	if !ok {
-		logger.Error(ctx, "viper cannot parse invalid config", "conf", fileName, "data", string(data))
-		return fmt.Errorf("config %s is invalid", fileName)
+		logger.Error(ctx, "viper cannot parse invalid config", "conf", conf, "data", string(data))
+		return fmt.Errorf("config %s is invalid", conf)
 	}
 
 	// parse current config file data
 	if err := v.ReadConfig(bytes.NewReader(data)); err != nil {
-		logger.Error(ctx, "viper read config failed", "conf", fileName, "data", string(data), "err", err)
+		logger.Error(ctx, "viper read config failed", "conf", conf, "data", string(data), logger.E(err))
 		return err
 	}
 
 	// triggers registered config change event handlers for related config keys
-	prevData := p.prevData[fileName]
+	prevData := p.prevData[conf]
 	curData := v.AllSettings()
 	for key, handler := range p.eventHandlers {
 		if !v.IsSet(key) {
 			if _, exists := prevData[key]; exists {
-				event := &Event{
+				event := &Event[any]{
 					Type: DeleteEvent,
 				}
 				if err := handler(event); err != nil {
-					logger.Error(ctx, "call config change handler failed", "conf", key, "err", err, "event", *event)
+					logger.Error(ctx, "call config change handler failed", "conf", key, logger.E(err), "event", *event)
 					return err
 				}
 			}
@@ -92,37 +92,17 @@ func (p *viperParser) parseConfigData(ctx context.Context, fileName string, data
 			continue
 		}
 
-		event := &Event{
+		event := &Event[any]{
 			Type: UpsertEvent,
 			Pre:  prevData[key],
 			Data: curData[key],
 		}
 		if err := handler(event); err != nil {
-			logger.Error(ctx, "call config change handler failed", "conf", key, "err", err, "event", *event)
+			logger.Error(ctx, "call config change handler failed", "conf", key, logger.E(err), "event", *event)
 			return err
 		}
 	}
-	p.prevData[fileName] = curData
+	p.prevData[conf] = curData
 
 	return nil
-}
-
-// ConvertBasic converts config value to specified basic type value.
-func ConvertBasic[T cast.Basic](data any) (T, error) {
-	return cast.ToE[T](data)
-}
-
-// Convert converts config value to pointer of specified type.
-func Convert[T any](data any) (*T, error) {
-	marshal, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("marshal failed: %v", err)
-	}
-
-	result := new(T)
-	if err = json.Unmarshal(marshal, result); err != nil {
-		return nil, fmt.Errorf("unmarshal failed: %v", err)
-	}
-
-	return result, nil
 }

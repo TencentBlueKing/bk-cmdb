@@ -101,7 +101,7 @@ func (s *Struct) Validate() error {
 		}
 
 		if err := validator(field.Interface()); err != nil {
-			return fmt.Errorf("validate field %s failed, err: %v", fieldName, err)
+			return fmt.Errorf("validate field %s failed, err: %w", fieldName, err)
 		}
 	}
 	return nil

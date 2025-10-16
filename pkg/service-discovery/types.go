@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/rs/xid"
+	"github.com/google/uuid"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
 )
@@ -33,6 +33,8 @@ type ServiceInstance struct {
 	UUID string `json:"uuid"`
 	// Environment is the server's environment, servers can only discover other servers in the same environment.
 	Environment string `json:"env"`
+	// Version is the server's version, servers can only discover other servers with greater or equal version.
+	Version string `json:"version"`
 }
 
 // Validate service instance.
@@ -42,7 +44,7 @@ func (s *ServiceInstance) Validate() error {
 	}
 
 	if len(s.UUID) == 0 {
-		s.UUID = xid.New().String()
+		s.UUID = uuid.New().String()
 	}
 
 	return nil

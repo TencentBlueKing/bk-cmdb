@@ -18,6 +18,8 @@
 package etcd
 
 import (
+	"context"
+
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	sd "github.com/TencentBlueKing/bk-cmdb/pkg/service-discovery"
@@ -30,15 +32,15 @@ type serviceDiscovery struct {
 }
 
 // NewServiceDiscovery creates a new etcd service registry and discovery instance.
-func NewServiceDiscovery(cli *clientv3.Client, regOpt *RegistryOption, disOpt *DiscoveryOption) (sd.ServiceDiscovery,
-	error) {
+func NewServiceDiscovery(ctx context.Context, cli *clientv3.Client, regOpt *RegistryOption, disOpt *DiscoveryOption) (
+	sd.ServiceDiscovery, error) {
 
-	reg, err := newRegistry(cli, regOpt, true)
+	reg, err := newRegistry(ctx, cli, regOpt, true)
 	if err != nil {
 		return nil, err
 	}
 
-	dis, err := newDiscovery(cli, disOpt)
+	dis, err := newDiscovery(ctx, cli, disOpt)
 	if err != nil {
 		return nil, err
 	}

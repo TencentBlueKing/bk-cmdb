@@ -50,7 +50,7 @@ func (c *TLSConfig) ToClientConf() (*tls.Config, bool, error) {
 	// load ca file and set Root CAs for server verification
 	caPool, err := loadCa(c.CAFile)
 	if err != nil {
-		return nil, false, fmt.Errorf("load CA file %s failed, err: %v", c.CAFile, err)
+		return nil, false, fmt.Errorf("load CA file %s failed, err: %w", c.CAFile, err)
 	}
 	tlsConf.RootCAs = caPool
 
@@ -58,7 +58,7 @@ func (c *TLSConfig) ToClientConf() (*tls.Config, bool, error) {
 	if c.CertFile != "" && c.KeyFile != "" {
 		cert, err := loadCertificates(c.CertFile, c.KeyFile)
 		if err != nil {
-			return nil, false, fmt.Errorf("load certificate: %s, key: %s failed, err: %v", c.CertFile, c.KeyFile, err)
+			return nil, false, fmt.Errorf("load certificate: %s, key: %s failed, err: %w", c.CertFile, c.KeyFile, err)
 		}
 		tlsConf.Certificates = []tls.Certificate{*cert}
 	}
@@ -76,13 +76,13 @@ func (c *TLSConfig) ToServerConf() (*tls.Config, bool, error) {
 	// load ca file
 	caPool, err := loadCa(c.CAFile)
 	if err != nil {
-		return nil, false, fmt.Errorf("load CA file %s failed, err: %v", c.CAFile, err)
+		return nil, false, fmt.Errorf("load CA file %s failed, err: %w", c.CAFile, err)
 	}
 
 	// load certificate and key file
 	cert, err := loadCertificates(c.CertFile, c.KeyFile)
 	if err != nil {
-		return nil, false, fmt.Errorf("load certificate: %s, key: %s failed, err: %v", c.CertFile, c.KeyFile, err)
+		return nil, false, fmt.Errorf("load certificate: %s, key: %s failed, err: %w", c.CertFile, c.KeyFile, err)
 	}
 
 	return &tls.Config{
@@ -97,7 +97,7 @@ func (c *TLSConfig) ToServerConf() (*tls.Config, bool, error) {
 func loadCa(caFile string) (*x509.CertPool, error) {
 	ca, err := os.ReadFile(caFile)
 	if err != nil {
-		return nil, fmt.Errorf("read CA file failed, err: %v", err)
+		return nil, fmt.Errorf("read CA file failed, err: %w", err)
 	}
 
 	caPool := x509.NewCertPool()

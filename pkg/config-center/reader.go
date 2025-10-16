@@ -45,10 +45,7 @@ func NewReader(discovery Discovery) *Reader {
 func (r *Reader) RunConfigRead(ctx context.Context) error {
 	for _, config := range allConfTypes {
 		// initialize viper parser
-		v := viper.New()
-		v.SetConfigName(config)
-		v.SetConfigType("yaml")
-		r.parser.addParser(config, v)
+		r.parser.addParser(config, viper.New())
 
 		// read config from config center
 		if err := r.ReadConfig(ctx, config); err != nil {
@@ -59,21 +56,21 @@ func (r *Reader) RunConfigRead(ctx context.Context) error {
 	// watch config change events from config center and triggers config update
 	watchChan, err := r.discovery.Watch(ctx, configPath)
 	if err != nil {
-		logger.Error(ctx, "watch config change events failed", "err", err)
+		logger.Error(ctx, "watch config change events failed", logger.E(err))
 		return err
 	}
 
 	go func() {
 		for event := range watchChan {
-			key := getConfigTypeByRegisterPath(event.Key)
+			conf := getConfigTypeByRegisterPath(event.Key)
 
 			data := event.Data
 			if event.Type == DeleteEvent {
 				data = make([]byte, 0)
 			}
 
-			if err = r.parser.parseConfigData(ctx, key, data); err != nil {
-				logger.Error(ctx, "parse config change event failed", "key", key, "event", event, "err", err)
+			if err = r.parser.parseConfigData(ctx, conf, data); err != nil {
+				logger.Error(ctx, "parse config change event failed", "key", conf, "event", event, logger.E(err))
 				continue
 			}
 		}
@@ -83,17 +80,18 @@ func (r *Reader) RunConfigRead(ctx context.Context) error {
 }
 
 // ReadConfig reads config file data from config center.
-func (r *Reader) ReadConfig(ctx context.Context, config string) error {
+func (r *Reader) ReadConfig(ctx context.Context, config ConfigType) error {
 	// read config file
 	key := getConfigRegisterPath(config)
 	data, err := r.discovery.Read(ctx, key)
 	if err != nil {
-		logger.Error(ctx, "read config from discovery failed", "config", config, "key", key, "err", err)
+		logger.Error(ctx, "read config from discovery failed", "config", config, "key", key, logger.E(err))
 		return err
 	}
 
 	// parse config file data
 	if err = r.parser.parseConfigData(ctx, config, data); err != nil {
+		logger.Error(ctx, "parse config data failed", "key", key, "data", data, logger.E(err))
 		return err
 	}
 

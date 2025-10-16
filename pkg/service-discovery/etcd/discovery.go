@@ -29,6 +29,7 @@ import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
 	sd "github.com/TencentBlueKing/bk-cmdb/pkg/service-discovery"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/version"
 )
 
 // discovery is the etcd service discovery implementation.
@@ -46,20 +47,18 @@ type discovery struct {
 }
 
 // NewDiscovery creates a new service discovery instance.
-func NewDiscovery(cli *clientv3.Client, opt *DiscoveryOption) (sd.Discovery, error) {
-	return newDiscovery(cli, opt)
+func NewDiscovery(ctx context.Context, cli *clientv3.Client, opt *DiscoveryOption) (sd.Discovery, error) {
+	return newDiscovery(ctx, cli, opt)
 }
 
-func newDiscovery(cli *clientv3.Client, opt *DiscoveryOption) (*discovery, error) {
-	ctx := context.Background()
-
+func newDiscovery(ctx context.Context, cli *clientv3.Client, opt *DiscoveryOption) (*discovery, error) {
 	if cli == nil || opt == nil {
 		logger.Error(ctx, "new discovery but etcd client or discovery options is not set")
 		return nil, fmt.Errorf("etcd client or discovery options is not set")
 	}
 
 	if err := opt.Validate(); err != nil {
-		logger.Error(ctx, "validate discovery options failed", "err", err, "opt", opt)
+		logger.Error(ctx, "validate discovery options failed", logger.E(err), "opt", opt)
 		return nil, err
 	}
 
@@ -77,7 +76,7 @@ func newDiscovery(cli *clientv3.Client, opt *DiscoveryOption) (*discovery, error
 		d.services.serviceIdxMap[service] = make(map[string]int)
 
 		if err := d.runDiscovery(ctx, service); err != nil {
-			logger.Error(ctx, "run discovery failed", "service", service, "err", err)
+			logger.Error(ctx, "run discovery failed", "service", service, logger.E(err))
 			return nil, err
 		}
 	}
@@ -105,7 +104,7 @@ func (d *discovery) runDiscovery(ctx context.Context, name config.ServiceName) e
 		time.Sleep(discoveryInterval)
 		for {
 			if err = d.refreshService(ctx, name, path); err != nil {
-				logger.Error(ctx, "refresh service failed", "service", name, "err", err)
+				logger.Error(ctx, "refresh service failed", "service", name, logger.E(err))
 				time.Sleep(time.Second)
 				continue
 			}
@@ -120,7 +119,7 @@ func (d *discovery) refreshService(ctx context.Context, name config.ServiceName,
 	// get service instances from etcd
 	resp, err := d.cli.Get(ctx, path, clientv3.WithPrefix(), clientv3.WithSerializable())
 	if err != nil {
-		logger.Error(ctx, "get service from etcd failed", "service", name, "err", err)
+		logger.Error(ctx, "get service from etcd failed", "service", name, logger.E(err))
 		return err
 	}
 
@@ -130,12 +129,17 @@ func (d *discovery) refreshService(ctx context.Context, name config.ServiceName,
 	for _, kv := range resp.Kvs {
 		var service sd.ServiceInstance
 		if err = json.Unmarshal(kv.Value, &service); err != nil {
-			logger.Error(ctx, "unmarshal service instance failed", "value", string(kv.Value), "err", err)
+			logger.Error(ctx, "unmarshal service instance failed", "value", string(kv.Value), logger.E(err))
 			return err
 		}
 
 		if service.Environment != d.environment {
 			logger.Info(ctx, "skip service instance with different environment", "value", string(kv.Value))
+			continue
+		}
+
+		if !version.IsGreaterOrEqualVersion(service.Version) {
+			logger.Info(ctx, "skip service instance with lower version", "value", string(kv.Value))
 			continue
 		}
 
@@ -153,7 +157,7 @@ func (d *discovery) refreshService(ctx context.Context, name config.ServiceName,
 func (d *discovery) watchService(ctx context.Context, name config.ServiceName) error {
 	watchChan, err := d.Watch(ctx, name)
 	if err != nil {
-		logger.Error(ctx, "watch service failed", "service", name, "err", err)
+		logger.Error(ctx, "watch service failed", "service", name, logger.E(err))
 		return err
 	}
 
@@ -223,12 +227,17 @@ func (d *discovery) Watch(ctx context.Context, name config.ServiceName, opts ...
 				// generate cmdb service discovery event from etcd event
 				service := new(sd.ServiceInstance)
 				if err := json.Unmarshal(eventValue, service); err != nil {
-					logger.Error(ctx, "unmarshal service instance failed", "value", string(eventValue), "err", err)
+					logger.Error(ctx, "unmarshal service instance failed", "value", string(eventValue), logger.E(err))
 					continue
 				}
 
 				if service.Environment != d.environment {
 					logger.Info(ctx, "skip service instance with different environment", "value", string(eventValue))
+					continue
+				}
+
+				if !version.IsGreaterOrEqualVersion(service.Version) {
+					logger.Info(ctx, "skip service instance with lower version", "value", string(eventValue))
 					continue
 				}
 

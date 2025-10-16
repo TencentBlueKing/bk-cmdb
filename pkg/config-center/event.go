@@ -16,7 +16,12 @@
 
 package cc
 
-import "fmt"
+import (
+	"encoding/json/v2"
+	"fmt"
+
+	"github.com/spf13/cast"
+)
 
 // EventType is the config item change event type.
 type EventType string
@@ -39,28 +44,78 @@ type DiscoveryEvent struct {
 }
 
 // Event is the config item change event.
-type Event struct {
+type Event[T any] struct {
 	// Type is the event type.
 	Type EventType
 	// Pre is the previous config item data.
-	Pre any
+	Pre T
 	// Data is the config item data.
-	Data any
+	Data T
 }
 
 // EventHandler is the config item change event handler.
-type EventHandler func(*Event) error
+type EventHandler[T any] func(*Event[T]) error
 
 // eventHandlers stores config item change event handlers.
-var eventHandlers = make(map[string]EventHandler)
+var eventHandlers = make(map[string]EventHandler[any])
 
-// RegisterEventHandler registers event handler
+// registerEventHandler registers event handler.
 // Note: must be called before new config reader or writer, otherwise the event handler will not be used.
-func RegisterEventHandler(key string, handler EventHandler) error {
+func registerEventHandler[T any](key string, handler EventHandler[T], conv func(data any) (T, error)) error {
 	_, exists := eventHandlers[key]
 	if exists {
 		return fmt.Errorf("config event handler for key %s already exists", key)
 	}
-	eventHandlers[key] = handler
+
+	eventHandlers[key] = func(e *Event[any]) error {
+		event := &Event[T]{Type: e.Type}
+		if e.Pre != nil {
+			pre, err := conv(e.Pre)
+			if err != nil {
+				return fmt.Errorf("convert pre failed: %w", err)
+			}
+			event.Pre = pre
+		}
+
+		if e.Data != nil {
+			data, err := conv(e.Data)
+			if err != nil {
+				return fmt.Errorf("convert data failed: %w", err)
+			}
+			event.Data = data
+		}
+
+		return handler(event)
+	}
 	return nil
+}
+
+// RegisterBasicEventHandler registers event handler for basic types.
+func RegisterBasicEventHandler[T cast.Basic](key string, handler EventHandler[T]) error {
+	return registerEventHandler(key, handler, convertBasic[T])
+}
+
+// RegisterPtrEventHandler registers event handler for pointer types.
+func RegisterPtrEventHandler[T any](key string, handler EventHandler[*T]) error {
+	return registerEventHandler(key, handler, convert[T])
+}
+
+// convertBasic converts config value to specified basic type value.
+func convertBasic[T cast.Basic](data any) (T, error) {
+	return cast.ToE[T](data)
+}
+
+// convert converts config value to pointer of specified type.
+func convert[T any](data any) (*T, error) {
+	marshal, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("marshal failed: %w", err)
+	}
+
+	result := new(T)
+	if err = json.Unmarshal(marshal, result); err != nil {
+		return nil, fmt.Errorf("unmarshal failed: %w", err)
+	}
+
+	return result, nil
 }

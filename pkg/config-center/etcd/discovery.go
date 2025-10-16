@@ -50,12 +50,12 @@ func NewDiscovery(cli *clientv3.Client) (cc.Discovery, error) {
 func (d *discovery) Read(ctx context.Context, key string) ([]byte, error) {
 	resp, err := d.cli.Get(ctx, key, clientv3.WithSerializable())
 	if err != nil {
-		logger.Error(ctx, "read config from etcd failed", "key", key, "err", err)
+		logger.Error(ctx, "read config from etcd failed", "key", key, logger.E(err))
 		return nil, err
 	}
 
 	if len(resp.Kvs) == 0 {
-		logger.Error(ctx, "read no config from etcd", "key", key)
+		logger.Info(ctx, "read no config from etcd", "key", key)
 		return make([]byte, 0), nil
 	}
 

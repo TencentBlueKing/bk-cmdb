@@ -21,19 +21,22 @@ import (
 	"strings"
 )
 
+// ConfigType is the config type.
+type ConfigType string
+
 const (
 	// pgsqlConfType is the pgsql config type.
-	pgsqlConfType = "pgsql"
+	pgsqlConfType ConfigType = "pgsql"
 	// redisConfType is the redis config type.
-	redisConfType = "redis"
+	redisConfType ConfigType = "redis"
 	// commonConfType is the common config type.
-	commonConfType = "common"
+	commonConfType ConfigType = "common"
 	// extraConfType is the extra config type.
-	extraConfType = "extra"
+	extraConfType ConfigType = "extra"
 )
 
 // allConfTypes stores all config types.
-var allConfTypes = []string{redisConfType, pgsqlConfType, commonConfType, extraConfType}
+var allConfTypes = []ConfigType{redisConfType, pgsqlConfType, commonConfType, extraConfType}
 
 const (
 	// configPath is the config register path prefix.
@@ -41,11 +44,11 @@ const (
 )
 
 // getConfigRegisterPath generate config register path by config key.
-func getConfigRegisterPath(key string) string {
-	return fmt.Sprintf("%s/%s", configPath, key)
+func getConfigRegisterPath(conf ConfigType) string {
+	return fmt.Sprintf("%s/%s", configPath, conf)
 }
 
 // getConfigTypeByRegisterPath get config type by config register path.
-func getConfigTypeByRegisterPath(path string) string {
-	return strings.TrimPrefix(path, configPath+"/")
+func getConfigTypeByRegisterPath(path string) ConfigType {
+	return ConfigType(strings.TrimPrefix(path, configPath+"/"))
 }

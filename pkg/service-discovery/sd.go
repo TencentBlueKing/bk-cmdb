@@ -45,14 +45,14 @@ type State interface {
 	IsMaster() bool
 }
 
-// Service defines service registry and service state related operations.
-type Service interface {
+// RegistryWithState defines service registry and service state related operations.
+type RegistryWithState interface {
 	Registry
 	State
 }
 
 // ServiceDiscovery defines service registry and discovery related operations.
 type ServiceDiscovery interface {
-	Service
+	RegistryWithState
 	Discovery
 }

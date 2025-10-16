@@ -23,13 +23,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	etcdcli "github.com/TencentBlueKing/bk-cmdb/pkg/client/etcd"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
-	etcdcli "github.com/TencentBlueKing/bk-cmdb/pkg/etcd"
 	sd "github.com/TencentBlueKing/bk-cmdb/pkg/service-discovery"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/service-discovery/etcd"
 )
 
 func initServiceDiscovery(t *testing.T) (sd.ServiceDiscovery, sd.ServiceDiscovery, sd.ServiceDiscovery) {
+	ctx := context.Background()
+
 	// create a new etcd client
 	// NOTE: etcdConf is the etcd config for test, change it to your own etcd config.
 	etcdConf := &etcdcli.Config{
@@ -58,14 +60,14 @@ func initServiceDiscovery(t *testing.T) (sd.ServiceDiscovery, sd.ServiceDiscover
 		Environment: "a",
 		Services:    []config.ServiceName{config.ApiServer},
 	}
-	sd1, err := etcd.NewServiceDiscovery(etcdCli, registryOpt, discoveryOpt)
+	sd1, err := etcd.NewServiceDiscovery(ctx, etcdCli, registryOpt, discoveryOpt)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	registryOpt.Service.Port = 22222
 	registryOpt.Service.UUID = "2"
-	sd2, err := etcd.NewServiceDiscovery(etcdCli, registryOpt, discoveryOpt)
+	sd2, err := etcd.NewServiceDiscovery(ctx, etcdCli, registryOpt, discoveryOpt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +76,7 @@ func initServiceDiscovery(t *testing.T) (sd.ServiceDiscovery, sd.ServiceDiscover
 	registryOpt.Service.Environment = "b"
 	registryOpt.Service.UUID = "3"
 	discoveryOpt.Environment = "b"
-	sd3, err := etcd.NewServiceDiscovery(etcdCli, registryOpt, discoveryOpt)
+	sd3, err := etcd.NewServiceDiscovery(ctx, etcdCli, registryOpt, discoveryOpt)
 	if err != nil {
 		t.Fatal(err)
 	}

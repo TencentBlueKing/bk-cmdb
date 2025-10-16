@@ -48,7 +48,7 @@ func NewRegistry(cli *clientv3.Client) (cc.Registry, error) {
 func (r *registry) Write(ctx context.Context, key string, data []byte) error {
 	_, err := r.cli.Put(ctx, key, string(data))
 	if err != nil {
-		logger.Error(ctx, "write config to etcd failed", "err", err, "key", key, "value", string(data))
+		logger.Error(ctx, "write config to etcd failed", logger.E(err), "key", key, "value", string(data))
 		return err
 	}
 	return nil
@@ -58,7 +58,7 @@ func (r *registry) Write(ctx context.Context, key string, data []byte) error {
 func (r *registry) Delete(ctx context.Context, key string) error {
 	_, err := r.cli.Delete(ctx, key)
 	if err != nil {
-		logger.Error(ctx, "delete config from etcd failed", "key", key, "err", err)
+		logger.Error(ctx, "delete config from etcd failed", "key", key, logger.E(err))
 		return err
 	}
 	return nil
