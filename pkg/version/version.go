@@ -43,3 +43,9 @@ func GetVersion() string {
 		Version, BuildTime, GitHash, GoVersion)
 	return version
 }
+
+// IsGreaterOrEqualVersion returns true if version is greater than current version.
+// TODO: this is only a placeholder, add version compare logic later when version format is confirmed.
+func IsGreaterOrEqualVersion(version string) bool {
+	return version >= Version
+}

@@ -250,7 +250,7 @@ func TestDynamicStructAsField(t *testing.T) {
 	}
 	actualJson, err := json.Marshal(testWrapperInst.Value())
 	if err != nil {
-		t.Fatalf("fail to marshal testWrapper to json, err: %v", err)
+		t.Fatalf("fail to marshal testWrapper to json, err: %w", err)
 	}
 	data := map[string]any{
 		"test": map[string]any{
