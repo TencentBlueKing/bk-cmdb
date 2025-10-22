@@ -153,6 +153,9 @@
       }
     },
     watch: {
+      isModelInstance() {
+        this.condition.bk_obj_id = ''
+      },
       instanceType() {
         this.condition.resource_id = ''
         this.condition.resource_name = ''
