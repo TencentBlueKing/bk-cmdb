@@ -110,6 +110,7 @@
               :is="getComponentType(property)"
               :placeholder="getPlaceholder(property)"
               :property="property"
+              :is-paste-split="getPasteSplit(property.bk_property_id)"
               :ref="`component-${property.id}`"
               v-bind="getBindProps(property)"
               v-model.trim="condition[property.id].value"
@@ -225,7 +226,7 @@
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
   import ConditionPicker from '@/components/condition-picker'
-  import { setCursorPosition, getConditionSelect, updatePropertySelect } from '@/utils/util'
+  import { setCursorPosition, getConditionSelect, updatePropertySelect, isPasteSplit } from '@/utils/util'
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
   import EditableBlock from '@/components/editable-block/index.vue'
@@ -402,6 +403,9 @@
       this.setChanged = setChanged
     },
     methods: {
+      getPasteSplit(id) {
+        return isPasteSplit(id)
+      },
       hasAddSelected(val, oldVal, addSelect) {
         return val[0] && oldVal[0] && addSelect.length > 0
       },

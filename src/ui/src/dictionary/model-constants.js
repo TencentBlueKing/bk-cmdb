@@ -21,6 +21,9 @@ import {
   MENU_RESOURCE_PROJECT_COLLECTION
 } from '@/dictionary/menu-symbol'
 
+// 字段搜索时，不受cmdb-search-xx组件isPastesplit属性切割影响的字段 （一定会切割）
+export const BUILTIN_PASTE_SPLIT_FIELDS = ['bk_biz_set_id', 'bk_biz_id', 'bk_host_id', 'bk_module_id', 'bk_set_id', 'id', 'bk_inst_id', 'bk_agent_id', 'bk_cloud_inst_id']
+
 // 不能更新修改的字段(在可能发生编辑操作的页面里不显示出来)
 export const BUILTIN_UNEDITABLE_FIELDS = ['bk_updated_by', 'bk_updated_at', 'bk_created_by', 'bk_created_at']
 

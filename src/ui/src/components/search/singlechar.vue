@@ -95,12 +95,14 @@
     methods: {
       handlePasteFn(value) {
         if (!value) return
-        if (this.onlyNumber && !isNumeric(value)) {
-          return
+        if (this.onlyNumber) {
+          // 如果当前需要分割功能，在只能输入number的时候，需要将value去掉分隔符
+          const detectionValue = this.isPasteSplit ? value.replace(/,|;|\n|\s/g, '') : value
+          if (!isNumeric(detectionValue)) return
         }
         let val = [value]
         if (this.isPasteSplit && this.multiple) {
-          val = (value.split(/,|;|\n/)).map(value => value.trim())
+          val = (value.split(/,|;|\n|\s/)).map(value => value.trim())
             .filter(value => value.length)
         }
         this.localValue = [...new Set([...this.localValue, ...val])]

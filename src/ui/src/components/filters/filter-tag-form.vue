@@ -32,6 +32,7 @@
           <component class="form-el"
             :is="getComponentType()"
             :placeholder="getPlaceholder()"
+            :is-paste-split="getPasteSplit(property.bk_property_id)"
             v-bind="getBindProps()"
             v-model.trim="value"
             @active-change="handleActiveChange">
@@ -53,6 +54,7 @@
   import { mapGetters } from 'vuex'
   import { isContainerObject } from '@/service/container/common'
   import { QUERY_OPERATOR, QUERY_OPERATOR_HOST_SYMBOL, QUERY_OPERATOR_HOST_DESC } from '@/utils/query-builder-operator'
+  import { isPasteSplit } from '@/utils/util'
 
   export default {
     components: {
@@ -110,6 +112,9 @@
       }
     },
     methods: {
+      getPasteSplit(id) {
+        return isPasteSplit(id)
+      },
       getPlaceholder() {
         return Utils.getPlaceholder(this.property)
       },

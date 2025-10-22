@@ -43,7 +43,7 @@
               v-validate="'required'"
               @change="handleChange"
               @click.native="handleClick"
-              :is-paste-split="isIPField(property.bk_property_id)"
+              :is-paste-split="getPasteSplit(property.bk_property_id, () => isIPField(property.bk_property_id))"
               :popover-options="{
                 duration: 0,
                 onShown: handleShow,
@@ -83,6 +83,7 @@
   } from '@/utils/query-builder-operator'
   import { DYNAMIC_GROUP_COND_TYPES, DYNAMIC_GROUP_COND_NAMES } from '@/dictionary/dynamic-group'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
+  import { isPasteSplit } from '@/utils/util'
   const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
 
   export default {
@@ -191,6 +192,9 @@
       }
     },
     methods: {
+      getPasteSplit(id, fn) {
+        return isPasteSplit(id, fn)
+      },
       isIPField(id) {
         const IPField = ['bk_host_outerip_v6', 'bk_host_innerip_v6', 'bk_host_innerip', 'bk_host_outerip']
         return IPField.includes(id)
