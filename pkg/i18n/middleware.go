@@ -24,12 +24,12 @@ import (
 	"golang.org/x/text/message"
 )
 
-// I18NMiddleWare i18n middleware
-func I18NMiddleWare(next http.Handler) http.Handler {
+// Middleware i18n middleware
+func Middleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tag := pickTag(r, defaultI18NManager)
-		p := message.NewPrinter(tag, message.Catalog(defaultI18NManager.Catalog()))
+		tag := pickTag(r, defaultManager)
+		p := message.NewPrinter(tag, message.Catalog(defaultManager.Catalog()))
 		printer := &TranslatePrinter{printer: p}
 		ctx := contextWithTranslator(r.Context(), printer)
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -41,16 +41,16 @@ func contextWithTranslator(ctx context.Context, trans *TranslatePrinter) context
 }
 
 // pickTag pick language Tag from request
-func pickTag(r *http.Request, m *I18NManager) language.Tag {
+func pickTag(r *http.Request, m *Manager) language.Tag {
 	if c, err := r.Cookie(HTTPCookieLanguage); err == nil && c.Value != "" {
 		if t, e := language.Parse(c.Value); e == nil {
-			return m.Match(t)
+			return m.Match(r.Context(), t)
 		}
 	}
 
 	if h := r.Header.Get(BKHTTPLanguage); h != "" {
 		if t, e := language.Parse(h); e == nil {
-			return m.Match(t)
+			return m.Match(r.Context(), t)
 		}
 	}
 	return m.Fallback()

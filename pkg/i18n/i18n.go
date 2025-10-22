@@ -19,15 +19,14 @@ package i18n
 
 import (
 	"context"
+	"fmt"
 
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
 )
 
-// defaultI18NManager default i18n manager
-var defaultI18NManager *I18NManager
+// defaultManager default i18n manager
+var defaultManager *Manager
 
 // TranslatePrinter translate printer
 type TranslatePrinter struct {
@@ -58,7 +57,7 @@ func T(ctx context.Context, key string, args ...any) string {
 }
 
 // CtxWithLanguageTag set language Tag for context
-func CtxWithLanguageTag(ctx context.Context, m *I18NManager, tag language.Tag) context.Context {
+func CtxWithLanguageTag(ctx context.Context, m *Manager, tag language.Tag) context.Context {
 	p := message.NewPrinter(tag, message.Catalog(m.Catalog()))
 	printer := &TranslatePrinter{printer: p}
 	return context.WithValue(ctx, translatorKey, printer)
@@ -66,10 +65,9 @@ func CtxWithLanguageTag(ctx context.Context, m *I18NManager, tag language.Tag) c
 
 func init() {
 	ctx := context.Background()
-	manager, err := NewI18NManager(ctx, Options{})
+	manager, err := NewManager(ctx, Options{})
 	if err != nil {
-		logger.Error(ctx, "new i18n manager failed", err)
-		return
+		panic(fmt.Errorf("new i18n manager failed: %w", err))
 	}
-	defaultI18NManager = manager
+	defaultManager = manager
 }

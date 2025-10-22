@@ -43,7 +43,7 @@ bk-cmdb
 │   └── translations 对应国际化翻译文件
 │       └── en/zh等 语言类型定义
 │           ├── error-code 错误码翻译
-│           └── string 内置及其他文本信息翻译
+│           └── text 内置及其他文本信息翻译
 ├── readme_en.md
 └── readme.md
 ```

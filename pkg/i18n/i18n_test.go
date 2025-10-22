@@ -69,12 +69,12 @@ func writeFile(t *testing.T, path string, content string) {
 // Test_BasicTranslate test basic translate
 func Test_BasicTranslate(t *testing.T) {
 	root := makeTestFiles(t)
-
-	iManager, err := NewI18NManager(context.Background(), Options{AttachedFS: []string{root}})
+	cxt := context.Background()
+	iManager, err := NewManager(cxt, Options{AttachedFS: []string{root}})
 	assert.NoError(t, err)
 
 	languageTag := language.Chinese
-	ctx := CtxWithLanguageTag(context.Background(), iManager, languageTag)
+	ctx := CtxWithLanguageTag(cxt, iManager, languageTag)
 	// test basic translate without parameter
 	assert.Equal(t, "你好", T(ctx, "hello"))
 	// test basic translate with parameter

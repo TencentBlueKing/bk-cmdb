@@ -31,7 +31,7 @@ import (
 // NewRouter ...
 func NewRouter() http.Handler {
 	r := chi.NewRouter()
-	r.Use(i18n.I18NMiddleWare)
+	r.Use(i18n.Middleware)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
