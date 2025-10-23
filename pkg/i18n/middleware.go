@@ -21,7 +21,6 @@ import (
 	"net/http"
 
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 // Middleware i18n middleware
@@ -29,15 +28,13 @@ func Middleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tag := pickTag(r, defaultManager)
-		p := message.NewPrinter(tag, message.Catalog(defaultManager.Catalog()))
-		printer := &TranslatePrinter{printer: p}
-		ctx := contextWithTranslator(r.Context(), printer)
+		ctx := contextWithTag(r.Context(), tag)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func contextWithTranslator(ctx context.Context, trans *TranslatePrinter) context.Context {
-	return context.WithValue(ctx, translatorKey, trans)
+func contextWithTag(ctx context.Context, tag language.Tag) context.Context {
+	return context.WithValue(ctx, tagKey, tag)
 }
 
 // pickTag pick language Tag from request

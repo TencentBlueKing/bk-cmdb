@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package i18n
+// Package i18n for international
 package i18n
 
 import (
@@ -22,45 +22,54 @@ import (
 	"fmt"
 
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
 )
 
 // defaultManager default i18n manager
 var defaultManager *Manager
 
-// TranslatePrinter translate printer
-type TranslatePrinter struct {
-	printer *message.Printer
-}
+// tagCtxKey define tag for translator
+type tagCtxKey struct{}
 
-// translatorCtxKey define context key for translator
-type translatorCtxKey struct{}
+var tagKey tagCtxKey
 
-var translatorKey translatorCtxKey
-
-// GetTranslatePrinter get translator from context
-func GetTranslatePrinter(ctx context.Context) *TranslatePrinter {
-	if v := ctx.Value(translatorKey); v != nil {
-		if l, ok := v.(*TranslatePrinter); ok {
+// GetTagFromCtx get translator from context
+func GetTagFromCtx(ctx context.Context) language.Tag {
+	if v := ctx.Value(tagKey); v != nil {
+		if l, ok := v.(language.Tag); ok {
 			return l
 		}
 	}
-	return nil
+	return language.Make(string(DefaultLanguage))
 }
 
 // T translate key, return key if not found
 func T(ctx context.Context, key string, args ...any) string {
-	if l := GetTranslatePrinter(ctx); l != nil {
-		return l.printer.Sprintf(key, args...)
+	lang := GetTagFromCtx(ctx)
+	if p, ok := defaultManager.languagePrinter[lang]; ok {
+		return p.Sprintf(key, args...)
 	}
+	logger.Warn(ctx, "translate printer not found", "key", key, "lang", lang)
+
+	// try base language
+	baseLang, _ := lang.Base()
+	if p, ok := defaultManager.languagePrinter[language.Make(baseLang.String())]; ok {
+		return p.Sprintf(key, args...)
+	}
+	logger.Warn(ctx, "translate base printer not found", "key", key, "baseLang", baseLang)
+
+	// try default language
+	if p, ok := defaultManager.languagePrinter[language.Make(string(DefaultLanguage))]; ok {
+		return p.Sprintf(key, args...)
+	}
+
 	return key
 }
 
 // CtxWithLanguageTag set language Tag for context
-func CtxWithLanguageTag(ctx context.Context, m *Manager, tag language.Tag) context.Context {
-	p := message.NewPrinter(tag, message.Catalog(m.Catalog()))
-	printer := &TranslatePrinter{printer: p}
-	return context.WithValue(ctx, translatorKey, printer)
+func CtxWithLanguageTag(ctx context.Context, tag language.Tag) context.Context {
+	return context.WithValue(ctx, tagKey, tag)
 }
 
 func init() {

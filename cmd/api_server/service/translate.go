@@ -17,37 +17,25 @@
 package service
 
 import (
-	"net/http"
+	"context"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/healthz"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
 )
 
-// NewRouter ...
-func NewRouter() http.Handler {
-	r := chi.NewRouter()
-	r.Use(i18n.Middleware)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+// TranslateInfoReq translate info request
+type TranslateInfoReq struct {
+	Context string `req:"context,in:query"`
+}
 
-	r.Get("/healthz", healthz.HealthzHandler)
-	r.Get("/-/healthy", healthz.HealthyHandler)
-	r.Get("/-/ready", healthz.ReadyHandler)
+// TranslateInfoResp translate info response
+type TranslateInfoResp struct {
+	Context string `json:"context"`
+}
 
-	// pprof
-	r.Mount("/debug", middleware.Profiler())
-
-	// metrics 配置
-	r.Get("/metrics", promhttp.Handler().ServeHTTP)
-
-	svr := service{}
-	r.Post("/user/info", rest.Handle(svr.UserInfo))
-	r.Post("/translate/info", rest.Handle(svr.Translate))
-
-	return r
+// Translate ...
+func (s *service) Translate(ctx context.Context, req *TranslateInfoReq) (*TranslateInfoResp, error) {
+	resp := &TranslateInfoResp{
+		Context: i18n.T(ctx, req.Context),
+	}
+	return resp, nil
 }

@@ -26,6 +26,7 @@ import (
 	"sync"
 
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
@@ -54,6 +55,8 @@ type Manager struct {
 	// fallback is used by default when a language is missing from the translation
 	fallback language.Tag
 	matcher  language.Matcher
+	// languagePrinter stores the printer for each supported language
+	languagePrinter map[language.Tag]*message.Printer
 }
 
 // NewManager return a new i18n manager with loading different sources
@@ -63,7 +66,8 @@ func NewManager(ctx context.Context, opts Options) (*Manager, error) {
 	}
 
 	i := &Manager{
-		fallback: language.Make(string(opts.Fallback)),
+		fallback:        language.Make(string(opts.Fallback)),
+		languagePrinter: make(map[language.Tag]*message.Printer),
 	}
 	i.builder = catalog.NewBuilder(catalog.Fallback(i.fallback))
 	// load different sources
@@ -117,8 +121,10 @@ func NewManager(ctx context.Context, opts Options) (*Manager, error) {
 
 	// initialize matcher
 	languages := make([]language.Tag, 0)
-	for _, langEntry := range getAllLanguages() {
-		languages = append(languages, language.Make(string(langEntry)))
+	for _, lang := range getAllLanguages() {
+		tag := language.Make(string(lang))
+		languages = append(languages, tag)
+		i.languagePrinter[tag] = message.NewPrinter(tag, message.Catalog(i.builder))
 	}
 	i.matcher = language.NewMatcher(languages)
 
@@ -157,8 +163,8 @@ func (i *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys 
 			return nil
 		}
 
-		name := d.Name()
-		if !strings.HasSuffix(strings.ToLower(name), ".json") {
+		name := strings.ToLower(d.Name())
+		if name != "error.json" && name != "sys.json" {
 			return nil
 		}
 

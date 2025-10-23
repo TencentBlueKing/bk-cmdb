@@ -5,3 +5,4 @@
 build
 bin
 .idea
+/pkg/i18n/resource

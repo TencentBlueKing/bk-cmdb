@@ -18,6 +18,7 @@ package i18n
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,20 +30,20 @@ import (
 func makeTestFiles(t *testing.T) string {
 	root := t.TempDir()
 	base := root
-	mustMkdirAll(t, filepath.Join(base, "en", "error-code"))
-	mustMkdirAll(t, filepath.Join(base, "en", "string-text"))
-	mustMkdirAll(t, filepath.Join(base, "zh", "error-code"))
-	mustMkdirAll(t, filepath.Join(base, "zh", "string-text"))
+	mustMkdirAll(t, filepath.Join(base, "en"))
+	mustMkdirAll(t, filepath.Join(base, "en"))
+	mustMkdirAll(t, filepath.Join(base, "zh"))
+	mustMkdirAll(t, filepath.Join(base, "zh"))
 
-	writeFile(t, filepath.Join(base, "en", "error-code", "en_errorCode.json"), `{ "1199000": "Test Error" }`)
+	writeFile(t, filepath.Join(base, "en", "error.json"), `{ "1199000": "Test Error" }`)
 
-	writeFile(t, filepath.Join(base, "en", "string-text", "en_stringTxt.json"), `{ "hello": "hello world", 
+	writeFile(t, filepath.Join(base, "en", "sys.json"), `{ "hello": "hello world", 
 "meeting": "i have a meeting with %s", "test": "i test %d times" }`)
 
-	writeFile(t, filepath.Join(base, "zh", "error-code", "zh_errorCode.json"), `
+	writeFile(t, filepath.Join(base, "zh", "error.json"), `
 { "1199000": "测试错误" }`)
 
-	writeFile(t, filepath.Join(base, "zh", "string-text", "zh_stringTxt.json"), `
+	writeFile(t, filepath.Join(base, "zh", "sys.json"), `
 { "hello": "你好", "meeting": "我和%s有个会议", "mike": "迈克", "test": "我测试%d次","same": "与上述相同" }`)
 	return root
 }
@@ -70,34 +71,57 @@ func writeFile(t *testing.T, path string, content string) {
 func Test_BasicTranslate(t *testing.T) {
 	root := makeTestFiles(t)
 	cxt := context.Background()
-	iManager, err := NewManager(cxt, Options{AttachedFS: []string{root}})
+	manager, err := NewManager(cxt, Options{AttachedFS: []string{root}})
 	assert.NoError(t, err)
 
 	languageTag := language.Chinese
-	ctx := CtxWithLanguageTag(cxt, iManager, languageTag)
+	ctx := CtxWithLanguageTag(cxt, languageTag)
 	// test basic translate without parameter
-	assert.Equal(t, "你好", T(ctx, "hello"))
+	assert.Equal(t, "你好", Tm(ctx, manager, "hello"))
 	// test basic translate with parameter
-	assert.Equal(t, "我和nancy有个会议", T(ctx, "meeting", "nancy"))
+	assert.Equal(t, "我和nancy有个会议", Tm(ctx, manager, "meeting", "nancy"))
 
 	languageTag = language.English
-	ctx = CtxWithLanguageTag(ctx, iManager, languageTag)
-	assert.Equal(t, "hello world", T(ctx, "hello"))
-	assert.Equal(t, "i have a meeting with nancy", T(ctx, "meeting", "nancy"))
+	ctx = CtxWithLanguageTag(ctx, languageTag)
+	assert.Equal(t, "hello world", Tm(ctx, manager, "hello"))
+	assert.Equal(t, "i have a meeting with nancy", Tm(ctx, manager, "meeting", "nancy"))
 
 	// test language not supported
 	languageTag = language.Japanese
-	ctx = CtxWithLanguageTag(ctx, iManager, languageTag)
-	assert.Equal(t, "你好", T(ctx, "hello"))
-	assert.Equal(t, "我和nancy有个会议", T(ctx, "meeting", "nancy"))
+	ctx = CtxWithLanguageTag(ctx, languageTag)
+	assert.Equal(t, "你好", Tm(ctx, manager, "hello"))
+	assert.Equal(t, "我和nancy有个会议", Tm(ctx, manager, "meeting", "nancy"))
 
 	// test language supported but no translation
 	languageTag = language.English
-	ctx = CtxWithLanguageTag(ctx, iManager, languageTag)
-	assert.Equal(t, "与上述相同", T(ctx, "same"))
+	ctx = CtxWithLanguageTag(ctx, languageTag)
+	assert.Equal(t, "与上述相同", Tm(ctx, manager, "same"))
 
 	// test translate with other format data
 	languageTag = language.English
-	ctx = CtxWithLanguageTag(ctx, iManager, languageTag)
-	assert.Equal(t, "i test 3 times", T(ctx, "test", 3))
+	ctx = CtxWithLanguageTag(ctx, languageTag)
+	assert.Equal(t, "i test 3 times", Tm(ctx, manager, "test", 3))
+}
+
+// Tm translate message, use for test with test translation resources
+func Tm(ctx context.Context, m *Manager, key string, args ...any) string {
+	lang := GetTagFromCtx(ctx)
+	if p, ok := m.languagePrinter[lang]; ok {
+		return p.Sprintf(key, args...)
+	}
+	fmt.Printf("translate printer not found")
+
+	// try base language
+	baseLang, _ := lang.Base()
+	if p, ok := m.languagePrinter[language.Make(baseLang.String())]; ok {
+		return p.Sprintf(key, args...)
+	}
+	fmt.Printf("translate base printer not found")
+
+	// try default language
+	if p, ok := m.languagePrinter[language.Make(string(DefaultLanguage))]; ok {
+		return p.Sprintf(key, args...)
+	}
+
+	return key
 }
