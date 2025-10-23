@@ -127,24 +127,51 @@ const (
 	ContainsInsensitive OpType = "cis"
 )
 
-// starts with json_
+// JSONOperatorPrefix json operator prefix
+const JSONOperatorPrefix = "json_"
+
+// JSON operators, starts with json_
 // reference: https://www.postgresql.org/docs/current/functions-json.html
 const (
+
 	// JSONEqual is json field equal operator.
 	JSONEqual OpType = "json_eq"
 	// JSONNotEqual is json field not equal operator.
 	JSONNotEqual OpType = "json_neq"
-	// JSONContains JSON中是否包含某个值，仅支持string类型：PG ? 操作符
+	// JSONContains is json array contains value
 	JSONContains OpType = "json_contains"
-	// JSONHasKey 检测 JSON数组或文档顶层是否有某个键值。
+	// JSONHasKey is json has value or json array has key
 	JSONHasKey OpType = "json_has_keys"
-	// JSONNotHasKey 检测 JSON数组或文档顶层不包含某个键值。
+	// JSONNotHasKey is json not has value or json array not has key
 	JSONNotHasKey OpType = "json_not_has_keys"
 )
 
 // IsJSONOperator check if op is json operator
 func IsJSONOperator(op OpType) bool {
-	return strings.HasPrefix(string(op), "json_")
+	return strings.HasPrefix(string(op), JSONOperatorPrefix)
+}
+
+// ArrayOperatorPrefix array operator prefix
+const ArrayOperatorPrefix = "array_"
+
+// Array operators
+// reference: https://www.postgresql.org/docs/current/functions-array.html
+const (
+	// ArrayEqual equal for array data
+	ArrayEqual OpType = "array_equal"
+	// ArrayNotEqual not equal for array data
+	ArrayNotEqual OpType = "array_neq"
+	// ArrayContains A array_contains B means B is a subset of A.
+	ArrayContains OpType = "array_contains"
+	// ArraySubset A array_subset B means A is a subset of B.
+	ArraySubset OpType = "array_subset"
+	// ArrayOverlap A array_overlap B means A and B have any common element.
+	ArrayOverlap OpType = "array_overlap"
+)
+
+// IsArrayOperator check if op is array operator
+func IsArrayOperator(op OpType) bool {
+	return strings.HasPrefix(string(op), ArrayOperatorPrefix)
 }
 
 // OpType defines the operators supported by mysql.

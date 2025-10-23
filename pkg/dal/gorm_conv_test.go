@@ -89,7 +89,7 @@ func Test_atomRuleToGormClause(t *testing.T) {
 		{
 			name: "TestStrIn",
 			args: args{
-				rule: filter.RuleIn("str", []any{"abc", "123"}),
+				rule: filter.RuleIn("str", []string{"abc", "123"}),
 			},
 			want:        clause.IN{Column: "str", Values: []any{"abc", "123"}},
 			wantSQL:     `"str" IN ($1,$2)`,
@@ -99,7 +99,7 @@ func Test_atomRuleToGormClause(t *testing.T) {
 		{
 			name: "TestStrNotIn",
 			args: args{
-				rule: filter.RuleNotIn("str", []any{"abc", "123"}),
+				rule: filter.RuleNotIn("str", []string{"abc", "123"}),
 			},
 			want:        clause.Not(clause.IN{Column: "str", Values: []any{"abc", "123"}}),
 			wantSQL:     `"str" NOT IN ($1,$2)`,
@@ -150,11 +150,18 @@ func Test_atomRuleToGormClause(t *testing.T) {
 	g := prepareTestDB(t, &testModel{}, testModels)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := AtomRuleToGormClause(tt.args.rule)
-			if (err != nil) != (tt.wantConvErr != "") {
-				assert.ErrorContains(t, err, tt.wantConvErr, "convert to clause failed")
+			got, err := atomRuleToGormClause(tt.args.rule)
+			if tt.wantConvErr != "" {
+				if !assert.ErrorContains(t, err, tt.wantConvErr, "convert to clause failed got unexpected error") {
+					return
+				}
+			} else {
+				assert.Nil(t, err, "convert to clause failed")
+				return
 			}
-			assert.Equal(t, tt.want, got)
+			if !assert.Equal(t, tt.want, got) {
+				return
+			}
 			s := &gorm.Statement{DB: g.Session(&gorm.Session{DryRun: true})}
 			got.Build(s)
 			sql := s.SQL.String()
@@ -246,7 +253,7 @@ func TestConvToGormClause(t *testing.T) {
 	g := prepareTestDB(t, &testModel{}, testModels)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ExpressionToGormClause(tt.args.flt)
+			got, err := expressionToGormClause(tt.args.flt)
 			if err != nil {
 				if tt.wantQueryErr == "" {
 					t.Errorf("test %s should not have error: %v", tt.name, err)

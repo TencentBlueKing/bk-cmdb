@@ -29,11 +29,11 @@ import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
-// atomJSONRuleToClauseExpr convert JSON rule to gorm clause.
+// jsonRuleToClauseExpr convert JSON rule to gorm clause.
 // Ref:
 // postgresql  https://www.postgresql.org/docs/current/functions-json.html
 // mysql: https://dev.mysql.com/doc/refman/8.0/en/json-search-functions.html
-func atomJSONRuleToClauseExpr(rule *filter.AtomRule) (clause.Expression, error) {
+func jsonRuleToClauseExpr(rule *filter.AtomRule) (clause.Expression, error) {
 	parts := strings.Split(rule.Field, filter.JSONFieldSeparator)
 	col := parts[0]
 	keys := parts[1:]

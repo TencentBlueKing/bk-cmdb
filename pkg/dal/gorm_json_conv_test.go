@@ -129,9 +129,17 @@ func Test_atomJSONRuleToClauseExpr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := atomJSONRuleToClauseExpr(tt.args.rule)
-			if (err != nil) != (tt.wantConvErr != "") {
-				assert.ErrorContains(t, err, tt.wantConvErr, "convert to clause failed")
+			got, err := jsonRuleToClauseExpr(tt.args.rule)
+			if tt.wantConvErr != "" {
+				if !assert.ErrorContains(t, err, tt.wantConvErr, "convert to clause failed got unexpected error") {
+					return
+				}
+			} else {
+				assert.Nil(t, err, "convert to clause failed")
+				return
+			}
+			if !assert.Equal(t, tt.want, got) {
+				return
 			}
 			assert.Equal(t, tt.want, got)
 			s := &gorm.Statement{DB: g.Session(&gorm.Session{DryRun: true})}

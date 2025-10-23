@@ -25,6 +25,8 @@ import (
 	"strings"
 
 	"github.com/tidwall/gjson"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
 const (
@@ -369,7 +371,7 @@ func validateFieldValue(rVal reflect.Value, typ FieldType) error {
 		return validateSliceElements(rVal, typ)
 	default:
 	}
-
+	rVal = util.UnpackAny(rVal)
 	switch typ {
 	case String:
 		if rVal.Kind() != reflect.String {

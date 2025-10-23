@@ -36,16 +36,16 @@ func ConvFilter(flt filter.RuleFactory) (clause.Expression, error) {
 
 	switch typed := flt.(type) {
 	case *filter.AtomRule:
-		return AtomRuleToGormClause(typed)
+		return atomRuleToGormClause(typed)
 	case *filter.Expression:
-		return ExpressionToGormClause(typed)
+		return expressionToGormClause(typed)
 	default:
 		return nil, fmt.Errorf("filter type is not supported: %T", flt)
 	}
 }
 
-// ExpressionToGormClause convert *filter.Expression to gorm clause expression, return nil if flt is empty
-func ExpressionToGormClause(flt *filter.Expression) (exp clause.Expression, err error) {
+// expressionToGormClause convert *filter.Expression to gorm clause expression, return nil if flt is empty
+func expressionToGormClause(flt *filter.Expression) (exp clause.Expression, err error) {
 	if flt.IsEmpty() {
 		return nil, errors.New("expression is empty")
 	}
@@ -80,8 +80,8 @@ func ExpressionToGormClause(flt *filter.Expression) (exp clause.Expression, err 
 	return exp, nil
 }
 
-// AtomRuleToGormClause convert *filter.AtomRule to gorm clause expression
-func AtomRuleToGormClause(rule *filter.AtomRule) (clause.Expression, error) {
+// atomRuleToGormClause convert *filter.AtomRule to gorm clause expression
+func atomRuleToGormClause(rule *filter.AtomRule) (clause.Expression, error) {
 	if rule == nil {
 		return nil, errors.New("rule is nil")
 	}
@@ -111,7 +111,10 @@ func AtomRuleToGormClause(rule *filter.AtomRule) (clause.Expression, error) {
 		// try other operator below
 	}
 	if filter.IsJSONOperator(op) {
-		return atomJSONRuleToClauseExpr(rule)
+		return jsonRuleToClauseExpr(rule)
+	}
+	if filter.IsArrayOperator(op) {
+		return arrayRuleToClauseExpr(rule)
 	}
 	return nil, fmt.Errorf("rule op is not supported: %s", op)
 }
@@ -144,8 +147,8 @@ func buildCIS(rule *filter.AtomRule) (clause.Expression, error) {
 	}
 	likeExpr := clause.Like{
 		Column: clause.Expr{
-			SQL:                "LOWER(" + rule.Field + ")",
-			Vars:               nil,
+			SQL:                "LOWER(?)",
+			Vars:               []any{clause.Column{Name: rule.Field}},
 			WithoutParentheses: true,
 		},
 		Value: "%" + strings.ToLower(s) + "%",

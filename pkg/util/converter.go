@@ -26,3 +26,13 @@ func GetString(value any) (str string, ok bool) {
 	}
 	return "", false
 }
+
+var reflectTypeAny = reflect.TypeFor[any]()
+
+// UnpackAny unpack any type
+func UnpackAny(value reflect.Value) reflect.Value {
+	if value.Type() == reflectTypeAny {
+		value = value.Elem()
+	}
+	return value
+}
