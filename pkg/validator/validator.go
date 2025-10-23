@@ -29,6 +29,7 @@ import (
 	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/samber/lo"
 
+	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
@@ -41,7 +42,6 @@ var (
 
 // ValidationError 校验错误
 type ValidationError struct {
-	ctx    context.Context
 	rawErr error
 }
 
@@ -76,7 +76,12 @@ func (e *ValidationError) Error() string {
 func Struct(ctx context.Context, s any) error {
 	err := validate.StructCtx(ctx, s)
 	if err != nil {
-		return &ValidationError{ctx: ctx, rawErr: err}
+		validateErr := ccError.GetDefaultErrorManager().WrapValidationErrors(err)
+		return &ccError.RespError{
+			Code:        ccError.INVALID_ARGUMENT,
+			Message:     err.Error(),
+			DetailError: validateErr,
+		}
 	}
 
 	// 实现了 Validate 接口自定义调用

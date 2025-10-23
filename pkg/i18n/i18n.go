@@ -14,60 +14,127 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package i18n ...
+// Package i18n for international
 package i18n
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
+
+	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // defaultManager default i18n manager
-var defaultManager *Manager
+var defaultManager Translator
 
-// TranslatePrinter translate printer
-type TranslatePrinter struct {
-	printer *message.Printer
+// SetDefaultManager set default i18n manager
+func SetDefaultManager(m Translator) {
+	defaultManager = m
 }
 
-// translatorCtxKey define context key for translator
-type translatorCtxKey struct{}
-
-var translatorKey translatorCtxKey
-
-// GetTranslatePrinter get translator from context
-func GetTranslatePrinter(ctx context.Context) *TranslatePrinter {
-	if v := ctx.Value(translatorKey); v != nil {
-		if l, ok := v.(*TranslatePrinter); ok {
-			return l
-		}
-	}
-	return nil
+// GetDefaultManager get default i18n manager
+func GetDefaultManager() Translator {
+	return defaultManager
 }
 
-// T translate key, return key if not found
-func T(ctx context.Context, key string, args ...any) string {
-	if l := GetTranslatePrinter(ctx); l != nil {
-		return l.printer.Sprintf(key, args...)
+// tagCtxKey define tag for translator
+type tagCtxKey struct{}
+
+var tagKey tagCtxKey
+
+// Translator interface
+type Translator interface {
+	T(ctx context.Context, key string, args ...any) string
+	ParseAllowed(code string) (language.Tag, error)
+	FallBack() language.Tag
+	PickTagStrict(r *http.Request) (language.Tag, error)
+	ErrorTranslator
+	SysTranslator
+}
+
+// ErrorTranslator error translator
+type ErrorTranslator interface {
+	Error(ctx context.Context, err *ccError.RespError) *ccError.RespError
+}
+
+// SysTranslator system translator
+type SysTranslator interface {
+	Sys(ctx context.Context, key string, args ...any) string
+}
+
+// Error translate error
+func (m *Manager) Error(ctx context.Context, err *ccError.RespError) *ccError.RespError {
+	if err == nil {
+		return nil
 	}
+
+	err.Message = m.T(ctx, string(err.Code))
+
+	return err
+}
+
+// Sys translate key, return key if not found
+func (m *Manager) Sys(ctx context.Context, key string, args ...any) string {
+	return m.T(ctx, key, args...)
+}
+
+// FallBack get fallback language
+func (m *Manager) FallBack() language.Tag {
+	return language.Make(string(DefaultLanguage))
+}
+
+// T general translator, translate key, return key if not found
+func (m *Manager) T(ctx context.Context, key string, args ...any) string {
+	lang := GetTagFromCtx(ctx)
+	if p, ok := m.languagePrinter[lang]; ok {
+		return p.Sprintf(key, args...)
+	}
+	log.Warn(ctx, "translate printer not found", "key", key, "lang", lang)
+
 	return key
 }
 
-// CtxWithLanguageTag set language Tag for context
-func CtxWithLanguageTag(ctx context.Context, m *Manager, tag language.Tag) context.Context {
-	p := message.NewPrinter(tag, message.Catalog(m.Catalog()))
-	printer := &TranslatePrinter{printer: p}
-	return context.WithValue(ctx, translatorKey, printer)
+// PickTagStrict get tag from request and check if it is allowed
+func (m *Manager) PickTagStrict(r *http.Request) (language.Tag, error) {
+
+	if c, err := r.Cookie(HTTPCookieLanguage); err == nil && c.Value != "" {
+		t, e := m.ParseAllowed(c.Value)
+		if e != nil {
+			return language.Tag{}, e
+		}
+		return t, nil
+	}
+
+	if h := r.Header.Get(BKHTTPLanguage); h != "" {
+		t, e := m.ParseAllowed(h)
+		if e != nil {
+			return language.Tag{}, e
+		}
+		return t, nil
+	}
+
+	return m.FallBack(), nil
 }
 
-func init() {
-	ctx := context.Background()
-	manager, err := NewManager(ctx, Options{})
-	if err != nil {
-		panic(fmt.Errorf("new i18n manager failed: %w", err))
+// CtxWithLanguageTag set language Tag for context
+func CtxWithLanguageTag(ctx context.Context, tag language.Tag) context.Context {
+	return context.WithValue(ctx, tagKey, tag)
+}
+
+// GetTagFromCtx get translator from context
+func GetTagFromCtx(ctx context.Context) language.Tag {
+	if v := ctx.Value(tagKey); v != nil {
+		if l, ok := v.(language.Tag); ok {
+			return l
+		}
 	}
-	defaultManager = manager
+	return language.Make(string(DefaultLanguage))
+}
+
+// ContextWithTag set tag to context
+func ContextWithTag(ctx context.Context, tag language.Tag) context.Context {
+	return context.WithValue(ctx, tagKey, tag)
 }

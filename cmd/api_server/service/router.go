@@ -31,9 +31,9 @@ import (
 // NewRouter ...
 func NewRouter() http.Handler {
 	r := chi.NewRouter()
-	r.Use(i18n.Middleware)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(I18nMiddleware)
 
 	r.Get("/healthz", healthz.HealthzHandler)
 	r.Get("/-/healthy", healthz.HealthyHandler)
@@ -45,8 +45,9 @@ func NewRouter() http.Handler {
 	// metrics 配置
 	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 
-	svr := service{}
+	svr := service{i18n.GetDefaultManager()}
 	r.Post("/user/info", rest.Handle(svr.UserInfo))
+	r.Post("/translate/info", rest.Handle(svr.Translate))
 
 	return r
 }

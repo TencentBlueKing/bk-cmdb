@@ -1,0 +1,6 @@
+{
+  "INVALID_ARGUMENT": "invalid argument",
+  "INVALID_REQUEST": "invalid request",
+  "OUT_OF_RANGE": "out of range",
+  "FAILED_PRECONDITION": "failed precondition"
+}

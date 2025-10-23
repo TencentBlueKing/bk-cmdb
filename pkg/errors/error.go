@@ -14,11 +14,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package service define apiserver service
-package service
+// Package errors support errors
+package errors
 
-import "github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+// ccError cc error type for internal call
+type ccError struct {
+	code     string
+	callBack func() string
+}
 
-type service struct {
-	i18n.Translator
+// CodeError interface for errors
+type CodeError interface {
+	Error() string
+	GetCode() string
+}
+
+// CodeError implementation of errors interface
+func (cli *ccError) Error() string {
+	return cli.callBack()
+}
+
+// GetCode returns errors code
+func (cli *ccError) GetCode() string {
+	return cli.code
+}
+
+// NewError create new error with code and msg, use for internal error
+func NewError(errorCode string, msg string) error {
+	return &ccError{
+		code: errorCode,
+		callBack: func() string {
+			return msg
+		},
+	}
 }

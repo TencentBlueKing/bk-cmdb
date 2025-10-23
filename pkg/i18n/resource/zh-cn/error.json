@@ -1,0 +1,6 @@
+{
+  "INVALID_ARGUMENT": "无效参数",
+  "INVALID_REQUEST": "无效请求",
+  "OUT_OF_RANGE": "超出范围",
+  "FAILED_PRECONDITION": "操作被拒绝"
+}

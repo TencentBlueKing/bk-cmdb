@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// program translate ...
+// Package main is used to generate translations
 package main
 
 import (
@@ -138,7 +138,7 @@ func translateFileToLang(baseFilePath, rel, baseLang, targetLang string) error {
 	targetMap := map[string]string{}
 	if b, err := os.ReadFile(targetFile); err == nil {
 		if len(strings.TrimSpace(string(b))) > 0 {
-			if err := json.Unmarshal(b, &targetMap); err != nil {
+			if err = json.Unmarshal(b, &targetMap); err != nil {
 				return fmt.Errorf("unmarshal target json (%s) failed: %w", targetFile, err)
 			}
 		}

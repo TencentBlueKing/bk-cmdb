@@ -14,11 +14,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package service define apiserver service
-package service
+package errors
 
-import "github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+import (
+	"github.com/go-playground/validator/v10"
+)
 
-type service struct {
-	i18n.Translator
+type fieldErr struct {
+	fieldE validator.FieldError
 }
+
+// Error return error string
+func (e *fieldErr) Error() string {
+	return e.fieldE.Error()
+}
+
+// GetCode return error code
+func (e *fieldErr) GetCode() string {
+	return "ValidationError"
+}
+
+type multiValidationErr struct {
+	children []error
+}
+
+// Error return error string
+func (e *multiValidationErr) Error() string {
+	return "validation error"
+}
+
+// Unwrap return children errors
+func (e *multiValidationErr) Unwrap() []error { return e.children }

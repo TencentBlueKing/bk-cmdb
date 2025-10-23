@@ -14,11 +14,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package service define apiserver service
 package service
 
-import "github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+import (
+	"net/http"
 
-type service struct {
-	i18n.Translator
+	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
+)
+
+// I18nMiddleware i18n middleware
+func I18nMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tag, err := i18n.GetDefaultManager().PickTagStrict(r)
+		if err != nil {
+			log.Error(r.Context(), "invalid language", tag, log.E(err))
+			err := &ccError.RespError{
+				Code:        ccError.INVALID_ARGUMENT,
+				DetailError: err,
+			}
+			rest.ApiRespError(err, w, r, ccError.INVALID_REQUEST)
+			return
+		}
+
+		ctx := i18n.ContextWithTag(r.Context(), tag)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }

@@ -20,12 +20,14 @@ import (
 	"context"
 	"embed"
 	"encoding/json/v2"
+	"fmt"
 	"io/fs"
 	"os"
 	"strings"
 	"sync"
 
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
@@ -48,12 +50,36 @@ type Options struct {
 
 // Manager i18n manager
 type Manager struct {
+	// attachedFS files for dynamic loading
+	attachedFS []string
 	// mu for hot update of language configuration or content
 	mu      sync.RWMutex
 	builder *catalog.Builder
 	// fallback is used by default when a language is missing from the translation
 	fallback language.Tag
 	matcher  language.Matcher
+	// languagePrinter stores the printer for each supported language
+	languagePrinter map[language.Tag]*message.Printer
+	// languages stores all supported languages
+	languages []LanguageType
+}
+
+// isSupportedTag check if supported
+func (m *Manager) isSupportedTag(lang LanguageType) bool {
+	_, ok := m.languagePrinter[language.Make(string(lang))]
+	return ok
+}
+
+// ParseAllowed parse language code and check if supported
+func (m *Manager) ParseAllowed(code string) (language.Tag, error) {
+	if code == "" {
+		return language.Tag{}, fmt.Errorf("empty language")
+	}
+
+	if m.isSupportedTag(LanguageType(code)) {
+		return language.Make(code), nil
+	}
+	return language.Tag{}, fmt.Errorf("unsupported language: %s", code)
 }
 
 // NewManager return a new i18n manager with loading different sources
@@ -63,7 +89,10 @@ func NewManager(ctx context.Context, opts Options) (*Manager, error) {
 	}
 
 	i := &Manager{
-		fallback: language.Make(string(opts.Fallback)),
+		fallback:        language.Make(string(opts.Fallback)),
+		languagePrinter: make(map[language.Tag]*message.Printer),
+		languages:       getAllLanguages(),
+		attachedFS:      opts.AttachedFS,
 	}
 	i.builder = catalog.NewBuilder(catalog.Fallback(i.fallback))
 	// load different sources
@@ -117,8 +146,10 @@ func NewManager(ctx context.Context, opts Options) (*Manager, error) {
 
 	// initialize matcher
 	languages := make([]language.Tag, 0)
-	for _, langEntry := range getAllLanguages() {
-		languages = append(languages, language.Make(string(langEntry)))
+	for _, lang := range i.languages {
+		tag := language.Make(string(lang))
+		languages = append(languages, tag)
+		i.languagePrinter[tag] = message.NewPrinter(tag, message.Catalog(i.builder))
 	}
 	i.matcher = language.NewMatcher(languages)
 
@@ -157,8 +188,8 @@ func (i *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys 
 			return nil
 		}
 
-		name := d.Name()
-		if !strings.HasSuffix(strings.ToLower(name), ".json") {
+		name := strings.ToLower(d.Name())
+		if name != "error.json" && name != "sys.json" {
 			return nil
 		}
 
@@ -200,8 +231,7 @@ func (i *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys 
 func (i *Manager) loadFromFS(ctx context.Context, fsys fs.FS) (map[LanguageType]map[string]struct{}, error) {
 
 	languageKeyMap := make(map[LanguageType]map[string]struct{})
-	languages := getAllLanguages()
-	for _, lang := range languages {
+	for _, lang := range i.languages {
 		keyMap, err := i.loadTranslations(ctx, lang, fsys)
 		if err != nil {
 			log.Error(ctx, "load i18n from file system failed", "lang", lang, log.E(err))

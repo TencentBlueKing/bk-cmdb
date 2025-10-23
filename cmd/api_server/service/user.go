@@ -20,6 +20,7 @@ import (
 	"context"
 	"time"
 
+	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
@@ -42,7 +43,7 @@ type UserInfoResp struct {
 }
 
 // UserInfo 用户信息
-func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, error) {
+func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, *ccError.RespError) {
 	log.Info(ctx, "handle UserInfo")
 	resp := &UserInfoResp{
 		Username: req.Username,

@@ -17,6 +17,8 @@
 package rest
 
 import (
+	"errors"
+	"net/http"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -24,6 +26,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 )
 
 var (
@@ -59,9 +63,14 @@ func getHandleName(fn any) string {
 
 // collectHandleMetrics api指标数据
 func collectHandleMetrics(funcName, method string, st time.Time, err error) {
-	code := 200
+	code := http.StatusOK
 	if err != nil {
-		code = APIError(err).(*APIResponse).HTTPCode
+		var respErr *ccError.RespError
+		if errors.As(err, &respErr) {
+			code = ccError.GetHTTPStatus(respErr.Code)
+		} else {
+			code = http.StatusInternalServerError
+		}
 	}
 
 	codeStr := strconv.Itoa(code)

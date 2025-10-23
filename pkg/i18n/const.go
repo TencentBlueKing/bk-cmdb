@@ -29,9 +29,11 @@ const (
 type LanguageType string
 
 // naming notations：https://i18ns.com/languagecode.html
+// Language constant definitions must align with specifications, and remain consistent with resource directory naming
+// conventions.
 const (
 	// CN Chinese
-	CN LanguageType = "zh"
+	CN LanguageType = "zh-cn"
 	// EN English
 	EN LanguageType = "en"
 )

@@ -14,11 +14,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package service define apiserver service
 package service
 
-import "github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+import (
+	"context"
 
-type service struct {
-	i18n.Translator
+	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+)
+
+// TranslateInfoReq translate info request
+type TranslateInfoReq struct {
+	Context string `req:"context,in:query"`
+}
+
+// TranslateInfoResp translate info response
+type TranslateInfoResp struct {
+	Context string `json:"context"`
+}
+
+// Translate ...
+func (s *service) Translate(ctx context.Context, req *TranslateInfoReq) (*TranslateInfoResp, *ccError.RespError) {
+	resp := &TranslateInfoResp{
+		Context: s.T(ctx, req.Context),
+	}
+	return resp, nil
 }
