@@ -25,7 +25,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // RegistryWriter is the config writer that reads config from config file and writes to config center.
@@ -64,7 +64,7 @@ func (w *RegistryWriter) RunConfigWrite(ctx context.Context) error {
 		v.WatchConfig()
 		v.OnConfigChange(func(e fsnotify.Event) {
 			if err := w.WriteConfig(ctx, config); err != nil {
-				logger.Error(ctx, "watch config file change failed", "file", config, logger.E(err))
+				log.Error(ctx, "watch config file change failed", "file", config, log.E(err))
 				return
 			}
 		})
@@ -78,31 +78,31 @@ func (w *RegistryWriter) WriteConfig(ctx context.Context, conf ConfigType) error
 	// read config file
 	file, err := os.OpenInRoot(w.directory, fmt.Sprintf("%s.yaml", conf))
 	if err != nil {
-		logger.Error(ctx, "open config file failed", logger.E(err), "file", conf, "dir", w.directory)
+		log.Error(ctx, "open config file failed", log.E(err), "file", conf, "dir", w.directory)
 		return err
 	}
 	defer func(file *os.File) {
 		if err = file.Close(); err != nil {
-			logger.Error(ctx, "close config file failed", "file", conf, logger.E(err))
+			log.Error(ctx, "close config file failed", "file", conf, log.E(err))
 		}
 	}(file)
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		logger.Error(ctx, "read config file failed", "file", conf, "dir", w.directory, logger.E(err))
+		log.Error(ctx, "read config file failed", "file", conf, "dir", w.directory, log.E(err))
 		return err
 	}
 
 	// write config to config center
 	path := getConfigRegisterPath(conf)
 	if err = w.registry.Write(ctx, path, data); err != nil {
-		logger.Error(ctx, "write config to config center failed", logger.E(err), "path", path, "data", string(data))
+		log.Error(ctx, "write config to config center failed", log.E(err), "path", path, "data", string(data))
 		return err
 	}
 
 	// parse config file data
 	if err = w.parser.parseConfigData(ctx, conf, data); err != nil {
-		logger.Error(ctx, "parse config data failed", "conf", conf, "data", data, logger.E(err))
+		log.Error(ctx, "parse config data failed", "conf", conf, "data", data, log.E(err))
 		return err
 	}
 

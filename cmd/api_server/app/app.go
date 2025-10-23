@@ -33,21 +33,25 @@ import (
 
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/options"
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/service"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
 )
 
 // NewAPIServerCommand creates a *cobra.Command object with default parameters
 func NewAPIServerCommand() *cobra.Command {
 	opts := options.NewOptions()
-	handlerOpts := logger.NewHandlerOptions()
+	handlerOpts := log.NewHandlerOptions()
 
 	cmd := &cobra.Command{
 		Use:   "apiserver",
 		Short: "A http service for handle unified http request",
 		RunE: func(c *cobra.Command, args []string) error {
-			handler := logger.NewContextualHandler(handlerOpts)
-			logger.SetDefault(handler)
+			if err := handlerOpts.Validate(); err != nil {
+				return err
+			}
+
+			handler := log.NewContextualHandler(handlerOpts)
+			log.SetDefault(handler)
 
 			return runHTTPServer(c.Context(), opts)
 		},
@@ -76,7 +80,7 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case s := <-cli.SignalChan:
-			logger.Warn(ctx, "Signal received", "signal", s)
+			log.Warn(ctx, "Signal received", "signal", s)
 			return fmt.Errorf("%w %s received", cli.ErrSignal, s)
 		}
 	}, func(err error) {
@@ -94,7 +98,7 @@ func registerHTTPServer(ctx context.Context, g *run.Group, router http.Handler, 
 	svr := http.Server{Addr: addr, Handler: h2cHandler}
 
 	g.Add(func() error {
-		logger.Info(ctx, "listening for http requests and metrics", "addr", addr)
+		log.Info(ctx, "listening for http requests and metrics", "addr", addr)
 		return svr.ListenAndServe()
 
 	}, func(err error) {
@@ -103,10 +107,10 @@ func registerHTTPServer(ctx context.Context, g *run.Group, router http.Handler, 
 		defer timeoutCancel()
 
 		if e := svr.Shutdown(timeoutCtx); e != nil {
-			logger.Error(ctx, "shutdown http server with error",
-				"reason", err, "duration", time.Since(st), logger.E(err))
+			log.Error(ctx, "shutdown http server with error",
+				"reason", err, "duration", time.Since(st), log.E(err))
 			return
 		}
-		logger.Info(ctx, "shutdown http server done", "reason", err, "duration", time.Since(st))
+		log.Info(ctx, "shutdown http server done", "reason", err, "duration", time.Since(st))
 	})
 }

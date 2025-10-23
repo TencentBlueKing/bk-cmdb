@@ -23,14 +23,14 @@ import (
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // New creates a new etcd client.
 func New(conf *Config) (*clientv3.Client, error) {
 	ctx := context.Background()
 	if err := conf.Validate(); err != nil {
-		logger.Error(ctx, "validate etcd config failed", "conf", conf, logger.E(err))
+		log.Error(ctx, "validate etcd config failed", "conf", conf, log.E(err))
 		return nil, err
 	}
 
@@ -45,7 +45,7 @@ func New(conf *Config) (*clientv3.Client, error) {
 	if conf.TLS != nil {
 		tlsConf, enabled, err := conf.TLS.ToClientConf()
 		if err != nil {
-			logger.Error(ctx, "parse etcd tls config failed", "conf", conf.TLS, logger.E(err))
+			log.Error(ctx, "parse etcd tls config failed", "conf", conf.TLS, log.E(err))
 			return nil, err
 		}
 		if enabled {
@@ -56,7 +56,7 @@ func New(conf *Config) (*clientv3.Client, error) {
 	// new etcd client
 	etcdCli, err := clientv3.New(etcdConf)
 	if err != nil {
-		logger.Error(ctx, "new etcd client failed", "conf", conf, logger.E(err))
+		log.Error(ctx, "new etcd client failed", "conf", conf, log.E(err))
 		return nil, err
 	}
 

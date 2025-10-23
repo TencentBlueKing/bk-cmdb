@@ -23,7 +23,7 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	cc "github.com/TencentBlueKing/bk-cmdb/pkg/config-center"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // registry is the etcd config registry implementation.
@@ -35,7 +35,7 @@ type registry struct {
 // NewRegistry creates a new config registry instance.
 func NewRegistry(cli *clientv3.Client) (cc.Registry, error) {
 	if cli == nil {
-		logger.Error(context.Background(), "new registry but etcd client is not set")
+		log.Error(context.Background(), "new registry but etcd client is not set")
 		return nil, fmt.Errorf("etcd client is not set")
 	}
 
@@ -48,7 +48,7 @@ func NewRegistry(cli *clientv3.Client) (cc.Registry, error) {
 func (r *registry) Write(ctx context.Context, key string, data []byte) error {
 	_, err := r.cli.Put(ctx, key, string(data))
 	if err != nil {
-		logger.Error(ctx, "write config to etcd failed", logger.E(err), "key", key, "value", string(data))
+		log.Error(ctx, "write config to etcd failed", log.E(err), "key", key, "value", string(data))
 		return err
 	}
 	return nil
@@ -58,7 +58,7 @@ func (r *registry) Write(ctx context.Context, key string, data []byte) error {
 func (r *registry) Delete(ctx context.Context, key string) error {
 	_, err := r.cli.Delete(ctx, key)
 	if err != nil {
-		logger.Error(ctx, "delete config from etcd failed", "key", key, logger.E(err))
+		log.Error(ctx, "delete config from etcd failed", "key", key, log.E(err))
 		return err
 	}
 	return nil

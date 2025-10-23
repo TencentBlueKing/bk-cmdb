@@ -22,7 +22,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // Reader is the config reader that reads and watches config from config center.
@@ -56,7 +56,7 @@ func (r *Reader) RunConfigRead(ctx context.Context) error {
 	// watch config change events from config center and triggers config update
 	watchChan, err := r.discovery.Watch(ctx, configPath)
 	if err != nil {
-		logger.Error(ctx, "watch config change events failed", logger.E(err))
+		log.Error(ctx, "watch config change events failed", log.E(err))
 		return err
 	}
 
@@ -70,7 +70,7 @@ func (r *Reader) RunConfigRead(ctx context.Context) error {
 			}
 
 			if err = r.parser.parseConfigData(ctx, conf, data); err != nil {
-				logger.Error(ctx, "parse config change event failed", "key", conf, "event", event, logger.E(err))
+				log.Error(ctx, "parse config change event failed", "key", conf, "event", event, log.E(err))
 				continue
 			}
 		}
@@ -85,13 +85,13 @@ func (r *Reader) ReadConfig(ctx context.Context, config ConfigType) error {
 	key := getConfigRegisterPath(config)
 	data, err := r.discovery.Read(ctx, key)
 	if err != nil {
-		logger.Error(ctx, "read config from discovery failed", "config", config, "key", key, logger.E(err))
+		log.Error(ctx, "read config from discovery failed", "config", config, "key", key, log.E(err))
 		return err
 	}
 
 	// parse config file data
 	if err = r.parser.parseConfigData(ctx, config, data); err != nil {
-		logger.Error(ctx, "parse config data failed", "key", key, "data", data, logger.E(err))
+		log.Error(ctx, "parse config data failed", "key", key, "data", data, log.E(err))
 		return err
 	}
 

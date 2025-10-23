@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package logger
+package log
 
 import (
 	"context"
@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/samber/lo"
 	"github.com/spf13/pflag"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -39,42 +40,63 @@ const (
 )
 
 var (
-	attrCtxKey    = ctxKey("logger.attr")
-	depthCtxKey   = ctxKey("logger.depth")
+	attrCtxKey    = ctxKey("log.attr")
+	depthCtxKey   = ctxKey("log.depth")
 	program       = filepath.Base(os.Args[0])
 	defaultLogger *contextualLogger
+	supportLevel  = []string{"trace", "debug", "info", "warn", "error"}
+	supportFormat = []string{"text", "json"}
 )
 
 // HandlerOptions ...
 type HandlerOptions struct {
-	Level      string // 日志等级,可选 trace, debug, info, warn, error
-	Format     string // 日志格式,可选 text, json
-	Stdout     bool   // 是否输出到标准输出
-	LogDir     string // 日志文件目录
-	MaxSize    int    // 日志文件大小
-	MaxBackups int    // 日志文件保留个数
+	Level   string // 日志等级,可选 trace, debug, info, warn, error
+	Format  string // 日志格式,可选 text, json
+	Stdout  bool   // 是否输出到标准输出
+	LogDir  string // 日志文件目录
+	MaxSize int    // 日志文件大小
+	MaxNum  int    // 日志文件保留个数
 }
 
 // AddFlags adds flags to fs and binds them to options.
 func (o *HandlerOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.Level, "log-level", o.Level, "Log filtering level. options: trace|debug|info|warn|error")
-	fs.StringVar(&o.Format, "log-format", o.Format, "Log format to use. options: text|json")
+	fs.StringVar(&o.Level, "log-level", o.Level,
+		fmt.Sprintf("Log filtering level. options: %s", strings.Join(supportLevel, "|")))
+	fs.StringVar(&o.Format, "log-format", o.Format,
+		fmt.Sprintf("Log format to use. options: %s", strings.Join(supportFormat, "|")))
 	fs.BoolVar(&o.Stdout, "log-stdout", o.Stdout, "Log output to stdout")
 	fs.StringVar(&o.LogDir, "log-dir", o.LogDir, "If non-empty, write log files in this directory")
 	fs.IntVar(&o.MaxSize, "log-max-size", o.MaxSize, "Max size (MB) per file")
-	fs.IntVar(&o.MaxBackups, "log-max-backups", o.MaxBackups,
-		"Max backups of file. The oldest will be removed if there is a extra file created")
+	fs.IntVar(&o.MaxNum, "log-max-num", o.MaxNum,
+		"Max number of file. The oldest will be removed if there is a extra file created")
+}
+
+// Validate opt
+func (o *HandlerOptions) Validate() error {
+	if !lo.Contains(supportLevel, o.Level) {
+		return fmt.Errorf("log-level not valid, options: %s", strings.Join(supportLevel, "|"))
+	}
+	if !lo.Contains(supportFormat, o.Format) {
+		return fmt.Errorf("log-format not valid, options: %s", strings.Join(supportFormat, "|"))
+	}
+	if o.MaxSize < 0 {
+		return fmt.Errorf("log-max-size must be greater than or equal 0")
+	}
+	if o.MaxNum < 0 {
+		return fmt.Errorf("log-max-num must be greater than or equal 0")
+	}
+	return nil
 }
 
 // NewHandlerOptions returns initialized Options
 func NewHandlerOptions() *HandlerOptions {
 	return &HandlerOptions{
-		Level:      getLevelName(slog.LevelInfo),
-		Format:     "text",
-		Stdout:     true,
-		LogDir:     "",
-		MaxSize:    500,
-		MaxBackups: 6,
+		Level:   getLevelName(slog.LevelInfo),
+		Format:  "text",
+		Stdout:  true,
+		LogDir:  "",
+		MaxSize: 500,
+		MaxNum:  6,
 	}
 }
 
@@ -101,7 +123,7 @@ func NewContextualHandler(opts *HandlerOptions) slog.Handler {
 		fileWriter := &lumberjack.Logger{
 			Filename:   filepath.Join(opts.LogDir, fmt.Sprintf("%s.log", program)),
 			MaxSize:    opts.MaxSize,
-			MaxBackups: opts.MaxBackups,
+			MaxBackups: opts.MaxNum,
 			LocalTime:  true,
 			Compress:   false,
 		}

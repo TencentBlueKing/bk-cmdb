@@ -26,7 +26,7 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	sd "github.com/TencentBlueKing/bk-cmdb/pkg/service-discovery"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/version"
 )
@@ -61,12 +61,12 @@ func NewRegistryWithState(ctx context.Context, cli *clientv3.Client, opt *Regist
 
 func newRegistry(ctx context.Context, cli *clientv3.Client, opt *RegistryOption, withState bool) (*registry, error) {
 	if cli == nil || opt == nil {
-		logger.Error(ctx, "new registry but etcd client or registry options is not set")
+		log.Error(ctx, "new registry but etcd client or registry options is not set")
 		return nil, fmt.Errorf("etcd client or registry options is not set")
 	}
 
 	if err := opt.Validate(); err != nil {
-		logger.Error(ctx, "validate registry options failed", logger.E(err), "opt", opt)
+		log.Error(ctx, "validate registry options failed", log.E(err), "opt", opt)
 		return nil, err
 	}
 
@@ -77,7 +77,7 @@ func newRegistry(ctx context.Context, cli *clientv3.Client, opt *RegistryOption,
 		Version:     version.Version,
 	}
 	if err := service.Validate(); err != nil {
-		logger.Error(ctx, "validate registered service instance failed", logger.E(err), "service", service)
+		log.Error(ctx, "validate registered service instance failed", log.E(err), "service", service)
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func (r *registry) Register(ctx context.Context, opts ...sd.RegisterOption) erro
 	key := sd.GetServiceRegisterPath(r.serviceName, r.service.UUID)
 	serviceJson, err := json.Marshal(r.service)
 	if err != nil {
-		logger.Error(ctx, "marshal service instance failed", logger.E(err), "service", r.service)
+		log.Error(ctx, "marshal service instance failed", log.E(err), "service", r.service)
 		return err
 	}
 	value := string(serviceJson)
@@ -136,14 +136,14 @@ func (r *registry) registerService(ctx context.Context, lease clientv3.Lease, tt
 
 	grantRes, err := lease.Grant(ctx, ttl)
 	if err != nil {
-		logger.Error(ctx, "grant lease failed", "ttl", ttl, logger.E(err))
+		log.Error(ctx, "grant lease failed", "ttl", ttl, log.E(err))
 		return 0, err
 	}
 	leaseID := grantRes.ID
 
 	_, err = r.cli.Put(ctx, key, value, clientv3.WithLease(leaseID))
 	if err != nil {
-		logger.Error(ctx, "put etcd with lease failed", "key", key, "value", value, logger.E(err))
+		log.Error(ctx, "put etcd with lease failed", "key", key, "value", value, log.E(err))
 		return 0, err
 	}
 
@@ -154,7 +154,7 @@ func (r *registry) registerService(ctx context.Context, lease clientv3.Lease, tt
 func (r *registry) runKeepAlive(lease clientv3.Lease, leaseID clientv3.LeaseID, ttl int64, key, value string) {
 	defer func(lease clientv3.Lease) {
 		if err := lease.Close(); err != nil {
-			logger.Error(context.Background(), "close lease failed", logger.E(err))
+			log.Error(context.Background(), "close lease failed", log.E(err))
 		}
 	}(lease)
 
@@ -164,7 +164,7 @@ func (r *registry) runKeepAlive(lease clientv3.Lease, leaseID clientv3.LeaseID, 
 	// call etcd keep alive function with the lease id.
 	channel, err := r.cli.KeepAlive(ctx, leaseID)
 	if err != nil {
-		logger.Error(ctx, "keep alive failed", "key", key, logger.E(err), "lease id", leaseID)
+		log.Error(ctx, "keep alive failed", "key", key, log.E(err), "lease id", leaseID)
 		leaseID = 0
 	}
 
@@ -172,7 +172,7 @@ func (r *registry) runKeepAlive(lease clientv3.Lease, leaseID clientv3.LeaseID, 
 		select {
 		// context is done, cancel keep alive
 		case <-ctx.Done():
-			logger.Info(ctx, "cancel keep alive", "key", key)
+			log.Info(ctx, "cancel keep alive", "key", key)
 			return
 		default:
 			// create a new lease if no lease is available and register service with it, keep it alive
@@ -185,7 +185,7 @@ func (r *registry) runKeepAlive(lease clientv3.Lease, leaseID clientv3.LeaseID, 
 
 				channel, err = r.cli.KeepAlive(ctx, leaseID)
 				if err != nil {
-					logger.Error(ctx, "keep alive failed", "key", key, logger.E(err), "lease id", leaseID)
+					log.Error(ctx, "keep alive failed", "key", key, log.E(err), "lease id", leaseID)
 					leaseID = 0
 					time.Sleep(time.Second)
 					continue
@@ -194,17 +194,17 @@ func (r *registry) runKeepAlive(lease clientv3.Lease, leaseID clientv3.LeaseID, 
 
 			select {
 			case <-ctx.Done():
-				logger.Info(ctx, "cancel keep alive", "key", key)
+				log.Info(ctx, "cancel keep alive", "key", key)
 				return
 			case resp, ok := <-channel:
 				if !ok {
-					logger.Info(ctx, "keep alive channel closed, register again later", "key", key, "lease id", leaseID)
+					log.Info(ctx, "keep alive channel closed, register again later", "key", key, "lease id", leaseID)
 					leaseID = 0
 					time.Sleep(time.Second)
 					continue
 				}
 
-				logger.Trace(ctx, "received keep alive response", "key", key, "lease", leaseID, "ttl", resp.TTL)
+				log.Trace(ctx, "received keep alive response", "key", key, "lease", leaseID, "ttl", resp.TTL)
 			}
 		}
 	}
@@ -217,7 +217,7 @@ func (r *registry) Deregister(ctx context.Context) error {
 	}
 
 	if _, err := r.cli.Delete(ctx, sd.GetServiceRegisterPath(r.serviceName, r.service.UUID)); err != nil {
-		logger.Error(ctx, "deregister service failed", "service", r.serviceName, "uuid", r.service.UUID, logger.E(err))
+		log.Error(ctx, "deregister service failed", "service", r.serviceName, "uuid", r.service.UUID, log.E(err))
 		return err
 	}
 	return nil

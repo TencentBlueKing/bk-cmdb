@@ -22,7 +22,7 @@ import (
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	sd "github.com/TencentBlueKing/bk-cmdb/pkg/service-discovery"
 )
 
@@ -45,14 +45,14 @@ func (r *registry) runServiceStateSync(ctx context.Context) error {
 	go func() {
 		for resp := range watchChan {
 			if resp.Err() != nil {
-				logger.Error(ctx, "watch service master key failed", "service", r.serviceName, "err", resp.Err())
+				log.Error(ctx, "watch service master key failed", "service", r.serviceName, "err", resp.Err())
 				return
 			}
 
 			masterKey := r.masterKey.Load()
 			if masterKey == "" {
 				if err := r.updateMaster(ctx, path); err != nil {
-					logger.Error(ctx, "update service master key failed", "service", r.serviceName, logger.E(err))
+					log.Error(ctx, "update service master key failed", "service", r.serviceName, log.E(err))
 					time.Sleep(time.Second)
 				}
 				continue
@@ -61,7 +61,7 @@ func (r *registry) runServiceStateSync(ctx context.Context) error {
 			for _, event := range resp.Events {
 				if event.Type == clientv3.EventTypeDelete && string(event.Kv.Key) == masterKey {
 					if err := r.updateMaster(ctx, path); err != nil {
-						logger.Error(ctx, "update service master key failed", "service", r.serviceName, logger.E(err))
+						log.Error(ctx, "update service master key failed", "service", r.serviceName, log.E(err))
 						time.Sleep(time.Second)
 					}
 					break
@@ -75,7 +75,7 @@ func (r *registry) runServiceStateSync(ctx context.Context) error {
 		time.Sleep(discoveryInterval)
 		for {
 			if err := r.updateMaster(ctx, path); err != nil {
-				logger.Error(ctx, "update service master key failed", "service", r.serviceName, logger.E(err))
+				log.Error(ctx, "update service master key failed", "service", r.serviceName, log.E(err))
 				time.Sleep(time.Second)
 				continue
 			}
@@ -92,13 +92,13 @@ func (r *registry) updateMaster(ctx context.Context, path string) error {
 	resp, err := r.cli.Get(ctx, path, append(clientv3.WithFirstCreate(), clientv3.WithSerializable(),
 		clientv3.WithKeysOnly())...)
 	if err != nil {
-		logger.Error(ctx, "get service master key from etcd failed", "service", r.serviceName, logger.E(err))
+		log.Error(ctx, "get service master key from etcd failed", "service", r.serviceName, log.E(err))
 		return err
 	}
 
 	masterKey := ""
 	if len(resp.Kvs) == 0 {
-		logger.Info(ctx, "service has no keys", "service", r.serviceName, "path", path)
+		log.Info(ctx, "service has no keys", "service", r.serviceName, "path", path)
 	} else {
 		masterKey = string(resp.Kvs[0].Key)
 	}
@@ -106,7 +106,7 @@ func (r *registry) updateMaster(ctx context.Context, path string) error {
 	// update master key
 	r.masterKey.Store(masterKey)
 
-	logger.Trace(ctx, "update master key", "service", r.serviceName, "key", masterKey)
+	log.Trace(ctx, "update master key", "service", r.serviceName, "key", masterKey)
 
 	return nil
 }

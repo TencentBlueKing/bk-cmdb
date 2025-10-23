@@ -28,7 +28,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 const translationsRoot = "resource"
@@ -72,7 +72,7 @@ func NewManager(ctx context.Context, opts Options) (*Manager, error) {
 	if !isEmbedFSEmpty(embedFS) {
 		sub, err := fs.Sub(embedFS, translationsRoot)
 		if err != nil {
-			logger.Error(ctx, "fs.Sub on embed failed", "dir", translationsRoot, logger.E(err))
+			log.Error(ctx, "fs.Sub on embed failed", "dir", translationsRoot, log.E(err))
 			return nil, err
 		}
 		sources = append(sources, sub)
@@ -92,7 +92,7 @@ func NewManager(ctx context.Context, opts Options) (*Manager, error) {
 	for idx, src := range sources {
 		fileLanguageKeyMap, err := i.loadFromFS(ctx, src)
 		if err != nil {
-			logger.Error(ctx, "load i18n from file system failed", "path", paths[idx], logger.E(err))
+			log.Error(ctx, "load i18n from file system failed", "path", paths[idx], log.E(err))
 			return nil, err
 		}
 
@@ -111,7 +111,7 @@ func NewManager(ctx context.Context, opts Options) (*Manager, error) {
 			continue
 		}
 		if !cmpKeyWithDefault(ctx, languageKeyMap[DefaultLanguage], keyMap) {
-			logger.Warn(ctx, "lang key not same with default", "defaultLang", DefaultLanguage, "lang", lang)
+			log.Warn(ctx, "lang key not same with default", "defaultLang", DefaultLanguage, "lang", lang)
 		}
 	}
 
@@ -128,14 +128,14 @@ func NewManager(ctx context.Context, opts Options) (*Manager, error) {
 // cmpKeyWithDefault compare key with default language key
 func cmpKeyWithDefault(ctx context.Context, defaultLang, lang map[string]struct{}) bool {
 	if len(defaultLang) != len(lang) {
-		logger.Warn(ctx, "default lang key count not equal with lang", "defaultLangLen", len(defaultLang),
+		log.Warn(ctx, "default lang key count not equal with lang", "defaultLangLen", len(defaultLang),
 			"langLen", len(lang))
 		return false
 	}
 	isPassed := true
 	for k := range defaultLang {
 		if _, ok := lang[k]; !ok {
-			logger.Warn(ctx, "key in defaultLang not found in lang", "key", k)
+			log.Warn(ctx, "key in defaultLang not found in lang", "key", k)
 			isPassed = false
 		}
 	}
@@ -149,7 +149,7 @@ func (i *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys 
 	root := string(lang)
 	err := fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			logger.Error(ctx, "walk dir entry failed", "path", path, logger.E(err))
+			log.Error(ctx, "walk dir entry failed", "path", path, log.E(err))
 			return err
 		}
 
@@ -164,24 +164,24 @@ func (i *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys 
 
 		b, readErr := fs.ReadFile(fsys, path)
 		if readErr != nil {
-			logger.Error(ctx, "read i18n json failed", "path", path, logger.E(readErr))
+			log.Error(ctx, "read i18n json failed", "path", path, log.E(readErr))
 			return readErr
 		}
 
 		var m map[string]string
 		if unmarshalErr := json.Unmarshal(b, &m); unmarshalErr != nil {
-			logger.Error(ctx, "unmarshal i18n json failed", "path", path, logger.E(unmarshalErr))
+			log.Error(ctx, "unmarshal i18n json failed", "path", path, log.E(unmarshalErr))
 			return unmarshalErr
 		}
 
 		for k, v := range m {
 			if setErr := i.builder.SetString(tag, k, v); setErr != nil {
-				logger.Error(ctx, "set string failed", "key", k, logger.E(setErr))
+				log.Error(ctx, "set string failed", "key", k, log.E(setErr))
 				return setErr
 			}
 			if tag == i.fallback {
 				if setErr := i.builder.SetString(language.Und, k, v); setErr != nil {
-					logger.Error(ctx, "set string failed", "key", k, logger.E(setErr))
+					log.Error(ctx, "set string failed", "key", k, log.E(setErr))
 					return setErr
 				}
 			}
@@ -204,7 +204,7 @@ func (i *Manager) loadFromFS(ctx context.Context, fsys fs.FS) (map[LanguageType]
 	for _, lang := range languages {
 		keyMap, err := i.loadTranslations(ctx, lang, fsys)
 		if err != nil {
-			logger.Error(ctx, "load i18n from file system failed", "lang", lang, logger.E(err))
+			log.Error(ctx, "load i18n from file system failed", "lang", lang, log.E(err))
 			return languageKeyMap, err
 		}
 		languageKeyMap[lang] = keyMap
@@ -223,7 +223,7 @@ func (i *Manager) Match(ctx context.Context, tags ...language.Tag) language.Tag 
 
 	tag, _, _ := i.matcher.Match(tags...)
 	if tag == language.Und {
-		logger.Error(ctx, "match language failed", "tags", tags)
+		log.Error(ctx, "match language failed", "tags", tags)
 	}
 	return tag
 }

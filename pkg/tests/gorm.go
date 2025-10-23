@@ -26,14 +26,14 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // GetTestGORM open a gorm db for test from env TEST_GORM_DSN, should only be used in test code
 func GetTestGORM(t *testing.T) (*gorm.DB, error) {
 	var gormDSN = os.Getenv("TEST_GORM_PG_DSN")
 	if gormDSN == "" {
-		logger.Warn(t.Context(), "TEST_GORM_PG_DSN is not set, skip", "test", t.Name())
+		log.Warn(t.Context(), "TEST_GORM_PG_DSN is not set, skip", "test", t.Name())
 		t.Skip("TEST_GORM_PG_DSN is not set")
 		return nil, fmt.Errorf("TEST_GORM_PG_DSN is not set")
 	}

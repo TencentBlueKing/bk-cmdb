@@ -25,7 +25,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // viperParser is the config files parser that use viper to parse config.
@@ -57,17 +57,17 @@ func (p *viperParser) addParser(conf ConfigType, v *viper.Viper) {
 
 // parseConfigData use viper to parse config data
 func (p *viperParser) parseConfigData(ctx context.Context, conf ConfigType, data []byte) error {
-	logger.Trace(ctx, "start parsing config", "conf", conf, "data", string(data))
+	log.Trace(ctx, "start parsing config", "conf", conf, "data", string(data))
 
 	v, ok := p.parsers[conf]
 	if !ok {
-		logger.Error(ctx, "viper cannot parse invalid config", "conf", conf, "data", string(data))
+		log.Error(ctx, "viper cannot parse invalid config", "conf", conf, "data", string(data))
 		return fmt.Errorf("config %s is invalid", conf)
 	}
 
 	// parse current config file data
 	if err := v.ReadConfig(bytes.NewReader(data)); err != nil {
-		logger.Error(ctx, "viper read config failed", "conf", conf, "data", string(data), logger.E(err))
+		log.Error(ctx, "viper read config failed", "conf", conf, "data", string(data), log.E(err))
 		return err
 	}
 
@@ -81,7 +81,7 @@ func (p *viperParser) parseConfigData(ctx context.Context, conf ConfigType, data
 					Type: DeleteEvent,
 				}
 				if err := handler(event); err != nil {
-					logger.Error(ctx, "call config change handler failed", "conf", key, logger.E(err), "event", *event)
+					log.Error(ctx, "call config change handler failed", "conf", key, log.E(err), "event", *event)
 					return err
 				}
 			}
@@ -98,7 +98,7 @@ func (p *viperParser) parseConfigData(ctx context.Context, conf ConfigType, data
 			Data: curData[key],
 		}
 		if err := handler(event); err != nil {
-			logger.Error(ctx, "call config change handler failed", "conf", key, logger.E(err), "event", *event)
+			log.Error(ctx, "call config change handler failed", "conf", key, log.E(err), "event", *event)
 			return err
 		}
 	}
