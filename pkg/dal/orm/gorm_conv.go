@@ -14,8 +14,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dal ...
-package dal
+// Package orm ...
+package orm
 
 import (
 	"errors"

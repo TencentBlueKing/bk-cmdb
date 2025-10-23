@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package dal
+package orm
 
 import (
 	"fmt"
