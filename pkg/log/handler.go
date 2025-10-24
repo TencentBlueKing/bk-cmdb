@@ -220,16 +220,20 @@ func (h *contextualHandler) WithGroup(name string) slog.Handler {
 	return &newH
 }
 
-// replaceAttr source 格式化为 file:line 格式
+// replaceAttr 自定义source和日志等级
 func replaceAttr(groups []string, a slog.Attr) slog.Attr {
-	// 自定义Source
+	// 自定义source
 	if a.Key == slog.SourceKey {
 		src, ok := a.Value.Any().(*slog.Source)
 		if !ok {
 			return a
 		}
 
-		a.Value = slog.StringValue(filepath.Base(src.File) + ":" + strconv.Itoa(src.Line))
+		// source 格式化为 dir/file:line 格式
+		dir, file := filepath.Split(src.File)
+		srcFile := filepath.Join(filepath.Base(dir), file)
+
+		a.Value = slog.StringValue(srcFile + ":" + strconv.Itoa(src.Line))
 		return a
 	}
 

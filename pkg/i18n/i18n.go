@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package i18n
+// Package i18n ...
 package i18n
 
 import (
