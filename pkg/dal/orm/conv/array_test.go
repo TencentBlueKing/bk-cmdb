@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package orm
+package conv
 
 import (
 	"testing"
@@ -33,6 +33,7 @@ type arrayTestModel struct {
 	IntArray      types.Array[int64]   `gorm:"column:int_array"`
 	StringArray   types.Array[string]  `gorm:"column:string_array"`
 	FloatArray    types.Array[float64] `gorm:"column:float_array"`
+	BoolArray     *types.Array[bool]   `gorm:"column:bool_array"`
 	NullableArray *types.Array[[]byte] `gorm:"column:nullable_array"`
 }
 
@@ -57,45 +58,94 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 		shouldFound  []arrayTestModel
 	}{
 		{
+			name: "EmptySlice-Equal",
+			args: args{
+				rule: filter.RuleArrayEqual("int_array", []int64{}),
+			},
+			want:        &SimpleExpression{Column: "int_array", OP: "=", Value: `{}`},
+			wantSQL:     `"int_array" = $1`,
+			wantVars:    []any{`{}`},
+			shouldFound: []arrayTestModel{},
+		},
+		{
+			name: "EmptySlice-Equal",
+			args: args{
+				rule: filter.RuleArrayEqual("bool_array", []bool{}),
+			},
+			want:        &SimpleExpression{Column: "bool_array", OP: "=", Value: `{}`},
+			wantSQL:     `"bool_array" = $1`,
+			wantVars:    []any{`{}`},
+			shouldFound: []arrayTestModel{arrayInst2},
+		},
+		{
+			name: "NilSlice-ArrayEqual",
+			args: args{
+				// will be converted to empty array, is want to check column is NULL, use RuleEqual
+				rule: filter.RuleArrayEqual("int_array", []int64(nil)),
+			},
+			want:        &SimpleExpression{Column: "int_array", OP: "=", Value: `{}`},
+			wantSQL:     `"int_array" = $1`,
+			wantVars:    []any{`{}`},
+			shouldFound: []arrayTestModel{},
+		},
+		{
+			name: "EmptySlice-Contains",
+			args: args{
+				rule: filter.RuleArrayContains("int_array", []int64(nil)),
+			},
+			want:     &SimpleExpression{Column: "int_array", OP: "@>", Value: `{}`},
+			wantSQL:  `"int_array" @> $1`,
+			wantVars: []any{`{}`},
+			// contains empty array will return all data, should be excluded by validate
+			shouldFound: allArrayTestModels,
+		},
+		{
+			name: "EmptySlice-Overlap",
+			args: args{
+				rule: filter.RuleArrayOverlap("int_array", []int64(nil)),
+			},
+			want:        &SimpleExpression{Column: "int_array", OP: "&&", Value: `{}`},
+			wantSQL:     `"int_array" && $1`,
+			wantVars:    []any{`{}`},
+			shouldFound: []arrayTestModel{},
+		},
+		{
 			name: "unsupportedArrayType-int16",
 			args: args{
-				rule: filter.RuleArrayEqual("int_array", []int16{1, 2, 3}),
+				rule: &filter.AtomRule{Field: "int_array", Op: filter.ArrayEqual.Factory(), Value: []int16{1, 2, 3}},
 			},
-			wantConvErr: "not support array elem kind int16",
+			wantConvErr: "not support array type:",
 		},
 		{
 			name: "unsupportedArrayType-any",
 			args: args{
-				rule: filter.RuleArrayEqual("int_array", []any{1, 2, 3}),
+				rule: &filter.AtomRule{Field: "int_array", Op: filter.ArrayEqual.Factory(), Value: []any{1, 2, 3}},
 			},
-			wantConvErr: "not support array elem kind interface",
+			wantConvErr: "not support array type:",
 		},
 		{
 			name: "Equal-userIntType",
 			args: args{
-				rule: filter.RuleArrayEqual("int_array", []userIntType{1, 2, 3}),
+				rule: &filter.AtomRule{Field: "int_array", Op: filter.ArrayEqual.Factory(), Value: []userIntType{1, 2, 3}},
 			},
-			want:        NewArrayQuery("int_array").Equal(`{1,2,3}`),
-			wantSQL:     `"int_array" = $1`,
-			wantVars:    []any{`{1,2,3}`},
-			shouldFound: []arrayTestModel{arrayInst1},
+			wantConvErr: "not support array type:",
 		},
 		{
 			name: "Equal-int64",
 			args: args{
 				rule: filter.RuleArrayEqual("int_array", []int64{1, 2, 3}),
 			},
-			want:        NewArrayQuery("int_array").Equal(`{1,2,3}`),
+			want:        &SimpleExpression{Column: "int_array", OP: "=", Value: `{1,2,3}`},
 			wantSQL:     `"int_array" = $1`,
 			wantVars:    []any{`{1,2,3}`},
 			shouldFound: []arrayTestModel{arrayInst1},
 		},
 		{
-			name: "NotEqual-int",
+			name: "NotEqual-int64",
 			args: args{
-				rule: filter.RuleArrayNotEqual("int_array", []int{1, 2, 3}),
+				rule: filter.RuleArrayNotEqual("int_array", []int64{1, 2, 3}),
 			},
-			want:        NewArrayQuery("int_array").NotEqual(`{1,2,3}`),
+			want:        &SimpleExpression{Column: "int_array", OP: "<>", Value: `{1,2,3}`},
 			wantSQL:     `"int_array" <> $1`,
 			wantVars:    []any{`{1,2,3}`},
 			shouldFound: []arrayTestModel{arrayInst2, arrayInst3},
@@ -105,7 +155,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			args: args{
 				rule: filter.RuleArrayEqual("int_array", []string{"1", "2", "3"}),
 			},
-			want:        NewArrayQuery("int_array").Equal(`{"1","2","3"}`),
+			want:        &SimpleExpression{Column: "int_array", OP: "=", Value: `{"1","2","3"}`},
 			wantSQL:     `"int_array" = $1`,
 			wantVars:    []any{`{"1","2","3"}`},
 			shouldFound: []arrayTestModel{arrayInst1},
@@ -115,7 +165,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			args: args{
 				rule: filter.RuleArrayEqual("int_array", []string{"a", "b", "c"}),
 			},
-			want:        NewArrayQuery("int_array").Equal(`{"a","b","c"}`),
+			want:        &SimpleExpression{Column: "int_array", OP: "=", Value: `{"a","b","c"}`},
 			wantSQL:     `"int_array" = $1`,
 			wantVars:    []any{`{"a","b","c"}`},
 			shouldFound: []arrayTestModel{},
@@ -125,7 +175,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			args: args{
 				rule: filter.RuleArrayContains("string_array", []string{"a", "b"}),
 			},
-			want:        NewArrayQuery("string_array").Contains(`{"a","b"}`),
+			want:        &SimpleExpression{Column: "string_array", OP: "@>", Value: `{"a","b"}`},
 			wantSQL:     `"string_array" @> $1`,
 			wantVars:    []any{`{"a","b"}`},
 			shouldFound: []arrayTestModel{arrayInst1},
@@ -135,7 +185,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			args: args{
 				rule: filter.RuleArraySubset("string_array", []string{"a", "b", "c", "d"}),
 			},
-			want:        NewArrayQuery("string_array").Subset(`{"a","b","c","d"}`),
+			want:        &SimpleExpression{Column: "string_array", OP: "<@", Value: `{"a","b","c","d"}`},
 			wantSQL:     `"string_array" <@ $1`,
 			wantVars:    []any{`{"a","b","c","d"}`},
 			shouldFound: []arrayTestModel{arrayInst1},
@@ -145,7 +195,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			args: args{
 				rule: filter.RuleArraySubset("string_array", []string{"a", "b", "c", "d", "e", "f"}),
 			},
-			want:        NewArrayQuery("string_array").Subset(`{"a","b","c","d","e","f"}`),
+			want:        &SimpleExpression{Column: "string_array", OP: "<@", Value: `{"a","b","c","d","e","f"}`},
 			wantSQL:     `"string_array" <@ $1`,
 			wantVars:    []any{`{"a","b","c","d","e","f"}`},
 			shouldFound: []arrayTestModel{arrayInst1, arrayInst2},
@@ -153,9 +203,9 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 		{
 			name: "Overlap",
 			args: args{
-				rule: filter.RuleArrayOverlap("int_array", []int{5}),
+				rule: filter.RuleArrayOverlap("int_array", []int64{5}),
 			},
-			want:        NewArrayQuery("int_array").Overlap(`{5}`),
+			want:        &SimpleExpression{Column: "int_array", OP: "&&", Value: `{5}`},
 			wantSQL:     `"int_array" && $1`,
 			wantVars:    []any{`{5}`},
 			shouldFound: []arrayTestModel{arrayInst2},
@@ -163,9 +213,9 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 		{
 			name: "Overlap3",
 			args: args{
-				rule: filter.RuleArrayOverlap("int_array", []int{1, 5, 9}),
+				rule: filter.RuleArrayOverlap("int_array", []int64{1, 5, 9}),
 			},
-			want:        NewArrayQuery("int_array").Overlap(`{1,5,9}`),
+			want:        &SimpleExpression{Column: "int_array", OP: "&&", Value: `{1,5,9}`},
 			wantSQL:     `"int_array" && $1`,
 			wantVars:    []any{`{1,5,9}`},
 			shouldFound: []arrayTestModel{arrayInst1, arrayInst2, arrayInst3},
@@ -175,7 +225,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			args: args{
 				rule: filter.RuleArrayOverlap("nullable_array", [][]byte{{1}, {2}}),
 			},
-			want:        NewArrayQuery("nullable_array").Overlap(`{"\\x01","\\x02"}`),
+			want:        &SimpleExpression{Column: "nullable_array", OP: "&&", Value: `{"\\x01","\\x02"}`},
 			wantSQL:     `"nullable_array" && $1`,
 			wantVars:    []any{`{"\\x01","\\x02"}`},
 			shouldFound: []arrayTestModel{arrayInst2, arrayInst3},
@@ -185,14 +235,38 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			args: args{
 				rule: filter.RuleArrayOverlap("nullable_array", [][]byte{{1}}),
 			},
-			want:        NewArrayQuery("nullable_array").Overlap(`{"\\x01"}`),
+			want:        &SimpleExpression{Column: "nullable_array", OP: "&&", Value: `{"\\x01"}`},
 			wantSQL:     `"nullable_array" && $1`,
 			wantVars:    []any{`{"\\x01"}`},
 			shouldFound: []arrayTestModel{arrayInst2, arrayInst3},
 		},
+		{
+			name: "isEmpty",
+			args: args{
+				rule: filter.RuleArrayIsEmpty("bool_array"),
+			},
+			want: &SimpleExpression{Column: "bool_array", OP: "IS NULL",
+				ColumnWrapper: &functionWrapper{Name: "array_length", ExtraArgs: []any{1}},
+				ValueWrapper:  &emptyWrapper{}},
+			wantSQL:     `array_length("bool_array",$1) IS NULL `,
+			wantVars:    []any{1},
+			shouldFound: []arrayTestModel{arrayInst1, arrayInst2},
+		},
+		{
+			name: "notEmpty",
+			args: args{
+				rule: filter.RuleArrayNotEmpty("bool_array"),
+			},
+			want: &SimpleExpression{Column: "bool_array", OP: "IS NOT NULL",
+				ColumnWrapper: &functionWrapper{Name: "array_length", ExtraArgs: []any{1}},
+				ValueWrapper:  &emptyWrapper{}},
+			wantSQL:     `array_length("bool_array",$1) IS NOT NULL `,
+			wantVars:    []any{1},
+			shouldFound: []arrayTestModel{arrayInst3},
+		},
 	}
 
-	g := prepareTestDB(t, arrayTestModel{}, arrayTestModels)
+	g := prepareTestDB(t, arrayTestModel{}, allArrayTestModels)
 	if !assert.NotNil(t, g, "failed to open gorm db") {
 		return
 	}
@@ -246,7 +320,7 @@ func TestArrayFilter(t *testing.T) {
 		{
 			name:        "ContainsFloatRule",
 			args:        args{rule: filter.RuleArrayContains("float_array", []float64{-0.2})},
-			want:        NewArrayQuery("float_array").Contains(`{-0.2}`),
+			want:        &SimpleExpression{Column: "float_array", OP: "@>", Value: `{-0.2}`},
 			wantSQL:     `"float_array" @> $1`,
 			wantVars:    []any{`{-0.2}`},
 			shouldFound: []arrayTestModel{arrayInst1, arrayInst2},
@@ -255,7 +329,7 @@ func TestArrayFilter(t *testing.T) {
 			name: "ContainsFloatExpression",
 			args: args{rule: filter.ExpressionAnd(
 				filter.RuleArrayContains("float_array", []float64{-0.4}))},
-			want:        NewArrayQuery("float_array").Contains(`{-0.4}`),
+			want:        &SimpleExpression{Column: "float_array", OP: "@>", Value: `{-0.4}`},
 			wantSQL:     `"float_array" @> $1`,
 			wantVars:    []any{`{-0.4}`},
 			shouldFound: []arrayTestModel{arrayInst2, arrayInst3},
@@ -264,7 +338,7 @@ func TestArrayFilter(t *testing.T) {
 			name: "arraySlice",
 			args: args{rule: filter.ExpressionAnd(
 				filter.RuleArrayContains("float_array[0:1]", []float64{-0.4}))},
-			want:     NewArrayQuery("float_array[0:1]").Contains(`{-0.4}`),
+			want:     &SimpleExpression{Column: "float_array[0:1]", OP: "@>", Value: `{-0.4}`},
 			wantSQL:  `"float_array[0:1]" @> $1`,
 			wantVars: []any{`{-0.4}`},
 			// array slice is not supported currently
@@ -273,14 +347,14 @@ func TestArrayFilter(t *testing.T) {
 		},
 	}
 
-	g := prepareTestDB(t, arrayTestModel{}, arrayTestModels)
+	g := prepareTestDB(t, arrayTestModel{}, allArrayTestModels)
 	if !assert.NotNil(t, g, "failed to open gorm db") {
 		return
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ConvFilter(tt.args.rule)
+			got, err := Filter(tt.args.rule)
 			if tt.wantConvErr != "" {
 				assert.ErrorContains(t, err, tt.wantConvErr, "convert to clause failed got unexpected error")
 				return
@@ -311,7 +385,7 @@ func TestArrayFilter(t *testing.T) {
 	}
 }
 
-var arrayTestModels = []arrayTestModel{arrayInst1, arrayInst2, arrayInst3}
+var allArrayTestModels = []arrayTestModel{arrayInst1, arrayInst2, arrayInst3}
 var arrayInst1 = arrayTestModel{
 	ID:            1,
 	Name:          "array-1",
@@ -319,6 +393,7 @@ var arrayInst1 = arrayTestModel{
 	StringArray:   types.Array[string]{"a", "b", "c"},
 	FloatArray:    types.Array[float64]{-0.1, -0.2, -0.3},
 	NullableArray: nil,
+	BoolArray:     nil,
 }
 var arrayInst2 = arrayTestModel{
 	ID:            2,
@@ -327,6 +402,7 @@ var arrayInst2 = arrayTestModel{
 	StringArray:   types.Array[string]{"d", "e", "f"},
 	FloatArray:    types.Array[float64]{-0.2, -0.3, -0.4},
 	NullableArray: &types.Array[[]byte]{{1}, {2}, {4}},
+	BoolArray:     &types.Array[bool]{},
 }
 var arrayInst3 = arrayTestModel{
 	ID:            3,
@@ -335,4 +411,5 @@ var arrayInst3 = arrayTestModel{
 	StringArray:   types.Array[string]{"g", "h", "i"},
 	FloatArray:    types.Array[float64]{-0.3, -0.4, -0.5},
 	NullableArray: &types.Array[[]byte]{{1}, {2}, {3}},
+	BoolArray:     &types.Array[bool]{true},
 }

@@ -14,8 +14,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package orm ...
-package orm
+// Package conv ...
+package conv
 
 import (
 	"errors"
@@ -28,8 +28,8 @@ import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
-// ConvFilter convert non-nil filter to gorm clause expression
-func ConvFilter(flt filter.RuleFactory) (clause.Expression, error) {
+// Filter convert non-nil filter to gorm clause expression
+func Filter(flt filter.RuleFactory) (clause.Expression, error) {
 	if flt == nil {
 		return nil, errors.New("filter expression is nil")
 	}
@@ -60,7 +60,7 @@ func expressionToGormClause(flt *filter.Expression) (exp clause.Expression, err 
 	var exps []clause.Expression
 	var expr clause.Expression
 	for _, sub := range flt.Rules {
-		expr, err = ConvFilter(sub)
+		expr, err = Filter(sub)
 		if err != nil {
 			return nil, err
 		}
@@ -75,7 +75,7 @@ func expressionToGormClause(flt *filter.Expression) (exp clause.Expression, err 
 	case filter.Or:
 		exp = clause.Or(exps...)
 	default:
-		return nil, fmt.Errorf("expression op is not supported: %s", flt.Op)
+		return nil, fmt.Errorf("expression OP is not supported: %s", flt.Op)
 	}
 	return exp, nil
 }
@@ -116,7 +116,7 @@ func atomRuleToGormClause(rule *filter.AtomRule) (clause.Expression, error) {
 	if filter.IsArrayOperator(op) {
 		return arrayRuleToClauseExpr(rule)
 	}
-	return nil, fmt.Errorf("rule op is not supported: %s", op)
+	return nil, fmt.Errorf("rule OP is not supported: %s", op)
 }
 
 func buildCS(rule *filter.AtomRule) (clause.Expression, error) {

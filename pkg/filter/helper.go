@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
@@ -204,28 +205,38 @@ func RuleJSONHasKey(fieldName string, value string) *AtomRule {
 }
 
 // RuleArrayEqual 生成资源字段等于查询的AtomRule，即fieldName=values
-func RuleArrayEqual[T any](fieldName string, values []T) *AtomRule {
+func RuleArrayEqual[T types.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayEqual.Factory(), Value: values}
 }
 
 // RuleArrayNotEqual 生成资源字段不等于查询的AtomRule，即fieldName!=values
-func RuleArrayNotEqual[T any](fieldName string, values []T) *AtomRule {
+func RuleArrayNotEqual[T types.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayNotEqual.Factory(), Value: values}
 }
 
-// RuleArrayContains 生成资源字段包含查询的AtomRule，即field @> values
-func RuleArrayContains[T any](fieldName string, values []T) *AtomRule {
+// RuleArrayContains 指定字段是否包含对应数组
+func RuleArrayContains[T types.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayContains.Factory(), Value: values}
 }
 
-// RuleArraySubset 生成资源字段包含查询的AtomRule，即field <@ values
-func RuleArraySubset[T any](fieldName string, values []T) *AtomRule {
+// RuleArraySubset 指定字段是否为对应数组的子集
+func RuleArraySubset[T types.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArraySubset.Factory(), Value: values}
 }
 
-// RuleArrayOverlap 生成资源字段包含查询的AtomRule，即field && values
-func RuleArrayOverlap[T any](fieldName string, values []T) *AtomRule {
+// RuleArrayOverlap 指定字段是否和对应数组有交集
+func RuleArrayOverlap[T types.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayOverlap.Factory(), Value: values}
+}
+
+// RuleArrayIsEmpty 指定字段是否为空数组
+func RuleArrayIsEmpty(fieldName string) *AtomRule {
+	return &AtomRule{Field: fieldName, Op: ArrayIsEmpty.Factory()}
+}
+
+// RuleArrayNotEmpty 指定字段是否不为空数组
+func RuleArrayNotEmpty(fieldName string) *AtomRule {
+	return &AtomRule{Field: fieldName, Op: ArrayNotEmpty.Factory()}
 }
 
 // ExpressionAnd expression with op and

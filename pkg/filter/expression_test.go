@@ -19,6 +19,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -319,7 +320,7 @@ func TestExpressionDepth(t *testing.T) {
 	assert.NotNil(t, err, "max depth-1")
 	assert.ErrorContains(t, err, "expression depth exceeded")
 
-	opt = opt.CopyWith(MaxDepth(DefaultMaxDepth))
+	opt.MaxDepth = lo.ToPtr(DefaultMaxDepth)
 	err = exp.Validate(opt)
 	assert.Nil(t, err, "max depth")
 
@@ -356,4 +357,43 @@ func TestEmptyExpression(t *testing.T) {
 		return
 	}
 
+}
+
+func TestEmptyValue(t *testing.T) {
+	type testcase struct {
+		name string
+		rule RuleFactory
+		err  string
+	}
+	var emptySlice = []string{}
+	var nilSlice []string = nil
+	rules := []testcase{
+		{name: "IN", rule: RuleIn("name", emptySlice), err: "at least have one element"},
+		{name: "JSONContains", rule: RuleJSONContains("name", emptySlice), err: "should be basic type"},
+		{name: "ArrayOverlap", rule: RuleArrayOverlap("name", emptySlice), err: "at least have one element"},
+		{name: "ArrayContains", rule: RuleArrayContains("name", emptySlice), err: "at least have one element"},
+		{name: "ArraySubset", rule: RuleArraySubset("name", emptySlice), err: "at least have one element"},
+	}
+	opt := NewExprOption(RuleFields(map[string]FieldType{"name": String}))
+	for _, tc := range rules {
+		t.Run(tc.name+"-empty", func(t *testing.T) {
+			err := tc.rule.Validate(opt)
+			if tc.err != "" {
+				assert.ErrorContains(t, err, tc.err)
+				return
+			}
+			assert.NoError(t, err)
+			return
+		})
+		t.Run(tc.name+"-nil", func(t *testing.T) {
+			tc.rule.(*AtomRule).Value = nilSlice
+			err := tc.rule.Validate(opt)
+			if tc.err != "" {
+				assert.ErrorContains(t, err, tc.err)
+				return
+			}
+			assert.NoError(t, err)
+			return
+		})
+	}
 }

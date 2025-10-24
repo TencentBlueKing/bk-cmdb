@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package orm
+package conv
 
 import (
 	"testing"
@@ -60,7 +60,7 @@ func Test_atomJSONRuleToClauseExpr(t *testing.T) {
 			},
 			want:         datatypes.JSONQuery("json_col").Equals(`{"a": "b"}`, []string{}...),
 			wantQueryErr: "42601",
-			// field with no path will be ignored, should use eq op
+			// field with no path will be ignored, should use eq OP
 			wantSQL:     ``,
 			wantVars:    nil,
 			shouldFound: []jsonTestModel{},

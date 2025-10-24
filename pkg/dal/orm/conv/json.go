@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package orm
+package conv
 
 import (
 	"errors"
@@ -54,7 +54,7 @@ func jsonRuleToClauseExpr(rule *filter.AtomRule) (clause.Expression, error) {
 		}
 		return clause.NotConditions{Exprs: []clause.Expression{containsExpr}}, nil
 	default:
-		return nil, fmt.Errorf("json op is not supported: %s", rule.Op)
+		return nil, fmt.Errorf("json OP is not supported: %s", rule.Op)
 	}
 }
 
