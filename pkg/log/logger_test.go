@@ -131,38 +131,38 @@ func TestLoggerDepth(t *testing.T) {
 	ctx := context.Background()
 	// 场景1
 	logger.InfoContext(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景2
 	slog.SetDefault(logger)
 	slog.InfoContext(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景3
 	SetDefault(h)
 	Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景5
 	Default().Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	Default().Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景6
 	Depth(0).Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景7
 	Depth(1).Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=log.go:"))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger.go:"))
 	buf.Reset()
 }
 
