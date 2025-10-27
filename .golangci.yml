@@ -42,6 +42,13 @@ linters:
     - unconvert
     - unparam
 
+  # 忽略特定错误
+  exclusions:
+    rules:
+      - linters:
+          - govet
+        text: 'shadow: declaration of "err" shadows declaration'
+
   settings:
     # 只开启特定的规则
     errcheck:

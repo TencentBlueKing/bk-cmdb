@@ -101,16 +101,15 @@ func registerHTTPServer(ctx context.Context, g *run.Group, router http.Handler, 
 		log.Info(ctx, "listening for http requests and metrics", "addr", addr)
 		return svr.ListenAndServe()
 
-	}, func(err error) {
+	}, func(reason error) {
 		st := time.Now()
 		timeoutCtx, timeoutCancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer timeoutCancel()
 
-		if e := svr.Shutdown(timeoutCtx); e != nil {
-			log.Error(ctx, "shutdown http server with error",
-				"reason", err, "duration", time.Since(st), log.E(err))
+		if err := svr.Shutdown(timeoutCtx); err != nil {
+			log.Error(ctx, "shutdown http server with error", "reason", reason, "duration", time.Since(st), log.E(err))
 			return
 		}
-		log.Info(ctx, "shutdown http server done", "reason", err, "duration", time.Since(st))
+		log.Info(ctx, "shutdown http server done", "reason", reason, "duration", time.Since(st))
 	})
 }

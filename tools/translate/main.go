@@ -138,8 +138,8 @@ func translateFileToLang(baseFilePath, rel, baseLang, targetLang string) error {
 	targetMap := map[string]string{}
 	if b, err := os.ReadFile(targetFile); err == nil {
 		if len(strings.TrimSpace(string(b))) > 0 {
-			if newErr := json.Unmarshal(b, &targetMap); newErr != nil {
-				return fmt.Errorf("unmarshal target json (%s) failed: %w", targetFile, newErr)
+			if err := json.Unmarshal(b, &targetMap); err != nil {
+				return fmt.Errorf("unmarshal target json (%s) failed: %w", targetFile, err)
 			}
 		}
 	} else if !os.IsNotExist(err) {

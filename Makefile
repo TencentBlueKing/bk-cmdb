@@ -17,12 +17,6 @@ LDFLAG=-ldflags "-X github.com/TencentBlueKing/bk-cmdb/pkg/version.Version=${VER
 -X github.com/TencentBlueKing/bk-cmdb/pkg/version.BuildTime=${BUILDTIME} \
 -X github.com/TencentBlueKing/bk-cmdb/pkg/version.GitHash=${GITHASH}"
 
-.PHONY: generate
-generate:
-	@echo ">> copying translation resources"
-	@mkdir -p pkg/i18n/resource
-	@cp -r resource/translations/* pkg/i18n/resource/
-
 ${lint}:
 	@echo ">> downloading golangci"
 	@mkdir -p ${PREFIX}/bin/lint
@@ -38,6 +32,6 @@ test:
 	GOEXPERIMENT=jsonv2 go test -count=1 -cover ./...
 
 .PHONY: build
-build: generate
+build:
 	@echo ">> building apiserver"
 	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/cmdb_apiserver cmd/api_server/*.go

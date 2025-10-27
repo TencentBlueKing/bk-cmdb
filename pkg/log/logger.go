@@ -20,8 +20,6 @@ package log
 import (
 	"context"
 	"log/slog"
-
-	"github.com/samber/lo"
 )
 
 // Logger contextual and structured logger
@@ -172,7 +170,6 @@ func E(err error) slog.Attr {
 
 func init() {
 	opt := NewHandlerOptions()
-	lo.Must0(opt.Validate())
 
 	handler := NewContextualHandler(opt)
 	SetDefault(handler)
