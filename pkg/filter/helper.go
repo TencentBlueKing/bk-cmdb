@@ -180,22 +180,22 @@ func RuleLessThanEqual(fieldName string, value any) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: LessThanEqual.Factory(), Value: value}
 }
 
-// RuleJSONEqual 生成资源字段等于查询的AtomRule，即fieldName=value
-func RuleJSONEqual(fieldName string, value any) *AtomRule {
-	return &AtomRule{Field: fieldName, Op: JSONEqual.Factory(), Value: value}
+// RuleJSONEqual 生成JSON等于给定值的AtomRule，即jsonPath=value
+func RuleJSONEqual(jsonPath string, value any) *AtomRule {
+	return &AtomRule{Field: jsonPath, Op: JSONEqual.Factory(), Value: value}
 }
 
-// RuleJSONNotEqual 生成资源字段等于查询的AtomRule，即fieldName!=value
-func RuleJSONNotEqual(fieldName string, value any) *AtomRule {
-	return &AtomRule{Field: fieldName, Op: JSONNotEqual.Factory(), Value: value}
+// RuleJSONNotEqual 生成JSON不等于给定值的AtomRule，即jsonPath!=value
+func RuleJSONNotEqual(jsonPath string, value any) *AtomRule {
+	return &AtomRule{Field: jsonPath, Op: JSONNotEqual.Factory(), Value: value}
 }
 
-// RuleJSONContains 生成资源字段等于查询的AtomRule，即values in fieldName
+// RuleJSONContains 生成JSON数组包含给定值的AtomRule，即values in fieldName
 func RuleJSONContains[T any](fieldName string, values T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: JSONContains.Factory(), Value: values}
 }
 
-// RuleJSONHasKey 生成资源字段等于查询的AtomRule，即field ? v
+// RuleJSONHasKey 生成JSON包含给定Key的AtomRule，即field ? v
 func RuleJSONHasKey(fieldName string, value string) *AtomRule {
 	return &AtomRule{
 		Field: fieldName,

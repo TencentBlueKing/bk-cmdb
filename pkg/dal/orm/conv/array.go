@@ -17,7 +17,6 @@
 package conv
 
 import (
-	"database/sql/driver"
 	"fmt"
 
 	"github.com/lib/pq"
@@ -25,17 +24,6 @@ import (
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/filter"
 )
-
-// arrayRuleToClauseExpr convert to postgresql array expression
-// ref: https://www.postgresql.org/docs/current/functions-array.html
-func arrayRuleToClauseExpr(rule *filter.AtomRule) (clause.Expression, error) {
-
-	opModifier := optModifier[filter.OpType(rule.Op)]
-	if opModifier == nil {
-		return nil, fmt.Errorf("not support array OP %s", rule.Op)
-	}
-	return opModifier.GetExpression(rule.Field, rule.Value)
-}
 
 var optModifier = map[filter.OpType]converter{
 	filter.ArrayEqual:    &ArrayValueConverter{OP: "="},
@@ -51,6 +39,16 @@ var optModifier = map[filter.OpType]converter{
 		OP:            "IS NOT NULL",
 		ColumnWrapper: &functionWrapper{Name: "array_length", ExtraArgs: []any{1}},
 		ValueWrapper:  &emptyWrapper{}},
+}
+
+// arrayRuleToClauseExpr convert to postgresql array expression
+// ref: https://www.postgresql.org/docs/current/functions-array.html
+func arrayRuleToClauseExpr(rule *filter.AtomRule) (clause.Expression, error) {
+	opModifier, exists := optModifier[filter.OpType(rule.Op)]
+	if !exists {
+		return nil, fmt.Errorf("not support array OP %s", rule.Op)
+	}
+	return opModifier.GetExpression(rule.Field, rule.Value)
 }
 
 // SimpleExpression simple expression
@@ -153,27 +151,7 @@ func buildArraySQL(value any) (sql string, err error) {
 	if value == nil {
 		return "", nil
 	}
-
-	var encoder driver.Valuer
-	switch typed := value.(type) {
-	case []string:
-		encoder = pq.StringArray(typed)
-	case []int64:
-		encoder = pq.Int64Array(typed)
-	case []int32:
-		encoder = pq.Int32Array(typed)
-	case []float64:
-		encoder = pq.Float64Array(typed)
-	case []float32:
-		encoder = pq.Float32Array(typed)
-	case [][]byte:
-		encoder = pq.ByteaArray(typed)
-	case []bool:
-		encoder = pq.BoolArray(typed)
-	default:
-		return "", fmt.Errorf("not support array type: %T", value)
-	}
-
+	var encoder = pq.Array(value)
 	val, err := encoder.Value()
 	if err != nil {
 		return "", fmt.Errorf("encode value to array sql failed: %w", err)

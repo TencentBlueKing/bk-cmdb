@@ -48,26 +48,22 @@ func NewArray[T ArrayElem](s []T) Array[T] {
 	return a
 }
 
-// Value return json value, implement driver.Valuer interface
-func (arr *Array[T]) Value() (driver.Value, error) {
-	if arr == nil {
-		return nil, nil
-	}
+// Value return array value, implement driver.Valuer interface
+func (arr Array[T]) Value() (driver.Value, error) {
 	// use empty array as default to avoid value to string type '<nil>',
-	if len(*arr) == 0 {
+	if len(arr) == 0 {
 		return driver.Value("{}"), nil
 	}
 	// use array encoder from lib/pq
-	pqArr := pq.Array(([]T)(*arr))
-	if _, ok := pqArr.(pq.GenericArray); ok {
-		return nil, fmt.Errorf("unsupport type: %s", reflect.ValueOf(*arr).Elem().Type().String())
-	}
-
+	pqArr := pq.Array(([]T)(arr))
 	return pqArr.Value()
 }
 
 // Scan value into Array[T], implements sql.Scanner interface
 func (arr *Array[T]) Scan(value any) error {
+	if arr == nil {
+		return errors.New("can not scan to nil array")
+	}
 
 	// 用反射获取数组arr的数据类型
 	var bytes []byte
@@ -77,16 +73,11 @@ func (arr *Array[T]) Scan(value any) error {
 	case string:
 		bytes = []byte(v)
 	default:
-		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
+		return errors.New(fmt.Sprint("failed to unmarshal array value:", value))
 	}
 
-	var safeArr []T
 	// TODO use another decoder to support NULL(nil) array value
-	pqArr := pq.Array(safeArr)
-	if _, ok := pqArr.(pq.GenericArray); ok {
-		return fmt.Errorf("unsupport type: %T", safeArr)
-	}
-
+	pqArr := pq.Array([]T{})
 	err := pqArr.Scan(bytes)
 	if err != nil {
 		return err
@@ -95,39 +86,20 @@ func (arr *Array[T]) Scan(value any) error {
 	sliceVal := reflect.ValueOf(pqArr).Elem()
 	*arr = make([]T, sliceVal.Len())
 	reflect.Copy(reflect.ValueOf(*arr), sliceVal)
-
 	return nil
 }
 
 // GormDataType gorm common data type
 func (Array[T]) GormDataType() string {
-	t := reflect.TypeFor[T]()
-	switch t.Kind() {
-	case reflect.Bool:
-		return "boolean[]"
-	case reflect.Int32:
-		return "integer[]"
-	case reflect.Int64:
-		return "bigint[]"
-	case reflect.Float32:
-		return "real[]"
-	case reflect.Float64:
-		return "double precision[]"
-	case reflect.String:
-		return "text[]"
-	case reflect.Slice:
-		if t.Elem().Kind() == reflect.Uint8 {
-			return "bytea[]"
-		}
-		return "UNKNOWN Slice"
-	default:
-		return "UNKNOWN"
-	}
+	return getArrayDataType[T]()
 }
 
 // GormDBDataType gorm db data type
 func (Array[T]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
+	return getArrayDataType[T]()
+}
 
+func getArrayDataType[T any]() string {
 	t := reflect.TypeFor[T]()
 	switch t.Kind() {
 	case reflect.Bool:
@@ -154,8 +126,10 @@ func (Array[T]) GormDBDataType(db *gorm.DB, field *schema.Field) string {
 
 // GormValue gorm value
 func (arr Array[T]) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
-
-	data, _ := arr.Value()
+	data, err := arr.Value()
+	if err != nil {
+		data = fmt.Errorf("<Array Value() failed: %s>", err.Error())
+	}
 	switch v := data.(type) {
 	case string:
 		return gorm.Expr("?", v)

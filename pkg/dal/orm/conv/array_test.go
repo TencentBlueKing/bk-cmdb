@@ -17,6 +17,7 @@
 package conv
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -110,30 +111,40 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			shouldFound: []arrayTestModel{},
 		},
 		{
-			name: "unsupportedArrayType-int16",
+			name: "Equal-int64",
+			args: args{
+				rule: filter.RuleArrayEqual("int_array", []int64{1, 2, 3}),
+			},
+			want:        &SimpleExpression{Column: "int_array", OP: "=", Value: `{1,2,3}`},
+			wantSQL:     `"int_array" = $1`,
+			wantVars:    []any{`{1,2,3}`},
+			shouldFound: []arrayTestModel{arrayInst1},
+		},
+		{
+			// expect array elem types, other type may also be supported for query, but not is not recommend
+			name: "int16",
 			args: args{
 				rule: &filter.AtomRule{Field: "int_array", Op: filter.ArrayEqual.Factory(), Value: []int16{1, 2, 3}},
 			},
-			wantConvErr: "not support array type:",
+			want:        &SimpleExpression{Column: "int_array", OP: "=", Value: `{1,2,3}`},
+			wantSQL:     `"int_array" = $1`,
+			wantVars:    []any{`{1,2,3}`},
+			shouldFound: []arrayTestModel{arrayInst1},
 		},
 		{
 			name: "unsupportedArrayType-any",
 			args: args{
 				rule: &filter.AtomRule{Field: "int_array", Op: filter.ArrayEqual.Factory(), Value: []any{1, 2, 3}},
 			},
-			wantConvErr: "not support array type:",
+			want:        &SimpleExpression{Column: "int_array", OP: "=", Value: `{1,2,3}`},
+			wantSQL:     `"int_array" = $1`,
+			wantVars:    []any{`{1,2,3}`},
+			shouldFound: []arrayTestModel{arrayInst1},
 		},
 		{
 			name: "Equal-userIntType",
 			args: args{
 				rule: &filter.AtomRule{Field: "int_array", Op: filter.ArrayEqual.Factory(), Value: []userIntType{1, 2, 3}},
-			},
-			wantConvErr: "not support array type:",
-		},
-		{
-			name: "Equal-int64",
-			args: args{
-				rule: filter.RuleArrayEqual("int_array", []int64{1, 2, 3}),
 			},
 			want:        &SimpleExpression{Column: "int_array", OP: "=", Value: `{1,2,3}`},
 			wantSQL:     `"int_array" = $1`,
@@ -319,7 +330,7 @@ func TestArrayFilter(t *testing.T) {
 	}{
 		{
 			name:        "ContainsFloatRule",
-			args:        args{rule: filter.RuleArrayContains("float_array", []float64{-0.2})},
+			args:        args{rule: filter.RuleArrayContains("float_array", []float32{-0.2})},
 			want:        &SimpleExpression{Column: "float_array", OP: "@>", Value: `{-0.2}`},
 			wantSQL:     `"float_array" @> $1`,
 			wantVars:    []any{`{-0.2}`},
@@ -412,4 +423,65 @@ var arrayInst3 = arrayTestModel{
 	FloatArray:    types.Array[float64]{-0.3, -0.4, -0.5},
 	NullableArray: &types.Array[[]byte]{{1}, {2}, {3}},
 	BoolArray:     &types.Array[bool]{true},
+}
+
+func Test_buildArraySQL(t *testing.T) {
+	tests := []struct {
+		name    string
+		arg     any
+		wantSql string
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name:    "string",
+			arg:     []string{"a"},
+			wantSql: `{"a"}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "bool",
+			arg:     []bool{true, false},
+			wantSql: `{t,f}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "bytea",
+			arg:     [][]byte{{1, 2, 3}, []byte("abc")},
+			wantSql: `{"\\x010203","\\x616263"}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "int32",
+			arg:     []int32{1, 2},
+			wantSql: `{1,2}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "int64",
+			arg:     []int64{1, 2},
+			wantSql: `{1,2}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "float32",
+			arg:     []float32{1, 2},
+			wantSql: `{1,2}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "float64",
+			arg:     []float64{1, 2},
+			wantSql: `{1,2}`,
+			wantErr: assert.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSql, err := buildArraySQL(tt.arg)
+			if !tt.wantErr(t, err, fmt.Sprintf("buildArraySQL(%v)", tt.arg)) {
+				return
+			}
+			assert.Equalf(t, tt.wantSql, gotSql, "buildArraySQL(%v)", tt.arg)
+		})
+	}
 }

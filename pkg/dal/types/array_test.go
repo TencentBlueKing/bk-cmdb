@@ -37,7 +37,6 @@ type arrScanFailTestCase[T ArrayElem] struct {
 }
 
 func TestInt32Array(t *testing.T) {
-
 	tests := []arrValueTestCase[int32]{
 		{
 			name: "simple",
@@ -104,7 +103,6 @@ func TestInt32Array(t *testing.T) {
 }
 
 func TestInt64Array(t *testing.T) {
-
 	tests := []arrValueTestCase[int64]{
 		{
 			name: "simple",
@@ -169,7 +167,6 @@ func TestInt64Array(t *testing.T) {
 }
 
 func TestFloat32Array(t *testing.T) {
-
 	tests := []arrValueTestCase[float32]{
 		{
 			name: "simple",
@@ -233,7 +230,6 @@ func TestFloat32Array(t *testing.T) {
 }
 
 func TestFloat64Array(t *testing.T) {
-
 	tests := []arrValueTestCase[float64]{
 		{
 			name: "simple",
@@ -371,7 +367,6 @@ func TestStringArray(t *testing.T) {
 }
 
 func TestByteaArray(t *testing.T) {
-
 	tests := []arrValueTestCase[[]byte]{
 		{
 			name: "simple",
@@ -416,6 +411,13 @@ func TestByteaArray(t *testing.T) {
 
 		})
 	}
+}
+func TestNullArray(t *testing.T) {
+	intArrayRaw := `{1,2,3}`
+	var intArr *Array[int64]
+	err := intArr.Scan(intArrayRaw)
+	// not support null array scan
+	assert.ErrorContains(t, err, "can not scan to nil array", "Scan() should failed with nil array")
 }
 
 func TestNullElement(t *testing.T) {

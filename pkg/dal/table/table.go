@@ -19,6 +19,8 @@ package table
 
 import (
 	"fmt"
+
+	"gorm.io/gorm/schema"
 )
 
 // Name of table
@@ -26,7 +28,7 @@ type Name string
 
 const (
 	// IDGeneratorTable ...
-	IDGeneratorTable Name = "id_generator"
+	IDGeneratorTable Name = "id_generator_test"
 	// TestModelTable ...
 	TestModelTable Name = "test_model"
 )
@@ -54,6 +56,4 @@ func (n Name) String() string {
 }
 
 // Tabler have table name method
-type Tabler interface {
-	TableName() string
-}
+type Tabler = schema.Tabler

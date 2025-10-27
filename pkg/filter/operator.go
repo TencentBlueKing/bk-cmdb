@@ -46,8 +46,8 @@ func init() {
 	opFactory[JSONEqual.Factory()] = JSONEqualOp(JSONEqual)
 	opFactory[JSONNotEqual.Factory()] = JSONNotEqualOp(JSONEqual)
 	opFactory[JSONContains.Factory()] = JSONContainsOp(JSONContains)
-	opFactory[JSONHasKey.Factory()] = JSONContainsPathOp(JSONHasKey)
-	opFactory[JSONNotHasKey.Factory()] = JSONNotContainsPathOp(JSONNotHasKey)
+	opFactory[JSONHasKey.Factory()] = JSONHasKeyOp(JSONHasKey)
+	opFactory[JSONNotHasKey.Factory()] = JSONNotHasKeyOp(JSONNotHasKey)
 
 	opFactory[ArrayEqual.Factory()] = ArrayEqualOp(ArrayEqual)
 	opFactory[ArrayNotEqual.Factory()] = ArrayNotEqualOp(ArrayNotEqual)
@@ -148,9 +148,9 @@ const (
 	// JSONContains is json array contains value
 	JSONContains OpType = "json_contains"
 	// JSONHasKey is json has value or json array has key
-	JSONHasKey OpType = "json_has_keys"
+	JSONHasKey OpType = "json_has_key"
 	// JSONNotHasKey is json not has value or json array not has key
-	JSONNotHasKey OpType = "json_not_has_keys"
+	JSONNotHasKey OpType = "json_not_has_key"
 )
 
 // IsJSONOperator check if op is json operator
@@ -510,33 +510,33 @@ func (op JSONContainsOp) ValidateValue(rVal reflect.Value, opt *ExprOption) erro
 	return nil
 }
 
-// JSONContainsPathOp is json field json contain path operator
-type JSONContainsPathOp OpType
+// JSONHasKeyOp is json field json contain path operator
+type JSONHasKeyOp OpType
 
 // Name is json field json contain path operator
-func (op JSONContainsPathOp) Name() OpType {
+func (op JSONHasKeyOp) Name() OpType {
 	return JSONHasKey
 }
 
 // ValidateValue validate json field equal's value
-func (op JSONContainsPathOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+func (op JSONHasKeyOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
 	if rVal.Kind() != reflect.String {
-		return errors.New("invalid json_contains field value type, should be string")
+		return errors.New("invalid json_not_has_key field value type, should be string")
 	}
 
 	return nil
 }
 
-// JSONNotContainsPathOp is json field json contain path operator
-type JSONNotContainsPathOp OpType
+// JSONNotHasKeyOp is json field json contain path operator
+type JSONNotHasKeyOp OpType
 
 // Name is json field json contain path operator
-func (op JSONNotContainsPathOp) Name() OpType {
+func (op JSONNotHasKeyOp) Name() OpType {
 	return JSONNotHasKey
 }
 
 // ValidateValue validate json field equal's value
-func (op JSONNotContainsPathOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+func (op JSONNotHasKeyOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
 	if rVal.Kind() != reflect.String {
 		return errors.New("invalid json_not_contains field value type, should be string")
 	}

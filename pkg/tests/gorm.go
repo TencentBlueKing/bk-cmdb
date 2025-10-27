@@ -30,7 +30,7 @@ import (
 )
 
 // GetTestGORM open a gorm db for test from env TEST_GORM_DSN, should only be used in test code
-func GetTestGORM(t *testing.T) (*gorm.DB, error) {
+func GetTestGORM(t testing.TB) (*gorm.DB, error) {
 	var gormDSN = os.Getenv("TEST_GORM_PG_DSN")
 	if gormDSN == "" {
 		log.Warn(t.Context(), "TEST_GORM_PG_DSN is not set, skip", "test", t.Name())

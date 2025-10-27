@@ -18,8 +18,8 @@ package table
 
 // IDGenerator id generator model
 type IDGenerator struct {
-	Resource Name   `json:"resource,omitempty" gorm:"resource;primaryKey;size:64"`
-	MaxID    string `json:"max_id,omitempty" gorm:"max_id;size:64;default:0"`
+	Resource Name   `json:"resource" gorm:"resource;primaryKey;size:64"`
+	MaxID    uint64 `json:"max_id" gorm:"max_id;size:64;default:0"`
 }
 
 // TableName id generator table name
