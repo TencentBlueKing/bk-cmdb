@@ -24,7 +24,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // UnaryFunc Unary or ClientStreaming handle function
@@ -52,19 +52,19 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 
 		rid := uuid.New().String()
 		ctx := r.Context()
-		ctx = logger.WithAttr(ctx, logger.RidAttr(rid))
+		ctx = log.WithAttr(ctx, log.RidAttr(rid))
 
 		// 反序列化
 		in, err := decodeReq[Req](r)
 		if err != nil {
-			logger.Error(ctx, "handle decode request failed", logger.E(err))
+			log.Error(ctx, "handle decode request failed", log.E(err))
 			_ = APIError(err).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
-			logger.Error(ctx, "validate req failed", logger.E(err))
+			log.Error(ctx, "validate req failed", log.E(err))
 			_ = APIError(err).Render(w, r)
 			return
 		}
@@ -106,14 +106,14 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		// 反序列化
 		in, err := decodeReq[Req](r)
 		if err != nil {
-			logger.Error(ctx, "handle decode stream request failed", logger.E(err))
+			log.Error(ctx, "handle decode stream request failed", log.E(err))
 			_ = APIError(err).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
-			logger.Error(ctx, "validate stream req failed", logger.E(err))
+			log.Error(ctx, "validate stream req failed", log.E(err))
 			_ = APIError(err).Render(w, r)
 			return
 		}

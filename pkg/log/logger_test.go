@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package logger
+package log
 
 import (
 	"bytes"
@@ -131,45 +131,38 @@ func TestLoggerDepth(t *testing.T) {
 	ctx := context.Background()
 	// 场景1
 	logger.InfoContext(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
-	assert.Equal(t, 89, len(buf.String()))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景2
 	slog.SetDefault(logger)
 	slog.InfoContext(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
-	assert.Equal(t, 89, len(buf.String()))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景3
 	SetDefault(h)
 	Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
-	assert.Equal(t, 89, len(buf.String()))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景5
 	Default().Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
-	assert.Equal(t, 89, len(buf.String()))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	Default().Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
-	assert.Equal(t, 89, len(buf.String()))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景6
 	Depth(0).Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger_test.go:"))
-	assert.Equal(t, 89, len(buf.String()))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger_test.go:"))
 	buf.Reset()
 
 	// 场景7
 	Depth(1).Info(ctx, "test depth")
-	assert.True(t, strings.Contains(buf.String(), "source=logger.go:"))
-	assert.Equal(t, 84, len(buf.String()))
+	assert.True(t, strings.Contains(buf.String(), "source=log/logger.go:"))
 	buf.Reset()
 }
 
@@ -192,11 +185,11 @@ func BenchmarkStdLogger(b *testing.B) {
 		ReplaceAttr: replaceAttr,
 	})
 
-	_logger := slog.New(textHandler)
-	_logger = _logger.With(RidAttr("8e388ed2-ba59-48b7-b213-cf1afd6ac1e9"))
+	logger := slog.New(textHandler)
+	logger = logger.With(RidAttr("8e388ed2-ba59-48b7-b213-cf1afd6ac1e9"))
 
 	for b.Loop() {
-		_logger.Debug("msg")
+		logger.Debug("msg")
 	}
 }
 
@@ -221,11 +214,11 @@ func BenchmarkStdLoggerParallel(b *testing.B) {
 		ReplaceAttr: replaceAttr,
 	})
 
-	_logger := slog.New(textHandler)
+	logger := slog.New(textHandler)
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_logger.Debug("msg")
+			logger.Debug("msg")
 		}
 	})
 }

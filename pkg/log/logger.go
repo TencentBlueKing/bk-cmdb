@@ -14,8 +14,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package logger provider the contextual and structured logger, base the golang's slog
-package logger
+// Package log provider the contextual and structured logger, base the golang's slog
+package log
 
 import (
 	"context"
@@ -169,6 +169,8 @@ func E(err error) slog.Attr {
 }
 
 func init() {
-	handler := NewContextualHandler(NewHandlerOptions())
+	opt := NewHandlerOptions()
+
+	handler := NewContextualHandler(opt)
 	SetDefault(handler)
 }

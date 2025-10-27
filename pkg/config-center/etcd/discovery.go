@@ -25,7 +25,7 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	cc "github.com/TencentBlueKing/bk-cmdb/pkg/config-center"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/logger"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // discovery is the etcd config discovery implementation.
@@ -37,7 +37,7 @@ type discovery struct {
 // NewDiscovery creates a new config discovery instance.
 func NewDiscovery(cli *clientv3.Client) (cc.Discovery, error) {
 	if cli == nil {
-		logger.Error(context.Background(), "new discovery but etcd client is not set")
+		log.Error(context.Background(), "new discovery but etcd client is not set")
 		return nil, fmt.Errorf("etcd client is not set")
 	}
 
@@ -50,12 +50,12 @@ func NewDiscovery(cli *clientv3.Client) (cc.Discovery, error) {
 func (d *discovery) Read(ctx context.Context, key string) ([]byte, error) {
 	resp, err := d.cli.Get(ctx, key, clientv3.WithSerializable())
 	if err != nil {
-		logger.Error(ctx, "read config from etcd failed", "key", key, logger.E(err))
+		log.Error(ctx, "read config from etcd failed", "key", key, log.E(err))
 		return nil, err
 	}
 
 	if len(resp.Kvs) == 0 {
-		logger.Info(ctx, "read no config from etcd", "key", key)
+		log.Info(ctx, "read no config from etcd", "key", key)
 		return make([]byte, 0), nil
 	}
 
@@ -70,7 +70,7 @@ func (d *discovery) Watch(ctx context.Context, key string) (<-chan cc.DiscoveryE
 	go func() {
 		for resp := range watchChan {
 			if resp.Err() != nil {
-				logger.Error(ctx, "watch config failed", "key", key, "err", resp.Err())
+				log.Error(ctx, "watch config failed", "key", key, "err", resp.Err())
 				close(eventChan)
 				return
 			}
@@ -88,7 +88,7 @@ func (d *discovery) Watch(ctx context.Context, key string) (<-chan cc.DiscoveryE
 					eventType = cc.DeleteEvent
 					eventValue = event.PrevKv.Value
 				default:
-					logger.Info(ctx, "event type is not supported, skip", "key", key, "event type", event.Type)
+					log.Info(ctx, "event type is not supported, skip", "key", key, "event type", event.Type)
 					continue
 				}
 
