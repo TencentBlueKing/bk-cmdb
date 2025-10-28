@@ -16,6 +16,7 @@
 package filter
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -396,4 +397,18 @@ func TestEmptyValue(t *testing.T) {
 			return
 		})
 	}
+}
+
+func TestArrayElemLength(t *testing.T) {
+	opt := NewExprOption(RuleFields(map[string]FieldType{"id": Numeric}))
+	err := RuleArrayEqual("id", lo.RangeFrom[int64](0, 501)).Validate(opt)
+	assert.ErrorContains(t, err, fmt.Sprintf("invalid array operator's value, at most have %d elements", DefaultMaxArrayElemLimit))
+
+	opt.MaxArrayElemLimit = 1
+	err = RuleArrayEqual("id", lo.RangeFrom[int64](0, 2)).Validate(opt)
+	assert.ErrorContains(t, err, fmt.Sprintf("invalid array operator's value, at most have %d elements", 1))
+
+	opt.MaxArrayElemLimit = 1
+	err = RuleArrayOverlap("id", []int64{}).Validate(opt)
+	assert.ErrorContains(t, err, fmt.Sprintf("invalid array operator's value, at least have one element"))
 }

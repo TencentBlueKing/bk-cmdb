@@ -232,7 +232,7 @@ func (uo UnknownOp) Name() OpType {
 }
 
 // ValidateValue validate equal's value
-func (uo UnknownOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+func (uo UnknownOp) ValidateValue(_ reflect.Value, _ *ExprOption) error {
 	return errors.New("unknown operator")
 }
 
@@ -554,10 +554,7 @@ func (op ArrayEqualOp) Name() OpType {
 
 // ValidateValue validate array equal's value
 func (op ArrayEqualOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
-	if rVal.Kind() != reflect.Array && rVal.Kind() != reflect.Slice {
-		return errors.New("invalid array_equal operator's value, should be array or slice")
-	}
-	return nil
+	return checkArrayWithLength(op, rVal, opt, true)
 }
 
 // ArrayNotEqualOp is array not equal operator
@@ -570,10 +567,7 @@ func (op ArrayNotEqualOp) Name() OpType {
 
 // ValidateValue validate array not equal's value
 func (op ArrayNotEqualOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
-	if rVal.Kind() != reflect.Array && rVal.Kind() != reflect.Slice {
-		return errors.New("invalid array_not_equal operator's value, should be array or slice")
-	}
-	return nil
+	return checkArrayWithLength(op, rVal, opt, true)
 }
 
 // ArrayContainsOp is array contains operator
@@ -586,13 +580,7 @@ func (op ArrayContainsOp) Name() OpType {
 
 // ValidateValue validate array contains's value
 func (op ArrayContainsOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
-	if rVal.Kind() != reflect.Array && rVal.Kind() != reflect.Slice {
-		return errors.New("invalid array_contains operator's value, should be array or slice")
-	}
-	if rVal.Len() == 0 {
-		return errors.New("invalid array_contains operator's value, at least have one element")
-	}
-	return nil
+	return checkArrayWithLength(op, rVal, opt, false)
 }
 
 // ArraySubsetOp is array subset operator
@@ -605,13 +593,7 @@ func (op ArraySubsetOp) Name() OpType {
 
 // ValidateValue validate array subset's value
 func (op ArraySubsetOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
-	if rVal.Kind() != reflect.Array && rVal.Kind() != reflect.Slice {
-		return errors.New("invalid array_subset operator's value, should be array or slice")
-	}
-	if rVal.Len() == 0 {
-		return errors.New("invalid array_subset operator's value, at least have one element")
-	}
-	return nil
+	return checkArrayWithLength(op, rVal, opt, false)
 }
 
 // ArrayOverlapOp is array overlap operator
@@ -624,13 +606,7 @@ func (op ArrayOverlapOp) Name() OpType {
 
 // ValidateValue validate array overlap's value
 func (op ArrayOverlapOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
-	if rVal.Kind() != reflect.Array && rVal.Kind() != reflect.Slice {
-		return errors.New("invalid array_overlap operator's value, should be array or slice")
-	}
-	if rVal.Len() == 0 {
-		return errors.New("invalid array_overlap operator's value, at least have one element")
-	}
-	return nil
+	return checkArrayWithLength(op, rVal, opt, false)
 }
 
 // ArrayIsEmptyOp is array is empty operator
@@ -658,5 +634,23 @@ func (op ArrayNotEmptyOp) Name() OpType {
 // ValidateValue validate array not empty's value
 func (op ArrayNotEmptyOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
 	// value is not used
+	return nil
+}
+
+// general check array with length
+func checkArrayWithLength[T ~string](op T, rVal reflect.Value, opt *ExprOption, allowZeroLength bool) error {
+	if rVal.Kind() != reflect.Array && rVal.Kind() != reflect.Slice {
+		return fmt.Errorf("invalid array operator's value, should be array or slice, op: %s", op)
+	}
+	maxElem := DefaultMaxArrayElemLimit
+	if opt != nil && opt.MaxArrayElemLimit > 0 {
+		maxElem = opt.MaxArrayElemLimit
+	}
+	if uint(rVal.Len()) > maxElem {
+		return fmt.Errorf("invalid array operator's value, at most have %d elements, op: %s", maxElem, op)
+	}
+	if !allowZeroLength && rVal.Len() == 0 {
+		return fmt.Errorf("invalid array operator's value, at least have one element, op: %s", op)
+	}
 	return nil
 }

@@ -18,6 +18,8 @@ package table
 
 // IDGenerator id generator model
 type IDGenerator struct {
+	// Resource identify id, commonly be table name.
+	// Note: the length limit of table name on PostgreSQL is 63 characters, on MySQL it is 64 characters.
 	Resource Name   `json:"resource" gorm:"resource;primaryKey;size:64"`
 	MaxID    uint64 `json:"max_id" gorm:"max_id;size:64;default:0"`
 }

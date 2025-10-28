@@ -38,6 +38,8 @@ const (
 	DefaultMaxRuleLimit = uint(10)
 	// DefaultMaxDepth defines the default max depth of the expression
 	DefaultMaxDepth = uint(5)
+	// DefaultMaxArrayElemLimit defines the default max element for array operator
+	DefaultMaxArrayElemLimit = uint(500)
 )
 
 // ExprOption defines how to validate an
@@ -61,6 +63,9 @@ type ExprOption struct {
 	// MaxRulesLimit defines the max number of rules an expression allows.
 	// If not set, then use default value: DefaultMaxRuleLimit
 	MaxRulesLimit uint
+	// MaxArrayElemLimit defines the max element of the array operator
+	// If not set, then use default value: DefaultMaxInLimit
+	MaxArrayElemLimit uint
 	// MaxDepth defines the max depth of whole expression tree.
 	// If not set, then use default value: DefaultMaxDepth
 	MaxDepth *uint
