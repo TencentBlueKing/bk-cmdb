@@ -24,7 +24,6 @@ import (
 // TestModel ...
 type TestModel struct {
 	Base     `gorm:"embedded" json:",inline"`
-	ID       string               `gorm:"column:id;primary_key" json:"id,omitempty"`
 	Name     string                  `gorm:"column:name" json:"name,omitempty"`
 	Size     int                     `gorm:"column:size" json:"size,omitempty"`
 	Weight   float64                 `gorm:"column:weight" json:"weight,omitempty"`

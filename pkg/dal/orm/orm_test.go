@@ -30,8 +30,8 @@ import (
 )
 
 func TestOrmRateLimit(t *testing.T) {
-	orm, err := NewOrm(t.Context(), nil)
-	assert.ErrorContains(t, err, "db is nil", "NewOrm() error")
+	orm, err := New(t.Context(), nil)
+	assert.ErrorContains(t, err, "db is nil", "New() error")
 	assert.Nil(t, orm)
 
 	db, mock, err := tests.GetMockPG(t)
@@ -39,7 +39,7 @@ func TestOrmRateLimit(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
-	orm, err = NewOrm(t.Context(), db)
+	orm, err = New(t.Context(), db)
 	if !assert.NoError(t, err) {
 		return
 	}

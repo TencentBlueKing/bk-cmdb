@@ -51,8 +51,8 @@ type Interface interface {
 	GetSession(config *gorm.Session) *gorm.DB
 }
 
-// NewOrm return orm operations.
-func NewOrm(ctx context.Context, db *gorm.DB, opts ...Option) (Interface, error) {
+// New return orm operations.
+func New(ctx context.Context, db *gorm.DB, opts ...Option) (Interface, error) {
 	if db == nil {
 		return nil, errors.New("db is nil")
 	}

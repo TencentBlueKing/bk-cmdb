@@ -17,7 +17,6 @@
 package idgenerator
 
 import (
-	"context"
 	"fmt"
 	"slices"
 	"strconv"
@@ -30,6 +29,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/table"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/tests"
 )
 
@@ -112,7 +112,7 @@ func TestIdGenerator_Batch(t *testing.T) {
 		t.Fatalf("failed to auto migrate: idgen table, err: %v", err)
 	}
 
-	ctx := context.Background()
+	kt := tests.GetKit(t)
 	idGen := New(db)
 	resName := table.Name(fmt.Sprintf("test_%d", time.Now().Unix()))
 	t.Cleanup(func() {
@@ -133,7 +133,7 @@ func TestIdGenerator_Batch(t *testing.T) {
 	})
 
 	t.Run("test zero id", func(t *testing.T) {
-		ids, err := idGen.Batch(ctx, resName, 0)
+		ids, err := idGen.Batch(kt, resName, 0)
 		if err != nil {
 			t.Fatalf("fial to generate zero id for %s, err: %v", resName, err)
 			return
@@ -142,7 +142,7 @@ func TestIdGenerator_Batch(t *testing.T) {
 	})
 
 	t.Run("test one id", func(t *testing.T) {
-		firstID, err := idGen.One(ctx, resName)
+		firstID, err := idGen.One(kt, resName)
 		if err != nil {
 			t.Fatalf("fial to generate first id for %s, err: %v", resName, err)
 			return
@@ -151,7 +151,7 @@ func TestIdGenerator_Batch(t *testing.T) {
 	})
 
 	t.Run("test batch id", func(t *testing.T) {
-		idList, err := idGen.Batch(ctx, resName, 4)
+		idList, err := idGen.Batch(kt, resName, 4)
 		if err != nil {
 			t.Fatalf("fial to generate id list for %s, err: %v", resName, err)
 			return
@@ -173,7 +173,7 @@ func TestParallelBatch(t *testing.T) {
 		return
 	}
 
-	ctx := context.Background()
+	kt := tests.GetKit(t)
 
 	resName := table.Name(time.Now().Format("test_20060102_150405"))
 	clean := func() {
@@ -199,14 +199,14 @@ func TestParallelBatch(t *testing.T) {
 		if t.Failed() {
 			return
 		}
-		testParallelGen(t, idGen.BatchQueryUpdate, ctx, resName, 0, total, parallel)
+		testParallelGen(t, idGen.BatchQueryUpdate, kt, resName, 0, total, parallel)
 	})
 	t.Run("test parallel batch atomic", func(t *testing.T) {
 		clean()
 		if t.Failed() {
 			return
 		}
-		testParallelGen(t, idGen.BatchUpdateReturning, ctx, resName, 0, total, parallel)
+		testParallelGen(t, idGen.BatchUpdateReturning, kt, resName, 0, total, parallel)
 	})
 }
 
@@ -222,7 +222,7 @@ func TestBatchZero(t *testing.T) {
 		return
 	}
 
-	ctx := context.Background()
+	kt := tests.GetKit(t)
 
 	resName := table.Name(time.Now().Format("test_20060102_150405"))
 	clean := func() {
@@ -244,15 +244,15 @@ func TestBatchZero(t *testing.T) {
 		if t.Failed() {
 			return
 		}
-		ids, err := idGen.BatchQueryUpdate(ctx, resName, 0)
+		ids, err := idGen.BatchQueryUpdate(kt, resName, 0)
 		assert.NoError(t, err)
 		assert.Len(t, ids, 0)
 		t.Run("test batch zero", func(t *testing.T) {
-			ids, err = idGen.BatchQueryUpdate(ctx, resName, 1)
+			ids, err = idGen.BatchQueryUpdate(kt, resName, 1)
 			assert.NoError(t, err)
 			assert.Equal(t, []string{"00000001"}, ids)
 
-			ids, err = idGen.BatchQueryUpdate(ctx, resName, 0)
+			ids, err = idGen.BatchQueryUpdate(kt, resName, 0)
 			assert.NoError(t, err)
 			assert.Len(t, ids, 0)
 		})
@@ -260,15 +260,15 @@ func TestBatchZero(t *testing.T) {
 
 	t.Run("BatchUpdateReturning zero", func(t *testing.T) {
 		clean()
-		ids, err := idGen.BatchUpdateReturning(ctx, resName, 0)
+		ids, err := idGen.BatchUpdateReturning(kt, resName, 0)
 		assert.NoError(t, err)
 		assert.Len(t, ids, 0)
 		t.Run("test batch zero", func(t *testing.T) {
-			ids, err = idGen.BatchUpdateReturning(ctx, resName, 1)
+			ids, err = idGen.BatchUpdateReturning(kt, resName, 1)
 			assert.NoError(t, err)
 			assert.Equal(t, []string{"00000001"}, ids)
 
-			ids, err = idGen.BatchUpdateReturning(ctx, resName, 0)
+			ids, err = idGen.BatchUpdateReturning(kt, resName, 0)
 			assert.NoError(t, err)
 			assert.Len(t, ids, 0)
 		})
@@ -276,9 +276,9 @@ func TestBatchZero(t *testing.T) {
 
 }
 
-type idGenFunc func(ctx context.Context, resource table.Name, count uint64) ([]string, error)
+type idGenFunc func(kt *kit.Kit, resource table.Name, count uint64) ([]string, error)
 
-func testParallelGen(t *testing.T, idGenFunc idGenFunc, ctx context.Context, resName table.Name, currentMax,
+func testParallelGen(t *testing.T, idGenFunc idGenFunc, kt *kit.Kit, resName table.Name, currentMax,
 	total, parallel int) {
 
 	exceptedMaxID := currentMax + total
@@ -292,7 +292,7 @@ func testParallelGen(t *testing.T, idGenFunc idGenFunc, ctx context.Context, res
 		go func(idx int) {
 			defer wg.Done()
 			t.Logf("start to generate id list for idx:%d", idx)
-			idList, err := retryOnDuplicate(idGenFunc, ctx, resName, batchSize)
+			idList, err := retryOnDuplicate(idGenFunc, kt, resName, batchSize)
 			if err != nil {
 				t.Fatalf("fial to generate id list for %s, idx:%d, err: %v", resName, idx, err)
 				return
@@ -353,11 +353,11 @@ func BenchmarkIdGenerator_Batch(b *testing.B) {
 	})
 	resName.Register(&table.IDGenerator{})
 	idGen := &idGenerator{db: db}
-	ctx := context.Background()
+	kt := tests.GetKit(b)
 
 	b.Run("UpdateReturning-serial", func(b *testing.B) {
 		for b.Loop() {
-			batch, err := retryOnDuplicate(idGen.BatchUpdateReturning, ctx, resName, 5)
+			batch, err := retryOnDuplicate(idGen.BatchUpdateReturning, kt, resName, 5)
 			if err != nil {
 				b.Errorf("failed to generate id batch, err: %v", err)
 				return
@@ -368,7 +368,7 @@ func BenchmarkIdGenerator_Batch(b *testing.B) {
 	b.Run("UpdateReturning-parallel", func(b *testing.B) {
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				batch, err := retryOnDuplicate(idGen.BatchUpdateReturning, ctx, resName, 5)
+				batch, err := retryOnDuplicate(idGen.BatchUpdateReturning, kt, resName, 5)
 				if err != nil {
 					b.Errorf("failed to generate id batch, err: %v", err)
 					return
@@ -380,7 +380,7 @@ func BenchmarkIdGenerator_Batch(b *testing.B) {
 
 	b.Run("QueryUpdate-serial", func(b *testing.B) {
 		for b.Loop() {
-			batch, err := retryOnDuplicate(idGen.BatchQueryUpdate, ctx, resName, 5)
+			batch, err := retryOnDuplicate(idGen.BatchQueryUpdate, kt, resName, 5)
 			if err != nil {
 				b.Errorf("failed to generate id batch, err: %v", err)
 				return
@@ -391,7 +391,7 @@ func BenchmarkIdGenerator_Batch(b *testing.B) {
 	b.Run("QueryUpdate-parallel", func(b *testing.B) {
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				batch, err := retryOnDuplicate(idGen.BatchQueryUpdate, ctx, resName, 5)
+				batch, err := retryOnDuplicate(idGen.BatchQueryUpdate, kt, resName, 5)
 				if err != nil {
 					b.Errorf("failed to generate id batch, err: %v", err)
 					return

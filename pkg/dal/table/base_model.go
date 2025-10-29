@@ -27,7 +27,7 @@ const BaseModelName = "base_model"
 
 // Base defines base model.
 type Base struct {
-	ID string `json:"id" gorm:"column:id;size:64;primaryKey"`
+	ID string `json:"id" gorm:"column:id;size:64;primaryKey,index:,unique"`
 }
 
 // SetID sets the ID.
