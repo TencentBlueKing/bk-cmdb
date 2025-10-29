@@ -40,19 +40,50 @@ func GetDefaultManager() Translator {
 	return defaultManager
 }
 
+// Translator i18n interface
+type Translator interface {
+	ErrorTranslator
+	SysTranslator
+	BaseTranslator
+}
+
+// BaseTranslator support base translator
+type BaseTranslator interface {
+	T(ctx context.Context, key string, args ...any) string
+	ParseAllowed(code string) (language.Tag, error)
+	FallBack() language.Tag
+	PickTagStrict(r *http.Request) (language.Tag, error)
+}
+
 // tagCtxKey define tag for translator
 type tagCtxKey struct{}
 
 var tagKey tagCtxKey
 
-// Translator interface
-type Translator interface {
-	T(ctx context.Context, key string, args ...any) string
-	ParseAllowed(code string) (language.Tag, error)
-	FallBack() language.Tag
-	PickTagStrict(r *http.Request) (language.Tag, error)
-	ErrorTranslator
-	SysTranslator
+// DefaultSysTranslator default system translator
+type DefaultSysTranslator struct {
+	base BaseTranslator
+}
+
+// Sys translate key, return key if not found
+func (s *DefaultSysTranslator) Sys(ctx context.Context, key string, args ...any) string {
+	return s.base.T(ctx, key, args...)
+}
+
+// DefaultErrorTranslator default error translator
+type DefaultErrorTranslator struct {
+	base BaseTranslator
+}
+
+// Error translate error
+func (e *DefaultErrorTranslator) Error(ctx context.Context, err *ccError.RespError) *ccError.RespError {
+	if err == nil {
+		return nil
+	}
+
+	err.Message = e.base.T(ctx, string(err.Code))
+
+	return err
 }
 
 // ErrorTranslator error translator
@@ -65,63 +96,84 @@ type SysTranslator interface {
 	Sys(ctx context.Context, key string, args ...any) string
 }
 
-// Error translate error
-func (m *Manager) Error(ctx context.Context, err *ccError.RespError) *ccError.RespError {
-	if err == nil {
-		return nil
-	}
-
-	err.Message = m.T(ctx, string(err.Code))
-
-	return err
+// TranslatorManager translator manager
+type TranslatorManager struct {
+	base BaseTranslator
+	err  ErrorTranslator
+	sys  SysTranslator
 }
 
-// Sys translate key, return key if not found
-func (m *Manager) Sys(ctx context.Context, key string, args ...any) string {
-	return m.T(ctx, key, args...)
+// InitTranslatorManager init translator manager with default error and system translator
+func InitTranslatorManager(ctx context.Context, opts Options) (*TranslatorManager, error) {
+	baseManager, err := NewBaseManager(ctx, opts)
+	if err != nil {
+		log.Error(ctx, "new base manager failed", "err", err)
+		return nil, err
+	}
+
+	m := &TranslatorManager{
+		base: baseManager,
+		err:  &DefaultErrorTranslator{base: baseManager},
+		sys:  &DefaultSysTranslator{base: baseManager},
+	}
+
+	return m, nil
+}
+
+// NewTranslatorManager new translator manager with base translator for customization
+func NewTranslatorManager(base BaseTranslator, opts ...TranslatorOption) *TranslatorManager {
+	m := &TranslatorManager{
+		base: base,
+		err:  &DefaultErrorTranslator{base: base},
+		sys:  &DefaultSysTranslator{base: base},
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// TranslatorOption translator option
+type TranslatorOption func(manager *TranslatorManager)
+
+// WithErrorTranslator set error translator
+func WithErrorTranslator(e ErrorTranslator) TranslatorOption {
+	return func(m *TranslatorManager) { m.err = e }
+}
+
+// WithSysTranslator set system translator
+func WithSysTranslator(s SysTranslator) TranslatorOption {
+	return func(m *TranslatorManager) { m.sys = s }
+}
+
+// T translate key, base translate function
+func (m *TranslatorManager) T(ctx context.Context, key string, args ...any) string {
+	return m.base.T(ctx, key, args...)
+}
+
+// ParseAllowed parse allowed language
+func (m *TranslatorManager) ParseAllowed(code string) (language.Tag, error) {
+	return m.base.ParseAllowed(code)
 }
 
 // FallBack get fallback language
-func (m *Manager) FallBack() language.Tag {
-	return language.Make(string(DefaultLanguage))
+func (m *TranslatorManager) FallBack() language.Tag {
+	return m.base.FallBack()
 }
 
-// T general translator, translate key, return key if not found
-func (m *Manager) T(ctx context.Context, key string, args ...any) string {
-	lang := GetTagFromCtx(ctx)
-	if p, ok := m.languagePrinter[lang]; ok {
-		return p.Sprintf(key, args...)
-	}
-	log.Warn(ctx, "translate printer not found", "key", key, "lang", lang)
-
-	return key
+// PickTagStrict pick tag from request, and check if it is allowed
+func (m *TranslatorManager) PickTagStrict(r *http.Request) (language.Tag, error) {
+	return m.base.PickTagStrict(r)
 }
 
-// PickTagStrict get tag from request and check if it is allowed
-func (m *Manager) PickTagStrict(r *http.Request) (language.Tag, error) {
-
-	if c, err := r.Cookie(HTTPCookieLanguage); err == nil && c.Value != "" {
-		t, e := m.ParseAllowed(c.Value)
-		if e != nil {
-			return language.Tag{}, e
-		}
-		return t, nil
-	}
-
-	if h := r.Header.Get(BKHTTPLanguage); h != "" {
-		t, e := m.ParseAllowed(h)
-		if e != nil {
-			return language.Tag{}, e
-		}
-		return t, nil
-	}
-
-	return m.FallBack(), nil
+// Error translate error
+func (m *TranslatorManager) Error(ctx context.Context, err *ccError.RespError) *ccError.RespError {
+	return m.err.Error(ctx, err)
 }
 
-// CtxWithLanguageTag set language Tag for context
-func CtxWithLanguageTag(ctx context.Context, tag language.Tag) context.Context {
-	return context.WithValue(ctx, tagKey, tag)
+// Sys translate system key
+func (m *TranslatorManager) Sys(ctx context.Context, key string, args ...any) string {
+	return m.sys.Sys(ctx, key, args...)
 }
 
 // GetTagFromCtx get translator from context

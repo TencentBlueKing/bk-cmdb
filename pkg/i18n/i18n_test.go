@@ -74,25 +74,25 @@ func writeFile(t *testing.T, path string, content string) {
 func Test_BasicTranslate(t *testing.T) {
 	root := makeTestFiles(t)
 	cxt := context.Background()
-	manager, err := NewManager(cxt, Options{AttachedFS: []string{root}})
+	manager, err := InitTranslatorManager(cxt, Options{AttachedFS: []string{root}})
 	SetDefaultManager(manager)
 	assert.NoError(t, err)
 
 	languageTag := language.Make("zh-cn")
-	ctx := CtxWithLanguageTag(cxt, languageTag)
+	ctx := ContextWithTag(cxt, languageTag)
 	// test basic translate without parameter
 	assert.Equal(t, "你好", GetDefaultManager().T(ctx, "hello"))
 	// test basic translate with parameter
 	assert.Equal(t, "我和nancy有个会议", GetDefaultManager().T(ctx, "meeting", "nancy"))
 
 	languageTag = language.English
-	ctx = CtxWithLanguageTag(ctx, languageTag)
+	ctx = ContextWithTag(ctx, languageTag)
 	assert.Equal(t, "hello world", GetDefaultManager().T(ctx, "hello"))
 	assert.Equal(t, "i have a meeting with nancy", GetDefaultManager().T(ctx, "meeting", "nancy"))
 
 	// test translate with other format data
 	languageTag = language.English
-	ctx = CtxWithLanguageTag(ctx, languageTag)
+	ctx = ContextWithTag(ctx, languageTag)
 	assert.Equal(t, "i test 3 times", GetDefaultManager().T(ctx, "test", 3))
 
 	errorManager := ccError.NewErrorManager("cmdb")
@@ -102,7 +102,7 @@ func Test_BasicTranslate(t *testing.T) {
 	assert.Equal(t, "invalid argument", testError.Message)
 
 	languageTag = language.Make("zh-cn")
-	ctx = CtxWithLanguageTag(ctx, languageTag)
+	ctx = ContextWithTag(ctx, languageTag)
 	testError = manager.Error(ctx, testError)
 	assert.Equal(t, "参数无效", testError.Message)
 }

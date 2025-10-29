@@ -22,6 +22,7 @@ import (
 	"encoding/json/v2"
 	"fmt"
 	"io/fs"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -82,8 +83,8 @@ func (m *Manager) ParseAllowed(code string) (language.Tag, error) {
 	return language.Tag{}, fmt.Errorf("unsupported language: %s", code)
 }
 
-// NewManager return a new i18n manager with loading different sources
-func NewManager(ctx context.Context, opts Options) (*Manager, error) {
+// NewBaseManager return a new i18n manager with loading different sources
+func NewBaseManager(ctx context.Context, opts Options) (*Manager, error) {
 	if opts.Fallback == "" {
 		opts.Fallback = DefaultLanguage
 	}
@@ -173,7 +174,7 @@ func cmpKeyWithDefault(ctx context.Context, defaultLang, lang map[string]struct{
 	return isPassed
 }
 
-func (i *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys fs.FS) (map[string]struct{}, error) {
+func (m *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys fs.FS) (map[string]struct{}, error) {
 	keyMap := make(map[string]struct{})
 
 	tag := language.Make(string(lang))
@@ -199,19 +200,19 @@ func (i *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys 
 			return readErr
 		}
 
-		var m map[string]string
-		if unmarshalErr := json.Unmarshal(b, &m); unmarshalErr != nil {
+		var jsonMap map[string]string
+		if unmarshalErr := json.Unmarshal(b, &jsonMap); unmarshalErr != nil {
 			log.Error(ctx, "unmarshal i18n json failed", "path", path, log.E(unmarshalErr))
 			return unmarshalErr
 		}
 
-		for k, v := range m {
-			if setErr := i.builder.SetString(tag, k, v); setErr != nil {
+		for k, v := range jsonMap {
+			if setErr := m.builder.SetString(tag, k, v); setErr != nil {
 				log.Error(ctx, "set string failed", "key", k, log.E(setErr))
 				return setErr
 			}
-			if tag == i.fallback {
-				if setErr := i.builder.SetString(language.Und, k, v); setErr != nil {
+			if tag == m.fallback {
+				if setErr := m.builder.SetString(language.Und, k, v); setErr != nil {
 					log.Error(ctx, "set string failed", "key", k, log.E(setErr))
 					return setErr
 				}
@@ -228,11 +229,11 @@ func (i *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys 
 }
 
 // loadFromFS load from file system
-func (i *Manager) loadFromFS(ctx context.Context, fsys fs.FS) (map[LanguageType]map[string]struct{}, error) {
+func (m *Manager) loadFromFS(ctx context.Context, fsys fs.FS) (map[LanguageType]map[string]struct{}, error) {
 
 	languageKeyMap := make(map[LanguageType]map[string]struct{})
-	for _, lang := range i.languages {
-		keyMap, err := i.loadTranslations(ctx, lang, fsys)
+	for _, lang := range m.languages {
+		keyMap, err := m.loadTranslations(ctx, lang, fsys)
 		if err != nil {
 			log.Error(ctx, "load i18n from file system failed", "lang", lang, log.E(err))
 			return languageKeyMap, err
@@ -244,14 +245,14 @@ func (i *Manager) loadFromFS(ctx context.Context, fsys fs.FS) (map[LanguageType]
 }
 
 // Match return language Tag which best matches given tags
-func (i *Manager) Match(ctx context.Context, tags ...language.Tag) language.Tag {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
-	if i.matcher == nil {
-		return i.fallback
+func (m *Manager) Match(ctx context.Context, tags ...language.Tag) language.Tag {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.matcher == nil {
+		return m.fallback
 	}
 
-	tag, _, _ := i.matcher.Match(tags...)
+	tag, _, _ := m.matcher.Match(tags...)
 	if tag == language.Und {
 		log.Error(ctx, "match language failed", "tags", tags)
 	}
@@ -259,17 +260,50 @@ func (i *Manager) Match(ctx context.Context, tags ...language.Tag) language.Tag 
 }
 
 // Catalog return the catalog builder
-func (i *Manager) Catalog() catalog.Catalog {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
-	return i.builder
+func (m *Manager) Catalog() catalog.Catalog {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.builder
 }
 
-// Fallback return the fallback language Tag
-func (i *Manager) Fallback() language.Tag {
-	i.mu.RLock()
-	defer i.mu.RUnlock()
-	return i.fallback
+// FallBack return the fallback language Tag
+func (m *Manager) FallBack() language.Tag {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.fallback
+}
+
+// T general translator, translate key, return key if not found
+func (m *Manager) T(ctx context.Context, key string, args ...any) string {
+	lang := GetTagFromCtx(ctx)
+	if p, ok := m.languagePrinter[lang]; ok {
+		return p.Sprintf(key, args...)
+	}
+	log.Warn(ctx, "translate printer not found", "key", key, "lang", lang)
+
+	return key
+}
+
+// PickTagStrict get tag from request and check if it is allowed
+func (m *Manager) PickTagStrict(r *http.Request) (language.Tag, error) {
+
+	if c, err := r.Cookie(HTTPCookieLanguage); err == nil && c.Value != "" {
+		t, e := m.ParseAllowed(c.Value)
+		if e != nil {
+			return language.Tag{}, e
+		}
+		return t, nil
+	}
+
+	if h := r.Header.Get(BKHTTPLanguage); h != "" {
+		t, e := m.ParseAllowed(h)
+		if e != nil {
+			return language.Tag{}, e
+		}
+		return t, nil
+	}
+
+	return m.FallBack(), nil
 }
 
 func isEmbedFSEmpty(fs embed.FS) bool {

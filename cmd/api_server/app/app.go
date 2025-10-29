@@ -98,7 +98,7 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 }
 
 func initClients(ctx context.Context) error {
-	m, err := i18n.NewManager(ctx, i18n.Options{})
+	m, err := i18n.InitTranslatorManager(ctx, i18n.Options{})
 	if err != nil {
 		log.Error(ctx, "init i18n manager failed", log.E(err))
 		return err
