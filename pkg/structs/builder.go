@@ -34,6 +34,9 @@ var (
 // RegisterBuilder registers struct name and its builder to the registry.
 func RegisterBuilder(name string, b *Builder) {
 	builderLock.Lock()
+	if old := builderRegistry[name]; old != nil {
+		old.setInvalid()
+	}
 	builderRegistry[name] = b
 	builderLock.Unlock()
 }
@@ -48,12 +51,16 @@ func GetBuilder(name string) (*Builder, bool) {
 
 // Builder is used to build a dynamic struct by its fields.
 type Builder struct {
+	name string
 	// structType is the struct reflection type.
 	structType reflect.Type
 	// validators is the mapping of struct field name to validate functions.
 	validators map[string]func(any) error
 	// fieldIndexMap is the mapping of struct field name to their index in the struct.
 	fieldIndexMap map[string]int
+	fields        []Field
+	// should not be used after invalid
+	invalid bool
 }
 
 // UpsertBuilderByFields creates or updates a struct builder in the registry by its name and fields.
@@ -61,8 +68,10 @@ func UpsertBuilderByFields(name string, fields []Field) (*Builder, error) {
 	builderFields := make([]reflect.StructField, len(fields))
 
 	builder := &Builder{
+		name:          name,
 		validators:    make(map[string]func(any) error),
 		fieldIndexMap: make(map[string]int),
+		fields:        fields,
 	}
 	for i, field := range fields {
 		if field.Name == "" {
@@ -103,7 +112,17 @@ func UpsertBuilderByFields(name string, fields []Field) (*Builder, error) {
 		if field.Validator != nil {
 			builder.validators[field.Name] = field.Validator
 		}
+
 		builder.fieldIndexMap[field.Name] = i
+
+		if field.Anonymous && typ.Kind() == reflect.Struct {
+			for j := 0; j < typ.NumField(); j++ {
+				if typ.Field(i).Anonymous {
+					continue
+				}
+				builder.fieldIndexMap[typ.Field(j).Name] = i
+			}
+		}
 	}
 
 	// create the dynamic struct type from the fields.
@@ -120,6 +139,7 @@ func (b *Builder) New() *Struct {
 	ptr := reflect.New(b.structType)
 
 	return &Struct{
+		name:          b.name,
 		data:          ptr.Interface(),
 		val:           ptr.Elem(),
 		validators:    b.validators,
@@ -136,9 +156,59 @@ func (b *Builder) NewSlice(len, cap int) *Slice {
 	slicePtr.Elem().Set(sliceValue)
 
 	return &Slice{
+		name:          b.name,
 		data:          slicePtr.Interface(),
 		val:           slicePtr.Elem(),
 		validators:    b.validators,
 		fieldIndexMap: b.fieldIndexMap,
 	}
+}
+
+// Name get the name of the struct.
+func (b *Builder) Name() string {
+	return b.name
+}
+
+// Of checks if the struct is of the builder type.
+func (b *Builder) Of(s *Struct) bool {
+	if s == nil {
+		return false
+	}
+
+	if b.name != s.name {
+		return false
+	}
+
+	if b.structType != s.val.Type() {
+		return false
+	}
+
+	return true
+}
+
+// OfSlice checks if the slice is of the builder type.
+func (b *Builder) OfSlice(s *Slice) bool {
+	if s == nil {
+		return false
+	}
+	if b.name != s.name {
+		return false
+	}
+	if s.val.Kind() != reflect.Slice {
+		return false
+	}
+	if b.structType != s.val.Type().Elem() {
+		return false
+	}
+	return true
+}
+
+// setInvalid sets the builder to invalid.
+func (b *Builder) setInvalid() {
+	b.invalid = true
+}
+
+// Invalid returns whether the builder is invalid.
+func (b *Builder) Invalid() bool {
+	return b.invalid
 }

@@ -23,6 +23,7 @@ import (
 
 // Struct defines a dynamic struct.
 type Struct struct {
+	name string
 	// data is the underlying dynamic struct instance pointer.
 	data any
 	// val is the reflection value of the struct instance which is used for runtime manipulation.
@@ -55,6 +56,17 @@ func (s *Struct) Get(fieldName string) (Valuer, error) {
 	if !field.IsValid() {
 		return nil, fmt.Errorf("field %s is invalid", fieldName)
 	}
+
+	if field.Kind() == reflect.Struct && fieldName != field.Type().Name() &&
+		s.val.Type().Field(fieldIndex).Anonymous {
+
+		v := field.FieldByName(fieldName)
+		if v.IsValid() {
+			return NewValue(v), nil
+		}
+
+		return nil, fmt.Errorf("field %s is invalid inside anonymous struct", fieldName)
+	}
 	return NewValue(field), nil
 }
 
@@ -81,6 +93,18 @@ func (s *Struct) Set(fieldName string, value any) error {
 		return nil
 	}
 
+	if field.Kind() == reflect.Struct && fieldName != field.Type().Name() &&
+		s.val.Type().Field(fieldIndex).Anonymous {
+
+		v := field.FieldByName(fieldName)
+		if !v.IsValid() {
+			return fmt.Errorf("field %s is invalid inside anonymous struct", fieldName)
+		}
+		// replace to the nested field.
+		valueType = v.Type()
+		field = v
+	}
+
 	// check if the value's type can be converted to the field's type.
 	if !valueType.ConvertibleTo(field.Type()) {
 		return fmt.Errorf("cannot set field %s, type mismatch", fieldName)
@@ -105,4 +129,15 @@ func (s *Struct) Validate() error {
 		}
 	}
 	return nil
+}
+
+// Name get the name of the struct.
+func (s *Struct) Name() string {
+	return s.name
+}
+
+// HaveField checks if the struct has given field.
+func (s *Struct) HaveField(field string) bool {
+	_, ok := s.fieldIndexMap[field]
+	return ok
 }

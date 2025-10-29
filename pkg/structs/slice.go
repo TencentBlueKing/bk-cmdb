@@ -23,6 +23,8 @@ import (
 
 // Slice defines a dynamic slice.
 type Slice struct {
+	// name is the identifier of the slice.
+	name string
 	// data is the underlying slice instance pointer.
 	data any
 	// val is the reflection value of the slice instance which is used for runtime manipulation.
@@ -47,6 +49,11 @@ func (s *Slice) Value() any {
 // Len returns the length of the slice.
 func (s *Slice) Len() int {
 	return s.val.Len()
+}
+
+// Cap returns the capacity of the slice.
+func (s *Slice) Cap() int {
+	return s.val.Cap()
 }
 
 // Get returns slice element value by index.
@@ -132,4 +139,10 @@ func (s *Slice) Validate() error {
 		}
 	}
 	return nil
+}
+
+// HaveField checks if the slice element has given field.
+func (s *Slice) HaveField(field string) bool {
+	_, ok := s.fieldIndexMap[field]
+	return ok
 }

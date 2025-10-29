@@ -359,3 +359,128 @@ func BenchmarkStructSet(b *testing.B) {
 		}
 	}
 }
+
+func TestEmbeddedStruct(t *testing.T) {
+	type base struct {
+		ID string `json:"str"`
+	}
+	structs.RegisterFieldType("base", reflect.TypeOf(base{}))
+	outsideBuilder, err := structs.UpsertBuilderByFields("Struct1", []structs.Field{
+		{
+			Name:      "Base",
+			Type:      "base",
+			IsSlice:   false,
+			Tags:      map[string]string{"json": ",inline"},
+			Anonymous: true,
+			Validator: nil,
+		},
+		{
+			Name:      "Name",
+			Type:      structs.StringType,
+			IsSlice:   false,
+			Tags:      map[string]string{"json": "name"},
+			Anonymous: false,
+			Validator: nil,
+		},
+	})
+	if err != nil {
+		t.Fatalf("upsert builder error: %v", err)
+		return
+	}
+	s1 := outsideBuilder.New()
+	err = s1.Set("ID", "123")
+	if err != nil {
+		t.Fatalf("set embedded key ID error: %v", err)
+		return
+	}
+	val, err := s1.Get("ID")
+	if err != nil {
+		t.Fatalf("get embedded key ID error: %v", err)
+		return
+	}
+	if val.String() != "123" {
+		t.Fatalf("key ID value mismatch error: got %v, want 123", val.String())
+		return
+	}
+}
+
+func TestBuilder_Invalid(t *testing.T) {
+	b1, err := structs.UpsertBuilderByFields("b1", []structs.Field{
+		{
+			Name:      "Name",
+			Type:      structs.StringType,
+			IsSlice:   false,
+			Tags:      map[string]string{"json": "name"},
+			Anonymous: false,
+			Validator: nil,
+		},
+	})
+	if err != nil {
+		t.Fatalf("b1 create builder error: %v", err)
+		return
+	}
+
+	b2, err := structs.UpsertBuilderByFields("b2", []structs.Field{
+		{
+			Name:      "Name2",
+			Type:      structs.StringType,
+			IsSlice:   false,
+			Tags:      map[string]string{"json": "name2"},
+			Anonymous: false,
+			Validator: nil,
+		},
+	})
+	if err != nil {
+		t.Fatalf("b1 create builder error: %v", err)
+		return
+	}
+	s1 := b1.New()
+	s2 := b2.New()
+
+	t.Run("test_of", func(t *testing.T) {
+		if !b1.Of(s1) {
+			t.Fatalf("b1 should be builder of s1")
+			return
+		}
+
+		if b1.Of(s2) {
+			t.Fatalf("b1 should not be builder of  s2 ")
+			return
+		}
+	})
+
+	t.Run("test invalid", func(t *testing.T) {
+		if b1.Invalid() {
+			t.Fatalf("b1 should not be invalid")
+		}
+
+		b1New, err := structs.UpsertBuilderByFields("b1", []structs.Field{
+			{
+				Name:      "NameNew",
+				Type:      structs.StringType,
+				IsSlice:   false,
+				Tags:      map[string]string{"json": "name"},
+				Anonymous: false,
+				Validator: nil,
+			},
+		})
+		if err != nil {
+			t.Fatalf("b1 upsert builder error: %v", err)
+			return
+		}
+		if b1.Invalid() == false {
+			t.Fatalf("b1 should be invalid after upsert")
+		}
+		if b1New.Invalid() == true {
+			t.Fatalf("b1New should not be invalid")
+		}
+
+		if !b1.Of(s1) {
+			t.Fatalf("b1 should be builder of s1")
+		}
+		if b1New.Of(s1) {
+			t.Fatalf("b1New should not be builder of s1")
+		}
+	})
+
+}
