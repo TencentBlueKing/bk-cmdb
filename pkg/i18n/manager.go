@@ -43,10 +43,10 @@ var embedFS embed.FS
 
 // Options i18n options
 type Options struct {
-	// Fallback If the required language or key does not exist, the default language will be used.
-	Fallback LanguageType
-	// AttachedFS Direct files to be loaded
-	AttachedFS []string
+	// DefaultLang If the required language or key does not exist, the default language will be used.
+	DefaultLang LanguageType
+	// langAbsDir Direct files to be loaded
+	langAbsDir string
 }
 
 // Manager i18n manager
@@ -71,90 +71,16 @@ func (m *Manager) isSupportedTag(lang LanguageType) bool {
 	return ok
 }
 
-// ParseAllowed parse language code and check if supported
-func (m *Manager) ParseAllowed(code string) (language.Tag, error) {
+// Validator parse language code and check if supported
+func (m *Manager) Validator(code LanguageType) (language.Tag, error) {
 	if code == "" {
 		return language.Tag{}, fmt.Errorf("empty language")
 	}
 
-	if m.isSupportedTag(LanguageType(code)) {
-		return language.Make(code), nil
+	if m.isSupportedTag(code) {
+		return language.Make(string(code)), nil
 	}
 	return language.Tag{}, fmt.Errorf("unsupported language: %s", code)
-}
-
-// NewBaseManager return a new i18n manager with loading different sources
-func NewBaseManager(ctx context.Context, opts Options) (*Manager, error) {
-	if opts.Fallback == "" {
-		opts.Fallback = DefaultLanguage
-	}
-
-	i := &Manager{
-		fallback:        language.Make(string(opts.Fallback)),
-		languagePrinter: make(map[language.Tag]*message.Printer),
-		languages:       getAllLanguages(),
-		attachedFS:      opts.AttachedFS,
-	}
-	i.builder = catalog.NewBuilder(catalog.Fallback(i.fallback))
-	// load different sources
-	paths := make([]string, 0, len(opts.AttachedFS)+1)
-	sources := make([]fs.FS, 0, len(opts.AttachedFS)+1)
-	if !isEmbedFSEmpty(embedFS) {
-		sub, err := fs.Sub(embedFS, translationsRoot)
-		if err != nil {
-			log.Error(ctx, "fs.Sub on embed failed", "dir", translationsRoot, log.E(err))
-			return nil, err
-		}
-		sources = append(sources, sub)
-		paths = append(paths, "embed path")
-	}
-
-	for _, path := range opts.AttachedFS {
-		if path == "" {
-			continue
-		}
-		diskFs := os.DirFS(path)
-		sources = append(sources, diskFs)
-		paths = append(paths, path)
-	}
-
-	languageKeyMap := make(map[LanguageType]map[string]struct{})
-	for idx, src := range sources {
-		fileLanguageKeyMap, err := i.loadFromFS(ctx, src)
-		if err != nil {
-			log.Error(ctx, "load i18n from file system failed", "path", paths[idx], log.E(err))
-			return nil, err
-		}
-
-		for lang, keyMap := range fileLanguageKeyMap {
-			if _, ok := languageKeyMap[lang]; !ok {
-				languageKeyMap[lang] = make(map[string]struct{})
-			}
-			for k := range keyMap {
-				languageKeyMap[lang][k] = struct{}{}
-			}
-		}
-	}
-
-	for lang, keyMap := range languageKeyMap {
-		if lang == DefaultLanguage {
-			continue
-		}
-		if !cmpKeyWithDefault(ctx, languageKeyMap[DefaultLanguage], keyMap) {
-			log.Warn(ctx, "lang key not same with default", "defaultLang", DefaultLanguage, "lang", lang)
-		}
-	}
-
-	// initialize matcher
-	languages := make([]language.Tag, 0)
-	for _, lang := range i.languages {
-		tag := language.Make(string(lang))
-		languages = append(languages, tag)
-		i.languagePrinter[tag] = message.NewPrinter(tag, message.Catalog(i.builder))
-	}
-	i.matcher = language.NewMatcher(languages)
-
-	return i, nil
 }
 
 // cmpKeyWithDefault compare key with default language key
@@ -172,76 +98,6 @@ func cmpKeyWithDefault(ctx context.Context, defaultLang, lang map[string]struct{
 		}
 	}
 	return isPassed
-}
-
-func (m *Manager) loadTranslations(ctx context.Context, lang LanguageType, fsys fs.FS) (map[string]struct{}, error) {
-	keyMap := make(map[string]struct{})
-
-	tag := language.Make(string(lang))
-	root := string(lang)
-	err := fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			log.Error(ctx, "walk dir entry failed", "path", path, log.E(err))
-			return err
-		}
-
-		if d.IsDir() {
-			return nil
-		}
-
-		name := strings.ToLower(d.Name())
-		if name != "error.json" && name != "sys.json" {
-			return nil
-		}
-
-		b, readErr := fs.ReadFile(fsys, path)
-		if readErr != nil {
-			log.Error(ctx, "read i18n json failed", "path", path, log.E(readErr))
-			return readErr
-		}
-
-		var jsonMap map[string]string
-		if unmarshalErr := json.Unmarshal(b, &jsonMap); unmarshalErr != nil {
-			log.Error(ctx, "unmarshal i18n json failed", "path", path, log.E(unmarshalErr))
-			return unmarshalErr
-		}
-
-		for k, v := range jsonMap {
-			if setErr := m.builder.SetString(tag, k, v); setErr != nil {
-				log.Error(ctx, "set string failed", "key", k, log.E(setErr))
-				return setErr
-			}
-			if tag == m.fallback {
-				if setErr := m.builder.SetString(language.Und, k, v); setErr != nil {
-					log.Error(ctx, "set string failed", "key", k, log.E(setErr))
-					return setErr
-				}
-			}
-			keyMap[k] = struct{}{}
-		}
-		return nil
-	})
-
-	if err != nil {
-		return keyMap, err
-	}
-	return keyMap, nil
-}
-
-// loadFromFS load from file system
-func (m *Manager) loadFromFS(ctx context.Context, fsys fs.FS) (map[LanguageType]map[string]struct{}, error) {
-
-	languageKeyMap := make(map[LanguageType]map[string]struct{})
-	for _, lang := range m.languages {
-		keyMap, err := m.loadTranslations(ctx, lang, fsys)
-		if err != nil {
-			log.Error(ctx, "load i18n from file system failed", "lang", lang, log.E(err))
-			return languageKeyMap, err
-		}
-		languageKeyMap[lang] = keyMap
-	}
-
-	return languageKeyMap, nil
 }
 
 // Match return language Tag which best matches given tags
@@ -266,29 +122,18 @@ func (m *Manager) Catalog() catalog.Catalog {
 	return m.builder
 }
 
-// FallBack return the fallback language Tag
+// FallBack return the defaultLang language Tag
 func (m *Manager) FallBack() language.Tag {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.fallback
 }
 
-// T general translator, translate key, return key if not found
-func (m *Manager) T(ctx context.Context, key string, args ...any) string {
-	lang := GetTagFromCtx(ctx)
-	if p, ok := m.languagePrinter[lang]; ok {
-		return p.Sprintf(key, args...)
-	}
-	log.Warn(ctx, "translate printer not found", "key", key, "lang", lang)
-
-	return key
-}
-
 // PickTagStrict get tag from request and check if it is allowed
 func (m *Manager) PickTagStrict(r *http.Request) (language.Tag, error) {
 
 	if c, err := r.Cookie(HTTPCookieLanguage); err == nil && c.Value != "" {
-		t, e := m.ParseAllowed(c.Value)
+		t, e := m.Validator(c.Value)
 		if e != nil {
 			return language.Tag{}, e
 		}
@@ -296,7 +141,7 @@ func (m *Manager) PickTagStrict(r *http.Request) (language.Tag, error) {
 	}
 
 	if h := r.Header.Get(BKHTTPLanguage); h != "" {
-		t, e := m.ParseAllowed(h)
+		t, e := m.Validator(h)
 		if e != nil {
 			return language.Tag{}, e
 		}

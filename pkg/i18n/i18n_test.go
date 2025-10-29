@@ -74,7 +74,7 @@ func writeFile(t *testing.T, path string, content string) {
 func Test_BasicTranslate(t *testing.T) {
 	root := makeTestFiles(t)
 	cxt := context.Background()
-	manager, err := InitTranslatorManager(cxt, Options{AttachedFS: []string{root}})
+	manager, err := InitTranslatorManager(cxt, Options{langAbsDir: []string{root}})
 	SetDefaultManager(manager)
 	assert.NoError(t, err)
 

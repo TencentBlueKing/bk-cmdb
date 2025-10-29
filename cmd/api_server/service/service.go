@@ -20,5 +20,5 @@ package service
 import "github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 
 type service struct {
-	i18n.Translator
+	i18n.I18nInterface
 }
