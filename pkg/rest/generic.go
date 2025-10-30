@@ -67,7 +67,7 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			log.Error(ctx, "validate req failed", log.E(err))
-			ApiRespError(err, w, r, ccError.INVALID_ARGUMENT)
+			ApiRespError(err, w, r, ccError.INVALID_REQUEST)
 			return
 		}
 

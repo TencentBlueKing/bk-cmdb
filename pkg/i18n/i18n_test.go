@@ -43,7 +43,7 @@ func makeTestFiles(t *testing.T) string {
 "meeting": "i have a meeting with %s", "test": "i test %d times" }`)
 
 	writeFile(t, filepath.Join(base, "zh-cn", "error.json"), `
-{ "INVALID_ARGUMENT": "参数无效"}`)
+{ "INVALID_ARGUMENT": "参数无效","INVALID_REQUEST": "无效请求"}`)
 
 	writeFile(t, filepath.Join(base, "zh-cn", "sys.json"), `
 { "hello": "你好", "meeting": "我和%s有个会议", "mike": "迈克", "test": "我测试%d次","same": "与上述相同" }`)
@@ -74,35 +74,35 @@ func writeFile(t *testing.T, path string, content string) {
 func Test_BasicTranslate(t *testing.T) {
 	root := makeTestFiles(t)
 	cxt := context.Background()
-	manager, err := InitTranslatorManager(cxt, Options{langAbsDir: []string{root}})
+	manager, err := NewI18nManager(cxt, Options{langAbsDir: root})
 	SetDefaultManager(manager)
 	assert.NoError(t, err)
 
 	languageTag := language.Make("zh-cn")
 	ctx := ContextWithTag(cxt, languageTag)
 	// test basic translate without parameter
-	assert.Equal(t, "你好", GetDefaultManager().T(ctx, "hello"))
+	assert.Equal(t, "你好", GetDefaultManager().Sys(ctx, "hello"))
 	// test basic translate with parameter
-	assert.Equal(t, "我和nancy有个会议", GetDefaultManager().T(ctx, "meeting", "nancy"))
+	assert.Equal(t, "我和nancy有个会议", GetDefaultManager().Sys(ctx, "meeting", "nancy"))
 
 	languageTag = language.English
 	ctx = ContextWithTag(ctx, languageTag)
-	assert.Equal(t, "hello world", GetDefaultManager().T(ctx, "hello"))
-	assert.Equal(t, "i have a meeting with nancy", GetDefaultManager().T(ctx, "meeting", "nancy"))
+	assert.Equal(t, "hello world", GetDefaultManager().Sys(ctx, "hello"))
+	assert.Equal(t, "i have a meeting with nancy", GetDefaultManager().Sys(ctx, "meeting", "nancy"))
 
 	// test translate with other format data
 	languageTag = language.English
 	ctx = ContextWithTag(ctx, languageTag)
-	assert.Equal(t, "i test 3 times", GetDefaultManager().T(ctx, "test", 3))
+	assert.Equal(t, "i test 3 times", GetDefaultManager().Sys(ctx, "test", 3))
 
 	errorManager := ccError.NewErrorManager("cmdb")
 	ccError.SetDefaultErrorManager(errorManager)
-	testError := ccError.GetDefaultErrorManager().NewRespError(ccError.INVALID_ARGUMENT)
+	testError := ccError.GetDefaultErrorManager().NewRespError(ccError.INVALID_REQUEST)
 	testError = manager.Error(ctx, testError)
-	assert.Equal(t, "invalid argument", testError.Message)
+	assert.Equal(t, "invalid request", testError.Message)
 
 	languageTag = language.Make("zh-cn")
 	ctx = ContextWithTag(ctx, languageTag)
 	testError = manager.Error(ctx, testError)
-	assert.Equal(t, "参数无效", testError.Message)
+	assert.Equal(t, "无效请求", testError.Message)
 }

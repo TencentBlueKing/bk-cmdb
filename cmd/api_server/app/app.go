@@ -55,6 +55,11 @@ func NewAPIServerCommand() *cobra.Command {
 			handler := log.NewContextualHandler(handlerOpts)
 			log.SetDefault(handler)
 
+			err := initClients(c.Context())
+			if err != nil {
+				return err
+			}
+
 			return runHTTPServer(c.Context(), opts)
 		},
 	}
@@ -70,11 +75,6 @@ func NewAPIServerCommand() *cobra.Command {
 func runHTTPServer(ctx context.Context, opts *options.Options) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	err := initClients(ctx)
-	if err != nil {
-		return err
-	}
 
 	var g run.Group
 	router := service.NewRouter()
@@ -98,7 +98,7 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 }
 
 func initClients(ctx context.Context) error {
-	m, err := i18n.InitTranslatorManager(ctx, i18n.Options{})
+	m, err := i18n.NewI18nManager(ctx, i18n.Options{})
 	if err != nil {
 		log.Error(ctx, "init i18n manager failed", log.E(err))
 		return err

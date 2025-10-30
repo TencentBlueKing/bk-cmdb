@@ -33,13 +33,13 @@ func Test_ErrorConv(t *testing.T) {
 	errManager := NewErrorManager("cmdb")
 
 	t.Run("error translate test", func(t *testing.T) {
-		err := NewError("INVALID_ARGUMENT", "test invalid argument")
+		err := NewError("INVALID_REQUEST", "test invalid request")
 		respErr := errManager.ConvToRespError(err)
 		assert.Equal(t, "cmdb", respErr.System)
-		assert.Equal(t, INVALID_ARGUMENT, respErr.Code)
-		assert.Equal(t, "test invalid argument", respErr.Message)
-		assert.Equal(t, "test invalid argument", respErr.Details[0].Message)
-		assert.Equal(t, "INVALID_ARGUMENT", respErr.Details[0].Code)
+		assert.Equal(t, INVALID_REQUEST, respErr.Code)
+		assert.Equal(t, "test invalid request", respErr.Message)
+		assert.Equal(t, "test invalid request", respErr.Details[0].Message)
+		assert.Equal(t, "INVALID_REQUEST", respErr.Details[0].Code)
 	})
 
 	t.Run("fmt.Errorf parcel test", func(t *testing.T) {

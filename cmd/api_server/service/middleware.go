@@ -28,11 +28,11 @@ import (
 // I18nMiddleware i18n middleware
 func I18nMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tag, err := i18n.GetDefaultManager().PickTagStrict(r)
+		tag, err := i18n.GetDefaultManager().Validator(r)
 		if err != nil {
 			log.Error(r.Context(), "invalid language", tag, log.E(err))
 			err := &ccError.RespError{
-				Code:        ccError.INVALID_ARGUMENT,
+				Code:        ccError.INVALID_REQUEST,
 				DetailError: err,
 			}
 			rest.ApiRespError(err, w, r, ccError.INVALID_REQUEST)

@@ -78,7 +78,7 @@ func Struct(ctx context.Context, s any) error {
 	if err != nil {
 		validateErr := ccError.GetDefaultErrorManager().WrapValidationErrors(err)
 		return &ccError.RespError{
-			Code:        ccError.INVALID_ARGUMENT,
+			Code:        ccError.INVALID_REQUEST,
 			Message:     err.Error(),
 			DetailError: validateErr,
 		}

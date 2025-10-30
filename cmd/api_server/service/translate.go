@@ -35,7 +35,7 @@ type TranslateInfoResp struct {
 // Translate ...
 func (s *service) Translate(ctx context.Context, req *TranslateInfoReq) (*TranslateInfoResp, *ccError.RespError) {
 	resp := &TranslateInfoResp{
-		Context: s.T(ctx, req.Context),
+		Context: s.Sys(ctx, req.Context),
 	}
 	return resp, nil
 }

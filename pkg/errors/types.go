@@ -25,56 +25,29 @@ import (
 type ErrorCodeType string
 
 const (
-	// INVALID_ARGUMENT invalid argument
-	INVALID_ARGUMENT ErrorCodeType = "INVALID_ARGUMENT"
 	// INVALID_REQUEST invalid request
 	INVALID_REQUEST ErrorCodeType = "INVALID_REQUEST"
-	// OUT_OF_RANGE out of range
-	OUT_OF_RANGE ErrorCodeType = "OUT_OF_RANGE"
-	// FAILED_PRECONDITION failed precondition
-	FAILED_PRECONDITION ErrorCodeType = "FAILED_PRECONDITION"
 	// UNAUTHENTICATED unauthenticated
 	UNAUTHENTICATED ErrorCodeType = "UNAUTHENTICATED"
-	// IAM_NO_PERMISSION iam no permission
-	IAM_NO_PERMISSION ErrorCodeType = "IAM_NO_PERMISSION"
 	// NO_PERMISSION no permission
 	NO_PERMISSION ErrorCodeType = "NO_PERMISSION"
-	// NOT_FOUND not found
-	NOT_FOUND ErrorCodeType = "NOT_FOUND"
-	// ALREADY_EXISTS already exists
-	ALREADY_EXISTS ErrorCodeType = "ALREADY_EXISTS"
-	// ABORTED aborted
-	ABORTED ErrorCodeType = "ABORTED"
 	// RATELIMIT_EXCEED rate limit exceed
 	RATELIMIT_EXCEED ErrorCodeType = "RATELIMIT_EXCEED"
-	// RESOURCE_EXHAUSTED resource exhausted
-	RESOURCE_EXHAUSTED ErrorCodeType = "RESOURCE_EXHAUSTED"
 	// INTERNAL internal error
 	INTERNAL ErrorCodeType = "INTERNAL"
 	// UNKNOWN unknown error
 	UNKNOWN ErrorCodeType = "UNKNOWN"
-	// NOT_IMPLEMENTED api not implemented
-	NOT_IMPLEMENTED ErrorCodeType = "NOT_IMPLEMENTED"
 )
 
 // StatusCodeMap error code and status map
 var (
 	StatusCodeMap = map[ErrorCodeType]int{
-		INVALID_ARGUMENT:    http.StatusBadRequest,
-		INVALID_REQUEST:     http.StatusBadRequest,
-		OUT_OF_RANGE:        http.StatusBadRequest,
-		FAILED_PRECONDITION: http.StatusBadRequest,
-		UNAUTHENTICATED:     http.StatusUnauthorized,
-		IAM_NO_PERMISSION:   http.StatusForbidden,
-		NO_PERMISSION:       http.StatusForbidden,
-		NOT_FOUND:           http.StatusNotFound,
-		ALREADY_EXISTS:      http.StatusConflict,
-		ABORTED:             http.StatusConflict,
-		RATELIMIT_EXCEED:    http.StatusTooManyRequests,
-		RESOURCE_EXHAUSTED:  http.StatusTooManyRequests,
-		INTERNAL:            http.StatusInternalServerError,
-		UNKNOWN:             http.StatusInternalServerError,
-		NOT_IMPLEMENTED:     http.StatusNotImplemented,
+		INVALID_REQUEST:  http.StatusBadRequest,
+		UNAUTHENTICATED:  http.StatusUnauthorized,
+		NO_PERMISSION:    http.StatusForbidden,
+		RATELIMIT_EXCEED: http.StatusTooManyRequests,
+		INTERNAL:         http.StatusInternalServerError,
+		UNKNOWN:          http.StatusInternalServerError,
 	}
 	statusMu sync.RWMutex
 )
