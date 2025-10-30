@@ -34,21 +34,14 @@ func GetDefaultErrorManager() ErrorResponseHandler {
 	return errorManager
 }
 
-// Detail detail error info
-type Detail struct {
-	// internal custom error code
-	Code    string `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-}
-
 // RespError response error info for out layer
 type RespError struct {
 	// Code for show
-	Code ErrorCodeType `json:"code"`
+	Code ErrorCode `json:"code"`
 	// Message for show, can be translated
 	Message string   `json:"message"`
 	System  string   `json:"system,omitempty"`
-	Details []Detail `json:"details,omitempty"`
+	Details []string `json:"details,omitempty"`
 	Data    any      `json:"data,omitempty"`
 	// DetailError if existed, unwrap error for details
 	DetailError error `json:"-"`
@@ -69,13 +62,13 @@ func NewErrorManager(system string) *HttpErrorManager {
 // ErrorResponseHandler default error interfaces
 type ErrorResponseHandler interface {
 	ConvToRespError(err error, opts ...convOpt) *RespError
-	NewRespError(code ErrorCodeType, data ...any) *RespError
-	UnwrapDetails(err error) []Detail
+	NewRespError(code ErrorCode, data ...any) *RespError
+	UnwrapDetails(err error) []string
 	WrapValidationErrors(err error) error
 }
 
 // convOpt convert error to response error option
-type convOpt func(re *RespError, srcErr error)
+type convOpt func(re *RespError)
 
 // ConvToRespError convert error to response error with convert options
 func (m *HttpErrorManager) ConvToRespError(err error, opts ...convOpt) *RespError {
@@ -93,63 +86,60 @@ func (m *HttpErrorManager) ConvToRespError(err error, opts ...convOpt) *RespErro
 			re.Details = m.UnwrapDetails(re.DetailError)
 		}
 		for _, opt := range opts {
-			opt(re, err)
+			opt(re)
 		}
 		return re
 	}
 
 	code := UNKNOWN
-	msg := err.Error()
 	var codeErr CodeError
 	if errors.As(err, &codeErr) {
-		code = ErrorCodeType(codeErr.GetCode())
-		msg = codeErr.Error()
+		code = codeErr.GetCode()
 	}
 
 	re = &RespError{
 		Code:        code,
-		Message:     msg,
 		System:      m.System,
 		Details:     m.UnwrapDetails(err),
 		DetailError: err,
 	}
 
 	for _, opt := range opts {
-		opt(re, err)
+		opt(re)
 	}
 	return re
 }
 
 // WithCode set code for response error
-func WithCode(code ErrorCodeType) convOpt {
-	return func(re *RespError, _ error) {
+func WithCode(code ErrorCode) convOpt {
+	return func(re *RespError) {
 		re.Code = code
 	}
 }
 
 // WithMessage set message for response error
 func WithMessage(msg string) convOpt {
-	return func(re *RespError, _ error) {
+	return func(re *RespError) {
 		re.Message = msg
 	}
 }
 
 // WithData set data for response error
 func WithData(vals ...any) convOpt {
-	return func(re *RespError, _ error) {
+	return func(re *RespError) {
 		re.Data = getValues(vals...)
 	}
 }
 
 // WithDetailErr set detail error for response error
 func WithDetailErr(detailErr error) convOpt {
-	return func(re *RespError, _ error) {
+	return func(re *RespError) {
 		re.DetailError = detailErr
 	}
 }
 
 // NewRespError new response error
-func (m *HttpErrorManager) NewRespError(code ErrorCodeType, data ...any) *RespError {
+func (m *HttpErrorManager) NewRespError(code ErrorCode, data ...any) *RespError {
 	return &RespError{
 		Code:   code,
 		System: m.System,
@@ -162,59 +152,37 @@ func (r *RespError) Error() string {
 	return r.Message
 }
 
-// UnwrapDetails unwrap error for details, which is nested or joined
-func (m *HttpErrorManager) UnwrapDetails(err error) []Detail {
+// GetCode return error code
+func (r *RespError) GetCode() string {
+	return r.Message
+}
+
+type (
+	multiUnwrapper interface{ Unwrap() []error }
+)
+
+// UnwrapDetails unwrap error for details, which is  joined
+func (m *HttpErrorManager) UnwrapDetails(err error) []string {
+	if err == nil {
+		return nil
+	}
+	return getDetails(err)
+}
+
+func getDetails(err error) []string {
 	if err == nil {
 		return nil
 	}
 
-	type (
-		singleUnwrapper interface{ Unwrap() error }
-		multiUnwrapper  interface{ Unwrap() []error }
-	)
-
-	var details []Detail
-
-	queue := []error{err}
-	visited := make(map[error]struct{})
-	for i := 0; i < len(queue); i++ {
-		e := queue[i]
-		if e == nil {
-			continue
+	if uw, ok := any(err).(multiUnwrapper); ok {
+		var out []string
+		for _, child := range uw.Unwrap() {
+			out = append(out, getDetails(child)...)
 		}
-		if _, ok := visited[e]; ok {
-			continue
-		}
-		visited[e] = struct{}{}
-
-		d := Detail{Message: e.Error()}
-		var re *RespError
-		var codeErr CodeError
-		if errors.As(e, &re) {
-			d.Code = string(re.Code)
-		} else if errors.As(e, &codeErr) {
-			d.Code = codeErr.GetCode()
-		}
-
-		details = append(details, d)
-
-		switch uw := any(e).(type) {
-		case multiUnwrapper:
-			children := uw.Unwrap()
-			for _, child := range children {
-				if child != nil {
-					queue = append(queue, child)
-				}
-			}
-			details = details[0 : len(details)-1]
-		case singleUnwrapper:
-			if child := uw.Unwrap(); child != nil {
-				queue = append(queue, child)
-			}
-		}
+		return out
 	}
 
-	return details
+	return []string{err.Error()}
 }
 
 // WrapValidationErrors wrap validation errors
@@ -228,7 +196,7 @@ func (m *HttpErrorManager) WrapValidationErrors(err error) error {
 		for _, fe := range ve {
 			children = append(children, &fieldErr{fieldE: fe})
 		}
-		return &multiValidationErr{children: children}
+		return errors.Join(children...)
 	}
 	return err
 }

@@ -43,15 +43,15 @@ const translationsRoot = "resource"
 var embedFS embed.FS
 
 // defaultManager default i18n manager
-var defaultManager I18nInterface
+var defaultManager Interface
 
 // SetDefaultManager set default i18n manager
-func SetDefaultManager(m I18nInterface) {
+func SetDefaultManager(m Interface) {
 	defaultManager = m
 }
 
 // GetDefaultManager get default i18n manager
-func GetDefaultManager() I18nInterface {
+func GetDefaultManager() Interface {
 	return defaultManager
 }
 
@@ -64,9 +64,9 @@ type i18n struct {
 	languageBaseInterface
 }
 
-// I18nInterface i18n interface for multilingual internationalization, starting from the scenario, it can be divided
+// Interface i18n interface for multilingual internationalization, starting from the scenario, it can be divided
 // into two types: implementing error translation and built-in system translation
-type I18nInterface interface {
+type Interface interface {
 	// RespError translate error info, translate for error message by error code which is pre-determined
 	RespError(ctx context.Context, err error) *cerr.RespError
 	// Sys translate key, return key if not found
@@ -289,7 +289,7 @@ func newMultilingualManager(ctx context.Context, opts Options) (*multilingual, e
 }
 
 // NewI18nManager return a new i18n manager
-func NewI18nManager(ctx context.Context, opts Options) (I18nInterface, error) {
+func NewI18nManager(ctx context.Context, opts Options) (Interface, error) {
 	baseLangManager, err := newMultilingualManager(ctx, opts)
 	if err != nil {
 		log.Error(ctx, "new base language manager failed", log.E(err))

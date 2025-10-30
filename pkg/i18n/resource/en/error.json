@@ -3,5 +3,6 @@
   "Unauthorized": "Authentication credentials are missing or invalid for the requested resource.",
   "Forbidden": "The user did not have the necessary permissions for a resource or needing an account of some sort, or attempting a prohibited action.",
   "Too Many Requests": "Request rate limit exceeded. Please try again later.",
-  "Server Error": "An unexpected condition was encountered and no more specific message is suitable."
+  "Server Error": "Internal server error.",
+  "Unknown Error": "An unexpected condition was encountered and no more specific message is suitable."
 }

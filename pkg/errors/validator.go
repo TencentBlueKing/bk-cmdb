@@ -33,15 +33,3 @@ func (e *fieldErr) Error() string {
 func (e *fieldErr) GetCode() string {
 	return "ValidationError"
 }
-
-type multiValidationErr struct {
-	children []error
-}
-
-// Error return error string
-func (e *multiValidationErr) Error() string {
-	return "validation error"
-}
-
-// Unwrap return children errors
-func (e *multiValidationErr) Unwrap() []error { return e.children }

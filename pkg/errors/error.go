@@ -17,16 +17,18 @@
 // Package cerr support errors
 package cerr
 
+import "fmt"
+
 // ccError cc error type for internal call
 type ccError struct {
-	code string
+	code ErrorCode
 	msg  string
 }
 
 // CodeError interface for errors
 type CodeError interface {
 	Error() string
-	GetCode() string
+	GetCode() ErrorCode
 }
 
 // CodeError implementation of errors interface
@@ -35,14 +37,24 @@ func (cli *ccError) Error() string {
 }
 
 // GetCode returns errors code
-func (cli *ccError) GetCode() string {
+func (cli *ccError) GetCode() ErrorCode {
 	return cli.code
 }
 
 // NewError create new error with code and msg, use for internal error
-func NewError(errorCode string, msg string) error {
+func NewError(errorCode ErrorCode, msg string) CodeError {
 	return &ccError{
 		code: errorCode,
 		msg:  msg,
 	}
+}
+
+// Wrap error with code
+func Wrap(code ErrorCode, err error) error {
+	return NewError(code, err.Error())
+}
+
+// Errorf create new error with code and format msg, use for internal error
+func Errorf(code ErrorCode, msg string, args ...any) error {
+	return NewError(code, fmt.Sprintf(msg, args...))
 }

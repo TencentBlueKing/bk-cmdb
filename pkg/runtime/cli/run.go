@@ -50,7 +50,7 @@ func Run(cmd *cobra.Command) int {
 	cmd.Version = version.GetVersion()
 
 	if err := execute(cmd); err != nil {
-		fmt.Fprintf(os.Stderr, "RespError: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		return 1
 	}
 

@@ -54,7 +54,6 @@ func APIOK(data any) Renderer {
 
 // APIError 错误返回
 func APIError(err *ccError.RespError) Renderer {
-	err = ccError.GetDefaultErrorManager().ConvToRespError(err)
 
 	if err == nil {
 		err = &ccError.RespError{

@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,14 +34,14 @@ func makeTestFiles(t *testing.T) string {
 	mustMkdirAll(t, filepath.Join(base, "zh-cn"))
 	mustMkdirAll(t, filepath.Join(base, "zh-cn"))
 
-	writeFile(t, filepath.Join(base, "en", "error.json"), `{ "INVALID_REQUEST": "invalid request","UNKNOWN": 
-"unknown error" }`)
+	writeFile(t, filepath.Join(base, "en", "error.json"), `{ "Test_INVALID_REQUEST": "invalid request",
+"Test_UNKNOWN":"unknown error" }`)
 
 	writeFile(t, filepath.Join(base, "en", "sys.json"), `{ "hello": "hello world", 
 "meeting": "i have a meeting with %s", "test": "i test %d times" }`)
 
 	writeFile(t, filepath.Join(base, "zh-cn", "error.json"), `
-{ "INVALID_ARGUMENT": "参数无效","INVALID_REQUEST": "无效请求"}`)
+{ "Test_INVALID_ARGUMENT": "参数无效","Test_INVALID_REQUEST": "无效请求"}`)
 
 	writeFile(t, filepath.Join(base, "zh-cn", "sys.json"), `
 { "hello": "你好", "meeting": "我和%s有个会议", "mike": "迈克", "test": "我测试%d次","same": "与上述相同" }`)
@@ -90,9 +90,9 @@ func Test_BasicTranslate(t *testing.T) {
 	ctx = ContextWithLang(ctx, EN)
 	assert.Equal(t, "i test 3 times", GetDefaultManager().Sys(ctx, "test", 3))
 
-	errorManager := ccError.NewErrorManager("cmdb")
-	ccError.SetDefaultErrorManager(errorManager)
-	testError := ccError.GetDefaultErrorManager().NewRespError(ccError.INVALID_REQUEST)
+	errorManager := cerr.NewErrorManager("cmdb")
+	cerr.SetDefaultErrorManager(errorManager)
+	testError := cerr.GetDefaultErrorManager().NewRespError(cerr.ErrorCode("Test_INVALID_REQUEST"))
 	testError = manager.RespError(ctx, testError)
 	assert.Equal(t, "invalid request", testError.Message)
 

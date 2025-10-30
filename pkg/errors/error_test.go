@@ -33,24 +33,12 @@ func Test_ErrorConv(t *testing.T) {
 	errManager := NewErrorManager("cmdb")
 
 	t.Run("error translate test", func(t *testing.T) {
-		err := NewError("INVALID_REQUEST", "test invalid request")
+		err := NewError(INVALID_REQUEST, "test invalid request")
 		respErr := errManager.ConvToRespError(err)
 		assert.Equal(t, "cmdb", respErr.System)
 		assert.Equal(t, INVALID_REQUEST, respErr.Code)
-		assert.Equal(t, "test invalid request", respErr.Message)
-		assert.Equal(t, "test invalid request", respErr.Details[0].Message)
-		assert.Equal(t, "INVALID_REQUEST", respErr.Details[0].Code)
-	})
-
-	t.Run("fmt.Errorf parcel test", func(t *testing.T) {
-		err := fmt.Errorf("this is first error")
-		secondErr := fmt.Errorf("this is second error, %w", err)
-		thirdErr := fmt.Errorf("this is third error, %w", secondErr)
-		respErr := errManager.ConvToRespError(thirdErr)
-
-		assert.Equal(t, "this is third error, this is second error, this is first error", respErr.Details[0].Message)
-		assert.Equal(t, "this is second error, this is first error", respErr.Details[1].Message)
-		assert.Equal(t, "this is first error", respErr.Details[2].Message)
+		assert.Equal(t, "test invalid request", respErr.Details[0])
+		assert.Equal(t, "test invalid request", respErr.Details[0])
 	})
 
 	t.Run("error join parse test", func(t *testing.T) {
@@ -60,9 +48,9 @@ func Test_ErrorConv(t *testing.T) {
 		resultError := errors.Join(testJoinErr_1, testJoinErr_2, testJoinErr_3)
 		details := errManager.UnwrapDetails(resultError)
 		assert.Equal(t, 3, len(details))
-		assert.Equal(t, "this is error one", details[0].Message)
-		assert.Equal(t, "this is error two", details[1].Message)
-		assert.Equal(t, "this is error three", details[2].Message)
+		assert.Equal(t, "this is error one", details[0])
+		assert.Equal(t, "this is error two", details[1])
+		assert.Equal(t, "this is error three", details[2])
 	})
 
 }

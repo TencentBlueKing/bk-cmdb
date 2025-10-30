@@ -30,7 +30,7 @@ import (
 )
 
 // UnaryFunc Unary or ClientStreaming handle function
-type UnaryFunc[Req, Resp any] func(context.Context, *Req) (*Resp, cerr.CodeError)
+type UnaryFunc[Req, Resp any] func(context.Context, *Req) (*Resp, error)
 
 // StreamingServer server or bidi streaming server
 type StreamingServer interface {
@@ -39,7 +39,7 @@ type StreamingServer interface {
 }
 
 // StreamFunc ServerStreaming or BidiStreaming handle function
-type StreamFunc[Req any] func(*Req, StreamingServer) cerr.CodeError
+type StreamFunc[Req any] func(*Req, StreamingServer) error
 
 // Handle Composable HTTP Handlers using generics
 func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +153,7 @@ type PaginationResp[T any] struct {
 }
 
 // ApiRespError return api response error
-func ApiRespError(err error, w http.ResponseWriter, r *http.Request, errorCode cerr.ErrorCodeType) {
+func ApiRespError(err error, w http.ResponseWriter, r *http.Request, errorCode cerr.ErrorCode) {
 	var respErr *cerr.RespError
 	if errorCode != "" {
 		respErr = cerr.GetDefaultErrorManager().ConvToRespError(err, cerr.WithCode(errorCode))

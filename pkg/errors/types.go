@@ -20,27 +20,27 @@ import (
 	"net/http"
 )
 
-// ErrorCodeType error code type
-type ErrorCodeType string
+// ErrorCode error code type
+type ErrorCode string
 
 const (
 	// INVALID_REQUEST invalid request
-	INVALID_REQUEST ErrorCodeType = "INVALID_REQUEST"
+	INVALID_REQUEST ErrorCode = "Bad Request"
 	// UNAUTHENTICATED unauthenticated
-	UNAUTHENTICATED ErrorCodeType = "UNAUTHENTICATED"
+	UNAUTHENTICATED ErrorCode = "Unauthorized"
 	// NO_PERMISSION no permission
-	NO_PERMISSION ErrorCodeType = "NO_PERMISSION"
+	NO_PERMISSION ErrorCode = "Forbidden"
 	// RATELIMIT_EXCEED rate limit exceed
-	RATELIMIT_EXCEED ErrorCodeType = "RATELIMIT_EXCEED"
+	RATELIMIT_EXCEED ErrorCode = "Too Many Requests"
 	// INTERNAL internal error
-	INTERNAL ErrorCodeType = "INTERNAL"
+	INTERNAL ErrorCode = "Server Error"
 	// UNKNOWN unknown error
-	UNKNOWN ErrorCodeType = "UNKNOWN"
+	UNKNOWN ErrorCode = "Unknown Error"
 )
 
 // StatusCodeMap error code and status map
 var (
-	StatusCodeMap = map[ErrorCodeType]int{
+	StatusCodeMap = map[ErrorCode]int{
 		INVALID_REQUEST:  http.StatusBadRequest,
 		UNAUTHENTICATED:  http.StatusUnauthorized,
 		NO_PERMISSION:    http.StatusForbidden,
@@ -51,7 +51,7 @@ var (
 )
 
 // GetHTTPStatus get http status by error code
-func GetHTTPStatus(code ErrorCodeType) int {
+func GetHTTPStatus(code ErrorCode) int {
 	if v, ok := StatusCodeMap[code]; ok {
 		return v
 	}
