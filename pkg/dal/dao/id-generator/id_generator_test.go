@@ -210,13 +210,13 @@ func TestParallelBatch(t *testing.T) {
 	})
 }
 
-type idGenFunc func(ctx context.Context, resource table.Name, count uint) ([]string, error)
+type idGenFunc func(ctx context.Context, resource table.Name, count uint64) ([]string, error)
 
 func testParallelGen(t *testing.T, idGenFunc idGenFunc, ctx context.Context, resName table.Name, currentMax,
 	total, parallel int) {
 
 	exceptedMaxID := currentMax + total
-	batchSize := uint(total / parallel)
+	batchSize := uint64(total / parallel)
 
 	wg := sync.WaitGroup{}
 	resultMap := sync.Map{}

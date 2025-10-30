@@ -128,7 +128,7 @@ func getArrayDataType[T any]() string {
 func (arr Array[T]) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
 	data, err := arr.Value()
 	if err != nil {
-		data = fmt.Errorf("<Array Value() failed: %s>", err.Error())
+		return gorm.Expr(fmt.Sprintf("<Array Value() failed: %s>", err.Error()))
 	}
 	switch v := data.(type) {
 	case string:

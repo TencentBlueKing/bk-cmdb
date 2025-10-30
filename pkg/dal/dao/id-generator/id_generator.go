@@ -19,18 +19,16 @@ package idgenerator
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
 	"unsafe"
 
-	"github.com/go-sql-driver/mysql"
-	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/orm"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/table"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
@@ -44,7 +42,7 @@ const StrIDBase = 36
 // Interface supplies all the method to generate a resource's unique identity id.
 type Interface interface {
 	// Batch return a list of resource's unique id as required.
-	Batch(ctx context.Context, resource table.Name, count uint) ([]string, error)
+	Batch(ctx context.Context, resource table.Name, count uint64) ([]string, error)
 	// One return one unique id for this resource.
 	One(ctx context.Context, resource table.Name) (string, error)
 	// InitTable initialize the table for the resource
@@ -64,18 +62,21 @@ type idGenerator struct {
 
 // InitTable initialize row for the resource
 func (ig *idGenerator) InitTable(ctx context.Context, resource table.Name, initValue uint64) (err error) {
+	return ig.initTable(ctx, ig.db, resource, initValue)
+}
+
+// initTable initialize row for the resource
+func (ig *idGenerator) initTable(ctx context.Context, txn *gorm.DB, resource table.Name, initValue uint64) (err error) {
 	if err = resource.Validate(); err != nil {
 		return err
 	}
 
-	err = ig.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		insertRet := tx.Clauses(dbresolver.Write).
-			Create(&table.IDGenerator{
-				Resource: resource,
-				MaxID:    initValue,
-			})
-		return insertRet.Error
-	})
+	value := &table.IDGenerator{
+		Resource: resource,
+		MaxID:    initValue,
+	}
+	err = txn.WithContext(ctx).Clauses(dbresolver.Write).Create(value).Error
+
 	return err
 }
 
@@ -95,7 +96,7 @@ func (ig *idGenerator) One(ctx context.Context, resource table.Name) (string, er
 
 // Batch is to generate distribute unique resource id list.
 // returned with a number of unique ids as required.
-func (ig *idGenerator) Batch(ctx context.Context, resource table.Name, count uint) (ids []string, err error) {
+func (ig *idGenerator) Batch(ctx context.Context, resource table.Name, count uint64) (ids []string, err error) {
 	f := ig.BatchUpdateReturning
 	if ig.db.Name() != "postgres" {
 		// only pg support update returning
@@ -104,54 +105,30 @@ func (ig *idGenerator) Batch(ctx context.Context, resource table.Name, count uin
 	return retryOnDuplicate(f, ctx, resource, count)
 }
 
-func retryOnDuplicate(f func(ctx context.Context, resource table.Name, count uint) ([]string, error),
-	ctx context.Context, resource table.Name, count uint) (ids []string, err error) {
+func retryOnDuplicate(f func(ctx context.Context, resource table.Name, count uint64) ([]string, error),
+	ctx context.Context, resource table.Name, count uint64) (ids []string, err error) {
 
 	const mostRetry = 3
 	const retryInterval = 10 * time.Millisecond
 
-	i := 0
-	for ; i < mostRetry; i++ {
-		if i > 0 {
-			time.Sleep(retryInterval)
-		}
+	for i := range mostRetry {
 		ids, err = f(ctx, resource, count)
 		if err == nil {
 			return ids, err
 		}
-		if isDuplicatedError(err) {
+		if orm.IsDuplicatedError(err) {
 			log.Warn(ctx, "got duplicate key err", "retry", i, log.E(err))
+			time.Sleep(retryInterval)
 			continue
 		}
 		// unknown error
 		return ids, err
 	}
-	return nil, fmt.Errorf("too many retry: %d, last err: %w", i, err)
-}
-
-// isDuplicatedError is db duplicated error, will check:
-// 1. Gorm ErrDuplicatedKey
-// 2. PostgreSQL SQLSTATE 23505
-// 3. MySQL Error Number 1062
-func isDuplicatedError(err error) bool {
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
-		return true
-	}
-	var pgErr *pgconn.PgError
-	const PGStateUniqueViolation = "23505"
-	if errors.As(err, &pgErr) && pgErr.Code == PGStateUniqueViolation {
-		return true
-	}
-	var mysqlErr *mysql.MySQLError
-	const MySQLNumberDuplicateEntry = 1062
-	if errors.As(err, &mysqlErr) && mysqlErr.Number == MySQLNumberDuplicateEntry {
-		return true
-	}
-	return false
+	return nil, fmt.Errorf("too many retry: %d, last err: %w", mostRetry, err)
 }
 
 // BatchQueryUpdate is to generate distribute unique resource id list
-func (ig *idGenerator) BatchQueryUpdate(ctx context.Context, resource table.Name, count uint) ([]string, error) {
+func (ig *idGenerator) BatchQueryUpdate(ctx context.Context, resource table.Name, count uint64) ([]string, error) {
 	if err := resource.Validate(); err != nil {
 		return nil, err
 	}
@@ -171,11 +148,11 @@ func (ig *idGenerator) BatchQueryUpdate(ctx context.Context, resource table.Name
 				return fmt.Errorf("get current max id for resource %s fail, err: %w", resource, result.Error)
 			}
 			if result.RowsAffected == 0 {
-				return ig.InitTable(ctx, resource, uint64(count))
+				return ig.initTable(ctx, txn, resource, count)
 			}
 
 			// generate new max id and update it
-			newMaxID := oldMaxID + uint64(count)
+			newMaxID := oldMaxID + (count)
 			// update with old max id to prevent id conflict
 			updateResult := txn.Where("resource= ? and max_id = ?", resource, oldMaxID).
 				Update("max_id", newMaxID)
@@ -197,14 +174,14 @@ func (ig *idGenerator) BatchQueryUpdate(ctx context.Context, resource table.Name
 	// generate the id list that can be used.
 	ids := make([]string, count)
 	for idx := range count {
-		ids[idx] = formatStrID(oldMaxID + uint64(idx+1))
+		ids[idx] = formatStrID(oldMaxID + (idx + 1))
 	}
 
 	return ids, nil
 }
 
 // BatchUpdateReturning is to generate distribute unique resource id list using `UPDATE ... RETURNING` statement.
-func (ig *idGenerator) BatchUpdateReturning(ctx context.Context, resource table.Name, count uint) ([]string, error) {
+func (ig *idGenerator) BatchUpdateReturning(ctx context.Context, resource table.Name, count uint64) ([]string, error) {
 	if err := resource.Validate(); err != nil {
 		return nil, err
 	}
@@ -219,18 +196,18 @@ func (ig *idGenerator) BatchUpdateReturning(ctx context.Context, resource table.
 		return nil, fmt.Errorf("gen %s unique id, but update with returning failed, err: %w", resource, err)
 	}
 	if ret.RowsAffected == 0 || newMaxID == 0 {
-		newMaxID = uint64(count)
-		err = ig.InitTable(ctx, resource, newMaxID)
+		newMaxID = count
+		err = ig.initTable(ctx, ig.db, resource, newMaxID)
 		if err != nil {
 			return nil, fmt.Errorf("gen %s unique id, but create failed, err: %w", resource, err)
 		}
 	}
 
-	oldMaxID := newMaxID - uint64(count)
+	oldMaxID := newMaxID - count
 	// generate the id list that can be used.
 	ids := make([]string, count)
 	for idx := range count {
-		id := oldMaxID + uint64(idx+1)
+		id := oldMaxID + idx + 1
 		ids[idx] = formatStrID(id)
 	}
 
