@@ -102,7 +102,7 @@ func Benchmark_paddingStr(b *testing.B) {
 }
 
 func TestIdGenerator_Batch(t *testing.T) {
-	db, err := tests.GetTestGORM(t)
+	db, err := tests.GetRealDB(t)
 	if err != nil {
 		t.Errorf("failed to open gorm db: %v", err)
 		return
@@ -159,10 +159,10 @@ func TestIdGenerator_Batch(t *testing.T) {
 		expected := []string{"00000002", "00000003", "00000004", "00000005"}
 		assert.Equal(t, expected, idList)
 	})
-
 }
+
 func TestParallelBatch(t *testing.T) {
-	db, err := tests.GetTestGORM(t)
+	db, err := tests.GetRealDB(t)
 	if err != nil {
 		t.Errorf("failed to open gorm db: %v", err)
 		return
@@ -175,7 +175,7 @@ func TestParallelBatch(t *testing.T) {
 
 	ctx := context.Background()
 
-	resName := table.Name(fmt.Sprintf("test_%d", time.Now().Unix()))
+	resName := table.Name(time.Now().Format("test_20060102_150405"))
 	clean := func() {
 		delResult := db.Model(&table.IDGenerator{}).
 			Where("resource in ?", []table.Name{resName}).
@@ -189,19 +189,24 @@ func TestParallelBatch(t *testing.T) {
 	resName.Register(&table.IDGenerator{})
 
 	idGen := &idGenerator{db: db}
+	// parallel goroutine number
+	const parallel = 100
+	// total id to generate
+	const total = parallel * 3
+
 	t.Run("test parallel batch", func(t *testing.T) {
 		clean()
 		if t.Failed() {
 			return
 		}
-		testParallelGen(t, idGen.BatchQueryUpdate, ctx, resName, 0, 2000, 1000)
+		testParallelGen(t, idGen.BatchQueryUpdate, ctx, resName, 0, total, parallel)
 	})
 	t.Run("test parallel batch atomic", func(t *testing.T) {
 		clean()
 		if t.Failed() {
 			return
 		}
-		testParallelGen(t, idGen.BatchUpdateReturning, ctx, resName, 0, 2000, 1000)
+		testParallelGen(t, idGen.BatchUpdateReturning, ctx, resName, 0, total, parallel)
 	})
 }
 
@@ -214,13 +219,6 @@ func testParallelGen(t *testing.T, idGenFunc idGenFunc, ctx context.Context, res
 	batchSize := uint(total / parallel)
 
 	wg := sync.WaitGroup{}
-	allChan := make(chan []string, parallel)
-	allResult := make([]string, 0)
-	go func() {
-		for idList := range allChan {
-			allResult = append(allResult, idList...)
-		}
-	}()
 	resultMap := sync.Map{}
 
 	for i := range parallel {
@@ -235,24 +233,24 @@ func testParallelGen(t *testing.T, idGenFunc idGenFunc, ctx context.Context, res
 			}
 			t.Logf("idx:%d, len:%d: %s", idx, len(idList), idList)
 			resultMap.Store(idx, idList)
-			allChan <- idList
 		}(i)
 	}
-
 	wg.Wait()
-	close(allChan)
+
+	allResult := make([]string, 0)
 	for i := range parallel {
-		_, ok := resultMap.Load(i)
+		result, ok := resultMap.Load(i)
 		if !ok {
 			t.Fatalf("failed to load id list for idx:%d", i)
 			return
 		}
+		allResult = append(allResult, result.([]string)...)
 	}
-	if !assert.Len(t, allResult, total, "total id should be equal to total") {
+	if !assert.Len(t, allResult, total, "total id length should be equal to total") {
 		return
 	}
 	allResult = lo.Uniq(allResult)
-	if !assert.Len(t, allResult, total, "total id should be equal to total after unique") {
+	if !assert.Len(t, allResult, total, "total id length should be equal to total after unique") {
 		return
 	}
 	slices.Sort(allResult)
@@ -274,7 +272,7 @@ func (i *IDGeneratorINT) TableName() string {
 }
 
 func BenchmarkIdGenerator_Batch(b *testing.B) {
-	db, err := tests.GetTestGORM(b)
+	db, err := tests.GetRealDB(b)
 	if err != nil {
 		b.Errorf("failed to open gorm db: %v", err)
 		return

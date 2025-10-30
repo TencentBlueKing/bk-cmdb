@@ -304,7 +304,7 @@ func TestConvToGormClause(t *testing.T) {
 }
 
 func prepareTestDB(t *testing.T, table interface{ TableName() string }, preInserts any) *gorm.DB {
-	g, err := tests.GetTestGORM(t)
+	g, err := tests.GetRealPG(t)
 	if err != nil {
 		t.Errorf("failed to open gorm db: %v", err)
 		return nil
