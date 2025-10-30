@@ -24,7 +24,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/healthz"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
 )
 
@@ -45,9 +44,8 @@ func NewRouter() http.Handler {
 	// metrics 配置
 	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 
-	svr := service{i18n.GetDefaultManager()}
+	svr := service{}
 	r.Post("/user/info", rest.Handle(svr.UserInfo))
-	r.Post("/translate/info", rest.Handle(svr.Translate))
 
 	return r
 }

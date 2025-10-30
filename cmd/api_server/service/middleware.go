@@ -28,9 +28,9 @@ import (
 // I18nMiddleware i18n middleware
 func I18nMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tag, err := i18n.GetDefaultManager().Validator(r)
+		lang, err := i18n.GetDefaultManager().Validate(pickTag(r))
 		if err != nil {
-			log.Error(r.Context(), "invalid language", tag, log.E(err))
+			log.Error(r.Context(), "invalid language", "lang", lang, log.E(err))
 			err := &ccError.RespError{
 				Code:        ccError.INVALID_REQUEST,
 				DetailError: err,
@@ -39,7 +39,19 @@ func I18nMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := i18n.ContextWithTag(r.Context(), tag)
+		ctx := i18n.ContextWithLang(r.Context(), lang)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func pickTag(r *http.Request) i18n.LanguageType {
+	if c, err := r.Cookie(i18n.HTTPCookieLanguage); err == nil && c.Value != "" {
+		return i18n.LanguageType(c.Value)
+	}
+
+	if h := r.Header.Get(i18n.BKHTTPLanguage); h != "" {
+		return i18n.LanguageType(h)
+	}
+
+	return i18n.DefaultLanguage
 }

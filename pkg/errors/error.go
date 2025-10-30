@@ -14,13 +14,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package errors support errors
-package errors
+// Package cerr support errors
+package cerr
 
 // ccError cc error type for internal call
 type ccError struct {
-	code     string
-	callBack func() string
+	code string
+	msg  string
 }
 
 // CodeError interface for errors
@@ -31,7 +31,7 @@ type CodeError interface {
 
 // CodeError implementation of errors interface
 func (cli *ccError) Error() string {
-	return cli.callBack()
+	return cli.msg
 }
 
 // GetCode returns errors code
@@ -43,8 +43,6 @@ func (cli *ccError) GetCode() string {
 func NewError(errorCode string, msg string) error {
 	return &ccError{
 		code: errorCode,
-		callBack: func() string {
-			return msg
-		},
+		msg:  msg,
 	}
 }

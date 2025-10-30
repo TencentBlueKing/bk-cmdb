@@ -24,13 +24,13 @@ import (
 
 	"github.com/google/uuid"
 
-	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // UnaryFunc Unary or ClientStreaming handle function
-type UnaryFunc[Req, Resp any] func(context.Context, *Req) (*Resp, *ccError.RespError)
+type UnaryFunc[Req, Resp any] func(context.Context, *Req) (*Resp, cerr.CodeError)
 
 // StreamingServer server or bidi streaming server
 type StreamingServer interface {
@@ -39,7 +39,7 @@ type StreamingServer interface {
 }
 
 // StreamFunc ServerStreaming or BidiStreaming handle function
-type StreamFunc[Req any] func(*Req, StreamingServer) *ccError.RespError
+type StreamFunc[Req any] func(*Req, StreamingServer) cerr.CodeError
 
 // Handle Composable HTTP Handlers using generics
 func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, r *http.Request) {
@@ -60,20 +60,20 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			log.Error(ctx, "handle decode request failed", log.E(err))
-			ApiRespError(err, w, r, ccError.INVALID_REQUEST)
+			ApiRespError(err, w, r, cerr.INVALID_REQUEST)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			log.Error(ctx, "validate req failed", log.E(err))
-			ApiRespError(err, w, r, ccError.INVALID_REQUEST)
+			ApiRespError(err, w, r, cerr.INVALID_REQUEST)
 			return
 		}
 
 		out, respErr := fn(ctx, in)
 		if respErr != nil {
-			ApiRespError(respErr, w, r, respErr.Code)
+			ApiRespError(respErr, w, r, "")
 			return
 		}
 		_ = APIOK(out).Render(w, r)
@@ -109,13 +109,14 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			log.Error(ctx, "handle decode stream request failed", log.E(err))
-			ApiRespError(err, w, r, ccError.INVALID_REQUEST)
+			ApiRespError(err, w, r, cerr.INVALID_REQUEST)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			log.Error(ctx, "validate stream req failed", log.E(err))
+			ApiRespError(err, w, r, cerr.INVALID_REQUEST)
 			return
 		}
 
@@ -125,8 +126,8 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 			ctx:                r.Context(),
 		}
 
-		if respErr := fn(in, svr); respErr != nil {
-			ApiRespError(err, w, r, respErr.Code)
+		if err := fn(in, svr); err != nil {
+			ApiRespError(err, w, r, "")
 			return
 		}
 	}
@@ -152,15 +153,15 @@ type PaginationResp[T any] struct {
 }
 
 // ApiRespError return api response error
-func ApiRespError(err error, w http.ResponseWriter, r *http.Request, errorCode ccError.ErrorCodeType) {
-	var respErr *ccError.RespError
+func ApiRespError(err error, w http.ResponseWriter, r *http.Request, errorCode cerr.ErrorCodeType) {
+	var respErr *cerr.RespError
 	if errorCode != "" {
-		respErr = ccError.GetDefaultErrorManager().ConvToRespErrorWithCode(err, errorCode)
+		respErr = cerr.GetDefaultErrorManager().ConvToRespError(err, cerr.WithCode(errorCode))
 	} else {
 		// convert error to response error
-		respErr = ccError.GetDefaultErrorManager().ConvToRespError(err)
+		respErr = cerr.GetDefaultErrorManager().ConvToRespError(err)
 	}
 	// translate error message
-	respErr = i18n.GetDefaultManager().Error(r.Context(), respErr)
+	respErr = i18n.GetDefaultManager().RespError(r.Context(), respErr)
 	_ = APIError(respErr).Render(w, r)
 }

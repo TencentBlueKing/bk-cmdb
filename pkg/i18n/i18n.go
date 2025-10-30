@@ -23,7 +23,6 @@ import (
 	"encoding/json/v2"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"os"
 	"strings"
 	"sync"
@@ -32,7 +31,7 @@ import (
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
 
-	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
@@ -58,57 +57,45 @@ func GetDefaultManager() I18nInterface {
 
 // i18n define implementation required components for language package.
 type i18n struct {
-	// langAbsDir file path for loading language, it requires folders for various language packs, the naming of language
-	// pack folders must comply with the system language definition specification.
-	langAbsDir string
+	// languageDir file path for loading language, it requires folders for various language packs, the naming of
+	//language pack folders must comply with the system language definition specification.
+	languageDir string
 	// languageBaseInterface language base interface, support base language translation service.
 	languageBaseInterface
 }
 
-// I18nInterface i18n interface for multilingual internationalization, Starting from the scenario, it can be divided
+// I18nInterface i18n interface for multilingual internationalization, starting from the scenario, it can be divided
 // into two types: implementing error translation and built-in system translation
 type I18nInterface interface {
-	// Error translate error info, translate for error message by error code which is pre-determined
-	Error(ctx context.Context, err *ccError.RespError) *ccError.RespError
+	// RespError translate error info, translate for error message by error code which is pre-determined
+	RespError(ctx context.Context, err error) *cerr.RespError
 	// Sys translate key, return key if not found
 	Sys(ctx context.Context, key string, args ...any) string
-	// Validator get tag from request and check if it is supported language
-	Validator(r *http.Request) (language.Tag, error)
+	// Validate get tag from request and check if it is supported language
+	Validate(lang LanguageType) (LanguageType, error)
 }
 
-// Validator get tag from request and check if it is allowed
-func (i *i18n) Validator(r *http.Request) (language.Tag, error) {
-
-	if c, err := r.Cookie(HTTPCookieLanguage); err == nil && c.Value != "" {
-		ok := i.isSupportedTag(LanguageType(c.Value))
-		if !ok {
-			e := fmt.Errorf("unsupported language: %s", c.Value)
-			return language.Tag{}, e
-		}
-		return language.Make(c.Value), nil
+// Validate get tag from request and check if it is allowed
+func (i *i18n) Validate(lang LanguageType) (LanguageType, error) {
+	ok := i.isSupportedLang(lang)
+	if !ok {
+		e := fmt.Errorf("unsupported language: %s", lang)
+		return i.getDefaultLang(), e
 	}
 
-	if h := r.Header.Get(BKHTTPLanguage); h != "" {
-		ok := i.isSupportedTag(LanguageType(h))
-		if !ok {
-			e := fmt.Errorf("unsupported language: %s", h)
-			return language.Tag{}, e
-		}
-		return language.Make(h), nil
-	}
-
-	return i.getDefaultLang(), nil
+	return lang, nil
 }
 
-// Error translate error
-func (i *i18n) Error(ctx context.Context, err *ccError.RespError) *ccError.RespError {
+// RespError translate response error message by error code
+func (i *i18n) RespError(ctx context.Context, err error) *cerr.RespError {
 	if err == nil {
 		return nil
 	}
 
-	err.Message = i.T(ctx, string(err.Code))
+	respErr := cerr.GetDefaultErrorManager().ConvToRespError(err)
+	respErr.Message = i.T(ctx, string(respErr.Code))
 
-	return err
+	return respErr
 }
 
 // Sys translate key, return key if not found
@@ -120,29 +107,29 @@ type multilingual struct {
 	// mu for hot update of language configuration or content
 	mu sync.RWMutex
 	// languagePrinter stores the printer for each supported language
-	languagePrinter map[language.Tag]*message.Printer
+	languagePrinter map[LanguageType]*message.Printer
 	// languages stores all supported languages
 	languages   []LanguageType
-	defaultLang language.Tag
+	defaultLang LanguageType
 	builder     *catalog.Builder
 }
 
 type languageBaseInterface interface {
 	T(ctx context.Context, key string, args ...any) string
-	isSupportedTag(lang LanguageType) bool
-	getDefaultLang() language.Tag
+	isSupportedLang(lang LanguageType) bool
+	getDefaultLang() LanguageType
 }
 
-func (l *multilingual) isSupportedTag(lang LanguageType) bool {
+func (l *multilingual) isSupportedLang(lang LanguageType) bool {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	_, ok := l.languagePrinter[language.Make(string(lang))]
+	_, ok := l.languagePrinter[lang]
 	return ok
 }
 
 // T general translator, translate key, return key if not found
 func (l *multilingual) T(ctx context.Context, key string, args ...any) string {
-	lang := GetTagFromCtx(ctx)
+	lang := GetLangFromCtx(ctx)
 	if p, ok := l.languagePrinter[lang]; ok {
 		return p.Sprintf(key, args...)
 	}
@@ -151,7 +138,7 @@ func (l *multilingual) T(ctx context.Context, key string, args ...any) string {
 	return key
 }
 
-func (l *multilingual) getDefaultLang() language.Tag {
+func (l *multilingual) getDefaultLang() LanguageType {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	return l.defaultLang
@@ -217,7 +204,7 @@ func (l *multilingual) loadTranslations(ctx context.Context, lang LanguageType, 
 				log.Error(ctx, "set string failed", "key", k, log.E(setErr))
 				return setErr
 			}
-			if tag == l.defaultLang {
+			if tag == language.Make(string(l.defaultLang)) {
 				if setErr := l.builder.SetString(language.Und, k, v); setErr != nil {
 					log.Error(ctx, "set string failed", "key", k, log.E(setErr))
 					return setErr
@@ -240,15 +227,15 @@ func newMultilingualManager(ctx context.Context, opts Options) (*multilingual, e
 	}
 
 	l := &multilingual{
-		languagePrinter: make(map[language.Tag]*message.Printer),
+		languagePrinter: make(map[LanguageType]*message.Printer),
 		languages:       getAllLanguages(),
-		defaultLang:     language.Make(string(opts.DefaultLang)),
+		defaultLang:     opts.DefaultLang,
 		builder:         catalog.NewBuilder(catalog.Fallback(language.Make(string(opts.DefaultLang)))),
 	}
 
 	// load different sources
-	paths := make([]string, 0, len(opts.langAbsDir)+1)
-	sources := make([]fs.FS, 0, len(opts.langAbsDir)+1)
+	paths := make([]string, 0, len(opts.languageDir)+1)
+	sources := make([]fs.FS, 0, len(opts.languageDir)+1)
 	if !isEmbedFSEmpty(embedFS) {
 		sub, err := fs.Sub(embedFS, translationsRoot)
 		if err != nil {
@@ -259,10 +246,10 @@ func newMultilingualManager(ctx context.Context, opts Options) (*multilingual, e
 		paths = append(paths, "embed path")
 	}
 
-	if opts.langAbsDir != "" {
-		diskFs := os.DirFS(opts.langAbsDir)
+	if opts.languageDir != "" {
+		diskFs := os.DirFS(opts.languageDir)
 		sources = append(sources, diskFs)
-		paths = append(paths, opts.langAbsDir)
+		paths = append(paths, opts.languageDir)
 	}
 
 	languageKeyMap := make(map[LanguageType]map[string]struct{})
@@ -294,8 +281,7 @@ func newMultilingualManager(ctx context.Context, opts Options) (*multilingual, e
 
 	// initialize matcher
 	for _, lang := range l.getLanguages() {
-		tag := language.Make(string(lang))
-		l.languagePrinter[tag] = message.NewPrinter(tag, message.Catalog(l.builder))
+		l.languagePrinter[lang] = message.NewPrinter(language.Make(string(lang)), message.Catalog(l.builder))
 	}
 
 	return l, nil
@@ -311,39 +297,39 @@ func NewI18nManager(ctx context.Context, opts Options) (I18nInterface, error) {
 	}
 
 	i := &i18n{
-		langAbsDir:            opts.langAbsDir,
+		languageDir:           opts.languageDir,
 		languageBaseInterface: baseLangManager,
 	}
 
 	return i, nil
 }
 
-// tagCtxKey define tag for translator
-type tagCtxKey struct{}
+// langCtxKey define lang context key for translator
+type langCtxKey struct{}
 
-var tagKey tagCtxKey
+var langKey langCtxKey
 
-// GetTagFromCtx get translator from context
-func GetTagFromCtx(ctx context.Context) language.Tag {
-	if v := ctx.Value(tagKey); v != nil {
-		if l, ok := v.(language.Tag); ok {
+// GetLangFromCtx get translator from context
+func GetLangFromCtx(ctx context.Context) LanguageType {
+	if v := ctx.Value(langKey); v != nil {
+		if l, ok := v.(LanguageType); ok {
 			return l
 		}
 	}
-	return language.Make(string(DefaultLanguage))
+	return DefaultLanguage
 }
 
-// ContextWithTag set tag to context
-func ContextWithTag(ctx context.Context, tag language.Tag) context.Context {
-	return context.WithValue(ctx, tagKey, tag)
+// ContextWithLang set tag to context
+func ContextWithLang(ctx context.Context, lang LanguageType) context.Context {
+	return context.WithValue(ctx, langKey, lang)
 }
 
 // Options i18n options
 type Options struct {
 	// DefaultLang If the required language or key does not exist, the default language will be used.
 	DefaultLang LanguageType
-	// langAbsDir Direct files to be loaded
-	langAbsDir string
+	// languageDir Direct files to be loaded
+	languageDir string
 }
 
 // cmpKeyWithDefault compare key with default language key

@@ -27,7 +27,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 )
 
 var (
@@ -65,9 +65,9 @@ func getHandleName(fn any) string {
 func collectHandleMetrics(funcName, method string, st time.Time, err error) {
 	code := http.StatusOK
 	if err != nil {
-		var respErr *ccError.RespError
+		var respErr *cerr.RespError
 		if errors.As(err, &respErr) {
-			code = ccError.GetHTTPStatus(respErr.Code)
+			code = cerr.GetHTTPStatus(respErr.Code)
 		} else {
 			code = http.StatusInternalServerError
 		}

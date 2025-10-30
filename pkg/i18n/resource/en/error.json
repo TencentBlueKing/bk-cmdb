@@ -1,6 +1,7 @@
 {
-  "INVALID_ARGUMENT": "invalid argument",
-  "INVALID_REQUEST": "invalid request",
-  "OUT_OF_RANGE": "out of range",
-  "FAILED_PRECONDITION": "failed precondition"
+  "Bad Request": "The server cannot process the request due to invalid client input or malformed syntax.",
+  "Unauthorized": "Authentication credentials are missing or invalid for the requested resource.",
+  "Forbidden": "The user did not have the necessary permissions for a resource or needing an account of some sort, or attempting a prohibited action.",
+  "Too Many Requests": "Request rate limit exceeded. Please try again later.",
+  "Server Error": "An unexpected condition was encountered and no more specific message is suitable."
 }

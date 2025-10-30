@@ -17,8 +17,5 @@
 // Package service define apiserver service
 package service
 
-import "github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
-
 type service struct {
-	i18n.I18nInterface
 }

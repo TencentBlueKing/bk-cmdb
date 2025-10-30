@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package errors
+package cerr
 
 import (
 	"errors"
@@ -22,7 +22,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-var errorManager *HttpErrorManager
+var errorManager ErrorResponseHandler
 
 // SetDefaultErrorManager set default error manager
 func SetDefaultErrorManager(m *HttpErrorManager) {
@@ -30,7 +30,7 @@ func SetDefaultErrorManager(m *HttpErrorManager) {
 }
 
 // GetDefaultErrorManager GetDefaultManager get default error manager
-func GetDefaultErrorManager() *HttpErrorManager {
+func GetDefaultErrorManager() ErrorResponseHandler {
 	return errorManager
 }
 
@@ -47,9 +47,9 @@ type RespError struct {
 	Code ErrorCodeType `json:"code"`
 	// Message for show, can be translated
 	Message string   `json:"message"`
-	System  string   `json:"system"`
-	Details []Detail `json:"details"`
-	Data    any      `json:"data"`
+	System  string   `json:"system,omitempty"`
+	Details []Detail `json:"details,omitempty"`
+	Data    any      `json:"data,omitempty"`
 	// DetailError if existed, unwrap error for details
 	DetailError error `json:"-"`
 }
@@ -68,18 +68,17 @@ func NewErrorManager(system string) *HttpErrorManager {
 
 // ErrorResponseHandler default error interfaces
 type ErrorResponseHandler interface {
-	ConvToRespError(err error) *RespError
-	ConvToRespErrorWithCode(err error, codeType ErrorCodeType) *RespError
+	ConvToRespError(err error, opts ...convOpt) *RespError
 	NewRespError(code ErrorCodeType, data ...any) *RespError
-	NewRespErrorWithMessage(code ErrorCodeType, message string, data ...any) *RespError
-	NewRespErrorWithDetail(code ErrorCodeType, message string, err error, data ...any) *RespError
-	WithDetailErr(respErr *RespError, err error) *RespError
 	UnwrapDetails(err error) []Detail
 	WrapValidationErrors(err error) error
 }
 
-// ConvToRespError convert error to response error
-func (m *HttpErrorManager) ConvToRespError(err error) *RespError {
+// convOpt convert error to response error option
+type convOpt func(re *RespError, srcErr error)
+
+// ConvToRespError convert error to response error with convert options
+func (m *HttpErrorManager) ConvToRespError(err error, opts ...convOpt) *RespError {
 	if err == nil {
 		return nil
 	}
@@ -92,55 +91,60 @@ func (m *HttpErrorManager) ConvToRespError(err error) *RespError {
 		}
 		if len(re.Details) == 0 && re.DetailError != nil {
 			re.Details = m.UnwrapDetails(re.DetailError)
+		}
+		for _, opt := range opts {
+			opt(re, err)
 		}
 		return re
 	}
 
 	code := UNKNOWN
 	msg := err.Error()
-
-	// get code from error
-	if ce, ok := err.(interface{ GetCode() ErrorCodeType }); ok {
-		code = ce.GetCode()
-	} else if ceStr, ok := err.(interface{ GetCode() string }); ok {
-		code = ErrorCodeType(ceStr.GetCode())
+	var codeErr CodeError
+	if errors.As(err, &codeErr) {
+		code = ErrorCodeType(codeErr.GetCode())
+		msg = codeErr.Error()
 	}
 
-	return &RespError{
+	re = &RespError{
 		Code:        code,
 		Message:     msg,
 		System:      m.System,
 		Details:     m.UnwrapDetails(err),
 		DetailError: err,
 	}
+
+	for _, opt := range opts {
+		opt(re, err)
+	}
+	return re
 }
 
-// ConvToRespErrorWithCode convert error to response error with specific code
-func (m *HttpErrorManager) ConvToRespErrorWithCode(err error, codeType ErrorCodeType) *RespError {
-	if err == nil {
-		return nil
+// WithCode set code for response error
+func WithCode(code ErrorCodeType) convOpt {
+	return func(re *RespError, _ error) {
+		re.Code = code
 	}
+}
 
-	// add system or detail info
-	var re *RespError
-	if errors.As(err, &re) {
-		if re.System == "" {
-			re.System = m.System
-		}
-		if len(re.Details) == 0 && re.DetailError != nil {
-			re.Details = m.UnwrapDetails(re.DetailError)
-		}
-		return re
+// WithMessage set message for response error
+func WithMessage(msg string) convOpt {
+	return func(re *RespError, _ error) {
+		re.Message = msg
 	}
+}
 
-	msg := err.Error()
+// WithData set data for response error
+func WithData(vals ...any) convOpt {
+	return func(re *RespError, _ error) {
+		re.Data = getValues(vals...)
+	}
+}
 
-	return &RespError{
-		Code:        codeType,
-		Message:     msg,
-		System:      m.System,
-		Details:     m.UnwrapDetails(err),
-		DetailError: err,
+// WithDetailErr set detail error for response error
+func WithDetailErr(detailErr error) convOpt {
+	return func(re *RespError, _ error) {
+		re.DetailError = detailErr
 	}
 }
 
@@ -151,42 +155,6 @@ func (m *HttpErrorManager) NewRespError(code ErrorCodeType, data ...any) *RespEr
 		System: m.System,
 		Data:   getValues(data...),
 	}
-}
-
-// NewRespErrorWithMessage new response error with error message
-func (m *HttpErrorManager) NewRespErrorWithMessage(code ErrorCodeType, message string, data ...any) *RespError {
-	return &RespError{
-		Code:    code,
-		Message: message,
-		System:  m.System,
-		Data:    getValues(data...),
-	}
-}
-
-// NewRespErrorWithDetail new response error with detail
-func (m *HttpErrorManager) NewRespErrorWithDetail(code ErrorCodeType, message string, err error,
-	data ...any) *RespError {
-
-	return &RespError{
-		Code:    code,
-		Message: message,
-		System:  m.System,
-		Details: m.UnwrapDetails(err),
-		Data:    getValues(data...),
-	}
-}
-
-// WithDetailErr add detail error
-func (m *HttpErrorManager) WithDetailErr(respErr *RespError, err error) *RespError {
-
-	if respErr == nil {
-		return nil
-	}
-	respErr.Details = m.UnwrapDetails(err)
-	if respErr.System == "" {
-		respErr.System = m.System
-	}
-	return respErr
 }
 
 // CodeError return response error message
@@ -220,11 +188,14 @@ func (m *HttpErrorManager) UnwrapDetails(err error) []Detail {
 		visited[e] = struct{}{}
 
 		d := Detail{Message: e.Error()}
-		if ce, ok := e.(interface{ GetCode() ErrorCodeType }); ok {
-			d.Code = string(ce.GetCode())
-		} else if ceStr, ok := e.(interface{ GetCode() string }); ok {
-			d.Code = ceStr.GetCode()
+		var re *RespError
+		var codeErr CodeError
+		if errors.As(e, &re) {
+			d.Code = string(re.Code)
+		} else if errors.As(e, &codeErr) {
+			d.Code = codeErr.GetCode()
 		}
+
 		details = append(details, d)
 
 		switch uw := any(e).(type) {

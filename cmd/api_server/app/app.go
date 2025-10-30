@@ -98,6 +98,7 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 }
 
 func initClients(ctx context.Context) error {
+	// Todo get option from config
 	m, err := i18n.NewI18nManager(ctx, i18n.Options{})
 	if err != nil {
 		log.Error(ctx, "init i18n manager failed", log.E(err))

@@ -14,11 +14,10 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package errors
+package cerr
 
 import (
 	"net/http"
-	"sync"
 )
 
 // ErrorCodeType error code type
@@ -49,22 +48,12 @@ var (
 		INTERNAL:         http.StatusInternalServerError,
 		UNKNOWN:          http.StatusInternalServerError,
 	}
-	statusMu sync.RWMutex
 )
 
 // GetHTTPStatus get http status by error code
 func GetHTTPStatus(code ErrorCodeType) int {
-	statusMu.RLock()
-	defer statusMu.RUnlock()
 	if v, ok := StatusCodeMap[code]; ok {
 		return v
 	}
 	return http.StatusBadRequest
-}
-
-// RegisterHttpStatus register http status with error code
-func RegisterHttpStatus(code ErrorCodeType, status int) {
-	statusMu.Lock()
-	defer statusMu.Unlock()
-	StatusCodeMap[code] = status
 }

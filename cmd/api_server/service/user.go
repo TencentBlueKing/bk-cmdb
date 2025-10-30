@@ -20,7 +20,8 @@ import (
 	"context"
 	"time"
 
-	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
@@ -43,10 +44,11 @@ type UserInfoResp struct {
 }
 
 // UserInfo 用户信息
-func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, *ccError.RespError) {
+func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, cerr.CodeError) {
 	log.Info(ctx, "handle UserInfo")
+
 	resp := &UserInfoResp{
-		Username: req.Username,
+		Username: i18n.GetDefaultManager().Sys(ctx, req.Username),
 		Age:      req.Age + 10,
 		Games:    req.Games,
 		Ko:       string(req.Ko),

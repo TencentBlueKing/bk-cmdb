@@ -19,25 +19,15 @@ package validator
 
 import (
 	"context"
-	"reflect"
-
-	"github.com/go-playground/locales/en"
-	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	validator "github.com/go-playground/validator/v10"
-	en_translations "github.com/go-playground/validator/v10/translations/en"
-	zh_translations "github.com/go-playground/validator/v10/translations/zh"
-	"github.com/samber/lo"
 
-	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 )
 
 var (
 	validate     *validator.Validate
-	uni          *ut.UniversalTranslator
 	defaultTrans ut.Translator
-	zhTrans      ut.Translator
 )
 
 // ValidationError 校验错误
@@ -76,10 +66,9 @@ func (e *ValidationError) Error() string {
 func Struct(ctx context.Context, s any) error {
 	err := validate.StructCtx(ctx, s)
 	if err != nil {
-		validateErr := ccError.GetDefaultErrorManager().WrapValidationErrors(err)
-		return &ccError.RespError{
-			Code:        ccError.INVALID_REQUEST,
-			Message:     err.Error(),
+		validateErr := cerr.GetDefaultErrorManager().WrapValidationErrors(err)
+		return &cerr.RespError{
+			Code:        cerr.INVALID_REQUEST,
 			DetailError: validateErr,
 		}
 	}
@@ -92,32 +81,6 @@ func Struct(ctx context.Context, s any) error {
 	return nil
 }
 
-// readableTagName 返回可读的json/req校验字段名称, 唯一性由codec校验
-func readableTagName(field reflect.StructField) string {
-	name := util.GetTagName(field, "json")
-	if name != "" && name != "-" {
-		return name
-	}
-
-	name = util.GetTagName(field, "req")
-	if name != "" && name != "-" {
-		return name
-	}
-
-	return ""
-}
-
 func init() {
 	validate = validator.New(validator.WithRequiredStructEnabled())
-	validate.RegisterTagNameFunc(readableTagName)
-
-	// 默认使用英文
-	en := en.New()
-	zh := zh.New()
-	uni = ut.New(en, en, zh)
-	defaultTrans, _ = uni.GetTranslator("en")
-	lo.Must0(en_translations.RegisterDefaultTranslations(validate, defaultTrans))
-
-	zhTrans, _ = uni.GetTranslator("zh")
-	lo.Must0(zh_translations.RegisterDefaultTranslations(validate, zhTrans))
 }
