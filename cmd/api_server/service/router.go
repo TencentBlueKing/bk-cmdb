@@ -24,16 +24,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/healthz"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
 )
 
 // NewRouter ...
 func NewRouter() http.Handler {
 	r := chi.NewRouter()
-	r.Use(i18n.Middleware)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(I18nMiddleware)
 
 	r.Get("/healthz", healthz.HealthzHandler)
 	r.Get("/-/healthy", healthz.HealthyHandler)

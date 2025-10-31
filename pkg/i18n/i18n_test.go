@@ -22,27 +22,28 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/text/language"
 )
 
 func makeTestFiles(t *testing.T) string {
 	root := t.TempDir()
 	base := root
-	mustMkdirAll(t, filepath.Join(base, "en", "error-code"))
-	mustMkdirAll(t, filepath.Join(base, "en", "string-text"))
-	mustMkdirAll(t, filepath.Join(base, "zh", "error-code"))
-	mustMkdirAll(t, filepath.Join(base, "zh", "string-text"))
+	mustMkdirAll(t, filepath.Join(base, "en"))
+	mustMkdirAll(t, filepath.Join(base, "en"))
+	mustMkdirAll(t, filepath.Join(base, "zh-cn"))
+	mustMkdirAll(t, filepath.Join(base, "zh-cn"))
 
-	writeFile(t, filepath.Join(base, "en", "error-code", "en_errorCode.json"), `{ "1199000": "Test Error" }`)
+	writeFile(t, filepath.Join(base, "en", "error.json"), `{ "Test_INVALID_REQUEST": "invalid request",
+"Test_UNKNOWN":"unknown error" }`)
 
-	writeFile(t, filepath.Join(base, "en", "string-text", "en_stringTxt.json"), `{ "hello": "hello world", 
+	writeFile(t, filepath.Join(base, "en", "sys.json"), `{ "hello": "hello world", 
 "meeting": "i have a meeting with %s", "test": "i test %d times" }`)
 
-	writeFile(t, filepath.Join(base, "zh", "error-code", "zh_errorCode.json"), `
-{ "1199000": "测试错误" }`)
+	writeFile(t, filepath.Join(base, "zh-cn", "error.json"), `
+{ "Test_INVALID_ARGUMENT": "参数无效","Test_INVALID_REQUEST": "无效请求"}`)
 
-	writeFile(t, filepath.Join(base, "zh", "string-text", "zh_stringTxt.json"), `
+	writeFile(t, filepath.Join(base, "zh-cn", "sys.json"), `
 { "hello": "你好", "meeting": "我和%s有个会议", "mike": "迈克", "test": "我测试%d次","same": "与上述相同" }`)
 	return root
 }
@@ -66,38 +67,37 @@ func writeFile(t *testing.T, path string, content string) {
 // 测试未设置fallback情况
 // 测试设置fallback 没有相关语言情况
 // 测试设置fallback 有语言但没有对应翻译情况
+// 测试errorCode翻译
 // Test_BasicTranslate test basic translate
 func Test_BasicTranslate(t *testing.T) {
 	root := makeTestFiles(t)
 	cxt := context.Background()
-	iManager, err := NewManager(cxt, Options{AttachedFS: []string{root}})
+	manager, err := NewI18nManager(cxt, &Options{LanguageDir: root})
+	SetDefaultManager(manager)
 	assert.NoError(t, err)
 
-	languageTag := language.Chinese
-	ctx := CtxWithLanguageTag(cxt, iManager, languageTag)
+	ctx := ContextWithLang(cxt, CN)
 	// test basic translate without parameter
-	assert.Equal(t, "你好", T(ctx, "hello"))
+	assert.Equal(t, "你好", GetDefaultManager().Sys(ctx, "hello"))
 	// test basic translate with parameter
-	assert.Equal(t, "我和nancy有个会议", T(ctx, "meeting", "nancy"))
+	assert.Equal(t, "我和nancy有个会议", GetDefaultManager().Sys(ctx, "meeting", "nancy"))
 
-	languageTag = language.English
-	ctx = CtxWithLanguageTag(ctx, iManager, languageTag)
-	assert.Equal(t, "hello world", T(ctx, "hello"))
-	assert.Equal(t, "i have a meeting with nancy", T(ctx, "meeting", "nancy"))
-
-	// test language not supported
-	languageTag = language.Japanese
-	ctx = CtxWithLanguageTag(ctx, iManager, languageTag)
-	assert.Equal(t, "你好", T(ctx, "hello"))
-	assert.Equal(t, "我和nancy有个会议", T(ctx, "meeting", "nancy"))
-
-	// test language supported but no translation
-	languageTag = language.English
-	ctx = CtxWithLanguageTag(ctx, iManager, languageTag)
-	assert.Equal(t, "与上述相同", T(ctx, "same"))
+	ctx = ContextWithLang(ctx, EN)
+	assert.Equal(t, "hello world", GetDefaultManager().Sys(ctx, "hello"))
+	assert.Equal(t, "i have a meeting with nancy", GetDefaultManager().Sys(ctx, "meeting", "nancy"))
 
 	// test translate with other format data
-	languageTag = language.English
-	ctx = CtxWithLanguageTag(ctx, iManager, languageTag)
-	assert.Equal(t, "i test 3 times", T(ctx, "test", 3))
+	ctx = ContextWithLang(ctx, EN)
+	assert.Equal(t, "i test 3 times", GetDefaultManager().Sys(ctx, "test", 3))
+
+	errorManager := cerr.NewErrorManager()
+	cerr.SetDefaultErrorManager(errorManager)
+	codeErr := cerr.NewError(cerr.ErrorCode("Test_INVALID_REQUEST"), "invalid request")
+	convErr := cerr.GetDefaultErrorManager().ConvToRespError(codeErr)
+	testError := manager.RespError(ctx, convErr)
+	assert.Equal(t, "invalid request", testError.Message)
+
+	ctx = ContextWithLang(ctx, CN)
+	testError = manager.RespError(ctx, testError)
+	assert.Equal(t, "无效请求", testError.Message)
 }

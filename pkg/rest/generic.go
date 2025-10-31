@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
@@ -58,20 +59,20 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			log.Error(ctx, "handle decode request failed", log.E(err))
-			_ = APIError(err).Render(w, r)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			log.Error(ctx, "validate req failed", log.E(err))
-			_ = APIError(err).Render(w, r)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
 			return
 		}
 
-		out, err := fn(ctx, in)
-		if err != nil {
-			_ = APIError(err).Render(w, r)
+		out, respErr := fn(ctx, in)
+		if respErr != nil {
+			_ = APIError(ctx, err).Render(w, r)
 			return
 		}
 		_ = APIOK(out).Render(w, r)
@@ -107,14 +108,14 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			log.Error(ctx, "handle decode stream request failed", log.E(err))
-			_ = APIError(err).Render(w, r)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			log.Error(ctx, "validate stream req failed", log.E(err))
-			_ = APIError(err).Render(w, r)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
 			return
 		}
 
@@ -124,9 +125,9 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 			ctx:                r.Context(),
 		}
 
-		err = fn(in, svr)
-		if err != nil {
-			_ = APIError(err).Render(w, r)
+		if err := fn(in, svr); err != nil {
+			_ = APIError(ctx, err).Render(w, r)
+			return
 		}
 	}
 	return f

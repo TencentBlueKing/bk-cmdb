@@ -14,44 +14,46 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package i18n
+package service
 
 import (
-	"context"
 	"net/http"
 
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
 )
 
-// Middleware i18n middleware
-func Middleware(next http.Handler) http.Handler {
-
+// I18nMiddleware i18n middleware
+func I18nMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tag := pickTag(r, defaultManager)
-		p := message.NewPrinter(tag, message.Catalog(defaultManager.Catalog()))
-		printer := &TranslatePrinter{printer: p}
-		ctx := contextWithTranslator(r.Context(), printer)
+		lang := pickTag(r)
+		err := i18n.GetDefaultManager().Validate(lang)
+		if err != nil {
+			log.Error(r.Context(), "invalid language", "lang", lang, log.E(err))
+			err := &cerr.RespError{
+				Code:        cerr.INVALID_REQUEST,
+				DetailError: err,
+			}
+			_ = rest.APIError(r.Context(), err).Render(w, r)
+			return
+		}
+
+		ctx := i18n.ContextWithLang(r.Context(), lang)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func contextWithTranslator(ctx context.Context, trans *TranslatePrinter) context.Context {
-	return context.WithValue(ctx, translatorKey, trans)
-}
-
-// pickTag pick language Tag from request
-func pickTag(r *http.Request, m *Manager) language.Tag {
-	if c, err := r.Cookie(HTTPCookieLanguage); err == nil && c.Value != "" {
-		if t, e := language.Parse(c.Value); e == nil {
-			return m.Match(r.Context(), t)
-		}
+func pickTag(r *http.Request) i18n.LanguageType {
+	if c, err := r.Cookie(i18n.HTTPCookieLanguage); err == nil && c.Value != "" {
+		return i18n.LanguageType(c.Value)
 	}
 
-	if h := r.Header.Get(BKHTTPLanguage); h != "" {
-		if t, e := language.Parse(h); e == nil {
-			return m.Match(r.Context(), t)
-		}
+	if h := r.Header.Get(i18n.BKHTTPLanguage); h != "" {
+		return i18n.LanguageType(h)
 	}
-	return m.Fallback()
+
+	// if language is not set, use default language
+	return i18n.GetDefaultManager().GetDefaultLang()
 }

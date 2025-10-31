@@ -17,8 +17,12 @@
 package rest
 
 import (
+	"context"
 	"encoding/json/v2"
 	"net/http"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 )
 
 // Renderer interface for managing response payloads.
@@ -28,10 +32,9 @@ type Renderer interface {
 
 // APIResponse response for api request
 type APIResponse struct {
-	HTTPCode int    `json:"-"` // http response status code
-	Code     int    `json:"code"`
-	Message  string `json:"message"`
-	Data     any    `json:"data"`
+	HTTPCode int             `json:"-"`               // http response status code
+	Error    *cerr.RespError `json:"error,omitempty"` // response error
+	Data     any             `json:"data,omitempty"`  // response data
 }
 
 // Render chi render interface implementation
@@ -46,18 +49,18 @@ func (e *APIResponse) Render(w http.ResponseWriter, r *http.Request) error {
 // APIOK 正常返回
 func APIOK(data any) Renderer {
 	return &APIResponse{
-		Message:  "request OK",
 		HTTPCode: http.StatusOK,
-		Code:     0,
 		Data:     data,
 	}
 }
 
 // APIError 错误返回
-func APIError(err error) Renderer {
+func APIError(ctx context.Context, err error) Renderer {
+	respErr := cerr.GetDefaultErrorManager().ConvToRespError(err)
+	respErr = i18n.GetDefaultManager().RespError(ctx, respErr)
+
 	return &APIResponse{
-		Message:  err.Error(),
-		HTTPCode: http.StatusBadRequest,
-		Code:     40000,
+		HTTPCode: cerr.GetHTTPStatus(respErr.Code),
+		Error:    respErr,
 	}
 }

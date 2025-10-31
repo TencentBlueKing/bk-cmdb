@@ -19,14 +19,13 @@ package validator
 
 import (
 	"context"
+	"errors"
 	"reflect"
 
 	"github.com/go-playground/locales/en"
-	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	validator "github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
-	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/samber/lo"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
@@ -34,14 +33,12 @@ import (
 
 var (
 	validate     *validator.Validate
-	uni          *ut.UniversalTranslator
 	defaultTrans ut.Translator
-	zhTrans      ut.Translator
+	uni          *ut.UniversalTranslator
 )
 
 // ValidationError 校验错误
 type ValidationError struct {
-	ctx    context.Context
 	rawErr error
 }
 
@@ -56,27 +53,39 @@ func (e *ValidationError) getTranslator() ut.Translator {
 
 // Error error iface
 func (e *ValidationError) Error() string {
-	if _, ok := e.rawErr.(*validator.InvalidValidationError); ok {
+	errs := e.Unwrap()
+	if len(errs) == 0 {
 		return e.rawErr.Error()
 	}
 
-	errs, ok := e.rawErr.(validator.ValidationErrors)
-	if !ok {
-		return e.rawErr.Error()
-	}
 	// 只返回单个错误
-	for _, ve := range errs {
-		return ve.Translate(e.getTranslator())
+	return errs[0].Error()
+}
+
+// Unwrap multierr iface
+func (e *ValidationError) Unwrap() []error {
+	if _, ok := e.rawErr.(*validator.InvalidValidationError); ok {
+		return []error{e.rawErr}
 	}
 
-	return e.rawErr.Error()
+	ves, ok := e.rawErr.(validator.ValidationErrors)
+	if !ok {
+		return []error{e.rawErr}
+	}
+
+	errs := make([]error, 0, len(ves))
+	for _, ve := range ves {
+		errs = append(errs, errors.New(ve.Translate(e.getTranslator())))
+	}
+
+	return errs
 }
 
 // Struct 通过 validate tag 校验结构体, Validate 校验需要传入指针类型
 func Struct(ctx context.Context, s any) error {
 	err := validate.StructCtx(ctx, s)
 	if err != nil {
-		return &ValidationError{ctx: ctx, rawErr: err}
+		return &ValidationError{err}
 	}
 
 	// 实现了 Validate 接口自定义调用
@@ -108,11 +117,7 @@ func init() {
 
 	// 默认使用英文
 	en := en.New()
-	zh := zh.New()
-	uni = ut.New(en, en, zh)
+	uni = ut.New(en, en)
 	defaultTrans, _ = uni.GetTranslator("en")
 	lo.Must0(en_translations.RegisterDefaultTranslations(validate, defaultTrans))
-
-	zhTrans, _ = uni.GetTranslator("zh")
-	lo.Must0(zh_translations.RegisterDefaultTranslations(validate, zhTrans))
 }

@@ -20,16 +20,17 @@ import (
 	"context"
 	"time"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // UserInfoReq 个人信息Req
 type UserInfoReq struct {
-	Username string     `json:"name" req:"-,in:query"`
+	Username string     `req:"name,in:query" validate:"required"`
 	Age      int        `req:"age,in:query" validate:"required"`
-	Games    *[]*string `json:"games" req:"-"`
-	BirthDay time.Time  `req:"birthday,in:query,format:2006-01-02"`
-	Ko       []byte     `json:"-" req:"ko,in:query"`
+	Games    *[]*string `json:"games" req:"-" validate:"required"`
+	BirthDay time.Time  `req:"birthday,in:query,format:2006-01-02" validate:"required"`
+	Ko       []byte     `json:"-" req:"ko,in:query" validate:"required"`
 }
 
 // UserInfoResp 个人信息
@@ -44,8 +45,9 @@ type UserInfoResp struct {
 // UserInfo 用户信息
 func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, error) {
 	log.Info(ctx, "handle UserInfo")
+
 	resp := &UserInfoResp{
-		Username: req.Username,
+		Username: i18n.GetDefaultManager().Sys(ctx, req.Username),
 		Age:      req.Age + 10,
 		Games:    req.Games,
 		Ko:       string(req.Ko),

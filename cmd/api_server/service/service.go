@@ -17,4 +17,5 @@
 // Package service define apiserver service
 package service
 
-type service struct{}
+type service struct {
+}

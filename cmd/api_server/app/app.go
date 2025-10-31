@@ -33,6 +33,8 @@ import (
 
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/options"
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/service"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
 )
@@ -53,6 +55,11 @@ func NewAPIServerCommand() *cobra.Command {
 			handler := log.NewContextualHandler(handlerOpts)
 			log.SetDefault(handler)
 
+			err := initClients(c.Context())
+			if err != nil {
+				return err
+			}
+
 			return runHTTPServer(c.Context(), opts)
 		},
 	}
@@ -70,7 +77,6 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 	defer cancel()
 
 	var g run.Group
-
 	router := service.NewRouter()
 	registerHTTPServer(ctx, &g, router, opts)
 
@@ -89,6 +95,22 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 
 	// block here
 	return g.Run()
+}
+
+func initClients(ctx context.Context) error {
+	// Todo get option from config
+	m, err := i18n.NewI18nManager(ctx, &i18n.Options{})
+	if err != nil {
+		log.Error(ctx, "init i18n manager failed", log.E(err))
+		return err
+	}
+	i18n.SetDefaultManager(m)
+
+	// Todo get from config
+	errorManager := cerr.NewErrorManager()
+	cerr.SetDefaultErrorManager(errorManager)
+
+	return nil
 }
 
 func registerHTTPServer(ctx context.Context, g *run.Group, router http.Handler, opts *options.Options) {
