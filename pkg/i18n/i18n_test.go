@@ -90,7 +90,7 @@ func Test_BasicTranslate(t *testing.T) {
 	ctx = ContextWithLang(ctx, EN)
 	assert.Equal(t, "i test 3 times", GetDefaultManager().Sys(ctx, "test", 3))
 
-	errorManager := cerr.NewErrorManager("cmdb")
+	errorManager := cerr.NewErrorManager()
 	cerr.SetDefaultErrorManager(errorManager)
 	testError := cerr.GetDefaultErrorManager().NewRespError(cerr.ErrorCode("Test_INVALID_REQUEST"))
 	testError = manager.RespError(ctx, testError)

@@ -154,13 +154,20 @@ type PaginationResp[T any] struct {
 
 // ApiRespError return api response error
 func ApiRespError(err error, w http.ResponseWriter, r *http.Request, errorCode cerr.ErrorCode) {
+	if err == nil {
+		err = &cerr.RespError{
+			Code: cerr.UNKNOWN,
+		}
+	}
+
 	var respErr *cerr.RespError
+	// convert error to response error
 	if errorCode != "" {
 		respErr = cerr.GetDefaultErrorManager().ConvToRespError(err, cerr.WithCode(errorCode))
 	} else {
-		// convert error to response error
 		respErr = cerr.GetDefaultErrorManager().ConvToRespError(err)
 	}
+
 	// translate error message
 	respErr = i18n.GetDefaultManager().RespError(r.Context(), respErr)
 	_ = APIError(respErr).Render(w, r)

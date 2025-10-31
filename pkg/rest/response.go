@@ -54,15 +54,6 @@ func APIOK(data any) Renderer {
 
 // APIError 错误返回
 func APIError(err *ccError.RespError) Renderer {
-
-	if err == nil {
-		err = &ccError.RespError{
-			Code:    ccError.UNKNOWN,
-			Message: "unknown error",
-			System:  "",
-		}
-	}
-
 	return &APIResponse{
 		HTTPCode: ccError.GetHTTPStatus(err.Code),
 		Error:    err,

@@ -19,7 +19,7 @@ package service
 import (
 	"net/http"
 
-	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
@@ -31,11 +31,11 @@ func I18nMiddleware(next http.Handler) http.Handler {
 		lang, err := i18n.GetDefaultManager().Validate(pickTag(r))
 		if err != nil {
 			log.Error(r.Context(), "invalid language", "lang", lang, log.E(err))
-			err := &ccError.RespError{
-				Code:        ccError.INVALID_REQUEST,
+			err := &cerr.RespError{
+				Code:        cerr.INVALID_REQUEST,
 				DetailError: err,
 			}
-			rest.ApiRespError(err, w, r, ccError.INVALID_REQUEST)
+			rest.ApiRespError(err, w, r, cerr.INVALID_REQUEST)
 			return
 		}
 

@@ -69,10 +69,10 @@ func (e *ValidationError) Error() string {
 func Struct(ctx context.Context, s any) error {
 	err := validate.StructCtx(ctx, s)
 	if err != nil {
-		validateErr := cerr.GetDefaultErrorManager().WrapValidationErrors(err)
+		detailErr := cerr.GetDefaultErrorManager().WrapValidationErrors(err)
 		return &cerr.RespError{
 			Code:        cerr.INVALID_REQUEST,
-			DetailError: validateErr,
+			DetailError: detailErr,
 		}
 	}
 

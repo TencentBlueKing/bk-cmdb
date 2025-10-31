@@ -71,6 +71,6 @@ func TestValidate(t *testing.T) {
 	name := "testValidate"
 	err = Struct(context.Background(), name)
 	assert.Equal(t, err.Error(), "validator: (nil string)")
-	// assert.Equal(t, err.RespError(), "Force is required")
-	// assert.Equal(t, err.RespError(), "Operator is required")
+	// assert.Equal(t, err.Error(), "Force is required")
+	// assert.Equal(t, err.Error(), "Operator is required")
 }

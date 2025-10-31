@@ -40,7 +40,6 @@ type RespError struct {
 	Code ErrorCode `json:"code"`
 	// Message for show, can be translated
 	Message string   `json:"message"`
-	System  string   `json:"system,omitempty"`
 	Details []string `json:"details,omitempty"`
 	Data    any      `json:"data,omitempty"`
 	// DetailError if existed, unwrap error for details
@@ -48,15 +47,18 @@ type RespError struct {
 }
 
 // HttpErrorManager error manager
-type HttpErrorManager struct {
-	System string
-}
+type HttpErrorManager struct{}
 
-// NewErrorManager return error manager with system
-func NewErrorManager(system string) *HttpErrorManager {
-	return &HttpErrorManager{
-		System: system,
+// managerOpt for new error manager client options
+type managerOpt func(re *HttpErrorManager)
+
+// NewErrorManager return error manager
+func NewErrorManager(opts ...managerOpt) *HttpErrorManager {
+	manager := &HttpErrorManager{}
+	for _, opt := range opts {
+		opt(manager)
 	}
+	return manager
 }
 
 // ErrorResponseHandler default error interfaces
@@ -79,9 +81,6 @@ func (m *HttpErrorManager) ConvToRespError(err error, opts ...convOpt) *RespErro
 	// add system or detail info
 	var re *RespError
 	if errors.As(err, &re) {
-		if re.System == "" {
-			re.System = m.System
-		}
 		if len(re.Details) == 0 && re.DetailError != nil {
 			re.Details = m.UnwrapDetails(re.DetailError)
 		}
@@ -99,7 +98,6 @@ func (m *HttpErrorManager) ConvToRespError(err error, opts ...convOpt) *RespErro
 
 	re = &RespError{
 		Code:        code,
-		System:      m.System,
 		Details:     m.UnwrapDetails(err),
 		DetailError: err,
 	}
@@ -141,9 +139,8 @@ func WithDetailErr(detailErr error) convOpt {
 // NewRespError new response error
 func (m *HttpErrorManager) NewRespError(code ErrorCode, data ...any) *RespError {
 	return &RespError{
-		Code:   code,
-		System: m.System,
-		Data:   getValues(data...),
+		Code: code,
+		Data: getValues(data...),
 	}
 }
 
@@ -174,7 +171,7 @@ func getDetails(err error) []string {
 		return nil
 	}
 
-	if uw, ok := any(err).(multiUnwrapper); ok {
+	if uw, ok := err.(multiUnwrapper); ok {
 		var out []string
 		for _, child := range uw.Unwrap() {
 			out = append(out, getDetails(child)...)

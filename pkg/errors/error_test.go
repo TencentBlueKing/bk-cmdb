@@ -30,12 +30,11 @@ import (
 // 测试join类型解析
 // 测试validator解析
 func Test_ErrorConv(t *testing.T) {
-	errManager := NewErrorManager("cmdb")
+	errManager := NewErrorManager()
 
 	t.Run("error translate test", func(t *testing.T) {
 		err := NewError(INVALID_REQUEST, "test invalid request")
 		respErr := errManager.ConvToRespError(err)
-		assert.Equal(t, "cmdb", respErr.System)
 		assert.Equal(t, INVALID_REQUEST, respErr.Code)
 		assert.Equal(t, "test invalid request", respErr.Details[0])
 		assert.Equal(t, "test invalid request", respErr.Details[0])
@@ -65,7 +64,7 @@ type RegisterModel struct {
 }
 
 func Test_validate(t *testing.T) {
-	errManager := NewErrorManager("cmdb")
+	errManager := NewErrorManager()
 	model := RegisterModel{
 		Username: "123",
 		Password: "456",

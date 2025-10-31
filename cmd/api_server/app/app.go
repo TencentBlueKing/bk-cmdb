@@ -107,7 +107,7 @@ func initClients(ctx context.Context) error {
 	i18n.SetDefaultManager(m)
 
 	// Todo get from config
-	errorManager := ccError.NewErrorManager("")
+	errorManager := ccError.NewErrorManager()
 	ccError.SetDefaultErrorManager(errorManager)
 
 	return nil
