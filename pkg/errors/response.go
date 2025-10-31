@@ -63,17 +63,14 @@ func NewErrorManager(opts ...managerOpt) *HttpErrorManager {
 
 // ErrorResponseHandler default error interfaces
 type ErrorResponseHandler interface {
-	ConvToRespError(err error, opts ...convOpt) *RespError
-	NewRespError(code ErrorCode, data ...any) *RespError
-	UnwrapDetails(err error) []string
-	WrapValidationErrors(err error) error
+	ConvToRespError(err error, opts ...ConvOpt) *RespError
 }
 
-// convOpt convert error to response error option
-type convOpt func(re *RespError)
+// ConvOpt convert error to response error option
+type ConvOpt func(re *RespError)
 
 // ConvToRespError convert error to response error with convert options
-func (m *HttpErrorManager) ConvToRespError(err error, opts ...convOpt) *RespError {
+func (m *HttpErrorManager) ConvToRespError(err error, opts ...ConvOpt) *RespError {
 	if err == nil {
 		return nil
 	}
@@ -109,28 +106,28 @@ func (m *HttpErrorManager) ConvToRespError(err error, opts ...convOpt) *RespErro
 }
 
 // WithCode set code for response error
-func WithCode(code ErrorCode) convOpt {
+func WithCode(code ErrorCode) ConvOpt {
 	return func(re *RespError) {
 		re.Code = code
 	}
 }
 
 // WithMessage set message for response error
-func WithMessage(msg string) convOpt {
+func WithMessage(msg string) ConvOpt {
 	return func(re *RespError) {
 		re.Message = msg
 	}
 }
 
 // WithData set data for response error
-func WithData(vals ...any) convOpt {
+func WithData(vals ...any) ConvOpt {
 	return func(re *RespError) {
 		re.Data = getValues(vals...)
 	}
 }
 
 // WithDetailErr set detail error for response error
-func WithDetailErr(detailErr error) convOpt {
+func WithDetailErr(detailErr error) ConvOpt {
 	return func(re *RespError) {
 		re.DetailError = detailErr
 	}
@@ -183,7 +180,7 @@ func getDetails(err error) []string {
 }
 
 // WrapValidationErrors wrap validation errors
-func (m *HttpErrorManager) WrapValidationErrors(err error) error {
+func WrapValidationErrors(err error) error {
 	if err == nil {
 		return nil
 	}

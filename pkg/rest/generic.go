@@ -160,13 +160,14 @@ func ApiRespError(err error, w http.ResponseWriter, r *http.Request, errorCode c
 		}
 	}
 
+	convOpts := make([]cerr.ConvOpt, 0)
+	if errorCode != "" {
+		convOpts = append(convOpts, cerr.WithCode(errorCode))
+	}
+
 	var respErr *cerr.RespError
 	// convert error to response error
-	if errorCode != "" {
-		respErr = cerr.GetDefaultErrorManager().ConvToRespError(err, cerr.WithCode(errorCode))
-	} else {
-		respErr = cerr.GetDefaultErrorManager().ConvToRespError(err)
-	}
+	respErr = cerr.GetDefaultErrorManager().ConvToRespError(err, convOpts...)
 
 	// translate error message
 	respErr = i18n.GetDefaultManager().RespError(r.Context(), respErr)

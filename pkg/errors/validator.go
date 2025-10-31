@@ -31,5 +31,5 @@ func (e *fieldErr) Error() string {
 
 // GetCode return error code
 func (e *fieldErr) GetCode() ErrorCode {
-	return UNKNOWN
+	return INVALID_REQUEST
 }

@@ -28,7 +28,8 @@ import (
 // I18nMiddleware i18n middleware
 func I18nMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lang, err := i18n.GetDefaultManager().Validate(pickTag(r))
+		lang := pickTag(r)
+		err := i18n.GetDefaultManager().Validate(lang)
 		if err != nil {
 			log.Error(r.Context(), "invalid language", "lang", lang, log.E(err))
 			err := &cerr.RespError{
@@ -53,5 +54,6 @@ func pickTag(r *http.Request) i18n.LanguageType {
 		return i18n.LanguageType(h)
 	}
 
-	return i18n.DefaultLanguage
+	// if language is not set, use default language
+	return i18n.GetDefaultManager().GetDefaultLang()
 }

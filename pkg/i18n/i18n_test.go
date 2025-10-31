@@ -72,7 +72,7 @@ func writeFile(t *testing.T, path string, content string) {
 func Test_BasicTranslate(t *testing.T) {
 	root := makeTestFiles(t)
 	cxt := context.Background()
-	manager, err := NewI18nManager(cxt, Options{languageDir: root})
+	manager, err := NewI18nManager(cxt, &Options{LanguageDir: root})
 	SetDefaultManager(manager)
 	assert.NoError(t, err)
 
@@ -92,8 +92,9 @@ func Test_BasicTranslate(t *testing.T) {
 
 	errorManager := cerr.NewErrorManager()
 	cerr.SetDefaultErrorManager(errorManager)
-	testError := cerr.GetDefaultErrorManager().NewRespError(cerr.ErrorCode("Test_INVALID_REQUEST"))
-	testError = manager.RespError(ctx, testError)
+	codeErr := cerr.NewError(cerr.ErrorCode("Test_INVALID_REQUEST"), "invalid request")
+	convErr := cerr.GetDefaultErrorManager().ConvToRespError(codeErr)
+	testError := manager.RespError(ctx, convErr)
 	assert.Equal(t, "invalid request", testError.Message)
 
 	ctx = ContextWithLang(ctx, CN)

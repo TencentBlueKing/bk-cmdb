@@ -73,7 +73,7 @@ func Test_validate(t *testing.T) {
 	validate := validator.New()
 	err := validate.Struct(model)
 	if err != nil {
-		validateErr := errManager.WrapValidationErrors(err)
+		validateErr := WrapValidationErrors(err)
 		details := errManager.UnwrapDetails(validateErr)
 		assert.Equal(t, 2, len(details))
 	}

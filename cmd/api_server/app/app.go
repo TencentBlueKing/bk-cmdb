@@ -33,7 +33,7 @@ import (
 
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/options"
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/service"
-	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
@@ -99,7 +99,7 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 
 func initClients(ctx context.Context) error {
 	// Todo get option from config
-	m, err := i18n.NewI18nManager(ctx, i18n.Options{})
+	m, err := i18n.NewI18nManager(ctx, &i18n.Options{})
 	if err != nil {
 		log.Error(ctx, "init i18n manager failed", log.E(err))
 		return err
@@ -107,8 +107,8 @@ func initClients(ctx context.Context) error {
 	i18n.SetDefaultManager(m)
 
 	// Todo get from config
-	errorManager := ccError.NewErrorManager()
-	ccError.SetDefaultErrorManager(errorManager)
+	errorManager := cerr.NewErrorManager()
+	cerr.SetDefaultErrorManager(errorManager)
 
 	return nil
 }

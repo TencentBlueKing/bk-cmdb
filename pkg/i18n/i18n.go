@@ -72,18 +72,25 @@ type Interface interface {
 	// Sys translate key, return key if not found
 	Sys(ctx context.Context, key string, args ...any) string
 	// Validate get tag from request and check if it is supported language
-	Validate(lang LanguageType) (LanguageType, error)
+	Validate(lang LanguageType) error
+	// GetDefaultLang get default language if lang is not set
+	GetDefaultLang() LanguageType
 }
 
 // Validate get tag from request and check if it is allowed
-func (i *i18n) Validate(lang LanguageType) (LanguageType, error) {
+func (i *i18n) Validate(lang LanguageType) error {
 	ok := i.isSupportedLang(lang)
 	if !ok {
 		e := fmt.Errorf("unsupported language: %s", lang)
-		return i.getDefaultLang(), e
+		return e
 	}
 
-	return lang, nil
+	return nil
+}
+
+// GetDefaultLang get default language
+func (i *i18n) GetDefaultLang() LanguageType {
+	return i.getDefaultLang()
 }
 
 // RespError translate response error message by error code
@@ -170,8 +177,8 @@ func (l *multilingual) loadFromFS(ctx context.Context, fsys fs.FS) (map[Language
 
 func (l *multilingual) loadTranslations(ctx context.Context, lang LanguageType, fsys fs.FS) (map[string]struct{},
 	error) {
-	keyMap := make(map[string]struct{})
 
+	keyMap := make(map[string]struct{})
 	tag := language.Make(string(lang))
 	root := string(lang)
 	err := fs.WalkDir(fsys, root, func(path string, d fs.DirEntry, err error) error {
@@ -223,7 +230,7 @@ func (l *multilingual) loadTranslations(ctx context.Context, lang LanguageType, 
 	return keyMap, nil
 }
 
-func newMultilingualManager(ctx context.Context, opts Options) (*multilingual, error) {
+func newMultilingualManager(ctx context.Context, opts *Options) (*multilingual, error) {
 	if opts.DefaultLang == "" {
 		opts.DefaultLang = DefaultLanguage
 	}
@@ -236,8 +243,8 @@ func newMultilingualManager(ctx context.Context, opts Options) (*multilingual, e
 	}
 
 	// load different sources
-	paths := make([]string, 0, len(opts.languageDir)+1)
-	sources := make([]fs.FS, 0, len(opts.languageDir)+1)
+	paths := make([]string, 0, len(opts.LanguageDir)+1)
+	sources := make([]fs.FS, 0, len(opts.LanguageDir)+1)
 	if !isEmbedFSEmpty(embedFS) {
 		sub, err := fs.Sub(embedFS, translationsRoot)
 		if err != nil {
@@ -248,10 +255,10 @@ func newMultilingualManager(ctx context.Context, opts Options) (*multilingual, e
 		paths = append(paths, "embed path")
 	}
 
-	if opts.languageDir != "" {
-		diskFs := os.DirFS(opts.languageDir)
+	if opts.LanguageDir != "" {
+		diskFs := os.DirFS(opts.LanguageDir)
 		sources = append(sources, diskFs)
-		paths = append(paths, opts.languageDir)
+		paths = append(paths, opts.LanguageDir)
 	}
 
 	languageKeyMap := make(map[LanguageType]map[string]struct{})
@@ -291,7 +298,7 @@ func newMultilingualManager(ctx context.Context, opts Options) (*multilingual, e
 }
 
 // NewI18nManager return a new i18n manager
-func NewI18nManager(ctx context.Context, opts Options) (Interface, error) {
+func NewI18nManager(ctx context.Context, opts *Options) (Interface, error) {
 	baseLangManager, err := newMultilingualManager(ctx, opts)
 	if err != nil {
 		log.Error(ctx, "new base language manager failed", log.E(err))
@@ -299,7 +306,7 @@ func NewI18nManager(ctx context.Context, opts Options) (Interface, error) {
 	}
 
 	i := &i18n{
-		languageDir:           opts.languageDir,
+		languageDir:           opts.LanguageDir,
 		languageBaseInterface: baseLangManager,
 	}
 
@@ -330,8 +337,8 @@ func ContextWithLang(ctx context.Context, lang LanguageType) context.Context {
 type Options struct {
 	// DefaultLang If the required language or key does not exist, the default language will be used.
 	DefaultLang LanguageType
-	// languageDir Direct files to be loaded
-	languageDir string
+	// LanguageDir Direct files to be loaded
+	LanguageDir string
 }
 
 // cmpKeyWithDefault compare key with default language key
