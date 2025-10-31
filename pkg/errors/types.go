@@ -25,17 +25,17 @@ type ErrorCode string
 
 const (
 	// INVALID_REQUEST invalid request
-	INVALID_REQUEST ErrorCode = "Bad Request"
+	INVALID_REQUEST ErrorCode = "BAD_REQUEST"
 	// UNAUTHENTICATED unauthenticated
-	UNAUTHENTICATED ErrorCode = "Unauthorized"
+	UNAUTHENTICATED ErrorCode = "UNAUTHORIZED"
 	// NO_PERMISSION no permission
-	NO_PERMISSION ErrorCode = "Forbidden"
+	NO_PERMISSION ErrorCode = "FORBIDDEN"
 	// RATELIMIT_EXCEED rate limit exceed
-	RATELIMIT_EXCEED ErrorCode = "Too Many Requests"
+	RATELIMIT_EXCEED ErrorCode = "TOO_MANY_REQUESTS"
 	// INTERNAL internal error
-	INTERNAL ErrorCode = "Server Error"
+	INTERNAL ErrorCode = "SERVER_ERROR"
 	// UNKNOWN unknown error
-	UNKNOWN ErrorCode = "Unknown Error"
+	UNKNOWN ErrorCode = "UNKNOWN_ERROR"
 )
 
 // StatusCodeMap error code and status map

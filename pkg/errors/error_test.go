@@ -21,14 +21,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 )
 
 // 测试error转换成responseErr
 // 测试error的detail解析
 // 测试join类型解析
-// 测试validator解析
 func Test_ErrorConv(t *testing.T) {
 	errManager := NewErrorManager()
 
@@ -51,30 +49,4 @@ func Test_ErrorConv(t *testing.T) {
 		assert.Equal(t, "this is error three", details[2])
 	})
 
-}
-
-// RegisterModel struct for test validate
-type RegisterModel struct {
-	Username string `validate:"required,numeric"`
-	Password string `validate:"required,numeric"`
-	Name     string `validate:"required"`
-	Age      int    `validate:"required,gte=0,lte=100,numeric"`
-	Gender   string `validate:"required,oneof=男 女"`
-}
-
-func Test_validate(t *testing.T) {
-	errManager := NewErrorManager()
-	model := RegisterModel{
-		Username: "123",
-		Password: "456",
-		Name:     "this",
-	}
-
-	validate := validator.New()
-	err := validate.Struct(model)
-	if err != nil {
-		validateErr := WrapValidationErrors(err)
-		details := errManager.UnwrapDetails(validateErr)
-		assert.Equal(t, 2, len(details))
-	}
 }

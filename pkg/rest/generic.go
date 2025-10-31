@@ -25,7 +25,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
@@ -60,20 +59,20 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			log.Error(ctx, "handle decode request failed", log.E(err))
-			ApiRespError(err, w, r, cerr.INVALID_REQUEST)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			log.Error(ctx, "validate req failed", log.E(err))
-			ApiRespError(err, w, r, cerr.INVALID_REQUEST)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
 			return
 		}
 
 		out, respErr := fn(ctx, in)
 		if respErr != nil {
-			ApiRespError(respErr, w, r, "")
+			_ = APIError(ctx, err).Render(w, r)
 			return
 		}
 		_ = APIOK(out).Render(w, r)
@@ -109,14 +108,14 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			log.Error(ctx, "handle decode stream request failed", log.E(err))
-			ApiRespError(err, w, r, cerr.INVALID_REQUEST)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			log.Error(ctx, "validate stream req failed", log.E(err))
-			ApiRespError(err, w, r, cerr.INVALID_REQUEST)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
 			return
 		}
 
@@ -127,7 +126,7 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		}
 
 		if err := fn(in, svr); err != nil {
-			ApiRespError(err, w, r, "")
+			_ = APIError(ctx, err).Render(w, r)
 			return
 		}
 	}
@@ -150,26 +149,4 @@ type PaginationReq struct {
 type PaginationResp[T any] struct {
 	Count int64 `json:"count"`
 	Items []T   `json:"items"`
-}
-
-// ApiRespError return api response error
-func ApiRespError(err error, w http.ResponseWriter, r *http.Request, errorCode cerr.ErrorCode) {
-	if err == nil {
-		err = &cerr.RespError{
-			Code: cerr.UNKNOWN,
-		}
-	}
-
-	convOpts := make([]cerr.ConvOpt, 0)
-	if errorCode != "" {
-		convOpts = append(convOpts, cerr.WithCode(errorCode))
-	}
-
-	var respErr *cerr.RespError
-	// convert error to response error
-	respErr = cerr.GetDefaultErrorManager().ConvToRespError(err, convOpts...)
-
-	// translate error message
-	respErr = i18n.GetDefaultManager().RespError(r.Context(), respErr)
-	_ = APIError(respErr).Render(w, r)
 }

@@ -1,8 +1,8 @@
 {
-  "Bad Request": "由于客户端输入无效或语法错误，服务器无法处理该请求。",
-  "Unauthorized": "请求资源的认证凭证缺失或无效。",
-  "Forbidden": "用户没有足够的权限访问该资源或尝试了禁止的操作。",
-  "Too Many Requests": "请求过于频繁，请稍后再试。",
-  "Server Error": "内部服务错误。",
-  "Unknown Error": "未知错误。"
+  "BAD_REQUEST": "由于客户端输入无效或语法错误，服务器无法处理该请求。",
+  "UNAUTHORIZED": "请求资源的认证凭证缺失或无效。",
+  "FORBIDDEN": "用户没有足够的权限访问该资源或尝试了禁止的操作。",
+  "TOO_MANY_REQUESTS": "请求过于频繁，请稍后再试。",
+  "SERVER_ERROR": "内部服务错误。",
+  "UNKNOWN_ERROR": "未知错误。"
 }

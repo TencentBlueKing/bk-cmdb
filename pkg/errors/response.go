@@ -18,8 +18,6 @@ package cerr
 
 import (
 	"errors"
-
-	"github.com/go-playground/validator/v10"
 )
 
 var errorManager ErrorResponseHandler
@@ -168,6 +166,11 @@ func getDetails(err error) []string {
 		return []string{}
 	}
 
+	var re *ccError
+	if errors.As(err, &re) {
+		err = re.err
+	}
+
 	if uw, ok := err.(multiUnwrapper); ok {
 		var out []string
 		for _, child := range uw.Unwrap() {
@@ -177,22 +180,6 @@ func getDetails(err error) []string {
 	}
 
 	return []string{err.Error()}
-}
-
-// WrapValidationErrors wrap validation errors
-func WrapValidationErrors(err error) error {
-	if err == nil {
-		return nil
-	}
-	var ve validator.ValidationErrors
-	if errors.As(err, &ve) {
-		children := make([]error, 0, len(ve))
-		for _, fe := range ve {
-			children = append(children, &fieldErr{fieldE: fe})
-		}
-		return errors.Join(children...)
-	}
-	return err
 }
 
 func getValues(vals ...any) any {

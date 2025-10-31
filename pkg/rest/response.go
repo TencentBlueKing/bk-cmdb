@@ -17,10 +17,12 @@
 package rest
 
 import (
+	"context"
 	"encoding/json/v2"
 	"net/http"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 )
 
 // Renderer interface for managing response payloads.
@@ -53,9 +55,12 @@ func APIOK(data any) Renderer {
 }
 
 // APIError 错误返回
-func APIError(err *cerr.RespError) Renderer {
+func APIError(ctx context.Context, err error) Renderer {
+	respErr := cerr.GetDefaultErrorManager().ConvToRespError(err)
+	respErr = i18n.GetDefaultManager().RespError(ctx, respErr)
+
 	return &APIResponse{
-		HTTPCode: cerr.GetHTTPStatus(err.Code),
-		Error:    err,
+		HTTPCode: cerr.GetHTTPStatus(respErr.Code),
+		Error:    respErr,
 	}
 }
