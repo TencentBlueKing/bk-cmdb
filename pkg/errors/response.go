@@ -150,8 +150,8 @@ func (r *RespError) Error() string {
 }
 
 // GetCode return error code
-func (r *RespError) GetCode() string {
-	return r.Message
+func (r *RespError) GetCode() ErrorCode {
+	return r.Code
 }
 
 type (
@@ -161,14 +161,14 @@ type (
 // UnwrapDetails unwrap error for details, which is  joined
 func (m *HttpErrorManager) UnwrapDetails(err error) []string {
 	if err == nil {
-		return nil
+		return []string{}
 	}
 	return getDetails(err)
 }
 
 func getDetails(err error) []string {
 	if err == nil {
-		return nil
+		return []string{}
 	}
 
 	if uw, ok := err.(multiUnwrapper); ok {

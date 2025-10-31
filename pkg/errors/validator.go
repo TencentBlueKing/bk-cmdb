@@ -30,6 +30,6 @@ func (e *fieldErr) Error() string {
 }
 
 // GetCode return error code
-func (e *fieldErr) GetCode() string {
-	return "ValidationError"
+func (e *fieldErr) GetCode() ErrorCode {
+	return UNKNOWN
 }

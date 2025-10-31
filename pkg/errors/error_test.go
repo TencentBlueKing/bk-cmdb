@@ -37,7 +37,6 @@ func Test_ErrorConv(t *testing.T) {
 		respErr := errManager.ConvToRespError(err)
 		assert.Equal(t, INVALID_REQUEST, respErr.Code)
 		assert.Equal(t, "test invalid request", respErr.Details[0])
-		assert.Equal(t, "test invalid request", respErr.Details[0])
 	})
 
 	t.Run("error join parse test", func(t *testing.T) {

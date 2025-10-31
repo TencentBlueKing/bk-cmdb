@@ -20,7 +20,7 @@ import (
 	"encoding/json/v2"
 	"net/http"
 
-	ccError "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 )
 
 // Renderer interface for managing response payloads.
@@ -30,9 +30,9 @@ type Renderer interface {
 
 // APIResponse response for api request
 type APIResponse struct {
-	HTTPCode int                `json:"-"`               // http response status code
-	Error    *ccError.RespError `json:"error,omitempty"` // response error
-	Data     any                `json:"data,omitempty"`  // response data
+	HTTPCode int             `json:"-"`               // http response status code
+	Error    *cerr.RespError `json:"error,omitempty"` // response error
+	Data     any             `json:"data,omitempty"`  // response data
 }
 
 // Render chi render interface implementation
@@ -53,9 +53,9 @@ func APIOK(data any) Renderer {
 }
 
 // APIError 错误返回
-func APIError(err *ccError.RespError) Renderer {
+func APIError(err *cerr.RespError) Renderer {
 	return &APIResponse{
-		HTTPCode: ccError.GetHTTPStatus(err.Code),
+		HTTPCode: cerr.GetHTTPStatus(err.Code),
 		Error:    err,
 	}
 }

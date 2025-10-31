@@ -129,6 +129,8 @@ func (l *multilingual) isSupportedLang(lang LanguageType) bool {
 
 // T general translator, translate key, return key if not found
 func (l *multilingual) T(ctx context.Context, key string, args ...any) string {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
 	lang := GetLangFromCtx(ctx)
 	if p, ok := l.languagePrinter[lang]; ok {
 		return p.Sprintf(key, args...)
