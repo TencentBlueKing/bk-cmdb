@@ -204,7 +204,7 @@ func RuleJSONHasKey(fieldName string, value string) *AtomRule {
 	}
 }
 
-// RuleArrayEqual 生成资源字段等于查询的AtomRule，即fieldName=values
+// RuleArrayEqual 生成资源字段等于查询的AtomRule，即fieldName=values，顺序必须一致
 func RuleArrayEqual[T types.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayEqual.Factory(), Value: values}
 }
@@ -229,12 +229,12 @@ func RuleArrayOverlap[T types.ArrayElem](fieldName string, values []T) *AtomRule
 	return &AtomRule{Field: fieldName, Op: ArrayOverlap.Factory(), Value: values}
 }
 
-// RuleArrayIsEmpty 指定字段是否为空数组
+// RuleArrayIsEmpty 指定字段是否为空数组，包含 NULL 和 零长数组
 func RuleArrayIsEmpty(fieldName string) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayIsEmpty.Factory()}
 }
 
-// RuleArrayNotEmpty 指定字段是否不为空数组
+// RuleArrayNotEmpty 指定字段是否不为空数组，即长度大于0
 func RuleArrayNotEmpty(fieldName string) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayNotEmpty.Factory()}
 }
