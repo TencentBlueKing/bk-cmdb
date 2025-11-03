@@ -59,7 +59,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 		shouldFound  []arrayTestModel
 	}{
 		{
-			name: "EmptySlice-Equal",
+			name: "EmptySlice-Equal-int64",
 			args: args{
 				rule: filter.RuleArrayEqual("int_array", []int64{}),
 			},
@@ -69,7 +69,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			shouldFound: []arrayTestModel{},
 		},
 		{
-			name: "EmptySlice-Equal",
+			name: "EmptySlice-Equal-bool",
 			args: args{
 				rule: filter.RuleArrayEqual("bool_array", []bool{}),
 			},
@@ -108,6 +108,17 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			want:        &SimpleExpression{Column: "int_array", OP: "&&", Value: `{}`},
 			wantSQL:     `"int_array" && $1`,
 			wantVars:    []any{`{}`},
+			shouldFound: []arrayTestModel{},
+		},
+		{
+			name: "Equal-out-of-order",
+			args: args{
+				rule: filter.RuleArrayEqual("int_array", []int64{3, 2, 1}),
+			},
+			want:     &SimpleExpression{Column: "int_array", OP: "=", Value: `{3,2,1}`},
+			wantSQL:  `"int_array" = $1`,
+			wantVars: []any{`{3,2,1}`},
+			// found nothing
 			shouldFound: []arrayTestModel{},
 		},
 		{
@@ -252,7 +263,17 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			shouldFound: []arrayTestModel{arrayInst2, arrayInst3},
 		},
 		{
-			name: "isEmpty",
+			name: "Overlap-out-of-order",
+			args: args{
+				rule: filter.RuleArrayOverlap("int_array", []int64{3, 2, 1}),
+			},
+			want:        &SimpleExpression{Column: "int_array", OP: "&&", Value: `{3,2,1}`},
+			wantSQL:     `"int_array" && $1`,
+			wantVars:    []any{`{3,2,1}`},
+			shouldFound: []arrayTestModel{arrayInst1},
+		},
+		{
+			name: "IsEmpty",
 			args: args{
 				rule: filter.RuleArrayIsEmpty("bool_array"),
 			},
@@ -264,7 +285,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			shouldFound: []arrayTestModel{arrayInst1, arrayInst2},
 		},
 		{
-			name: "notEmpty",
+			name: "NotEmpty",
 			args: args{
 				rule: filter.RuleArrayNotEmpty("bool_array"),
 			},
@@ -472,6 +493,18 @@ func Test_buildArraySQL(t *testing.T) {
 			name:    "float64",
 			arg:     []float64{1, 2},
 			wantSql: `{1,2}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "nil",
+			arg:     nil,
+			wantSql: `{}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "typed-nil",
+			arg:     []int64(nil),
+			wantSql: `{}`,
 			wantErr: assert.NoError,
 		},
 	}

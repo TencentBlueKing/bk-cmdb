@@ -94,11 +94,10 @@ func (ig *idGenerator) One(ctx context.Context, resource table.Name) (string, er
 	return list[0], nil
 }
 
-// Batch is to generate distribute unique resource id list.
-// returned with a number of unique ids as required.
+// Batch is to generate distribute unique resource id list. returned with a number of unique ids as required.
 func (ig *idGenerator) Batch(ctx context.Context, resource table.Name, count uint64) (ids []string, err error) {
 	f := ig.BatchUpdateReturning
-	if ig.db.Name() != "postgres" {
+	if orm.IsPostgres(ig.db) {
 		// only pg support update returning
 		f = ig.BatchQueryUpdate
 	}
@@ -196,6 +195,7 @@ func (ig *idGenerator) BatchUpdateReturning(ctx context.Context, resource table.
 		return nil, fmt.Errorf("gen %s unique id, but update with returning failed, err: %w", resource, err)
 	}
 	if ret.RowsAffected == 0 || newMaxID == 0 {
+		// only trigger when resource row is not exist
 		newMaxID = count
 		err = ig.initTable(ctx, ig.db, resource, newMaxID)
 		if err != nil {

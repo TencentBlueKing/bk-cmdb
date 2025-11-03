@@ -125,7 +125,7 @@ type wrapper interface {
 type emptyWrapper struct{}
 
 // Wrap write nothing
-func (e *emptyWrapper) Wrap(builder clause.Builder, val any) {
+func (e *emptyWrapper) Wrap(_ clause.Builder, _ any) {
 }
 
 // RawValueWithFunction raw value function
@@ -149,7 +149,7 @@ func (a *RawValueWithFunction) GetExpression(column, value any) (clause.Expressi
 
 func buildArraySQL(value any) (sql string, err error) {
 	if value == nil {
-		return "", nil
+		return "{}", nil
 	}
 	var encoder = pq.Array(value)
 	val, err := encoder.Value()

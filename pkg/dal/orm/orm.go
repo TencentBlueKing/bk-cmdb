@@ -45,3 +45,11 @@ func IsDuplicatedError(err error) bool {
 	}
 	return false
 }
+
+// GROMDatabasePostgres postgres
+const GROMDatabasePostgres = "postgres"
+
+// IsPostgres check db is a postgres dialector
+func IsPostgres(db *gorm.DB) bool {
+	return db.Name() == GROMDatabasePostgres
+}

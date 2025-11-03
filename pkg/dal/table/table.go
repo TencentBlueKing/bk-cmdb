@@ -28,7 +28,7 @@ type Name string
 
 const (
 	// IDGeneratorTable ...
-	IDGeneratorTable Name = "id_generator_test"
+	IDGeneratorTable Name = "id_generator"
 	// TestModelTable ...
 	TestModelTable Name = "test_model"
 )

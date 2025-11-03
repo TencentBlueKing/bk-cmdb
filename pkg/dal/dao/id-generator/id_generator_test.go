@@ -210,6 +210,72 @@ func TestParallelBatch(t *testing.T) {
 	})
 }
 
+func TestBatchZero(t *testing.T) {
+	db, err := tests.GetRealDB(t)
+	if err != nil {
+		t.Errorf("failed to open gorm db: %v", err)
+		return
+	}
+	err = db.Migrator().AutoMigrate(&table.IDGenerator{})
+	if err != nil {
+		t.Fatalf("failed to auto migrate: idgen table, err: %v", err)
+		return
+	}
+
+	ctx := context.Background()
+
+	resName := table.Name(time.Now().Format("test_20060102_150405"))
+	clean := func() {
+		delResult := db.Model(&table.IDGenerator{}).
+			Where("resource in ?", []table.Name{resName}).
+			Delete(&table.IDGenerator{})
+		if delResult.Error != nil {
+			t.Fatalf("failed to delete idgen record for %s, err: %v", resName, delResult.Error)
+			return
+		}
+	}
+	t.Cleanup(clean)
+	resName.Register(&table.IDGenerator{})
+
+	idGen := &idGenerator{db: db}
+
+	t.Run("BatchQueryUpdate zero", func(t *testing.T) {
+		clean()
+		if t.Failed() {
+			return
+		}
+		ids, err := idGen.BatchQueryUpdate(ctx, resName, 0)
+		assert.NoError(t, err)
+		assert.Len(t, ids, 0)
+		t.Run("test batch zero", func(t *testing.T) {
+			ids, err = idGen.BatchQueryUpdate(ctx, resName, 1)
+			assert.NoError(t, err)
+			assert.Equal(t, []string{"00000001"}, ids)
+
+			ids, err = idGen.BatchQueryUpdate(ctx, resName, 0)
+			assert.NoError(t, err)
+			assert.Len(t, ids, 0)
+		})
+	})
+
+	t.Run("BatchUpdateReturning zero", func(t *testing.T) {
+		clean()
+		ids, err := idGen.BatchUpdateReturning(ctx, resName, 0)
+		assert.NoError(t, err)
+		assert.Len(t, ids, 0)
+		t.Run("test batch zero", func(t *testing.T) {
+			ids, err = idGen.BatchUpdateReturning(ctx, resName, 1)
+			assert.NoError(t, err)
+			assert.Equal(t, []string{"00000001"}, ids)
+
+			ids, err = idGen.BatchUpdateReturning(ctx, resName, 0)
+			assert.NoError(t, err)
+			assert.Len(t, ids, 0)
+		})
+	})
+
+}
+
 type idGenFunc func(ctx context.Context, resource table.Name, count uint64) ([]string, error)
 
 func testParallelGen(t *testing.T, idGenFunc idGenFunc, ctx context.Context, resName table.Name, currentMax,
@@ -261,16 +327,6 @@ func testParallelGen(t *testing.T, idGenFunc idGenFunc, ctx context.Context, res
 	assert.Equal(t, uint64(exceptedMaxID), maxID, "max id should be currentMax + total")
 }
 
-type IDGeneratorINT struct {
-	Resource table.Name `json:"resource,omitempty" gorm:"resource;primaryKey;size:64"`
-	MaxID    int64      `json:"max_id,omitempty" gorm:"max_id;default:0"`
-	Prefix   string     `json:"prefix,omitempty" gorm:"prefix;size:64;default:''"`
-}
-
-func (i *IDGeneratorINT) TableName() string {
-	return "id_generator_int"
-}
-
 func BenchmarkIdGenerator_Batch(b *testing.B) {
 	db, err := tests.GetRealDB(b)
 	if err != nil {
@@ -278,16 +334,13 @@ func BenchmarkIdGenerator_Batch(b *testing.B) {
 		return
 	}
 	db.Logger = logger.Default.LogMode(logger.Error)
-	err = db.Migrator().AutoMigrate(&table.IDGenerator{}, &IDGeneratorINT{})
+	err = db.Migrator().AutoMigrate(&table.IDGenerator{})
 	if err != nil {
 		b.Fatalf("failed to auto migrate: idgen table, err: %v", err)
 	}
 
 	resName := table.Name(fmt.Sprintf("test_%d", time.Now().Unix()))
 	resName.Register(&table.IDGenerator{})
-
-	resNameInt := table.Name(fmt.Sprintf("test_%d", time.Now().Unix()))
-	resNameInt.Register(&IDGeneratorINT{})
 
 	b.Cleanup(func() {
 		delResult := db.Model(&table.IDGenerator{}).
