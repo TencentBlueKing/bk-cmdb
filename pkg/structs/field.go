@@ -41,12 +41,12 @@ const (
 
 // fieldTypeRegistry is the mapping of field type to reflection type.
 var fieldTypeRegistry = map[FieldType]reflect.Type{
-	Int64Type:   reflect.TypeOf(int64(0)),
-	StringType:  reflect.TypeOf(""),
-	Float64Type: reflect.TypeOf(float64(0)),
-	BoolType:    reflect.TypeOf(false),
-	TimeType:    reflect.TypeOf(time.Time{}),
-	MapType:     reflect.TypeOf(map[string]any{}),
+	Int64Type:   reflect.TypeFor[int64](),
+	StringType:  reflect.TypeFor[string](),
+	Float64Type: reflect.TypeFor[float64](),
+	BoolType:    reflect.TypeFor[bool](),
+	TimeType:    reflect.TypeFor[time.Time](),
+	MapType:     reflect.TypeFor[map[string]any](),
 }
 
 // RegisterFieldType registers field type and its corresponding reflection type to the registry.

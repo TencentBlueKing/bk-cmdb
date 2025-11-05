@@ -6,3 +6,4 @@ build
 bin
 .idea
 /pkg/proto/github.com/
+.run
