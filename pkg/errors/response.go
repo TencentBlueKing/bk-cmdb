@@ -18,18 +18,86 @@ package cerr
 
 import (
 	"errors"
+	"sync"
 )
 
-var errorManager ErrorResponseHandler
-
-// SetDefaultErrorManager set default error manager
-func SetDefaultErrorManager(m *HttpErrorManager) {
-	errorManager = m
+// ErrorRespConvertor convert error to response error interface
+type ErrorRespConvertor interface {
+	// ConvToRespError convert error to response error
+	ConvToRespError(err error, opts ...convOpt) *RespError
 }
 
-// GetDefaultErrorManager GetDefaultManager get default error manager
-func GetDefaultErrorManager() ErrorResponseHandler {
-	return errorManager
+type (
+	// httpRespErrorConvertor http response error convertor to covert error to response error
+	httpRespErrorConvertor struct{}
+	// convOpt convert error to response error option
+	convOpt func(re *RespError)
+	// clientOpt func(re *httpRespErrorConvertor) error
+	clientOpt func(re *httpRespErrorConvertor) error
+)
+
+// NewErrorClient return error client
+func NewErrorClient(opts ...clientOpt) error {
+	client := &httpRespErrorConvertor{}
+	for _, opt := range opts {
+		if err := opt(client); err != nil {
+			return err
+		}
+	}
+
+	initErrorClient(client)
+	return nil
+}
+
+// ConvToRespError convert error to response error with convert options
+func (m *httpRespErrorConvertor) ConvToRespError(err error, opts ...convOpt) *RespError {
+	if err == nil {
+		err = NewError(Unknown, "unknown error")
+	}
+
+	// add system or detail info
+	var re *RespError
+	if errors.As(err, &re) {
+		if len(re.Details) == 0 && re.DetailError != nil {
+			re.Details = unwrapDetails(re.DetailError)
+		}
+		for _, opt := range opts {
+			opt(re)
+		}
+		return re
+	}
+
+	code := Unknown
+	var codeErr CodeError
+	if errors.As(err, &codeErr) {
+		code = codeErr.GetCode()
+	}
+
+	re = &RespError{
+		Code:        code,
+		Details:     unwrapDetails(err),
+		DetailError: err,
+	}
+
+	for _, opt := range opts {
+		opt(re)
+	}
+	return re
+}
+
+var (
+	errorClient ErrorRespConvertor
+	setOnce     sync.Once
+)
+
+// setDefaultErrorManager set default error manager
+func initErrorClient(m *httpRespErrorConvertor) {
+	setOnce.Do(func() { errorClient = m })
+}
+
+// ErrorClient GetDefaultManager get default error manager
+func ErrorClient() ErrorRespConvertor {
+	return errorClient
 }
 
 // RespError response error info for out layer
@@ -44,95 +112,8 @@ type RespError struct {
 	DetailError error `json:"-"`
 }
 
-// HttpErrorManager error manager
-type HttpErrorManager struct{}
-
-// managerOpt for new error manager client options
-type managerOpt func(re *HttpErrorManager)
-
-// NewErrorManager return error manager
-func NewErrorManager(opts ...managerOpt) *HttpErrorManager {
-	manager := &HttpErrorManager{}
-	for _, opt := range opts {
-		opt(manager)
-	}
-	return manager
-}
-
-// ErrorResponseHandler default error interfaces
-type ErrorResponseHandler interface {
-	ConvToRespError(err error, opts ...ConvOpt) *RespError
-}
-
-// ConvOpt convert error to response error option
-type ConvOpt func(re *RespError)
-
-// ConvToRespError convert error to response error with convert options
-func (m *HttpErrorManager) ConvToRespError(err error, opts ...ConvOpt) *RespError {
-	if err == nil {
-		return nil
-	}
-
-	// add system or detail info
-	var re *RespError
-	if errors.As(err, &re) {
-		if len(re.Details) == 0 && re.DetailError != nil {
-			re.Details = m.UnwrapDetails(re.DetailError)
-		}
-		for _, opt := range opts {
-			opt(re)
-		}
-		return re
-	}
-
-	code := UNKNOWN
-	var codeErr CodeError
-	if errors.As(err, &codeErr) {
-		code = codeErr.GetCode()
-	}
-
-	re = &RespError{
-		Code:        code,
-		Details:     m.UnwrapDetails(err),
-		DetailError: err,
-	}
-
-	for _, opt := range opts {
-		opt(re)
-	}
-	return re
-}
-
-// WithCode set code for response error
-func WithCode(code ErrorCode) ConvOpt {
-	return func(re *RespError) {
-		re.Code = code
-	}
-}
-
-// WithMessage set message for response error
-func WithMessage(msg string) ConvOpt {
-	return func(re *RespError) {
-		re.Message = msg
-	}
-}
-
-// WithData set data for response error
-func WithData(vals ...any) ConvOpt {
-	return func(re *RespError) {
-		re.Data = getValues(vals...)
-	}
-}
-
-// WithDetailErr set detail error for response error
-func WithDetailErr(detailErr error) ConvOpt {
-	return func(re *RespError) {
-		re.DetailError = detailErr
-	}
-}
-
 // NewRespError new response error
-func (m *HttpErrorManager) NewRespError(code ErrorCode, data ...any) *RespError {
+func (m *httpRespErrorConvertor) NewRespError(code ErrorCode, data ...any) *RespError {
 	return &RespError{
 		Code: code,
 		Data: getValues(data...),
@@ -149,12 +130,40 @@ func (r *RespError) GetCode() ErrorCode {
 	return r.Code
 }
 
+// WithCode set code for response error
+func WithCode(code ErrorCode) convOpt {
+	return func(re *RespError) {
+		re.Code = code
+	}
+}
+
+// WithMessage set message for response error
+func WithMessage(msg string) convOpt {
+	return func(re *RespError) {
+		re.Message = msg
+	}
+}
+
+// WithData set data for response error
+func WithData(vals ...any) convOpt {
+	return func(re *RespError) {
+		re.Data = getValues(vals...)
+	}
+}
+
+// WithDetailErr set detail error for response error
+func WithDetailErr(detailErr error) convOpt {
+	return func(re *RespError) {
+		re.DetailError = detailErr
+	}
+}
+
 type (
 	multiUnwrapper interface{ Unwrap() []error }
 )
 
 // UnwrapDetails unwrap error for details, which is  joined
-func (m *HttpErrorManager) UnwrapDetails(err error) []string {
+func unwrapDetails(err error) []string {
 	if err == nil {
 		return []string{}
 	}

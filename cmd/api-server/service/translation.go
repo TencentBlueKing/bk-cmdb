@@ -17,36 +17,30 @@
 package service
 
 import (
-	"context"
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
-
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/server/middleware"
 )
 
-// NewRouter creates a new api-server router.
-func (s *Service) NewRouter(ctx context.Context) (http.Handler, error) {
-	r := chi.NewRouter()
-	r.Use(I18nMiddleware)
+// TranslationRequest translation request
+type TranslationRequest struct {
+	DefaultLang string `req:"default_lang,in:query"`
+	LangPath    string `req:"lang_path,in:query"`
+}
 
-	r.Use(Authentication) // 统一鉴权中间件
-	r.Use(middleware.ConvHttpMiddleware(middleware.PrintHttpLog, s.metric.HTTPMiddleware))
+// ReloadTranslation for reload translation
+func (s *service) ReloadTranslation(kt *kit.Kit, req *TranslationRequest) (*rest.EmptyResp, error) {
+	log.Info(kt, "handle ReloadTranslation")
 
-	// register grpc gateway http handlers
-	grpcMux, err := s.newGrpcMux(ctx)
+	err := i18n.Reload(kt, &i18n.Options{
+		LanguageDir: req.LangPath,
+		DefaultLang: i18n.LanguageType(req.DefaultLang),
+	})
 	if err != nil {
-		log.Error(ctx, "new grpc mux failed", log.E(err), "addr", grpcMux)
+		log.Error(kt, "reload language failed, err: %w", err)
 		return nil, err
 	}
-	r.Mount("/", grpcMux)
 
-	// register restful http handlers
-	r.Post("/api/v4/user/info", rest.Handle(s.UserInfo))
-	r.Post("/api/v4/authorized/users", rest.Handle(s.ListAuthorizedUsers))
-
-	r.Post("/api/v4/reload/translation", rest.Handle(s.ReloadTranslation))
-	return r, nil
+	return nil, nil
 }

@@ -1,5 +1,6 @@
 {
-  "BAD_REQUEST": "The server cannot process the request due to invalid client input or malformed syntax.",
+  "INVALID_REQUEST": "The request is invalid or cannot be processed.",
+  "INVALID_ARGUMENT": "The request contained an invalid argument.",
   "UNAUTHORIZED": "Authentication credentials are missing or invalid for the requested resource.",
   "FORBIDDEN": "The user did not have the necessary permissions for a resource or needing an account of some sort, or attempting a prohibited action.",
   "TOO_MANY_REQUESTS": "Request rate limit exceeded. Please try again later.",

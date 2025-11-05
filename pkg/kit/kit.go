@@ -31,26 +31,21 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/constant"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 const (
 	defaultScopeName = "kit"
-	// UserHeader is the username http header key, its value set by apiserver auth middleware
-	UserHeader = "X-Cmdb-User"
-	// AppCodeHeader is the blueking app code http header key, its value set by apiserver auth middleware
-	AppCodeHeader = "X-Cmdb-App-Code"
-	// TenantHeader is tenant http header key
-	TenantHeader = "X-Bk-Tenant-Id"
 )
 
 // Metadata the biz metadata
 type Metadata struct {
-	User     string            // 操作人
-	AppCode  string            // 来源AppCode
-	TenantID string            // 来源多租户ID
-	Language i18n.LanguageType // 语言
+	User     string // 操作人
+	AppCode  string // 来源AppCode
+	TenantID string // 来源多租户ID
+	Lang     string // 请求语言
 }
 
 // Kit a biz metadata and context kit
@@ -84,9 +79,9 @@ func (kt *Kit) StartSpan(name string, opts ...trace.SpanStartOption) (*Kit, trac
 
 	// auto set metadata attr
 	span.SetAttributes(
-		attribute.String(UserHeader, kt.User),
-		attribute.String(AppCodeHeader, kt.AppCode),
-		attribute.String(TenantHeader, kt.TenantID),
+		attribute.String(constant.UserHeader, kt.User),
+		attribute.String(constant.AppCodeHeader, kt.AppCode),
+		attribute.String(constant.TenantHeader, kt.TenantID),
 	)
 
 	ctx = log.WithSpan(ctx, span)
@@ -124,9 +119,10 @@ func NewKit(ctx context.Context, md Metadata) *Kit {
 // NewKitFromHeader 从http header中获取metadata
 func NewKitFromHeader(ctx context.Context, header http.Header) *Kit {
 	md := Metadata{
-		User:     header.Get(UserHeader),
-		AppCode:  header.Get(AppCodeHeader),
-		TenantID: header.Get(TenantHeader),
+		User:     header.Get(constant.UserHeader),
+		AppCode:  header.Get(constant.AppCodeHeader),
+		TenantID: header.Get(constant.TenantHeader),
+		Lang:     header.Get(constant.HTTPLanguageHeader),
 	}
 	return NewKit(ctx, md)
 }
@@ -140,6 +136,17 @@ func newKit(ctx context.Context, md Metadata) *Kit {
 		i18n.BKHTTPLanguage, string(md.Language),
 	))
 	return &Kit{Context: ctx, Metadata: md}
+}
+
+// DefaultKit generate new kit with default parameters
+func DefaultKit() *Kit {
+	// todo set default TenantID
+	md := Metadata{
+		User: constant.CCSystemOperatorUserName,
+		Lang: constant.DefaultLanguage,
+	}
+
+	return NewKit(context.Background(), md)
 }
 
 // getCaller 获取调用函数名

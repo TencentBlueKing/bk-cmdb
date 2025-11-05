@@ -22,16 +22,16 @@ import (
 	"fmt"
 )
 
-// ccError cc error type for internal call
-type ccError struct {
-	code ErrorCode
-	err  error
-}
-
 // CodeError interface for errors
 type CodeError interface {
 	Error() string
 	GetCode() ErrorCode
+}
+
+// ccError cc error type for internal call
+type ccError struct {
+	code ErrorCode
+	err  error
 }
 
 // CodeError implementation of errors interface
@@ -45,8 +45,8 @@ func (cli *ccError) GetCode() ErrorCode {
 }
 
 // Unwrap unwrap single error
-func (ce *ccError) Unwrap() error {
-	return ce.err
+func (cli *ccError) Unwrap() error {
+	return cli.err
 }
 
 // NewError create new error with code and msg, use for internal error

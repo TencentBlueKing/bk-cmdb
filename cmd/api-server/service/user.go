@@ -67,7 +67,7 @@ func (s *Service) UserInfo(kt *kit.Kit, req *UserInfoReq) (*UserInfoResp, error)
 	}
 
 	resp := &UserInfoResp{
-		Username: i18n.GetDefaultManager().Sys(kt, req.Username),
+		Username: i18n.Sys(kt, req.Username),
 		Age:      req.Age + 10,
 		Games:    req.Games,
 		Ko:       string(req.Ko),

@@ -19,6 +19,7 @@ package service
 import (
 	"net/http"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/constant"
 	cerr "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
@@ -30,42 +31,41 @@ import (
 func I18nMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		lang := pickTag(r)
-		err := i18n.GetDefaultManager().Validate(lang)
-		if err != nil {
+		if err := i18n.Validate(lang); err != nil {
 			log.Error(r.Context(), "invalid language", "lang", lang, log.E(err))
 			err := &cerr.RespError{
-				Code:        cerr.INVALID_REQUEST,
+				Code:        cerr.InvalidArgument,
 				DetailError: err,
 			}
-			_ = rest.APIError(r.Context(), err).Render(w)
+			_ = rest.APIError(kit.DefaultKit(), err).Render(w)
 			return
 		}
 
-		ctx := i18n.ContextWithLang(r.Context(), lang)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		r.Header.Set(constant.HTTPLanguageHeader, string(lang))
+		next.ServeHTTP(w, r)
 	})
 }
 
 func pickTag(r *http.Request) i18n.LanguageType {
-	if c, err := r.Cookie(i18n.HTTPCookieLanguage); err == nil && c.Value != "" {
+	if c, err := r.Cookie(constant.HTTPLanguageCookie); err == nil && c.Value != "" {
 		return i18n.LanguageType(c.Value)
 	}
 
-	if h := r.Header.Get(i18n.BKHTTPLanguage); h != "" {
+	if h := r.Header.Get(constant.HTTPLanguageHeader); h != "" {
 		return i18n.LanguageType(h)
 	}
 
 	// if language is not set, use default language
-	return i18n.GetDefaultManager().GetDefaultLang()
+	return i18n.DefaultLang()
 }
 
 // Authentication 统一鉴权中间件
 func Authentication(next http.Handler) http.Handler {
 	f := func(w http.ResponseWriter, r *http.Request) {
 		// TODO: 这里需要根据实际的鉴权逻辑来实现
-		r.Header.Set(kit.AppCodeHeader, "test")
-		r.Header.Set(kit.UserHeader, "test")
-		r.Header.Set(kit.TenantHeader, "default")
+		r.Header.Set(constant.AppCodeHeader, "test")
+		r.Header.Set(constant.UserHeader, "test")
+		r.Header.Set(constant.TenantHeader, "default")
 
 		next.ServeHTTP(w, r)
 	}

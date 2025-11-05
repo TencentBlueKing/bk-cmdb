@@ -50,28 +50,26 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 			collectHandleMetrics(handleName, r.Method, st, err)
 		}()
 
-		ctx := r.Context()
+		kt := kit.NewKitFromHeader(r.Context(), r.Header)
 
 		// 反序列化
 		in, err := decodeReq[Req](r)
 		if err != nil {
-			log.Error(ctx, "handle decode request failed", log.E(err))
-			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w)
+			log.Error(kt, "handle decode request failed", log.E(err))
+			_ = APIError(kt, cerr.Wrap(cerr.InvalidRequest, err)).Render(w)
 			return
 		}
 
 		// 参数校验
-		if err = validateReq(r.Context(), in); err != nil {
-			log.Error(ctx, "validate req failed", log.E(err))
-			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w)
+		if err = validateReq(kt, in); err != nil {
+			log.Error(kt, "validate req failed", log.E(err))
+			_ = APIError(kt, cerr.Wrap(cerr.InvalidRequest, err)).Render(w)
 			return
 		}
 
-		kt := kit.NewKitFromHeader(ctx, r.Header)
-
 		out, respErr := fn(kt, in)
 		if respErr != nil {
-			_ = APIError(ctx, respErr).Render(w)
+			_ = APIError(kt, respErr).Render(w)
 			return
 		}
 
@@ -103,23 +101,22 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		}()
 
 		ctx := r.Context()
+		kt := kit.NewKitFromHeader(ctx, r.Header)
 
 		// 反序列化
 		in, err := decodeReq[Req](r)
 		if err != nil {
-			log.Error(ctx, "handle decode stream request failed", log.E(err))
-			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w)
+			log.Error(kt, "handle decode stream request failed", log.E(err))
+			_ = APIError(kt, cerr.Wrap(cerr.InvalidRequest, err)).Render(w)
 			return
 		}
 
 		// 参数校验
-		if err = validateReq(r.Context(), in); err != nil {
-			log.Error(ctx, "validate stream req failed", log.E(err))
-			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w)
+		if err = validateReq(kt, in); err != nil {
+			log.Error(kt, "validate stream req failed", log.E(err))
+			_ = APIError(kt, cerr.Wrap(cerr.InvalidRequest, err)).Render(w)
 			return
 		}
-
-		kt := kit.NewKitFromHeader(ctx, r.Header)
 
 		svr := &streamingServer{
 			ResponseWriter:     w,
@@ -128,7 +125,7 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		}
 
 		if err := fn(in, svr); err != nil {
-			_ = APIError(ctx, err).Render(w)
+			_ = APIError(kt, err).Render(w)
 			return
 		}
 	}

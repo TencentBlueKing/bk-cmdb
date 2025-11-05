@@ -14,27 +14,15 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package i18n
-
-// LanguageType the language type
-type LanguageType string
-
-// Language constant definitions must align with specifications, and remain consistent with resource directory naming
-// conventions.
-const (
-	// CN Chinese
-	CN LanguageType = "zh-cn"
-	// EN English
-	EN LanguageType = "en"
-)
+package constant
 
 const (
-	// languageDir static compilation folder name, static compilation file read from this directory.
-	languageDir = "resource"
+	// UserHeader is the username http header key, its value set by apiserver auth middleware
+	UserHeader = "X-Cmdb-User"
+	// AppCodeHeader is the blueking app code http header key, its value set by apiserver auth middleware
+	AppCodeHeader = "X-Cmdb-App-Code"
+	// TenantHeader is tenant http header key
+	TenantHeader = "X-Bk-Tenant-Id"
+	// HTTPLanguageHeader is the language http header key, its value set by i18n middleware
+	HTTPLanguageHeader = "blueking-language"
 )
-
-var allLanguages = []LanguageType{CN, EN}
-
-func getAllLanguages() []LanguageType {
-	return allLanguages
-}
