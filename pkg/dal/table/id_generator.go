@@ -14,25 +14,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package util
+package table
 
-import "reflect"
-
-// GetString test if an interface is the string type, if yes, return the string value
-func GetString(value any) (str string, ok bool) {
-	v := reflect.ValueOf(value)
-	if v.Kind() == reflect.String {
-		return v.String(), true
-	}
-	return "", false
+// IDGenerator id generator model
+type IDGenerator struct {
+	// Resource identify id, commonly be table name.
+	// Note: the length limit of table name on PostgreSQL is 63 characters, on MySQL it is 64 characters.
+	Resource Name   `json:"resource" gorm:"resource;primaryKey;size:64"`
+	MaxID    uint64 `json:"max_id" gorm:"max_id;size:64;default:0"`
 }
 
-var reflectTypeAny = reflect.TypeFor[any]()
-
-// UnpackAny unpack any type
-func UnpackAny(value reflect.Value) reflect.Value {
-	if value.Type() == reflectTypeAny {
-		value = value.Elem()
-	}
-	return value
+// TableName id generator table name
+func (ig IDGenerator) TableName() string {
+	return IDGeneratorTable.String()
 }

@@ -14,8 +14,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dal ...
-package dal
+// Package conv ...
+package conv
 
 import (
 	"errors"
@@ -28,24 +28,24 @@ import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
-// ConvFilter convert non-nil filter to gorm clause expression
-func ConvFilter(flt filter.RuleFactory) (clause.Expression, error) {
+// Filter convert non-nil filter to gorm clause expression
+func Filter(flt filter.RuleFactory) (clause.Expression, error) {
 	if flt == nil {
 		return nil, errors.New("filter expression is nil")
 	}
 
 	switch typed := flt.(type) {
 	case *filter.AtomRule:
-		return AtomRuleToGormClause(typed)
+		return atomRuleToGormClause(typed)
 	case *filter.Expression:
-		return ExpressionToGormClause(typed)
+		return expressionToGormClause(typed)
 	default:
 		return nil, fmt.Errorf("filter type is not supported: %T", flt)
 	}
 }
 
-// ExpressionToGormClause convert *filter.Expression to gorm clause expression, return nil if flt is empty
-func ExpressionToGormClause(flt *filter.Expression) (exp clause.Expression, err error) {
+// expressionToGormClause convert *filter.Expression to gorm clause expression, return nil if flt is empty
+func expressionToGormClause(flt *filter.Expression) (exp clause.Expression, err error) {
 	if flt.IsEmpty() {
 		return nil, errors.New("expression is empty")
 	}
@@ -60,7 +60,7 @@ func ExpressionToGormClause(flt *filter.Expression) (exp clause.Expression, err 
 	var exps []clause.Expression
 	var expr clause.Expression
 	for _, sub := range flt.Rules {
-		expr, err = ConvFilter(sub)
+		expr, err = Filter(sub)
 		if err != nil {
 			return nil, err
 		}
@@ -75,13 +75,13 @@ func ExpressionToGormClause(flt *filter.Expression) (exp clause.Expression, err 
 	case filter.Or:
 		exp = clause.Or(exps...)
 	default:
-		return nil, fmt.Errorf("expression op is not supported: %s", flt.Op)
+		return nil, fmt.Errorf("expression OP is not supported: %s", flt.Op)
 	}
 	return exp, nil
 }
 
-// AtomRuleToGormClause convert *filter.AtomRule to gorm clause expression
-func AtomRuleToGormClause(rule *filter.AtomRule) (clause.Expression, error) {
+// atomRuleToGormClause convert *filter.AtomRule to gorm clause expression
+func atomRuleToGormClause(rule *filter.AtomRule) (clause.Expression, error) {
 	if rule == nil {
 		return nil, errors.New("rule is nil")
 	}
@@ -111,9 +111,12 @@ func AtomRuleToGormClause(rule *filter.AtomRule) (clause.Expression, error) {
 		// try other operator below
 	}
 	if filter.IsJSONOperator(op) {
-		return atomJSONRuleToClauseExpr(rule)
+		return jsonRuleToClauseExpr(rule)
 	}
-	return nil, fmt.Errorf("rule op is not supported: %s", op)
+	if filter.IsArrayOperator(op) {
+		return arrayRuleToClauseExpr(rule)
+	}
+	return nil, fmt.Errorf("rule OP is not supported: %s", op)
 }
 
 func buildCS(rule *filter.AtomRule) (clause.Expression, error) {
@@ -144,8 +147,8 @@ func buildCIS(rule *filter.AtomRule) (clause.Expression, error) {
 	}
 	likeExpr := clause.Like{
 		Column: clause.Expr{
-			SQL:                "LOWER(" + rule.Field + ")",
-			Vars:               nil,
+			SQL:                "LOWER(?)",
+			Vars:               []any{clause.Column{Name: rule.Field}},
 			WithoutParentheses: true,
 		},
 		Value: "%" + strings.ToLower(s) + "%",

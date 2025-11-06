@@ -16,23 +16,46 @@
 
 package util
 
-import "reflect"
+import (
+	"testing"
+)
 
-// GetString test if an interface is the string type, if yes, return the string value
-func GetString(value any) (str string, ok bool) {
-	v := reflect.ValueOf(value)
-	if v.Kind() == reflect.String {
-		return v.String(), true
+func TestGetString(t *testing.T) {
+	type args struct {
+		value any
 	}
-	return "", false
-}
-
-var reflectTypeAny = reflect.TypeFor[any]()
-
-// UnpackAny unpack any type
-func UnpackAny(value reflect.Value) reflect.Value {
-	if value.Type() == reflectTypeAny {
-		value = value.Elem()
+	tests := []struct {
+		name    string
+		args    args
+		wantStr string
+		wantOk  bool
+	}{
+		{
+			name: "str",
+			args: args{
+				value: "abc",
+			},
+			wantStr: "abc",
+			wantOk:  true,
+		},
+		{
+			name: "int",
+			args: args{
+				value: 1,
+			},
+			wantStr: "",
+			wantOk:  false,
+		},
 	}
-	return value
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotStr, gotOk := GetString(tt.args.value)
+			if gotStr != tt.wantStr {
+				t.Errorf("GetString() gotStr = %v, want %v", gotStr, tt.wantStr)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("GetString() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+		})
+	}
 }

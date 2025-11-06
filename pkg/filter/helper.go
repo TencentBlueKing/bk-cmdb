@@ -22,7 +22,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/samber/lo"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
 // isNumeric test if an interface is a numeric value or not.
@@ -54,6 +55,7 @@ func isComparableValue(val reflect.Value) bool {
 
 // isBasicValue test if is the basic supported golang type or not.
 func isBasicValue(value reflect.Value) bool {
+	value = util.UnpackAny(value)
 	switch value.Kind() {
 	case reflect.Bool,
 		reflect.Int,
@@ -89,7 +91,7 @@ func ContainersExpression[T any](fieldName string, values []T) *Expression {
 	return &Expression{
 		Op: And,
 		Rules: []RuleFactory{
-			&AtomRule{Field: fieldName, Op: In.Factory(), Value: lo.ToAnySlice(values)},
+			&AtomRule{Field: fieldName, Op: In.Factory(), Value: toAnySlice(values)},
 		},
 	}
 }
@@ -145,12 +147,12 @@ func RuleNotEqual(fieldName string, value any) *AtomRule {
 
 // RuleIn 生成资源字段等于查询的AtomRule，即fieldName in values
 func RuleIn[T any](fieldName string, values []T) *AtomRule {
-	return &AtomRule{Field: fieldName, Op: In.Factory(), Value: values}
+	return &AtomRule{Field: fieldName, Op: In.Factory(), Value: toAnySlice(values)}
 }
 
 // RuleNotIn 生成资源字段等于查询的AtomRule，即fieldName nin values
 func RuleNotIn[T any](fieldName string, values []T) *AtomRule {
-	return &AtomRule{Field: fieldName, Op: NotIn.Factory(), Value: values}
+	return &AtomRule{Field: fieldName, Op: NotIn.Factory(), Value: toAnySlice(values)}
 }
 
 // RuleCis 生成资源字段不区分大小写匹配查询的AtomRule，即LOWER(fieldName) like value
@@ -178,28 +180,63 @@ func RuleLessThanEqual(fieldName string, value any) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: LessThanEqual.Factory(), Value: value}
 }
 
-// RuleJSONEqual 生成资源字段等于查询的AtomRule，即fieldName=value
-func RuleJSONEqual(fieldName string, value any) *AtomRule {
-	return &AtomRule{Field: fieldName, Op: JSONEqual.Factory(), Value: value}
+// RuleJSONEqual 生成JSON等于给定值的AtomRule，即jsonPath=value
+func RuleJSONEqual(jsonPath string, value any) *AtomRule {
+	return &AtomRule{Field: jsonPath, Op: JSONEqual.Factory(), Value: value}
 }
 
-// RuleJSONNotEqual 生成资源字段等于查询的AtomRule，即fieldName!=value
-func RuleJSONNotEqual(fieldName string, value any) *AtomRule {
-	return &AtomRule{Field: fieldName, Op: JSONNotEqual.Factory(), Value: value}
+// RuleJSONNotEqual 生成JSON不等于给定值的AtomRule，即jsonPath!=value
+func RuleJSONNotEqual(jsonPath string, value any) *AtomRule {
+	return &AtomRule{Field: jsonPath, Op: JSONNotEqual.Factory(), Value: value}
 }
 
-// RuleJSONContains 生成资源字段等于查询的AtomRule，即values in fieldName
+// RuleJSONContains 生成JSON数组包含给定值的AtomRule，即values in fieldName
 func RuleJSONContains[T any](fieldName string, values T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: JSONContains.Factory(), Value: values}
 }
 
-// RuleJSONHasKey 生成资源字段等于查询的AtomRule，即field ? v
+// RuleJSONHasKey 生成JSON包含给定Key的AtomRule，即field ? v
 func RuleJSONHasKey(fieldName string, value string) *AtomRule {
 	return &AtomRule{
 		Field: fieldName,
 		Op:    JSONHasKey.Factory(),
 		Value: value,
 	}
+}
+
+// RuleArrayEqual 生成资源字段等于查询的AtomRule，即fieldName=values，顺序必须一致
+func RuleArrayEqual[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+	return &AtomRule{Field: fieldName, Op: ArrayEqual.Factory(), Value: values}
+}
+
+// RuleArrayNotEqual 生成资源字段不等于查询的AtomRule，即fieldName!=values
+func RuleArrayNotEqual[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+	return &AtomRule{Field: fieldName, Op: ArrayNotEqual.Factory(), Value: values}
+}
+
+// RuleArrayContains 指定字段是否包含对应数组
+func RuleArrayContains[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+	return &AtomRule{Field: fieldName, Op: ArrayContains.Factory(), Value: values}
+}
+
+// RuleArraySubset 指定字段是否为对应数组的子集
+func RuleArraySubset[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+	return &AtomRule{Field: fieldName, Op: ArraySubset.Factory(), Value: values}
+}
+
+// RuleArrayOverlap 指定字段是否和对应数组有交集
+func RuleArrayOverlap[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+	return &AtomRule{Field: fieldName, Op: ArrayOverlap.Factory(), Value: values}
+}
+
+// RuleArrayIsEmpty 指定字段是否为空数组，包含 NULL 和 零长数组
+func RuleArrayIsEmpty(fieldName string) *AtomRule {
+	return &AtomRule{Field: fieldName, Op: ArrayIsEmpty.Factory()}
+}
+
+// RuleArrayNotEmpty 指定字段是否不为空数组，即长度大于0
+func RuleArrayNotEmpty(fieldName string) *AtomRule {
+	return &AtomRule{Field: fieldName, Op: ArrayNotEmpty.Factory()}
 }
 
 // ExpressionAnd expression with op and
@@ -216,4 +253,13 @@ func ExpressionOr(rules ...RuleFactory) *Expression {
 		Op:    Or,
 		Rules: rules,
 	}
+}
+
+// to reduce dependency
+func toAnySlice[T any](value []T) []any {
+	anySlice := make([]any, len(value))
+	for idx := range value {
+		anySlice[idx] = value[idx]
+	}
+	return anySlice
 }

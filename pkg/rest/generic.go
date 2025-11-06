@@ -72,7 +72,7 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 
 		out, respErr := fn(ctx, in)
 		if respErr != nil {
-			_ = APIError(ctx, err).Render(w, r)
+			_ = APIError(ctx, respErr).Render(w, r)
 			return
 		}
 		_ = APIOK(out).Render(w, r)

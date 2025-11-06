@@ -25,6 +25,8 @@ import (
 	"strings"
 
 	"github.com/tidwall/gjson"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
 const (
@@ -36,6 +38,8 @@ const (
 	DefaultMaxRuleLimit = uint(10)
 	// DefaultMaxDepth defines the default max depth of the expression
 	DefaultMaxDepth = uint(5)
+	// DefaultMaxArrayElemLimit defines the default max element for array operator
+	DefaultMaxArrayElemLimit = uint(500)
 )
 
 // ExprOption defines how to validate an
@@ -59,23 +63,14 @@ type ExprOption struct {
 	// MaxRulesLimit defines the max number of rules an expression allows.
 	// If not set, then use default value: DefaultMaxRuleLimit
 	MaxRulesLimit uint
+	// MaxArrayElemLimit defines the max element of the array operator
+	// If not set, then use default value: DefaultMaxInLimit
+	MaxArrayElemLimit uint
 	// MaxDepth defines the max depth of whole expression tree.
 	// If not set, then use default value: DefaultMaxDepth
-	MaxDepth *int
-}
-
-// CopyWith return a copy of current expression option with opts.
-func (opt *ExprOption) CopyWith(opts ...ExprOptionFunc) (newOpt *ExprOption) {
-	if opt == nil {
-		newOpt = NewExprOption()
-	} else {
-		var val = *opt
-		newOpt = &val
-	}
-	for _, optFunc := range opts {
-		optFunc(newOpt)
-	}
-	return newOpt
+	MaxDepth *uint
+	// curDepth stores the current depth of the expression tree, used internally for depth validation.
+	curDepth uint
 }
 
 // ExprOptionFunc expr option func defines.
@@ -112,8 +107,7 @@ func MaxRulesLimit(limit uint) ExprOptionFunc {
 // MaxDepth set max depth func.
 func MaxDepth(depth uint) ExprOptionFunc {
 	return func(opt *ExprOption) {
-		var d = int(depth)
-		opt.MaxDepth = &d
+		opt.MaxDepth = &depth
 	}
 }
 
@@ -156,7 +150,7 @@ func (exp *Expression) Validate(opt *ExprOption) (hitErr error) {
 	}
 
 	maxRules := DefaultMaxRuleLimit
-	maxDepth := int(DefaultMaxDepth)
+	maxDepth := DefaultMaxDepth
 
 	if opt != nil {
 		if opt.MaxRulesLimit > 0 {
@@ -165,10 +159,17 @@ func (exp *Expression) Validate(opt *ExprOption) (hitErr error) {
 		if opt.MaxDepth != nil {
 			maxDepth = *opt.MaxDepth
 		}
+	} else {
+		opt = NewExprOption()
 	}
 
-	if maxDepth == 0 {
-		return fmt.Errorf("expression depth exceeded, please reduce the depth")
+	opt.curDepth++
+	defer func() {
+		opt.curDepth--
+	}()
+
+	if opt.curDepth > maxDepth {
+		return fmt.Errorf("expression depth exceeded, please reduce the depth less than %d", maxDepth)
 	}
 
 	if len(exp.Rules) > int(maxRules) {
@@ -184,7 +185,6 @@ func (exp *Expression) Validate(opt *ExprOption) (hitErr error) {
 		}
 	}
 
-	opt = opt.CopyWith(MaxDepth(uint(max(maxDepth-1, 0))))
 	for _, one := range exp.Rules {
 		if err := one.Validate(opt); err != nil {
 			return err
@@ -369,7 +369,7 @@ func validateFieldValue(rVal reflect.Value, typ FieldType) error {
 		return validateSliceElements(rVal, typ)
 	default:
 	}
-
+	rVal = util.UnpackAny(rVal)
 	switch typ {
 	case String:
 		if rVal.Kind() != reflect.String {

@@ -18,33 +18,96 @@
 package tests
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
-// GetTestGORM open a gorm db for test from env TEST_GORM_DSN, should only be used in test code
-func GetTestGORM(t *testing.T) (*gorm.DB, error) {
-	var gormDSN = os.Getenv("TEST_GORM_PG_DSN")
-	if gormDSN == "" {
-		log.Warn(t.Context(), "TEST_GORM_PG_DSN is not set, skip", "test", t.Name())
-		t.Skip("TEST_GORM_PG_DSN is not set")
-		return nil, fmt.Errorf("TEST_GORM_PG_DSN is not set")
+// TestGORMDSNMySQL env key for test gorm mysql dsn
+const TestGORMDSNMySQL = "TEST_GORM_DSN_MYSQL"
+
+// TestGORMDSNPG env key for test gorm pg dsn
+const TestGORMDSNPG = "TEST_GORM_DSN_PG"
+
+// GetRealDB open a real gorm db for test from env TEST_GORM_DSN_PG or TEST_GORM_DSN_MYSQL,
+// if both TEST_GORM_DSN_PG and TEST_GORM_DSN_MYSQL are not set, it will skip the test
+func GetRealDB(t testing.TB) (*gorm.DB, error) {
+	if os.Getenv(TestGORMDSNMySQL) != "" {
+		return GetRealMySQL(t)
 	}
+	return GetRealPG(t)
+}
+
+// GetRealMySQL open a real gorm db for test from env TEST_GORM_DSN_MYSQL,
+// if TEST_GORM_DSN_MYSQL is not set, it will skip the test
+func GetRealMySQL(t testing.TB) (*gorm.DB, error) {
+	var mysqlDsn = os.Getenv(TestGORMDSNMySQL)
+	if mysqlDsn == "" {
+		t.Skip("TEST_GORM_DSN_MYSQL is not set")
+		return nil, fmt.Errorf("TEST_GORM_DSN_MYSQL is not set")
+	}
+	return getGORM(mysql.Open(mysqlDsn))
+}
+
+// GetRealPG open a real gorm db for test from env TEST_GORM_DSN_PG or TEST_GORM_DSN_MYSQL,
+// if TEST_GORM_DSN_PG is not set, it will skip the test
+func GetRealPG(t testing.TB) (*gorm.DB, error) {
+	var pgDSN = os.Getenv(TestGORMDSNPG)
+	if pgDSN == "" {
+		t.Skip("TEST_GORM_DSN_PG is not set")
+		return nil, fmt.Errorf("TEST_GORM_DSN_PG is not set")
+	}
+	return getGORM(postgres.Open(pgDSN))
+
+}
+
+// GetMockPG open a mock pg gorm db for test from sqlmock
+func GetMockPG(t testing.TB) (*gorm.DB, sqlmock.Sqlmock, error) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := getGORM(getMockGormPG(db))
+	return gormDB, mock, err
+}
+
+// GetMockMySQL open a mock mysql gorm db for test from sqlmock
+func GetMockMySQL(t testing.TB) (*gorm.DB, sqlmock.Sqlmock, error) {
+	db, mock, err := sqlmock.New()
+	assert.Nil(t, err)
+	gormDB, err := getGORM(getMockGormMySQL(db))
+	return gormDB, mock, err
+}
+
+func getGORM(dialector gorm.Dialector) (*gorm.DB, error) {
 	gormDB, err := gorm.Open(
-		postgres.Open(gormDSN),
+		dialector,
 		&gorm.Config{
 			NowFunc:     func() time.Time { return time.Now().UTC().Round(time.Microsecond) },
-			PrepareStmt: true,
+			PrepareStmt: false,
 		})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open gorm db: %w", err)
+		return nil, fmt.Errorf("failed to open gorm db with dialector %v, err: %w", dialector.Name(), err)
 	}
 	return gormDB.Debug(), nil
+}
+
+func getMockGormMySQL(db *sql.DB) gorm.Dialector {
+	return mysql.New(mysql.Config{
+		DriverName: "mysql",
+		Conn:       db,
+	})
+}
+
+func getMockGormPG(db *sql.DB) gorm.Dialector {
+	return postgres.New(postgres.Config{
+		DriverName: "postgres",
+		Conn:       db,
+	})
 }

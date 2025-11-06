@@ -46,9 +46,16 @@ func init() {
 	opFactory[JSONEqual.Factory()] = JSONEqualOp(JSONEqual)
 	opFactory[JSONNotEqual.Factory()] = JSONNotEqualOp(JSONEqual)
 	opFactory[JSONContains.Factory()] = JSONContainsOp(JSONContains)
-	opFactory[JSONHasKey.Factory()] = JSONContainsPathOp(JSONHasKey)
-	opFactory[JSONNotHasKey.Factory()] = JSONNotContainsPathOp(JSONNotHasKey)
+	opFactory[JSONHasKey.Factory()] = JSONHasKeyOp(JSONHasKey)
+	opFactory[JSONNotHasKey.Factory()] = JSONNotHasKeyOp(JSONNotHasKey)
 
+	opFactory[ArrayEqual.Factory()] = ArrayEqualOp(ArrayEqual)
+	opFactory[ArrayNotEqual.Factory()] = ArrayNotEqualOp(ArrayNotEqual)
+	opFactory[ArrayContains.Factory()] = ArrayContainsOp(ArrayContains)
+	opFactory[ArraySubset.Factory()] = ArraySubsetOp(ArraySubset)
+	opFactory[ArrayOverlap.Factory()] = ArrayOverlapOp(ArrayOverlap)
+	opFactory[ArrayIsEmpty.Factory()] = ArrayIsEmptyOp(ArrayIsEmpty)
+	opFactory[ArrayNotEmpty.Factory()] = ArrayNotEmptyOp(ArrayNotEmpty)
 }
 
 const (
@@ -127,24 +134,55 @@ const (
 	ContainsInsensitive OpType = "cis"
 )
 
-// starts with json_
+// JSONOperatorPrefix json operator prefix
+const JSONOperatorPrefix = "json_"
+
+// JSON operators, starts with json_
 // reference: https://www.postgresql.org/docs/current/functions-json.html
 const (
+
 	// JSONEqual is json field equal operator.
 	JSONEqual OpType = "json_eq"
 	// JSONNotEqual is json field not equal operator.
 	JSONNotEqual OpType = "json_neq"
-	// JSONContains JSON中是否包含某个值，仅支持string类型：PG ? 操作符
+	// JSONContains is json array contains value
 	JSONContains OpType = "json_contains"
-	// JSONHasKey 检测 JSON数组或文档顶层是否有某个键值。
-	JSONHasKey OpType = "json_has_keys"
-	// JSONNotHasKey 检测 JSON数组或文档顶层不包含某个键值。
-	JSONNotHasKey OpType = "json_not_has_keys"
+	// JSONHasKey is json has value or json array has key
+	JSONHasKey OpType = "json_has_key"
+	// JSONNotHasKey is json not has value or json array not has key
+	JSONNotHasKey OpType = "json_not_has_key"
 )
 
 // IsJSONOperator check if op is json operator
 func IsJSONOperator(op OpType) bool {
-	return strings.HasPrefix(string(op), "json_")
+	return strings.HasPrefix(string(op), JSONOperatorPrefix)
+}
+
+// ArrayOperatorPrefix array operator prefix
+const ArrayOperatorPrefix = "array_"
+
+// Array operators
+// reference: https://www.postgresql.org/docs/current/functions-array.html
+const (
+	// ArrayEqual equal for array data
+	ArrayEqual OpType = "array_eq"
+	// ArrayNotEqual not equal for array data
+	ArrayNotEqual OpType = "array_neq"
+	// ArrayContains A array_contains B means B is a subset of A.
+	ArrayContains OpType = "array_contains"
+	// ArraySubset A array_subset B means A is a subset of B.
+	ArraySubset OpType = "array_subset"
+	// ArrayOverlap A array_overlap B means A and B have any common element.
+	ArrayOverlap OpType = "array_overlap"
+	// ArrayIsEmpty  A array_is_empty means A's length is equal to 0 or A is null.
+	ArrayIsEmpty OpType = "array_is_empty"
+	// ArrayNotEmpty A array_not_empty means A's length is not 0.
+	ArrayNotEmpty OpType = "array_not_empty"
+)
+
+// IsArrayOperator check if op is array operator
+func IsArrayOperator(op OpType) bool {
+	return strings.HasPrefix(string(op), ArrayOperatorPrefix)
 }
 
 // OpType defines the operators supported by mysql.
@@ -161,6 +199,9 @@ func (op OpType) Validate() error {
 
 	case JSONEqual, JSONNotEqual, JSONContains,
 		JSONHasKey, JSONNotHasKey:
+
+	case ArrayEqual, ArrayNotEqual, ArrayContains,
+		ArraySubset, ArrayOverlap, ArrayIsEmpty, ArrayNotEmpty:
 
 	default:
 		return fmt.Errorf("unsupported operator: %s", op)
@@ -191,7 +232,7 @@ func (uo UnknownOp) Name() OpType {
 }
 
 // ValidateValue validate equal's value
-func (uo UnknownOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+func (uo UnknownOp) ValidateValue(_ reflect.Value, _ *ExprOption) error {
 	return errors.New("unknown operator")
 }
 
@@ -464,41 +505,152 @@ func (op JSONContainsOp) Name() OpType {
 // ValidateValue validate json field in's value
 func (op JSONContainsOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
 	if !isBasicValue(rVal) {
-		return errors.New("invalid value field")
+		return errors.New("invalid json_contains field value type, should be basic type")
 	}
 	return nil
 }
 
-// JSONContainsPathOp is json field json contain path operator
-type JSONContainsPathOp OpType
+// JSONHasKeyOp is json field json contain path operator
+type JSONHasKeyOp OpType
 
 // Name is json field json contain path operator
-func (op JSONContainsPathOp) Name() OpType {
+func (op JSONHasKeyOp) Name() OpType {
 	return JSONHasKey
 }
 
 // ValidateValue validate json field equal's value
-func (op JSONContainsPathOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+func (op JSONHasKeyOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
 	if rVal.Kind() != reflect.String {
-		return errors.New("invalid value field")
+		return errors.New("invalid json_not_has_key field value type, should be string")
 	}
 
 	return nil
 }
 
-// JSONNotContainsPathOp is json field json contain path operator
-type JSONNotContainsPathOp OpType
+// JSONNotHasKeyOp is json field json contain path operator
+type JSONNotHasKeyOp OpType
 
 // Name is json field json contain path operator
-func (op JSONNotContainsPathOp) Name() OpType {
+func (op JSONNotHasKeyOp) Name() OpType {
 	return JSONNotHasKey
 }
 
 // ValidateValue validate json field equal's value
-func (op JSONNotContainsPathOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+func (op JSONNotHasKeyOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
 	if rVal.Kind() != reflect.String {
-		return errors.New("invalid value field")
+		return errors.New("invalid json_not_contains field value type, should be string")
 	}
 
+	return nil
+}
+
+// ArrayEqualOp is array equal operator
+type ArrayEqualOp OpType
+
+// Name is array equal operator
+func (op ArrayEqualOp) Name() OpType {
+	return ArrayEqual
+}
+
+// ValidateValue validate array equal's value
+func (op ArrayEqualOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+	return checkArrayWithLength(op, rVal, opt, true)
+}
+
+// ArrayNotEqualOp is array not equal operator
+type ArrayNotEqualOp OpType
+
+// Name is array not equal operator
+func (op ArrayNotEqualOp) Name() OpType {
+	return ArrayNotEqual
+}
+
+// ValidateValue validate array not equal's value
+func (op ArrayNotEqualOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+	return checkArrayWithLength(op, rVal, opt, true)
+}
+
+// ArrayContainsOp is array contains operator
+type ArrayContainsOp OpType
+
+// Name is array contains operator
+func (op ArrayContainsOp) Name() OpType {
+	return ArrayContains
+}
+
+// ValidateValue validate array contains's value
+func (op ArrayContainsOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+	return checkArrayWithLength(op, rVal, opt, false)
+}
+
+// ArraySubsetOp is array subset operator
+type ArraySubsetOp OpType
+
+// Name is array subset operator
+func (op ArraySubsetOp) Name() OpType {
+	return ArraySubset
+}
+
+// ValidateValue validate array subset's value
+func (op ArraySubsetOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+	return checkArrayWithLength(op, rVal, opt, false)
+}
+
+// ArrayOverlapOp is array overlap operator
+type ArrayOverlapOp OpType
+
+// Name is array overlap operator
+func (op ArrayOverlapOp) Name() OpType {
+	return ArrayOverlap
+}
+
+// ValidateValue validate array overlap's value
+func (op ArrayOverlapOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+	return checkArrayWithLength(op, rVal, opt, false)
+}
+
+// ArrayIsEmptyOp is array is empty operator
+type ArrayIsEmptyOp OpType
+
+// Name is array is empty operator
+func (op ArrayIsEmptyOp) Name() OpType {
+	return ArrayIsEmpty
+}
+
+// ValidateValue validate array is empty's value
+func (op ArrayIsEmptyOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+	// value is not used
+	return nil
+}
+
+// ArrayNotEmptyOp is array not empty operator
+type ArrayNotEmptyOp OpType
+
+// Name is array not empty operator
+func (op ArrayNotEmptyOp) Name() OpType {
+	return ArrayNotEmpty
+}
+
+// ValidateValue validate array not empty's value
+func (op ArrayNotEmptyOp) ValidateValue(rVal reflect.Value, opt *ExprOption) error {
+	// value is not used
+	return nil
+}
+
+// general check array with length
+func checkArrayWithLength[T ~string](op T, rVal reflect.Value, opt *ExprOption, allowZeroLength bool) error {
+	if rVal.Kind() != reflect.Array && rVal.Kind() != reflect.Slice {
+		return fmt.Errorf("invalid array operator's value, should be array or slice, op: %s", op)
+	}
+	maxElem := DefaultMaxArrayElemLimit
+	if opt != nil && opt.MaxArrayElemLimit > 0 {
+		maxElem = opt.MaxArrayElemLimit
+	}
+	if uint(rVal.Len()) > maxElem {
+		return fmt.Errorf("invalid array operator's value, at most have %d elements, op: %s", maxElem, op)
+	}
+	if !allowZeroLength && rVal.Len() == 0 {
+		return fmt.Errorf("invalid array operator's value, at least have one element, op: %s", op)
+	}
 	return nil
 }

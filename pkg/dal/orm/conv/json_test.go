@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package dal
+package conv
 
 import (
 	"testing"
@@ -60,7 +60,7 @@ func Test_atomJSONRuleToClauseExpr(t *testing.T) {
 			},
 			want:         datatypes.JSONQuery("json_col").Equals(`{"a": "b"}`, []string{}...),
 			wantQueryErr: "42601",
-			// field with no path will be ignored, should use eq op
+			// field with no path will be ignored, should use eq OP
 			wantSQL:     ``,
 			wantVars:    nil,
 			shouldFound: []jsonTestModel{},
@@ -129,9 +129,17 @@ func Test_atomJSONRuleToClauseExpr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := atomJSONRuleToClauseExpr(tt.args.rule)
-			if (err != nil) != (tt.wantConvErr != "") {
-				assert.ErrorContains(t, err, tt.wantConvErr, "convert to clause failed")
+			got, err := jsonRuleToClauseExpr(tt.args.rule)
+			if tt.wantConvErr != "" {
+				if !assert.ErrorContains(t, err, tt.wantConvErr, "convert to clause failed got unexpected error") {
+					return
+				}
+			} else {
+				assert.Nil(t, err, "convert to clause failed")
+				return
+			}
+			if !assert.Equal(t, tt.want, got) {
+				return
 			}
 			assert.Equal(t, tt.want, got)
 			s := &gorm.Statement{DB: g.Session(&gorm.Session{DryRun: true})}

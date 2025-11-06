@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package dal
+package conv
 
 import (
 	"fmt"
@@ -30,11 +30,12 @@ import (
 )
 
 type testModel struct {
-	ID      int       `gorm:"column:id;primaryKey"`
-	Str     string    `gorm:"column:str"`
-	Int     int       `gorm:"column:int"`
-	Float64 float64   `gorm:"column:float64"`
-	Time    time.Time `gorm:"column:time"`
+	ID           int       `gorm:"column:id;primaryKey"`
+	Str          string    `gorm:"column:str"`
+	Int          int       `gorm:"column:int"`
+	Float64      float64   `gorm:"column:float64"`
+	Time         time.Time `gorm:"column:time"`
+	NullableBool *bool     `gorm:"column:nullable_bool"`
 }
 
 func (m testModel) TableName() string {
@@ -81,15 +82,17 @@ func Test_atomRuleToGormClause(t *testing.T) {
 			args: args{
 				rule: filter.RuleCis("str", "b"),
 			},
-			want:        clause.Like{Column: clause.Expr{SQL: "LOWER(str)", WithoutParentheses: true}, Value: "%b%"},
-			wantSQL:     `LOWER(str) LIKE $1`,
+			want: clause.Like{
+				Column: clause.Expr{SQL: "LOWER(?)", WithoutParentheses: true, Vars: []any{clause.Column{Name: "str"}}},
+				Value:  "%b%"},
+			wantSQL:     `LOWER("str") LIKE $1`,
 			wantVars:    []any{"%b%"},
 			shouldFound: []testModel{abcTestModel},
 		},
 		{
 			name: "TestStrIn",
 			args: args{
-				rule: filter.RuleIn("str", []any{"abc", "123"}),
+				rule: filter.RuleIn("str", []string{"abc", "123"}),
 			},
 			want:        clause.IN{Column: "str", Values: []any{"abc", "123"}},
 			wantSQL:     `"str" IN ($1,$2)`,
@@ -97,9 +100,19 @@ func Test_atomRuleToGormClause(t *testing.T) {
 			shouldFound: []testModel{abcTestModel},
 		},
 		{
+			name: "TestStrInEmpty",
+			args: args{
+				rule: filter.RuleIn("str", []string{}),
+			},
+			want:        clause.IN{Column: "str", Values: []any{}},
+			wantSQL:     `"str" IN (NULL)`,
+			wantVars:    []any(nil),
+			shouldFound: []testModel{},
+		},
+		{
 			name: "TestStrNotIn",
 			args: args{
-				rule: filter.RuleNotIn("str", []any{"abc", "123"}),
+				rule: filter.RuleNotIn("str", []string{"abc", "123"}),
 			},
 			want:        clause.Not(clause.IN{Column: "str", Values: []any{"abc", "123"}}),
 			wantSQL:     `"str" NOT IN ($1,$2)`,
@@ -146,15 +159,32 @@ func Test_atomRuleToGormClause(t *testing.T) {
 			wantVars:    []any{1.1},
 			shouldFound: []testModel{abcTestModel, defTestModel},
 		},
+		{
+			name: "TestBoolEqualNil",
+			args: args{
+				rule: filter.RuleEqual("nullable_bool", nil),
+			},
+			want:        clause.Eq{Column: "nullable_bool", Value: nil},
+			wantSQL:     `"nullable_bool" IS NULL`,
+			wantVars:    nil,
+			shouldFound: []testModel{defTestModel},
+		},
 	}
 	g := prepareTestDB(t, &testModel{}, testModels)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := AtomRuleToGormClause(tt.args.rule)
-			if (err != nil) != (tt.wantConvErr != "") {
-				assert.ErrorContains(t, err, tt.wantConvErr, "convert to clause failed")
+			got, err := atomRuleToGormClause(tt.args.rule)
+			if tt.wantConvErr != "" {
+				if !assert.ErrorContains(t, err, tt.wantConvErr, "convert to clause failed got unexpected error") {
+					return
+				}
+				return
+			} else {
+				assert.Nil(t, err, "convert to clause failed")
 			}
-			assert.Equal(t, tt.want, got)
+			if !assert.Equal(t, tt.want, got, "got unexpected clause") {
+				return
+			}
 			s := &gorm.Statement{DB: g.Session(&gorm.Session{DryRun: true})}
 			got.Build(s)
 			sql := s.SQL.String()
@@ -246,7 +276,7 @@ func TestConvToGormClause(t *testing.T) {
 	g := prepareTestDB(t, &testModel{}, testModels)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ExpressionToGormClause(tt.args.flt)
+			got, err := expressionToGormClause(tt.args.flt)
 			if err != nil {
 				if tt.wantQueryErr == "" {
 					t.Errorf("test %s should not have error: %v", tt.name, err)
@@ -274,7 +304,7 @@ func TestConvToGormClause(t *testing.T) {
 }
 
 func prepareTestDB(t *testing.T, table interface{ TableName() string }, preInserts any) *gorm.DB {
-	g, err := tests.GetTestGORM(t)
+	g, err := tests.GetRealPG(t)
 	if err != nil {
 		t.Errorf("failed to open gorm db: %v", err)
 		return nil
@@ -300,11 +330,12 @@ func prepareTestDB(t *testing.T, table interface{ TableName() string }, preInser
 }
 
 var abcTestModel = testModel{
-	ID:      1,
-	Str:     "abc",
-	Int:     1,
-	Float64: 1.1,
-	Time:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.Local),
+	ID:           1,
+	Str:          "abc",
+	Int:          1,
+	Float64:      1.1,
+	Time:         time.Date(2025, 1, 1, 0, 0, 0, 0, time.Local),
+	NullableBool: new(bool),
 }
 var defTestModel = testModel{
 	ID:      2,
@@ -347,11 +378,11 @@ func TestConvFilter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ConvFilter(tt.flt)
-			if !tt.wantErr(t, err, fmt.Sprintf("ConvFilter(%v)", tt.flt)) {
+			got, err := Filter(tt.flt)
+			if !tt.wantErr(t, err, fmt.Sprintf("Filter(%v)", tt.flt)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "ConvFilter(%v)", tt.flt)
+			assert.Equalf(t, tt.want, got, "Filter(%v)", tt.flt)
 		})
 	}
 }

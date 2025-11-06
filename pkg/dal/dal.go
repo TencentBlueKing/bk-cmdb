@@ -14,25 +14,5 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package util
-
-import "reflect"
-
-// GetString test if an interface is the string type, if yes, return the string value
-func GetString(value any) (str string, ok bool) {
-	v := reflect.ValueOf(value)
-	if v.Kind() == reflect.String {
-		return v.String(), true
-	}
-	return "", false
-}
-
-var reflectTypeAny = reflect.TypeFor[any]()
-
-// UnpackAny unpack any type
-func UnpackAny(value reflect.Value) reflect.Value {
-	if value.Type() == reflectTypeAny {
-		value = value.Elem()
-	}
-	return value
-}
+// Package dal ...
+package dal

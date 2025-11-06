@@ -14,25 +14,46 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package util
+// Package table ...
+package table
 
-import "reflect"
+import (
+	"fmt"
 
-// GetString test if an interface is the string type, if yes, return the string value
-func GetString(value any) (str string, ok bool) {
-	v := reflect.ValueOf(value)
-	if v.Kind() == reflect.String {
-		return v.String(), true
+	"gorm.io/gorm/schema"
+)
+
+// Name of table
+type Name string
+
+const (
+	// IDGeneratorTable ...
+	IDGeneratorTable Name = "id_generator"
+	// TestModelTable ...
+	TestModelTable Name = "test_model"
+)
+
+// Validate whether the table name is valid or not.
+func (n Name) Validate() error {
+	_, valid := tableRegistry[n]
+	if valid {
+		return nil
 	}
-	return "", false
+
+	return fmt.Errorf("table name is invalid: %s", n)
 }
 
-var reflectTypeAny = reflect.TypeFor[any]()
+var tableRegistry = make(map[Name]any)
 
-// UnpackAny unpack any type
-func UnpackAny(value reflect.Value) reflect.Value {
-	if value.Type() == reflectTypeAny {
-		value = value.Elem()
-	}
-	return value
+// Register table
+func (n Name) Register(tableStruct Tabler) {
+	tableRegistry[n] = tableStruct
 }
+
+// String return table name string
+func (n Name) String() string {
+	return string(n)
+}
+
+// Tabler have table name method
+type Tabler = schema.Tabler
