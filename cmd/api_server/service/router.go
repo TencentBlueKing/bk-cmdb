@@ -25,6 +25,7 @@ import (
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/healthz"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/trace"
 )
 
 // NewRouter ...
@@ -33,6 +34,7 @@ func NewRouter() http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(I18nMiddleware)
+	r.Use(trace.Middleware)
 
 	r.Get("/healthz", healthz.HealthzHandler)
 	r.Get("/-/healthy", healthz.HealthyHandler)

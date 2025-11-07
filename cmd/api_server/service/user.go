@@ -17,10 +17,11 @@
 package service
 
 import (
-	"context"
+	"sync"
 	"time"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
@@ -43,15 +44,28 @@ type UserInfoResp struct {
 }
 
 // UserInfo 用户信息
-func (s *service) UserInfo(ctx context.Context, req *UserInfoReq) (*UserInfoResp, error) {
-	log.Info(ctx, "handle UserInfo")
+func (s *service) UserInfo(kt *kit.Kit, req *UserInfoReq) (*UserInfoResp, error) {
+	log.Info(kt, "handle UserInfo")
+
+	var wg sync.WaitGroup
+
+	wg.Go(func() { doBiz(kt) })
+	wg.Go(func() { doBiz(kt) })
+	wg.Wait()
 
 	resp := &UserInfoResp{
-		Username: i18n.GetDefaultManager().Sys(ctx, req.Username),
+		Username: i18n.GetDefaultManager().Sys(kt, req.Username),
 		Age:      req.Age + 10,
 		Games:    req.Games,
 		Ko:       string(req.Ko),
 		BirthDay: req.BirthDay,
 	}
 	return resp, nil
+}
+
+func doBiz(kt *kit.Kit) {
+	kt, span := kt.StartSpan("")
+	defer span.End()
+
+	log.Info(kt, "do Biz")
 }

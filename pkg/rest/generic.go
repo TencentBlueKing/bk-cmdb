@@ -22,14 +22,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	cerr "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 // UnaryFunc Unary or ClientStreaming handle function
-type UnaryFunc[Req, Resp any] func(context.Context, *Req) (*Resp, error)
+type UnaryFunc[Req, Resp any] func(*kit.Kit, *Req) (*Resp, error)
 
 // StreamingServer server or bidi streaming server
 type StreamingServer interface {
@@ -51,9 +50,7 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 			collectHandleMetrics(handleName, r.Method, st, err)
 		}()
 
-		rid := uuid.New().String()
 		ctx := r.Context()
-		ctx = log.WithAttr(ctx, log.RidAttr(rid))
 
 		// 反序列化
 		in, err := decodeReq[Req](r)
@@ -70,11 +67,13 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 			return
 		}
 
-		out, respErr := fn(ctx, in)
+		kt := kit.NewKit(ctx, kit.Metadata{User: "test", AppCode: "test", TenantID: "test"})
+
+		out, respErr := fn(kt, in)
 		if respErr != nil {
 			_ = APIError(ctx, respErr).Render(w, r)
-			return
 		}
+
 		_ = APIOK(out).Render(w, r)
 	}
 	return f
@@ -119,10 +118,12 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 			return
 		}
 
+		kt := kit.NewKit(ctx, kit.Metadata{User: "test", AppCode: "test", TenantID: "test"})
+
 		svr := &streamingServer{
 			ResponseWriter:     w,
 			ResponseController: http.NewResponseController(w),
-			ctx:                r.Context(),
+			ctx:                kt,
 		}
 
 		if err := fn(in, svr); err != nil {
@@ -130,6 +131,7 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 			return
 		}
 	}
+
 	return f
 }
 
