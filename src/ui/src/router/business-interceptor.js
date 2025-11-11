@@ -100,8 +100,8 @@ export const before = async function (to, from, next) {
   const hasURLId = to.params.bizId
   const isAuthorized = authorizedList.some(item => item.bk_biz_id === business?.bk_biz_id)
 
-  // 缓存无ID，URL无ID，则认为是首次进入业务导航 或者 当前缓存的ID没有匹配到任何一个业务 取一个默认业务id进入到二级路由
-  if (!id || (id && !business)) {
+  // 缓存无ID，URL无ID，则认为是首次进入业务导航 或者 在开启多租户模式下，当前缓存的ID没有匹配到任何一个业务 取一个默认业务id进入到二级路由
+  if (!id || (id && !business && window.Site.enableMultiTenantMode)) {
     // 优先取有权限业务的第一个写入URL中，否则取系统的第一个业务
     const firstAuthedBiz = authorizedList?.[0]
 
