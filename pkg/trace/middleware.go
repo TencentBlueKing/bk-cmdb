@@ -37,7 +37,7 @@ const (
 // requestIDContext 自定义从X-Request-Id统一转换为traceID
 type requestIDContext struct{}
 
-// Inject ...
+// Inject implement otel/propagation.TextMapPropagator interface
 func (r requestIDContext) Inject(ctx context.Context, carrier propagation.TextMapCarrier) {
 	spanCtx := trace.SpanContextFromContext(ctx)
 	if !spanCtx.HasTraceID() {
@@ -47,7 +47,8 @@ func (r requestIDContext) Inject(ctx context.Context, carrier propagation.TextMa
 	carrier.Set(requestIDHeader, spanCtx.TraceID().String())
 }
 
-// Extract 如果没有traceparent,且X-Request-Id是合法的,生成对应的traceID
+// Extract implement otel/propagation.TextMapPropagator interface
+// 如果没有traceparent,且X-Request-Id是合法的,生成对应的traceID
 func (r requestIDContext) Extract(ctx context.Context, carrier propagation.TextMapCarrier) context.Context {
 	spanCtx := trace.SpanContextFromContext(ctx)
 	if spanCtx.HasTraceID() {
@@ -68,14 +69,14 @@ func (r requestIDContext) Extract(ctx context.Context, carrier propagation.TextM
 		return ctx
 	}
 
-	span := trace.NewSpanContext(trace.SpanContextConfig{
+	spanCtx = trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID: traceID,
 	})
 
-	return trace.ContextWithRemoteSpanContext(ctx, span)
+	return trace.ContextWithRemoteSpanContext(ctx, spanCtx)
 }
 
-// Fields ...
+// Fields implement otel/propagation.TextMapPropagator interface
 func (r requestIDContext) Fields() []string {
 	return []string{requestIDHeader}
 }

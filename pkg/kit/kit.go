@@ -19,6 +19,7 @@ package kit
 
 import (
 	"context"
+	"net/http"
 	"runtime"
 	"strings"
 	"time"
@@ -32,6 +33,12 @@ import (
 
 const (
 	defaultScopeName = "kit"
+	// UserHeader is the username http header key, its value set by apiserver auth middleware
+	UserHeader = "X-Cmdb-User"
+	// AppCodeHeader is the blueking app code http header key, its value set by apiserver auth middleware
+	AppCodeHeader = "X-Cmdb-App-Code"
+	// TenantHeader is tenant http header key
+	TenantHeader = "X-Bk-Tenant-Id"
 )
 
 // Metadata the biz metadata
@@ -72,9 +79,9 @@ func (kt *Kit) StartSpan(name string, opts ...trace.SpanStartOption) (*Kit, trac
 
 	// auto set metadata attr
 	span.SetAttributes(
-		attribute.String("user", kt.User),
-		attribute.String("appCode", kt.AppCode),
-		attribute.String("tenantID", kt.TenantID),
+		attribute.String(UserHeader, kt.User),
+		attribute.String(AppCodeHeader, kt.AppCode),
+		attribute.String(TenantHeader, kt.TenantID),
 	)
 
 	ctx = log.WithSpan(ctx, span)
@@ -92,17 +99,31 @@ func (kt *Kit) SetSpanAttr(attr map[string]string) {
 
 // Rid aka traceID/request_id
 func (kt *Kit) Rid() string {
-	span := trace.SpanContextFromContext(kt.Context)
-	if span.HasTraceID() {
-		return span.TraceID().String()
-	}
-
-	return ""
+	spanCtx := trace.SpanContextFromContext(kt.Context)
+	return spanCtx.TraceID().String()
 }
 
 // NewKit with metadata
 func NewKit(ctx context.Context, md Metadata) *Kit {
-	return newKit(ctx, md)
+	kt := newKit(ctx, md)
+
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if !spanCtx.HasTraceID() {
+		// 随机生成traceID
+		kt, _ = kt.StartSpan("newKit")
+	}
+
+	return kt
+}
+
+// NewKitFromHeader 从http header中获取metadata
+func NewKitFromHeader(ctx context.Context, header http.Header) *Kit {
+	md := Metadata{
+		User:     header.Get(UserHeader),
+		AppCode:  header.Get(AppCodeHeader),
+		TenantID: header.Get(TenantHeader),
+	}
+	return NewKit(ctx, md)
 }
 
 func newKit(ctx context.Context, md Metadata) *Kit {

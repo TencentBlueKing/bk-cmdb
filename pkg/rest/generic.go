@@ -67,7 +67,7 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 			return
 		}
 
-		kt := kit.NewKit(ctx, kit.Metadata{User: "test", AppCode: "test", TenantID: "test"})
+		kt := kit.NewKitFromHeader(ctx, r.Header)
 
 		out, respErr := fn(kt, in)
 		if respErr != nil {
@@ -118,7 +118,7 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		kt := kit.NewKit(ctx, kit.Metadata{User: "test", AppCode: "test", TenantID: "test"})
+		kt := kit.NewKitFromHeader(ctx, r.Header)
 
 		svr := &streamingServer{
 			ResponseWriter:     w,

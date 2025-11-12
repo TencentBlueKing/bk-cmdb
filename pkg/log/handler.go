@@ -321,17 +321,11 @@ func getTraceAttr(ctx context.Context) slog.Attr {
 	}
 
 	traceID := spanCtx.TraceID().String()
-	spans, ok := ctx.Value(spanCtxKey).([]trace.Span)
-	if !ok {
+	spanID, ok := ctx.Value(spanCtxKey).(string)
+	if !ok || len(spanID) == 0 {
 		return RidAttr(traceID)
 	}
 
-	shortSpans := lo.Map(spans, func(span trace.Span, _ int) string {
-		spanID := span.SpanContext().SpanID().String()
-		// span规范, 16长度, 日志只打印前6位
-		return spanID[:6]
-	})
-	rid := traceID + "/" + strings.Join(shortSpans, "/")
-
+	rid := traceID + "/" + spanID
 	return RidAttr(rid)
 }

@@ -166,13 +166,17 @@ func WithSpan(ctx context.Context, span trace.Span) context.Context {
 		return ctx
 	}
 
-	spans, ok := ctx.Value(spanCtxKey).([]trace.Span)
-	if !ok {
-		return context.WithValue(ctx, spanCtxKey, []trace.Span{span})
+	// span规范, 16长度, 日志只打印前6位
+	// 完整示例较长 rid=660bb87ee3d3883914598c4b95be5910/46e52288b38dbea7/c404c158283e3f99
+	// 使用简短日志 rid=660bb87ee3d3883914598c4b95be5910/46e522/c404c1
+	spanID := span.SpanContext().SpanID().String()[:6]
+	rawSpanID, ok := ctx.Value(spanCtxKey).(string)
+	if !ok || len(rawSpanID) == 0 {
+		return context.WithValue(ctx, spanCtxKey, spanID)
 	}
 
-	spans = append(spans, span)
-	ctx = context.WithValue(ctx, spanCtxKey, spans)
+	spanID = rawSpanID + "/" + spanID
+	ctx = context.WithValue(ctx, spanCtxKey, spanID)
 	return ctx
 }
 

@@ -50,22 +50,30 @@ func NewAPIServerCommand() *cobra.Command {
 		Use:   "apiserver",
 		Short: "A http service for handle unified http request",
 		RunE: func(c *cobra.Command, args []string) error {
+			// TODO, 后续需求场景可在pkg/runtime同一抽象
 			// 设置服务名称
 			config.SetServiceName(config.ApiServer)
 
+			// 日志初始化
 			if err := handlerOpts.Validate(); err != nil {
 				return err
 			}
-
 			handler := log.NewContextualHandler(handlerOpts)
 			log.SetDefault(handler)
 
-			err := initClients(c.Context())
+			// trace初始化
+			ctx := c.Context()
+			opt := new(trace.Option)
+			if err := trace.SetupTrace(ctx, opt); err != nil {
+				return err
+			}
+
+			err := initClients(ctx)
 			if err != nil {
 				return err
 			}
 
-			return runHTTPServer(c.Context(), opts)
+			return runHTTPServer(ctx, opts)
 		},
 	}
 
@@ -144,11 +152,6 @@ func registerHTTPServer(ctx context.Context, g *run.Group, router http.Handler, 
 
 func registerTrace(ctx context.Context, g *run.Group) {
 	g.Add(func() error {
-		opt := new(trace.Option)
-		if err := trace.SetupTrace(ctx, opt); err != nil {
-			return err
-		}
-
 		// block here, wait for sign to shutdown program
 		<-ctx.Done()
 		return nil

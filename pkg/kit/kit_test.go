@@ -21,10 +21,21 @@ import (
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	_ "github.com/TencentBlueKing/bk-cmdb/pkg/trace" // for init trace
+	"github.com/stretchr/testify/assert"
 )
 
-func TestKit(t *testing.T) {
+func TestNewKit(t *testing.T) {
 	kt := NewKit(t.Context(), Metadata{})
+	assert.Equal(t, len(kt.Rid()), 32)
+
+	log.Info(kt, "test newkit")
+
+	testDoBiz(kt)
+}
+
+func TestKitStartSpan(t *testing.T) {
+	kt := NewKit(t.Context(), Metadata{})
+
 	kt, span := kt.StartSpan("")
 	defer span.End()
 

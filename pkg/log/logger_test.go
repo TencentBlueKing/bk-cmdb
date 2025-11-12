@@ -26,6 +26,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestDefaultLogger(t *testing.T) {
@@ -164,6 +166,23 @@ func TestLoggerDepth(t *testing.T) {
 	Depth(1).Info(ctx, "test depth")
 	assert.True(t, strings.Contains(buf.String(), "source=log/logger.go:"))
 	buf.Reset()
+}
+
+func BenchmarkGetTraceAttr(b *testing.B) {
+	ctx := b.Context()
+	provider := sdktrace.NewTracerProvider()
+
+	var span trace.Span
+	for range 10 {
+		ctx, span = provider.Tracer("").Start(ctx, "")
+		ctx = WithSpan(ctx, span)
+	}
+
+	// Info(ctx, "info")
+
+	for b.Loop() {
+		getTraceAttr(ctx)
+	}
 }
 
 func BenchmarkLogger(b *testing.B) {

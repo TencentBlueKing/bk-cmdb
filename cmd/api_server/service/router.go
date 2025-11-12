@@ -33,8 +33,10 @@ func NewRouter() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(I18nMiddleware)
 	r.Use(trace.Middleware)
+	r.Use(I18nMiddleware)
+
+	r.Use(Authentication) // 统一鉴权中间件
 
 	r.Get("/healthz", healthz.HealthzHandler)
 	r.Get("/-/healthy", healthz.HealthyHandler)

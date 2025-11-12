@@ -125,6 +125,5 @@ func newTraceProvider(exp sdktrace.SpanExporter) (*sdktrace.TracerProvider, erro
 
 func init() {
 	// 默认只做context传递, 不导出到其他输出
-	opt := &Option{}
-	lo.Must0(SetupTrace(context.Background(), opt))
+	lo.Must0(SetupTrace(context.Background(), new(Option)))
 }

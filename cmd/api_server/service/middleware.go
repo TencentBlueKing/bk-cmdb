@@ -19,8 +19,9 @@ package service
 import (
 	"net/http"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	cerr "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
 )
@@ -56,4 +57,17 @@ func pickTag(r *http.Request) i18n.LanguageType {
 
 	// if language is not set, use default language
 	return i18n.GetDefaultManager().GetDefaultLang()
+}
+
+// Authentication 统一鉴权中间件
+func Authentication(next http.Handler) http.Handler {
+	f := func(w http.ResponseWriter, r *http.Request) {
+		// TODO: 这里需要根据实际的鉴权逻辑来实现
+		r.Header.Set(kit.AppCodeHeader, "test")
+		r.Header.Set(kit.UserHeader, "test")
+		r.Header.Set(kit.TenantHeader, "default")
+
+		next.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(f)
 }
