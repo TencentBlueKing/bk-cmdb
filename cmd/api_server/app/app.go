@@ -33,10 +33,12 @@ import (
 
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/options"
 	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/service"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
+	cerr "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/trace"
 )
 
 // NewAPIServerCommand creates a *cobra.Command object with default parameters
@@ -48,19 +50,30 @@ func NewAPIServerCommand() *cobra.Command {
 		Use:   "apiserver",
 		Short: "A http service for handle unified http request",
 		RunE: func(c *cobra.Command, args []string) error {
+			// TODO, 后续需求场景可在pkg/runtime同一抽象
+			// 设置服务名称
+			config.SetServiceName(config.ApiServer)
+
+			// 日志初始化
 			if err := handlerOpts.Validate(); err != nil {
 				return err
 			}
-
 			handler := log.NewContextualHandler(handlerOpts)
 			log.SetDefault(handler)
 
-			err := initClients(c.Context())
+			// trace初始化
+			ctx := c.Context()
+			opt := new(trace.Option)
+			if err := trace.SetupTrace(ctx, opt); err != nil {
+				return err
+			}
+
+			err := initClients(ctx)
 			if err != nil {
 				return err
 			}
 
-			return runHTTPServer(c.Context(), opts)
+			return runHTTPServer(ctx, opts)
 		},
 	}
 
@@ -78,6 +91,7 @@ func runHTTPServer(ctx context.Context, opts *options.Options) error {
 
 	var g run.Group
 	router := service.NewRouter()
+	registerTrace(ctx, &g)
 	registerHTTPServer(ctx, &g, router, opts)
 
 	// 监听信号
@@ -133,5 +147,22 @@ func registerHTTPServer(ctx context.Context, g *run.Group, router http.Handler, 
 			return
 		}
 		log.Info(ctx, "shutdown http server done", "reason", reason, "duration", time.Since(st))
+	})
+}
+
+func registerTrace(ctx context.Context, g *run.Group) {
+	g.Add(func() error {
+		// block here, wait for sign to shutdown program
+		<-ctx.Done()
+		return nil
+	}, func(reason error) {
+		timeoutCtx, timeoutCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer timeoutCancel()
+
+		if err := trace.Shutdown(timeoutCtx); err != nil {
+			log.Error(ctx, "shutdown trace exporter with error", "reason", reason, log.E(err))
+			return
+		}
+		log.Info(ctx, "shutdown trace exporter done", "reason", reason)
 	})
 }

@@ -20,6 +20,8 @@ package log
 import (
 	"context"
 	"log/slog"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Logger contextual and structured logger
@@ -155,6 +157,26 @@ func WithAttr(ctx context.Context, attrs ...slog.Attr) context.Context {
 
 	rawAttrs = append(rawAttrs, attrs...)
 	ctx = context.WithValue(ctx, attrCtxKey, rawAttrs)
+	return ctx
+}
+
+// WithSpan 日志格式的traceID/spanID
+func WithSpan(ctx context.Context, span trace.Span) context.Context {
+	if !span.SpanContext().HasSpanID() {
+		return ctx
+	}
+
+	// span规范, 16长度, 日志只打印前6位
+	// 完整示例较长 rid=660bb87ee3d3883914598c4b95be5910/46e52288b38dbea7/c404c158283e3f99
+	// 使用简短日志 rid=660bb87ee3d3883914598c4b95be5910/46e522/c404c1
+	spanID := span.SpanContext().SpanID().String()[:6]
+	rawSpanID, ok := ctx.Value(spanCtxKey).(string)
+	if !ok || len(rawSpanID) == 0 {
+		return context.WithValue(ctx, spanCtxKey, spanID)
+	}
+
+	spanID = rawSpanID + "/" + spanID
+	ctx = context.WithValue(ctx, spanCtxKey, spanID)
 	return ctx
 }
 

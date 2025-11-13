@@ -29,6 +29,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/spf13/pflag"
+	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -42,6 +43,7 @@ const (
 var (
 	attrCtxKey    = ctxKey("log.attr")
 	depthCtxKey   = ctxKey("log.depth")
+	spanCtxKey    = ctxKey("log.span")
 	program       = filepath.Base(os.Args[0])
 	defaultLogger *contextualLogger
 	supportLevel  = []string{"trace", "debug", "info", "warn", "error"}
@@ -155,6 +157,9 @@ func (h *contextualHandler) makeRecord(ctx context.Context, r slog.Record) slog.
 		Message: r.Message,
 		PC:      r.PC,
 	}
+
+	// rid/spanID
+	newR.AddAttrs(getTraceAttr(ctx))
 
 	// content中的attr
 	if attrs, ok := ctx.Value(attrCtxKey).([]slog.Attr); ok {
@@ -306,4 +311,21 @@ func (g *groupOrAttrs) WithAttrs(attrs []slog.Attr) *groupOrAttrs {
 		attrs: attrs,
 		next:  g,
 	}
+}
+
+// getTraceAttr 组合成单个attr
+func getTraceAttr(ctx context.Context) slog.Attr {
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if !spanCtx.HasTraceID() {
+		return slog.Attr{}
+	}
+
+	traceID := spanCtx.TraceID().String()
+	spanID, ok := ctx.Value(spanCtxKey).(string)
+	if !ok || len(spanID) == 0 {
+		return RidAttr(traceID)
+	}
+
+	rid := traceID + "/" + spanID
+	return RidAttr(rid)
 }

@@ -116,3 +116,18 @@ func (s *ServerInfo) Instance() string {
 	}
 	return net.JoinHostPort(s.IP, strconv.Itoa(int(s.Port)))
 }
+
+var (
+	// current service name
+	currentServiceName ServiceName
+)
+
+// SetServiceName set the service name.
+func SetServiceName(name ServiceName) {
+	currentServiceName = name
+}
+
+// GetServiceName get the service name.
+func GetServiceName() ServiceName {
+	return currentServiceName
+}
