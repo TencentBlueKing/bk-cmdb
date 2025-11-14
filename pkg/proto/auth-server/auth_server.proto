@@ -1,0 +1,63 @@
+syntax = "proto3";
+package auth_server;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/TencentBlueKing/bk-cmdb/pkg/proto/auth-server;authpb";
+
+service Auth {
+  // Authorize checks whether the user has permission to operate resources.
+  rpc Authorize(AuthorizeReq) returns (AuthorizeResp) {
+    option (google.api.http) = {
+      post: "/api/v4/auth/authorize"
+      body: "*"
+    };
+  }
+
+  // ListAuthorizedResources lists the resources that the user has permission to operate.
+  rpc ListAuthorizedResources(ListAuthResReq) returns (ListAuthResResp) {}
+
+  // AuthorizeStream this is only a demo for streaming.
+  rpc AuthorizeStream(stream AuthorizeReq) returns (stream AuthorizeResp){ };
+}
+
+// Basic defines the basic info of an auth resource.
+message Basic {
+  string type = 1;
+  string action = 2;
+  string name = 3;
+  string id = 4;
+}
+
+// ResourceAttribute represents one iam resource.
+message ResourceAttribute {
+  Basic basic = 1;
+  repeated Basic layers = 2;
+}
+
+// AuthorizeReq is the authorize request.
+message AuthorizeReq {
+  repeated ResourceAttribute resources = 1;
+}
+
+// Decision is the authorize decision.
+message Decision {
+  bool authorized = 1;
+}
+
+// AuthorizeResp is the authorize response.
+message AuthorizeResp {
+  repeated Decision decisions = 1;
+}
+
+// ListAuthResReq is the list authorized resource request.
+message ListAuthResReq {
+  string resource_type = 1;
+  string action = 2;
+}
+
+// ListAuthResResp is the list authorized resource response.
+message ListAuthResResp {
+  repeated string ids = 1;
+  bool is_any = 2;
+}

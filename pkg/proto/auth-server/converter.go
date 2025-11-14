@@ -14,27 +14,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package options define app runtime option
-package options
+package authpb
 
-import "github.com/spf13/pflag"
+import "github.com/TencentBlueKing/bk-cmdb/pkg/auth/meta"
 
-// Options contains everything necessary to create and run a apiserver server.
-type Options struct {
-	Address string
-	Port    int
-}
-
-// AddFlags adds flags to fs and binds them to options.
-func (o *Options) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.Address, "address", o.Address, "The IP address on which to listen")
-	fs.IntVar(&o.Port, "port", o.Port, "API listen http/metrics port")
-}
-
-// NewOptions returns initialized Options
-func NewOptions() *Options {
-	return &Options{
-		Address: "0.0.0.0",
-		Port:    8090,
+// ConvertToPbBasic converts meta.Basic to Basic
+func ConvertToPbBasic(basic *meta.Basic) *Basic {
+	return &Basic{
+		Type:   string(basic.Type),
+		Action: string(basic.Action),
+		Name:   basic.Name,
+		Id:     basic.ID,
 	}
+}
+
+// ConvertToPBAuthAttr converts meta.ResourceAttribute to ResourceAttribute
+func ConvertToPBAuthAttr(attr *meta.ResourceAttribute) *ResourceAttribute {
+	pbAttr := &ResourceAttribute{
+		Basic:  ConvertToPbBasic(attr.Basic),
+		Layers: make([]*Basic, len(attr.Layers)),
+	}
+
+	for i, layer := range attr.Layers {
+		pbAttr.Layers[i] = ConvertToPbBasic(&layer)
+	}
+
+	return pbAttr
 }

@@ -27,7 +27,7 @@ import (
 
 // Renderer interface for managing response payloads.
 type Renderer interface {
-	Render(w http.ResponseWriter, r *http.Request) error
+	Render(w http.ResponseWriter) error
 }
 
 // APIResponse response for api request
@@ -38,7 +38,7 @@ type APIResponse struct {
 }
 
 // Render chi render interface implementation
-func (e *APIResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (e *APIResponse) Render(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(e.HTTPCode)
@@ -61,6 +61,21 @@ func APIError(ctx context.Context, err error) Renderer {
 
 	return &APIResponse{
 		HTTPCode: cerr.GetHTTPStatus(respErr.Code),
+		Error:    respErr,
+	}
+}
+
+// APIErrorWithStatus returns an API response with the given error and HTTP status code.
+func APIErrorWithStatus(ctx context.Context, err error, statusCode int) Renderer {
+	respErr := cerr.GetDefaultErrorManager().ConvToRespError(err)
+	respErr = i18n.GetDefaultManager().RespError(ctx, respErr)
+
+	if statusCode == 0 {
+		statusCode = cerr.GetHTTPStatus(respErr.Code)
+	}
+
+	return &APIResponse{
+		HTTPCode: statusCode,
 		Error:    respErr,
 	}
 }

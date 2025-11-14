@@ -25,9 +25,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	etcdcli "github.com/TencentBlueKing/bk-cmdb/pkg/client/etcd"
 	cc "github.com/TencentBlueKing/bk-cmdb/pkg/config-center"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/etcd"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/tests"
 )
 
 func TestEtcdConfigCenter(t *testing.T) {
@@ -40,7 +40,7 @@ func TestEtcdConfigCenter(t *testing.T) {
 	pgsql := testRegisterEventHandler[pgsqlConf](t, "pgsql")
 
 	// test write initial config
-	writer := cc.NewRegistryWriter(registry, tempDir)
+	writer := cc.NewRegistryWriter(registry, tempDir, []cc.ConfigType{cc.PgsqlConfType, cc.CommonConfType})
 	if err := writer.RunConfigWrite(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ pgsql:
 	}
 
 	// test read initial config
-	reader := cc.NewReader(discovery)
+	reader := cc.NewReader(discovery, []cc.ConfigType{cc.PgsqlConfType, cc.CommonConfType})
 	if err := reader.RunConfigRead(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -171,16 +171,7 @@ type apigwConf struct {
 }
 
 func generateRegDisc(t *testing.T) (cc.Registry, cc.Discovery) {
-	// create a new etcd client
-	// NOTE: etcdConf is the etcd config for test, change it to your own etcd config.
-	etcdConf := &etcdcli.Config{
-		Endpoints: []string{"127.0.0.1:2379"},
-		Username:  "",
-		Password:  "",
-		TLS:       nil,
-	}
-
-	etcdCli, err := etcdcli.New(etcdConf)
+	etcdCli, err := tests.GetTestEtcd(t)
 	if err != nil {
 		t.Fatal(err)
 	}

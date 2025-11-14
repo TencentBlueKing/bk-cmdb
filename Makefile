@@ -31,7 +31,13 @@ lint: ${lint}
 test:
 	GOEXPERIMENT=jsonv2 go test -count=1 -cover ./...
 
+.PHONY: proto
+proto:
+	@cd pkg/proto && make
+
 .PHONY: build
 build:
 	@echo ">> building apiserver"
-	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/cmdb_apiserver cmd/api_server/*.go
+	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/cmdb_apiserver cmd/api-server/*.go
+	@echo ">> building auth-server"
+	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/cmdb_authserver cmd/auth-server/*.go

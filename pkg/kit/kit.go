@@ -19,6 +19,8 @@ package kit
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"runtime"
 	"strings"
@@ -27,7 +29,9 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/metadata"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
@@ -43,9 +47,10 @@ const (
 
 // Metadata the biz metadata
 type Metadata struct {
-	User     string // 操作人
-	AppCode  string // 来源AppCode
-	TenantID string // 来源多租户ID
+	User     string            // 操作人
+	AppCode  string            // 来源AppCode
+	TenantID string            // 来源多租户ID
+	Language i18n.LanguageType // 语言
 }
 
 // Kit a biz metadata and context kit
@@ -127,6 +132,13 @@ func NewKitFromHeader(ctx context.Context, header http.Header) *Kit {
 }
 
 func newKit(ctx context.Context, md Metadata) *Kit {
+	// creates a new grpc request context with kit metadata.
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(
+		UserHeader, md.User,
+		AppCodeHeader, md.AppCode,
+		TenantHeader, md.TenantID,
+		i18n.BKHTTPLanguage, string(md.Language),
+	))
 	return &Kit{Context: ctx, Metadata: md}
 }
 
@@ -145,4 +157,77 @@ func getCaller() (string, string) {
 
 	// 返回 libname pkg.func
 	return fn[:idx], fn[idx+1:]
+}
+
+// NewKitFromGrpcCtx creates a new kit using grpc context.
+func NewKitFromGrpcCtx(ctx context.Context) (*Kit, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("get grpc metadata from context failed")
+	}
+
+	meta := Metadata{}
+
+	user := md.Get(UserHeader)
+	if len(user) == 0 {
+		return nil, errors.New("get user from grpc metadata failed")
+	}
+	meta.User = user[0]
+
+	tenant := md.Get(TenantHeader)
+	if len(tenant) == 0 {
+		return nil, errors.New("get tenant from grpc metadata failed")
+	}
+	meta.TenantID = tenant[0]
+
+	language := md.Get(i18n.BKHTTPLanguage)
+	if len(language) != 0 && language[0] != "" {
+		lang := i18n.LanguageType(language[0])
+		if err := i18n.GetDefaultManager().Validate(lang); err != nil {
+			return nil, fmt.Errorf("get language from grpc metadata failed: %w", err)
+		}
+		meta.Language = lang
+	}
+
+	appCode := md.Get(AppCodeHeader)
+	if len(appCode) != 0 {
+		meta.AppCode = appCode[0]
+	}
+
+	span := trace.SpanFromContext(ctx)
+	ctx = log.WithSpan(ctx, span)
+
+	return NewKit(ctx, meta), nil
+}
+
+// Validate creates a new grpc request context with kit metadata.
+func (kt *Kit) Validate() error {
+	if kt.User == "" {
+		return errors.New("user is not set")
+	}
+
+	if kt.TenantID == "" {
+		return errors.New("tenant id is not set")
+	}
+
+	if kt.Language != "" {
+		if err := i18n.GetDefaultManager().Validate(kt.Language); err != nil {
+			return fmt.Errorf("language is invalid: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// GetGrpcKit get kit from grpc context, if not found, create a new one.
+func GetGrpcKit(ctx context.Context) *Kit {
+	if kit, ok := ctx.(*Kit); ok {
+		return kit
+	}
+
+	kt, err := NewKitFromGrpcCtx(ctx)
+	if err != nil {
+		return NewKit(ctx, Metadata{})
+	}
+	return kt
 }

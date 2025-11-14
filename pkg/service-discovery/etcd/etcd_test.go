@@ -23,25 +23,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	etcdcli "github.com/TencentBlueKing/bk-cmdb/pkg/client/etcd"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
 	sd "github.com/TencentBlueKing/bk-cmdb/pkg/service-discovery"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/service-discovery/etcd"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/tests"
 )
 
 func initServiceDiscovery(t *testing.T) (sd.ServiceDiscovery, sd.ServiceDiscovery, sd.ServiceDiscovery) {
 	ctx := context.Background()
 
 	// create a new etcd client
-	// NOTE: etcdConf is the etcd config for test, change it to your own etcd config.
-	etcdConf := &etcdcli.Config{
-		Endpoints: []string{"127.0.0.1:2379"},
-		Username:  "",
-		Password:  "",
-		TLS:       nil,
-	}
-
-	etcdCli, err := etcdcli.New(etcdConf)
+	etcdCli, err := tests.GetTestEtcd(t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,33 +41,33 @@ func initServiceDiscovery(t *testing.T) (sd.ServiceDiscovery, sd.ServiceDiscover
 	// create etcd service discovery instances for testing
 	registryOpt := &etcd.RegistryOption{
 		Service: &config.ServerInfo{
-			Name:        config.ApiServer,
-			IP:          "127.0.0.1",
-			Port:        11111,
-			Environment: "a",
-			UUID:        "1",
+			Name:     config.ApiServer,
+			IP:       "127.0.0.1",
+			HttpPort: 11111,
+			Cluster:  "a",
+			UUID:     "1",
 		},
 	}
 	discoveryOpt := &etcd.DiscoveryOption{
-		Environment: "a",
-		Services:    []config.ServiceName{config.ApiServer},
+		Cluster:  "a",
+		Services: []config.ServiceName{config.ApiServer},
 	}
 	sd1, err := etcd.NewServiceDiscovery(ctx, etcdCli, registryOpt, discoveryOpt)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	registryOpt.Service.Port = 22222
+	registryOpt.Service.HttpPort = 22222
 	registryOpt.Service.UUID = "2"
 	sd2, err := etcd.NewServiceDiscovery(ctx, etcdCli, registryOpt, discoveryOpt)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	registryOpt.Service.Port = 33333
-	registryOpt.Service.Environment = "b"
+	registryOpt.Service.HttpPort = 33333
+	registryOpt.Service.Cluster = "b"
 	registryOpt.Service.UUID = "3"
-	discoveryOpt.Environment = "b"
+	discoveryOpt.Cluster = "b"
 	sd3, err := etcd.NewServiceDiscovery(ctx, etcdCli, registryOpt, discoveryOpt)
 	if err != nil {
 		t.Fatal(err)

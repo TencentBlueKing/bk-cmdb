@@ -14,42 +14,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package service defines auth-server service.
 package service
 
 import (
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/healthz"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/trace"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 )
 
-// NewRouter ...
-func NewRouter() http.Handler {
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(trace.Middleware)
-	r.Use(I18nMiddleware)
+// PullResource is iam pull resource callback function.
+func (s *Service) PullResource(kt *kit.Kit, req *PullResourceReq) (*PullResourceResp, error) {
+	return &PullResourceResp{IDs: []string{"test"}}, nil
+}
 
-	r.Use(Authentication) // 统一鉴权中间件
+// PullResourceReq is iam pull resource request.
+type PullResourceReq struct {
+	Type string `json:"type"`
+}
 
-	r.Get("/healthz", healthz.HealthzHandler)
-	r.Get("/-/healthy", healthz.HealthyHandler)
-	r.Get("/-/ready", healthz.ReadyHandler)
-
-	// pprof
-	r.Mount("/debug", middleware.Profiler())
-
-	// metrics 配置
-	r.Get("/metrics", promhttp.Handler().ServeHTTP)
-
-	svr := service{}
-	r.Post("/user/info", rest.Handle(svr.UserInfo))
-
-	return r
+// PullResourceResp is iam pull resource response.
+type PullResourceResp struct {
+	IDs []string `json:"ids"`
 }

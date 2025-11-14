@@ -25,8 +25,8 @@ import (
 
 // DiscoveryOption is the service discovery options.
 type DiscoveryOption struct {
-	// Environment defines the environment to be discovered.
-	Environment string
+	// Cluster defines the cluster to be discovered.
+	Cluster string
 	// Services defines the services to be discovered.
 	Services []config.ServiceName
 }

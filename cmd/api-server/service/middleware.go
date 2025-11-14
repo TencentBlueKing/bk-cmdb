@@ -37,7 +37,7 @@ func I18nMiddleware(next http.Handler) http.Handler {
 				Code:        cerr.INVALID_REQUEST,
 				DetailError: err,
 			}
-			_ = rest.APIError(r.Context(), err).Render(w, r)
+			_ = rest.APIError(r.Context(), err).Render(w)
 			return
 		}
 

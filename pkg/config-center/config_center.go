@@ -14,9 +14,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cc is cmdb's config center.
 package cc
 
 import "context"
+
+// ConfigCenter defines config related operations.
+type ConfigCenter interface {
+	// Get gets config item of specified key from config center.
+	Get(conf ConfigType, key string) (any, bool)
+}
 
 // Registry defines config registry related operations.
 type Registry interface {

@@ -56,14 +56,14 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			log.Error(ctx, "handle decode request failed", log.E(err))
-			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			log.Error(ctx, "validate req failed", log.E(err))
-			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w)
 			return
 		}
 
@@ -71,10 +71,11 @@ func Handle[Req, Resp any](fn UnaryFunc[Req, Resp]) func(w http.ResponseWriter, 
 
 		out, respErr := fn(kt, in)
 		if respErr != nil {
-			_ = APIError(ctx, respErr).Render(w, r)
+			_ = APIError(ctx, respErr).Render(w)
+			return
 		}
 
-		_ = APIOK(out).Render(w, r)
+		_ = APIOK(out).Render(w)
 	}
 	return f
 }
@@ -107,14 +108,14 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		in, err := decodeReq[Req](r)
 		if err != nil {
 			log.Error(ctx, "handle decode stream request failed", log.E(err))
-			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w)
 			return
 		}
 
 		// 参数校验
 		if err = validateReq(r.Context(), in); err != nil {
 			log.Error(ctx, "validate stream req failed", log.E(err))
-			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w, r)
+			_ = APIError(ctx, cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w)
 			return
 		}
 
@@ -127,7 +128,7 @@ func Stream[Req any](fn StreamFunc[Req]) func(w http.ResponseWriter, r *http.Req
 		}
 
 		if err := fn(in, svr); err != nil {
-			_ = APIError(ctx, err).Render(w, r)
+			_ = APIError(ctx, err).Render(w)
 			return
 		}
 	}

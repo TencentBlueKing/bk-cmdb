@@ -17,12 +17,15 @@
 package service
 
 import (
+	"errors"
 	"sync"
 	"time"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/auth/meta"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
 )
 
 // UserInfoReq 个人信息Req
@@ -44,7 +47,7 @@ type UserInfoResp struct {
 }
 
 // UserInfo 用户信息
-func (s *service) UserInfo(kt *kit.Kit, req *UserInfoReq) (*UserInfoResp, error) {
+func (s *Service) UserInfo(kt *kit.Kit, req *UserInfoReq) (*UserInfoResp, error) {
 	log.Info(kt, "handle UserInfo")
 
 	var wg sync.WaitGroup
@@ -52,6 +55,16 @@ func (s *service) UserInfo(kt *kit.Kit, req *UserInfoReq) (*UserInfoResp, error)
 	wg.Go(func() { doBiz(kt) })
 	wg.Go(func() { doBiz(kt) })
 	wg.Wait()
+
+	// authorize, NOTE: this is only a demo
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: "skip"},
+	}
+	decisions, err := s.authorizer.Authorize(kt, authRes)
+	if err != nil || !decisions[0].Authorized {
+		log.Error(kt, "authorize failed", log.E(err), "decisions", decisions)
+		return nil, errors.New("authorize failed")
+	}
 
 	resp := &UserInfoResp{
 		Username: i18n.GetDefaultManager().Sys(kt, req.Username),
@@ -68,4 +81,24 @@ func doBiz(kt *kit.Kit) {
 	defer span.End()
 
 	log.Info(kt, "do Biz")
+}
+
+// ListAuthorizedUsers 获取有权限的用户
+func (s *Service) ListAuthorizedUsers(kt *kit.Kit, _ *rest.EmptyReq) (*[]UserInfoResp, error) {
+	log.Info(kt, "handle ListAuthorizedUsers")
+
+	authOpt := &meta.ListAuthResOptions{ResourceType: "user", Action: "list"}
+	resInfo, err := s.authorizer.ListAuthorizedResources(kt, authOpt)
+	if err != nil {
+		log.Error(kt, "list authorized resources failed", log.E(err))
+		return nil, err
+	}
+
+	users := make([]UserInfoResp, len(resInfo.IDs))
+	for i, id := range resInfo.IDs {
+		users[i] = UserInfoResp{
+			Username: id,
+		}
+	}
+	return &users, nil
 }

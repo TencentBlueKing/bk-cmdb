@@ -20,6 +20,8 @@ package sd
 import (
 	"context"
 
+	"google.golang.org/grpc/resolver"
+
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
 )
 
@@ -37,6 +39,8 @@ type Discovery interface {
 	Discover(ctx context.Context, name config.ServiceName, opts ...DiscoverOption) ([]ServiceInstance, error)
 	// Watch service instance change events.
 	Watch(ctx context.Context, name config.ServiceName, opts ...DiscoverOption) (<-chan Event, error)
+	// Builder is grpc resolver builder.
+	resolver.Builder
 }
 
 // State defines service state related operations.

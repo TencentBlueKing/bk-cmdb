@@ -25,18 +25,15 @@ import (
 type ConfigType string
 
 const (
-	// pgsqlConfType is the pgsql config type.
-	pgsqlConfType ConfigType = "pgsql"
-	// redisConfType is the redis config type.
-	redisConfType ConfigType = "redis"
-	// commonConfType is the common config type.
-	commonConfType ConfigType = "common"
-	// extraConfType is the extra config type.
-	extraConfType ConfigType = "extra"
+	// PgsqlConfType is the pgsql config type.
+	PgsqlConfType ConfigType = "pgsql"
+	// RedisConfType is the redis config type.
+	RedisConfType ConfigType = "redis"
+	// CommonConfType is the common config type.
+	CommonConfType ConfigType = "common"
+	// ExtraConfType is the extra config type.
+	ExtraConfType ConfigType = "extra"
 )
-
-// allConfTypes stores all config types.
-var allConfTypes = []ConfigType{redisConfType, pgsqlConfType, commonConfType, extraConfType}
 
 const (
 	// configPath is the config register path prefix.
@@ -52,3 +49,6 @@ func getConfigRegisterPath(conf ConfigType) string {
 func getConfigTypeByRegisterPath(path string) ConfigType {
 	return ConfigType(strings.TrimPrefix(path, configPath+"/"))
 }
+
+// ConfigWaitTime is the time that server waits for config to be ready, unit: second.
+const ConfigWaitTime = 15
