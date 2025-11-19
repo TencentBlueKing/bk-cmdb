@@ -120,6 +120,8 @@ func (s *Service) WebService() *restful.Container {
 	api.Route(api.POST("/migrate/database").To(s.migrateDatabase))
 	api.Route(api.POST("/add/tenant").To(s.addTenant))
 	api.Route(api.POST("/migrate/system/user_config/{key}/{can}").To(s.UserConfigSwitch))
+	// 特殊需求，接口不对外暴露，修改业务对应时区
+	api.Route(api.POST("/update/biz/time_zone").To(s.updateBizTimeZone))
 
 	api.Route(api.PUT("/update/config/platform_config/{type}").To(s.UpdatePlatformConfig))
 	api.Route(api.GET("/find/config/platform_config/{type}").To(s.SearchPlatformConfig))
