@@ -19,8 +19,8 @@ package database
 
 import (
 	"fmt"
+	"time"
 
-	mysqldriver "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -28,47 +28,30 @@ import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
 )
 
+const defaultContextTimeout = time.Second * 20
+
 // NewGORMClient 创建新的GORM客户端
 func NewGORMClient(cfg *config.DBConfig) (db *gorm.DB, err error) {
 	var dialector gorm.Dialector
 	switch cfg.DBType {
 	case config.PostgreSQLType:
-		dsn := buildPostgreSQLDSN(cfg)
-		dialector = postgres.Open(dsn)
-	case config.MySQLType:
-		tlsCfg, tlsEnabled, err := cfg.TLS.ToClientConf()
+		pgConn, err := OpenStdlibPGX(cfg)
 		if err != nil {
-			return nil, fmt.Errorf("fail to get tls config: %w", err)
+			return nil, fmt.Errorf("fail to create pgx std client for new gorm client: %w", err)
 		}
-		if tlsEnabled {
-			if err = mysqldriver.RegisterTLSConfig("cmdb", tlsCfg); err != nil {
-				return nil, fmt.Errorf("fail to register mysql tls config: %w", err)
-			}
+		pgCfg := postgres.Config{Conn: pgConn}
+		dialector = postgres.New(pgCfg)
+	case config.MySQLType:
+		conn, err := OpenMySQL(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("fail to create mysql client for new gorm client: %w", err)
 		}
-		dsn := buildMySQLDSN(cfg, tlsEnabled)
-		mysqlCfg := mysql.Config{DSN: dsn}
+		mysqlCfg := mysql.Config{Conn: conn}
 		dialector = mysql.New(mysqlCfg)
 	default:
 		return nil, fmt.Errorf("unsupported db type: %s", cfg.DBType)
 	}
-	gormCfg := &gorm.Config{
-		SkipDefaultTransaction:                   false,
-		DefaultTransactionTimeout:                0,
-		DefaultContextTimeout:                    cfg.DefaultConnectionTimeout,
-		NamingStrategy:                           nil,
-		NowFunc:                                  nil,
-		PrepareStmt:                              false,
-		PrepareStmtMaxSize:                       0,
-		PrepareStmtTTL:                           0,
-		DisableAutomaticPing:                     false,
-		DisableForeignKeyConstraintWhenMigrating: false,
-		IgnoreRelationshipsWhenMigrating:         false,
-		DisableNestedTransaction:                 false,
-		AllowGlobalUpdate:                        false,
-		QueryFields:                              false,
-		CreateBatchSize:                          0,
-		TranslateError:                           false,
-	}
+	gormCfg := &gorm.Config{DefaultContextTimeout: defaultContextTimeout}
 	db, err = gorm.Open(dialector, gormCfg)
 	if err != nil {
 		return nil, fmt.Errorf("open gorm failed, err: %w", err)
@@ -79,43 +62,10 @@ func NewGORMClient(cfg *config.DBConfig) (db *gorm.DB, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to get sql.DB during init gorm database, err: %w", err)
 	}
-	sqlDB.SetConnMaxIdleTime(cfg.ConnMaxIdleTime)
-	sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
-	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
-	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
+	sqlDB.SetConnMaxIdleTime(time.Duration(cfg.ConnMaxIdleSec) * time.Second)
+	sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifeSec) * time.Second)
+	sqlDB.SetMaxIdleConns(int(cfg.MaxIdleConns))
+	sqlDB.SetMaxOpenConns(int(cfg.MaxOpenConns))
 
 	return db, nil
-}
-
-func buildPostgreSQLDSN(cfg *config.DBConfig) string {
-	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s ",
-		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Database)
-	if cfg.TLS == nil {
-		dsn += "sslmode=disable"
-	} else {
-		if cfg.TLS.InsecureSkipVerify {
-			dsn += "sslmode=allow "
-		} else {
-			dsn += "sslmode=verify-ca "
-		}
-		if cfg.TLS.CAFile != "" {
-			dsn += fmt.Sprintf("sslrootcert=%s ", cfg.TLS.CAFile)
-		}
-		// cert and key should be set together
-		if cfg.TLS.CertFile != "" {
-			dsn += fmt.Sprintf("sslkey=%s sslcert=%s ", cfg.TLS.KeyFile, cfg.TLS.CertFile)
-		}
-	}
-	return dsn
-}
-
-// buildMySQLDSN 构建MySQL的DSN
-func buildMySQLDSN(cfg *config.DBConfig, tlsEnabled bool) string {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
-	if tlsEnabled {
-		dsn += "&tls=cmdb"
-	}
-
-	return dsn
 }

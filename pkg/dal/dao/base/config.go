@@ -14,44 +14,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package orm
+package base
 
 import (
-	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/filter"
 )
 
-type options struct {
-	// mc db request metrics.
-	mc *metric
-	// slowRequestTime db slow request time, beyond this time, the db request will be logged.
-	slowRequestTime time.Duration
-
-	// debug will set logger level to info.
-	debug bool
+// Config defines dao operation config
+type Config struct {
+	PageOption          *types.PageOption
+	ExprOptionFunctions []filter.ExprOptionFunc
 }
 
-// Option orm option func defines.
-type Option func(opt *options)
-
-// MetricsRegisterer set metrics registerer.
-func MetricsRegisterer(register prometheus.Registerer) Option {
-	return func(opt *options) {
-		opt.mc = initMetric(register)
+// GetConfig return page option and expr config modified by options
+func GetConfig(ruleFields map[string]filter.FieldType, opts []Option) (*filter.ExprOption, *types.PageOption) {
+	c := Config{
+		// provide a default option to avoid nil pointer check
+		PageOption: types.NewDefaultPageOption(),
 	}
+	for _, opt := range opts {
+		opt(&c)
+	}
+	filterOpt := filter.NewExprOption(filter.RuleFields(ruleFields))
+	for _, expOpt := range c.ExprOptionFunctions {
+		expOpt(filterOpt)
+	}
+	return filterOpt, c.PageOption
 }
 
-// SlowRequest set db slow request time.
-func SlowRequest(duration time.Duration) Option {
-	return func(opt *options) {
-		opt.slowRequestTime = duration
-	}
-}
-
-// Debug set debug mode.
-func Debug() Option {
-	return func(opt *options) {
-		opt.debug = true
-	}
-}
+// Option configure page and expr option, both page option and expr option are guaranteed not nil
+type Option func(*Config)

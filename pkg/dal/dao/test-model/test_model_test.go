@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 
@@ -84,7 +85,9 @@ func TestGenericDaoCRUD(t *testing.T) {
 	t.Run("list all", func(t *testing.T) {
 		kt := tests.GetKit(t)
 		result, err := testDO.List(kt, listOpt)
-		assert.Nil(t, err, "fail to list")
+		if !assert.Nil(t, err, "fail to list") {
+			return
+		}
 		assert.Equal(t, result.Details, predefinedModels)
 	})
 
@@ -157,7 +160,8 @@ func prepareTestModelDo(t *testing.T) (Interface, error) {
 		t.Errorf("fail to get test db, err: %v", err)
 		return nil, err
 	}
-	ormInst, err := orm.New(ctx, db)
+	// 使用不同registry避免重复注册导致panic
+	ormInst, err := orm.New(ctx, db, orm.MetricsRegisterer(prometheus.NewRegistry()))
 	if err != nil {
 		t.Errorf("fail to init orm for test, err: %v", err)
 		return nil, err

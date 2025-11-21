@@ -44,4 +44,4 @@ build:
 
 gen:
 	@echo ">> generating orm code"
-	go run pkg/dal/gen/cmd/gen_main.go -cwd pkg/dal/gen
+	go generate ./...

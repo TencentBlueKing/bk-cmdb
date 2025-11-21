@@ -36,11 +36,11 @@ type Valuer interface {
 // NOTE: the valuer only support the method with the same type, calling other method will result in panic.
 func NewValue(v reflect.Value) Valuer {
 	switch v.Kind() {
-	case reflect.Int64:
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return &int64Value{value[int64]{raw: v.Int()}}
 	case reflect.String:
 		return &stringValue{value[string]{raw: v.String()}}
-	case reflect.Float64:
+	case reflect.Float32, reflect.Float64:
 		return &float64Value{value[float64]{raw: v.Float()}}
 	case reflect.Bool:
 		return &boolValue{value[bool]{raw: v.Bool()}}

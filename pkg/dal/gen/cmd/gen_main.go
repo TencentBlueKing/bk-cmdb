@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/samber/lo"
 	"gorm.io/gen"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/table"
@@ -48,7 +49,9 @@ func main() {
 		Mode:              gen.WithDefaultQuery | gen.WithQueryInterface,
 	})
 
-	models := table.GetAllStaticTables()
+	// 加载全部静态表
+	models := lo.Values(table.GetAllStaticTables())
+	// id生成器不在静态模型中，单独处理
 	models = append(models, table.IDGenerator{})
 	// 这里添加需要生成的模型
 	g.ApplyBasic(models...)

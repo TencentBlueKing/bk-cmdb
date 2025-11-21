@@ -19,6 +19,7 @@ package base
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -50,50 +51,62 @@ type Dynamic interface {
 
 	/* operations below must be used after Dynamic */
 
-	// BatchCreate batch create
+	// BatchCreate create given items, will auto generate id
 	BatchCreate(kt *kit.Kit, items *structs.Slice) (ids []string, err error)
-	List(kt *kit.Kit, opt *types.ListOption) (*types.DynamicListDetails, error)
-	Delete(kt *kit.Kit, filterExpr filter.RuleFactory) (updated int, err error)
-	Update(kt *kit.Kit, filterExpr filter.RuleFactory, model *structs.Struct) (updated int, err error)
-	UpdateByID(kt *kit.Kit, id string, model *structs.Struct) (updated int, err error)
+	List(kt *kit.Kit, opt *types.ListOption, opts ...Option) (*types.DynamicListDetails, error)
+	Delete(kt *kit.Kit, filterExpr filter.RuleFactory, opts ...Option) (deleted int64, err error)
+	Update(kt *kit.Kit, filterExpr filter.RuleFactory, model *structs.Struct, opts ...Option) (updated int64, err error)
+	UpdateByID(kt *kit.Kit, id string, model *structs.Struct) (updated int64, err error)
 }
 
 var _ Dynamic = &dynamicDao{}
+var _ DynamicConstructor = &dynamicConstructor{}
+
+type dynamicConstructor struct {
+	orm   orm.Interface
+	idgen idgenerator.Interface
+	lock  sync.Mutex
+}
 
 // NewDynamicConstructor returns a new DynamicConstructor
 func NewDynamicConstructor(orm orm.Interface, idg idgenerator.Interface) DynamicConstructor {
-	return &dynamicDao{
-		Orm:   orm,
-		IDGen: idg,
+	constructor := &dynamicConstructor{
+		orm:   orm,
+		idgen: idg,
+		lock:  sync.Mutex{},
 	}
+	return constructor
 }
 
 type dynamicDao struct {
-	modelName    string
-	modelBuilder *structs.Builder
-	Orm          orm.Interface
-	IDGen        idgenerator.Interface
+	modelName string
+	orm       orm.Interface
+	idgen     idgenerator.Interface
+	log       log.Logger
 }
 
 // Dynamic get new Dynamic dao with model
-func (d *dynamicDao) Dynamic(model string) (Dynamic, error) {
-	// load model from structs
-	builder, ok := structs.GetBuilder(model)
+func (d *dynamicConstructor) Dynamic(model string) (Dynamic, error) {
+	// check model builder
+	_, ok := structs.GetBuilder(model)
 	if !ok {
 		return nil, fmt.Errorf("dynamic model not found: %s", model)
 	}
-	return &dynamicDao{
-		modelName:    model,
-		modelBuilder: builder,
-		Orm:          d.Orm,
-		IDGen:        d.IDGen,
-	}, nil
+
+	logger := log.With("model", model)
+	dynamic := &dynamicDao{
+		modelName: model,
+		orm:       d.orm,
+		idgen:     d.idgen,
+		log:       logger,
+	}
+	return dynamic, nil
 }
 
 // AutoTxn auto start transaction to execute fn then commit, rollback if error
 func (d *dynamicDao) AutoTxn(kt *kit.Kit, fn func(tx orm.Interface) error, opts ...*sql.TxOptions) error {
-	return d.Orm.DB().WithContext(kt).Transaction(func(tx *gorm.DB) error {
-		return fn(d.Orm.WithTx(tx))
+	return d.orm.DB(orm.WithContext(kt)).Transaction(func(tx *gorm.DB) error {
+		return fn(d.orm.WithTx(tx))
 	}, opts...)
 
 }
@@ -101,27 +114,29 @@ func (d *dynamicDao) AutoTxn(kt *kit.Kit, fn func(tx orm.Interface) error, opts 
 // WithTx creates a new Dynamic dao with the given transaction
 func (d *dynamicDao) WithTx(tx orm.Interface) Dynamic {
 	return &dynamicDao{
-		modelName:    d.modelName,
-		modelBuilder: d.modelBuilder,
-		Orm:          tx,
-		IDGen:        d.IDGen,
+		modelName: d.modelName,
+		orm:       tx,
+		idgen:     d.idgen,
 	}
 }
 
-// BatchCreate batch create
+// BatchCreate ...
 func (d *dynamicDao) BatchCreate(kt *kit.Kit, items *structs.Slice) (ids []string, err error) {
-	// 1. check builder
-	_, err = d.getBuilderBySlice(items)
-	if err != nil {
-		return nil, err
+	builder, ok := d.GetBuilder()
+	if !ok {
+		return nil, fmt.Errorf("dynamic model not found: %s", d.modelName)
+	}
+	// 1. check type
+	if !builder.OfSlice(items) {
+		return nil, fmt.Errorf("items is not slice of model: %s", d.modelName)
 	}
 
 	// 2. check id field
 	if !items.HaveField("ID") {
-		return nil, fmt.Errorf("model %s not have id field", d.modelName)
+		return nil, fmt.Errorf("model %s should have ID field", d.modelName)
 	}
 	// 3. generate id
-	ids, err = d.IDGen.Batch(kt, table.Name(d.modelName), uint64(items.Len()))
+	ids, err = d.idgen.Batch(kt, types.Name(d.modelName), uint64(items.Len()))
 	if err != nil {
 		return nil, err
 	}
@@ -133,67 +148,66 @@ func (d *dynamicDao) BatchCreate(kt *kit.Kit, items *structs.Slice) (ids []strin
 		}
 
 		if err = s.Set("ID", ids[i]); err != nil {
-			log.Error(kt, "dynamic dao fail to set id", "model", d.modelName, log.E(err))
+			d.log.Error(kt, "dynamic dao fail to set id", log.E(err))
 			return nil, fmt.Errorf("fail to set id: %w", err)
 		}
 	}
 	// 5. create
-	ret := d.Orm.DBContext(kt).Table(d.modelName).Create(items.Value())
+	ret := d.orm.DB(orm.WithContext(kt)).Table(d.modelName).Create(items.Value())
 	if ret.Error != nil {
-		log.Error(kt, "dynamic dao fail to create items", "model", d.modelName, log.E(ret.Error))
+		d.log.Error(kt, "dynamic dao fail to create items", log.E(ret.Error))
 		return nil, ret.Error
 	}
 
 	return ids, nil
-
 }
 
 // List ...
-func (d *dynamicDao) List(kt *kit.Kit, opt *types.ListOption) (*types.DynamicListDetails, error) {
-	// 1. check modelBuilder
-	if err := d.refreshBuilder(); err != nil {
-		return nil, fmt.Errorf("dynamic list failed: %w", err)
+func (d *dynamicDao) List(kt *kit.Kit, listOpt *types.ListOption, opts ...Option) (*types.DynamicListDetails, error) {
+	builder, ok := d.GetBuilder()
+	if !ok {
+		return nil, fmt.Errorf("dynamic model not found: %s", d.modelName)
 	}
 
-	modelInfo, ok := table.GetModelTypeInfo(kt, table.Name(d.modelName))
+	// get model struct info
+	modelInfo, ok := table.GetModelTypeInfo(types.Name(d.modelName))
 	if !ok {
-		return nil, fmt.Errorf("model type info not found for model: %s", d.modelName)
+		d.log.Error(kt, "model type info not found for dynamic list ")
+		return nil, fmt.Errorf("model type info not found for dynamic list: %s", d.modelName)
 	}
+
+	// get option and validate list option for dynamic
 	typeMap := modelInfo.GetColumnTypeMap()
-	eo := filter.NewExprOption(filter.RuleFields(typeMap))
-	// validate opt
-	err := opt.Validate(eo, types.NewDefaultPageOption())
-	if err != nil {
+	eo, po := GetConfig(typeMap, opts)
+	if err := listOpt.Validate(eo, po); err != nil {
 		return nil, err
 	}
-
-	expr, err := conv.Filter(opt.Filter)
+	// convert filter
+	expr, err := conv.Filter(listOpt.Filter)
 	if err != nil {
-		log.Error(kt, "fail to convert filter to clause expression", "opt", opt, log.E(err))
-		return nil, fmt.Errorf("fail to convert filter to clause expression: %v", err)
+		d.log.Error(kt, "fail to convert filter to clause expression", "listOpt", listOpt, log.E(err))
+		return nil, fmt.Errorf("fail to convert filter to clause expression: %w", err)
 	}
 
-	db := d.Orm.DB().Table(d.modelName).Where(expr)
-	if len(opt.Fields) > 0 {
-		db = db.Select(opt.Fields)
-	}
-
+	db := d.orm.DB().Table(d.modelName).Where(expr)
 	// for count request
-	if opt.Page.Count {
+	if listOpt.Page.Count {
 		var count int64
 		err = db.Count(&count).Error
 		if err != nil {
-			log.Error(kt, "fail to count table", Table(d.modelName), log.E(err))
+			d.log.Error(kt, "fail to count table", log.E(err))
 			return nil, err
 		}
 		return &types.DynamicListDetails{Count: uint64(count)}, nil
 	}
-
-	data := d.modelBuilder.NewSlice(0, int(opt.Page.Limit))
 	// for list request
-	err = db.Find(data.Pointer()).Error
+	if len(listOpt.Fields) > 0 {
+		db = db.Select(listOpt.Fields)
+	}
+	data := builder.NewSlice(0, int(listOpt.Page.Limit))
+	err = db.Clauses(conv.Page(listOpt.Page, po)...).Find(data.Pointer()).Error
 	if err != nil {
-		log.Error(kt, "fail to list table", Table(d.modelName), "expr", expr, log.E(err))
+		d.log.Error(kt, "fail to list table", "expr", expr, log.E(err))
 		return nil, err
 	}
 
@@ -204,95 +218,72 @@ func (d *dynamicDao) List(kt *kit.Kit, opt *types.ListOption) (*types.DynamicLis
 }
 
 // Delete ...
-func (d *dynamicDao) Delete(kt *kit.Kit, flt filter.RuleFactory) (deleted int, err error) {
-	expr, err := d.convFilter(kt, flt)
+func (d *dynamicDao) Delete(kt *kit.Kit, flt filter.RuleFactory, opts ...Option) (deleted int64, err error) {
+	expr, err := d.convFilter(kt, flt, opts)
 	if err != nil {
 		return 0, fmt.Errorf("fail to convert filter to clause expression for delete: %w", err)
 	}
-	ret := d.Orm.DBContext(kt).Table(d.modelName).Clauses(expr).Delete(nil)
-	return int(ret.RowsAffected), ret.Error
+	ret := d.orm.DB(orm.WithContext(kt)).Table(d.modelName).Clauses(expr).Delete(nil)
+	return ret.RowsAffected, ret.Error
 }
 
 // Update ...
-func (d *dynamicDao) Update(kt *kit.Kit, flt filter.RuleFactory, model *structs.Struct) (
-	updated int, err error) {
+func (d *dynamicDao) Update(kt *kit.Kit, flt filter.RuleFactory, model *structs.Struct, opts ...Option) (
+	updated int64, err error) {
 
-	expr, err := d.convFilter(kt, flt)
+	builder, ok := d.GetBuilder()
+	if !ok {
+		return 0, fmt.Errorf("dynamic model not found: %s", d.modelName)
+	}
+	// 1.conv filter
+	expr, err := d.convFilter(kt, flt, opts)
 	if err != nil {
 		return 0, fmt.Errorf("fail to convert filter to clause expression for update: %w", err)
 	}
-	ret := d.Orm.DBContext(kt).Table(d.modelName).Clauses(expr).Updates(model.Value())
-	return int(ret.RowsAffected), ret.Error
+	// 2. check builder type
+	if !builder.OfStruct(model) {
+		return 0, fmt.Errorf("items is not a struct instance of model: %s", d.modelName)
+	}
+	ret := d.orm.DB(orm.WithContext(kt)).Table(d.modelName).Clauses(expr).Updates(model.Value())
+	return ret.RowsAffected, ret.Error
 }
 
 // UpdateByID update by id
-func (d *dynamicDao) UpdateByID(kt *kit.Kit, id string, model *structs.Struct) (updated int, err error) {
-	// 1. check modelBuilder
-	_, err = d.getBuilderByStruct(model)
-	if err != nil {
-		return 0, fmt.Errorf("dynamic update by id fail: %w", err)
-	}
-
-	ret := d.Orm.DBContext(kt).Table(d.modelName).Where("id = ?", id).Updates(model.Value())
-	return int(ret.RowsAffected), ret.Error
-}
-
-func (d *dynamicDao) getBuilderBySlice(items *structs.Slice) (*structs.Builder, error) {
-	err := d.refreshBuilder()
-	if err != nil {
-		return nil, err
-	}
-	if !d.modelBuilder.OfSlice(items) {
-		return nil, fmt.Errorf("items is not slice of model: %s", d.modelName)
-	}
-	return d.modelBuilder, nil
-}
-
-func (d *dynamicDao) getBuilderByStruct(items *structs.Struct) (*structs.Builder, error) {
-	err := d.refreshBuilder()
-	if err != nil {
-		return nil, err
-	}
-	if !d.modelBuilder.Of(items) {
-		return nil, fmt.Errorf("items is not struct of model: %s", d.modelName)
-	}
-	return d.modelBuilder, nil
-}
-
-// refreshBuilder refresh model builder if invalid
-func (d *dynamicDao) refreshBuilder() error {
-	// check is modelBuilder set
-	if d.modelName == "" {
-		return fmt.Errorf("model builder is unset")
-	}
-
-	// refresh model builder if invalid
-	if d.modelBuilder == nil || d.modelBuilder.Invalid() {
-		builder, ok := structs.GetBuilder(d.modelName)
-		if !ok {
-			return fmt.Errorf("dynamic model not found after old builder invalid %s", d.modelName)
-		}
-		d.modelBuilder = builder
-	}
-	return nil
-}
-func (d *dynamicDao) convFilter(kt *kit.Kit, flt filter.RuleFactory) (clause.Expression, error) {
-	// check is modelBuilder up to date
-	if err := d.refreshBuilder(); err != nil {
-		return nil, err
-	}
-	// get model struct info
-	modelInfo, ok := table.GetModelTypeInfo(kt, table.Name(d.modelName))
+func (d *dynamicDao) UpdateByID(kt *kit.Kit, id string, model *structs.Struct) (updated int64, err error) {
+	// 1. get modelBuilder
+	builder, ok := d.GetBuilder()
 	if !ok {
-		return nil, fmt.Errorf("model type info not found for deleting model: %s", d.modelName)
+		return 0, fmt.Errorf("dynamic model not found: %s", d.modelName)
 	}
+	if !builder.OfStruct(model) {
+		return 0, fmt.Errorf("update items is not struct of model: %s", d.modelName)
+	}
+	ret := d.orm.DB(orm.WithContext(kt)).Table(d.modelName).Where("id = ?", id).Updates(model.Value())
+	return ret.RowsAffected, ret.Error
+}
 
-	// convert filter
+func (d *dynamicDao) convFilter(kt *kit.Kit, flt filter.RuleFactory, opts []Option) (clause.Expression, error) {
+	// get model struct info
+	modelInfo, ok := table.GetModelTypeInfo(types.Name(d.modelName))
+	if !ok {
+		d.log.Error(kt, "model type info not found")
+		return nil, fmt.Errorf("model type info not found: %s", d.modelName)
+	}
 	typeMap := modelInfo.GetColumnTypeMap()
-	eo := filter.NewExprOption(filter.RuleFields(typeMap))
+	// ignore page option here
+	eo, _ := GetConfig(typeMap, opts)
 	if err := flt.Validate(eo); err != nil {
 		return nil, err
 	}
+	// convert filter
+	exp, err := conv.Filter(flt)
+	if err != nil {
+		return nil, err
+	}
+	return exp, nil
+}
 
-	return conv.Filter(flt)
+// GetBuilder ...
+func (d *dynamicDao) GetBuilder() (*structs.Builder, bool) {
+	return structs.GetBuilder(d.modelName)
 }

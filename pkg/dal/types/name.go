@@ -14,44 +14,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package orm
+package types
 
-import (
-	"time"
+import "gorm.io/gorm/schema"
 
-	"github.com/prometheus/client_golang/prometheus"
-)
+// Name of table
+type Name string
 
-type options struct {
-	// mc db request metrics.
-	mc *metric
-	// slowRequestTime db slow request time, beyond this time, the db request will be logged.
-	slowRequestTime time.Duration
+// Tabler table name method, should work on zero value, if implemented by pointer type should handle nil pointer
+type Tabler = schema.Tabler
 
-	// debug will set logger level to info.
-	debug bool
-}
-
-// Option orm option func defines.
-type Option func(opt *options)
-
-// MetricsRegisterer set metrics registerer.
-func MetricsRegisterer(register prometheus.Registerer) Option {
-	return func(opt *options) {
-		opt.mc = initMetric(register)
-	}
-}
-
-// SlowRequest set db slow request time.
-func SlowRequest(duration time.Duration) Option {
-	return func(opt *options) {
-		opt.slowRequestTime = duration
-	}
-}
-
-// Debug set debug mode.
-func Debug() Option {
-	return func(opt *options) {
-		opt.debug = true
-	}
+// String return table name string
+func (n Name) String() string {
+	return string(n)
 }

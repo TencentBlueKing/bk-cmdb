@@ -29,6 +29,7 @@ import (
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/orm"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/table"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
@@ -42,11 +43,11 @@ const StrIDBase = 36
 // Interface supplies all the method to generate a resource's unique identity id.
 type Interface interface {
 	// Batch return a list of resource's unique id as required.
-	Batch(kt *kit.Kit, resource table.Name, count uint64) ([]string, error)
+	Batch(kt *kit.Kit, resource types.Name, count uint64) ([]string, error)
 	// One return one unique id for this resource.
-	One(kt *kit.Kit, resource table.Name) (string, error)
+	One(kt *kit.Kit, resource types.Name) (string, error)
 	// InitTable initialize the table for the resource
-	InitTable(kt *kit.Kit, resource table.Name, initValue uint64) (err error)
+	InitTable(kt *kit.Kit, resource types.Name, initValue uint64) (err error)
 }
 
 var _ Interface = new(idGenerator)
@@ -61,13 +62,13 @@ type idGenerator struct {
 }
 
 // InitTable initialize row for the resource
-func (ig *idGenerator) InitTable(kt *kit.Kit, resource table.Name, initValue uint64) (err error) {
+func (ig *idGenerator) InitTable(kt *kit.Kit, resource types.Name, initValue uint64) (err error) {
 	return ig.initTable(kt, ig.db, resource, initValue)
 }
 
 // initTable initialize row for the resource
-func (ig *idGenerator) initTable(kt *kit.Kit, txn *gorm.DB, resource table.Name, initValue uint64) (err error) {
-	if err = resource.Validate(); err != nil {
+func (ig *idGenerator) initTable(kt *kit.Kit, txn *gorm.DB, resource types.Name, initValue uint64) (err error) {
+	if err = table.Validate(resource); err != nil {
 		return err
 	}
 
@@ -81,7 +82,7 @@ func (ig *idGenerator) initTable(kt *kit.Kit, txn *gorm.DB, resource table.Name,
 }
 
 // One generate one unique resource id.
-func (ig *idGenerator) One(kt *kit.Kit, resource table.Name) (string, error) {
+func (ig *idGenerator) One(kt *kit.Kit, resource types.Name) (string, error) {
 	list, err := ig.Batch(kt, resource, 1)
 	if err != nil {
 		return "", err
@@ -95,7 +96,7 @@ func (ig *idGenerator) One(kt *kit.Kit, resource table.Name) (string, error) {
 }
 
 // Batch is to generate distribute unique resource id list. returned with a number of unique ids as required.
-func (ig *idGenerator) Batch(kt *kit.Kit, resource table.Name, count uint64) (ids []string, err error) {
+func (ig *idGenerator) Batch(kt *kit.Kit, resource types.Name, count uint64) (ids []string, err error) {
 	f := ig.BatchUpdateReturning
 	if orm.IsPostgres(ig.db) {
 		// only pg support update returning
@@ -104,8 +105,8 @@ func (ig *idGenerator) Batch(kt *kit.Kit, resource table.Name, count uint64) (id
 	return retryOnDuplicate(f, kt, resource, count)
 }
 
-func retryOnDuplicate(f func(kt *kit.Kit, resource table.Name, count uint64) ([]string, error),
-	kt *kit.Kit, resource table.Name, count uint64) (ids []string, err error) {
+func retryOnDuplicate(f func(kt *kit.Kit, resource types.Name, count uint64) ([]string, error),
+	kt *kit.Kit, resource types.Name, count uint64) (ids []string, err error) {
 
 	const mostRetry = 3
 	const retryInterval = 10 * time.Millisecond
@@ -127,8 +128,8 @@ func retryOnDuplicate(f func(kt *kit.Kit, resource table.Name, count uint64) ([]
 }
 
 // BatchQueryUpdate is to generate distribute unique resource id list
-func (ig *idGenerator) BatchQueryUpdate(kt *kit.Kit, resource table.Name, count uint64) ([]string, error) {
-	if err := resource.Validate(); err != nil {
+func (ig *idGenerator) BatchQueryUpdate(kt *kit.Kit, resource types.Name, count uint64) ([]string, error) {
+	if err := table.Validate(resource); err != nil {
 		return nil, fmt.Errorf("gen %s ids, but resource validate failed: %w", resource, err)
 	}
 
@@ -180,8 +181,8 @@ func (ig *idGenerator) BatchQueryUpdate(kt *kit.Kit, resource table.Name, count 
 }
 
 // BatchUpdateReturning is to generate distribute unique resource id list using `UPDATE ... RETURNING` statement.
-func (ig *idGenerator) BatchUpdateReturning(kt *kit.Kit, resource table.Name, count uint64) ([]string, error) {
-	if err := resource.Validate(); err != nil {
+func (ig *idGenerator) BatchUpdateReturning(kt *kit.Kit, resource types.Name, count uint64) ([]string, error) {
+	if err := table.Validate(resource); err != nil {
 		return nil, err
 	}
 

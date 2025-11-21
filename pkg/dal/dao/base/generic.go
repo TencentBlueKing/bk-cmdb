@@ -20,9 +20,9 @@ package base
 import (
 	"database/sql"
 	"fmt"
-	"log/slog"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	idgenerator "github.com/TencentBlueKing/bk-cmdb/pkg/dal/dao/id-generator"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/gen"
@@ -35,65 +35,73 @@ import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
-// IDSetterModel 对类型指针的约束
-type IDSetterModel[T any] interface {
-	table.Tabler
+// IDSettable 可以被设置ID的类型，应该被指针类型实现
+type IDSettable interface {
 	SetID(id string)
-	// SetID requires a pointer to T
-	*T
 }
 
-// Table returns a slog attribute for the given table name
-func Table[T ~string](name T) slog.Attr {
-	return slog.String("table", string(name))
-}
-
-// Generic generic dao interface
-type Generic[T any, PT IDSetterModel[T]] interface {
+// Generic 泛型通用DAO接口, T应为非指针类型, 且*T应该实现 IDSettable 接口,否则BatchCreate方法无法设置ID
+type Generic[T types.Tabler] interface {
 	// AutoTxn auto start transaction to execute fn then commit, rollback if error
 	AutoTxn(kt *kit.Kit, fn func(tx orm.Interface) error, opts ...*sql.TxOptions) error
 	// WithTx creates a new GenericDao with the given transaction
-	WithTx(tx orm.Interface) Generic[T, PT]
+	WithTx(tx orm.Interface) Generic[T]
+
+	// BatchCreate create given items, will auto generate id
 	BatchCreate(kt *kit.Kit, items []T) (ids []string, err error)
-	List(kt *kit.Kit, opt *types.ListOption) (*types.ListDetails[T], error)
-	Delete(kt *kit.Kit, filterExpr *filter.Expression) (updated int, err error)
-	Update(kt *kit.Kit, filterExpr *filter.Expression, model PT) (updated int, err error)
-	UpdateByID(kt *kit.Kit, id string, model PT) (updated int, err error)
+	// List items by filter and page option
+	List(kt *kit.Kit, opt *types.ListOption, opts ...Option) (*types.ListDetails[T], error)
+	// Delete delete items by filter
+	Delete(kt *kit.Kit, filterExpr *filter.Expression, opts ...Option) (updated int64, err error)
+	// Update update model items by filter
+	Update(kt *kit.Kit, filterExpr *filter.Expression, model *T, opts ...Option) (updated int64, err error)
+	// UpdateByID update model item by id
+	UpdateByID(kt *kit.Kit, id string, model *T) (updated int64, err error)
 }
 
-var _ Generic[table.TestModel, *table.TestModel] = new(GenericDao[table.TestModel, *table.TestModel])
+var _ Generic[table.TestModel] = new(GenericDao[table.TestModel])
 
 // GenericDao dao for generic type
-type GenericDao[T any, PT IDSetterModel[T]] struct {
+type GenericDao[T types.Tabler] struct {
 	Orm   orm.Interface
 	IDGen idgenerator.Interface
+	Config
+	log log.Logger
 }
 
 // NewGenericDao returns a new GenericDao
-func NewGenericDao[T any, PT IDSetterModel[T]](orm orm.Interface, idGen idgenerator.Interface) *GenericDao[T, PT] {
-	return &GenericDao[T, PT]{
-		Orm:   orm,
-		IDGen: idGen,
+func NewGenericDao[T types.Tabler](orm orm.Interface, idGen idgenerator.Interface, opts ...Option) *GenericDao[T] {
+	cfg := &Config{}
+	for _, opt := range opts {
+		opt(cfg)
 	}
+
+	d := &GenericDao[T]{
+		Orm:    orm,
+		IDGen:  idGen,
+		Config: *cfg,
+	}
+	logger := log.With("table", d.GetTableName())
+	d.log = logger
+	return d
 }
 
 // GetTableName get table name
-func (d *GenericDao[T, PT]) GetTableName() table.Name {
-	return table.Name(PT(new(T)).TableName())
+func (d *GenericDao[T]) GetTableName() types.Name {
+	var t T
+	return types.Name(t.TableName())
 }
 
 // AutoTxn auto start transaction to execute fn then commit, rollback if error
-func (d *GenericDao[T, PT]) AutoTxn(kt *kit.Kit, fn func(tx orm.Interface) error,
-	opts ...*sql.TxOptions) error {
-
-	return d.Orm.DB().WithContext(kt).Transaction(func(tx *gorm.DB) error {
+func (d *GenericDao[T]) AutoTxn(kt *kit.Kit, fn func(tx orm.Interface) error, opts ...*sql.TxOptions) error {
+	return d.Orm.DB(orm.WithContext(kt)).Transaction(func(tx *gorm.DB) error {
 		return fn(d.Orm.WithTx(tx))
 	}, opts...)
 }
 
 // WithTx creates a new GenericDao with the given transaction
-func (d *GenericDao[T, PT]) WithTx(tx orm.Interface) Generic[T, PT] {
-	return &GenericDao[T, PT]{
+func (d *GenericDao[T]) WithTx(tx orm.Interface) Generic[T] {
+	return &GenericDao[T]{
 		Orm: tx,
 		// IDGen should not use transaction, to avoid long time lock
 		IDGen: d.IDGen,
@@ -101,66 +109,82 @@ func (d *GenericDao[T, PT]) WithTx(tx orm.Interface) Generic[T, PT] {
 }
 
 // BatchCreate ...
-func (d *GenericDao[T, PT]) BatchCreate(kt *kit.Kit, items []T) (ids []string, err error) {
+func (d *GenericDao[T]) BatchCreate(kt *kit.Kit, items []T) (ids []string, err error) {
+	// type check, T should not be ptr, and its pointer type should implement SetID(string) method
+	if err := checkIDSettable[T](); err != nil {
+		return nil, err
+	}
+
 	// generate ids
 	tableName := d.GetTableName()
 	ids, err = d.IDGen.Batch(kt, tableName, uint64(len(items)))
 	if err != nil {
-		log.Error(kt, "fail to generate ids for table", "table", tableName.String(), log.E(err))
+		d.log.Error(kt, "fail to generate ids for table", "table", tableName, log.E(err))
 		return nil, err
 	}
 	for i := range items {
-		PT(&items[i]).SetID(ids[i])
+		// type already checked
+		any(&items[i]).(IDSettable).SetID(ids[i])
 	}
 	err = d.Orm.DB().Create(items).Error
 	if err != nil {
-		log.Error(kt, "fail to create table", Table(tableName), log.E(err))
+		d.log.Error(kt, "fail to create table", log.E(err))
 		return nil, err
 	}
 	return ids, nil
 }
 
-// List ...
-func (d *GenericDao[T, PT]) List(kt *kit.Kit, opt *types.ListOption) (*types.ListDetails[T], error) {
-	tableName := d.GetTableName()
-	fieldsInfo, ok := table.GetModelTypeInfo(kt, tableName)
-	if !ok {
-		return nil, fmt.Errorf("fail to get table fields for %s", tableName)
+func checkIDSettable[T any]() error {
+	var t T
+	if _, ok := any(&t).(IDSettable); !ok {
+		return fmt.Errorf("item's pointer type should implement SetID method, got %T", t)
 	}
-	option := filter.NewExprOption(filter.RuleFields(fieldsInfo.GetColumnTypeMap()))
-	err := opt.Validate(option, types.NewDefaultPageOption())
-	if err != nil {
-		return nil, fmt.Errorf("invalid list option: %w", err)
+	return nil
+}
+
+// List ...
+func (d *GenericDao[T]) List(kt *kit.Kit, listOpt *types.ListOption, opts ...Option) (*types.ListDetails[T], error) {
+	// get model struct info
+	tableName := d.GetTableName()
+	modelInfo, ok := table.GetModelTypeInfo(tableName)
+	if !ok {
+		d.log.Error(kt, "model type info not found for generic list")
+		return nil, fmt.Errorf("model type info not found for generic list: %s", tableName)
 	}
 
-	expr, err := conv.Filter(opt.Filter)
+	// get option and validate list option for dynamic
+	typeMap := modelInfo.GetColumnTypeMap()
+	eo, po := GetConfig(typeMap, opts)
+	if err := listOpt.Validate(eo, po); err != nil {
+		return nil, err
+	}
+
+	expr, err := conv.Filter(listOpt.Filter)
 	if err != nil {
-		log.Error(kt, "fail to convert filter to clause expression", "opt", opt, log.E(err))
-		return nil, fmt.Errorf("fail to convert filter to clause expression: %v", err)
+		d.log.Error(kt, "fail to convert filter to clause expression", "listOpt", listOpt, log.E(err))
+		return nil, fmt.Errorf("fail to convert filter to clause expression: %w", err)
 	}
 
 	db := d.Orm.DB().Model(new(T)).Where(expr)
-	if len(opt.Fields) > 0 {
-		db = db.Select(opt.Fields)
-	}
 
 	// for count request
-	if opt.Page.Count {
+	if listOpt.Page.Count {
 		var count int64
 		err = db.Count(&count).Error
 		if err != nil {
-			log.Error(kt, "fail to count table", Table(tableName), log.E(err))
+			d.log.Error(kt, "fail to count table", log.E(err))
 			return nil, err
 		}
 		return &types.ListDetails[T]{Count: uint64(count)}, nil
 	}
-
-	data := make([]T, 0)
 	// for list request
-	err = db.Find(&data).Error
+	if len(listOpt.Fields) > 0 {
+		db = db.Select(listOpt.Fields)
+	}
+	data := make([]T, 0)
+	err = db.Clauses(conv.Page(listOpt.Page, po)...).Find(&data).Error
 	if err != nil {
-		log.Error(kt, "fail to list table", Table(tableName),
-			log.E(err), slog.Any("expr", expr))
+		d.log.Error(kt, "fail to list table", "expr", expr, log.E(err))
 		return nil, err
 	}
 
@@ -171,73 +195,73 @@ func (d *GenericDao[T, PT]) List(kt *kit.Kit, opt *types.ListOption) (*types.Lis
 }
 
 // Delete ...
-func (d *GenericDao[T, PT]) Delete(kt *kit.Kit, filterExpr *filter.Expression) (deleted int, err error) {
-	fieldsInfo, ok := table.GetModelTypeInfo(kt, d.GetTableName())
-	if !ok {
-		return 0, fmt.Errorf("fail to get table fields for table")
-	}
-	option := filter.NewExprOption(filter.RuleFields(fieldsInfo.GetColumnTypeMap()))
-	err = filterExpr.Validate(option)
+func (d *GenericDao[T]) Delete(kt *kit.Kit, flt *filter.Expression, opts ...Option) (deleted int64, err error) {
+	expr, _, err := d.ConvFilter(kt, flt, opts)
 	if err != nil {
-		return 0, fmt.Errorf("invalid delete option: %w", err)
-	}
-
-	expr, err := conv.Filter(filterExpr)
-	if err != nil {
-		log.Error(kt, "fail to convert filter to clause expression",
-			log.E(err), slog.Any("filter", filterExpr))
-		return 0, fmt.Errorf("fail to convert filter to clause expression: %v", err)
+		d.log.Error(kt, "generic delete fail to convert filter to clause expression", log.E(err), "filter", flt)
+		return 0, err
 	}
 
 	do := gen.Use(d.Orm.DB()).WithContext(kt).TestModel
 	ret, err := do.Clauses(expr).Delete()
 	if err != nil {
-		log.Error(kt, "fail to delete table", log.E(err))
+		d.log.Error(kt, "fail to delete table", log.E(err))
 		return 0, err
 	}
-	return int(ret.RowsAffected), nil
+	return ret.RowsAffected, nil
 }
 
 // Update ...
-func (d *GenericDao[T, PT]) Update(kt *kit.Kit, filterExpr *filter.Expression, model PT) (
-	updated int, err error) {
+func (d *GenericDao[T]) Update(kt *kit.Kit, flt *filter.Expression, model *T, opts ...Option) (
+	updated int64, err error) {
 
-	fieldInfo, ok := table.GetModelTypeInfo(kt, d.GetTableName())
-	if !ok {
-		return 0, fmt.Errorf("fail to get table fields for table")
-	}
-	option := filter.NewExprOption(filter.RuleFields(fieldInfo.GetColumnTypeMap()))
-	err = filterExpr.Validate(option)
+	expr, _, err := d.ConvFilter(kt, flt, opts)
 	if err != nil {
-		return 0, fmt.Errorf("invalid update option: %w", err)
-	}
-
-	expr, err := conv.Filter(filterExpr)
-	if err != nil {
-		log.Error(kt, "fail to convert filter to clause expression",
-			log.E(err), slog.Any("filter", filterExpr))
-		return 0, fmt.Errorf("fail to convert filter to clause expression: %v", err)
+		d.log.Error(kt, "generic update fail to convert filter to clause expression", log.E(err), "filter", flt)
+		return 0, err
 	}
 
 	do := gen.Use(d.Orm.DB()).WithContext(kt).TestModel
 	ret, err := do.Clauses(expr).Updates(model)
 	if err != nil {
-		log.Error(kt, "fail to update table", log.E(err))
+		d.log.Error(kt, "fail to update table", log.E(err))
 		return 0, err
 	}
-	return int(ret.RowsAffected), nil
+	return ret.RowsAffected, nil
 }
 
 // UpdateByID ...
-func (d *GenericDao[T, PT]) UpdateByID(kt *kit.Kit, id string, model PT) (
-	updated int, err error) {
-
+func (d *GenericDao[T]) UpdateByID(kt *kit.Kit, id string, model *T) (updated int64, err error) {
 	info, err := gen.Use(d.Orm.DB()).WithContext(kt).TestModel.
 		Where(gen.TestModel.BaseID.Eq(id)).
 		Updates(model)
 	if err != nil {
-		log.Error(kt, "fail to update table", log.E(err))
+		d.log.Error(kt, "fail to update table", log.E(err))
 		return 0, err
 	}
-	return int(info.RowsAffected), nil
+	return info.RowsAffected, nil
+}
+
+// ConvFilter conv and check filter
+func (d *GenericDao[T]) ConvFilter(kt *kit.Kit, flt filter.RuleFactory, opts []Option) (
+	clause.Expression, *filter.ExprOption, error) {
+
+	// get table fields definition
+	tableName := d.GetTableName()
+	fieldsInfo, ok := table.GetModelTypeInfo(tableName)
+	if !ok {
+		return nil, nil, fmt.Errorf("fail to get table fields for %s", tableName)
+	}
+	// ignore page option here
+	eo, _ := GetConfig(fieldsInfo.GetColumnTypeMap(), opts)
+	if err := flt.Validate(eo); err != nil {
+		return nil, nil, err
+	}
+	// convert filter to clause expression
+	expr, err := conv.Filter(flt)
+	if err != nil {
+		return nil, nil, fmt.Errorf("fail to convert filter to clause expression: %w", err)
+	}
+
+	return expr, eo, nil
 }

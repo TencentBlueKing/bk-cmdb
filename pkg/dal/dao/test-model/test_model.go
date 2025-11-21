@@ -29,7 +29,7 @@ import (
 
 // Interface for test only
 type Interface interface {
-	base.Generic[table.TestModel, *table.TestModel]
+	base.Generic[table.TestModel]
 	// GetNameByID Get name by id
 	GetNameByID(kt *kit.Kit, id string) (string, error)
 }
@@ -38,18 +38,18 @@ var _ Interface = new(dao)
 
 // dao test model dao.
 type dao struct {
-	*base.GenericDao[table.TestModel, *table.TestModel]
+	*base.GenericDao[table.TestModel]
 }
 
 // NewDao new test model dao
 func NewDao(orm orm.Interface, idGen idgenerator.Interface) Interface {
 	return &dao{
-		GenericDao: base.NewGenericDao[table.TestModel, *table.TestModel](orm, idGen),
+		GenericDao: base.NewGenericDao[table.TestModel](orm, idGen),
 	}
 }
 
 // GetNameByID Get name by id
-func (d dao) GetNameByID(kt *kit.Kit, id string) (string, error) {
+func (d *dao) GetNameByID(kt *kit.Kit, id string) (string, error) {
 	m := gen.Use(d.Orm.DB()).TestModel
 	model, err := m.WithContext(kt).
 		Where(m.BaseID.Eq(id)).

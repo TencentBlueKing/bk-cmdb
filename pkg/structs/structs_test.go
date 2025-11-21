@@ -361,8 +361,14 @@ func BenchmarkStructSet(b *testing.B) {
 }
 
 func TestEmbeddedStruct(t *testing.T) {
+	type DeepBase struct {
+		ID  string `json:"id"`
+		Age int    `json:"age"`
+	}
 	type base struct {
-		ID string `json:"str"`
+		ID   string `json:"id"`
+		Name string `json:"name"`
+		DeepBase
 	}
 	structs.RegisterFieldType("base", reflect.TypeOf(base{}))
 	outsideBuilder, err := structs.UpsertBuilderByFields("Struct1", []structs.Field{
@@ -402,6 +408,46 @@ func TestEmbeddedStruct(t *testing.T) {
 		t.Fatalf("key ID value mismatch error: got %v, want 123", val.String())
 		return
 	}
+
+	if err = s1.Set("Age", 27); err != nil {
+		t.Fatalf("set Base.DeepBase.Age failed: %v", err)
+		return
+	}
+	val, err = s1.Get("Age")
+	if err != nil {
+		t.Fatalf("get Base.DeepBase.Age failed: %v", err)
+		return
+	}
+	if val.Int64() != 27 {
+		t.Fatalf("key Age value mismatch error: got %v, want 27", val.Int64())
+		return
+	}
+
+	if err := s1.Set("Name", "cmdb"); err != nil {
+		t.Fatalf("set Name failed: %v", err)
+		return
+	}
+	val, err = s1.Get("Name")
+	if err != nil {
+		t.Fatalf("get Name failed: %v", err)
+		return
+	}
+	if val.String() != "cmdb" {
+		t.Fatalf("key Name value mismatch error: got %v, want cmdb", val.String())
+		return
+	}
+
+	baseVal, err := s1.Get("Base")
+	expected := base{
+		ID: "123",
+		// Name value will be set to s1 itself
+		Name: "",
+		DeepBase: DeepBase{
+			ID:  "",
+			Age: 27,
+		},
+	}
+	assert.ObjectsAreEqual(expected, baseVal.Raw())
 }
 
 func TestBuilder_Invalid(t *testing.T) {
@@ -438,49 +484,14 @@ func TestBuilder_Invalid(t *testing.T) {
 	s2 := b2.New()
 
 	t.Run("test_of", func(t *testing.T) {
-		if !b1.Of(s1) {
+		if !b1.OfStruct(s1) {
 			t.Fatalf("b1 should be builder of s1")
 			return
 		}
 
-		if b1.Of(s2) {
+		if b1.OfStruct(s2) {
 			t.Fatalf("b1 should not be builder of  s2 ")
 			return
 		}
 	})
-
-	t.Run("test invalid", func(t *testing.T) {
-		if b1.Invalid() {
-			t.Fatalf("b1 should not be invalid")
-		}
-
-		b1New, err := structs.UpsertBuilderByFields("b1", []structs.Field{
-			{
-				Name:      "NameNew",
-				Type:      structs.StringType,
-				IsSlice:   false,
-				Tags:      map[string]string{"json": "name"},
-				Anonymous: false,
-				Validator: nil,
-			},
-		})
-		if err != nil {
-			t.Fatalf("b1 upsert builder error: %v", err)
-			return
-		}
-		if b1.Invalid() == false {
-			t.Fatalf("b1 should be invalid after upsert")
-		}
-		if b1New.Invalid() == true {
-			t.Fatalf("b1New should not be invalid")
-		}
-
-		if !b1.Of(s1) {
-			t.Fatalf("b1 should be builder of s1")
-		}
-		if b1New.Of(s1) {
-			t.Fatalf("b1New should not be builder of s1")
-		}
-	})
-
 }

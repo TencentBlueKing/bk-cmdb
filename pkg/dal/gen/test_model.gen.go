@@ -44,7 +44,6 @@ func newTestModel(db *gorm.DB, opts ...gen.DOOption) testModel {
 	tableName := _testModel.testModelDo.TableName()
 	_testModel.ALL = field.NewAsterisk(tableName)
 	_testModel.BaseID = field.NewString(tableName, "id")
-	_testModel.ID = field.NewString(tableName, "id")
 	_testModel.Name = field.NewString(tableName, "name")
 	_testModel.Size = field.NewInt(tableName, "size")
 	_testModel.Weight = field.NewFloat64(tableName, "weight")
@@ -62,7 +61,6 @@ type testModel struct {
 
 	ALL      field.Asterisk
 	BaseID   field.String
-	ID       field.String
 	Name     field.String
 	Size     field.Int
 	Weight   field.Float64
@@ -86,7 +84,6 @@ func (t testModel) As(alias string) *testModel {
 func (t *testModel) updateTableName(table string) *testModel {
 	t.ALL = field.NewAsterisk(table)
 	t.BaseID = field.NewString(table, "id")
-	t.ID = field.NewString(table, "id")
 	t.Name = field.NewString(table, "name")
 	t.Size = field.NewInt(table, "size")
 	t.Weight = field.NewFloat64(table, "weight")
@@ -119,9 +116,8 @@ func (t *testModel) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (t *testModel) fillFieldMap() {
-	t.fieldMap = make(map[string]field.Expr, 8)
+	t.fieldMap = make(map[string]field.Expr, 7)
 	t.fieldMap["id"] = t.BaseID
-	t.fieldMap["id"] = t.ID
 	t.fieldMap["name"] = t.Name
 	t.fieldMap["size"] = t.Size
 	t.fieldMap["weight"] = t.Weight

@@ -29,6 +29,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/table"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/tests"
 )
@@ -114,7 +115,7 @@ func TestIdGenerator_Batch(t *testing.T) {
 
 	kt := tests.GetKit(t)
 	idGen := New(db)
-	resName := table.Name(fmt.Sprintf("test_%d", time.Now().Unix()))
+	resName := types.Name(fmt.Sprintf("test_%d", time.Now().Unix()))
 	t.Cleanup(func() {
 		delResult := db.Model(&table.IDGenerator{}).Where("resource = ?", resName).Delete(&table.IDGenerator{})
 		if delResult.Error != nil {
@@ -123,12 +124,12 @@ func TestIdGenerator_Batch(t *testing.T) {
 		}
 	})
 	t.Run("test invalid table name", func(t *testing.T) {
-		err = resName.Validate()
-		assert.ErrorContains(t, err, "table name is invalid:", "table name should be invalid without register")
+		err = table.Validate(resName)
+		assert.ErrorContains(t, err, "table name unregistered", "table name should be invalid without register")
 	})
-	resName.Register(&table.IDGenerator{})
+	table.RegisterWithName(resName, &table.IDGenerator{})
 	t.Run("test valid table name after register", func(t *testing.T) {
-		err = resName.Validate()
+		err = table.Validate(resName)
 		assert.NoError(t, err, "table name should be valid after register")
 	})
 
@@ -175,10 +176,10 @@ func TestParallelBatch(t *testing.T) {
 
 	kt := tests.GetKit(t)
 
-	resName := table.Name(time.Now().Format("test_20060102_150405"))
+	resName := types.Name(time.Now().Format("test_20060102_150405"))
 	clean := func() {
 		delResult := db.Model(&table.IDGenerator{}).
-			Where("resource in ?", []table.Name{resName}).
+			Where("resource in ?", []types.Name{resName}).
 			Delete(&table.IDGenerator{})
 		if delResult.Error != nil {
 			t.Fatalf("failed to delete idgen record for %s, err: %v", resName, delResult.Error)
@@ -186,7 +187,7 @@ func TestParallelBatch(t *testing.T) {
 		}
 	}
 	t.Cleanup(clean)
-	resName.Register(&table.IDGenerator{})
+	table.RegisterWithName(resName, &table.IDGenerator{})
 
 	idGen := &idGenerator{db: db}
 	// parallel goroutine number
@@ -224,10 +225,10 @@ func TestBatchZero(t *testing.T) {
 
 	kt := tests.GetKit(t)
 
-	resName := table.Name(time.Now().Format("test_20060102_150405"))
+	resName := types.Name(time.Now().Format("test_20060102_150405"))
 	clean := func() {
 		delResult := db.Model(&table.IDGenerator{}).
-			Where("resource in ?", []table.Name{resName}).
+			Where("resource in ?", []types.Name{resName}).
 			Delete(&table.IDGenerator{})
 		if delResult.Error != nil {
 			t.Fatalf("failed to delete idgen record for %s, err: %v", resName, delResult.Error)
@@ -235,7 +236,7 @@ func TestBatchZero(t *testing.T) {
 		}
 	}
 	t.Cleanup(clean)
-	resName.Register(&table.IDGenerator{})
+	table.RegisterWithName(resName, &table.IDGenerator{})
 
 	idGen := &idGenerator{db: db}
 
@@ -276,9 +277,9 @@ func TestBatchZero(t *testing.T) {
 
 }
 
-type idGenFunc func(kt *kit.Kit, resource table.Name, count uint64) ([]string, error)
+type idGenFunc func(kt *kit.Kit, resource types.Name, count uint64) ([]string, error)
 
-func testParallelGen(t *testing.T, idGenFunc idGenFunc, kt *kit.Kit, resName table.Name, currentMax,
+func testParallelGen(t *testing.T, idGenFunc idGenFunc, kt *kit.Kit, resName types.Name, currentMax,
 	total, parallel int) {
 
 	exceptedMaxID := currentMax + total
@@ -294,7 +295,7 @@ func testParallelGen(t *testing.T, idGenFunc idGenFunc, kt *kit.Kit, resName tab
 			t.Logf("start to generate id list for idx:%d", idx)
 			idList, err := retryOnDuplicate(idGenFunc, kt, resName, batchSize)
 			if err != nil {
-				t.Fatalf("fial to generate id list for %s, idx:%d, err: %v", resName, idx, err)
+				t.Errorf("fial to generate id list for %s, idx:%d, err: %v", resName, idx, err)
 				return
 			}
 			t.Logf("idx:%d, len:%d: %s", idx, len(idList), idList)
@@ -339,19 +340,19 @@ func BenchmarkIdGenerator_Batch(b *testing.B) {
 		b.Fatalf("failed to auto migrate: idgen table, err: %v", err)
 	}
 
-	resName := table.Name(fmt.Sprintf("test_%d", time.Now().Unix()))
-	resName.Register(&table.IDGenerator{})
+	resName := types.Name(fmt.Sprintf("test_%d", time.Now().Unix()))
+	table.Register(&table.IDGenerator{})
 
 	b.Cleanup(func() {
 		delResult := db.Model(&table.IDGenerator{}).
-			Where("resource in ?", []table.Name{resName}).
+			Where("resource in ?", []types.Name{resName}).
 			Delete(&table.IDGenerator{})
 		if delResult.Error != nil {
 			b.Fatalf("failed to delete idgen record for %s, err: %v", resName, delResult.Error)
 			return
 		}
 	})
-	resName.Register(&table.IDGenerator{})
+	table.Register(&table.IDGenerator{})
 	idGen := &idGenerator{db: db}
 	kt := tests.GetKit(b)
 

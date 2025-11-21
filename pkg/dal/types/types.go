@@ -30,6 +30,7 @@ type ListOption struct {
 	Fields []string
 	Filter filter.RuleFactory
 	Page   *BasePage
+	Option *ListOption
 }
 
 // DynamicListDetails defines the results of listing resources.
@@ -46,27 +47,16 @@ type ListDetails[T any] struct {
 
 // Validate list option.
 func (opt ListOption) Validate(eo *filter.ExprOption, po *PageOption) error {
-	if opt.Filter == nil {
-		return errors.New("filter expr is required")
-	}
-
-	if opt.Page == nil {
-		return errors.New("page is required")
+	err := opt.validatePage(po)
+	if err != nil {
+		return err
 	}
 
 	if eo == nil {
 		return errors.New("filter expr option is required")
 	}
 
-	if po == nil {
-		return errors.New("page option is required")
-	}
-
-	if err := opt.Filter.Validate(eo); err != nil {
-		return err
-	}
-
-	if err := opt.Page.Validate(po); err != nil {
+	if err = opt.validateFilter(eo); err != nil {
 		return err
 	}
 
@@ -74,6 +64,32 @@ func (opt ListOption) Validate(eo *filter.ExprOption, po *PageOption) error {
 		return err
 	}
 
+	return nil
+}
+
+func (opt ListOption) validateFilter(eo *filter.ExprOption) error {
+	if opt.Filter == nil {
+		return errors.New("filter expr is required")
+	}
+
+	if err := opt.Filter.Validate(eo); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (opt ListOption) validatePage(po *PageOption) error {
+	if opt.Page == nil {
+		return errors.New("page is required")
+	}
+
+	if po == nil {
+		return errors.New("page option is required")
+	}
+	if err := opt.Page.Validate(po); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -95,63 +111,4 @@ func (opt ListOption) ValidateFields(eo *filter.ExprOption) error {
 
 	return nil
 
-}
-
-// CountOption defines options to count resources.
-type CountOption struct {
-	Filter  *filter.Expression
-	GroupBy string
-}
-
-// Validate list option.
-func (opt *CountOption) Validate(eo *filter.ExprOption) error {
-	if opt.Filter == nil {
-		return errors.New("filter expr is required")
-	}
-
-	if eo == nil {
-		return errors.New("filter expr option is required")
-	}
-
-	if err := opt.Filter.Validate(eo); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// ValidateExcludeFilter validate list option, Filter is allowed to be empty.
-func (opt ListOption) ValidateExcludeFilter(eo *filter.ExprOption, po *PageOption) error {
-	if opt.Filter != nil {
-		if eo == nil {
-			return errors.New("filter expr option is required")
-		}
-		if err := opt.Filter.Validate(eo); err != nil {
-			return err
-		}
-	}
-
-	if opt.Page == nil {
-		return errors.New("page is required")
-	}
-
-	if po == nil {
-		return errors.New("page option is required")
-	}
-
-	if err := opt.Page.Validate(po); err != nil {
-		return err
-	}
-
-	if err := opt.ValidateFields(eo); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// CountResult defines count resources with group by options result.
-type CountResult struct {
-	GroupField string `db:"group_field" json:"group_field"`
-	Count      uint64 `db:"count" json:"count"`
 }

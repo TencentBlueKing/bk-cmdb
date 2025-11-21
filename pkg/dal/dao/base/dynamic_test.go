@@ -40,8 +40,8 @@ func TestDynamic(t *testing.T) {
 		return
 	}
 	kt := tests.GetKit(t)
-	ormInst, err := orm.New(kt, db)
-	if !assert.NoError(t, err, "init Orm error") {
+	ormInst, err := orm.New(kt, db, orm.Debug())
+	if !assert.NoError(t, err, "init orm error") {
 		return
 	}
 	idgen := idgenerator.New(db)
@@ -49,12 +49,6 @@ func TestDynamic(t *testing.T) {
 	if err := autoDeleteTable(ormInst, dynamicTableName); err != nil {
 		t.Fatalf("fail to delete table before test: %v", err)
 		return
-	}
-
-	listTest0Opt := &types.ListOption{
-		Fields: nil,
-		Filter: filter.RuleEqual("name", "test-0"),
-		Page:   types.NewDefaultPage(),
 	}
 
 	// 构造动态结构体
@@ -81,7 +75,7 @@ func TestDynamic(t *testing.T) {
 		return
 	}
 	// 建表
-	err = ormInst.DBContext(kt).
+	err = ormInst.DB(orm.WithContext(kt)).
 		Table(dynamicTableName).
 		Migrator().
 		AutoMigrate(testDynamicBuilder.New().Value())
@@ -93,12 +87,6 @@ func TestDynamic(t *testing.T) {
 		_ = autoDeleteTable(ormInst, dynamicTableName)
 	})
 
-	// 注册表结构
-	err = table.RegisterBuilder(testDynamicBuilder)
-	if !assert.Nil(t, err, "register builder to table error") {
-		return
-	}
-
 	// 初始化动态DO
 	dynamic := NewDynamicConstructor(ormInst, idgen)
 
@@ -107,36 +95,67 @@ func TestDynamic(t *testing.T) {
 	if !assert.Nil(t, err, "with model error") {
 		return
 	}
+	type script struct {
+		Name      string
+		Operation func(t *testing.T, testDynamicBuilder *structs.Builder, dynamicWithModel Dynamic) error
+	}
+	var scripts = []script{
+		{Name: "test_create", Operation: testDynamicCreate},
+		{Name: "test_list", Operation: testDynamicList},
+		{Name: "test_list_with_page", Operation: testDynamicListWithPage},
+		{Name: "test_update", Operation: testDynamicUpdate},
+		{Name: "test_delete", Operation: testDynamicDelete},
+	}
+	for _, s := range scripts {
+		err = s.Operation(t, testDynamicBuilder, dynamicWithModel)
+		if err != nil {
+			t.Errorf("script %s error: %v", s.Name, err)
+			return
+		}
+	}
 
+}
+
+func testDynamicCreate(t *testing.T, testDynamicBuilder *structs.Builder, dynamicWithModel Dynamic) error {
 	// 测试创建
 	// 构造Slice数据
+	kt := tests.GetKit(t)
 	sliceData := testDynamicBuilder.NewSlice(3, 3)
 	for i := range sliceData.Cap() {
 		st := testDynamicBuilder.New()
-		err = st.Set("Name", fmt.Sprintf("test-%d", i))
-		if !assert.Nilf(t, err, "set name error idx %d", i) {
-			return
+		err := st.Set("Name", fmt.Sprintf("test-%d", i))
+		if !assert.Nil(t, err) {
+			return fmt.Errorf("set name error idx %d: %w", i, err)
 		}
 		err = sliceData.SetStruct(i, st)
-		if !assert.Nilf(t, err, "set struct error idx %d", i) {
-			return
+		if !assert.Nil(t, err) {
+			return fmt.Errorf("set struct error idx %d: %w", i, err)
 		}
 	}
 	ids, err := dynamicWithModel.BatchCreate(kt, sliceData)
-	if !assert.Nil(t, err, "batch create error") {
-		return
+	if !assert.Nil(t, err) {
+		return fmt.Errorf("batch create error: %w", err)
 	}
 	if !assert.Len(t, ids, sliceData.Len()) {
-		return
+		return fmt.Errorf("ids length mismatch: got %d, want %d", len(ids), sliceData.Len())
 	}
+	return nil
+}
 
+func testDynamicList(t *testing.T, testDynamicBuilder *structs.Builder, dynamicWithModel Dynamic) error {
 	// 测试查询
+	listTest0Opt := &types.ListOption{
+		Fields: nil,
+		Filter: filter.RuleEqual("name", "test-0"),
+		Page:   types.NewDefaultPage(),
+	}
+	kt := tests.GetKit(t)
 	listRet, err := dynamicWithModel.List(kt, listTest0Opt)
 	if !assert.Nil(t, err, "list error") {
-		return
+		return err
 	}
 	if !assert.Equal(t, 1, listRet.Details.Len(), "list by id length mismatch") {
-		return
+		return fmt.Errorf("list by id length mismatch")
 	}
 	m0, err := listRet.Details.GetStruct(0)
 	assert.Nil(t, err, "get struct error at index 0")
@@ -144,31 +163,72 @@ func TestDynamic(t *testing.T) {
 	assert.Nil(t, err, "get id error")
 	if len(idVal.String()) == 0 {
 		t.Errorf("id not set successful, got %s, want non-empty", idVal.String())
-		return
+		return fmt.Errorf("id not set successful, got %s, want non-empty", idVal.String())
 	}
+	return nil
+}
 
-	// 测试更新
-	dataTest0, err := listRet.Details.GetStruct(0)
-	if !assert.Nil(t, err, "get struct error") {
-		return
+func testDynamicListWithPage(t *testing.T, testDynamicBuilder *structs.Builder, dynamicWithModel Dynamic) error {
+	// 测试查询
+	listTest0Opt := &types.ListOption{
+		Fields: nil,
+		Filter: filter.AllExpression(),
+		Page: &types.BasePage{
+			Count: false,
+			Start: 1,
+			Limit: 2,
+			Sort:  types.NewSorts(types.NewSort("name", types.Descending)),
+		},
 	}
+	kt := tests.GetKit(t)
+	listRet, err := dynamicWithModel.List(kt, listTest0Opt)
+	if !assert.Nil(t, err, "list error") {
+		return err
+	}
+	if !assert.Equal(t, 2, listRet.Details.Len(), "list by id length mismatch") {
+		return fmt.Errorf("list by id length mismatch")
+	}
+	names := []string{"test-1", "test-0"}
+	for i := range listRet.Details.Len() {
+		data, err := listRet.Details.GetStruct(i)
+		if !assert.Nil(t, err, "get struct error at index %d", i) {
+			return fmt.Errorf("get struct error at index %d: %w", i, err)
+		}
+		nameVal, err := data.Get("Name")
+		if !assert.Nil(t, err, "get name error at index %d", i) {
+			return fmt.Errorf("get name error at index %d: %w", i, err)
+		}
+		if !assert.Equal(t, names[i], nameVal.String(), "name mismatch at index %d", i) {
+			return fmt.Errorf("name mismatch at index %d: got %s, want %s", i, nameVal.String(), names[i])
+		}
+	}
+	return nil
+}
+
+func testDynamicUpdate(t *testing.T, testDynamicBuilder *structs.Builder, dynamicWithModel Dynamic) error {
+	// 测试更新
+	dataTest0 := testDynamicBuilder.New()
 	dataTest0.Set("Name", "test-0-updated")
 	// update
-	updated, err := dynamicWithModel.Update(kt, filter.RuleEqual("name", "test-0"), dataTest0)
+	updated, err := dynamicWithModel.Update(tests.GetKit(t), filter.RuleEqual("name", "test-0"), dataTest0)
 	if !assert.Nil(t, err, "update error") {
-		return
+		return fmt.Errorf("update error: %w", err)
 	}
-	if !assert.Equal(t, updated, int(1), "update count mismatch") {
-		return
+	if !assert.Equal(t, updated, int64(1), "update count mismatch") {
+		return fmt.Errorf("update count mismatch: got %d, want %d", updated, 1)
 	}
+	return nil
+}
 
+func testDynamicDelete(t *testing.T, testDynamicBuilder *structs.Builder, dynamicWithModel Dynamic) error {
 	// 测试删除
+	kt := tests.GetKit(t)
 	deleted, err := dynamicWithModel.Delete(kt, filter.RuleEqual("name", "test-0-updated"))
 	if !assert.Nil(t, err, "delete error") {
-		return
+		return fmt.Errorf("delete error: %w", err)
 	}
-	if !assert.Equal(t, deleted, int(1), "delete count mismatch") {
-		return
+	if !assert.Equal(t, deleted, int64(1), "delete count mismatch") {
+		return fmt.Errorf("delete count mismatch: got %d, want %d", deleted, 1)
 	}
 
 	// 测试删除后查询
@@ -177,30 +237,30 @@ func TestDynamic(t *testing.T) {
 		Filter: filter.RuleCis("name", "test"),
 		Page:   types.NewDefaultPage(),
 	}
-	listRet, err = dynamicWithModel.List(kt, listAllTestOpt)
+	listRet, err := dynamicWithModel.List(kt, listAllTestOpt)
 	if !assert.Nil(t, err, "list error") {
-		return
+		return err
 	}
 	// should be 2 after delete 1
 	if !assert.Equal(t, listRet.Details.Len(), 2, "list by id length mismatch") {
-		return
+		return fmt.Errorf("list by id length mismatch: got %d, want %d", listRet.Details.Len(), 2)
 	}
 	names := make([]string, 0)
 	for i := range listRet.Details.Len() {
 		data, err := listRet.Details.GetStruct(i)
 		if !assert.Nil(t, err, "get struct error") {
-			return
+			return fmt.Errorf("get struct error: %w", err)
 		}
 		name, err := data.Get("Name")
 		if !assert.Nil(t, err, "get name error") {
-			return
+			return fmt.Errorf("get name error: %w", err)
 		}
 		names = append(names, name.String())
 	}
 	if !assert.ElementsMatch(t, names, []string{"test-1", "test-2"}, "names mismatch") {
-		return
+		return fmt.Errorf("names mismatch: got %v, want %v", names, []string{"test-1", "test-2"})
 	}
-
+	return nil
 }
 
 func autoDeleteTable(ormInst orm.Interface, table string) error {

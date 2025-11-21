@@ -23,6 +23,7 @@ import (
 
 // TestModel ...
 type TestModel struct {
+	// embedded base model to add ID field
 	Base     `gorm:"embedded" json:",inline"`
 	Name     string                  `gorm:"column:name" json:"name,omitempty"`
 	Size     int                     `gorm:"column:size" json:"size,omitempty"`
@@ -33,10 +34,11 @@ type TestModel struct {
 }
 
 // TableName ...
-func (*TestModel) TableName() string {
+func (TestModel) TableName() string {
 	return TestModelTable.String()
 }
 
 func init() {
-	TestModelTable.Register(&TestModel{})
+	// register test model to table field definition
+	Register(&TestModel{})
 }

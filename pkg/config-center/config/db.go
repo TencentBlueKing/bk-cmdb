@@ -16,49 +16,40 @@
 
 package config
 
-import "time"
-
 // DBType ...
 type DBType string
 
 const (
 	// PostgreSQLType ...
-	PostgreSQLType = "postgres"
+	PostgreSQLType DBType = "postgres"
 	// MySQLType ...
-	MySQLType = "mysql"
+	MySQLType DBType = "mysql"
 )
 
 // DBConfig 数据库配置
 type DBConfig struct {
-	DBType string `yaml:"db_type" json:"db_type"`
+	DBType DBType `yaml:"db_type" json:"db_type"`
 
-	// connection params
+	/* connection params */
+
 	Host     string     `yaml:"host" json:"host"`
-	Port     int        `yaml:"port" json:"port"`
+	Port     uint16     `yaml:"port" json:"port"`
 	Database string     `yaml:"database" json:"database"`
 	Username string     `yaml:"username" json:"username"`
 	Password string     `yaml:"password" json:"password"`
 	TLS      *TLSConfig `yaml:"tls" json:"tls,omitempty"`
 
-	// sql.DB connection pool settings
+	/* sql.DB connection pool settings */
 
-	MaxIdleConns    int           `yaml:"max_idle_conns" json:"max_idle_conns"`
-	MaxOpenConns    int           `yaml:"max_open_conns" json:"max_open_conns"`
-	ConnMaxLifetime time.Duration `yaml:"conn_max_lifetime" json:"conn_max_lifetime"`
-	ConnMaxIdleTime time.Duration `yaml:"conn_max_idle_time" json:"conn_max_idle_time"`
+	MaxIdleConns   uint `yaml:"max_idle_conns" json:"max_idle_conns"`
+	MaxOpenConns   uint `yaml:"max_open_conns" json:"max_open_conns"`
+	ConnMaxLifeSec uint `yaml:"conn_max_life_sec" json:"conn_max_life_sec,format:units"`
+	ConnMaxIdleSec uint `yaml:"conn_max_idle_sec" json:"conn_max_idle_sec,format:units"`
 
 	/* gorm settings */
 
-	// if > 0, all query will add this default timeout to context if given context timeout not specified
-	DefaultConnectionTimeout time.Duration `yaml:"default_connection_timeout" json:"default_connection_timeout"`
-	Debug                    bool          `yaml:"debug" json:"debug"`
+	// Debug enable gorm debug mode, will print sql to log
+	Debug bool `yaml:"debug" json:"debug"`
 
-	SlowLogThreshold time.Duration       `yaml:"slow_log_threshold" json:"slow_log_threshold"`
-	IngressLimit     *TokenBucketLimiter `yaml:"ingress_limit" json:"ingress_limit"`
-}
-
-// TokenBucketLimiter 令牌桶限流配置
-type TokenBucketLimiter struct {
-	Bucket  uint `yaml:"bucket" json:"bucket"`
-	RateQPS uint `yaml:"rate_qps" json:"rate_qps"`
+	SlowLogThresholdMS uint `yaml:"slow_log_threshold_ms" json:"slow_log_threshold_ms,format:units"`
 }

@@ -17,23 +17,22 @@
 package orm
 
 import (
-	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/metrics"
 )
 
+// note: same register can only be called once, otherwise it will panic
 func initMetric(register prometheus.Registerer) *metric {
 	m := new(metric)
 	labels := prometheus.Labels{
 		// TODO 加上服务、环境信息，或者使用统一的进程ID
-		"connection_id": uuid.NewString(),
 	}
 
 	m.cmdLagMS = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace:   metrics.Namespace,
 		Subsystem:   metrics.OrmCmdSubsystem,
-		Name:        "cmd_lag_milliseconds",
+		Name:        "cmd_lag_ms",
 		Help:        "the lags(milliseconds) to exec a ORM command",
 		ConstLabels: labels,
 		Buckets:     []float64{1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 400, 800, 1000, 1500, 2000},

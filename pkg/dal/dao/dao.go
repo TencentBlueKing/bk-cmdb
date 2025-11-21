@@ -20,18 +20,19 @@ package dao
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/client/database"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/dao/base"
 	idgenerator "github.com/TencentBlueKing/bk-cmdb/pkg/dal/dao/id-generator"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/dao/test-model"
+	testmodel "github.com/TencentBlueKing/bk-cmdb/pkg/dal/dao/test-model"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/orm"
 )
 
 // Dao dao interface
 type Dao interface {
-	Dynamic(model string) (base.Dynamic, error)
+	base.DynamicConstructor
 	TestModel() testmodel.Interface
 }
 
@@ -39,28 +40,26 @@ type dao struct {
 	orm orm.Interface
 	idg idgenerator.Interface
 	base.DynamicConstructor
+	testModel testmodel.Interface
 }
 
 // NewDao new dao instance
-func NewDao(kt context.Context, config *config.DBConfig) (Dao, error) {
+func NewDao(ctx context.Context, config *config.DBConfig) (Dao, error) {
 	db, err := database.NewGORMClient(config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create gorm client failed: %w", err)
 	}
 	var opts = make([]orm.Option, 0)
-	if config.IngressLimit != nil {
-		opts = append(opts, orm.IngressLimiter(config.IngressLimit.RateQPS, config.IngressLimit.Bucket))
-	}
 
-	if config.SlowLogThreshold > 0 {
-		opts = append(opts, orm.SlowRequest(config.SlowLogThreshold))
+	if config.SlowLogThresholdMS > 0 {
+		opts = append(opts, orm.SlowRequest(time.Duration(config.SlowLogThresholdMS)*time.Millisecond))
 	}
 
 	if config.Debug {
 		opts = append(opts, orm.Debug())
 	}
 
-	ormInst, err := orm.New(kt, db, opts...)
+	ormInst, err := orm.New(ctx, db, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("new orm failed: %w", err)
 	}
@@ -72,11 +71,12 @@ func NewDao(kt context.Context, config *config.DBConfig) (Dao, error) {
 		orm:                ormInst,
 		idg:                idg,
 		DynamicConstructor: dynamicConstructor,
+		testModel:          testmodel.NewDao(ormInst, idg),
 	}
 	return daoInst, nil
 }
 
-// TestModel ...
-func (d dao) TestModel() testmodel.Interface {
-	return testmodel.NewDao(d.orm, d.idg)
+// TestModel test model dao for example use
+func (d *dao) TestModel() testmodel.Interface {
+	return d.testModel
 }

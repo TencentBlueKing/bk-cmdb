@@ -33,7 +33,7 @@ type Slice struct {
 	// validators maps struct field names to their corresponding validation functions.
 	validators map[string]func(any) error
 	// fieldIndexMap maps struct field names to their respective field indices in the struct type.
-	fieldIndexMap map[string]int
+	fieldIndexMap map[string][]int
 }
 
 // Pointer returns the underlying dynamic slice instance in the form of pointer.
@@ -73,6 +73,7 @@ func (s *Slice) GetStruct(index int) (*Struct, error) {
 	val := s.val.Index(index).Addr()
 
 	return &Struct{
+		name:          s.name,
 		data:          val.Interface(),
 		val:           val.Elem(),
 		validators:    s.validators,
@@ -128,7 +129,7 @@ func (s *Slice) Append(value ...any) error {
 func (s *Slice) Validate() error {
 	for i := 0; i < s.val.Len(); i++ {
 		for fieldName, validator := range s.validators {
-			field := s.val.Index(i).Field(s.fieldIndexMap[fieldName])
+			field := s.val.Index(i).Field(s.fieldIndexMap[fieldName][0])
 			if !field.IsValid() {
 				return fmt.Errorf("field %s is invalid", fieldName)
 			}

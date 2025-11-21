@@ -32,7 +32,7 @@ type Struct struct {
 	// validators maps struct field names to their corresponding validation functions.
 	validators map[string]func(any) error
 	// fieldIndexMap maps struct field names to their respective field indices in the struct type.
-	fieldIndexMap map[string]int
+	fieldIndexMap map[string][]int
 }
 
 // Pointer returns the underlying dynamic struct instance in the form of pointer.
@@ -52,32 +52,21 @@ func (s *Struct) Get(fieldName string) (Valuer, error) {
 		return nil, fmt.Errorf("field %s not found", fieldName)
 	}
 
-	field := s.val.Field(fieldIndex)
+	field := s.val.FieldByIndex(fieldIndex)
 	if !field.IsValid() {
 		return nil, fmt.Errorf("field %s is invalid", fieldName)
-	}
-
-	if field.Kind() == reflect.Struct && fieldName != field.Type().Name() &&
-		s.val.Type().Field(fieldIndex).Anonymous {
-
-		v := field.FieldByName(fieldName)
-		if v.IsValid() {
-			return NewValue(v), nil
-		}
-
-		return nil, fmt.Errorf("field %s is invalid inside anonymous struct", fieldName)
 	}
 	return NewValue(field), nil
 }
 
-// Set sets the value of the specified struct field.
+// Set sets the value of the specified struct field, including nested fields.
 func (s *Struct) Set(fieldName string, value any) error {
 	fieldIndex, exists := s.fieldIndexMap[fieldName]
 	if !exists {
 		return fmt.Errorf("field %s not found", fieldName)
 	}
 
-	field := s.val.Field(fieldIndex)
+	field := s.val.FieldByIndex(fieldIndex)
 	if !field.IsValid() {
 		return fmt.Errorf("field %s is invalid", fieldName)
 	}
@@ -91,18 +80,6 @@ func (s *Struct) Set(fieldName string, value any) error {
 	if valueType == field.Type() {
 		field.Set(reflect.ValueOf(value))
 		return nil
-	}
-
-	if field.Kind() == reflect.Struct && fieldName != field.Type().Name() &&
-		s.val.Type().Field(fieldIndex).Anonymous {
-
-		v := field.FieldByName(fieldName)
-		if !v.IsValid() {
-			return fmt.Errorf("field %s is invalid inside anonymous struct", fieldName)
-		}
-		// replace to the nested field.
-		valueType = v.Type()
-		field = v
 	}
 
 	// check if the value's type can be converted to the field's type.
@@ -119,7 +96,8 @@ func (s *Struct) Set(fieldName string, value any) error {
 // Validate executes all validators for their corresponding struct field values.
 func (s *Struct) Validate() error {
 	for fieldName, validator := range s.validators {
-		field := s.val.Field(s.fieldIndexMap[fieldName])
+		index := s.fieldIndexMap[fieldName]
+		field := s.val.Field(index[0])
 		if !field.IsValid() {
 			return fmt.Errorf("field %s is invalid", fieldName)
 		}
@@ -136,8 +114,8 @@ func (s *Struct) Name() string {
 	return s.name
 }
 
-// HaveField checks if the struct has given field.
-func (s *Struct) HaveField(field string) bool {
+// HasField checks if the struct has given field.
+func (s *Struct) HasField(field string) bool {
 	_, ok := s.fieldIndexMap[field]
 	return ok
 }

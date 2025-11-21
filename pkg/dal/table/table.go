@@ -18,62 +18,12 @@
 package table
 
 import (
-	"fmt"
-
-	"gorm.io/gorm/schema"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/structs"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
 )
-
-// Name of table
-type Name string
 
 const (
 	// IDGeneratorTable ...
-	IDGeneratorTable Name = "id_generator"
+	IDGeneratorTable types.Name = "id_generator"
 	// TestModelTable ...
-	TestModelTable Name = "test_model"
+	TestModelTable types.Name = "test_model"
 )
-
-// Register for static table
-func (n Name) Register(tableStruct Tabler) {
-	tableRegistry[n] = tableStruct
-}
-
-// RegisterBuilder register dynamic struct builder
-func RegisterBuilder(builder *structs.Builder) error {
-	tableRegistry[Name(builder.Name())] = builder
-	return nil
-}
-
-// GetAllStaticTables get all static tables
-func GetAllStaticTables() []any {
-	var tables []any
-	for _, table := range tableRegistry {
-		if _, ok := table.(*structs.Builder); ok {
-			continue
-		}
-		tables = append(tables, table)
-	}
-	return tables
-}
-
-// Validate whether the table name is valid or not.
-func (n Name) Validate() error {
-	_, valid := tableRegistry[n]
-	if valid {
-		return nil
-	}
-
-	return fmt.Errorf("table name is invalid: %s", n)
-}
-
-var tableRegistry = make(map[Name]any)
-
-// String return table name string
-func (n Name) String() string {
-	return string(n)
-}
-
-// Tabler have table name method
-type Tabler = schema.Tabler

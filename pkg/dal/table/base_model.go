@@ -27,6 +27,7 @@ const BaseModelName = "base_model"
 
 // Base defines base model.
 type Base struct {
+	// ID is the primary key.
 	ID string `json:"id" gorm:"column:id;size:64;primaryKey,index:,unique"`
 }
 
@@ -36,5 +37,6 @@ func (m *Base) SetID(id string) {
 }
 
 func init() {
+	// register to dynamic structs
 	structs.RegisterFieldType(BaseModelName, reflect.TypeFor[Base]())
 }

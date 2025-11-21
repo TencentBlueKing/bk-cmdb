@@ -26,16 +26,12 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/time/rate"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/plugin/dbresolver"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
-
-// DefaultIngressLimit default ingress limit of orm
-const DefaultIngressLimit = 500
 
 // DefaultSlowSQLThreshold default slow sql threshold
 const DefaultSlowSQLThreshold = 200 * time.Millisecond
@@ -44,11 +40,35 @@ const DefaultSlowSQLThreshold = 200 * time.Millisecond
 type Interface interface {
 	WithTx(tx *gorm.DB) Interface
 	AutoTxn(ctx context.Context, run TxnFunc) (any, error)
-	DB() *gorm.DB
-	DBContext(ctx context.Context) *gorm.DB
-	WriteDB(ctx context.Context) *gorm.DB
-	ReadDB(ctx context.Context) *gorm.DB
-	GetSession(config *gorm.Session) *gorm.DB
+	DB(opts ...func(*gorm.DB) *gorm.DB) *gorm.DB
+}
+
+// WithContext set context for db
+func WithContext(ctx context.Context) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.WithContext(ctx)
+	}
+}
+
+// UseWriteDB use write db
+func UseWriteDB() func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Clauses(dbresolver.Write)
+	}
+}
+
+// PreferReadDB prefer read db
+func PreferReadDB() func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Clauses(dbresolver.Read)
+	}
+}
+
+// WithSessionConfig set session for db
+func WithSessionConfig(config *gorm.Session) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Session(config)
+	}
 }
 
 // New return orm operations.
@@ -63,10 +83,8 @@ func New(ctx context.Context, db *gorm.DB, opts ...Option) (Interface, error) {
 	}
 
 	ro := &runtimeOrm{db: db}
-	if ormOpts.ingressLimiter == nil {
-		ormOpts.ingressLimiter = rate.NewLimiter(rate.Limit(DefaultIngressLimit), DefaultIngressLimit)
-	}
 
+	// initialize metrics with default registerer if not set
 	if ormOpts.mc == nil {
 		ormOpts.mc = initMetric(prometheus.DefaultRegisterer)
 	}
@@ -87,62 +105,23 @@ func New(ctx context.Context, db *gorm.DB, opts ...Option) (Interface, error) {
 		ParameterizedQueries:      false,
 		LogLevel:                  loggerLevel,
 	}
-
 	slogger := slog.New(log.Depth(2).Handler())
+	// reset logger to use slog logger
 	db.Logger = logger.NewSlogLogger(slogger, loggerConfig)
 
 	ro.mc = ormOpts.mc
-	ro.ingressLimiter = ormOpts.ingressLimiter
 	ro.slowRequestTime = ormOpts.slowRequestTime
 
+	// register metrics callbacks to record the cost time to exec an orm command.
 	if err := ro.registerMetricsCallbacks(); err != nil {
 		log.Error(ctx, "register metrics callbacks error", log.E(err))
-		return nil, err
-	}
-	if err := ro.registerLimiterCallbacks(); err != nil {
-		log.Error(ctx, "register limiter callbacks error", log.E(err))
 		return nil, err
 	}
 	return ro, nil
 }
 
-func (o *runtimeOrm) registerLimiterCallbacks() error {
-	// register limiter
-	err := o.db.Callback().Create().Before("*").Register("limiter:create", o.tryAccept)
-	if err != nil {
-		return fmt.Errorf("register create_limiter error: %w", err)
-	}
-
-	err = o.db.Callback().Update().Before("*").Register("limiter:update", o.tryAccept)
-	if err != nil {
-		return fmt.Errorf("register update_limiter error: %w", err)
-	}
-
-	err = o.db.Callback().Query().Before("*").Register("limiter:query", o.tryAccept)
-	if err != nil {
-		return fmt.Errorf("register query_limiter error: %w", err)
-	}
-
-	err = o.db.Callback().Delete().Before("*").Register("limiter:delete", o.tryAccept)
-	if err != nil {
-		return fmt.Errorf("register delete_limiter error: %w", err)
-	}
-
-	err = o.db.Callback().Row().Before("*").Register("limiter:row", o.tryAccept)
-	if err != nil {
-		return fmt.Errorf("register row_limiter error: %w", err)
-	}
-
-	err = o.db.Callback().Raw().Before("*").Register("limiter:raw", o.tryAccept)
-	if err != nil {
-		return fmt.Errorf("register raw_limiter error: %w", err)
-	}
-
-	return nil
-}
-
 func (o *runtimeOrm) registerMetricsCallbacks() error {
-	// register limiter
+	// register for create command
 	err := o.db.Callback().Create().Before("*").Register("metric:create:before", o.beforeCommandCallback("create"))
 	if err != nil {
 		return fmt.Errorf("register create_metric error: %w", err)
@@ -152,6 +131,7 @@ func (o *runtimeOrm) registerMetricsCallbacks() error {
 		return fmt.Errorf("register metric:create:after error: %w", err)
 	}
 
+	// register for update command
 	err = o.db.Callback().Update().Before("*").Register("metric:update:before", o.beforeCommandCallback("update"))
 	if err != nil {
 		return fmt.Errorf("register metric:update:before error: %w", err)
@@ -161,6 +141,7 @@ func (o *runtimeOrm) registerMetricsCallbacks() error {
 		return fmt.Errorf("register metric:update:after error: %w", err)
 	}
 
+	// register for query command
 	err = o.db.Callback().Query().Before("*").Register("metric:query:before", o.beforeCommandCallback("query"))
 	if err != nil {
 		return fmt.Errorf("register metric:query:before error: %w", err)
@@ -170,6 +151,7 @@ func (o *runtimeOrm) registerMetricsCallbacks() error {
 		return fmt.Errorf("register metric:query:after error: %w", err)
 	}
 
+	// register for delete command
 	err = o.db.Callback().Delete().Before("*").Register("metric:delete:before", o.beforeCommandCallback("delete"))
 	if err != nil {
 		return fmt.Errorf("register metric:delete:before error: %w", err)
@@ -179,6 +161,7 @@ func (o *runtimeOrm) registerMetricsCallbacks() error {
 		return fmt.Errorf("register metric:delete:after error: %w", err)
 	}
 
+	// register for row command
 	err = o.db.Callback().Row().Before("*").Register("metric:row:before", o.beforeCommandCallback("row"))
 	if err != nil {
 		return fmt.Errorf("register metric:row:before error: %w", err)
@@ -188,6 +171,7 @@ func (o *runtimeOrm) registerMetricsCallbacks() error {
 		return fmt.Errorf("register metric:row:after error: %w", err)
 	}
 
+	// register for raw command
 	err = o.db.Callback().Raw().Before("*").Register("metric:raw:before", o.beforeCommandCallback("raw"))
 	if err != nil {
 		return fmt.Errorf("register metric:raw:before error: %w", err)
@@ -202,8 +186,6 @@ func (o *runtimeOrm) registerMetricsCallbacks() error {
 
 type runtimeOrm struct {
 	db              *gorm.DB
-	ingressLimiter  *rate.Limiter
-	logLimiter      *rate.Limiter
 	mc              *metric
 	slowRequestTime time.Duration
 }
@@ -212,61 +194,30 @@ type runtimeOrm struct {
 func (o *runtimeOrm) WithTx(tx *gorm.DB) Interface {
 	return &runtimeOrm{
 		db:              tx,
-		ingressLimiter:  o.ingressLimiter,
-		logLimiter:      o.logLimiter,
 		mc:              o.mc,
 		slowRequestTime: o.slowRequestTime,
 	}
 }
 
-// DB returns the underlying gorm database.
-func (o *runtimeOrm) DB() *gorm.DB {
-	return o.db
-}
-
-// DBContext returns the underlying database.
-func (o *runtimeOrm) DBContext(ctx context.Context) *gorm.DB {
-	return o.db.WithContext(ctx)
-}
-
-// WriteDB returns the underlying database.
-func (o *runtimeOrm) WriteDB(ctx context.Context) *gorm.DB {
-	return o.db.WithContext(ctx).Session(&gorm.Session{}).Clauses(dbresolver.Write)
-}
-
-// ReadDB returns the underlying database.
-func (o *runtimeOrm) ReadDB(ctx context.Context) *gorm.DB {
-	return o.db.WithContext(ctx).Session(&gorm.Session{}).Clauses(dbresolver.Read)
-}
-
-// GetSession returns a session with configuration.
-func (o *runtimeOrm) GetSession(config *gorm.Session) *gorm.DB {
-	return o.db.Session(config)
-}
-
-// ErrTooManyRequests is the error returned when the request is too many.
-var ErrTooManyRequests = errors.New("orm too many requests")
-
-// tryAccept is used to test if the incoming orm request can be accepted.
-func (o *runtimeOrm) tryAccept(db *gorm.DB) {
-	if o.ingressLimiter == nil {
-		return
+// DB returns a database with options.
+func (o *runtimeOrm) DB(opts ...func(*gorm.DB) *gorm.DB) *gorm.DB {
+	db := o.db
+	for _, opt := range opts {
+		db = opt(db)
 	}
-	if o.ingressLimiter.Allow() {
-		return
-	}
-	// have already oversize the limit
-	db.Error = errors.Join(db.Error, ErrTooManyRequests)
-	o.mc.errCounter.With(prometheus.Labels{"cmd": "limiter"}).Inc()
+	return db
 }
 
 const metricStartTimeKey = "cmd_start_time"
 
+// beforeCommandCallback record the start time of an orm command.
 func (o *runtimeOrm) beforeCommandCallback(cmd string) func(db *gorm.DB) {
 	return func(db *gorm.DB) {
 		db.Set(metricStartTimeKey, time.Now())
 	}
 }
+
+// afterCmdCallback record the cost time to exec an orm command.
 func (o *runtimeOrm) afterCmdCallback(cmd string) func(db *gorm.DB) {
 	return func(db *gorm.DB) {
 		if db.Error != nil {
@@ -283,8 +234,6 @@ func (o *runtimeOrm) afterCmdCallback(cmd string) func(db *gorm.DB) {
 		}
 	}
 }
-
-// }
 
 // TxnFunc is a callback function to process logic tasks between a transaction.
 type TxnFunc func(txn *gorm.DB) (any, error)

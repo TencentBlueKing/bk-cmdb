@@ -22,26 +22,6 @@ import (
 	"fmt"
 )
 
-// PageWithoutSort page without sort.
-type PageWithoutSort struct {
-	// Count describe if this query only return the total request
-	// count of the resources.
-	// If true, then the request will only return the total count
-	// without the resource's detail infos. and start, limit must
-	// be 0.
-	Count bool `json:"count"`
-	// Start is the start position of the queried resource's page.
-	// Note:
-	// 1. Start only works when the Count = false.
-	// 2. Start's minimum value is 0, not 1.
-	// 3. if PageOption.EnableUnlimitedLimit = true, then Start = 0
-	//   and Limit = 0 means query all the resources at once.
-	Start uint32 `json:"start"`
-	// Limit is the total returned resources at once query.
-	// Limit only works when the Count = false.
-	Limit uint `json:"limit"`
-}
-
 const (
 	// DefaultMaxPageLimit is the default value of the max page limitation.
 	DefaultMaxPageLimit = uint64(500)
@@ -74,6 +54,19 @@ func NewDefaultPageOption() *PageOption {
 	}
 }
 
+// NewSort return a new field sort definition
+func NewSort(key string, order Order) Sort {
+	return Sort{
+		Field: key,
+		Order: order,
+	}
+}
+
+// NewSorts return a new multiple fields sort definition
+func NewSorts(sorts ...Sort) []Sort {
+	return sorts
+}
+
 // PageOption defines the options to validate the
 // BasePage's configuration.
 type PageOption struct {
@@ -84,8 +77,6 @@ type PageOption struct {
 	MaxLimit uint64 `json:"max_limit"`
 	// DisableSort defines the sort field is not allowed to be defined by the user.
 	// then system defined sort field is used.
-	// Note: this option does not work when use the page to generate SQL expression,
-	// which means call the method of BasePage's SQLExprAndValue().
 	DisabledSort bool `json:"disabled_sort"`
 }
 
@@ -130,6 +121,26 @@ func (sd Order) Order() Order {
 	}
 }
 
+// Sort represents the sort field and its direction.
+type Sort struct {
+	Field string `json:"field,omitempty"`
+	// if order is not specified use ascending as the default
+	Order Order `json:"order,omitempty"`
+}
+
+// Validate sort: filed is required, order is optional.
+func (s Sort) Validate() error {
+	if len(s.Field) == 0 {
+		return nil
+	}
+
+	if err := s.Order.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // BasePage define the basic page limitation to query resources.
 type BasePage struct {
 	// Count describe if this query only return the total request
@@ -149,12 +160,8 @@ type BasePage struct {
 	// Limit only works when the Count = false.
 	Limit uint64 `json:"limit"`
 	// Sort defines use which field to sort the queried resources.
-	// only 'one' field is supported to do sort.
 	// Sort only works when the Count = false.
-	Sort string `json:"sort"`
-	// Order is the direction when do sort operation.
-	// it works only when the Sort is set.
-	Order Order `json:"order"`
+	Sort []Sort `json:"sort"`
 }
 
 // Validate the base page's options.
@@ -182,11 +189,6 @@ func (bp BasePage) Validate(opt ...*PageOption) (err error) {
 		if len(bp.Sort) > 0 {
 			return errors.New("count is enabled, page.sort should be null")
 		}
-
-		if len(bp.Order) > 0 {
-			return errors.New("count is enabled, page.order should be empty")
-		}
-
 		return nil
 	}
 
@@ -205,10 +207,6 @@ func (bp BasePage) Validate(opt ...*PageOption) (err error) {
 			if len(bp.Sort) > 0 {
 				return errors.New("page.sort is not allowed")
 			}
-
-			if len(bp.Order) > 0 {
-				return errors.New("invalid page.order, page.order is not allowed")
-			}
 		}
 	}
 
@@ -225,12 +223,11 @@ func (bp BasePage) Validate(opt ...*PageOption) (err error) {
 		}
 	}
 
-	// if direction is set, then validate it.
-	if len(bp.Order) != 0 {
-		if err := bp.Order.Validate(); err != nil {
+	// if direction is set, then validate it
+	for i := range bp.Sort {
+		if err := bp.Sort[i].Validate(); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }

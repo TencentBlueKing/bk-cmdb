@@ -20,6 +20,7 @@ package structs
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -29,16 +30,24 @@ var (
 	builderRegistry = make(map[string]*Builder)
 	// builderLock protects concurrent access to builderRegistry.
 	builderLock sync.RWMutex
+
+	// handlers for builder change.
+	handlers = make(map[uint64]Handler)
+	// nextHandlerIDCounter is the id of the next handler.
+	nextHandlerIDCounter = uint64(0)
 )
+
+// Handler builder change handler
+type Handler func(name string, newBuilder *Builder)
 
 // RegisterBuilder registers struct name and its builder to the registry.
 func RegisterBuilder(name string, b *Builder) {
 	builderLock.Lock()
-	if old := builderRegistry[name]; old != nil {
-		old.setInvalid()
-	}
 	builderRegistry[name] = b
 	builderLock.Unlock()
+	for _, handler := range handlers {
+		handler(name, b)
+	}
 }
 
 // GetBuilder get struct builder by name.
@@ -49,18 +58,39 @@ func GetBuilder(name string) (*Builder, bool) {
 	return builder, exists
 }
 
+// RegisterChangeHandler register for builder change.
+func RegisterChangeHandler(handlerFunc Handler) uint64 {
+	builderLock.Lock()
+	defer builderLock.Unlock()
+	nextHandlerIDCounter++
+	id := nextHandlerIDCounter
+	handlers[id] = handlerFunc
+	return id
+}
+
+// DeregisterChangeHandler stop listening for builder change.
+func DeregisterChangeHandler(id uint64) {
+	builderLock.Lock()
+	defer builderLock.Unlock()
+	_, ok := handlers[id]
+	if !ok {
+		return
+	}
+	delete(handlers, id)
+}
+
 // Builder is used to build a dynamic struct by its fields.
 type Builder struct {
 	name string
 	// structType is the struct reflection type.
 	structType reflect.Type
-	// validators is the mapping of struct field name to validate functions.
+	// validators is the mapping of struct field name to validate functions,
+	// validate functions only check first level field, which means embedded field will be checked as a single field.
 	validators map[string]func(any) error
 	// fieldIndexMap is the mapping of struct field name to their index in the struct.
-	fieldIndexMap map[string]int
-	fields        []Field
-	// should not be used after invalid
-	invalid bool
+	// Outer fields override inner fields with the same name,
+	// fields with larger index override those with smaller index.
+	fieldIndexMap map[string][]int
 }
 
 // UpsertBuilderByFields creates or updates a struct builder in the registry by its name and fields.
@@ -70,8 +100,7 @@ func UpsertBuilderByFields(name string, fields []Field) (*Builder, error) {
 	builder := &Builder{
 		name:          name,
 		validators:    make(map[string]func(any) error),
-		fieldIndexMap: make(map[string]int),
-		fields:        fields,
+		fieldIndexMap: make(map[string][]int),
 	}
 	for i, field := range fields {
 		if field.Name == "" {
@@ -112,17 +141,10 @@ func UpsertBuilderByFields(name string, fields []Field) (*Builder, error) {
 		if field.Validator != nil {
 			builder.validators[field.Name] = field.Validator
 		}
-
-		builder.fieldIndexMap[field.Name] = i
-
-		if field.Anonymous && typ.Kind() == reflect.Struct {
-			for j := 0; j < typ.NumField(); j++ {
-				if typ.Field(i).Anonymous {
-					continue
-				}
-				builder.fieldIndexMap[typ.Field(j).Name] = i
-			}
-		}
+		// record the field index.
+		builder.fieldIndexMap[field.Name] = []int{i}
+		// travel the embedded field and record the field index.
+		travelEmbeddedField(builder.fieldIndexMap, typ, []int{i})
 	}
 
 	// create the dynamic struct type from the fields.
@@ -132,6 +154,35 @@ func UpsertBuilderByFields(name string, fields []Field) (*Builder, error) {
 	RegisterBuilder(name, builder)
 
 	return builder, nil
+}
+
+func travelEmbeddedField(indexMap map[string][]int, typ reflect.Type, curPath []int) {
+	if typ.Kind() != reflect.Struct {
+		return
+	}
+	for i := range typ.NumField() {
+		subField := typ.Field(i)
+		subPath := append(slices.Clip(curPath), i)
+		// three cases to update the index:
+		// 1. new field
+		// 2. old field is deeper
+		// 3. old field is same level but index is smaller
+		oldIndex, ok := indexMap[subField.Name]
+		switch {
+		case !ok:
+			fallthrough
+		case len(oldIndex) > len(subPath):
+			fallthrough
+		case len(oldIndex) == len(subPath) && oldIndex[len(oldIndex)-1] < subPath[len(subPath)-1]:
+			indexMap[subField.Name] = subPath
+		default:
+			// do not update, keep the old index
+		}
+
+		if subField.Anonymous {
+			travelEmbeddedField(indexMap, subField.Type, subPath)
+		}
+	}
 }
 
 // New creates a new struct instance.
@@ -169,8 +220,8 @@ func (b *Builder) Name() string {
 	return b.name
 }
 
-// Of checks if the struct is of the builder type.
-func (b *Builder) Of(s *Struct) bool {
+// OfStruct checks if the struct is an instance of the builder type.
+func (b *Builder) OfStruct(s *Struct) bool {
 	if s == nil {
 		return false
 	}
@@ -186,7 +237,7 @@ func (b *Builder) Of(s *Struct) bool {
 	return true
 }
 
-// OfSlice checks if the slice is of the builder type.
+// OfSlice checks if the slice is an instance of the builder type.
 func (b *Builder) OfSlice(s *Slice) bool {
 	if s == nil {
 		return false
@@ -201,14 +252,4 @@ func (b *Builder) OfSlice(s *Slice) bool {
 		return false
 	}
 	return true
-}
-
-// setInvalid sets the builder to invalid.
-func (b *Builder) setInvalid() {
-	b.invalid = true
-}
-
-// Invalid returns whether the builder is invalid.
-func (b *Builder) Invalid() bool {
-	return b.invalid
 }

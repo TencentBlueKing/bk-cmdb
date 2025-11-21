@@ -14,6 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package table ...
 package table
 
 import (
@@ -23,9 +24,9 @@ import (
 	"sync"
 	"time"
 
-	"gorm.io/gorm"
-	"gorm.io/gorm/utils/tests"
+	"gorm.io/gorm/schema"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/filter"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/structs"
@@ -35,6 +36,32 @@ type tableFieldStore struct {
 	tableMap sync.Map
 }
 
+// Store table field definition
+func (m *tableFieldStore) Store(table types.Name, val *ModelTypeInfo) {
+	m.tableMap.Store(table, val)
+}
+
+// CAS compare and swap table field definition
+func (m *tableFieldStore) CAS(table types.Name, old, new *ModelTypeInfo) bool {
+	return m.tableMap.CompareAndSwap(table, old, new)
+}
+
+// Load table field definition
+func (m *tableFieldStore) Load(table types.Name) (*ModelTypeInfo, bool) {
+	value, ok := m.tableMap.Load(table)
+	if !ok {
+		return nil, false
+	}
+	modelInfo, ok := value.(*ModelTypeInfo)
+	return modelInfo, ok
+}
+
+// Delete table field definition
+func (m *tableFieldStore) Delete(table types.Name) {
+	m.tableMap.Delete(table)
+}
+
+// tableFields store table field definition
 var tableFields = tableFieldStore{}
 
 // FieldInfo store field type information
@@ -46,8 +73,8 @@ type FieldInfo struct {
 
 // ModelTypeInfo store field type information of table fields
 type ModelTypeInfo struct {
-	fields       []*FieldInfo
-	fieldTypeMap map[string]*FieldInfo
+	fields       []FieldInfo
+	fieldTypeMap map[string]FieldInfo
 	builder      *structs.Builder
 }
 
@@ -57,14 +84,14 @@ func (mt *ModelTypeInfo) GetBuilder() *structs.Builder {
 }
 
 // GetFieldMetas return fields
-func (mt *ModelTypeInfo) GetFieldMetas() []*FieldInfo {
+func (mt *ModelTypeInfo) GetFieldMetas() []FieldInfo {
 	return mt.fields
 }
 
 // GetColumnTypeMap return column type map
 func (mt *ModelTypeInfo) GetColumnTypeMap() map[string]filter.FieldType {
 	var colMap = make(map[string]filter.FieldType, len(mt.fields))
-	for i := 0; i < len(mt.fields); i++ {
+	for i := range mt.fields {
 		colMap[mt.fields[i].Name] = mt.fields[i].ColumnType
 	}
 	return colMap
@@ -73,11 +100,11 @@ func (mt *ModelTypeInfo) GetColumnTypeMap() map[string]filter.FieldType {
 // GetFieldByName return field type by field name
 func (mt *ModelTypeInfo) GetFieldByName(name string) (*FieldInfo, bool) {
 	info, ok := mt.fieldTypeMap[name]
-	return info, ok
+	return &info, ok
 }
 
 // NewModelTypeInfo creates a new ModelTypeInfo with the given fields
-func NewModelTypeInfo(fields []*FieldInfo) *ModelTypeInfo {
+func NewModelTypeInfo(fields []FieldInfo) *ModelTypeInfo {
 	return &ModelTypeInfo{
 		fields:       fields,
 		fieldTypeMap: mergeColumnTypes(fields),
@@ -86,88 +113,60 @@ func NewModelTypeInfo(fields []*FieldInfo) *ModelTypeInfo {
 
 // GetModelTypeInfo try to get table field definition from cache
 // Note: table must be registered first
-func GetModelTypeInfo(ctx context.Context, table Name) (*ModelTypeInfo, bool) {
-	return tableFields.getModelInfo(ctx, table)
+func GetModelTypeInfo(table types.Name) (*ModelTypeInfo, bool) {
+	return tableFields.Load(table)
 }
 
-// getModelInfo try to get table fields type map from cache, if not exist, try to parse table struct and store to cache
-func (m *tableFieldStore) getModelInfo(ctx context.Context, tableName Name) (*ModelTypeInfo, bool) {
-	value, ok := m.tableMap.Load(tableName)
-	if !ok {
-		return m.reloadTableStruct(ctx, tableName)
+// load all static table struct, note it should only be used to register static table during startup
+// if table parse failed, it will panic
+func (m *tableFieldStore) loadAllStaticTableStruct() {
+	for tableName, tableStruct := range GetAllStaticTables() {
+		m.loadTableStruct(tableName, tableStruct)
 	}
-
-	modelInfo, ok := value.(*ModelTypeInfo)
-	if !ok {
-		log.Error(ctx, "try get cached table value, but type mismatch",
-			"type", reflect.TypeOf(value).String(), "table", tableName)
-		return nil, false
-	}
-	if modelInfo == nil {
-		log.Error(ctx, "try get cached table model info, but got nil", "table", tableName)
-		return nil, false
-	}
-	if modelInfo.builder != nil && modelInfo.builder.Invalid() {
-		return m.reloadTableStruct(ctx, tableName)
-	}
-	return modelInfo, true
 }
 
-func (m *tableFieldStore) reloadTableStruct(ctx context.Context, tableName Name) (*ModelTypeInfo, bool) {
-	tableStruct, registered := tableRegistry[tableName]
-	if !registered {
-		log.Warn(ctx, "try to get unregistered table", "table", tableName)
-		return nil, false
-	}
-	if builder, isBuilder := tableStruct.(*structs.Builder); isBuilder {
-		if builder.Invalid() {
-			// try to reload builder from structs if invalid
-			var exists bool
-			builder, exists = structs.GetBuilder(builder.Name())
-			if !exists {
-				log.Error(ctx, "fail to get builder from struct after invalid", "table", builder.Name())
-				return nil, false
-			}
-		}
-		tableStruct = builder.New().Value()
-	}
-	columns, err := parseTableStruct(tableStruct)
+// loadTableStruct load single table struct note it should only be used to register static table during startup,
+// if table parse failed, it will panic
+func (m *tableFieldStore) loadTableStruct(tableName types.Name, tableStruct any) {
+	ft, err := parseTableStruct(tableStruct)
 	if err != nil {
-		log.Error(ctx, "fail to parse table from struct", "table", tableName, "struct", tableStruct, log.E(err))
-		return nil, false
+		log.Error(context.TODO(), "fail to parse table for struct", "name", tableName, log.E(err))
+		panic(err)
 	}
-
-	ft := NewModelTypeInfo(columns)
-	// same table should have same field definition, it should be ok to store directly
-	m.tableMap.Store(tableName, ft)
-	return ft, true
+	m.Store(tableName, ft)
 }
 
-func mergeColumnTypes(columns []*FieldInfo) map[string]*FieldInfo {
-	columnMap := make(map[string]*FieldInfo)
+func mergeColumnTypes(columns []FieldInfo) map[string]FieldInfo {
+	columnMap := make(map[string]FieldInfo)
 	for _, column := range columns {
 		columnMap[column.Name] = column
 	}
 	return columnMap
 }
 
-func parseTableStruct(tableStruct any) ([]*FieldInfo, error) {
+// used by schema.ParseWithSpecialTableName
+var cacheStore = sync.Map{}
+
+// used by schema.ParseWithSpecialTableName
+var namingStrategy = schema.NamingStrategy{IdentifierMaxLength: 64}
+
+func parseTableStruct(tableStruct any) (*ModelTypeInfo, error) {
 	// ref: gorm.io/gen ConvertStructs
-	dummyDB, _ := gorm.Open(tests.DummyDialector{})
-	stmt := gorm.Statement{DB: dummyDB}
-	err := stmt.Parse(tableStruct)
+	tableSchema, err := schema.ParseWithSpecialTableName(tableStruct, &cacheStore, namingStrategy, "")
 	if err != nil {
 		return nil, err
 	}
 
-	infos := make([]*FieldInfo, 0)
-	for _, field := range stmt.Schema.Fields {
+	infos := make([]FieldInfo, 0)
+	for _, field := range tableSchema.Fields {
 		column := field.DBName
 		columnType := getColumnType(field.FieldType)
-		infos = append(infos, &FieldInfo{Name: column, ColumnType: columnType, ReflectType: field.FieldType})
+		infos = append(infos, FieldInfo{Name: column, ColumnType: columnType, ReflectType: field.FieldType})
 	}
 
-	return infos, nil
+	ft := NewModelTypeInfo(infos)
+
+	return ft, nil
 }
 
 var jsonNumberReflectType = reflect.TypeFor[json.Number]()
@@ -199,4 +198,23 @@ func getColumnType(field reflect.Type) filter.FieldType {
 		fieldType = filter.Any
 	}
 	return fieldType
+}
+
+// onModelBuilderChange update table field definition when model builder changes
+func (m *tableFieldStore) onModelBuilderChange(name string, newBuilder *structs.Builder) {
+	tableStruct := newBuilder.New().Value()
+	ft, err := parseTableStruct(tableStruct)
+	if err != nil {
+		log.Error(context.TODO(), "fail to parse table from struct",
+			"table", name, "struct", tableStruct, log.E(err))
+		return
+	}
+	// same table should have same field definition, it should be ok to store directly
+	m.Store(types.Name(name), ft)
+}
+
+func init() {
+	tableFields.loadAllStaticTableStruct()
+	// register change handler to update table field definition when model builder changes
+	structs.RegisterChangeHandler(tableFields.onModelBuilderChange)
 }
