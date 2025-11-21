@@ -16,6 +16,7 @@
     "lint-fix": "eslint --fix --ext .js,.vue ./src"
   },
   "dependencies": {
+    "@babel/runtime": "^7.28.4",
     "@blueking/bkui-library": "^0.0.0-beta.6",
     "@blueking/functional-dependency": "^0.0.1-beta.10",
     "@blueking/login-modal": "^1.0.0",

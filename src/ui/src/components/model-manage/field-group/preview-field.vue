@@ -76,6 +76,7 @@
 
 <script>
   import formMixins from '@/mixins/form'
+  import { filterXSS } from '@/utils/util'
   import TableDefaultSettings from './table-default-settings.vue'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
 
@@ -149,11 +150,7 @@
         return !property.editable || property.isreadonly
       },
       htmlEncode(placeholder) {
-        let temp = document.createElement('div')
-        temp.innerHTML = placeholder
-        const output = temp.innerText
-        temp = null
-        return output
+        return filterXSS(placeholder)
       },
       getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'

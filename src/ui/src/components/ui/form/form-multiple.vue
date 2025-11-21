@@ -43,7 +43,7 @@
                         v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
                         v-bk-tooltips="{
                           trigger: 'mouseenter',
-                          content: property.placeholder
+                          content: htmlEncode(property.placeholder)
                         }">
                       </i>
                     </bk-checkbox>
@@ -65,7 +65,7 @@
                         disabled: !property.placeholder,
                         theme: 'light',
                         trigger: 'click',
-                        content: property.placeholder
+                        content: htmlEncode(property.placeholder)
                       }"
                       v-bind="$tools.getValidateEvents(property)"
                       v-validate="getValidateRules(property)"
@@ -125,6 +125,7 @@
   import { BUILTIN_UNEDITABLE_FIELDS } from '@/dictionary/model-constants'
   import useSideslider from '@/hooks/use-sideslider'
   import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
+  import { filterXSS } from '@/utils/util'
 
   export default {
     name: 'cmdb-form-multiple',
@@ -242,11 +243,7 @@
         this.editable = editable
       },
       htmlEncode(placeholder) {
-        let temp = document.createElement('div')
-        temp.innerHTML = placeholder
-        const output = temp.innerText
-        temp = null
-        return output
+        return filterXSS(placeholder)
       },
       getProperty(id) {
         return this.properties.find(property => property.bk_property_id === id)

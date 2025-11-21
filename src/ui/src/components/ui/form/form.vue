@@ -123,6 +123,7 @@
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
   import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
+  import { filterXSS } from '@/utils/util'
 
   export default {
     name: 'cmdb-form',
@@ -258,11 +259,7 @@
         return property.isrequired
       },
       htmlEncode(placeholder) {
-        let temp = document.createElement('div')
-        temp.innerHTML = placeholder
-        const output = temp.innerText
-        temp = null
-        return output
+        return filterXSS(placeholder)
       },
       getValidateRules(property) {
         const rules = this.$tools.getValidateRules(property)
