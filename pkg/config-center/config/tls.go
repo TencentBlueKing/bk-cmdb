@@ -26,13 +26,13 @@ import (
 // TLSConfig is the common TLS configuration.
 type TLSConfig struct {
 	// InsecureSkipVerify defines whether the tls certificate should be verified.
-	InsecureSkipVerify bool
+	InsecureSkipVerify bool `json:"insecure_skip_verify"`
 	// CAFile is the trusted root CA certificate bundle file path.
-	CAFile string
+	CAFile string `json:"ca_file"`
 	// CertFile is the certificate file path.
-	CertFile string
+	CertFile string `json:"cert_file"`
 	// KeyFile is the private key file path.
-	KeyFile string
+	KeyFile string `json:"key_file"`
 }
 
 // ToClientConf converts the TLSConfig to a tls.Config for client-side connections.

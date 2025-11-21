@@ -37,13 +37,15 @@ type discovery struct {
 	// cli is the etcd client.
 	cli *clientv3.Client
 
-	// environment defines the environment to be discovered.
-	environment string
+	// cluster defines the cluster to be discovered.
+	cluster string
 	// supportedServices is used to check if the service name is supported for discovery.
 	supportedServices map[config.ServiceName]struct{}
 
 	// services defines the discovered service info.
 	services *discoveredServices
+	// resolvers are map[service]resolve, which is used to update grpc resolver addresses when service instance changed.
+	resolvers sync.Map
 }
 
 // NewDiscovery creates a new service discovery instance.
@@ -64,12 +66,13 @@ func newDiscovery(ctx context.Context, cli *clientv3.Client, opt *DiscoveryOptio
 
 	d := &discovery{
 		cli:               cli,
-		environment:       opt.Environment,
+		cluster:           opt.Cluster,
 		supportedServices: make(map[config.ServiceName]struct{}),
 		services: &discoveredServices{
 			services:      make(map[config.ServiceName][]sd.ServiceInstance),
 			serviceIdxMap: make(map[config.ServiceName]map[string]int),
 		},
+		resolvers: sync.Map{},
 	}
 	for _, service := range opt.Services {
 		d.supportedServices[service] = struct{}{}
@@ -133,8 +136,7 @@ func (d *discovery) refreshService(ctx context.Context, name config.ServiceName,
 			return err
 		}
 
-		if service.Environment != d.environment {
-			log.Info(ctx, "skip service instance with different environment", "value", string(kv.Value))
+		if service.Cluster != d.cluster {
 			continue
 		}
 
@@ -149,6 +151,14 @@ func (d *discovery) refreshService(ctx context.Context, name config.ServiceName,
 
 	// update service instances
 	d.services.updateServices(name, services, serviceIdxMap)
+
+	// update resolver
+	if r, ok := d.resolvers.Load(name); ok && r != nil {
+		resolver, ok := r.(*grpcResolver)
+		if ok {
+			resolver.updateServices(services)
+		}
+	}
 
 	return nil
 }
@@ -231,8 +241,7 @@ func (d *discovery) Watch(ctx context.Context, name config.ServiceName, opts ...
 					continue
 				}
 
-				if service.Environment != d.environment {
-					log.Info(ctx, "skip service instance with different environment", "value", string(eventValue))
+				if service.Cluster != d.cluster {
 					continue
 				}
 

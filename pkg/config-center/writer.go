@@ -34,26 +34,29 @@ type RegistryWriter struct {
 	registry Registry
 	// directory is the config file directory.
 	directory string
-	// parser is the viper parser that parses the config file.
-	parser *viperParser
+	// viperParser is the viper parser that parses the config file.
+	*viperParser
+	// neededConfigs are the needed config types.
+	neededConfigs []ConfigType
 }
 
 // NewRegistryWriter creates a new config writer and starts writing config to config center.
-func NewRegistryWriter(registry Registry, directory string) *RegistryWriter {
+func NewRegistryWriter(registry Registry, directory string, neededConfigs []ConfigType) *RegistryWriter {
 	return &RegistryWriter{
-		registry:  registry,
-		directory: directory,
-		parser:    newViperParser(),
+		registry:      registry,
+		directory:     directory,
+		viperParser:   newViperParser(),
+		neededConfigs: neededConfigs,
 	}
 }
 
 // RunConfigWrite starts writing config to config center.
 func (w *RegistryWriter) RunConfigWrite(ctx context.Context) error {
-	for _, config := range allConfTypes {
+	for _, config := range w.neededConfigs {
 		// initialize viper parser
 		v := viper.New()
 		v.AddConfigPath(w.directory)
-		w.parser.addParser(config, v)
+		w.addParser(config, v)
 
 		// write config to config center
 		if err := w.WriteConfig(ctx, config); err != nil {
@@ -101,7 +104,7 @@ func (w *RegistryWriter) WriteConfig(ctx context.Context, conf ConfigType) error
 	}
 
 	// parse config file data
-	if err = w.parser.parseConfigData(ctx, conf, data); err != nil {
+	if err = w.parseConfigData(ctx, conf, data); err != nil {
 		log.Error(ctx, "parse config data failed", "conf", conf, "data", data, log.E(err))
 		return err
 	}

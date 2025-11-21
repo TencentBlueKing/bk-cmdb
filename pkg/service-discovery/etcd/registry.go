@@ -71,10 +71,10 @@ func newRegistry(ctx context.Context, cli *clientv3.Client, opt *RegistryOption,
 	}
 
 	service := &sd.ServiceInstance{
-		Address:     opt.Service.RegisterAddress(),
-		UUID:        opt.Service.UUID,
-		Environment: opt.Service.Environment,
-		Version:     version.Version,
+		Address: opt.Service.RegisterAddress(),
+		UUID:    opt.Service.UUID,
+		Cluster: opt.Service.Cluster,
+		Version: version.Version,
 	}
 	if err := service.Validate(); err != nil {
 		log.Error(ctx, "validate registered service instance failed", log.E(err), "service", service)

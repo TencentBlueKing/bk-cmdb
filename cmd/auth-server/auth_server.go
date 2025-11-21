@@ -14,8 +14,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package service define apiserver service
-package service
+// program auth_server defines the auth server main entry.
+package main
 
-type service struct {
+import (
+	"os"
+
+	"github.com/TencentBlueKing/bk-cmdb/cmd/auth-server/app"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
+)
+
+func main() {
+	command := app.NewAuthServerCommand()
+	code := cli.Run(command)
+	os.Exit(code)
 }

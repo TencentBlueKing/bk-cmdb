@@ -17,7 +17,6 @@
 package cc
 
 import (
-	"encoding/json/v2"
 	"fmt"
 
 	"github.com/spf13/cast"
@@ -98,24 +97,4 @@ func RegisterBasicEventHandler[T cast.Basic](key string, handler EventHandler[T]
 // RegisterPtrEventHandler registers event handler for pointer types.
 func RegisterPtrEventHandler[T any](key string, handler EventHandler[*T]) error {
 	return registerEventHandler(key, handler, convert[T])
-}
-
-// convertBasic converts config value to specified basic type value.
-func convertBasic[T cast.Basic](data any) (T, error) {
-	return cast.ToE[T](data)
-}
-
-// convert converts config value to pointer of specified type.
-func convert[T any](data any) (*T, error) {
-	marshal, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("marshal failed: %w", err)
-	}
-
-	result := new(T)
-	if err = json.Unmarshal(marshal, result); err != nil {
-		return nil, fmt.Errorf("unmarshal failed: %w", err)
-	}
-
-	return result, nil
 }

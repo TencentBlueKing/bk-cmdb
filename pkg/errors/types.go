@@ -34,6 +34,10 @@ const (
 	RATELIMIT_EXCEED ErrorCode = "TOO_MANY_REQUESTS"
 	// INTERNAL internal error
 	INTERNAL ErrorCode = "SERVER_ERROR"
+	// NOT_FOUND not found
+	NOT_FOUND ErrorCode = "NOT_FOUND"
+	// METHOD_NOT_ALLOWED method not allowed
+	METHOD_NOT_ALLOWED ErrorCode = "METHOD_NOT_ALLOWED"
 	// UNKNOWN unknown error
 	UNKNOWN ErrorCode = "UNKNOWN_ERROR"
 )
@@ -41,12 +45,24 @@ const (
 // StatusCodeMap error code and status map
 var (
 	StatusCodeMap = map[ErrorCode]int{
-		INVALID_REQUEST:  http.StatusBadRequest,
-		UNAUTHENTICATED:  http.StatusUnauthorized,
-		NO_PERMISSION:    http.StatusForbidden,
-		RATELIMIT_EXCEED: http.StatusTooManyRequests,
-		INTERNAL:         http.StatusInternalServerError,
-		UNKNOWN:          http.StatusInternalServerError,
+		INVALID_REQUEST:    http.StatusBadRequest,
+		UNAUTHENTICATED:    http.StatusUnauthorized,
+		NO_PERMISSION:      http.StatusForbidden,
+		RATELIMIT_EXCEED:   http.StatusTooManyRequests,
+		INTERNAL:           http.StatusInternalServerError,
+		NOT_FOUND:          http.StatusNotFound,
+		METHOD_NOT_ALLOWED: http.StatusMethodNotAllowed,
+		UNKNOWN:            http.StatusInternalServerError,
+	}
+
+	errCodeStatusMap = map[int]ErrorCode{
+		http.StatusBadRequest:          INVALID_REQUEST,
+		http.StatusUnauthorized:        UNAUTHENTICATED,
+		http.StatusForbidden:           NO_PERMISSION,
+		http.StatusTooManyRequests:     RATELIMIT_EXCEED,
+		http.StatusInternalServerError: INTERNAL,
+		http.StatusNotFound:            NOT_FOUND,
+		http.StatusMethodNotAllowed:    METHOD_NOT_ALLOWED,
 	}
 )
 
@@ -56,4 +72,12 @@ func GetHTTPStatus(code ErrorCode) int {
 		return v
 	}
 	return http.StatusBadRequest
+}
+
+// GetErrCodeByHTTPStatus get http status by error code
+func GetErrCodeByHTTPStatus(status int) ErrorCode {
+	if code, ok := errCodeStatusMap[status]; ok {
+		return code
+	}
+	return UNKNOWN
 }

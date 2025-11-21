@@ -9,10 +9,14 @@ bk-cmdb
 ├── build 项目构建产物
 │   └── cmdb_apiserver
 ├── cmd 服务入口&自身服务业务逻辑
-│   └── apiserver
-│       ├── apiserver.go main入口
+│   └── api-server
+│   │   ├── api_server.go main入口
+│   │   ├── app 命令行主逻辑
+│   │   ├── options 命令行参数
+│   │   └── service 服务业务逻辑
+│   └── auth-server 鉴权服务
+│       ├── auth_server.go main入口
 │       ├── app 命令行主逻辑
-│       ├── etc 命令行配置模版
 │       ├── options 命令行参数
 │       └── service 服务业务逻辑
 ├── docs 各类文档
@@ -28,13 +32,15 @@ bk-cmdb
 │   ├── etcd 封装了etcd相关的配置和操作
 │   ├── healthz 自身服务healthz接口
 │   ├── logger 自定义Contextual&Structured Logger
+│   ├── proto protobuf文件和生成的grpc代码
 │   ├── rest http服务框架
 │   ├── i18n 国际化处理
 │   ├── dal 数据访问层
 │   │   └── dao 数据访问对象
 │   ├── filter 查询表达式定义
 │   ├── runtime
-│   │   └── cli 命令行入口封装
+│       ├── cli 命令行入口封装
+│   │   └── server 创建和运行通用服务的逻辑封装
 │   ├── service-discovery 服务注册与发现逻辑封装
 │   │   └── etcd 使用etcd实现服务注册与发现
 │   ├── validator struct参数校验

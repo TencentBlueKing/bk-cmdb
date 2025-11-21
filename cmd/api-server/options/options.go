@@ -14,18 +14,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// program apiserver defines the server main entry.
-package main
+// Package options define app runtime option
+package options
 
 import (
-	"os"
-
-	"github.com/TencentBlueKing/bk-cmdb/cmd/api_server/app"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/cli"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/options"
 )
 
-func main() {
-	command := app.NewAPIServerCommand()
-	code := cli.Run(command)
-	os.Exit(code)
+// NewOptions returns initialized Options
+func NewOptions() *options.Options {
+	opt := options.NewOptions(config.ApiServer)
+	opt.Server.HttpPort = 6010
+	return opt
 }

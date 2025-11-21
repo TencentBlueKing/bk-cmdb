@@ -31,8 +31,8 @@ type ServiceInstance struct {
 	Address string `json:"address"`
 	// UUID is used to distinguish which service is master.
 	UUID string `json:"uuid"`
-	// Environment is the server's environment, servers can only discover other servers in the same environment.
-	Environment string `json:"env"`
+	// Cluster is the server's cluster, servers can only discover other servers in the same cluster.
+	Cluster string `json:"cluster"`
 	// Version is the server's version, servers can only discover other servers with greater or equal version.
 	Version string `json:"version"`
 }
@@ -88,4 +88,9 @@ func GenServiceDiscoveryPath(name config.ServiceName) string {
 // GetServiceRegisterPath generate service register path by service name and uuid.
 func GetServiceRegisterPath(name config.ServiceName, uuid string) string {
 	return fmt.Sprintf("%s/%s", GenServiceDiscoveryPath(name), uuid)
+}
+
+// GenGrpcServiceDiscoveryPath generate grpc service discovery path by service name.
+func GenGrpcServiceDiscoveryPath(name config.ServiceName) string {
+	return fmt.Sprintf("etcd:///%s", name)
 }

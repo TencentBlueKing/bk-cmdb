@@ -24,6 +24,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/spf13/pflag"
 )
 
 // ServiceName represents the service name.
@@ -56,16 +57,19 @@ type ServerInfo struct {
 	Name ServiceName `json:"name"`
 	// IP is the service listen ip.
 	IP string `json:"ip"`
-	// Port is the service listen port.
-	Port uint `json:"port"`
+	// HttpPort is the http service listen port.
+	HttpPort int `json:"port"`
+	// RpcPort is the rpc service listen port.
+	RpcPort int `json:"rpc_port,omitempty"`
 	// RegisterIP is the service ip used for registration.
 	RegisterIP string `json:"register_ip"`
 	// Scheme is the http scheme of the service.
 	Scheme string `json:"scheme"`
 	// UUID is used to distinguish which service is master.
 	UUID string `json:"uuid"`
-	// Environment is the server's environment, servers can only discover other servers in the same environment.
-	Environment string `json:"env"`
+	// Cluster is the server's cluster, servers can only discover other servers in the same cluster.
+	// IsMaster will discover servers in all clusters to ensure there is only one master among all clusters.
+	Cluster string `json:"cluster,omitempty"`
 }
 
 // Validate server info.
@@ -90,8 +94,12 @@ func (s *ServerInfo) Validate() error {
 		s.Scheme = "http"
 	}
 
-	if s.Port == 0 || s.Port > 65535 {
-		return errors.New("service port is invalid")
+	if s.HttpPort <= 0 || s.HttpPort > 65535 {
+		return errors.New("http service port is invalid")
+	}
+
+	if s.RpcPort < 0 || s.RpcPort > 65535 {
+		return errors.New("rpc service port is invalid")
 	}
 
 	if len(s.UUID) == 0 {
@@ -106,7 +114,10 @@ func (s *ServerInfo) RegisterAddress() string {
 	if s == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s://%s", s.Scheme, net.JoinHostPort(s.RegisterIP, strconv.Itoa(int(s.Port))))
+	if s.RpcPort != 0 {
+		return net.JoinHostPort(s.RegisterIP, strconv.Itoa(s.RpcPort))
+	}
+	return fmt.Sprintf("%s://%s", s.Scheme, net.JoinHostPort(s.RegisterIP, strconv.Itoa(s.HttpPort)))
 }
 
 // Instance get the instance identifier of the server.
@@ -114,7 +125,22 @@ func (s *ServerInfo) Instance() string {
 	if s == nil {
 		return ""
 	}
-	return net.JoinHostPort(s.IP, strconv.Itoa(int(s.Port)))
+	if s.RpcPort != 0 {
+		return net.JoinHostPort(s.IP, strconv.Itoa(s.RpcPort))
+	}
+	return net.JoinHostPort(s.IP, strconv.Itoa(s.HttpPort))
+}
+
+// AddFlags adds server info flags to flag set.
+func (s *ServerInfo) AddFlags(fs *pflag.FlagSet, isRPC bool) {
+	fs.StringVar(&s.IP, "ip", s.IP, "The IP address on which to listen")
+	fs.IntVar(&s.HttpPort, "http-port", s.HttpPort, "the http listen port of the server")
+	if isRPC {
+		fs.IntVar(&s.RpcPort, "rpc-port", s.RpcPort, "the rpc listen port of the server")
+	}
+	fs.StringVar(&s.RegisterIP, "register-ip", s.RegisterIP, "the ip address used for service discovery")
+	fs.StringVar(&s.Scheme, "scheme", s.Scheme, "the http scheme of the server, default is http")
+	fs.StringVar(&s.Cluster, "cluster", s.Cluster, "the cluster of the server, used for service discovery")
 }
 
 var (

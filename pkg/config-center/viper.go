@@ -25,6 +25,7 @@ import (
 
 	"github.com/spf13/viper"
 
+	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
@@ -105,4 +106,29 @@ func (p *viperParser) parseConfigData(ctx context.Context, conf ConfigType, data
 	p.prevData[conf] = curData
 
 	return nil
+}
+
+// Get gets config value by key.
+func (p *viperParser) Get(conf ConfigType, key string) (any, bool) {
+	parser, exists := p.parsers[conf]
+	if !exists || !parser.IsSet(key) {
+		return nil, false
+	}
+
+	return parser.Get(key), true
+}
+
+// TLSConfig gets TLS config value by key.
+func (p *viperParser) TLSConfig(key string) (*config.TLSConfig, error) {
+	parser, exists := p.parsers[CommonConfType]
+	if !exists || !parser.IsSet(key) {
+		return new(config.TLSConfig), nil
+	}
+
+	tlsConf := parser.Get(key)
+	tlsConfig, err := convert[config.TLSConfig](tlsConf)
+	if err != nil {
+		return nil, fmt.Errorf("convert tls config failed: %v", err)
+	}
+	return tlsConfig, nil
 }
