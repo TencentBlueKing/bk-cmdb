@@ -73,7 +73,10 @@ func makeDyTestFiles(t *testing.T, root string) string {
   "FORBIDDEN": "사용자가 리소스에 대한 필요한 권한이 없거나 일종의 계정이 필요하거나 금지된 작업을 시도했습니다.",
   "TOO_MANY_REQUESTS": "요청 속도 제한을 초과했습니다. 나중에 다시 시도하십시오.",
   "SERVER_ERROR": "내부 서버 오류.",
-  "UNKNOWN_ERROR": "예기치 않은 조건이 발생했으며 더 구체적인 메시지가 적합하지 않습니다."
+  "UNKNOWN_ERROR": "예기치 않은 조건이 발생했으며 더 구체적인 메시지가 적합하지 않습니다.",
+  "NOT_FOUND": "리소스를 찾을 수 없습니다.",
+  "METHOD_NOT_ALLOWED": "요청에 지정된 메서드가 허용되지 않습니다."
+
 }`)
 
 	writeFile(t, filepath.Join(base, "ko", "sys.json"), `{
@@ -132,7 +135,7 @@ func Test_BasicTranslate(t *testing.T) {
 	kt.Lang = string(EN)
 	assert.Equal(t, "i test 3 times", Sys(kt, "test", 3))
 
-	err = cerr.NewErrorClient()
+	err = cerr.Init()
 	require.NoError(t, err)
 	codeErr := cerr.NewError("Test_INVALID_REQUEST", "invalid request")
 	convErr := cerr.ErrorClient().ConvToRespError(codeErr)
@@ -183,7 +186,7 @@ func Test_DynamicTranslate(t *testing.T) {
 	kt.Lang = string(EN)
 	assert.Equal(t, "i test 3 times", Sys(kt, "test", 3))
 
-	err = cerr.NewErrorClient()
+	err = cerr.Init()
 	require.NoError(t, err)
 	codeErr := cerr.NewError("Test_INVALID_REQUEST", "invalid request")
 	convErr := cerr.ErrorClient().ConvToRespError(codeErr)

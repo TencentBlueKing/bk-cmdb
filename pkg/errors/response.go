@@ -24,20 +24,20 @@ import (
 // ErrorRespConvertor convert error to response error interface
 type ErrorRespConvertor interface {
 	// ConvToRespError convert error to response error
-	ConvToRespError(err error, opts ...convOpt) *RespError
+	ConvToRespError(err error, opts ...ConvOpt) *RespError
 }
 
 type (
 	// httpRespErrorConvertor http response error convertor to covert error to response error
 	httpRespErrorConvertor struct{}
-	// convOpt convert error to response error option
-	convOpt func(re *RespError)
+	// ConvOpt convert error to response error option
+	ConvOpt func(re *RespError)
 	// clientOpt func(re *httpRespErrorConvertor) error
 	clientOpt func(re *httpRespErrorConvertor) error
 )
 
-// NewErrorClient return error client
-func NewErrorClient(opts ...clientOpt) error {
+// Init init error client
+func Init(opts ...clientOpt) error {
 	client := &httpRespErrorConvertor{}
 	for _, opt := range opts {
 		if err := opt(client); err != nil {
@@ -50,7 +50,7 @@ func NewErrorClient(opts ...clientOpt) error {
 }
 
 // ConvToRespError convert error to response error with convert options
-func (m *httpRespErrorConvertor) ConvToRespError(err error, opts ...convOpt) *RespError {
+func (m *httpRespErrorConvertor) ConvToRespError(err error, opts ...ConvOpt) *RespError {
 	if err == nil {
 		err = NewError(Unknown, "unknown error")
 	}
@@ -86,18 +86,18 @@ func (m *httpRespErrorConvertor) ConvToRespError(err error, opts ...convOpt) *Re
 }
 
 var (
-	errorClient ErrorRespConvertor
-	setOnce     sync.Once
+	errRespConvertor ErrorRespConvertor
+	setOnce          sync.Once
 )
 
 // setDefaultErrorManager set default error manager
 func initErrorClient(m *httpRespErrorConvertor) {
-	setOnce.Do(func() { errorClient = m })
+	setOnce.Do(func() { errRespConvertor = m })
 }
 
 // ErrorClient GetDefaultManager get default error manager
 func ErrorClient() ErrorRespConvertor {
-	return errorClient
+	return errRespConvertor
 }
 
 // RespError response error info for out layer
@@ -131,28 +131,28 @@ func (r *RespError) GetCode() ErrorCode {
 }
 
 // WithCode set code for response error
-func WithCode(code ErrorCode) convOpt {
+func WithCode(code ErrorCode) ConvOpt {
 	return func(re *RespError) {
 		re.Code = code
 	}
 }
 
 // WithMessage set message for response error
-func WithMessage(msg string) convOpt {
+func WithMessage(msg string) ConvOpt {
 	return func(re *RespError) {
 		re.Message = msg
 	}
 }
 
 // WithData set data for response error
-func WithData(vals ...any) convOpt {
+func WithData(vals ...any) ConvOpt {
 	return func(re *RespError) {
 		re.Data = getValues(vals...)
 	}
 }
 
 // WithDetailErr set detail error for response error
-func WithDetailErr(detailErr error) convOpt {
+func WithDetailErr(detailErr error) ConvOpt {
 	return func(re *RespError) {
 		re.DetailError = detailErr
 	}

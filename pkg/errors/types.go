@@ -53,8 +53,8 @@ var (
 		NoPermission:       http.StatusForbidden,
 		RateLimitExceed:    http.StatusTooManyRequests,
 		Internal:           http.StatusInternalServerError,
-		NotFound:          http.StatusNotFound,
-		MethodNotAllowed: http.StatusMethodNotAllowed,
+		NotFound:           http.StatusNotFound,
+		MethodNotAllowed:   http.StatusMethodNotAllowed,
 		Unknown:            http.StatusInternalServerError,
 	}
 

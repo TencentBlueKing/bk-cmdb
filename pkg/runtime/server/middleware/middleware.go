@@ -59,7 +59,7 @@ func ConvHttpMiddleware(middlewares ...HttpMiddleware) func(next http.Handler) h
 
 			if err := kt.Validate(); err != nil {
 				log.Error(r.Context(), "http kit is invalid", log.E(err))
-				_ = rest.APIError(r.Context(), cerr.Wrap(cerr.INVALID_REQUEST, err)).Render(w)
+				_ = rest.APIError(kt, cerr.Wrap(cerr.InvalidRequest, err)).Render(w)
 				return
 			}
 

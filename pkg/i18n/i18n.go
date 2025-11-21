@@ -145,13 +145,6 @@ type i18n struct {
 
 // initTranslations initialize the i18n, register translations and build language render.
 func (i *i18n) initTranslations(ctx context.Context, opts *Options) error {
-	// set default language
-	if opts.DefaultLang == "" {
-		log.Info(ctx, "default language not set, use default language", "defaultLanguage",
-			constant.DefaultLanguage)
-		opts.DefaultLang = constant.DefaultLanguage
-	}
-
 	// load translations
 	translations, err := i.loadTranslations(ctx, opts.LanguageDir)
 	if err != nil {
@@ -184,8 +177,8 @@ func (i *i18n) verifyTranslations(ctx context.Context, opts *Options, trans map[
 		return fmt.Errorf("default language %s not exist", opts.DefaultLang)
 	}
 
-	defaultSys := trans[constant.DefaultLanguage].sys
-	defaultErr := trans[constant.DefaultLanguage].err
+	defaultSys := trans[opts.DefaultLang].sys
+	defaultErr := trans[opts.DefaultLang].err
 	for lang, dom := range trans {
 		if lang == opts.DefaultLang {
 			continue
@@ -193,13 +186,13 @@ func (i *i18n) verifyTranslations(ctx context.Context, opts *Options, trans map[
 
 		if !cmpKeyWithDefault(ctx, defaultSys, dom.sys) {
 			log.Error(ctx, "verify load translations, sys keys not same with default lang", "defaultLang",
-				constant.DefaultLanguage, "lang", lang)
+				opts.DefaultLang, "lang", lang)
 			return fmt.Errorf("sys keys of lang %s key not same with default", lang)
 		}
 
 		if !cmpKeyWithDefault(ctx, defaultErr, dom.err) {
 			log.Error(ctx, "error keys not same with default", "defaultLang",
-				constant.DefaultLanguage, "lang", lang)
+				opts.DefaultLang, "lang", lang)
 			return fmt.Errorf("error keys of lang %s key not same with default", lang)
 		}
 
@@ -218,6 +211,10 @@ func (i *i18n) Reload(kt *kit.Kit, opt *Options) error {
 		return fmt.Errorf("validate option failed: %w", err)
 	}
 
+	// set default language for reload scene
+	if len(opt.DefaultLang) == 0 {
+		opt.DefaultLang = i.DefaultLang()
+	}
 	if err := i.initTranslations(kt, opt); err != nil {
 		log.Error(kt, "reload i18n translations failed", "languageDir", opt.LanguageDir, "defaultLang",
 			opt.DefaultLang, log.E(err))
@@ -295,12 +292,6 @@ func (i *i18n) registerTranslations(ctx context.Context, languageKeyMap map[Lang
 				log.Error(ctx, "set sys string failed", "key", k, "lang", tag, log.E(setErr))
 				return setErr
 			}
-			if lang == opts.DefaultLang {
-				if setErr := builder.SetString(language.Und, k, v); setErr != nil {
-					log.Error(ctx, "set sys default value failed", "key", k, log.E(setErr))
-					return setErr
-				}
-			}
 		}
 		return nil
 	}
@@ -343,8 +334,8 @@ func (i *i18n) buildTranslator(builder *builders, translations map[LanguageType]
 func (i *i18n) rend(lang LanguageType) (renders, bool) {
 	i.lock.RLock()
 	defer i.lock.RUnlock()
-	if p, ok := i.render[lang]; ok {
-		return p, true
+	if r, ok := i.render[lang]; ok {
+		return r, true
 	}
 	return renders{}, false
 }
@@ -355,13 +346,12 @@ func Init(ctx context.Context, opts *Options) error {
 		return err
 	}
 
-	// new i18n client
-	langMap := make(map[LanguageType]struct{})
-	for _, lang := range getAllLanguages() {
-		langMap[lang] = struct{}{}
+	// set default lang
+	if len(opts.DefaultLang) == 0 {
+		opts.DefaultLang = constant.DefaultLanguage
 	}
+	// new i18n client
 	i18n := &i18n{
-		languages:   langMap,
 		defaultLang: opts.DefaultLang,
 		render:      make(map[LanguageType]renders),
 		languageDir: opts.LanguageDir,
@@ -446,14 +436,14 @@ func (i *i18n) DefaultLang() LanguageType {
 
 // readLangFs load multilingual translation files from input file system.
 func (i *i18n) readLangFs(ctx context.Context, fsys fs.FS) (map[LanguageType]translations, error) {
-	out := make(map[LanguageType]translations)
 
 	entries, err := fs.ReadDir(fsys, ".")
 	if err != nil {
 		log.Error(ctx, "read fs root failed", log.E(err))
-		return out, err
+		return nil, err
 	}
 
+	out := make(map[LanguageType]translations)
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
@@ -464,21 +454,20 @@ func (i *i18n) readLangFs(ctx context.Context, fsys fs.FS) (map[LanguageType]tra
 		sub, err := fs.Sub(fsys, dirName)
 		if err != nil {
 			log.Error(ctx, "fs.Sub failed for language dir", "langDir", dirName, log.E(err))
-			return out, err
+			return nil, err
 		}
 
 		errMap, err := i.readFile(ctx, sub, "error.json")
 		if err != nil {
 			log.Error(ctx, "read i18n json file failed", "dir", dirName, "file", "error.json", log.E(err))
-			return out, err
+			return nil, err
 		}
 
 		sysMap, err := i.readFile(ctx, sub, "sys.json")
 		if err != nil {
 			log.Error(ctx, "read i18n json file failed", "dir", dirName, "file", "sys.json", log.E(err))
-			return out, err
+			return nil, err
 		}
-
 		out[lang] = translations{
 			sys: sysMap,
 			err: errMap,
@@ -532,32 +521,29 @@ func (o Options) validate(isInit bool) error {
 			return fmt.Errorf("language dir and require external dir are not match, languageDir: %s, "+
 				"requireExternalDir: %v", o.LanguageDir, o.RequireExternalDir)
 		}
-		if !hasLangDir {
-			return nil
+	} else {
+		// reload language scenarios
+		if !hasLangDir && !hasDefault {
+			return fmt.Errorf("validate reload lanuages, both languageDir and defaultLang are empty")
 		}
-		return validateDir(o.LanguageDir)
 	}
 
-	// reload language scenarios
-	if !hasLangDir && !hasDefault {
-		return fmt.Errorf("validate reload lanuages, both languageDir and defaultLang are empty")
-	}
 	if !hasLangDir {
 		return nil
 	}
-	return validateDir(o.LanguageDir)
+	return validDirectory(o.LanguageDir)
 }
 
-func validateDir(p string) error {
-	s, err := os.Stat(p)
+func validDirectory(path string) error {
+	s, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("language dir %q does not exist: %w", p, err)
+			return fmt.Errorf("language dir %s does not exist: %w", path, err)
 		}
-		return fmt.Errorf("stat %q: %w", p, err)
+		return fmt.Errorf("get directory stat failed, err: %w", err)
 	}
 	if !s.IsDir() {
-		return fmt.Errorf("language dir %q is not a directory", p)
+		return fmt.Errorf("language path %s is not a directory", path)
 	}
 	return nil
 }

@@ -17,11 +17,11 @@
 package service
 
 import (
-	"errors"
 	"sync"
 	"time"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/auth/meta"
+	cerr "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
@@ -62,8 +62,8 @@ func (s *Service) UserInfo(kt *kit.Kit, req *UserInfoReq) (*UserInfoResp, error)
 	}
 	decisions, err := s.authorizer.Authorize(kt, authRes)
 	if err != nil || !decisions[0].Authorized {
-		log.Error(kt, "authorize failed", log.E(err), "decisions", decisions)
-		return nil, errors.New("authorize failed")
+		log.Error(kt, "authorize failed", "err", err, "decisions", decisions)
+		return nil, cerr.NewError(cerr.StatusUnauthorized, "authorize failed")
 	}
 
 	resp := &UserInfoResp{

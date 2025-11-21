@@ -29,7 +29,7 @@ import (
 // 测试error的detail解析
 // 测试join类型解析
 func Test_ErrorConv(t *testing.T) {
-	err := NewErrorClient()
+	err := Init()
 	require.NoError(t, err)
 
 	t.Run("error translate test", func(t *testing.T) {

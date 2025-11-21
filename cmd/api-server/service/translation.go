@@ -30,7 +30,7 @@ type TranslationRequest struct {
 }
 
 // ReloadTranslation for reload translation
-func (s *service) ReloadTranslation(kt *kit.Kit, req *TranslationRequest) (*rest.EmptyResp, error) {
+func (s *Service) ReloadTranslation(kt *kit.Kit, req *TranslationRequest) (*rest.EmptyResp, error) {
 	log.Info(kt, "handle ReloadTranslation")
 
 	err := i18n.Reload(kt, &i18n.Options{
@@ -38,7 +38,7 @@ func (s *service) ReloadTranslation(kt *kit.Kit, req *TranslationRequest) (*rest
 		DefaultLang: i18n.LanguageType(req.DefaultLang),
 	})
 	if err != nil {
-		log.Error(kt, "reload language failed, err: %w", err)
+		log.Error(kt, "reload language failed", log.E(err))
 		return nil, err
 	}
 

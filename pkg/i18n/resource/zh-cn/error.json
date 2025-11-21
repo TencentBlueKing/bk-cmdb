@@ -5,5 +5,7 @@
   "FORBIDDEN": "用户没有足够的权限访问该资源或尝试了禁止的操作。",
   "TOO_MANY_REQUESTS": "请求过于频繁，请稍后再试。",
   "SERVER_ERROR": "内部服务错误。",
-  "UNKNOWN_ERROR": "未知错误。"
+  "UNKNOWN_ERROR": "未知错误。",
+  "NOT_FOUND": "请求的资源不存在。",
+  "METHOD_NOT_ALLOWED": "请求中指定的方法不允许。"
 }

@@ -24,5 +24,5 @@ const (
 	// TenantHeader is tenant http header key
 	TenantHeader = "X-Bk-Tenant-Id"
 	// HTTPLanguageHeader is the language http header key, its value set by i18n middleware
-	HTTPLanguageHeader = "blueking-language"
+	HTTPLanguageHeader = "Blueking-Language"
 )

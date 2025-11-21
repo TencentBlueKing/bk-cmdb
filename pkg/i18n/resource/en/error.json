@@ -5,5 +5,7 @@
   "FORBIDDEN": "The user did not have the necessary permissions for a resource or needing an account of some sort, or attempting a prohibited action.",
   "TOO_MANY_REQUESTS": "Request rate limit exceeded. Please try again later.",
   "SERVER_ERROR": "Internal server error.",
-  "UNKNOWN_ERROR": "An unexpected condition was encountered and no more specific message is suitable."
+  "UNKNOWN_ERROR": "An unexpected condition was encountered and no more specific message is suitable.",
+  "NOT_FOUND": "The requested resource was not found.",
+  "METHOD_NOT_ALLOWED": "The method specified in the request is not allowed."
 }

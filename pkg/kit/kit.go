@@ -20,7 +20,6 @@ package kit
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"runtime"
 	"strings"
@@ -32,7 +31,6 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/constant"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
@@ -130,10 +128,10 @@ func NewKitFromHeader(ctx context.Context, header http.Header) *Kit {
 func newKit(ctx context.Context, md Metadata) *Kit {
 	// creates a new grpc request context with kit metadata.
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(
-		UserHeader, md.User,
-		AppCodeHeader, md.AppCode,
-		TenantHeader, md.TenantID,
-		i18n.BKHTTPLanguage, string(md.Language),
+		constant.UserHeader, md.User,
+		constant.AppCodeHeader, md.AppCode,
+		constant.TenantHeader, md.TenantID,
+		constant.HTTPLanguageHeader, md.Lang,
 	))
 	return &Kit{Context: ctx, Metadata: md}
 }
@@ -175,28 +173,24 @@ func NewKitFromGrpcCtx(ctx context.Context) (*Kit, error) {
 
 	meta := Metadata{}
 
-	user := md.Get(UserHeader)
+	user := md.Get(constant.UserHeader)
 	if len(user) == 0 {
 		return nil, errors.New("get user from grpc metadata failed")
 	}
 	meta.User = user[0]
 
-	tenant := md.Get(TenantHeader)
+	tenant := md.Get(constant.TenantHeader)
 	if len(tenant) == 0 {
 		return nil, errors.New("get tenant from grpc metadata failed")
 	}
 	meta.TenantID = tenant[0]
 
-	language := md.Get(i18n.BKHTTPLanguage)
+	language := md.Get(constant.HTTPLanguageHeader)
 	if len(language) != 0 && language[0] != "" {
-		lang := i18n.LanguageType(language[0])
-		if err := i18n.GetDefaultManager().Validate(lang); err != nil {
-			return nil, fmt.Errorf("get language from grpc metadata failed: %w", err)
-		}
-		meta.Language = lang
+		meta.Lang = language[0]
 	}
 
-	appCode := md.Get(AppCodeHeader)
+	appCode := md.Get(constant.AppCodeHeader)
 	if len(appCode) != 0 {
 		meta.AppCode = appCode[0]
 	}
@@ -215,12 +209,6 @@ func (kt *Kit) Validate() error {
 
 	if kt.TenantID == "" {
 		return errors.New("tenant id is not set")
-	}
-
-	if kt.Language != "" {
-		if err := i18n.GetDefaultManager().Validate(kt.Language); err != nil {
-			return fmt.Errorf("language is invalid: %w", err)
-		}
 	}
 
 	return nil
