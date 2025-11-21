@@ -111,7 +111,7 @@
     "minimist": "^1.2.5",
     "os-browserify": "^0.3.0",
     "path-browserify": "^1.0.1",
-    "path-to-regexp": "^6.2.1",
+    "path-to-regexp": "^6.3.0",
     "postcss": "^8.2.10",
     "postcss-deep-scopable": "0.0.2",
     "postcss-loader": "^5.2.0",
