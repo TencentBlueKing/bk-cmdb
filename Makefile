@@ -41,3 +41,7 @@ build:
 	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/cmdb_apiserver cmd/api-server/*.go
 	@echo ">> building auth-server"
 	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/cmdb_authserver cmd/auth-server/*.go
+
+gen:
+	@echo ">> generating orm code"
+	go run pkg/dal/gen/gen.go -cwd pkg/dal/gen

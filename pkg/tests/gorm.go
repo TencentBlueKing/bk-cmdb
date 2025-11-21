@@ -19,6 +19,7 @@ package tests
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -29,6 +30,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
 )
 
 // TestGORMDSNMySQL env key for test gorm mysql dsn
@@ -110,4 +113,36 @@ func getMockGormPG(db *sql.DB) gorm.Dialector {
 		DriverName: "postgres",
 		Conn:       db,
 	})
+}
+
+const (
+	// TestGormSSLPgConfig is the env name for ssl pg config
+	TestGormSSLPgConfig = "TEST_GORM_SSL_PG_CONFIG"
+	// TestGormSSLMySQLConfig is the env name for ssl mysql config
+	TestGormSSLMySQLConfig = "TEST_GORM_SSL_MYSQL_CONFIG"
+)
+
+// GetTestPGSSLConfig get the test postgresql ssl config
+func GetTestPGSSLConfig(t testing.TB) (*config.DBConfig, error) {
+	return GetTestDBSSLConfig(t, TestGormSSLPgConfig)
+}
+
+// GetTestMySQLSSLConfig get the test mysql ssl config
+func GetTestMySQLSSLConfig(t testing.TB) (*config.DBConfig, error) {
+	return GetTestDBSSLConfig(t, TestGormSSLMySQLConfig)
+}
+
+// GetTestDBSSLConfig get the test db ssl config
+func GetTestDBSSLConfig(t testing.TB, configKey string) (*config.DBConfig, error) {
+	sslConfigJSON := os.Getenv(configKey)
+	if sslConfigJSON == "" {
+		t.Skipf("%s is not set", configKey)
+		return nil, fmt.Errorf("%s is not set", configKey)
+	}
+	var sslConfig = new(config.DBConfig)
+	err := json.Unmarshal([]byte(sslConfigJSON), sslConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal %s, err: %w", configKey, err)
+	}
+	return sslConfig, nil
 }

@@ -24,18 +24,18 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/datatype"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/filter"
 )
 
 type arrayTestModel struct {
-	ID            int                  `gorm:"primaryKey"`
-	Name          string               `gorm:"column:name"`
-	IntArray      types.Array[int64]   `gorm:"column:int_array"`
-	StringArray   types.Array[string]  `gorm:"column:string_array"`
-	FloatArray    types.Array[float64] `gorm:"column:float_array"`
-	BoolArray     *types.Array[bool]   `gorm:"column:bool_array"`
-	NullableArray *types.Array[[]byte] `gorm:"column:nullable_array"`
+	ID            int                     `gorm:"primaryKey"`
+	Name          string                  `gorm:"column:name"`
+	IntArray      datatype.Array[int64]   `gorm:"column:int_array"`
+	StringArray   datatype.Array[string]  `gorm:"column:string_array"`
+	FloatArray    datatype.Array[float64] `gorm:"column:float_array"`
+	BoolArray     *datatype.Array[bool]   `gorm:"column:bool_array"`
+	NullableArray *datatype.Array[[]byte] `gorm:"column:nullable_array"`
 }
 
 func (arrayTestModel) TableName() string {
@@ -132,7 +132,7 @@ func Test_arrayRuleToClauseExpr(t *testing.T) {
 			shouldFound: []arrayTestModel{arrayInst1},
 		},
 		{
-			// expect array elem types, other type may also be supported for query, but not is not recommend
+			// expect array elem datatype, other type may also be supported for query, but not is not recommend
 			name: "int16",
 			args: args{
 				rule: &filter.AtomRule{Field: "int_array", Op: filter.ArrayEqual.Factory(), Value: []int16{1, 2, 3}},
@@ -421,29 +421,29 @@ var allArrayTestModels = []arrayTestModel{arrayInst1, arrayInst2, arrayInst3}
 var arrayInst1 = arrayTestModel{
 	ID:            1,
 	Name:          "array-1",
-	IntArray:      types.Array[int64]{1, 2, 3},
-	StringArray:   types.Array[string]{"a", "b", "c"},
-	FloatArray:    types.Array[float64]{-0.1, -0.2, -0.3},
+	IntArray:      datatype.Array[int64]{1, 2, 3},
+	StringArray:   datatype.Array[string]{"a", "b", "c"},
+	FloatArray:    datatype.Array[float64]{-0.1, -0.2, -0.3},
 	NullableArray: nil,
 	BoolArray:     nil,
 }
 var arrayInst2 = arrayTestModel{
 	ID:            2,
 	Name:          "array-2",
-	IntArray:      types.Array[int64]{4, 5, 6},
-	StringArray:   types.Array[string]{"d", "e", "f"},
-	FloatArray:    types.Array[float64]{-0.2, -0.3, -0.4},
-	NullableArray: &types.Array[[]byte]{{1}, {2}, {4}},
-	BoolArray:     &types.Array[bool]{},
+	IntArray:      datatype.Array[int64]{4, 5, 6},
+	StringArray:   datatype.Array[string]{"d", "e", "f"},
+	FloatArray:    datatype.Array[float64]{-0.2, -0.3, -0.4},
+	NullableArray: &datatype.Array[[]byte]{{1}, {2}, {4}},
+	BoolArray:     &datatype.Array[bool]{},
 }
 var arrayInst3 = arrayTestModel{
 	ID:            3,
 	Name:          "array-3",
-	IntArray:      types.Array[int64]{7, 8, 9},
-	StringArray:   types.Array[string]{"g", "h", "i"},
-	FloatArray:    types.Array[float64]{-0.3, -0.4, -0.5},
-	NullableArray: &types.Array[[]byte]{{1}, {2}, {3}},
-	BoolArray:     &types.Array[bool]{true},
+	IntArray:      datatype.Array[int64]{7, 8, 9},
+	StringArray:   datatype.Array[string]{"g", "h", "i"},
+	FloatArray:    datatype.Array[float64]{-0.3, -0.4, -0.5},
+	NullableArray: &datatype.Array[[]byte]{{1}, {2}, {3}},
+	BoolArray:     &datatype.Array[bool]{true},
 }
 
 func Test_buildArraySQL(t *testing.T) {

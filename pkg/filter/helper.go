@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/datatype"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/util"
 )
 
@@ -205,27 +205,27 @@ func RuleJSONHasKey(fieldName string, value string) *AtomRule {
 }
 
 // RuleArrayEqual 生成资源字段等于查询的AtomRule，即fieldName=values，顺序必须一致
-func RuleArrayEqual[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+func RuleArrayEqual[T datatype.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayEqual.Factory(), Value: values}
 }
 
 // RuleArrayNotEqual 生成资源字段不等于查询的AtomRule，即fieldName!=values
-func RuleArrayNotEqual[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+func RuleArrayNotEqual[T datatype.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayNotEqual.Factory(), Value: values}
 }
 
 // RuleArrayContains 指定字段是否包含对应数组
-func RuleArrayContains[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+func RuleArrayContains[T datatype.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayContains.Factory(), Value: values}
 }
 
 // RuleArraySubset 指定字段是否为对应数组的子集
-func RuleArraySubset[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+func RuleArraySubset[T datatype.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArraySubset.Factory(), Value: values}
 }
 
 // RuleArrayOverlap 指定字段是否和对应数组有交集
-func RuleArrayOverlap[T types.ArrayElem](fieldName string, values []T) *AtomRule {
+func RuleArrayOverlap[T datatype.ArrayElem](fieldName string, values []T) *AtomRule {
 	return &AtomRule{Field: fieldName, Op: ArrayOverlap.Factory(), Value: values}
 }
 
