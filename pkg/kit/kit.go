@@ -20,7 +20,6 @@ package kit
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"runtime"
 	"strings"
@@ -31,26 +30,20 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/constant"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 )
 
 const (
 	defaultScopeName = "kit"
-	// UserHeader is the username http header key, its value set by apiserver auth middleware
-	UserHeader = "X-Cmdb-User"
-	// AppCodeHeader is the blueking app code http header key, its value set by apiserver auth middleware
-	AppCodeHeader = "X-Cmdb-App-Code"
-	// TenantHeader is tenant http header key
-	TenantHeader = "X-Bk-Tenant-Id"
 )
 
 // Metadata the biz metadata
 type Metadata struct {
-	User     string            // 操作人
-	AppCode  string            // 来源AppCode
-	TenantID string            // 来源多租户ID
-	Language i18n.LanguageType // 语言
+	User     string // 操作人
+	AppCode  string // 来源AppCode
+	TenantID string // 来源多租户ID
+	Lang     string // 请求语言
 }
 
 // Kit a biz metadata and context kit
@@ -84,9 +77,9 @@ func (kt *Kit) StartSpan(name string, opts ...trace.SpanStartOption) (*Kit, trac
 
 	// auto set metadata attr
 	span.SetAttributes(
-		attribute.String(UserHeader, kt.User),
-		attribute.String(AppCodeHeader, kt.AppCode),
-		attribute.String(TenantHeader, kt.TenantID),
+		attribute.String(constant.UserHeader, kt.User),
+		attribute.String(constant.AppCodeHeader, kt.AppCode),
+		attribute.String(constant.TenantHeader, kt.TenantID),
 	)
 
 	ctx = log.WithSpan(ctx, span)
@@ -124,9 +117,10 @@ func NewKit(ctx context.Context, md Metadata) *Kit {
 // NewKitFromHeader 从http header中获取metadata
 func NewKitFromHeader(ctx context.Context, header http.Header) *Kit {
 	md := Metadata{
-		User:     header.Get(UserHeader),
-		AppCode:  header.Get(AppCodeHeader),
-		TenantID: header.Get(TenantHeader),
+		User:     header.Get(constant.UserHeader),
+		AppCode:  header.Get(constant.AppCodeHeader),
+		TenantID: header.Get(constant.TenantHeader),
+		Lang:     header.Get(constant.HTTPLanguageHeader),
 	}
 	return NewKit(ctx, md)
 }
@@ -134,12 +128,23 @@ func NewKitFromHeader(ctx context.Context, header http.Header) *Kit {
 func newKit(ctx context.Context, md Metadata) *Kit {
 	// creates a new grpc request context with kit metadata.
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(
-		UserHeader, md.User,
-		AppCodeHeader, md.AppCode,
-		TenantHeader, md.TenantID,
-		i18n.BKHTTPLanguage, string(md.Language),
+		constant.UserHeader, md.User,
+		constant.AppCodeHeader, md.AppCode,
+		constant.TenantHeader, md.TenantID,
+		constant.HTTPLanguageHeader, md.Lang,
 	))
 	return &Kit{Context: ctx, Metadata: md}
+}
+
+// DefaultKit generate new kit with default parameters
+func DefaultKit() *Kit {
+	// todo set default TenantID
+	md := Metadata{
+		User: constant.CCSystemOperatorUserName,
+		Lang: constant.DefaultLanguage,
+	}
+
+	return NewKit(context.Background(), md)
 }
 
 // getCaller 获取调用函数名
@@ -168,28 +173,24 @@ func NewKitFromGrpcCtx(ctx context.Context) (*Kit, error) {
 
 	meta := Metadata{}
 
-	user := md.Get(UserHeader)
+	user := md.Get(constant.UserHeader)
 	if len(user) == 0 {
 		return nil, errors.New("get user from grpc metadata failed")
 	}
 	meta.User = user[0]
 
-	tenant := md.Get(TenantHeader)
+	tenant := md.Get(constant.TenantHeader)
 	if len(tenant) == 0 {
 		return nil, errors.New("get tenant from grpc metadata failed")
 	}
 	meta.TenantID = tenant[0]
 
-	language := md.Get(i18n.BKHTTPLanguage)
+	language := md.Get(constant.HTTPLanguageHeader)
 	if len(language) != 0 && language[0] != "" {
-		lang := i18n.LanguageType(language[0])
-		if err := i18n.GetDefaultManager().Validate(lang); err != nil {
-			return nil, fmt.Errorf("get language from grpc metadata failed: %w", err)
-		}
-		meta.Language = lang
+		meta.Lang = language[0]
 	}
 
-	appCode := md.Get(AppCodeHeader)
+	appCode := md.Get(constant.AppCodeHeader)
 	if len(appCode) != 0 {
 		meta.AppCode = appCode[0]
 	}
@@ -208,12 +209,6 @@ func (kt *Kit) Validate() error {
 
 	if kt.TenantID == "" {
 		return errors.New("tenant id is not set")
-	}
-
-	if kt.Language != "" {
-		if err := i18n.GetDefaultManager().Validate(kt.Language); err != nil {
-			return fmt.Errorf("language is invalid: %w", err)
-		}
 	}
 
 	return nil

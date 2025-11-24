@@ -22,18 +22,20 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // 测试error转换成responseErr
 // 测试error的detail解析
 // 测试join类型解析
 func Test_ErrorConv(t *testing.T) {
-	errManager := NewErrorManager()
+	err := Init()
+	require.NoError(t, err)
 
 	t.Run("error translate test", func(t *testing.T) {
-		err := NewError(INVALID_REQUEST, "test invalid request")
-		respErr := errManager.ConvToRespError(err)
-		assert.Equal(t, INVALID_REQUEST, respErr.Code)
+		err := NewError(InvalidRequest, "test invalid request")
+		respErr := ErrorClient().ConvToRespError(err)
+		assert.Equal(t, InvalidRequest, respErr.Code)
 		assert.Equal(t, "test invalid request", respErr.Details[0])
 	})
 
@@ -42,7 +44,7 @@ func Test_ErrorConv(t *testing.T) {
 		testJoinErr_2 := fmt.Errorf("this is error two")
 		testJoinErr_3 := fmt.Errorf("this is error three")
 		resultError := errors.Join(testJoinErr_1, testJoinErr_2, testJoinErr_3)
-		details := errManager.UnwrapDetails(resultError)
+		details := unwrapDetails(resultError)
 		assert.Equal(t, 3, len(details))
 		assert.Equal(t, "this is error one", details[0])
 		assert.Equal(t, "this is error two", details[1])

@@ -46,6 +46,6 @@ func (s *Service) NewRouter(ctx context.Context) (http.Handler, error) {
 	// register restful http handlers
 	r.Post("/api/v4/user/info", rest.Handle(s.UserInfo))
 	r.Post("/api/v4/authorized/users", rest.Handle(s.ListAuthorizedUsers))
-
+	r.Post("/api/v4/translations/reload", rest.Handle(s.ReloadTranslation))
 	return r, nil
 }

@@ -27,8 +27,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/config-center/config"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/constant"
 	cerr "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	authpb "github.com/TencentBlueKing/bk-cmdb/pkg/proto/auth-server"
@@ -91,10 +91,10 @@ func (m *grpcGWMarshaller) Marshal(v any) ([]byte, error) {
 }
 
 var grpcHeaderMap = map[string]struct{}{
-	kit.UserHeader:      {},
-	kit.AppCodeHeader:   {},
-	kit.TenantHeader:    {},
-	i18n.BKHTTPLanguage: {},
+	constant.UserHeader:         {},
+	constant.AppCodeHeader:      {},
+	constant.TenantHeader:       {},
+	constant.HTTPLanguageHeader: {},
 }
 
 // grpcGWHeaderMatcher is the grpc gateway incoming header matcher.
@@ -108,25 +108,27 @@ func grpcGWHeaderMatcher(s string) (string, bool) {
 
 // grpcGWErrHandler is the error handler for grpc gateway.
 func grpcGWErrHandler(ctx context.Context, _ *runtime.ServeMux, _ runtime.Marshaler, w http.ResponseWriter,
-	_ *http.Request, err error) {
+	r *http.Request, err error) {
 
+	kt := kit.NewKitFromHeader(ctx, r.Header)
 	st, ok := status.FromError(err)
 	if !ok {
-		_ = rest.APIError(ctx, err).Render(w)
+		_ = rest.APIError(kt, err).Render(w)
 		return
 	}
 
 	statusCode := runtime.HTTPStatusFromCode(st.Code())
 	errCode := cerr.GetErrCodeByHTTPStatus(statusCode)
 	err = cerr.NewError(errCode, st.Message())
-	_ = rest.APIErrorWithStatus(ctx, err, statusCode).Render(w)
+	_ = rest.APIErrorWithStatus(kt, err, statusCode).Render(w)
 }
 
 // grpcGWRoutingErrHandler is the http routing error handler for grpc gateway.
 func grpcGWRoutingErrHandler(ctx context.Context, _ *runtime.ServeMux, _ runtime.Marshaler, w http.ResponseWriter,
 	_ *http.Request, httpStatus int) {
 
+	kt := kit.GetGrpcKit(ctx)
 	errCode := cerr.GetErrCodeByHTTPStatus(httpStatus)
 	err := cerr.NewError(errCode, http.StatusText(httpStatus))
-	_ = rest.APIErrorWithStatus(ctx, err, httpStatus).Render(w)
+	_ = rest.APIErrorWithStatus(kt, err, httpStatus).Render(w)
 }

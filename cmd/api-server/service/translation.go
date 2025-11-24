@@ -14,27 +14,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package i18n
+package service
 
-// LanguageType the language type
-type LanguageType string
-
-// Language constant definitions must align with specifications, and remain consistent with resource directory naming
-// conventions.
-const (
-	// CN Chinese
-	CN LanguageType = "zh-cn"
-	// EN English
-	EN LanguageType = "en"
+import (
+	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
 )
 
-const (
-	// languageDir static compilation folder name, static compilation file read from this directory.
-	languageDir = "resource"
-)
+// TranslationRequest translation request
+type TranslationRequest struct {
+	DefaultLang string `req:"default_lang,in:query"`
+	LangPath    string `req:"lang_path,in:query"`
+}
 
-var allLanguages = []LanguageType{CN, EN}
+// ReloadTranslation for reload translation
+func (s *Service) ReloadTranslation(kt *kit.Kit, req *TranslationRequest) (*rest.EmptyResp, error) {
+	log.Info(kt, "handle ReloadTranslation")
 
-func getAllLanguages() []LanguageType {
-	return allLanguages
+	err := i18n.Reload(kt, &i18n.Options{
+		LanguageDir: req.LangPath,
+		DefaultLang: i18n.LanguageType(req.DefaultLang),
+	})
+	if err != nil {
+		log.Error(kt, "reload language failed", log.E(err))
+		return nil, err
+	}
+
+	return nil, nil
 }

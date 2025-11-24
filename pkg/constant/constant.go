@@ -14,27 +14,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package i18n
-
-// LanguageType the language type
-type LanguageType string
-
-// Language constant definitions must align with specifications, and remain consistent with resource directory naming
-// conventions.
-const (
-	// CN Chinese
-	CN LanguageType = "zh-cn"
-	// EN English
-	EN LanguageType = "en"
-)
+// Package constant provides common constant definitions
+package constant
 
 const (
-	// languageDir static compilation folder name, static compilation file read from this directory.
-	languageDir = "resource"
+	// CCSystemOperatorUserName the system user
+	CCSystemOperatorUserName = "cc_system"
+	// DefaultLanguage the default language
+	DefaultLanguage = "zh-cn"
+	// HTTPLanguageCookie is the blueking language cookie name
+	HTTPLanguageCookie = "blueking_language"
 )
-
-var allLanguages = []LanguageType{CN, EN}
-
-func getAllLanguages() []LanguageType {
-	return allLanguages
-}

@@ -159,16 +159,16 @@ func newServerInfo(ctx context.Context, opts *Options) (*serverInfo, error) {
 		return nil, err
 	}
 
-	// init i18n manager and error manager
-	m, err := i18n.NewI18nManager(ctx, &i18n.Options{})
-	if err != nil {
-		log.Error(ctx, "init i18n manager failed", log.E(err))
+	// init i18n and error client
+	if err = i18n.Init(ctx, &i18n.Options{RequireExternalDir: false, DefaultLang: "zh-cn"}); err != nil {
+		log.Error(ctx, "init i18n failed", log.E(err))
 		return nil, err
 	}
-	i18n.SetDefaultManager(m)
 
-	errorManager := cerr.NewErrorManager()
-	cerr.SetDefaultErrorManager(errorManager)
+	if err = cerr.Init(); err != nil {
+		log.Error(ctx, "init error client failed", log.E(err))
+		return nil, err
+	}
 
 	// create metrics instance
 	metricsConf := &metrics.Config{
