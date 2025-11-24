@@ -16,15 +16,6 @@
 
 package i18n
 
-const (
-	// HTTPCookieLanguage is the blueking language cookie name
-	HTTPCookieLanguage = "blueking_language"
-	// BKHTTPLanguage the language key word
-	BKHTTPLanguage = "blueking-language"
-	// DefaultLanguage the default language
-	DefaultLanguage = CN
-)
-
 // LanguageType the language type
 type LanguageType string
 
@@ -35,6 +26,11 @@ const (
 	CN LanguageType = "zh-cn"
 	// EN English
 	EN LanguageType = "en"
+)
+
+const (
+	// languageDir static compilation folder name, static compilation file read from this directory.
+	languageDir = "resource"
 )
 
 var allLanguages = []LanguageType{CN, EN}

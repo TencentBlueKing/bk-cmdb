@@ -28,7 +28,7 @@ import (
 
 	"github.com/bregydoc/gtranslate"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/constant"
 )
 
 // translate translates text from base language to target language
@@ -217,7 +217,7 @@ func main() {
 		lang = flag.String("lang", "", "extra language to create and translate (optional)")
 	)
 	flag.Parse()
-	baseLang := string(i18n.DefaultLanguage)
+	baseLang := constant.DefaultLanguage
 	if strings.TrimSpace(*path) == "" {
 		fmt.Println("error: -path is required")
 		return

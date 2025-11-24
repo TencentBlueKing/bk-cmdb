@@ -17,12 +17,12 @@
 package rest
 
 import (
-	"context"
 	"encoding/json/v2"
 	"net/http"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/i18n"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 )
 
 // Renderer interface for managing response payloads.
@@ -30,15 +30,19 @@ type Renderer interface {
 	Render(w http.ResponseWriter) error
 }
 
-// APIResponse response for api request
-type APIResponse struct {
-	HTTPCode int             `json:"-"`               // http response status code
-	Error    *cerr.RespError `json:"error,omitempty"` // response error
-	Data     any             `json:"data,omitempty"`  // response data
+// APIErrorResp response for api request error
+type APIErrorResp struct {
+	HTTPCode int             `json:"-"`     // http response status code
+	Error    *cerr.RespError `json:"error"` // response error
 }
 
-// Render chi render interface implementation
-func (e *APIResponse) Render(w http.ResponseWriter) error {
+// APISuccessResp response for api request success
+type APISuccessResp struct {
+	Data any `json:"data"` // response data
+}
+
+// Render chi render interface implementation for error response
+func (e *APIErrorResp) Render(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(e.HTTPCode)
@@ -46,35 +50,42 @@ func (e *APIResponse) Render(w http.ResponseWriter) error {
 	return json.MarshalWrite(w, e)
 }
 
+// Render chi render interface implementation for success response
+func (e *APISuccessResp) Render(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(http.StatusOK)
+
+	return json.MarshalWrite(w, e)
+}
+
 // APIOK 正常返回
 func APIOK(data any) Renderer {
-	return &APIResponse{
-		HTTPCode: http.StatusOK,
-		Data:     data,
+	return &APISuccessResp{
+		Data: data,
 	}
 }
 
 // APIError 错误返回
-func APIError(ctx context.Context, err error) Renderer {
-	respErr := cerr.GetDefaultErrorManager().ConvToRespError(err)
-	respErr = i18n.GetDefaultManager().RespError(ctx, respErr)
+func APIError(kt *kit.Kit, err error) Renderer {
 
-	return &APIResponse{
+	respErr := i18n.RespError(kt, err)
+
+	return &APIErrorResp{
 		HTTPCode: cerr.GetHTTPStatus(respErr.Code),
 		Error:    respErr,
 	}
 }
 
 // APIErrorWithStatus returns an API response with the given error and HTTP status code.
-func APIErrorWithStatus(ctx context.Context, err error, statusCode int) Renderer {
-	respErr := cerr.GetDefaultErrorManager().ConvToRespError(err)
-	respErr = i18n.GetDefaultManager().RespError(ctx, respErr)
+func APIErrorWithStatus(kt *kit.Kit, err error, statusCode int) Renderer {
+	respErr := i18n.RespError(kt, err)
 
 	if statusCode == 0 {
 		statusCode = cerr.GetHTTPStatus(respErr.Code)
 	}
 
-	return &APIResponse{
+	return &APIErrorResp{
 		HTTPCode: statusCode,
 		Error:    respErr,
 	}

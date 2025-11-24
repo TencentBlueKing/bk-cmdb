@@ -23,6 +23,7 @@ import (
 
 // Struct defines a dynamic struct.
 type Struct struct {
+	name string
 	// data is the underlying dynamic struct instance pointer.
 	data any
 	// val is the reflection value of the struct instance which is used for runtime manipulation.
@@ -31,7 +32,7 @@ type Struct struct {
 	// validators maps struct field names to their corresponding validation functions.
 	validators map[string]func(any) error
 	// fieldIndexMap maps struct field names to their respective field indices in the struct type.
-	fieldIndexMap map[string]int
+	fieldIndexMap map[string][]int
 }
 
 // Pointer returns the underlying dynamic struct instance in the form of pointer.
@@ -51,21 +52,21 @@ func (s *Struct) Get(fieldName string) (Valuer, error) {
 		return nil, fmt.Errorf("field %s not found", fieldName)
 	}
 
-	field := s.val.Field(fieldIndex)
+	field := s.val.FieldByIndex(fieldIndex)
 	if !field.IsValid() {
 		return nil, fmt.Errorf("field %s is invalid", fieldName)
 	}
 	return NewValue(field), nil
 }
 
-// Set sets the value of the specified struct field.
+// Set sets the value of the specified struct field, including nested fields.
 func (s *Struct) Set(fieldName string, value any) error {
 	fieldIndex, exists := s.fieldIndexMap[fieldName]
 	if !exists {
 		return fmt.Errorf("field %s not found", fieldName)
 	}
 
-	field := s.val.Field(fieldIndex)
+	field := s.val.FieldByIndex(fieldIndex)
 	if !field.IsValid() {
 		return fmt.Errorf("field %s is invalid", fieldName)
 	}
@@ -95,7 +96,8 @@ func (s *Struct) Set(fieldName string, value any) error {
 // Validate executes all validators for their corresponding struct field values.
 func (s *Struct) Validate() error {
 	for fieldName, validator := range s.validators {
-		field := s.val.Field(s.fieldIndexMap[fieldName])
+		index := s.fieldIndexMap[fieldName]
+		field := s.val.Field(index[0])
 		if !field.IsValid() {
 			return fmt.Errorf("field %s is invalid", fieldName)
 		}
@@ -105,4 +107,15 @@ func (s *Struct) Validate() error {
 		}
 	}
 	return nil
+}
+
+// Name get the name of the struct.
+func (s *Struct) Name() string {
+	return s.name
+}
+
+// HasField checks if the struct has given field.
+func (s *Struct) HasField(field string) bool {
+	_, ok := s.fieldIndexMap[field]
+	return ok
 }

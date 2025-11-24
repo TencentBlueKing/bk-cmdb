@@ -36,14 +36,14 @@ type TLSConfig struct {
 }
 
 // ToClientConf converts the TLSConfig to a tls.Config for client-side connections.
-func (c *TLSConfig) ToClientConf() (*tls.Config, bool, error) {
+func (c *TLSConfig) ToClientConf() (tlsConf *tls.Config, enabled bool, err error) {
 	// tls required config is not set, returns a default skip verify config and disable TLS flag
 	if c == nil || c.CAFile == "" {
 		return &tls.Config{InsecureSkipVerify: true}, false, nil // nolint:gosec
 	}
 
 	// generate tls config
-	tlsConf := &tls.Config{
+	tlsConf = &tls.Config{
 		InsecureSkipVerify: c.InsecureSkipVerify, // nolint:gosec
 	}
 
@@ -67,7 +67,7 @@ func (c *TLSConfig) ToClientConf() (*tls.Config, bool, error) {
 }
 
 // ToServerConf converts the TLSConfig to a tls.Config for server-side connections.
-func (c *TLSConfig) ToServerConf() (*tls.Config, bool, error) {
+func (c *TLSConfig) ToServerConf() (tlsConf *tls.Config, enabled bool, err error) {
 	// tls required config is not set, returns a default skip verify config and disable TLS flag
 	if c == nil || c.CAFile == "" || c.CertFile == "" || c.KeyFile == "" {
 		return &tls.Config{InsecureSkipVerify: true}, false, nil // nolint:gosec

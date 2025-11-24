@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package datatype
 
 import (
 	"strconv"

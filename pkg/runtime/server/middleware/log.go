@@ -109,7 +109,7 @@ func PrintGrpcStreamLog(kt *kit.Kit, srv any, ss grpc.ServerStream, info *grpc.S
 			// validate request
 			if v, ok := m.(validator.Validator); ok {
 				if err := v.Validate(kt); err != nil {
-					return cerr.Wrap(cerr.INVALID_REQUEST, err)
+					return cerr.Wrap(cerr.InvalidRequest, err)
 				}
 			}
 			return nil

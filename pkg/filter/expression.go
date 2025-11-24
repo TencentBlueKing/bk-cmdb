@@ -138,7 +138,7 @@ func (exp *Expression) Validate(opt *ExprOption) (hitErr error) {
 	}()
 
 	if exp.IsEmpty() {
-		return fmt.Errorf("expression rules is empty")
+		return fmt.Errorf("expression is empty")
 	}
 
 	if err := exp.Op.Validate(); err != nil {

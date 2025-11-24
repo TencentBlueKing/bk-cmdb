@@ -42,7 +42,7 @@ func ConvGrpcUnaryInterceptor(interceptors ...GrpcUnaryInterceptor) grpc.UnarySe
 		kt, err := kit.NewKitFromGrpcCtx(ctx)
 		if err != nil {
 			log.Error(ctx, "new grpc kit failed", log.E(err))
-			return nil, cerr.Wrap(cerr.INVALID_REQUEST, err)
+			return nil, cerr.Wrap(cerr.InvalidRequest, err)
 		}
 
 		nextHandler := handler
@@ -50,7 +50,7 @@ func ConvGrpcUnaryInterceptor(interceptors ...GrpcUnaryInterceptor) grpc.UnarySe
 			// validate request
 			if v, ok := req.(validator.Validator); ok {
 				if err = v.Validate(ctx); err != nil {
-					return nil, cerr.Wrap(cerr.INVALID_REQUEST, err)
+					return nil, cerr.Wrap(cerr.InvalidRequest, err)
 				}
 			}
 			return nextHandler(ctx, req)
@@ -85,7 +85,7 @@ func ConvGrpcStreamInterceptor(interceptors ...GrpcStreamInterceptor) grpc.Strea
 		kt, err := kit.NewKitFromGrpcCtx(ctx)
 		if err != nil {
 			log.Error(ss.Context(), "new grpc kit failed", log.E(err))
-			return cerr.Wrap(cerr.INVALID_REQUEST, err)
+			return cerr.Wrap(cerr.InvalidRequest, err)
 		}
 
 		// call all interceptors, generate grpc stream handler and server stream wrapper

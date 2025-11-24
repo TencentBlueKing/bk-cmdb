@@ -58,8 +58,12 @@ func Registerer() prometheus.Registerer {
 	return registerer
 }
 
-// Namespace is the namespace of cmdb metrics.
-const Namespace = "cmdb"
+const (
+	// Namespace is the namespace of cmdb metrics.
+	Namespace = "cmdb"
+	// OrmCmdSubsystem defines the subsystem of the orm command
+	OrmCmdSubsystem = "orm"
+)
 
 // labels
 const (
