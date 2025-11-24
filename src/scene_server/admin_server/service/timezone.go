@@ -19,7 +19,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"configcenter/pkg/tenant"
@@ -28,7 +27,6 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/auditlog"
 	"configcenter/src/common/blog"
-	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 
@@ -46,26 +44,20 @@ func (s *Service) updateBizTimeZone(req *restful.Request, resp *restful.Response
 	rHeader := req.Request.Header
 
 	kit := rest.NewKitFromHeader(rHeader, s.CCErr)
-	if err := s.validTenant(req); err != nil {
+	if err := s.validTenant(kit); err != nil {
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err,
 			ErrCode: common.CCErrAPICheckTenantInvalid})
 		return
 	}
 
 	timeZone := new(TimeZone)
-	body, err := ioutil.ReadAll(req.Request.Body)
-	if err != nil {
-		blog.Errorf("read request body failed, err: %v, rid: %s", err, kit.Rid)
-		_ = resp.WriteError(http.StatusInternalServerError, kit.CCError.CCError(common.CCErrCommHTTPReadBodyFailed))
-		return
-	}
-	if err := json.Unmarshal(body, timeZone); err != nil {
-		blog.Errorf("failed with decode body err: %v, body: %s, rid:%s", err, string(body), kit.Rid)
+	if err := json.NewDecoder(req.Request.Body).Decode(timeZone); err != nil {
+		blog.Errorf("failed with decode body err: %v, body: %s, rid:%s", err, req.Request.Body, kit.Rid)
 		_ = resp.WriteError(http.StatusInternalServerError, kit.CCError.CCError(common.CCErrCommJSONUnmarshalFailed))
 		return
 	}
 
-	if err := validation(kit, *timeZone); err != nil {
+	if err := timeZone.validate(kit); err != nil {
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err,
 			ErrCode: common.CCErrCommParamsInvalid})
 		return
@@ -87,12 +79,12 @@ func (s *Service) updateBizTimeZone(req *restful.Request, resp *restful.Response
 	auditLog, ccErr := audit.GenerateAuditLogByCondGetData(generateAuditParameter, common.BKInnerObjIDApp, cond)
 	if ccErr != nil {
 		blog.Errorf("update inst, generate audit log failed, err: %v, rid: %s", ccErr, kit.Rid)
-		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err,
+		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: ccErr,
 			ErrCode: common.CCErrAuditGenerateLogFailed})
 		return
 	}
 
-	err = s.db.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseApp).Update(kit.Ctx, cond, updateData)
+	err := s.db.Shard(kit.ShardOpts()).Table(common.BKTableNameBaseApp).Update(kit.Ctx, cond, updateData)
 	if err != nil {
 		blog.Errorf("update time zone failed, err: %v, rid: %s", err, kit.Rid)
 		_ = resp.WriteError(http.StatusInternalServerError, &metadata.RespError{Msg: err,
@@ -113,33 +105,32 @@ func (s *Service) updateBizTimeZone(req *restful.Request, resp *restful.Response
 	return
 }
 
-func (s *Service) validTenant(req *restful.Request) error {
-	// validation tenant mode
-	tenantID, err := tools.ValidateDisableTenantMode(req.Request.Header.Get(httpheader.TenantHeader),
-		s.Config.EnableMultiTenantMode)
+func (s *Service) validTenant(kit *rest.Kit) error {
+	// validate tenant mode
+	tenantID, err := tools.ValidateDisableTenantMode(kit.TenantID, s.Config.EnableMultiTenantMode)
 	if err != nil {
 		blog.Errorf("tenant mode is not enabled, but tenant id is set")
 		return fmt.Errorf("tenant mode is not enabled, but tenant id is set")
 	}
 
-	// check if tenant is validation
+	// check if tenant is validate
 	tenantData, exist := tenant.GetTenant(tenantID)
 	if !exist || tenantData.Status != types.EnabledStatus {
-		blog.Errorf("invalid tenant: %s, rid: %s", tenantID, httpheader.GetRid(req.Request.Header))
+		blog.Errorf("invalid tenant: %s, rid: %s", tenantID, kit.Rid)
 		return fmt.Errorf("invalid tenant: %s", tenantID)
 	}
 
 	return nil
 }
 
-func validation(kit *rest.Kit, timeZone TimeZone) error {
+func (t TimeZone) validate(kit *rest.Kit) error {
 
-	if len(timeZone.BizName) == 0 {
+	if len(t.BizName) == 0 {
 		blog.Errorf("biz name cannot be empty, rid: %s", kit.Rid)
 		return fmt.Errorf("biz name cannot be empty")
 	}
 
-	if len(timeZone.TimeZone) == 0 {
+	if len(t.TimeZone) == 0 {
 		blog.Errorf("time zone is empty, rid: %s", kit.Rid)
 		return fmt.Errorf("time zone is empty")
 	}
