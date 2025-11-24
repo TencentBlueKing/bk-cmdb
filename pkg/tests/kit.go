@@ -14,21 +14,15 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package table
+package tests
 
 import (
-	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
+	"testing"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 )
 
-// IDGenerator id generator model
-type IDGenerator struct {
-	// Resource identify id, commonly be table name.
-	// Note: the length limit of table name on PostgreSQL is 63 characters, on MySQL it is 64 characters.
-	Resource types.Name `json:"resource" gorm:"resource;primaryKey;size:64"`
-	MaxID    uint64     `json:"max_id" gorm:"max_id;size:64;default:0"`
-}
-
-// TableName id generator table name
-func (ig IDGenerator) TableName() string {
-	return IDGeneratorTable.String()
+// GetKit 获取kit
+func GetKit(t testing.TB) *kit.Kit {
+	return kit.NewKit(t.Context(), kit.Metadata{User: "test", AppCode: "test", TenantID: ""})
 }

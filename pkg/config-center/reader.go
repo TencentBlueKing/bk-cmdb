@@ -89,7 +89,7 @@ func (r *Reader) ReadConfig(ctx context.Context, config ConfigType) error {
 
 	var data []byte
 	var err error
-	for cnt := 0; cnt < ConfigWaitTime; cnt++ {
+	for range ConfigWaitTime {
 		data, err = r.discovery.Read(ctx, key)
 		if err != nil {
 			log.Error(ctx, "read config from discovery failed", "config", config, "key", key, log.E(err))

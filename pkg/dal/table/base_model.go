@@ -17,18 +17,26 @@
 package table
 
 import (
-	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
+	"reflect"
+
+	"github.com/TencentBlueKing/bk-cmdb/pkg/structs"
 )
 
-// IDGenerator id generator model
-type IDGenerator struct {
-	// Resource identify id, commonly be table name.
-	// Note: the length limit of table name on PostgreSQL is 63 characters, on MySQL it is 64 characters.
-	Resource types.Name `json:"resource" gorm:"resource;primaryKey;size:64"`
-	MaxID    uint64     `json:"max_id" gorm:"max_id;size:64;default:0"`
+// BaseModelName defines base model name.
+const BaseModelName = "base_model"
+
+// Base defines base model.
+type Base struct {
+	// ID is the primary key.
+	ID string `json:"id" gorm:"column:id;size:64;primaryKey,index:,unique"`
 }
 
-// TableName id generator table name
-func (ig IDGenerator) TableName() string {
-	return IDGeneratorTable.String()
+// SetID sets the ID.
+func (m *Base) SetID(id string) {
+	m.ID = id
+}
+
+func init() {
+	// register to dynamic structs
+	structs.RegisterFieldType(BaseModelName, reflect.TypeFor[Base]())
 }

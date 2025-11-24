@@ -14,21 +14,44 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package table
+package orm
 
 import (
-	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-// IDGenerator id generator model
-type IDGenerator struct {
-	// Resource identify id, commonly be table name.
-	// Note: the length limit of table name on PostgreSQL is 63 characters, on MySQL it is 64 characters.
-	Resource types.Name `json:"resource" gorm:"resource;primaryKey;size:64"`
-	MaxID    uint64     `json:"max_id" gorm:"max_id;size:64;default:0"`
+type options struct {
+	// mc db request metrics.
+	mc *metric
+	// slowRequestTime db slow request time, beyond this time, the db request will be logged.
+	slowRequestTime time.Duration
+
+	// debug will set logger level to info.
+	debug bool
 }
 
-// TableName id generator table name
-func (ig IDGenerator) TableName() string {
-	return IDGeneratorTable.String()
+// Option orm option func defines.
+type Option func(opt *options)
+
+// MetricsRegisterer set metrics registerer.
+func MetricsRegisterer(register prometheus.Registerer) Option {
+	return func(opt *options) {
+		opt.mc = initMetric(register)
+	}
+}
+
+// SlowRequest set db slow request time.
+func SlowRequest(duration time.Duration) Option {
+	return func(opt *options) {
+		opt.slowRequestTime = duration
+	}
+}
+
+// Debug set debug mode.
+func Debug() Option {
+	return func(opt *options) {
+		opt.debug = true
+	}
 }

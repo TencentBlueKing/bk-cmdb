@@ -2,7 +2,7 @@ GOBUILD                  = GOEXPERIMENT=jsonv2 CGO_ENABLED=0 go build -trimpath
 PREFIX                  ?= $(shell pwd)
 BUILD_PATH               = ${PREFIX}/build
 lint                     = ${PREFIX}/bin/lint
-GOLANGCI_VERSION         = v2.4.0
+GOLANGCI_VERSION         = v2.6.1
 
 ifdef VERSION
 	VERSION=$(VERSION)
@@ -41,3 +41,7 @@ build:
 	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/cmdb_apiserver cmd/api-server/*.go
 	@echo ">> building auth-server"
 	${GOBUILD} ${LDFLAG} -o ${BUILD_PATH}/cmdb_authserver cmd/auth-server/*.go
+
+gen:
+	@echo ">> generating orm code"
+	go generate ./...

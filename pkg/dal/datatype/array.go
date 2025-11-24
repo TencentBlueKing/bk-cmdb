@@ -14,8 +14,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package types for data
-package types
+// Package datatype for data
+package datatype
 
 import (
 	"context"
@@ -30,7 +30,7 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-// ArrayElem defines types that supported by Array.
+// ArrayElem defines datatype that supported by Array.
 // NOTE: `NULL`(nil) element not supported currently
 type ArrayElem interface {
 	int32 | int64 | float32 | float64 | string | bool | []byte

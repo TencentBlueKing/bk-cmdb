@@ -14,21 +14,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package table ...
 package table
 
 import (
-	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/datatype"
 )
 
-// IDGenerator id generator model
-type IDGenerator struct {
-	// Resource identify id, commonly be table name.
-	// Note: the length limit of table name on PostgreSQL is 63 characters, on MySQL it is 64 characters.
-	Resource types.Name `json:"resource" gorm:"resource;primaryKey;size:64"`
-	MaxID    uint64     `json:"max_id" gorm:"max_id;size:64;default:0"`
+// TestModel ...
+type TestModel struct {
+	// embedded base model to add ID field
+	Base     `gorm:"embedded" json:",inline"`
+	Name     string                  `gorm:"column:name" json:"name,omitempty"`
+	Size     int                     `gorm:"column:size" json:"size,omitempty"`
+	Weight   float64                 `gorm:"column:weight" json:"weight,omitempty"`
+	Int64s   datatype.Array[int64]   `gorm:"column:int64s" json:"int64s,omitempty"`
+	Strings  datatype.Array[string]  `gorm:"column:strings" json:"strings,omitempty"`
+	Strings2 *datatype.Array[string] `gorm:"column:strings2" json:"strings2,omitempty"`
 }
 
-// TableName id generator table name
-func (ig IDGenerator) TableName() string {
-	return IDGeneratorTable.String()
+// TableName ...
+func (TestModel) TableName() string {
+	return TestModelTable.String()
+}
+
+func init() {
+	// register test model to table field definition
+	Register(&TestModel{})
 }

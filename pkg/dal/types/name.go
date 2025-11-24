@@ -14,21 +14,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package table
+package types
 
-import (
-	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
-)
+import "gorm.io/gorm/schema"
 
-// IDGenerator id generator model
-type IDGenerator struct {
-	// Resource identify id, commonly be table name.
-	// Note: the length limit of table name on PostgreSQL is 63 characters, on MySQL it is 64 characters.
-	Resource types.Name `json:"resource" gorm:"resource;primaryKey;size:64"`
-	MaxID    uint64     `json:"max_id" gorm:"max_id;size:64;default:0"`
-}
+// Name of table
+type Name string
 
-// TableName id generator table name
-func (ig IDGenerator) TableName() string {
-	return IDGeneratorTable.String()
+// Tabler table name method, should work on zero value, if implemented by pointer type should handle nil pointer
+type Tabler = schema.Tabler
+
+// String return table name string
+func (n Name) String() string {
+	return string(n)
 }

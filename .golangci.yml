@@ -3,6 +3,8 @@ version: "2"
 run:
   timeout: 5m
   tests: false # 过滤_test.go文件
+  build-tags:
+    - goexperiment.jsonv2
 
 issues:
   # 显示所有 issue
@@ -41,6 +43,7 @@ linters:
     - revive
     - unconvert
     - unparam
+    - modernize
 
   # 忽略特定错误
   exclusions:
@@ -69,7 +72,6 @@ linters:
         - G401 # Detect the usage of DES, RC4, MD5 or SHA1
         - G402 # Look for bad TLS connection settings
         - G403 # Ensure minimum RSA key length of 2048 bits
-        - G404 # Insecure random number source (rand)
         - G504 # Import blocklist: net/http/cgi
     goheader:
       values:

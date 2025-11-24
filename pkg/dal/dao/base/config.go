@@ -14,21 +14,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package table
+package base
 
 import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/dal/types"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/filter"
 )
 
-// IDGenerator id generator model
-type IDGenerator struct {
-	// Resource identify id, commonly be table name.
-	// Note: the length limit of table name on PostgreSQL is 63 characters, on MySQL it is 64 characters.
-	Resource types.Name `json:"resource" gorm:"resource;primaryKey;size:64"`
-	MaxID    uint64     `json:"max_id" gorm:"max_id;size:64;default:0"`
+// Config defines dao operation config
+type Config struct {
+	PageOption          *types.PageOption
+	ExprOptionFunctions []filter.ExprOptionFunc
 }
 
-// TableName id generator table name
-func (ig IDGenerator) TableName() string {
-	return IDGeneratorTable.String()
+// GetConfig return page option and expr config modified by options
+func GetConfig(ruleFields map[string]filter.FieldType, opts []Option) (*filter.ExprOption, *types.PageOption) {
+	c := Config{
+		// provide a default option to avoid nil pointer check
+		PageOption: types.NewDefaultPageOption(),
+	}
+	for _, opt := range opts {
+		opt(&c)
+	}
+	filterOpt := filter.NewExprOption(filter.RuleFields(ruleFields))
+	for _, expOpt := range c.ExprOptionFunctions {
+		expOpt(filterOpt)
+	}
+	return filterOpt, c.PageOption
 }
+
+// Option configure page and expr option, both page option and expr option are guaranteed not nil
+type Option func(*Config)
