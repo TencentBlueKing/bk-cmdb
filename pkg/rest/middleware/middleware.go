@@ -14,22 +14,5 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
-
-import (
-	"net/http"
-
-	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/server/middleware"
-)
-
-// NewRouter creates a new auth-server router.
-func (s *Service) NewRouter() http.Handler {
-	r := rest.NewRouter()
-	r.Use(middleware.ConvHttpMiddleware(middleware.PrintHttpLog, s.metric.HTTPMiddleware))
-
-	r.Post("/api/v4/auth/find/resource", rest.Handle(s.PullResource))
-
-	return r
-
-}
+// Package middleware ...
+package middleware

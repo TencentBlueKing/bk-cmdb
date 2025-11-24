@@ -27,7 +27,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -39,6 +38,7 @@ import (
 	cerr "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/server/middleware"
 )
 
@@ -144,7 +144,7 @@ func (s *Service) HTTPMiddleware(kt *kit.Kit, w *middleware.ResponseWriter, r *h
 	next.ServeHTTP(w, r)
 
 	// get request uri, use route pattern if it's not empty
-	uri := chi.RouteContext(r.Context()).RoutePattern()
+	uri := rest.RoutePattern(r)
 	if uri == "" {
 		requestUrl, err := url.ParseRequestURI(r.RequestURI)
 		if err != nil {

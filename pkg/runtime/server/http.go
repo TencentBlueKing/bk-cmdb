@@ -24,14 +24,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/oklog/run"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
 	"github.com/TencentBlueKing/bk-cmdb/pkg/healthz"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest/middleware"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/trace"
 )
 
@@ -77,14 +77,14 @@ func runHTTPServer(ctx context.Context, opts *RunOptions, g *run.Group, tlsConf 
 
 // newRouter creates a new server router instance with common handlers and middlewares.
 func newRouter(opts *RunOptions) http.Handler {
-	r := chi.NewRouter()
+	r := rest.NewRouter()
 
 	// add http middlewares
 	r.Use(middleware.Recoverer)
 
 	// register http handlers
 	if opts.Router != nil {
-		r.Group(func(r chi.Router) {
+		r.Group(func(r rest.Router) {
 			r.Use(trace.Middleware)
 			r.Mount("/", opts.Router)
 		})

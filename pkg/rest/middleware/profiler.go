@@ -14,36 +14,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package service
+package middleware
 
 import (
-	"context"
 	"net/http"
+	"net/http/pprof"
 
-	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/server/middleware"
 )
 
-// NewRouter creates a new api-server router.
-func (s *Service) NewRouter(ctx context.Context) (http.Handler, error) {
+// Profiler is a convenient subrouter used for mounting net/http/pprof
+func Profiler() http.Handler {
 	r := rest.NewRouter()
 
-	r.Use(I18nMiddleware)
-	r.Use(Authentication) // 统一鉴权中间件
-	r.Use(middleware.ConvHttpMiddleware(middleware.PrintHttpLog, s.metric.HTTPMiddleware))
+	r.Get("/{$}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, r.RequestURI+"/pprof/", http.StatusMovedPermanently)
+	})
 
-	// register grpc gateway http handlers
-	grpcMux, err := s.newGrpcMux(ctx)
-	if err != nil {
-		log.Error(ctx, "new grpc mux failed", log.E(err), "addr", grpcMux)
-		return nil, err
-	}
-	r.Mount("/", grpcMux)
+	r.HandleFunc("/pprof/{_...}", pprof.Index)
+	r.HandleFunc("/pprof/cmdline", pprof.Cmdline)
+	r.HandleFunc("/pprof/profile", pprof.Profile)
+	r.HandleFunc("/pprof/symbol", pprof.Symbol)
+	r.HandleFunc("/pprof/trace", pprof.Trace)
 
-	// register restful http handlers
-	r.Post("/api/v4/user/info", rest.Handle(s.UserInfo))
-	r.Post("/api/v4/authorized/users", rest.Handle(s.ListAuthorizedUsers))
+	r.Handle("/pprof/goroutine", pprof.Handler("goroutine"))
+	r.Handle("/pprof/threadcreate", pprof.Handler("threadcreate"))
+	r.Handle("/pprof/mutex", pprof.Handler("mutex"))
+	r.Handle("/pprof/heap", pprof.Handler("heap"))
+	r.Handle("/pprof/block", pprof.Handler("block"))
+	r.Handle("/pprof/allocs", pprof.Handler("allocs"))
 
-	return r, nil
+	return r
 }
