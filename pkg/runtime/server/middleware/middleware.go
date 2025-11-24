@@ -24,32 +24,11 @@ import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest/middleware"
 )
 
 // HttpMiddleware is the http middleware with kit.
-type HttpMiddleware func(kt *kit.Kit, w *ResponseWriter, r *http.Request, next http.HandlerFunc)
-
-// ResponseWriter is the cmdb http response writer that records the status code.
-type ResponseWriter struct {
-	http.ResponseWriter
-	statusCode int
-}
-
-// newResponseWriter creates a new ResponseWriter.
-func newResponseWriter(w http.ResponseWriter) *ResponseWriter {
-	return &ResponseWriter{w, http.StatusOK}
-}
-
-// WriteHeader records the status code when WriteHeader is called.
-func (w *ResponseWriter) WriteHeader(code int) {
-	w.statusCode = code
-	w.ResponseWriter.WriteHeader(code)
-}
-
-// GetStatusCode returns the status code that was recorded when WriteHeader was called.
-func (w *ResponseWriter) GetStatusCode() int {
-	return w.statusCode
-}
+type HttpMiddleware func(kt *kit.Kit, w middleware.WrapResponseWriter, r *http.Request, next http.HandlerFunc)
 
 // ConvHttpMiddleware returns a http middleware with the given cmdb http interceptors.
 func ConvHttpMiddleware(middlewares ...HttpMiddleware) func(next http.Handler) http.Handler {
@@ -63,7 +42,7 @@ func ConvHttpMiddleware(middlewares ...HttpMiddleware) func(next http.Handler) h
 				return
 			}
 
-			resp := newResponseWriter(w)
+			resp := middleware.NewWrapResponseWriter(w)
 
 			// use all middlewares
 			serveHttp := next.ServeHTTP

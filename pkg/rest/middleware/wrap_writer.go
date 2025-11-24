@@ -17,6 +17,8 @@
 package middleware
 
 import (
+	"bufio"
+	"net"
 	"net/http"
 )
 
@@ -24,6 +26,8 @@ import (
 // into various parts of the response process.
 type WrapResponseWriter interface {
 	http.ResponseWriter
+	Flush() error
+	Hijack() (net.Conn, *bufio.ReadWriter, error)
 	Status() int
 	BytesWritten() int
 }

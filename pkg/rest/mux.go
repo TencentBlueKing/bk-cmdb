@@ -186,7 +186,7 @@ func (r *router) HandleFunc(pattern string, handler http.HandlerFunc) {
 	r.register("", pattern, handler)
 }
 
-// Get adds the route `pattern` that matches a POST http method to
+// Get adds the route `pattern` that matches a GET http method to
 // execute the `handlerFn` http.HandlerFunc.
 func (r *router) Get(pattern string, handler http.HandlerFunc) {
 	r.register(http.MethodGet, pattern, handler)

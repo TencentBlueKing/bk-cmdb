@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json/v2"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -29,11 +30,12 @@ import (
 	cerr "github.com/TencentBlueKing/bk-cmdb/pkg/errors"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest/middleware"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/validator"
 )
 
 // PrintHttpLog print http request log.
-func PrintHttpLog(kt *kit.Kit, w *ResponseWriter, r *http.Request, next http.HandlerFunc) {
+func PrintHttpLog(kt *kit.Kit, w middleware.WrapResponseWriter, r *http.Request, next http.HandlerFunc) {
 	start := time.Now()
 	body := make([]byte, 0)
 	if r.Body != nil {
@@ -47,12 +49,12 @@ func PrintHttpLog(kt *kit.Kit, w *ResponseWriter, r *http.Request, next http.Han
 	next(w, r)
 
 	log.Info(kt, "http request", "appCode", kt.AppCode, "user", kt.User, "method", r.Method, "uri",
-		r.RequestURI, "body", truncateBody(body), "cost", time.Since(start), "status", w.statusCode)
+		r.RequestURI, "body", truncateBody(body), "cost", time.Since(start), "status", w.Status())
 }
 
 func truncateBody(body []byte) string {
 	if len(body) > 2048 {
-		return string(body[:2048])
+		return fmt.Sprintf("%s...(Total %dB)", body[:2048], len(body))
 	}
 	return string(body)
 }

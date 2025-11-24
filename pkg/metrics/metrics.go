@@ -39,7 +39,8 @@ import (
 	"github.com/TencentBlueKing/bk-cmdb/pkg/kit"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/log"
 	"github.com/TencentBlueKing/bk-cmdb/pkg/rest"
-	"github.com/TencentBlueKing/bk-cmdb/pkg/runtime/server/middleware"
+	"github.com/TencentBlueKing/bk-cmdb/pkg/rest/middleware"
+	rtmiddleware "github.com/TencentBlueKing/bk-cmdb/pkg/runtime/server/middleware"
 )
 
 // registerer is a global register which is used to collect metrics we need.
@@ -134,7 +135,7 @@ func (s *Service) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 }
 
 // HTTPMiddleware returns the HTTP middleware that records user metrics.
-func (s *Service) HTTPMiddleware(kt *kit.Kit, w *middleware.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+func (s *Service) HTTPMiddleware(kt *kit.Kit, w middleware.WrapResponseWriter, r *http.Request, next http.HandlerFunc) {
 	if r.RequestURI == "/metrics" || r.RequestURI == "/metrics/" {
 		s.ServeHTTP(w, r)
 		return
@@ -159,7 +160,7 @@ func (s *Service) HTTPMiddleware(kt *kit.Kit, w *middleware.ResponseWriter, r *h
 		return
 	}
 
-	s.recordMetrics(kt, before, "http", uri, strconv.Itoa(w.GetStatusCode()))
+	s.recordMetrics(kt, before, "http", uri, strconv.Itoa(w.Status()))
 }
 
 func (s *Service) recordMetrics(kt *kit.Kit, before time.Time, protocol, handler, status string) {
@@ -236,7 +237,7 @@ func (s *Service) GrpcStreamServerInterceptor(kt *kit.Kit, srv any, ss grpc.Serv
 	}
 
 	// record grpc total request metrics for message send and receive
-	ssWrapper := middleware.NewServerStreamWrapper(kt, ss, method, func(m any) error {
+	ssWrapper := rtmiddleware.NewServerStreamWrapper(kt, ss, method, func(m any) error {
 		err := ss.SendMsg(m)
 		s.recordRequestTotal(kt, "grpc", method+"_send", s.getHttpStatusByGrpcErr(err))
 		return err
