@@ -31,6 +31,7 @@ func (s *Service) Index(c *gin.Context) {
 	session := sessions.Default(c)
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
 	tenantID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
+	timeZone, _ := session.Get(common.WEBSessionTimeZoneKey).(string)
 
 	pageConf := gin.H{
 		"site":                  s.Config.Site.DomainUrl,
@@ -49,6 +50,7 @@ func (s *Service) Index(c *gin.Context) {
 		"enableNotification":    s.Config.EnableNotification,
 		"bkSharedResUrl":        s.Config.Site.BkSharedResUrl,
 		"enableMultiTenantMode": s.Config.EnableMultiTenantMode,
+		"timeZone":              timeZone,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {

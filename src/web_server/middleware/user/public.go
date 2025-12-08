@@ -86,6 +86,7 @@ func (m *publicUser) LoginUser(c *gin.Context) bool {
 	} else {
 		session.Set(common.WEBSessionMultiTenantKey, common.LoginSystemMultiTenantFalse)
 	}
+	session.Set(common.WEBSessionTimeZoneKey, userInfo.TimeZone)
 
 	if err := session.Save(); err != nil {
 		blog.Warnf("save session failed, err: %s, rid: %s", err.Error(), rid)

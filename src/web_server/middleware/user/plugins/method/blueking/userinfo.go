@@ -78,6 +78,7 @@ func (m *user) LoginUser(c *gin.Context, config options.Config, isMultiOwner boo
 			BkToken:   bkToken,
 			TenantUin: userInfo.TenantID,
 			Language:  userInfo.Language,
+			TimeZone:  userInfo.TimeZone,
 		}
 		break
 	}

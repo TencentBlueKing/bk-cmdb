@@ -1419,6 +1419,8 @@ const (
 	WEBSessionAvatarUrlKey = "avatar_url"
 	// WEBSessionMultiTenantKey multi tenant session key
 	WEBSessionMultiTenantKey = "multitenant"
+	// WEBSessionTimeZoneKey time zone session key
+	WEBSessionTimeZoneKey = "time_zone"
 
 	// LoginSystemMultiTenantTrue login system multi tenant flag
 	LoginSystemMultiTenantTrue = "1"

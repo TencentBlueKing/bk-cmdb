@@ -47,6 +47,7 @@ type LoginUserInfo struct {
 	Language     string                       `json:"-"`
 	AvatarUrl    string                       `json:"avatar_url"`
 	MultiTenant  bool                         `json:"multi_tenant"`
+	TimeZone     string                       `json:"time_zone"`
 }
 
 // LoginPluginInfo login user plugin info
