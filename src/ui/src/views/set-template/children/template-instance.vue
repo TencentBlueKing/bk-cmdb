@@ -70,7 +70,7 @@
         <InstanceStatusColumn></InstanceStatusColumn>
         <bk-table-column :label="$t('上次同步时间')" prop="last_time" sortable="custom" show-overflow-tooltip>
           <template slot-scope="{ row }">
-            <span>{{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ss') : '--'}}</span>
+            <span>{{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ssZZ') : '--'}}</span>
           </template>
         </bk-table-column>
         <bk-table-column :label="$t('同步人')" prop="bk_updated_by">

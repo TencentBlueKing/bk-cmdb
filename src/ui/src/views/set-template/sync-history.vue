@@ -64,7 +64,7 @@
       </bk-table-column>
       <bk-table-column :label="$t('同步时间')" prop="last_time" sortable="custom" show-overflow-tooltip>
         <template slot-scope="{ row }">
-          {{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ss') : '--'}}
+          {{row.last_time ? $tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm:ssZZ') : '--'}}
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('同步人')" prop="sync_user">

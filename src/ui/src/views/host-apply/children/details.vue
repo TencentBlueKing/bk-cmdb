@@ -234,7 +234,7 @@
           ?.map(rule => new Date(rule.last_time).getTime())
         if (lastTimeList?.length) {
           const latestTime = Math.max(...lastTimeList)
-          return formatTime(latestTime, 'YYYY-MM-DD HH:mm:ss')
+          return formatTime(latestTime, 'YYYY-MM-DD HH:mm:ssZZ')
         }
         return ''
       })

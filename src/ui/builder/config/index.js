@@ -159,7 +159,8 @@ module.exports = {
       SHARED_RES_URL: '{{.bkSharedResUrl}}',
       TENANT_ID: '{{.tenantId}}',
       USER_MANAGE_URL: '{{.userManageUrl}}',
-      ENABLE_MULTI_TENANT_MODE: '{{.enableMultiTenantMode}}'
+      ENABLE_MULTI_TENANT_MODE: '{{.enableMultiTenantMode}}',
+      TIMEZONE: '{{.timeZone}}'
     }),
 
     // Template for index.html

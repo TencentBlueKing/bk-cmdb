@@ -43,7 +43,9 @@
       </div>
       <div class="info-group">
         <label class="info-label">{{$t('操作时间')}}</label>
-        <span class="info-content" v-bk-overflow-tips>{{$tools.formatTime(details.operation_time)}}</span>
+        <span class="info-content" v-bk-overflow-tips>
+          {{$tools.formatTime(details.operation_time, 'YYYY-MM-DD HH:mm:ssZZ')}}
+        </span>
       </div>
       <div class="info-group">
         <label class="info-label">{{$t('操作账号')}}</label>

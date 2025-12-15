@@ -30,7 +30,7 @@
         :active.sync="activeTab"
         :before-toggle="handleTabToggle"
         @tab-change="handleTabChange">
-        <bk-tab-panel name="hostList" :label="$t('主机列表')">
+        <bk-tab-panel name="hostList" :label="$t('主机列表11')">
           <bk-exception class="empty-set" type="empty" scene="part" v-if="emptySet">
             <i18n path="该集群尚未创建模块">
               <template #link>

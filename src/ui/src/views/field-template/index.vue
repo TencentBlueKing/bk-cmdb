@@ -530,7 +530,7 @@
         min-width="190"
         show-overflow-tooltip>
         <template slot-scope="{ row }">
-          <div>{{ row.last_time }}</div>
+          <div>{{row.last_time ? $tools.formatTime(row.last_time) : '--'}}</div>
         </template>
       </bk-table-column>
       <bk-table-column :label="$t('操作')" min-width="250" fixed="right">

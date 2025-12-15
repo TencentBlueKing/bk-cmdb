@@ -63,7 +63,7 @@
         <template slot-scope="{ row }">{{`${getActionName(row)}${getResourceTypeName(row)}`}}</template>
       </bk-table-column>
       <bk-table-column
-        width="160"
+        width="190"
         sortable="custom"
         prop="operation_time"
         :label="$t('时间')">

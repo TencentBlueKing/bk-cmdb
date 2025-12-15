@@ -233,7 +233,7 @@
         <template #default="{ row }">
           <span v-if="statusMap[row.id] && !row.bk_ispaused">
             {{ statusMap[row.id].sync_time
-              ? $tools.formatTime(statusMap[row.id].sync_time, 'YYYY-MM-DD HH:mm:ss')
+              ? $tools.formatTime(statusMap[row.id].sync_time, 'YYYY-MM-DD HH:mm:ssZZ')
               : '--'
             }}
           </span>

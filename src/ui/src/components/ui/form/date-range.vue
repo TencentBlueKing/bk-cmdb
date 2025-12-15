@@ -62,7 +62,7 @@
           return this.localValue.map(date => (date ? new Date(date) : ''))
         },
         set(value) {
-          const localValue = value.map(date => this.$tools.formatTime(date, this.timer ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'))
+          const localValue = value.map(date => this.$tools.formatTime(date, this.timer ? 'YYYY-MM-DD HH:mm:ssZZ' : 'YYYY-MM-DD'))
           this.localValue = localValue.filter(date => !!date)
         }
       },

@@ -78,6 +78,9 @@
         :label="$t('创建时间')"
         prop="create_time"
         show-overflow-tooltip>
+        <template #default="{ row }">
+          <span>{{$tools.formatTime(row.create_time)}}</span>
+        </template>
       </bk-table-column>
       <cmdb-table-empty
         slot="empty"

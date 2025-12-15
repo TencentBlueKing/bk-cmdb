@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-import moment from 'moment'
+import moment from 'moment-timezone'
 import GET_VALUE from 'get-value'
 import has from 'has'
 import { t } from '@/i18n'
@@ -43,7 +43,7 @@ export function getPropertyText(property, item) {
     const enumOption = options.find(option => option.id === propertyValue)
     propertyValue = enumOption ? enumOption.name : '--'
   } else if (['date', 'time'].includes(propertyType)) {
-    propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+    propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ssZZ')
   } else if (propertyType === 'foreignkey') {
     if (Array.isArray(propertyValue)) {
       propertyValue = propertyValue.map(inst => inst.bk_inst_name).join(',')
@@ -89,7 +89,7 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
       const defaultValue = autoSelect ? propertyDefault : ''
-      const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+      const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ssZZ')
       const  value = has(inst, propertyId) ? formatedTime : defaultValue
       values[propertyId] = value || null
     } else if (['int', 'float'].includes(propertyType)) {
@@ -228,17 +228,20 @@ export function formatValues(values, properties) {
  * 格式化时间
  * @param {String} originalTime - 需要被格式化的时间
  * @param {String} format - 格式化类型
+ * @param {String} timezone - 时区
  * @return {String} 格式化后的时间
  */
-export function formatTime(originalTime, format = 'YYYY-MM-DD HH:mm:ss') {
+export function formatTime(originalTime, format = 'YYYY-MM-DD HH:mm:ssZZ', timezone) {
   if (!originalTime) {
     return ''
   }
-  const formatedTime = moment(originalTime).format(format)
-  if (formatedTime === 'Invalid date') {
-    return originalTime
-  }
-  return formatedTime
+  const dateObj = moment(originalTime)
+
+  if (!dateObj.isValid()) return 'Invalid Date'
+
+  const targetTimezone = timezone || window.Site.timezone || moment.tz.guess()
+
+  return dateObj.tz(targetTimezone).format(format)
 }
 /**
  * 从模型属性中获取指定id的属性对象
@@ -592,7 +595,7 @@ export function getPropertyCopyValue(originalValue, propertyType, options = {}) 
       value = formatTime(originalValue, 'YYYY-MM-DD')
       break
     case 'time':
-      value = formatTime(originalValue, 'YYYY-MM-DD HH:mm:ss')
+      value = formatTime(originalValue, 'YYYY-MM-DD HH:mm:ssZZ')
       break
     case 'foreignkey': {
       if (options.isFullCloud) {

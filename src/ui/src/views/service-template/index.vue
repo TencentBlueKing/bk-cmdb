@@ -111,7 +111,7 @@
       </bk-table-column>
       <bk-table-column prop="last_time" :label="$t('修改时间')" show-overflow-tooltip sortable="custom">
         <template slot-scope="{ row }">
-          {{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mm')}}
+          {{$tools.formatTime(row.last_time, 'YYYY-MM-DD HH:mmZZ')}}
         </template>
       </bk-table-column>
       <bk-table-column prop="operation" :label="$t('操作')" fixed="right">
