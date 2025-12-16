@@ -351,6 +351,7 @@ grant_permissions:
       - find_host_topo_relation
       - list_business_set
       - search_objects
+      - resource_watch
   - bk_app_code: {{ environ.BK_LOG_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
