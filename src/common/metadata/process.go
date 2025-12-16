@@ -49,6 +49,43 @@ type CreateProcessTemplateBatchInput struct {
 	Processes         []ProcessDetail `json:"processes"`
 }
 
+// Validate create process template batch input
+func (c CreateProcessTemplateBatchInput) Validate() error {
+	for _, p := range c.Processes {
+		if p.Spec == nil {
+			continue
+		}
+		if err := validateSpace(p.Spec); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateSpace valid space for string value
+func validateSpace(prop *ProcessProperty) error {
+	v := reflect.ValueOf(prop).Elem()
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		fieldVal := v.Field(i)
+		fieldType := t.Field(i)
+
+		ps, ok := fieldVal.Interface().(PropertyString)
+		if !ok || ps.Value == nil {
+			continue
+		}
+		value := *ps.Value
+		if strings.TrimSpace(value) != value {
+			jsonName := fieldType.Tag.Get("json")
+			name := strings.Split(jsonName, ",")[0]
+			return fmt.Errorf("field %s contains space: %v", name, value)
+		}
+	}
+
+	return nil
+}
+
 // DeleteProcessTemplateBatchInput TODO
 type DeleteProcessTemplateBatchInput struct {
 	BizID            int64   `json:"bk_biz_id"`

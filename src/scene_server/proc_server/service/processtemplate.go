@@ -41,6 +41,12 @@ func (ps *ProcServer) CreateProcessTemplateBatch(ctx *rest.Contexts) {
 		return
 	}
 
+	if err := input.Validate(); err != nil {
+		blog.Errorf("process template input valid failed, err: %v", err)
+		ctx.RespAutoError(err)
+		return
+	}
+
 	if len(input.Processes) > common.BKMaxUpdateOrCreatePageSize {
 		ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommXXExceedLimit, "create process template",
 			common.BKMaxUpdateOrCreatePageSize))
