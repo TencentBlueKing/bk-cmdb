@@ -385,6 +385,10 @@ grant_permissions:
       - list_biz_hosts
       - search_biz_inst_topo
       - search_cloud_area
+  - bk_app_code: { { environ.BK_BSCP_APP_CODE } }
+    grant_dimension: "resource"
+    resource_names:
+      - search_business
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
