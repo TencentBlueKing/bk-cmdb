@@ -1,5 +1,5 @@
 specVersion: 3
-appVersion: "3.15.1-feature-tenant-alpha21"
+appVersion: "3.15.1-feature-tenant-alpha22"
 app:
   bkAppCode: "bk_cmdb_saas"
   bkAppName: "蓝鲸配置平台"

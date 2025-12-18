@@ -1,3 +1,7 @@
+## [Version: 3.15.1-feature-tenant-alpha22] - 2025-12-18
+**功能优化**
+- 前端支持子路径浏览图标
+
 ## [Version: 3.15.1-feature-tenant-alpha21] - 2025-12-18
 **缺陷修复**
 - 修改bscp的apigw授权格式
