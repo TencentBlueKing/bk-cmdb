@@ -13,7 +13,7 @@
 import { showLoginModal as showModal } from '@blueking/login-modal'
 
 export const showLoginModal = () => {
-  const successUrl = `${window.location.origin}/static/login_success.html`
+  const successUrl = `${window.location.origin}${window.location.pathname}static/login_success.html`
 
   const siteLoginUrl = window.Site.login
   if (!siteLoginUrl) {

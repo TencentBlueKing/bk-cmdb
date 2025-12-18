@@ -40,7 +40,7 @@ export const initialConfig = {
     productNameEn: 'BK CMDB',
     brandName: '蓝鲸智云',
     brandNameEn: 'Tencent BlueKing',
-    favicon: '/static/favicon.ico',
+    favicon: `${window.Site.publicPath}static/favicon.ico`,
     version: window.Site.buildVersion
   }
 }
