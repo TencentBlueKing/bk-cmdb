@@ -374,8 +374,10 @@
             // eslint-disable-next-line no-plusplus
             if (item.count === 0) zeroList++
             if (data.chart_type === 'pie') {
-              content.labels.push(item.id)
-              if (item.count !== 0) content.values.push(item.count)
+              if (item.count !== 0) {
+                content.labels.push(item.id)
+                content.values.push(item.count)
+              }
             } else {
               const color = '#3A84FF'
               content.marker.color.push(color)
