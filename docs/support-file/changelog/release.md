@@ -1,3 +1,7 @@
+## [Version: 3.15.1-feature-tenant-alpha21] - 2025-12-18
+**缺陷修复**
+- 修改bscp的apigw授权格式
+
 ## [Version: 3.15.1-feature-tenant-alpha20] - 2025-12-17
 **功能优化**
 - 支持运维需求，修改业务时区
