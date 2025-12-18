@@ -385,7 +385,7 @@ grant_permissions:
       - list_biz_hosts
       - search_biz_inst_topo
       - search_cloud_area
-  - bk_app_code: { { environ.BK_BSCP_APP_CODE } }
+  - bk_app_code: {{ environ.BK_BSCP_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
       - search_business
