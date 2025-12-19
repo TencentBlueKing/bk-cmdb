@@ -308,7 +308,8 @@
     MENU_MODEL_MANAGEMENT,
     MENU_RESOURCE_INSTANCE,
     MENU_MODEL_FIELD_TEMPLATE,
-    MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL
+    MENU_MODEL_FIELD_TEMPLATE_SYNC_MODEL,
+    MENU_RESOURCE_COLLECTION
   } from '@/dictionary/menu-symbol'
   import { BUILTIN_MODEL_RESOURCE_MENUS, BUILTIN_MODELS } from '@/dictionary/model-constants.js'
   import EditableField from '@/components/ui/details/editable-field.vue'
@@ -373,6 +374,7 @@
       }
     },
     computed: {
+      ...mapGetters('userCustom', ['usercustom']),
       ...mapGetters([
         'supplierAccount',
         'userName'
@@ -684,6 +686,10 @@
           bk_obj_id: this.activeModel.bk_obj_id
         })
         this.updateActiveModel()
+        if (ispaused) {
+          // 停用了调用更新收藏模型的接口
+          this.updateModelCollection()
+        }
       },
       async deleteModel() {
         if (this.isMainLineModel) {
@@ -707,7 +713,18 @@
           this.$routerActions.redirect({ name: MENU_MODEL_MANAGEMENT })
         }
         this.$success(this.$t('删除成功'))
+        this.updateModelCollection()
         this.$http.cancel('post_searchClassificationsObjects')
+      },
+      // 停用或者删除模型后，如果该模型被收藏了，则取消收藏
+      updateModelCollection() {
+        const oldCollection = this.usercustom[MENU_RESOURCE_COLLECTION] || []
+        // 如果之前没收藏则返回，收藏了则取消收藏
+        const hasCollection = oldCollection.filter(id => id === this.activeModel.bk_obj_id)
+        if (!hasCollection.length) return
+        this.$store.dispatch('userCustom/saveUsercustom', {
+          [MENU_RESOURCE_COLLECTION]: oldCollection.filter(id => id !== this.activeModel.bk_obj_id)
+        })
       },
       handleGoInstance() {
         const model = this.activeModel
