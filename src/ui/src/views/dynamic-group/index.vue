@@ -148,7 +148,7 @@
           }
         }
         this.filter.forEach((item) => {
-          const itemValue = item.value?.split(',')
+          const itemValue = item.value?.split(/,|;|\n|\s/)
           const value = itemValue?.length > 1 ? {
             $in: itemValue
           } : itemValue[0]
