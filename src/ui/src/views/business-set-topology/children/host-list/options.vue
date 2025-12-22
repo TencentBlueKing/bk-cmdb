@@ -40,16 +40,13 @@
   import FilterStore from '@/components/filters/store'
   import FilterUtils from '@/components/filters/utils'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants.js'
+  import { IPWithCloudSymbol, IPWithCloudFields, IPv6WithCloudSymbol, IPv46WithCloudSymbol, IPv64WithCloudSymbol } from '@/dictionary/ip-with-cloud-symbol'
+  import { isEmptyPropertyValue } from '@/utils/tools'
 
   export default {
     components: {
       FilterCollection,
       FilterFastSearch,
-    },
-    data() {
-      return {
-        IPWithCloudSymbol: Symbol('IPWithCloud')
-      }
     },
     computed: {
       ...mapGetters('userCustom', ['usercustom']),
@@ -68,15 +65,15 @@
         return !!this.selection.length
       },
       clipboardList() {
-        const IPWithCloud = FilterUtils.defineProperty({
-          id: this.IPWithCloudSymbol,
-          bk_obj_id: BUILTIN_MODELS.HOST,
-          bk_property_id: this.IPWithCloudSymbol,
-          bk_property_name: `${this.$t('管控区域')}ID:IP`,
+        const IPWithClouds = Object.keys(IPWithCloudFields).map(key => FilterUtils.defineProperty({
+          id: key,
+          bk_obj_id: 'host',
+          bk_property_id: key,
+          bk_property_name: IPWithCloudFields[key],
           bk_property_type: 'singlechar'
-        })
+        }))
         const clipboardList = this.$parent.tableHeader.slice()
-        clipboardList.splice(1, 0, IPWithCloud)
+        clipboardList.splice(3, 0, ...IPWithClouds)
         return clipboardList
       },
       tableHeaderPropertyIdList() {
@@ -91,11 +88,34 @@
         const copyText = this.selection.map((data) => {
           const modelId = property.bk_obj_id
           const modelData = data[modelId]
-          if (property.id === this.IPWithCloudSymbol) {
+
+          const IPWithCloudKeys = Object.keys(IPWithCloudFields)
+          if (IPWithCloudKeys.includes(property.id)) {
             const cloud = this.$tools.getPropertyCopyValue(modelData.bk_cloud_id, 'foreignkey')
             const ip = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip, 'singlechar')
-            return `${cloud}:${ip}`
+            const ipv6 = this.$tools.getPropertyCopyValue(modelData.bk_host_innerip_v6, 'singlechar')
+            const isEmptyIPv4Value = isEmptyPropertyValue(modelData.bk_host_innerip)
+            const isEmptyIPv6Value = isEmptyPropertyValue(modelData.bk_host_innerip_v6)
+            if (property.id === IPWithCloudSymbol) {
+              return `${cloud}:${ip}`
+            }
+            if (property.id === IPv6WithCloudSymbol) {
+              return `${cloud}:[${ipv6}]`
+            }
+            if (property.id === IPv46WithCloudSymbol) {
+              if (!isEmptyIPv4Value || isEmptyIPv6Value) {
+                return `${cloud}:${ip}`
+              }
+              return `${cloud}:[${ipv6}]`
+            }
+            if (property.id === IPv64WithCloudSymbol) {
+              if (isEmptyIPv4Value || !isEmptyIPv6Value) {
+                return `${cloud}:[${ipv6}]`
+              }
+              return `${cloud}:${ip}`
+            }
           }
+
           const propertyId = property.bk_property_id
           if (Array.isArray(modelData)) {
             const value = modelData.map(item => this.$tools.getPropertyCopyValue(item[propertyId], property))
