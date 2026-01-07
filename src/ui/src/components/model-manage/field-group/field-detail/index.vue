@@ -536,6 +536,11 @@
           this.fieldInfo.default = this.isNullOrUndefinedOrEmpty(this.fieldInfo.default) ? '' : Number(this.fieldInfo.default)
         }
 
+        // 将布尔类型的默认值改成default
+        if (PROPERTY_TYPES.BOOL === this.fieldInfo.bk_property_type) {
+          this.fieldInfo.default = this.fieldInfo.option
+        }
+
         // 配置流程直接抛出事件并退出，在流程中自行处理
         if (this.isSettingScene) {
           this.$emit('confirm', this.field.id, this.fieldInfo)
