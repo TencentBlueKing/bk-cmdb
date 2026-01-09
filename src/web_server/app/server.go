@@ -223,6 +223,8 @@ func (w *WebServer) onServerConfigUpdate(previous, current cc.ProcessConfig) {
 	w.Config.LoginUrl = fmt.Sprintf(w.Config.Site.BkLoginUrl, w.Config.Site.AppCode, w.Config.Site.DomainUrl)
 	w.Config.EnableNotification, _ = cc.Bool("webServer.enableNotification")
 	w.Config.EnableMultiTenantMode, _ = cc.Bool("tenant.enableMultiTenantMode")
+	w.Config.IamWebUrl, _ = cc.String("webServer.iamWebUrl")
+	w.Config.UserManagerWebUrl, _ = cc.String("webServer.userManagerWebUrl")
 }
 
 // Stop the ccapi server

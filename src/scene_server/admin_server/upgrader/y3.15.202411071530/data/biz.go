@@ -105,8 +105,8 @@ func addBizAsstData(kit *rest.Kit, db local.DB, bizID int64, moduleNames []strin
 		return fmt.Errorf("failed to get set id")
 	}
 	// add resource business module common.BKAppIDField, common.BKSetNameField, common.BKInstParentStr
-	uniqueStr := strings.Join([]string{strconv.FormatInt(bizID, 16), common.DefaultResSetName,
-		strconv.FormatInt(bizID, 16)}, "*")
+	uniqueStr := strings.Join([]string{strconv.FormatInt(bizID, 10), common.DefaultResSetName,
+		strconv.FormatInt(bizID, 10)}, "*")
 	value := ids[uniqueStr]
 	id, err := util.GetInt64ByInterface(value)
 	if err != nil {

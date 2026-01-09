@@ -99,4 +99,8 @@ type Config struct {
 	DeploymentMethod      common.DeploymentMethod
 	EnableNotification    bool
 	EnableMultiTenantMode bool
+	// 用户管理访问入口
+	UserManagerWebUrl string
+	// 权限中心访问入口
+	IamWebUrl string
 }
