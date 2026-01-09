@@ -55,7 +55,8 @@
         window.User = {
             name: <%= htmlWebpackPlugin.options.config.USER_NAME %>
         }
-        window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + window.location.pathname)
+        const pathname = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/'
+        window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + pathname)
         window.API_PREFIX = API_HOST + 'api/' + Site.version
     </script>
   </body>
