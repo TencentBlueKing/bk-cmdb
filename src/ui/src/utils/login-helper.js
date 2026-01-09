@@ -13,7 +13,8 @@
 import { showLoginModal as showModal } from '@blueking/login-modal'
 
 export const showLoginModal = () => {
-  const successUrl = `${window.location.origin}${window.location.pathname}static/login_success.html`
+  const currentPathname = window.location.pathname.endsWith('/') ? window.location.pathname : `${window.location.pathname}/`
+  const successUrl = `${window.location.origin}${currentPathname}static/login_success.html`
 
   const siteLoginUrl = window.Site.login
   if (!siteLoginUrl) {
@@ -23,8 +24,8 @@ export const showLoginModal = () => {
 
   const loginURL = new URL(siteLoginUrl)
   loginURL.searchParams.set('c_url', successUrl)
-  const pathname = loginURL.pathname.endsWith('/') ? loginURL.pathname : `${loginURL.pathname}/`
-  const loginUrl = `${loginURL.origin}${pathname}plain/${loginURL.search}`
+  const loginPathname = loginURL.pathname.endsWith('/') ? loginURL.pathname : `${loginURL.pathname}/`
+  const loginUrl = `${loginURL.origin}${loginPathname}plain/${loginURL.search}`
 
   showModal({ loginUrl })
 }

@@ -52,6 +52,9 @@ const dev = {
     TENANT_ID: JSON.stringify(''),
     USER_MANAGE_URL: JSON.stringify(''),
     ENABLE_MULTI_TENANT_MODE: JSON.stringify(''),
+    TIMEZONE: JSON.stringify(''),
+    USER_MANAGER_WEB_URL: JSON.stringify(''),
+    IAM_WEB_URL: JSON.stringify(''),
   }),
 
   // Paths
@@ -160,7 +163,9 @@ module.exports = {
       TENANT_ID: '{{.tenantId}}',
       USER_MANAGE_URL: '{{.userManageUrl}}',
       ENABLE_MULTI_TENANT_MODE: '{{.enableMultiTenantMode}}',
-      TIMEZONE: '{{.timeZone}}'
+      TIMEZONE: '{{.timeZone}}',
+      USER_MANAGER_WEB_URL: '{{.userManagerWebUrl}}',
+      IAM_WEB_URL: '{{.iamWebUrl}}'
     }),
 
     // Template for index.html

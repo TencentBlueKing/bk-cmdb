@@ -50,12 +50,15 @@
             userManageUrl: <%= htmlWebpackPlugin.options.config.USER_MANAGE_URL %>,
             tenantId: <%= htmlWebpackPlugin.options.config.TENANT_ID %>,
             enableMultiTenantMode: <%= htmlWebpackPlugin.options.config.ENABLE_MULTI_TENANT_MODE %>,
-            timezone: <%= htmlWebpackPlugin.options.config.TIMEZONE %>
+            timezone: <%= htmlWebpackPlugin.options.config.TIMEZONE %>,
+            userManagerWebUrl: <%= htmlWebpackPlugin.options.config.USER_MANAGER_WEB_URL %>,
+            iamWebUrl: <%= htmlWebpackPlugin.options.config.IAM_WEB_URL %>
         }
         window.User = {
             name: <%= htmlWebpackPlugin.options.config.USER_NAME %>
         }
-        window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + window.location.pathname)
+        const pathname = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/'
+        window.API_HOST = Site.buildVersion.indexOf('dev') !== -1 ? Site.url : (window.location.origin + pathname)
         window.API_PREFIX = API_HOST + 'api/' + Site.version
     </script>
   </body>
