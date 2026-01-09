@@ -151,6 +151,8 @@
           :value="defaultValue"
           :property="field">
         </cmdb-property-value>
+        <span v-else-if="field.bk_property_type === 'time'"
+          class="property-value">{{$tools.formatTime(defaultValue) ?? '--'}}</span>
         <!-- bool类型字段未设置与默认值false都将显示为false -->
         <span v-else
           class="property-value">{{defaultValue ?? '--'}}</span>

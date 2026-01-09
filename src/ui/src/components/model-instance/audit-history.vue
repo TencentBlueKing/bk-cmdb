@@ -41,7 +41,7 @@
           <cmdb-user-value :value="row.user" />
         </template>
       </bk-table-column>
-      <bk-table-column prop="operation_time" :label="$t('操作时间11')">
+      <bk-table-column prop="operation_time" :label="$t('操作时间')">
         <template slot-scope="{ row }">
           {{$tools.formatTime(row['operation_time'], 'YYYY-MM-DD HH:mm:ssZZ')}}
         </template>
