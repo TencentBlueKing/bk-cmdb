@@ -51,6 +51,8 @@ func (s *Service) Index(c *gin.Context) {
 		"bkSharedResUrl":        s.Config.Site.BkSharedResUrl,
 		"enableMultiTenantMode": s.Config.EnableMultiTenantMode,
 		"timeZone":              timeZone,
+		"userManagerWebUrl":     s.Config.UserManagerWebUrl,
+		"iamWebUrl":             s.Config.IamWebUrl,
 	}
 
 	if s.Config.Site.PaasDomainUrl != "" {
