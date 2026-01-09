@@ -1,3 +1,7 @@
+## [Version: 3.15.1-feature-tenant-alpha23] - 2025-01-09
+**功能优化**
+- 支持页面权限中心及用户管理入口
+
 ## [Version: 3.15.1-feature-tenant-alpha22] - 2025-12-18
 **功能优化**
 - 前端支持子路径浏览图标
