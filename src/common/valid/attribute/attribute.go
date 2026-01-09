@@ -59,6 +59,9 @@ func ValidPropertyOption(kit *rest.Kit, propertyType string, option interface{},
 		return ValidIDRuleOption(kit, option, attrTypeMap)
 	}
 
+	if item, ok := common.IsFieldTypeArray(propertyType); ok {
+		return ValidFieldTypeArray(kit, option, item)
+	}
 	if handle, ok := manager.Get(propertyType); ok {
 		if err := handle.ValidateOption(kit.Ctx, option, extraOpt); err != nil {
 			blog.Errorf("valid property option failed, property type: %s, option: %+v, extra opt: %+v, err: %v, rid: %s",
@@ -257,6 +260,33 @@ func ValidFieldTypeList(kit *rest.Kit, option, defaultVal interface{}) error {
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "list default value")
 	}
 
+	return nil
+}
+
+// ValidFieldTypeArray validate array field type's option and default value
+func ValidFieldTypeArray(kit *rest.Kit, option interface{}, itemType string) error {
+	if option == nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsLostField, "option")
+	}
+	arrayOption, err := metadata.ParseArrayOption(option)
+	if err != nil {
+		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, "option")
+	}
+	switch itemType {
+	case common.FieldTypeDate,
+		common.FieldTypeTime,
+		common.FieldTypeBool:
+		return nil
+	case common.FieldTypeSingleChar:
+		return ValidFieldTypeString(kit, arrayOption.CharOption, "")
+	case common.FieldTypeInt:
+		return ValidFieldTypeInt(kit, arrayOption.IntOption, 0)
+	case common.FieldTypeFloat:
+		return ValidFieldTypeFloat(kit, arrayOption.FloatOption, 0)
+	default:
+		blog.Errorf("array not support item type %s ,option: %#v", itemType, arrayOption)
+		return fmt.Errorf("array not support item type %s", itemType)
+	}
 	return nil
 }
 

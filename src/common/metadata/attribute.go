@@ -205,8 +205,11 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 		// TODO what validation should do on these types
 		rawError = attribute.validTable(ctx, data, key)
 	default:
+		if _, ok := common.IsFieldTypeArray(attribute.PropertyType); ok {
+			rawError = attribute.validArray(ctx, data, key)
+			break
+		}
 		// notice: 注意default 这里的实现逻辑， 用break 做了执行流程的终止。 pr 建议，降低圈复杂度
-
 		validator, exists := attrValidatorMap[fieldType]
 		if exists {
 			rawError = validator(ctx, data, key)
@@ -231,6 +234,7 @@ func (attribute *Attribute) Validate(ctx context.Context, data interface{}, key 
 	}
 	// 如果出现了问题，并且报错原内容为propertyID，则替换为propertyName。
 	if rawError.ErrCode != 0 {
+		blog.Errorf("attribute validate failed,rawError:%v", rawError)
 		if key == attribute.PropertyID || key == common.BKPropertyValueField {
 			rawError.Args = []interface{}{attribute.PropertyName}
 		}
@@ -922,6 +926,160 @@ func (attribute *Attribute) validList(ctx context.Context, val interface{}, key 
 	}
 }
 
+func validArrayItem[T any](ty string, data any) ([]T, error) {
+	raw, ok := data.([]any)
+	if !ok {
+		return nil, fmt.Errorf("not []any")
+	}
+	if len(raw) == 0 {
+		return make([]T, 0), nil
+	}
+
+	result := make([]T, 0, len(raw))
+
+	for _, v := range raw {
+		var (
+			resultItem any
+			err        error
+		)
+		switch ty {
+		case common.FieldTypeBool:
+			if resultItem, ok = v.(bool); !ok {
+				err = fmt.Errorf("array item type %T is not %v", ty, common.FieldTypeBool)
+			}
+		case common.FieldTypeSingleChar, common.FieldTypeLongChar:
+			if resultItem, ok = v.(string); !ok {
+				err = fmt.Errorf("array item type %T is not %v", ty, common.FieldTypeSingleChar)
+			}
+		case common.FieldTypeInt:
+			resultItem, err = util.GetInt64ByInterface(v)
+		case common.FieldTypeFloat:
+			resultItem, err = util.GetFloat64ByInterface(v)
+		case common.FieldTypeDate:
+			if !util.IsDate(v) {
+				err = fmt.Errorf("array item type %T is not %v", ty, common.FieldTypeDate)
+			}
+		case common.FieldTypeTime:
+			if _, ok := util.IsTime(v); !ok {
+				err = fmt.Errorf("array item type %T is not %v", ty, common.FieldTypeTime)
+			}
+		default:
+			return nil, fmt.Errorf("array item type %T is not support", ty)
+		}
+		if err != nil {
+			blog.Errorf("array item type %T is not valid ,err:%v", ty, err)
+			return nil, err
+		}
+		item, ok := resultItem.(T)
+		if !ok {
+			return nil, fmt.Errorf("item type %T is not %T", result, ty)
+		}
+		result = append(result, item)
+	}
+
+	return result, nil
+}
+
+func (attribute *Attribute) validArray(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
+	rid := util.ExtractRequestUserFromContext(ctx)
+
+	if val == nil {
+		if attribute.IsRequired {
+			blog.Error("params can not be null, array field key: %s, rid: %s", key, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsNeedSet,
+				Args:    []interface{}{key},
+			}
+		}
+		return errors.RawErrorInfo{}
+	}
+	arrayOpt, err := ParseArrayOption(attribute.Option)
+	if err != nil {
+		return errors.RawErrorInfo{
+			ErrCode: common.CCErrCommParamsIsInvalid,
+			Args:    []interface{}{err},
+		}
+	}
+	errorInfo := errors.RawErrorInfo{
+		ErrCode: common.CCErrCommParamsInvalid,
+		Args:    nil,
+	}
+	itemType, _ := common.IsFieldTypeArray(attribute.PropertyType)
+	switch itemType {
+	case common.FieldTypeBool, common.FieldTypeTime, common.FieldTypeDate:
+		_, err := validArrayItem[any](itemType, val)
+		if err != nil {
+			errorInfo.Args = []any{arrayOpt.CharOption, err}
+			return errorInfo
+		}
+	case common.FieldTypeSingleChar:
+		value, err := validArrayItem[string](itemType, val)
+		if err != nil {
+			blog.Errorf("array params %s not valid,value: %v, option:%#v,err:%v,rid: %s", key, val, attribute.Option, err, rid)
+			errorInfo.Args = []any{attribute.Option, err}
+			return errorInfo
+		}
+		strReg, err := regexp.Compile(arrayOpt.CharOption)
+		if err != nil {
+			blog.Errorf(`regexp "%s" invalid, err: %v, rid: %s`, arrayOpt, err, rid)
+			return errors.RawErrorInfo{
+				ErrCode: common.CCErrCommParamsIsInvalid,
+				Args:    []interface{}{arrayOpt},
+			}
+		}
+		for _, v := range value {
+			if len(v) > common.FieldTypeSingleLenChar {
+				blog.Errorf("params over length %d, rid: %s", common.FieldTypeSingleLenChar, rid)
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrCommOverLimit,
+					Args:    []interface{}{key},
+				}
+			}
+			if !strReg.MatchString(v) {
+				blog.Errorf(`params "%s" not match regexp "%s", rid: %s`, val, arrayOpt, rid)
+				return errors.RawErrorInfo{
+					ErrCode: common.CCErrFieldRegValidFailed,
+					Args:    []interface{}{key},
+				}
+			}
+		}
+
+	case common.FieldTypeInt:
+		result, err := validArrayItem[int64](itemType, val)
+		if err != nil {
+			blog.Errorf("array params %s not valid,value:%v,option:%#v,err:%v, rid: %s", key, val, arrayOpt.IntOption, err, rid)
+			errorInfo.Args = []any{arrayOpt.IntOption, err}
+			return errorInfo
+		}
+		for _, v := range result {
+			if arrayOpt.IntOption.Min > v || arrayOpt.IntOption.Max < v {
+				errorInfo.Args = []any{arrayOpt.IntOption, "array item(int) option valid"}
+				return errorInfo
+			}
+		}
+
+	case common.FieldTypeFloat:
+		result, err := validArrayItem[float64](itemType, val)
+		if err != nil {
+			blog.Errorf("array params %s not valid,value:%v,option:%#v,err:%v, rid: %s", key, val, arrayOpt.FloatOption, err, rid)
+			errorInfo.Args = []any{arrayOpt.FloatOption, err}
+			return errorInfo
+		}
+		for _, v := range result {
+			if arrayOpt.FloatOption.Min > v || arrayOpt.FloatOption.Max < v {
+				errorInfo.Args = []any{arrayOpt.FloatOption, "array item(float) option valid"}
+				return errorInfo
+			}
+		}
+	default:
+		blog.Errorf("array item not support type:%v %v %v", key, val, rid)
+		errorInfo.Args = []any{attribute.Option, fmt.Errorf("array item not support")}
+		return errorInfo
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 // validOrganization valid object attribute that is organization type
 func (attribute *Attribute) validOrganization(ctx context.Context, val interface{}, key string) errors.RawErrorInfo {
 	rid := util.ExtractRequestIDFromContext(ctx)
@@ -1573,6 +1731,33 @@ func ParseListOption(option interface{}) (ListOption, error) {
 	return valueList, nil
 }
 
+// ArrayOption list option
+type ArrayOption struct {
+	BoolOption  string      `json:"bool" bson:"bool"`
+	CharOption  string      `json:"char" bson:"char"`
+	IntOption   IntOption   `json:"int" bson:"int"`
+	FloatOption FloatOption `json:"float" bson:"float"`
+	DateOption  string      `json:"date" bson:"date"`
+	TimeOption  string      `json:"time" bson:"time"`
+}
+
+// ParseArrayOption parse 'list' type option
+func ParseArrayOption(option interface{}) (ArrayOption, error) {
+	if option == nil {
+		return ArrayOption{}, fmt.Errorf("array type field option is null")
+	}
+	var result ArrayOption
+	marshal, err := json.Marshal(option)
+	if err != nil {
+		return result, err
+	}
+	err = json.Unmarshal(marshal, &result)
+	if err != nil {
+		return result, fmt.Errorf("array option %+v type %T is invalid,err:%v", option, result, err)
+	}
+	return result, nil
+}
+
 // PrettyValue TODO
 func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (string, error) {
 	if val == nil {
@@ -1648,6 +1833,10 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 			return "", fmt.Errorf("invalid value type for %s, value: %+v", fieldType, val)
 		}
 		return value, nil
+
+	case common.FieldTypeArray:
+		return "", nil
+
 	case common.FieldTypeList:
 		strVal, ok := val.(string)
 		if !ok {

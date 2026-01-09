@@ -179,7 +179,9 @@ func getLostFieldDefaultValue(kit *rest.Kit, attr metadata.Attribute) interface{
 	case common.FieldTypeBool:
 		return false
 	}
-
+	if _, ok := common.IsFieldTypeArray(common.FieldTypeArray); ok {
+		return make([]any, 0)
+	}
 	return nil
 }
 

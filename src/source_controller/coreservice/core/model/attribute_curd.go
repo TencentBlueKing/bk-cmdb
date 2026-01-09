@@ -149,7 +149,12 @@ func (m *modelAttribute) save(kit *rest.Kit, attribute metadata.Attribute) (id u
 			isMultiple := true
 			attribute.IsMultiple = &isMultiple
 		default:
-			return 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, metadata.AttributeFieldPropertyType)
+			if _, ok := common.IsFieldTypeArray(attribute.PropertyType); ok {
+				isMultiple := true
+				attribute.IsMultiple = &isMultiple
+				break
+			}
+			return 0, kit.CCError.Errorf(common.CCErrCommParamsInvalid, attribute)
 		}
 	}
 	// 对于枚举，枚举多选，枚举引用字段, 默认值是放在option中的，需要将default置为nil
@@ -561,6 +566,9 @@ func (m *modelAttribute) checkAttributeValidity(kit *rest.Kit, attribute metadat
 func (m *modelAttribute) validPropertyType(kit *rest.Kit, attribute metadata.Attribute, propertyType string) error {
 
 	if attribute.PropertyType != "" {
+		if _, ok := common.IsFieldTypeArray(attribute.PropertyType); ok {
+			return nil
+		}
 		if _, exists := validAttrPropertyTypes[attribute.PropertyType]; !exists {
 			if _, ok := manager.Get(attribute.PropertyType); !ok {
 				return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
@@ -641,6 +649,9 @@ func (m *modelAttribute) checkTableAttributeDefaultValue(kit *rest.Kit, option, 
 // checkAttributeDefaultValue 校验属性的default字段，对于枚举，枚举多选，枚举引用字段, 默认值是放在option中的，不能调用该函数校验
 func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute metadata.Attribute,
 	propertyType string) error {
+	if itemType, ok := common.IsFieldTypeArray(common.FieldTypeArray); ok {
+		return attrvalid.ValidFieldTypeArray(kit, attribute.Option, itemType)
+	}
 
 	var err error
 	switch propertyType {

@@ -87,6 +87,7 @@ var ccSysFieldTypeRela = map[string]func(valData mapstr.MapStr, field metadata.A
 	common.FieldTypeOrganization: fillLostOrganizationFieldValue,
 	common.FieldTypeTimeZone:     fillLostTimeZoneFieldValue,
 	common.FieldTypeList:         fillLostListFieldValue,
+	common.FieldTypeArray:        fillLostArrayFieldValue,
 	common.FieldTypeBool:         fillLostBoolFieldValue,
 }
 
@@ -351,6 +352,11 @@ func fillLostListFieldValue(valData mapstr.MapStr, field metadata.Attribute) err
 
 	return fmt.Errorf("list type default value is error, propertyID: %s, default value: %v", field.PropertyID,
 		field.Default)
+}
+func fillLostArrayFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {
+	//not support default value
+	valData[field.PropertyID] = make([]any, 0)
+	return nil
 }
 
 func fillLostBoolFieldValue(valData mapstr.MapStr, field metadata.Attribute) error {

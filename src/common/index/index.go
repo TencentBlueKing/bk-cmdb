@@ -175,6 +175,9 @@ func ValidateCCFieldType(propertyType string, keyLen int) bool {
 		common.FieldTypeDate, common.FieldTypeList:
 		return true
 	default:
+		if _, ok := common.IsFieldTypeArray(propertyType); ok {
+			return ok
+		}
 		return false
 	}
 }

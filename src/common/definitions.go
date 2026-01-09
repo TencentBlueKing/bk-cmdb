@@ -18,6 +18,7 @@ package common
 
 import (
 	"math"
+	"strings"
 	"time"
 )
 
@@ -994,7 +995,7 @@ const (
 
 var FieldTypes = []string{FieldTypeSingleChar, FieldTypeLongChar, FieldTypeInt, FieldTypeFloat, FieldTypeEnum,
 	FieldTypeEnumMulti, FieldTypeDate, FieldTypeTime, FieldTypeUser, FieldTypeOrganization, FieldTypeTimeZone,
-	FieldTypeBool, FieldTypeList, FieldTypeTable, FieldTypeInnerTable, FieldTypeEnumQuote}
+	FieldTypeBool, FieldTypeList, FieldTypeTable, FieldTypeInnerTable, FieldTypeEnumQuote, FieldTypeArray}
 
 const (
 	// FieldTypeSingleChar the single char filed type
@@ -1026,6 +1027,9 @@ const (
 
 	// FieldTypeUser the user field type
 	FieldTypeUser string = "objuser"
+
+	// FieldTypeArray the array field type
+	FieldTypeArray string = "array"
 
 	// FieldObject 此处只校验是否是对象。此校验是为了兼容biz_set中的bk_scope 的类型是 querybuilder，由于在 coreservice层解析出来的
 	// 是map[string]interface,所以在此处只需要校验是否是对象，对于querybuilder的合法性应该放在场景层做校验。后续如果走的是object校验，
@@ -1078,6 +1082,13 @@ const (
 	// FieldTypeLongCharRegexp the long char regex expression
 	FieldTypeLongCharRegexp string = `\S`
 )
+
+func IsFieldTypeArray(ty string) (string, bool) {
+	if !strings.HasPrefix(ty, FieldTypeArray) {
+		return "", false
+	}
+	return strings.TrimPrefix(ty, FieldTypeArray+"_"), true
+}
 
 const (
 	// HostAddMethodExcel add a host method

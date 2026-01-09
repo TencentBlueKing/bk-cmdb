@@ -183,6 +183,10 @@ func (f *FieldTemplateAttr) validateType() ccErr.RawErrorInfo {
 		common.FieldTypeOrganization, common.FieldTypeTimeZone, common.FieldTypeBool, common.FieldTypeList:
 
 	default:
+		if _, ok := common.IsFieldTypeArray(f.PropertyType); ok {
+			break
+		}
+
 		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid,
 			Args: []interface{}{AttributeFieldPropertyType}}
 	}
