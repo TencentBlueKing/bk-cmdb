@@ -82,6 +82,12 @@
           <i class="user-icon bk-icon icon-angle-down"></i>
         </span>
         <template slot="content">
+          <a class="link-item" v-if="userManagerWebUrl" target="_blank" :href="userManagerWebUrl">
+            {{$t('个人中心')}}
+          </a>
+          <a class="link-item" v-if="iamWebUrl" target="_blank" :href="iamWebUrl">
+            {{$t('权限中心')}}
+          </a>
           <a class="link-item" href="javascript:void(0)"
             @click="handleLogout">
             {{$t('退出登录')}}
@@ -161,6 +167,12 @@
       appLogo() {
         const src = this.config.publicConfig.appLogo || logoSvg
         return `url(${src})`
+      },
+      userManagerWebUrl() {
+        return window.Site.userManagerWebUrl || ''
+      },
+      iamWebUrl() {
+        return window.Site.iamWebUrl || ''
       }
     },
     async mounted() {
