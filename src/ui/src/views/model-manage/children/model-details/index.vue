@@ -182,7 +182,7 @@
                 <div>
                   <span class="model-property-item-text">
                     <cmdb-loading :loading="$loading(request.instanceCount)">
-                      <span v-if="['last_time', 'create_time'].includes(item.key)">
+                      <span v-if="item.type === 'time' || ['last_time', 'create_time'].includes(item.key)">
                         {{$tools.formatTime(activeModel[item.key]) || '--'}}
                       </span>
                       <span v-else-if="item.type !== 'user'">{{activeModel[item.key] || '--'}}</span>

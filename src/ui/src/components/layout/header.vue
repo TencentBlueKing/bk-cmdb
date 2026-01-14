@@ -82,7 +82,7 @@
           <i class="user-icon bk-icon icon-angle-down"></i>
         </span>
         <template slot="content">
-          <a class="link-item" v-if="userManagerWebUrl" target="_blank" :href="`${userManagerWebUrl}/personal-center`">
+          <a class="link-item" v-if="!userManagerWebUrl" target="_blank" :href="userManagerWebFullUrl">
             {{$t('个人中心')}}
           </a>
           <a class="link-item" v-if="iamWebUrl" target="_blank" :href="iamWebUrl">
@@ -167,6 +167,11 @@
       appLogo() {
         const src = this.config.publicConfig.appLogo || logoSvg
         return `url(${src})`
+      },
+      userManagerWebFullUrl() {
+        const url = this.userManagerWebUrl
+        const address = `${url.endsWith('/')  ? '' : '/'}personal-center`
+        return url + address
       },
       userManagerWebUrl() {
         return window.Site.userManagerWebUrl || ''
