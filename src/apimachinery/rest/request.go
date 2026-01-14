@@ -358,40 +358,53 @@ func (r *Request) Do() *Result {
 			}
 
 			var needRetry bool
-			result, needRetry = r.do(client, req, result, rid)
+			result, needRetry = r.do(client, req, rid)
 			if needRetry {
 				continue
 			}
 			return result
 		}
-
 	}
 
 	result.Err = errors.New("unexpected error")
+	blog.Errorf("request unexpected error, %s %s with body %s, status: %s, rid: %s", string(r.verb),
+		r.WrapURL().String(), commonUtil.FormatHttpBody(r.subPath, r.body), result.Status, rid)
 	return result
 }
 
-func (r *Request) do(client util.HttpClient, req *http.Request, result *Result, rid string) (*Result, bool) {
+func (r *Request) do(client util.HttpClient, req *http.Request, rid string) (*Result, bool) {
 	url := req.URL.String()
 	start := time.Now()
 	resp, err := client.Do(req)
+	result := &Result{
+		Rid: rid,
+	}
 	if err != nil {
 		// "Connection reset by peer" is a special err which in most scenario is a a transient error.
 		// Which means that we can retry it. And so does the GET operation.
 		// While the other "write" operation can not simply retry it again, because they are not idempotent.
-
-		blog.Errorf("[apimachinery] %s %s with body %s, but %v, rid: %s", string(r.verb), url,
-			commonUtil.FormatHttpBody(r.subPath, r.body), err, rid)
+		if resp != nil {
+			result.StatusCode = resp.StatusCode
+			result.Status = resp.Status
+		}
 		r.checkToleranceLatency(&start, url, r.subPath, rid)
 		if !isConnectionReset(err) || r.verb != GET {
+			blog.Errorf("[apimachinery] %s %s with body %s, status: %s, but %v, rid: %s", string(r.verb), url,
+				commonUtil.FormatHttpBody(r.subPath, r.body), result.Status, err, rid)
 			result.Err = err
 			return result, false
 		}
 
+		blog.Warnf("[apimachinery] %s %s with body %s, status: %s, but %v, rid: %s", string(r.verb), url,
+			commonUtil.FormatHttpBody(r.subPath, r.body), result.Status, err, rid)
 		// retry now
 		time.Sleep(20 * time.Millisecond)
 		return result, true
 	}
+
+	result.StatusCode = resp.StatusCode
+	result.Status = resp.Status
+	result.Header = resp.Header
 
 	// collect request metrics
 	if r.parent.requestDuration != nil {
@@ -412,13 +425,18 @@ func (r *Request) do(client util.HttpClient, req *http.Request, result *Result, 
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			if err == io.ErrUnexpectedEOF {
+				if blog.V(4) {
+					blog.Warnf("unexpected EOF when reading response, cost: %dms, verb: %s, url: %s, status: %s, "+
+						"partial body: %s, rid: %s, err: %v", time.Since(start)/time.Millisecond,
+						string(r.verb), url, resp.Status, commonUtil.FormatHttpBody(r.subPath, data), rid, err)
+				}
 				// retry now
 				time.Sleep(20 * time.Millisecond)
 				return result, true
 			}
 			result.Err = err
-			blog.Errorf("[apimachinery] %s %s with body %s, err: %v, rid: %s", string(r.verb), url,
-				commonUtil.FormatHttpBody(r.subPath, r.body), err, rid)
+			blog.Errorf("[apimachinery] %s %s with body %s, status: %s, err: %v, rid: %s", string(r.verb), url,
+				commonUtil.FormatHttpBody(r.subPath, r.body), resp.Status, err, rid)
 			return result, false
 		}
 		body = data
@@ -432,10 +450,6 @@ func (r *Request) do(client util.HttpClient, req *http.Request, result *Result, 
 	}
 
 	result.Body = body
-	result.StatusCode = resp.StatusCode
-	result.Status = resp.Status
-	result.Header = resp.Header
-
 	return result, false
 }
 
