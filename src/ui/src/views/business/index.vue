@@ -169,6 +169,7 @@
             :is-main-line="true"
             :type="attribute.type"
             :save-auth="saveAuth"
+            :submitting="submitting"
             @on-submit="handleSave"
             @on-cancel="handleSliderBeforeClose">
           </cmdb-form>
@@ -250,6 +251,7 @@
     },
     data() {
       return {
+        submitting: false,
         properties: [],
         propertyGroups: [],
         table: {
@@ -677,6 +679,7 @@
         })
       },
       handleSave(values, changedValues, originalValues, type) {
+        this.submitting = true
         if (type === 'update') {
           this.updateBusiness({
             bizId: originalValues.bk_biz_id,
@@ -688,6 +691,7 @@
             this.$success(this.$t('修改成功'))
             this.$http.cancel('post_searchBusiness_$ne_disabled')
           })
+            .finally(() => this.submitting = false)
         } else {
           delete values.bk_biz_id // properties中注入了前端自定义的bk_biz_id属性
           this.createBusiness({
@@ -698,6 +702,7 @@
             this.$success(this.$t('创建成功'))
             this.$http.cancel('post_searchBusiness_$ne_disabled')
           })
+            .finally(() => this.submitting = false)
         }
       },
       closeCreateSlider() {

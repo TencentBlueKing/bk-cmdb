@@ -170,6 +170,7 @@
           :is-main-line="isMainLineModel"
           :type="attribute.type"
           :save-auth="{ type: $OPERATION.C_INST, relation: [model.id] }"
+          :submitting="submitting"
           @on-submit="handleSave"
           @on-cancel="handleCancel">
         </cmdb-form>
@@ -180,6 +181,7 @@
           :property-groups="propertyGroups"
           :save-auth="saveAuth"
           :show-default-value="true"
+          :loading="submitting"
           @on-submit="handleMultipleSave"
           @on-cancel="handleMultipleCancel">
         </cmdb-form-multiple>
@@ -251,6 +253,7 @@
     },
     data() {
       return {
+        submitting: false,
         properties: [],
         propertyGroups: [],
         table: {
@@ -795,6 +798,7 @@
         })
       },
       handleSave(values, changedValues, originalValues, type) {
+        this.submitting = true
         if (type === 'update') {
           this.updateInst({
             objId: this.objId,
@@ -806,6 +810,7 @@
             this.$success(this.$t('修改成功'))
             RouterQuery.refresh()
           })
+            .finally(() => this.submitting = false)
         } else {
           delete values.bk_inst_id // properties中注入了前端自定义的bk_inst_id属性
           this.createInst({
@@ -819,6 +824,7 @@
             this.handleCancel()
             this.$success(this.$t('创建成功'))
           })
+            .finally(() => this.submitting = false)
         }
       },
       handleCancel() {
@@ -832,6 +838,7 @@
         this.slider.show = true
       },
       handleMultipleSave(values) {
+        this.submitting = true
         this.batchUpdateInst({
           objId: this.objId,
           params: {
@@ -851,6 +858,7 @@
             page: 1
           })
         })
+          .finally(() => this.submitting = false)
       },
       handleMultipleCancel() {
         this.slider.show = false
