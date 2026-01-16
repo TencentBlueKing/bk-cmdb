@@ -394,7 +394,7 @@
       },
       async getPropertyConfig() {
         if (!this.withTemplate && !this.withSetTemplate) {
-          return
+          return this.propertyConfigList = []
         }
 
         const templateService = this.isModuleNode ? serviceTemplateService : setTemplateService
