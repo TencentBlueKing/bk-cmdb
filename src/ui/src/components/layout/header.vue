@@ -134,7 +134,7 @@
       ...mapGetters('objectBiz', ['bizId']),
       ...mapGetters('globalConfig', ['config']),
       helpDocUrl() {
-        return `${this.$Site.helpDocUrl}/markdown/CMDB/UserGuide/Introduce/Overview.md`
+        return `${this.$Site.helpDocUrl}/markdown/ZH/CMDB/3.10/UserGuide/Introduce/Overview.md`
       },
       visibleMenu() {
         return menu.filter((menuItem) => {
