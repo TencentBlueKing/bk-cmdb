@@ -1,3 +1,7 @@
+## [Version: 3.15.1-feature-tenant-alpha25] - 2025-01-20
+**缺陷修复**
+- 修复个人中心与权限中心入口问题
+
 ## [Version: 3.15.1-feature-tenant-alpha24] - 2025-01-15
 **缺陷修复**
 - 个人中心地址优化
