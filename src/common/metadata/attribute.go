@@ -1475,7 +1475,7 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 		return strconv.FormatInt(value, 10), nil
 	case common.FieldTypeFloat:
 		var value float64
-		value, err := util.GetFloat64ByInterface(value)
+		value, err := util.GetFloat64ByInterface(val)
 		if nil != err {
 			return "", fmt.Errorf("invalid value type for %s, value: %+v, err: %+v", fieldType, value, err)
 		}
