@@ -59,7 +59,11 @@
       value: {
         type: [String, Array, Number, Boolean],
         default: ''
-      }
+      },
+      filterTimezoneCondition: { // 高级筛选时区
+        type: Object,
+        default: () => ({})
+      },
     },
     data() {
       return {
@@ -72,12 +76,19 @@
       }
     },
     computed: {
+      timezone() {
+        // 快速搜索时区
+        return this.$route.query?.timezone || window.Site.timezone
+        // return this.$route.query?.timezone || this.filterTimezoneCondition?.[`${id}_tz`] || window.Site.timezone
+      },
       transformedValue() {
         let { value } = this
         if (!Array.isArray(value)) {
           value = [value]
         }
-        return value.map(value => formatter(value, this.property))
+        return value.map(value => formatter(value, { ...this.property,
+                                                     option: { timezone: this.timezone }
+        }))
       },
       showColon() {
         return this.operator === '$range'
@@ -113,7 +124,8 @@
               return h(FilterTagForm, {
                 ref: 'filterTagForm',
                 props: {
-                  property: self.property
+                  property: self.property,
+                  timezone: self.timezone
                 },
                 on: {
                   confirm: self.handleHideTagForm,

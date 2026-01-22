@@ -13,6 +13,8 @@
 import QS from 'qs'
 import RouterQuery from '@/router/query'
 import Utils from '@/components/filters/utils'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import { timestampFormatter } from '@/filters/formatter'
 
 // 快速搜索的默认query值
 const defaultFastQuery = () => ({
@@ -29,14 +31,16 @@ const defaultBaseQuery = () => ({
 })
 
 // 根据条件Map设置搜索query，空值视为删除
-export const setSearchQueryByCondition = (conditionMap = {}, properties = []) => {
+export const setSearchQueryByCondition = (conditionMap = {}, properties = [], timezoneConditionMap = {}) => {
   const query = QS.parse(RouterQuery.get('filter_adv'))
   const field = RouterQuery.get('field')
+  const timezoneCondition = {}
   let clearFastQuery = {}
 
   Object.keys(conditionMap).forEach((id) => {
     const { operator, value } = conditionMap[id]
     const key = `${id}.${operator.replace('$', '')}`
+    let conditionVal = value
 
     if (String(value).length) {
       const property = Utils.findProperty(id, properties)
@@ -48,8 +52,13 @@ export const setSearchQueryByCondition = (conditionMap = {}, properties = []) =>
           Reflect.deleteProperty(query, queryKey)
         }
       })
-
-      query[key] = Array.isArray(value) ? value.join(',') : value
+      // 如果是时间类型，value值需要转换成时间戳
+      if (property.bk_property_type === PROPERTY_TYPES.TIME) {
+        const timezone = timezoneConditionMap[`${id}_tz`] || window.Site.timezone
+        conditionVal = value.map(val => timestampFormatter(val, timezone))
+        timezoneCondition[`${id}_tz`] = timezone
+      }
+      query[key] = Array.isArray(conditionVal) ? conditionVal.join(',') : conditionVal
 
       // 与快速搜索重合，清除快速搜索此优先级更高
       if (field === property.bk_property_id) {
@@ -66,10 +75,11 @@ export const setSearchQueryByCondition = (conditionMap = {}, properties = []) =>
       Reflect.deleteProperty(query, key)
     }
   })
-
   RouterQuery.set({
     filter_adv: QS.stringify(query, { encode: false }),
     s: 'adv',
+    ...timezoneCondition,
+    timezone: undefined,
     ...clearFastQuery,
     ...defaultBaseQuery()
   })
@@ -85,6 +95,7 @@ export const clearOneSearchQuery = (property, operator) => {
     RouterQuery.set({
       filter: '',
       s: 'fast',
+      timezone: undefined,
       ...defaultBaseQuery()
     })
     return
@@ -97,6 +108,7 @@ export const clearOneSearchQuery = (property, operator) => {
     RouterQuery.set({
       filter_adv: QS.stringify(query, { encode: false }),
       s: 'adv',
+      timezone: undefined,
       ...defaultBaseQuery()
     })
   }
@@ -109,6 +121,7 @@ export const clearSearchQuery = () => {
     _t: '',
     s: '',
     page: '',
+    timezone: undefined,
     ...defaultFastQuery()
   })
 }

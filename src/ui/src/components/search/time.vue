@@ -11,33 +11,42 @@
 -->
 
 <template>
-  <bk-date-picker
-    type="datetimerange"
-    transfer
-    :value="localValue"
+  <DatePicker
     v-bind="$attrs"
-    format="yyyy-MM-dd HH:mm:ss"
-    @clear="() => $emit('clear')"
-    @change="handleChange"
-    @open-change="handleToggle">
-  </bk-date-picker>
+    :enable-format-click="false"
+    :model-value="localValue"
+    :timezone="timezone"
+    @update:modelValue="handleChange"
+    @update:timezone="handleChangeTimezone" />
 </template>
 
 <script>
+  import DatePicker from '@blueking/date-picker/vue2'
+  import '@blueking/date-picker/vue2/vue2.css'
   import activeMixin from './mixins/active'
+  import { timestampFormatter } from '@/filters/formatter'
   export default {
     name: 'cmdb-search-time',
+    components: {
+      DatePicker
+    },
     mixins: [activeMixin],
     props: {
+      // 需为时间戳格式，如果传日期格式，组件内部会在根据时区进行一次转换
       value: {
         type: Array,
         default: () => ([])
+      },
+      timezone: {
+        type: String,
+        required: true,
       }
     },
     computed: {
       localValue: {
         get() {
-          return [...this.value]
+          // 需要转换成时间戳格式
+          return [...this.value.map(value => timestampFormatter(value))]
         },
         set(values) {
           this.$emit('input', values)
@@ -46,10 +55,25 @@
       }
     },
     methods: {
-      handleChange(values) {
-        if (values.toString() === this.value.toString()) return
-        this.localValue = values.filter(value => !!value)
-      }
+      handleChange(timestamp, date) {
+        const [{ formatText: startDate }, { formatText: endDate }] = date
+        // 将日期转换为时间戳格式
+        const newDate = [startDate, endDate].filter(value => !!value)
+          .map(value => timestampFormatter(value, this.timezone))
+        if (newDate.toString() === this.value.toString()) return
+        this.localValue = newDate
+      },
+      handleChangeTimezone(value) {
+        this.$emit('change-timezone', value)
+      },
     }
   }
 </script>
+<style lang="scss">
+  .__bk_date_picker__ {
+    width: 100%;
+    .date-content {
+      flex: 1;
+    }
+}
+</style>

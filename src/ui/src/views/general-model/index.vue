@@ -88,7 +88,9 @@
           :class="filterType"
           :fuzzy="filter.fuzzyQuery"
           v-bind="filterComponentProps"
+          :timezone="timezone"
           v-model="filter.value"
+          @change-timezone="handleTimezoneChange"
           @change="handleFilterValueChange"
           @enter="handleFilterValueEnter"
           @clear="handleFilterValueEnter">
@@ -104,7 +106,8 @@
       class="filter-tag"
       ref="filterTag"
       :filter-selected="filterSelected"
-      :filter-condition="filterCondition">
+      :filter-condition="filterCondition"
+      :filter-timezone-condition="filterTimezoneCondition">
     </general-model-filter-tag>
     <bk-table class="models-table" ref="table"
       v-bkloading="{ isLoading: $loading(request.list) }"
@@ -203,7 +206,7 @@
     <bk-sideslider v-transfer-dom
       :show-mask="false"
       :is-show.sync="advancedFilterShow"
-      :width="400"
+      :width="450"
       :title="$t('高级筛选')"
       :before-close="handleFilterBeforeClose">
       <general-model-filter-form slot="content"
@@ -212,6 +215,7 @@
         :obj-id="objId"
         :filter-selected="filterSelected"
         :filter-condition="filterCondition"
+        :filter-timezone-condition="filterTimezoneCondition"
         :properties="properties"
         :property-groups="propertyGroups"
         @close="advancedFilterShow = false">
@@ -240,6 +244,7 @@
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import cmdbModelFastLink from '@/components/model-fast-link'
   import cmdbRefresh from '@/components/refresh'
+  import { timeToZero } from '@/filters/formatter'
 
   const defaultFastSearch = () => ({
     field: 'bk_inst_name',
@@ -260,6 +265,7 @@
     },
     data() {
       return {
+        timezone: window.Site.timezone,
         properties: [],
         propertyGroups: [],
         table: {
@@ -281,6 +287,7 @@
         filter: defaultFastSearch(),
         filterSelected: [],
         filterCondition: {},
+        filterTimezoneCondition: {},
         advancedFilterShow: false,
         slider: {
           show: false,
@@ -494,8 +501,13 @@
           operator,
           filter: value = '',
           fuzzy = 0,
-          s: searchType = 'fast'
+          s: searchType = 'fast',
+          timezone = ''
         } = this.$route.query
+
+        if (timezone) {
+          this.timezone = timezone
+        }
 
         const advQuery = QS.parse(RouterQuery.get('filter_adv'))
         const fastQuery = { field, operator, value }
@@ -522,6 +534,7 @@
                 operator: `$${operator}`,
                 value: Utils.convertValue(value, `$${operator}`, property)
               })
+              this.$set(this.filterTimezoneCondition, `${property.id}_tz`, this.$route.query?.[`${property.id}_tz`])
               // eslint-disable-next-line max-len
               const exist = this.filterSelected.findIndex(item => item.bk_property_id === property.bk_property_id) !== -1
               if (!exist) {
@@ -551,15 +564,21 @@
             value: this.formatFilterValue({ value: fastQuery.value, operator: fastQuery.operator }, defaultData.value)
           }
           this.$set(this.filterCondition, fastSearchProperty.id, conditionValue)
-
-          // 给快速搜索框初始化一个正确的值
-          this.filter.value = conditionValue.value
+          // 给快速搜索框初始化一个正确的值--下次循环，不然回显会因为上面watch了field变化而清空value
+          this.$nextTick(() => this.filter.value = conditionValue.value)
         }
 
         // 高级搜索时重置快速搜索的数据值，因高级搜索是快速搜索的超集在快速搜索中不能复原
         if (searchType === 'adv') {
           this.resetFastSearch()
         }
+      },
+      getFilterConditionVal(conditionValue, queryVal) {
+        // 如果是时间格式用queryVal保存，因为接口数据是根据query中的时间戳转成的日期格式
+        if (this.filterType === PROPERTY_TYPES.TIME) {
+          return queryVal.map(val => +val)
+        }
+        return conditionValue
       },
       formatFilterValue({ value: currentValue, operator }, defaultValue) {
         let value = currentValue.toString().length ? currentValue : defaultValue
@@ -575,9 +594,16 @@
         } else if (operator === '$regex') {
           value = Array.isArray(value) ? (value[0] || '') : value
         } else if (Array.isArray(value)) {
+          // 时间类型需要转换成0时区格式 (接口value用)
+          if (this.filterType === PROPERTY_TYPES.TIME) {
+            value = value.map(val => timeToZero(val))
+          }
           value = value.filter(value => !!value)
         }
         return value
+      },
+      handleTimezoneChange(timezone) {
+        this.timezone = timezone
       },
       handleFilterValueChange() {
         const hasEnterEvnet = ['float', 'int', 'longchar', 'singlechar']
@@ -592,6 +618,7 @@
           field: this.filter.field,
           filter: this.filter.value,
           operator: this.filter.operator,
+          timezone: this.filterType === PROPERTY_TYPES.TIME ? this.timezone : undefined
         }
         if (this.allowFuzzyQuery) {
           query.fuzzy = this.filter.fuzzyQuery ? 1 : 0
@@ -621,6 +648,7 @@
         // 重置筛选项与条件
         this.filterSelected = []
         this.filterCondition = {}
+        this.filterTimezoneCondition = {}
       },
       getProperties() {
         return this.searchObjectAttribute({
@@ -1062,7 +1090,7 @@
         margin-right: 5px;
         display: flex;
         align-items: flex-start;
-        width: 439px;
+        width: 499px;
         .filter-selector{
             width: 120px;
             border-radius: 2px 0 0 2px;
@@ -1073,7 +1101,7 @@
         }
         .filter-value{
             flex: 1;
-            width: 320px;
+            width: 380px;
             border-radius: 0 2px 2px 0;
             &.singlechar,
             &.longchar {

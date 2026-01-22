@@ -47,7 +47,8 @@
                 ref: 'filterTagForm',
                 props: {
                   property: self.property,
-                  condition: self.dynamicCondition
+                  condition: self.dynamicCondition,
+                  timezone: self.timezone
                 },
                 on: {
                   confirm: self.handleHideTagForm,

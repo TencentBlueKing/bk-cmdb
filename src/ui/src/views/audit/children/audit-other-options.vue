@@ -41,12 +41,12 @@
       </td>
       <td align="right"><label class="option-label">{{$t('时间')}}</label></td>
       <td>
-        <cmdb-form-date-range class="option-value"
-          font-size="medium"
-          :placeholder="$t('请选择xx', { name: $t('时间') })"
-          :clearable="false"
-          v-model="condition.operation_time">
-        </cmdb-form-date-range>
+        <cmdb-search-time
+          class="option-value"
+          :timezone="timezone"
+          v-model="condition.operation_time"
+          @change-timezone="handleTimezoneChange">
+        </cmdb-search-time>
       </td>
     </tr>
     <tr>
@@ -110,6 +110,7 @@
     },
     data() {
       return {
+        timezone: window.Site.timezone,
         instanceType: 'resource_name',
         condition: {
           ...defaultCondition()
@@ -136,6 +137,9 @@
       this.handleSearch()
     },
     methods: {
+      handleTimezoneChange(timezone) {
+        this.timezone = timezone
+      },
       handleSearch(isEvent) {
         this.$emit('condition-change', this.condition)
         RouterQuery.set({

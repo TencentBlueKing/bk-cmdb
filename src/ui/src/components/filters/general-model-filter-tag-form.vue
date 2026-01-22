@@ -66,7 +66,7 @@
             value: this.value
           }
         }
-        setSearchQueryByCondition(condition, [this.property])
+        setSearchQueryByCondition(condition, [this.property], this.timezoneCondition)
         this.$emit('confirm')
       }
     }

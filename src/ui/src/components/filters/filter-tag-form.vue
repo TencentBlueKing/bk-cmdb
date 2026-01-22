@@ -35,13 +35,16 @@
             :is-paste-split="getPasteSplit(property.bk_property_id)"
             v-bind="getBindProps()"
             v-model.trim="value"
+            :timezone="timezoneCondition[`${property.id}_tz`] || timezone || $Site.timezone"
+            @change-timezone="(timezone) => handleTimezoneChange(timezone, property.id)"
+            @change="handleSureVal"
             @active-change="handleActiveChange"
             @confirm="handleSureVal">
           </component>
         </div>
       </div>
       <div class="form-options">
-        <bk-button class="mr10" text @click="handleConfirm">{{$t('确定')}}</bk-button>
+        <bk-button class="mr10" text @click="handleConfirm">{{$t('确定2')}}</bk-button>
         <bk-button class="mr10" text @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </bk-form-item>
@@ -66,11 +69,13 @@
       property: {
         type: Object,
         required: true
-      }
+      },
+      timezone: String  // 快速搜索的时区
     },
     data() {
       const { IN, NIN, LIKE, CONTAINS, EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
       return {
+        timezoneCondition: FilterStore.timezoneCondition || {}, // 高级筛选的时区
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         localOperator: null,
         localValue: null,
@@ -118,10 +123,13 @@
         return isPasteSplit(id)
       },
       handleSureVal() {
-        // 组织类型自动调用确认接口
-        if (this.property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+        // 组织/时间类型自动调用确认接口
+        if ([PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.TIME].includes(this.property.bk_property_type)) {
           this.handleConfirm()
         }
+      },
+      handleTimezoneChange(timezone, id) {
+        this.timezoneCondition = FilterStore.setTimezoneCondition({ [`${id}_tz`]: timezone })
       },
       getPlaceholder() {
         return Utils.getPlaceholder(this.property)

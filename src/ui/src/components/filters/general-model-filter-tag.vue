@@ -33,9 +33,16 @@
       filterCondition: {
         type: Object,
         default: () => ({})
+      },
+      filterTimezoneCondition: {
+        type: Object,
+        default: () => ({})
       }
     },
     computed: {
+      timezoneCondition() {
+        return this.filterTimezoneCondition
+      },
       condition() {
         return this.filterCondition
       },

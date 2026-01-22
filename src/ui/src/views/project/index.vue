@@ -47,6 +47,8 @@
           :fuzzy="true"
           v-bind="filterComponentProps"
           v-model="filter.value"
+          :timezone="timezone"
+          @change-timezone="handleTimezoneChange"
           @change="handleFilterValueChange"
           @enter="handleFilterValueEnter"
           @clear="handleFilterValueEnter">
@@ -241,6 +243,7 @@
     },
     data() {
       return {
+        timezone: window.Site.timezone,
         table: {
           header: [],
           list: [],
@@ -396,11 +399,15 @@
           limit = this.table.pagination.limit,
           filter = '',
           operator = '',
-          field = 'bk_project_name'
+          field = 'bk_project_name',
+          timezone = ''
         }) => {
           this.filter.field = field
           this.table.pagination.current = parseInt(page, 10)
           this.table.pagination.limit = parseInt(limit, 10)
+          if (timezone) {
+            this.timezone = timezone
+          }
           await this.$nextTick()
           this.genFilterCondition(filter, operator)
           this.throttleGetTableData()
@@ -597,6 +604,9 @@
         })
         this.columnsConfig.show = false
       },
+      handleTimezoneChange(timezone) {
+        this.timezone = timezone
+      },
       handleFilterValueChange() {
         const hasEnterEvnet = ['float', 'int', 'longchar', 'singlechar']
         if (hasEnterEvnet.includes(this.filterType)) return
@@ -609,6 +619,7 @@
           page: 1,
           field: this.filter.field,
           filter: this.filter.value,
+          timezone: this.filterType === PROPERTY_TYPES.TIME ? this.timezone : undefined
         })
       },
       genFilterCondition(filter = '', operator = '') {
@@ -790,7 +801,7 @@
   .options-filter {
     position: relative;
     margin-right: 10px;
-    width: 439px;
+    width: 499px;
 
     .filter-selector {
       width: 120px;
@@ -798,7 +809,7 @@
       margin-right: -1px;
     }
     .filter-value {
-      width: 320px;
+      width: 380px;
       border-radius: 0 2px 2px 0;
       /deep/ .bk-form-input {
         border-radius: 0 2px 2px 0;

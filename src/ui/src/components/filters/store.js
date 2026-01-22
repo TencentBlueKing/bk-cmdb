@@ -23,6 +23,8 @@ import { CONTAINER_OBJECTS, TOPO_MODE_KEYS, MIX_SEARCH_MODES } from '@/dictionar
 import containerPropertyService from '@/service/container/property.js'
 import { getContainerInstanceService } from '@/service/container/common'
 import { propertyFilter } from '@/service/property/property.js'
+import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import { timestampFormatter } from '@/filters/formatter'
 
 function getStorageHeader(type, key, properties) {
   if (!key) {
@@ -278,11 +280,16 @@ const FilterStore = new Vue({
       const query = QS.parse(RouterQuery.get('filter'))
       const properties = []
       const condition = {}
+      const timezoneCondition = {}
       try {
         Object.keys(query).forEach((key) => {
           const [id, operator] = key.split('.')
           const property = Utils.findProperty(id, this.properties)
           const value = query[key].toString().split(',')
+          if (property.bk_property_type === PROPERTY_TYPES.TIME) {
+            const timezone = RouterQuery.get(`${id}_tz`) || window.Site.timezone
+            timezoneCondition[`${id}_tz`] = timezone
+          }
           if (property && operator && value.length) {
             properties.push(property)
             condition[property.id] = {
@@ -296,6 +303,7 @@ const FilterStore = new Vue({
       }
       this.selected = properties
       this.condition = condition
+      this.timezoneCondition = timezoneCondition
     },
     setupNormalProperty() {
       // 用户选择后的保存结果
@@ -354,6 +362,10 @@ const FilterStore = new Vue({
       this.condition = data.condition || this.condition
       this.setIP(data.IP || this.IP)
       this.throttleSearch()
+    },
+    setTimezoneCondition(timezoneCondition = {}) {
+      this.timezoneCondition = { ...this.timezoneCondition, ...timezoneCondition }
+      return this.timezoneCondition
     },
     setConditonField(propertyId, defaultData, modelId = 'host') {
       const property = this.getProperty(propertyId, modelId)
@@ -454,16 +466,26 @@ const FilterStore = new Vue({
     },
     getQuery(condition) {
       const query = {}
+      const timezoneCondition = {}
       Object.keys(condition).forEach((id) => {
         const { operator, value } = condition[id]
+        let conditionVal = value
+        const property = Utils.findProperty(id, this.properties)
         if (String(value).length) {
-          query[`${id}.${operator.replace('$', '')}`] = Array.isArray(value) ? value.join(',') : value
+          if (property.bk_property_type === PROPERTY_TYPES.TIME) {
+            const tzid = `${property.id}_tz`
+            const timezone = this.timezoneCondition[tzid] || window.Site.timezone
+            timezoneCondition[tzid] = timezone
+            conditionVal = value.map(val => timestampFormatter(val, timezone))
+          }
+          query[`${id}.${operator.replace('$', '')}`] = Array.isArray(conditionVal) ? conditionVal.join(',') : conditionVal
         }
       })
       return {
         filter: QS.stringify(query, { encode: false }),
         ip: QS.stringify(this.IP.text.trim().length ? this.IP : {}, { encode: false }),
-        _t: Date.now()
+        _t: Date.now(),
+        ...timezoneCondition
       }
     },
     setQuery() {
@@ -475,6 +497,9 @@ const FilterStore = new Vue({
       }
 
       RouterQuery.set(allQuery)
+    },
+    setTimezone() {
+
     },
     setHeader() {
       const suffixPropertyId = Object.keys(this.condition).filter(id => String(this.condition[id].value).trim().length)
@@ -779,6 +804,7 @@ export async function setupFilterStore(config = {}) {
   FilterStore.config = config
   FilterStore.selected = []
   FilterStore.condition = {}
+  FilterStore.timezoneCondition = {}
   FilterStore.components = {}
   FilterStore.activeCollection = null
   FilterStore.topoMode = null

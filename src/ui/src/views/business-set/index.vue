@@ -44,6 +44,8 @@
           :fuzzy="true"
           v-bind="filterComponentProps"
           v-model="filter.value"
+          :timezone="timezone"
+          @change-timezone="handleTimezoneChange"
           @change="handleFilterValueChange"
           @enter="handleFilterValueEnter"
           @clear="handleFilterValueEnter">
@@ -196,6 +198,8 @@
 
       // 响应式的query
       const query = computed(() => RouterQuery.getAll())
+
+      const timezone = ref(query.value.timezone || window.Site.timezone)
 
       const table = reactive({
         header: [],
@@ -375,12 +379,16 @@
             limit = table.pagination.limit,
             keyword = '',
             operator = '',
-            field = MODEL_NAME_KEY
+            field = MODEL_NAME_KEY,
+            timezone: val = ''
           } = query
           updateFilter(field, keyword, operator)
 
           table.pagination.current = parseInt(page, 10)
           table.pagination.limit = parseInt(limit, 10)
+          if (val) {
+            timezone.value = val
+          }
 
           getList()
         }
@@ -482,13 +490,18 @@
         handleFilterValueEnter()
       }
 
+      const  handleTimezoneChange = (val) => {
+        timezone.value = val
+      }
+
       const handleFilterValueEnter = () => {
         RouterQuery.set({
           _t: Date.now(),
           page: 1,
           field: filter.field,
           keyword: filter.value,
-          operator: filter.operator
+          operator: filter.operator,
+          timezone: filterType.value === PROPERTY_TYPES.TIME ? timezone.value : undefined
         })
       }
 
@@ -517,9 +530,11 @@
         columnsConfigShow,
         previewProps,
         objId,
+        timezone,
         isBuiltin,
         handleCreate,
         handleFilterValueChange,
+        handleTimezoneChange,
         handleFilterValueEnter,
         handleSortChange,
         handleSizeChange,
@@ -546,14 +561,14 @@
     .options-filter {
         position: relative;
         margin-right: 10px;
-        width: 439px;
+        width: 499px;
         .filter-selector {
             width: 120px;
             border-radius: 2px 0 0 2px;
             margin-right: -1px;
         }
         .filter-value {
-            width: 320px;
+            width: 380px;
             border-radius: 0 2px 2px 0;
             /deep/ .bk-form-input {
                 border-radius: 0 2px 2px 0;

@@ -13,11 +13,13 @@
 <template>
   <div class="history">
     <div class="history-filter">
-      <cmdb-form-date-range class="filter-item filter-range"
+      <cmdb-search-time
+        class="filter-item filter-range"
+        :timezone="timezone"
         v-model="condition.operation_time"
-        :clearable="false"
-        @input="handlePageChange(1)">
-      </cmdb-form-date-range>
+        @change-timezone="handleTimezoneChange"
+        @change="handlePageChange(1)">
+      </cmdb-search-time>
       <cmdb-form-objuser class="filter-item filter-user"
         v-model="condition.user"
         :exclude="false"
@@ -55,6 +57,7 @@
   import AuditDetails from '@/components/audit-history/details.js'
   import tools from '@/utils/tools'
   import resourcePoolService from '@/service/resource-pool/index'
+  import { timeToZero } from '@/filters/formatter'
 
   const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
   const formatValue = () => ({
@@ -81,6 +84,7 @@
     },
     data() {
       return {
+        timezone: window.Site.timezone,
         history: [],
         dictionary: [],
         condition: {
@@ -113,6 +117,9 @@
       this.getHistory()
     },
     methods: {
+      handleTimezoneChange(timezone) {
+        this.timezone = timezone
+      },
       async getAuditDictionary() {
         try {
           this.dictionary = await this.$store.dispatch('audit/getDictionary', {
@@ -170,8 +177,8 @@
         if (usefuleCondition.operation_time) {
           const [start, end] = usefuleCondition.operation_time
           usefuleCondition.operation_time = {
-            start: `${start} 00:00:00`,
-            end: `${end} 23:59:59`
+            start: timeToZero(start),
+            end: timeToZero(end)
           }
         }
         return usefuleCondition
@@ -225,7 +232,7 @@
             display: inline-block;
             vertical-align: middle;
             &.filter-range {
-                width: 300px !important;
+                width: 380px !important;
                 margin: 0 5px 0 0;
             }
             &.filter-user {
