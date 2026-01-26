@@ -17,11 +17,12 @@
     "lint-fix": "eslint --fix --ext .js,.vue ./src"
   },
   "dependencies": {
+    "@babel/runtime": "^7.28.4",
     "@blueking/bk-org-selector": "0.0.22-beta.1",
     "@blueking/bk-user-display-name": "^1.0.0",
     "@blueking/bk-user-selector": "^0.0.35",
-    "@babel/runtime": "^7.28.4",
     "@blueking/bkui-library": "^0.0.0-beta.6",
+    "@blueking/date-picker": "3.0.6",
     "@blueking/functional-dependency": "^0.0.1-beta.10",
     "@blueking/login-modal": "^1.0.0",
     "@blueking/notice-component-vue2": "^2.0.1-beta.2",
@@ -38,6 +39,7 @@
     "cytoscape-edgehandles": "3.6.0",
     "cytoscape-popper": "1.0.4",
     "date-fns": "1.29.0",
+    "dayjs": "1.11.19",
     "deep-equal": "1.1.0",
     "get-value": "^3.0.1",
     "has": "^1.0.3",
