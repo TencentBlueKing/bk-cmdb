@@ -90,6 +90,7 @@
   import RouterQuery from '@/router/query'
   import AuditDetails from '@/components/audit-history/details.js'
   import { isNumeric } from '@/utils/util'
+  import { timeToZero } from '@/utils/tools'
   export default {
     components: {
       [AuditBusinessOptions.name]: AuditBusinessOptions,
@@ -206,8 +207,8 @@
           if (usefulCondition.operation_time) {
             const [start, end] = usefulCondition.operation_time
             usefulCondition.operation_time = {
-              start: `${start} 00:00:00`,
-              end: `${end} 23:59:59`
+              start: timeToZero(start),
+              end: timeToZero(end)
             }
           }
           // 账号多选转为Array

@@ -22,7 +22,8 @@
     extends: FilterTag,
     provide() {
       return {
-        condition: () => this.condition
+        condition: () => this.condition,
+        timezoneCondition: () => this.timezoneCondition,
       }
     },
     props: {
@@ -33,9 +34,16 @@
       filterCondition: {
         type: Object,
         default: () => ({})
+      },
+      filterTimezoneCondition: {
+        type: Object,
+        default: () => ({})
       }
     },
     computed: {
+      timezoneCondition() {
+        return this.filterTimezoneCondition
+      },
       condition() {
         return this.filterCondition
       },

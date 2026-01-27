@@ -24,10 +24,13 @@
   export default {
     name: 'general-model-filter-tag-item',
     extends: FilterTagItem,
-    inject: ['condition'],
+    inject: ['condition', 'timezoneCondition'],
     computed: {
       dynamicCondition() {
         return this.condition()
+      },
+      dynamicTimezoneCondition() {
+        return this.timezoneCondition()
       },
       operatorSymbol() {
         return Utils.getOperatorSymbol(this.operator, QUERY_OPERATOR_OTHER_SYMBOL)
@@ -47,7 +50,9 @@
                 ref: 'filterTagForm',
                 props: {
                   property: self.property,
-                  condition: self.dynamicCondition
+                  condition: self.dynamicCondition,
+                  timezone: self.timezone,
+                  timezoneCondition: self.dynamicTimezoneCondition,
                 },
                 on: {
                   confirm: self.handleHideTagForm,

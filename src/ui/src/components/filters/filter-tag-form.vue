@@ -35,6 +35,9 @@
             :is-paste-split="getPasteSplit(property.bk_property_id)"
             v-bind="getBindProps()"
             v-model.trim="value"
+            :timezone="tz || timezone || $Site.timezone"
+            @change-timezone="(timezone) => handleTimezoneChange(timezone, property.id)"
+            @change="handleSureVal"
             @active-change="handleActiveChange"
             @confirm="handleSureVal">
           </component>
@@ -66,7 +69,8 @@
       property: {
         type: Object,
         required: true
-      }
+      },
+      timezone: String  // 快速搜索的时区
     },
     data() {
       const { IN, NIN, LIKE, CONTAINS, EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
@@ -74,6 +78,7 @@
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         localOperator: null,
         localValue: null,
+        localTimezone: null,
         active: false,
         customOperatorTypeMap: {
           float: [EQ, NE, GTE, LTE, RANGE, IN],
@@ -111,6 +116,17 @@
         set(value) {
           this.localValue = value
         }
+      },
+      tz: {
+        get() {
+          if (this.localTimezone === null) {
+            return FilterStore.timezoneCondition[`${this.property.id}_tz`]
+          }
+          return this.localTimezone
+        },
+        set(value) {
+          this.localTimezone = value
+        }
       }
     },
     methods: {
@@ -118,10 +134,14 @@
         return isPasteSplit(id)
       },
       handleSureVal() {
-        // 组织类型自动调用确认接口
-        if (this.property.bk_property_type === PROPERTY_TYPES.ORGANIZATION) {
+        // 组织/时间类型自动调用确认接口
+        if ([PROPERTY_TYPES.ORGANIZATION, PROPERTY_TYPES.TIME].includes(this.property.bk_property_type)) {
           this.handleConfirm()
         }
+      },
+      handleTimezoneChange(timezone, id) {
+        this.tz = timezone
+        FilterStore.setTimezoneCondition({ [`${id}_tz`]: timezone })
       },
       getPlaceholder() {
         return Utils.getPlaceholder(this.property)
@@ -188,6 +208,7 @@
       resetCondition() {
         this.operator = null
         this.value = null
+        this.tz = null
       },
       handleOperatorChange(operator) {
         this.value = Utils.getOperatorSideEffect(this.property, operator, this.value)

@@ -19,6 +19,7 @@ import isEmpty from 'lodash/isEmpty'
 import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 import { CONTAINER_OBJECTS } from '@/dictionary/container'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+import { timeToZero } from '@/utils/tools'
 
 const getModelById = store.getters['objectModelClassify/getModelById']
 export function getLabel(property) {
@@ -132,6 +133,10 @@ export function convertValue(value, operator, property) {
     if (type === 'bool') {
       return data === 'true'
     }
+    // 时间类型需要转换成0时区格式 (接口value用)
+    if (type === PROPERTY_TYPES.TIME) {
+      return timeToZero(data)
+    }
     return data
   })
   if (['$in', '$nin', '$range'].includes(operator)) {
@@ -186,13 +191,13 @@ export function transformCondition(condition, properties, header) {
     const property = findProperty(id, properties, 'id')
     const { operator, value } = condition[id]
     if (value === null || value === undefined || !value.toString().length) return
-    // 时间类型的字段需要上升一层单独处理
+    // 时间类型的字段需要上升一层单独处理 , 将时间戳转为日期格式
     if (property.bk_property_type === 'time') {
       const [start, end] = value
       timeCondition[property.bk_obj_id].rules.push({
         field: property.bk_property_id,
-        start,
-        end
+        start: timeToZero(start),
+        end: timeToZero(end),
       })
       return
     }
@@ -243,7 +248,6 @@ export function transformGeneralModelCondition(condition, properties) {
     if (!property) {
       continue
     }
-
     const { operator, value } = condition[id]
 
     // 忽略空值
@@ -252,12 +256,12 @@ export function transformGeneralModelCondition(condition, properties) {
     }
 
     // 时间类型参数格式特殊处理
-    if (property.bk_property_type === 'time') {
+    if (property.bk_property_type === PROPERTY_TYPES.TIME) {
       const [start, end] = value
       timeCondition.rules.push({
         field: property.bk_property_id,
-        start,
-        end
+        start: timeToZero(start),
+        end: timeToZero(end)
       })
       continue
     }

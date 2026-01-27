@@ -21,6 +21,10 @@
       condition: {
         type: Object,
         default: () => ({})
+      },
+      timezoneCondition: {
+        type: Object,
+        default: () => ({})
       }
     },
     data() {
@@ -55,9 +59,23 @@
         set(value) {
           this.localValue = value
         }
+      },
+      tz: {
+        get() {
+          if (this.localTimezone === null) {
+            return this.timezoneCondition[`${this.property.id}_tz`]
+          }
+          return this.localTimezone
+        },
+        set(value) {
+          this.localTimezone = value
+        }
       }
     },
     methods: {
+      handleTimezoneChange(timezone) {
+        this.tz = timezone
+      },
       handleConfirm() {
         // 构建单个condition
         const condition = {
@@ -66,7 +84,10 @@
             value: this.value
           }
         }
-        setSearchQueryByCondition(condition, [this.property])
+        setSearchQueryByCondition(
+          condition, [this.property],
+          { ...this.timezoneCondition, [`${this.property.id}_tz`]: this.tz }
+        )
         this.$emit('confirm')
       }
     }

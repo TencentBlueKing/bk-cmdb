@@ -14,7 +14,7 @@
   <bk-sideslider class="filter-form-sideslider"
     v-transfer-dom
     :is-show.sync="isShow"
-    :width="400"
+    :width="450"
     :show-mask="false"
     :transfer="true"
     :before-close="handleSliderBeforeClose"
@@ -114,6 +114,8 @@
               :ref="`component-${property.id}`"
               v-bind="getBindProps(property)"
               v-model.trim="condition[property.id].value"
+              :timezone="timezoneCondition[`${property.id}_tz`] || $Site.timezone"
+              @change-timezone="(timezone) => handleTimezoneChange(timezone, property.id)"
               v-bk-tooltips.top="{
                 disabled: !property.placeholder,
                 theme: 'light',
@@ -267,6 +269,7 @@
         originIPCondition: { ...FilterStore.IP },
         condition: {},
         originCondition: {},
+        timezoneCondition: {},
         selected: [],
         collectionForm: {
           name: '',
@@ -397,6 +400,7 @@
         this.focusIP()
       }, 0)
       this.originCondition = this.setCondition(this.originCondition)
+      this.timezoneCondition = this.setTimezoneCondition(this.timezoneCondition)
       const subTitle = this.type === 'index' ? '离开将会导致表单填写的内容丢失' : '离开将会导致未保存信息丢失'
       const { beforeClose, setChanged } = useSideslider('', { subTitle })
       this.beforeClose = beforeClose
@@ -408,6 +412,9 @@
       },
       hasAddSelected(val, oldVal, addSelect) {
         return val[0] && oldVal[0] && addSelect.length > 0
+      },
+      handleTimezoneChange(timezone, id) {
+        this.timezoneCondition = FilterStore.setTimezoneCondition({ [`${id}_tz`]: timezone })
       },
       handleClearCondition() {
         this.clearCondition()
@@ -452,6 +459,15 @@
       },
       setCondition(nowCondition) {
         const newCondition = this.$tools.clone(FilterStore.condition)
+        Object.keys(nowCondition).forEach((id) => {
+          if (has(nowCondition, id)) {
+            newCondition[id] = nowCondition[id]
+          }
+        })
+        return newCondition
+      },
+      setTimezoneCondition(nowCondition) {
+        const newCondition = this.$tools.clone(FilterStore.timezoneCondition)
         Object.keys(nowCondition).forEach((id) => {
           if (has(nowCondition, id)) {
             newCondition[id] = nowCondition[id]

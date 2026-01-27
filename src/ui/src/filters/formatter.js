@@ -74,9 +74,9 @@ export function date(value) {
   return timeFormatter(value, 'YYYY-MM-DD')
 }
 
-export function time(value) {
+export function time(value, options) {
   // 通过此方法默认展示带时区的时间格式
-  return timeFormatter(value, 'YYYY-MM-DD HH:mm:ssZZ')
+  return timeFormatter(value, 'YYYY-MM-DD HH:mm:ssZZ', options?.timezone)
 }
 
 export function objuser(value) {
@@ -199,7 +199,7 @@ export default function formatter(value, property, options) {
   const type = isPropertyObject ? property.bk_property_type : property
   const propertyOptions = isPropertyObject ? property.option : options
   if (has(formatterMap, type)) {
-    return formatterMap[type](value, propertyOptions)
+    return formatterMap[type](value, propertyOptions, options)
   }
   return value
 }

@@ -66,6 +66,7 @@
             :is-paste-split="getPasteSplit(property.bk_property_id)"
             :ref="`component-${property.id}`"
             v-bind="getBindProps(property)"
+            :timezone="timezoneCondition[`${property.id}_tz`] || $Site.timezone"
             v-model.trim="condition[property.id].value"
             v-bk-tooltips.top="{
               disabled: !property.placeholder,
@@ -73,6 +74,7 @@
               trigger: 'click',
               content: property.placeholder
             }"
+            @change-timezone="(timezone) => handleTimezoneChange(timezone, property.id)"
             @active-change="handleComponentActiveChange(property, ...arguments)"
             @change="handleChange"
             @inputchange="hanleInputChange"
@@ -136,11 +138,17 @@
       filterCondition: {
         type: Object,
         default: () => ({})
+      },
+      filterTimezoneCondition: {
+        type: Object,
+        default: () => ({})
       }
     },
     data() {
       const { IN, NIN, LIKE, CONTAINS_CS, EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
       return {
+        timezoneCondition: this.filterTimezoneCondition,
+        timezone: window.Site.timezone,
         scrollToBottom: false,
         withoutOperator: ['date', 'time', 'bool'],
         condition: {},
@@ -334,13 +342,16 @@
         // tag-input组件在blur时写入数据有200ms的延迟，此处等待更长时间，避免无法写入
         this.searchTimer && clearTimeout(this.searchTimer)
         this.searchTimer = setTimeout(() => {
-          setSearchQueryByCondition(this.condition, this.selected)
+          setSearchQueryByCondition(this.condition, this.selected, this.timezoneCondition)
           this.$emit('close')
         }, 300)
       },
       handleReset() {
         this.condition = resetConditionValue(this.condition, this.selected)
-      }
+      },
+      handleTimezoneChange(timezone, id) {
+        this.timezoneCondition[`${id}_tz`] = timezone
+      },
     }
   }
 </script>

@@ -38,6 +38,8 @@
               :data-vv-as="property.bk_property_name"
               v-bind="getBindProps(property)"
               v-model="condition[property.id].value"
+              :timezone="condition[property.id]?.timezone"
+              @change-timezone="(timezone) => handleTimezoneChange(property.id, timezone)"
               display-tag
               :disabled="disabled"
               v-validate="'required'"
@@ -251,7 +253,8 @@
           },
           time: {
             operator: '$range',
-            value: []
+            value: [],
+            timezone: window.Site.timezone,
           },
           'service-template': {
             operator: '$in',
@@ -310,6 +313,9 @@
       handleRemove(property) {
         if (this.disabled) return
         this.$emit('remove', property)
+      },
+      handleTimezoneChange(id, timezone) {
+        this.condition[id].timezone = timezone
       },
       handleToggle(property) {
         if (this.disabled) return

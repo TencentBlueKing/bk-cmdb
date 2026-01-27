@@ -21,8 +21,8 @@
     @hidden="handleHidden">
     <bk-resize-layout
       :collapsible="false"
-      :initial-divide="412"
-      :min="400"
+      :initial-divide="450"
+      :min="450"
       :max="500"
       slot="content"
       style="height: 100%;">
@@ -164,7 +164,7 @@
   import { getConditionSelect, updatePropertySelect } from '@/utils/util'
   import queryBuilderOperator, { QUERY_OPERATOR, OPERATOR_ECHO, OPERATOR_SPECIAL_ECHO, TRANSFORM_DYNAMIC_SET_OPERATOR } from '@/utils/query-builder-operator'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
-  import { getOperator } from '@/utils/tools'
+  import { getOperator, timeToZero } from '@/utils/tools'
 
   const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
   export default {
@@ -671,8 +671,8 @@
             const [start, end] = value
             timeCondition.rules.push({
               field: property.bk_property_id,
-              start,
-              end
+              start: timeToZero(start),
+              end: timeToZero(end)
             })
             timeConditionMap[type][property.bk_obj_id] = timeCondition
             return
