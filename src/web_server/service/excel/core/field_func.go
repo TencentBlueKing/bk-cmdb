@@ -563,3 +563,15 @@ func getUserListStr(userList []string) []string {
 
 	return userListStr
 }
+
+// HandleDDE Add a prefix of ' to the characters '=', '+', '-', '@' to disrupt the Excel DDE formula
+func HandleDDE(str string) string {
+	realStr := strings.TrimSpace(str)
+	if len(realStr) > 0 {
+		switch realStr[0] {
+		case '=', '+', '-', '@':
+			realStr = `'` + realStr
+		}
+	}
+	return realStr
+}

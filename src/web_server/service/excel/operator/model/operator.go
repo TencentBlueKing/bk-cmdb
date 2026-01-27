@@ -216,8 +216,12 @@ func (op *Operator) setExcelData() error {
 				data[rowIdx][idx].Value = string(value)
 				continue
 			}
-
-			data[rowIdx][idx].Value = cell
+			switch value := cell.(type) {
+			case string:
+				data[rowIdx][idx].Value = core.HandleDDE(value)
+			default:
+				data[rowIdx][idx].Value = cell
+			}
 		}
 	}
 

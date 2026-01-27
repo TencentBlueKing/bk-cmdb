@@ -36,12 +36,26 @@ var handleSpecialInstFieldFuncMap = make(map[string]handleInstFieldFunc)
 func init() {
 	handleInstFieldFuncMap[common.FieldTypeInt] = getHandleIntFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeFloat] = getHandleFloatFieldFunc()
+	handleInstFieldFuncMap[common.FieldTypeSingleChar] = getHandleCharFieldFunc()
+	handleInstFieldFuncMap[common.FieldTypeLongChar] = getHandleCharFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeEnum] = getHandleEnumFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeEnumMulti] = getHandleEnumMultiFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeBool] = getHandleBoolFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeInnerTable] = getHandleTableFieldFunc()
 
 	handleSpecialInstFieldFuncMap[common.BKCloudIDField] = getHandleInstCloudAreaFunc()
+}
+func getHandleCharFieldFunc() handleInstFieldFunc {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
+		if val == nil {
+			return [][]excel.Cell{getRowWithOneCell()}, nil
+		}
+
+		strVal := util.GetStrByInterface(val)
+		strVal = core.HandleDDE(strVal)
+		handleFunc := getDefaultHandleFieldFunc()
+		return handleFunc(e, property, strVal)
+	}
 }
 
 func getHandleInstFieldFunc(property *core.ColProp) handleInstFieldFunc {
@@ -231,13 +245,13 @@ func getHandleTableFieldFunc() handleInstFieldFunc {
 
 func getDefaultHandleFieldFunc() handleInstFieldFunc {
 	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
-		var styleID int
+		style := normalField
 		if property.NotEditable {
-			var err error
-			styleID, err = e.styleCreator.getStyle(noEditField)
-			if err != nil {
-				return nil, err
-			}
+			style = noEditField
+		}
+		styleID, err := e.styleCreator.getStyle(style, property.PropertyType)
+		if err != nil {
+			return nil, err
 		}
 
 		result := make([][]excel.Cell, singleCellLen)

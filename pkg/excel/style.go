@@ -25,10 +25,12 @@ type Style struct {
 	Fill   *Fill
 	Border []Border
 	Font   *Font
+	NumFmt int
 }
 
 func (s *Style) convert() (*excelize.Style, error) {
 	style := new(excelize.Style)
+	style.NumFmt = s.NumFmt
 	if s.Fill != nil {
 		fill, err := s.Fill.convert()
 		if err != nil {
