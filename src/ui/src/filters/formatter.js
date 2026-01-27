@@ -103,8 +103,8 @@ export function time(value, options) {
 export function timeToZero(value) {
   // 兼容 '我是时间戳' 格式
   const timestamp = isTimestamp(value) ? +value : value
-  // 通过此方法默认展示0时区的时间格式--需要指定一个固定的0时区
-  return timeFormatter(timestamp, 'YYYY-MM-DDTHH:mm:ss[Z]', 'Africa/Abidjan')
+  return moment(timestamp).utc()
+    .format('YYYY-MM-DDTHH:mm:ss[Z]')
 }
 
 export function objuser(value) {

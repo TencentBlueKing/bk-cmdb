@@ -24,7 +24,7 @@
   import DatePicker from '@blueking/date-picker/vue2'
   import '@blueking/date-picker/vue2/vue2.css'
   import activeMixin from './mixins/active'
-  import { timestampFormatter } from '@/filters/formatter'
+  import { timestampFormatter } from '@/utils/tools'
   export default {
     name: 'cmdb-search-time',
     components: {

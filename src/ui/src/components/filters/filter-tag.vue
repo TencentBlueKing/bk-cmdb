@@ -23,6 +23,7 @@
         v-for="property in selected"
         :key="property.id"
         :property="property"
+        :filter-timezone-condition="timezoneCondition"
         v-bind="condition[property.id]">
       </filter-tag-item>
       <bk-button class="filter-clear" text
@@ -45,6 +46,9 @@
       FilterTagItem
     },
     computed: {
+      timezoneCondition() {
+        return FilterStore.timezoneCondition
+      },
       condition() {
         return FilterStore.condition
       },

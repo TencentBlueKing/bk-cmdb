@@ -35,7 +35,7 @@
             :is-paste-split="getPasteSplit(property.bk_property_id)"
             v-bind="getBindProps()"
             v-model.trim="value"
-            :timezone="timezoneCondition[`${property.id}_tz`] || timezone || $Site.timezone"
+            :timezone="tz || timezone || $Site.timezone"
             @change-timezone="(timezone) => handleTimezoneChange(timezone, property.id)"
             @change="handleSureVal"
             @active-change="handleActiveChange"
@@ -44,7 +44,7 @@
         </div>
       </div>
       <div class="form-options">
-        <bk-button class="mr10" text @click="handleConfirm">{{$t('确定2')}}</bk-button>
+        <bk-button class="mr10" text @click="handleConfirm">{{$t('确定')}}</bk-button>
         <bk-button class="mr10" text @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </bk-form-item>
@@ -75,10 +75,10 @@
     data() {
       const { IN, NIN, LIKE, CONTAINS, EQ, NE, GTE, LTE, RANGE } = QUERY_OPERATOR
       return {
-        timezoneCondition: FilterStore.timezoneCondition || {}, // 高级筛选的时区
         withoutOperator: ['date', 'time', 'bool', 'service-template'],
         localOperator: null,
         localValue: null,
+        localTimezone: null,
         active: false,
         customOperatorTypeMap: {
           float: [EQ, NE, GTE, LTE, RANGE, IN],
@@ -116,6 +116,17 @@
         set(value) {
           this.localValue = value
         }
+      },
+      tz: {
+        get() {
+          if (this.localTimezone === null) {
+            return FilterStore.timezoneCondition[`${this.property.id}_tz`]
+          }
+          return this.localTimezone
+        },
+        set(value) {
+          this.localTimezone = value
+        }
       }
     },
     methods: {
@@ -129,7 +140,8 @@
         }
       },
       handleTimezoneChange(timezone, id) {
-        this.timezoneCondition = FilterStore.setTimezoneCondition({ [`${id}_tz`]: timezone })
+        this.tz = timezone
+        FilterStore.setTimezoneCondition({ [`${id}_tz`]: timezone })
       },
       getPlaceholder() {
         return Utils.getPlaceholder(this.property)
@@ -196,6 +208,7 @@
       resetCondition() {
         this.operator = null
         this.value = null
+        this.tz = null
       },
       handleOperatorChange(operator) {
         this.value = Utils.getOperatorSideEffect(this.property, operator, this.value)

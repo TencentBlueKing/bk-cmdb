@@ -14,7 +14,7 @@ import QS from 'qs'
 import RouterQuery from '@/router/query'
 import Utils from '@/components/filters/utils'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-import { timestampFormatter } from '@/filters/formatter'
+import { timestampFormatter } from '@/utils/tools'
 
 // 快速搜索的默认query值
 const defaultFastQuery = () => ({

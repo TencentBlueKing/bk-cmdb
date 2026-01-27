@@ -78,8 +78,7 @@
     computed: {
       timezone() {
         // 快速搜索时区
-        return this.$route.query?.timezone || window.Site.timezone
-        // return this.$route.query?.timezone || this.filterTimezoneCondition?.[`${id}_tz`] || window.Site.timezone
+        return this.$route.query?.timezone
       },
       transformedValue() {
         let { value } = this
@@ -87,7 +86,7 @@
           value = [value]
         }
         return value.map(value => formatter(value, { ...this.property,
-                                                     option: { timezone: this.timezone }
+                                                     option: { timezone: this.timezone || this.filterTimezoneCondition?.[`${this.property.id}_tz`] }
         }))
       },
       showColon() {

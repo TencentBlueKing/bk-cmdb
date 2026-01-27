@@ -244,7 +244,7 @@
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import cmdbModelFastLink from '@/components/model-fast-link'
   import cmdbRefresh from '@/components/refresh'
-  import { timeToZero } from '@/filters/formatter'
+  import { timeToZero } from '@/utils/tools'
 
   const defaultFastSearch = () => ({
     field: 'bk_inst_name',

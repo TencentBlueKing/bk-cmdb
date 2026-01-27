@@ -24,7 +24,7 @@ import containerPropertyService from '@/service/container/property.js'
 import { getContainerInstanceService } from '@/service/container/common'
 import { propertyFilter } from '@/service/property/property.js'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-import { timestampFormatter } from '@/filters/formatter'
+import { timestampFormatter } from '@/utils/tools'
 
 function getStorageHeader(type, key, properties) {
   if (!key) {
@@ -364,7 +364,9 @@ const FilterStore = new Vue({
       this.throttleSearch()
     },
     setTimezoneCondition(timezoneCondition = {}) {
-      this.timezoneCondition = { ...this.timezoneCondition, ...timezoneCondition }
+      Object.entries(timezoneCondition).forEach(([key, tz]) => {
+        this.timezoneCondition[key] = tz
+      })
       return this.timezoneCondition
     },
     setConditonField(propertyId, defaultData, modelId = 'host') {

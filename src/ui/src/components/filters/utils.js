@@ -19,7 +19,7 @@ import isEmpty from 'lodash/isEmpty'
 import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 import { CONTAINER_OBJECTS } from '@/dictionary/container'
 import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-import { timeToZero } from '@/filters/formatter'
+import { timeToZero } from '@/utils/tools'
 
 const getModelById = store.getters['objectModelClassify/getModelById']
 export function getLabel(property) {

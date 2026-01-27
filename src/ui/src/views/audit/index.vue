@@ -90,7 +90,7 @@
   import RouterQuery from '@/router/query'
   import AuditDetails from '@/components/audit-history/details.js'
   import { isNumeric } from '@/utils/util'
-  import { timeToZero } from '@/filters/formatter'
+  import { timeToZero } from '@/utils/tools'
   export default {
     components: {
       [AuditBusinessOptions.name]: AuditBusinessOptions,

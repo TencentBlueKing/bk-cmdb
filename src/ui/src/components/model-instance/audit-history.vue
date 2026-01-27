@@ -55,9 +55,8 @@
 
 <script>
   import AuditDetails from '@/components/audit-history/details.js'
-  import tools from '@/utils/tools'
+  import tools, { timeToZero } from '@/utils/tools'
   import resourcePoolService from '@/service/resource-pool/index'
-  import { timeToZero } from '@/filters/formatter'
 
   const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
   const formatValue = () => ({
