@@ -47,27 +47,6 @@ export const timeFormatter = (value, format = 'YYYY-MM-DD HH:mm:ss', timezone) =
   return dateObj.tz(targetTimezone).format(format)
 }
 
-export const timestampFormatter = (value, timezone) => {
-  if (!value) return '--'
-  if (isTimestamp(value)) return +value
-
-  // 确定目标时区（优先使用传入时区，否则为配置的时区，最后使用浏览器当前时区）
-  const targetTimezone = timezone || window.Site.timezone || moment.tz.guess()
-  // 转换时区并格式化为时间戳
-  // .tz() 方法不会改变绝对时间，只会改变“展示的时间”和“时区偏移量”
-  return moment.tz(value, targetTimezone).valueOf()
-}
-
-export const isTimestamp = (value) => {
-  try {
-    const timestamp = Date.parse(new Date(+value).toISOString())
-    return !isNaN(timestamp) && timestamp === +value
-  } catch (e) {
-    console.error(e, 'error')
-    return false
-  }
-}
-
 const numericFormatter = (value) => {
   if (isNaN(value) || value === null || value === undefined || value === '') {
     return '--'
@@ -98,13 +77,6 @@ export function date(value) {
 export function time(value, options) {
   // 通过此方法默认展示带时区的时间格式
   return timeFormatter(value, 'YYYY-MM-DD HH:mm:ssZZ', options?.timezone)
-}
-// 转换成0时区的时间
-export function timeToZero(value) {
-  // 兼容 '我是时间戳' 格式
-  const timestamp = isTimestamp(value) ? +value : value
-  return moment(timestamp).utc()
-    .format('YYYY-MM-DDTHH:mm:ss[Z]')
 }
 
 export function objuser(value) {
