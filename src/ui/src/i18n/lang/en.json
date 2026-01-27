@@ -1532,7 +1532,7 @@
     "确认彻底删除该业务？": "Are you sure compeletly delete the business?",
     "一旦被清除，将无法再恢复，请谨慎操作！": "Once cleared, it won't be possible to recover. Please operate with caution!",
     "导入更新提示": "Description: To import and edit, you first need to export the instances to be modified, complete the editing, and then perform the import and edit operation",
-    "导出提示": "If the field value starts with =, +, -, or @, it will be automatically escaped. For example, ' = ' will be escaped as  ' = '",
+    "模型实例导出提示": "If the field value starts with =, +, -, or @, it will be automatically escaped. For example, ' = ' will be escaped as  ' = '",
     "业务导入主机提示": "Description: To edit and import existing hosts in a business, follow these steps: 1. Export the required host instances. 2. Modify the host properties in Excel. 3. Import the Excel file to update the host properties.",
     "资源导入主机提示": "Description: The resource pool only supports the import of new hosts and does not support updates to existing hosts.",
     "导入文件大小提示": "Files within 20MB in xlsx format",

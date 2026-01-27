@@ -20,7 +20,7 @@
     <cmdb-tips class="file-tips"
       :icon-style="{ color: '#FF9C01' }"
       :tips-style="{ background: '#fff4e2', border: '1px solid #ffdfac' }">
-      {{$t('导出提示')}}
+      {{$t('模型实例导出提示')}}
     </cmdb-tips>
     <keep-alive>
       <component :is="stepComponent"></component>
