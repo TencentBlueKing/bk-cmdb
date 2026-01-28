@@ -1,3 +1,7 @@
+## [Version: 3.15.1-feature-tenant-alpha26] - 2025-01-28
+**缺陷修复**
+- 时间搜索改为新的时区组件
+
 ## [Version: 3.15.1-feature-tenant-alpha25] - 2025-01-20
 **缺陷修复**
 - 修复个人中心与权限中心入口问题
