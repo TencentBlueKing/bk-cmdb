@@ -19,8 +19,8 @@ package watch
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"time"
 
 	"configcenter/src/common/metadata"
 )
@@ -39,6 +39,11 @@ type WatchEventOptions struct {
 	// the resource kind you want to watch
 	Resource CursorType       `json:"bk_resource"`
 	Filter   WatchEventFilter `json:"bk_filter"`
+
+	// Time drift relative to now.
+	// Valid range: [-3h, 0s], where negative values indicate time before now.
+	// Example: -1h59m59s.
+	Drift string `json:"drift"`
 }
 
 // WatchEventFilter TODO
@@ -48,6 +53,8 @@ type WatchEventFilter struct {
 	// SubResources is the sub resources you want to watch, NOTE: this is a special parameter for internal use only
 	SubResources []string `json:"-"`
 }
+
+const driftLimit = 3 * time.Hour
 
 // Validate watch event options
 func (w *WatchEventOptions) Validate(isInner bool) error {
@@ -68,11 +75,6 @@ func (w *WatchEventOptions) Validate(isInner bool) error {
 		}
 	}
 
-	// use either StartFrom or Cursor.
-	if w.StartFrom != 0 && len(w.Cursor) != 0 {
-		return errors.New("bk_start_from and bk_cursor can not use at the same time")
-	}
-
 	if len(w.Filter.SubResource) > 0 || len(w.Filter.SubResources) > 0 {
 		switch w.Resource {
 		case ObjectBase, MainlineInstance, InstAsst, KubeWorkload:
@@ -81,6 +83,17 @@ func (w *WatchEventOptions) Validate(isInner bool) error {
 		}
 	}
 
+	if len(w.Drift) != 0 {
+		duration, err := time.ParseDuration(w.Drift)
+		if err != nil {
+			return err
+		}
+		if duration > 0 {
+			w.Drift = "0s"
+		} else if duration < -driftLimit {
+			w.Drift = "-3h"
+		}
+	}
 	return nil
 }
 

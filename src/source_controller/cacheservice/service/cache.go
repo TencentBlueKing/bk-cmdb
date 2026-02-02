@@ -602,6 +602,11 @@ func (s *cacheService) watchEvent(ctx *rest.Contexts, isInner bool) {
 	}
 
 	// watch with start from
+	if len(options.Drift) != 0 {
+		duration, _ := time.ParseDuration(options.Drift)
+		options.StartFrom = time.Now().Add(duration).Unix()
+	}
+
 	if options.StartFrom != 0 {
 		events, err := s.cacheSet.Event.WatchWithStartFrom(ctx.Kit, key, options)
 		if err != nil {
