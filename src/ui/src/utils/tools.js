@@ -89,8 +89,8 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
     } else if (['date', 'time'].includes(propertyType)) {
       const defaultValue = autoSelect ? propertyDefault : ''
-      const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ssZZ')
-      const  value = has(inst, propertyId) ? formatedTime : defaultValue
+      const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+      const value = has(inst, propertyId) ? formatedTime : defaultValue
       values[propertyId] = value || null
     } else if (['int', 'float'].includes(propertyType)) {
       const defaultValue = autoSelect ? propertyDefault : ''
@@ -733,7 +733,6 @@ export const isTimestamp = (value) => {
     const timestamp = Date.parse(new Date(+value).toISOString())
     return !isNaN(timestamp) && timestamp === +value
   } catch (e) {
-    console.error(e, 'error')
     return false
   }
 }

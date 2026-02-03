@@ -47,6 +47,17 @@ export const timeFormatter = (value, format = 'YYYY-MM-DD HH:mm:ss', timezone) =
   return dateObj.tz(targetTimezone).format(format)
 }
 
+export const dateFormatter = (value, format = 'YYYY-MM-DD HH:mm:ss') => {
+  if (!value) {
+    return '--'
+  }
+  const formated = moment(value).format(format)
+  if (formated === 'Invalid date') {
+    return value
+  }
+  return formated
+}
+
 const numericFormatter = (value) => {
   if (isNaN(value) || value === null || value === undefined || value === '') {
     return '--'
@@ -71,7 +82,7 @@ export function float(value) {
 }
 
 export function date(value) {
-  return timeFormatter(value, 'YYYY-MM-DD')
+  return dateFormatter(value, 'YYYY-MM-DD')
 }
 
 export function time(value, options) {
@@ -199,7 +210,7 @@ export default function formatter(value, property, options) {
   const type = isPropertyObject ? property.bk_property_type : property
   const propertyOptions = isPropertyObject ? property.option : options
   if (has(formatterMap, type)) {
-    return formatterMap[type](value, propertyOptions, options)
+    return formatterMap[type](value, propertyOptions)
   }
   return value
 }

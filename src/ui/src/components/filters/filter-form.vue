@@ -414,7 +414,7 @@
         return val[0] && oldVal[0] && addSelect.length > 0
       },
       handleTimezoneChange(timezone, id) {
-        this.timezoneCondition = FilterStore.setTimezoneCondition({ [`${id}_tz`]: timezone })
+        this.timezoneCondition = this.$tools.clone(FilterStore.setTimezoneCondition({ [`${id}_tz`]: timezone }))
       },
       handleClearCondition() {
         this.clearCondition()

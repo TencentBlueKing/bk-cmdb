@@ -481,6 +481,11 @@ const FilterStore = new Vue({
             conditionVal = value.map(val => timestampFormatter(val, timezone))
           }
           query[`${id}.${operator.replace('$', '')}`] = Array.isArray(conditionVal) ? conditionVal.join(',') : conditionVal
+        } else {
+          if (property.bk_property_type === PROPERTY_TYPES.TIME) {
+            const tzid = `${property.id}_tz`
+            timezoneCondition[tzid] = undefined
+          }
         }
       })
       return {

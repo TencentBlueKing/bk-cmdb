@@ -25,6 +25,7 @@
   import '@blueking/date-picker/vue2/vue2.css'
   import activeMixin from './mixins/active'
   import { timestampFormatter } from '@/utils/tools'
+  import { timeFormatter } from '@/filters/formatter'
   export default {
     name: 'cmdb-search-time',
     components: {
@@ -42,9 +43,20 @@
         required: true,
       }
     },
+    data() {
+      return {
+        flag: true
+      }
+    },
     computed: {
       localValue: {
         get() {
+          if (this.value[0] && this.flag) {
+            this.flag = false
+            // 如果第一次有值，则初始化值的时候按照当前时区传入正常的日期格式
+            return [...this.value.map(value => timeFormatter(value, 'YYYY-MM-DD HH:mm:ss', this.timezone))]
+          }
+          this.flag = false
           // 需要转换成时间戳格式
           return [...this.value.map(value => timestampFormatter(value))]
         },

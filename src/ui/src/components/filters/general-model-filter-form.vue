@@ -350,7 +350,7 @@
         this.condition = resetConditionValue(this.condition, this.selected)
       },
       handleTimezoneChange(timezone, id) {
-        this.timezoneCondition[`${id}_tz`] = timezone
+        this.$set(this.timezoneCondition, `${id}_tz`, timezone)
       },
     }
   }
