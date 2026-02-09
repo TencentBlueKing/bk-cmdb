@@ -895,7 +895,6 @@ def main(argv):
             print("auth_app_code:", auth["auth_app_code"])
         elif opt in ("--auth_app_secret",):
             auth["auth_app_secret"] = arg
-            print("auth_app_secret:", auth["auth_app_secret"])
         elif opt in ("--auth_sync_workers",):
             auth["auth_sync_workers"] = arg
             print("auth_sync_workers:", auth["auth_sync_workers"])
@@ -934,19 +933,14 @@ def main(argv):
             print('enable_cryptor:', enable_cryptor)
         elif opt in("--secret_key_url",):
             secret_key_url = arg
-            print('secret_key_url:', secret_key_url)
         elif opt in("--secrets_addrs",):
             secrets_addrs = arg
-            print('secrets_addrs:', secrets_addrs)
         elif opt in("--secrets_token",):
             secrets_token = arg
-            print('secrets_token:', secrets_token)
         elif opt in("--secrets_project",):
             secrets_project = arg
-            print('secrets_project:', secrets_project)
         elif opt in("--secrets_env",):
             secrets_env = arg
-            print('secrets_env:', secrets_env)
 
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
