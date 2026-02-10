@@ -25,6 +25,7 @@
 </template>
 
 <script>
+  import moment from 'moment-timezone'
   export default {
     name: 'cmdb-form-time',
     props: {
@@ -55,7 +56,7 @@
         },
         set(value) {
           const previousValue = this.value
-          const currentValue = this.$tools.formatTime(value, 'YYYY-MM-DD HH:mm:ss')
+          const currentValue = this.$tools.formatTime(value, 'YYYY-MM-DD HH:mm:ss', moment.tz.guess())
           this.$emit('input', currentValue)
           if (currentValue !== previousValue) {
             this.$emit('change', currentValue, previousValue)
