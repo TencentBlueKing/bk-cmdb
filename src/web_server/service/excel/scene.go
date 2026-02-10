@@ -177,9 +177,10 @@ func (s *service) exportInstFunc(c *gin.Context, objID string) {
 	dir := fmt.Sprintf("%s/export", webCommon.ResourcePath)
 	filePath := fmt.Sprintf("%s/%s", dir, fmt.Sprintf("%dinst.xlsx", time.Now().UnixNano()))
 
+	timeZone := webCommon.GetTimeZoneBySession(c)
 	client := &core.Client{ApiClient: s.apiCli, GinCtx: c}
 	baseOp, err := operator.NewBaseOp(operator.FilePath(filePath), operator.Client(client), operator.ObjID(objID),
-		operator.Kit(kit), operator.Language(s.engine.Language))
+		operator.Kit(kit), operator.Language(s.engine.Language), operator.TimeZone(timeZone))
 	if err != nil {
 		blog.Errorf("create excel template failed, err: %v, rid: %s", err, kit.Rid)
 		c.JSON(http.StatusOK, getErrResp(kit, common.CCErrCommExcelTemplateFailed, err.Error()))

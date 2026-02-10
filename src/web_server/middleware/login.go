@@ -99,12 +99,14 @@ func handleAuthedReq(c *gin.Context, config options.Config, path1 string, disc d
 	tenantID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
 	bkToken, _ := session.Get(common.HTTPCookieBKToken).(string)
 	bkTicket, _ := session.Get(common.HTTPCookieBKTicket).(string)
+	timeZone, _ := session.Get(common.WEBSessionTimeZoneKey).(string)
 	language := webCommon.GetLanguageByHTTPRequest(c)
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, language)
 	httpheader.SetTenantID(c.Request.Header, tenantID)
 	httpheader.SetUserToken(c.Request.Header, bkToken)
 	httpheader.SetUserTicket(c.Request.Header, bkTicket)
+	httpheader.SetTimeZone(c.Request.Header, timeZone)
 
 	if config.LoginVersion == common.BKBluekingLoginPluginVersion {
 		resp, err := apigw.Client().Login().VerifyToken(c.Request.Context(), c.Request.Header, bkToken)

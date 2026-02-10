@@ -17,6 +17,7 @@
 package util
 
 import (
+	"configcenter/src/common/blog"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -171,6 +172,49 @@ func convItemToTime(val interface{}) (interface{}, error) {
 		return t, nil
 	}
 
+}
+
+// ConvertTimeToUserTZ converts a UTC time string to the user's timezone.
+// Supported input formats:
+//   - "2006-01-02T15:04:05Z" or "2006-01-02T15:04:05.000Z" (ISO 8601 with Z suffix, from MongoDB ISODate)
+//   - "2006-01-02T15:04:05+08:00" (ISO 8601 with timezone offset)
+//
+// Output format: "2006-01-02 15:04:05-0700" in the user's timezone (e.g. "2026-01-04 03:01:46+0000").
+func ConvertTimeToUserTZ(val string, timeZone string) string {
+	if val == "" || timeZone == "" {
+		return val
+	}
+
+	loc, err := time.LoadLocation(timeZone)
+	if err != nil {
+		blog.Errorf("load timezone failed, timeZone: %s, err: %+v", timeZone, err)
+		return val
+	}
+
+	layouts := []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05.000Z",
+	}
+
+	var parsed time.Time
+	var parseErr error
+	for _, layout := range layouts {
+		parsed, parseErr = time.Parse(layout, val)
+		if parseErr == nil {
+			break
+		}
+	}
+
+	if parseErr != nil {
+		parsed, parseErr = time.ParseInLocation("2006-01-02 15:04:05", val, time.UTC)
+		if parseErr != nil {
+			return val
+		}
+	}
+
+	return parsed.In(loc).Format("2006-01-02 15:04:05-0700")
 }
 
 var validPeriod = regexp.MustCompile("^\\d*[DHMS]$") // period regexp to check period
