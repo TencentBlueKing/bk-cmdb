@@ -106,6 +106,7 @@
       <template slot-scope="{ row }">
         <div class="form-element-content">
           <property-form-element
+            :key="row.id"
             :property="row"
             v-bk-tooltips.top="{
               disabled: !row.placeholder || $tools.isIconTipProperty(row.bk_property_type),
