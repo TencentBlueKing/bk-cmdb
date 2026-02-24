@@ -36,7 +36,13 @@ func SetProxyHeader(c *gin.Context) {
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, GetLanguageByHTTPRequest(c))
 	httpheader.SetTenantID(c.Request.Header, tenantID)
+}
 
+// GetTimeZoneBySession get user timezone from session
+func GetTimeZoneBySession(c *gin.Context) string {
+	session := sessions.Default(c)
+	timeZone, _ := session.Get(common.WEBSessionTimeZoneKey).(string)
+	return timeZone
 }
 
 // GetLanguageByHTTPRequest get language by http request cookie

@@ -30,6 +30,7 @@ type BaseOp struct {
 	objID    string
 	kit      *rest.Kit
 	language language.CCLanguageIf
+	timeZone string
 }
 
 type BuildOpFunc func(op *BaseOp) error
@@ -91,6 +92,14 @@ func Language(language language.CCLanguageIf) BuildOpFunc {
 	}
 }
 
+// TimeZone set operator user timezone
+func TimeZone(timeZone string) BuildOpFunc {
+	return func(op *BaseOp) error {
+		op.timeZone = timeZone
+		return nil
+	}
+}
+
 // GetExcel get excel
 func (op *BaseOp) GetExcel() *excel.Excel {
 	return op.excel
@@ -114,4 +123,9 @@ func (op *BaseOp) GetKit() *rest.Kit {
 // GetLang get language
 func (op *BaseOp) GetLang() language.CCLanguageIf {
 	return op.language
+}
+
+// GetTimeZone get user timezone
+func (op *BaseOp) GetTimeZone() string {
+	return op.timeZone
 }

@@ -40,6 +40,7 @@ func init() {
 	handleInstFieldFuncMap[common.FieldTypeEnumMulti] = getHandleEnumMultiFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeBool] = getHandleBoolFieldFunc()
 	handleInstFieldFuncMap[common.FieldTypeInnerTable] = getHandleTableFieldFunc()
+	handleInstFieldFuncMap[common.FieldTypeTime] = getHandleTimeFieldFunc()
 
 	handleSpecialInstFieldFuncMap[common.BKCloudIDField] = getHandleInstCloudAreaFunc()
 }
@@ -244,6 +245,29 @@ func getDefaultHandleFieldFunc() handleInstFieldFunc {
 		result[0] = append(result[0], excel.Cell{Value: val, StyleID: styleID})
 
 		return result, nil
+	}
+}
+
+func getHandleTimeFieldFunc() handleInstFieldFunc {
+	return func(e *Exporter, property *core.ColProp, val interface{}) ([][]excel.Cell, error) {
+		if val == nil {
+			return [][]excel.Cell{getRowWithOneCell()}, nil
+		}
+
+		timeStr := util.GetStrByInterface(val)
+		timeZone := e.GetTimeZone()
+		if timeZone != "" {
+			converted, convertErr := util.ConvertTimeToUserTZ(timeStr, timeZone)
+			if convertErr != nil {
+				blog.Warnf("export excel convert timezone failed, ignore it, time: %s, timeZone: %s, rid: %s",
+					timeStr, timeZone, e.GetKit().Rid)
+			} else {
+				timeStr = converted
+			}
+		}
+
+		handleFunc := getDefaultHandleFieldFunc()
+		return handleFunc(e, property, timeStr)
 	}
 }
 

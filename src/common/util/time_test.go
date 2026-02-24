@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -58,4 +59,130 @@ func TestFormatPeriod(t *testing.T) {
 		t.Errorf("error formated period %s", periodFormated)
 	}
 	fmt.Println(periodFormated)
+}
+
+func TestConvertTimeToUserTZ(t *testing.T) {
+	tests := []struct {
+		name     string
+		val      string
+		timeZone string
+		want     string
+		wantErr  bool
+	}{
+		{
+			name:     "UTC ISO8601 Z suffix to Asia/Shanghai (+8)",
+			val:      "2019-04-28T09:43:13Z",
+			timeZone: "Asia/Shanghai",
+			want:     "2019-04-28 17:43:13+0800",
+		},
+		{
+			name:     "UTC ISO8601 fractional seconds to Asia/Shanghai (+8)",
+			val:      "2019-04-28T09:43:13.985Z",
+			timeZone: "Asia/Shanghai",
+			want:     "2019-04-28 17:43:13+0800",
+		},
+		{
+			name:     "UTC ISO8601 to America/New_York (EDT -4 in April)",
+			val:      "2019-04-28T09:43:13Z",
+			timeZone: "America/New_York",
+			want:     "2019-04-28 05:43:13-0400",
+		},
+		{
+			name:     "UTC ISO8601 to Europe/London (BST +1 in April)",
+			val:      "2019-04-28T09:43:13Z",
+			timeZone: "Europe/London",
+			want:     "2019-04-28 10:43:13+0100",
+		},
+		{
+			name:     "Europe/London in winter (GMT +0)",
+			val:      "2026-02-10T03:44:50.993Z",
+			timeZone: "Europe/London",
+			want:     "2026-02-10 03:44:50+0000",
+		},
+		{
+			name:     "ISO8601 with offset to Asia/Shanghai",
+			val:      "2026-02-10T05:11:10+08:00",
+			timeZone: "Asia/Shanghai",
+			want:     "2026-02-10 05:11:10+0800",
+		},
+		{
+			name:     "ISO8601 with offset to America/Los_Angeles (PST -8 in Feb)",
+			val:      "2026-02-10T05:11:10+08:00",
+			timeZone: "America/Los_Angeles",
+			// UTC = 2026-02-09T21:11:10Z, LA PST = UTC-8 => 2026-02-09 13:11:10
+			want: "2026-02-09 13:11:10-0800",
+		},
+		{
+			name:     "timezone-naive format as UTC to Asia/Tokyo (+9)",
+			val:      "2019-04-28 09:43:13",
+			timeZone: "Asia/Tokyo",
+			want:     "2019-04-28 18:43:13+0900",
+		},
+		{
+			name:     "UTC midnight cross-day to Asia/Shanghai (+8)",
+			val:      "2019-04-27T23:00:00Z",
+			timeZone: "Asia/Shanghai",
+			want:     "2019-04-28 07:00:00+0800",
+		},
+		{
+			name:     "empty value returns empty",
+			val:      "",
+			timeZone: "Asia/Shanghai",
+			want:     "",
+		},
+		{
+			name:     "empty timezone returns original",
+			val:      "2019-04-28T09:43:13Z",
+			timeZone: "",
+			want:     "2019-04-28T09:43:13Z",
+		},
+		{
+			name:     "invalid timezone returns error",
+			val:      "2019-04-28T09:43:13Z",
+			timeZone: "Invalid/TimeZone",
+			wantErr:  true,
+		},
+		{
+			name:     "unparseable value returns error",
+			val:      "not-a-time",
+			timeZone: "Asia/Shanghai",
+			wantErr:  true,
+		},
+		{
+			name:     "high precision nano to Asia/Shanghai",
+			val:      "2019-04-28T09:43:13.123456789Z",
+			timeZone: "Asia/Shanghai",
+			want:     "2019-04-28 17:43:13+0800",
+		},
+		{
+			name:     "UTC to UTC remains same",
+			val:      "2019-04-28T09:43:13Z",
+			timeZone: "UTC",
+			want:     "2019-04-28 09:43:13+0000",
+		},
+		{
+			name:     "negative offset: Pacific/Honolulu (UTC-10)",
+			val:      "2019-04-28T09:43:13Z",
+			timeZone: "Pacific/Honolulu",
+			want:     "2019-04-27 23:43:13-1000",
+		},
+		{
+			name:     "half-hour offset: Asia/Kolkata (UTC+5:30)",
+			val:      "2019-04-28T09:43:13Z",
+			timeZone: "Asia/Kolkata",
+			want:     "2019-04-28 15:13:13+0530",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ConvertTimeToUserTZ(tt.val, tt.timeZone)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
