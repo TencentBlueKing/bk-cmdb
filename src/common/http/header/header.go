@@ -70,7 +70,4 @@ const (
 
 	// IsInnerReqHeader is the http header key that represents if request is an inner request
 	IsInnerReqHeader = "X-Bkcmdb-Is-Inner-Request"
-
-	// TimeZoneHeader is the user timezone http header key, its value is from session time_zone
-	TimeZoneHeader = "X-Bkcmdb-TimeZone"
 )

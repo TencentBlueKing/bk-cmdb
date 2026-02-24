@@ -210,13 +210,3 @@ func IsInnerReq(header http.Header) bool {
 func SetIsInnerReqHeader(header http.Header) {
 	header.Set(IsInnerReqHeader, "true")
 }
-
-// GetTimeZone get user timezone from http header
-func GetTimeZone(header http.Header) string {
-	return header.Get(TimeZoneHeader)
-}
-
-// SetTimeZone set user timezone to http header
-func SetTimeZone(header http.Header, value string) {
-	header.Set(TimeZoneHeader, value)
-}

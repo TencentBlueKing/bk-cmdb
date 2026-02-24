@@ -257,7 +257,13 @@ func getHandleTimeFieldFunc() handleInstFieldFunc {
 		timeStr := util.GetStrByInterface(val)
 		timeZone := e.GetTimeZone()
 		if timeZone != "" {
-			timeStr = util.ConvertTimeToUserTZ(timeStr, timeZone)
+			converted, convertErr := util.ConvertTimeToUserTZ(timeStr, timeZone)
+			if convertErr != nil {
+				blog.Warnf("export excel convert timezone failed, ignore it, time: %s, timeZone: %s, rid: %s",
+					timeStr, timeZone, e.GetKit().Rid)
+			} else {
+				timeStr = converted
+			}
 		}
 
 		handleFunc := getDefaultHandleFieldFunc()

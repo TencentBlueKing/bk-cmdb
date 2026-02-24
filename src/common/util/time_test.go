@@ -67,6 +67,7 @@ func TestConvertTimeToUserTZ(t *testing.T) {
 		val      string
 		timeZone string
 		want     string
+		wantErr  bool
 	}{
 		{
 			name:     "UTC ISO8601 Z suffix to Asia/Shanghai (+8)",
@@ -136,16 +137,16 @@ func TestConvertTimeToUserTZ(t *testing.T) {
 			want:     "2019-04-28T09:43:13Z",
 		},
 		{
-			name:     "invalid timezone returns original",
+			name:     "invalid timezone returns error",
 			val:      "2019-04-28T09:43:13Z",
 			timeZone: "Invalid/TimeZone",
-			want:     "2019-04-28T09:43:13Z",
+			wantErr:  true,
 		},
 		{
-			name:     "unparseable value returns original",
+			name:     "unparseable value returns error",
 			val:      "not-a-time",
 			timeZone: "Asia/Shanghai",
-			want:     "not-a-time",
+			wantErr:  true,
 		},
 		{
 			name:     "high precision nano to Asia/Shanghai",
@@ -175,7 +176,12 @@ func TestConvertTimeToUserTZ(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ConvertTimeToUserTZ(tt.val, tt.timeZone)
+			got, err := ConvertTimeToUserTZ(tt.val, tt.timeZone)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}

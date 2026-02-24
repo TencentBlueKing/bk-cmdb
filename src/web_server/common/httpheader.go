@@ -30,14 +30,12 @@ func SetProxyHeader(c *gin.Context) {
 	session := sessions.Default(c)
 	userName, _ := session.Get(common.WEBSessionUinKey).(string)
 	tenantID, _ := session.Get(common.WEBSessionTenantUinKey).(string)
-	timeZone, _ := session.Get(common.WEBSessionTimeZoneKey).(string)
 
 	// 删除 Accept-Encoding 避免返回值被压缩
 	c.Request.Header.Del("Accept-Encoding")
 	httpheader.AddUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, GetLanguageByHTTPRequest(c))
 	httpheader.SetTenantID(c.Request.Header, tenantID)
-	httpheader.SetTimeZone(c.Request.Header, timeZone)
 }
 
 // GetTimeZoneBySession get user timezone from session
