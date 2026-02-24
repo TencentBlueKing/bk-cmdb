@@ -314,6 +314,9 @@ data:
       endpoint: {{ .Values.common.auditCenter.endpoint }}
       token: {{ .Values.common.auditCenter.token }}
 
+    httpClient:
+      idleConnTimeoutSeconds: {{ .Values.common.httpClient.idleConnTimeoutSeconds }}
+
   extra.yaml: |-
     
 

@@ -65,7 +65,13 @@ func NewIAM(cfg AuthConfig, reg prometheus.Registerer) (*IAM, error) {
 	}
 	tls = &config
 
-	client, err := util.NewClient(tls)
+	// idleConnTimeout config for iam, default is 0, no limit
+	var extraConf util.ExtraClientConfig
+	if idleConnTimeoutSec, e := cc.Int("httpClient.idleConnTimeoutSeconds"); e == nil && idleConnTimeoutSec > 0 {
+		extraConf.IdleConnTimeout = time.Duration(idleConnTimeoutSec) * time.Second
+	}
+
+	client, err := util.NewClient(tls, extraConf)
 	if err != nil {
 		return nil, err
 	}

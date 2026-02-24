@@ -20,10 +20,12 @@ package client
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"configcenter/src/apimachinery/flowctrl"
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/apimachinery/util"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/scene_server/auth_server/sdk/types"
 )
@@ -42,7 +44,13 @@ func NewClient(conf types.IamConfig, opt types.Options) (Interface, error) {
 		return nil, err
 	}
 
-	client, err := util.NewClient(&conf.TLS)
+	// idleConnTimeout config for iam, default is 0, no limit
+	var extraConf util.ExtraClientConfig
+	if idleConnTimeoutSec, e := cc.Int("httpClient.idleConnTimeoutSeconds"); e == nil && idleConnTimeoutSec > 0 {
+		extraConf.IdleConnTimeout = time.Duration(idleConnTimeoutSec) * time.Second
+	}
+
+	client, err := util.NewClient(&conf.TLS, extraConf)
 	if err != nil {
 		return nil, err
 	}

@@ -1427,6 +1427,11 @@ common:
     endpoint:
     token:
 
+  # http client config
+  httpClient:
+    ## @param httpClient.idleConnTimeoutSeconds http client idle connection timeout seconds
+    idleConnTimeoutSeconds: 0
+
 ## @section zookeeper parameters
 ##
 zookeeper:
