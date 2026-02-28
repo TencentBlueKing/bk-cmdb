@@ -22,7 +22,7 @@
     "@blueking/bk-user-display-name": "^1.0.0",
     "@blueking/bk-user-selector": "^0.0.35",
     "@blueking/bkui-library": "^0.0.0-beta.6",
-    "@blueking/date-picker": "3.0.6",
+    "@blueking/date-picker": "3.0.7",
     "@blueking/functional-dependency": "^0.0.1-beta.10",
     "@blueking/login-modal": "^1.0.0",
     "@blueking/notice-component-vue2": "^2.0.1-beta.2",

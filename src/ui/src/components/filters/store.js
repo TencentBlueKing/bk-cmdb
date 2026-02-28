@@ -286,7 +286,7 @@ const FilterStore = new Vue({
           const [id, operator] = key.split('.')
           const property = Utils.findProperty(id, this.properties)
           const value = query[key].toString().split(',')
-          if (property.bk_property_type === PROPERTY_TYPES.TIME) {
+          if (property?.bk_property_type === PROPERTY_TYPES.TIME) {
             const timezone = RouterQuery.get(`${id}_tz`) || window.Site.timezone
             timezoneCondition[`${id}_tz`] = timezone
           }
@@ -474,13 +474,18 @@ const FilterStore = new Vue({
         let conditionVal = value
         const property = Utils.findProperty(id, this.properties)
         if (String(value).length) {
-          if (property.bk_property_type === PROPERTY_TYPES.TIME) {
+          if (property?.bk_property_type === PROPERTY_TYPES.TIME) {
             const tzid = `${property.id}_tz`
             const timezone = this.timezoneCondition[tzid] || window.Site.timezone
             timezoneCondition[tzid] = timezone
             conditionVal = value.map(val => timestampFormatter(val, timezone))
           }
           query[`${id}.${operator.replace('$', '')}`] = Array.isArray(conditionVal) ? conditionVal.join(',') : conditionVal
+        } else {
+          if (property?.bk_property_type === PROPERTY_TYPES.TIME) {
+            const tzid = `${property.id}_tz`
+            timezoneCondition[tzid] = undefined
+          }
         }
       })
       return {

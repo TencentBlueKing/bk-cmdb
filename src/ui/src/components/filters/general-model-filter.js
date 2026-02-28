@@ -101,14 +101,19 @@ export const clearOneSearchQuery = (property, operator) => {
     return
   }
 
+  const timezoneCondition = {}
   // 清除高级搜索项
   const key = `${property.id}.${operator.replace('$', '')}`
   if (Reflect.has(query, key)) {
     Reflect.deleteProperty(query, key)
+    if (property.bk_property_type === PROPERTY_TYPES.TIME) {
+      timezoneCondition[`${property.id}_tz`] = undefined
+    }
     RouterQuery.set({
       filter_adv: QS.stringify(query, { encode: false }),
       s: 'adv',
       timezone: undefined,
+      ...timezoneCondition,
       ...defaultBaseQuery()
     })
   }
@@ -116,12 +121,23 @@ export const clearOneSearchQuery = (property, operator) => {
 
 // 清除所有查询条件
 export const clearSearchQuery = () => {
+  const timezoneCondition = {}
+  Object.keys(QS.parse(RouterQuery.get('filter_adv'))).forEach((key) => {
+    const [id] = key.split('.')
+    const qKey = `${id}_tz`
+    const nowVal = RouterQuery.get(qKey)
+    if (nowVal) {
+      timezoneCondition[qKey] = undefined
+    }
+  })
+
   RouterQuery.set({
     filter_adv: '',
     _t: '',
     s: '',
     page: '',
     timezone: undefined,
+    ...timezoneCondition,
     ...defaultFastQuery()
   })
 }

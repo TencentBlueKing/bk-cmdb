@@ -145,6 +145,7 @@
     Object.assign(form, cloneDeep(defaultIdGenerateForm), cloneDeep(idGenerator))
     Object.assign(originForm, cloneDeep(defaultIdGenerateForm), cloneDeep(idGenerator))
     form.init_id = Object.assign({}, form?.current_id, form?.init_id)
+    originForm.init_id = cloneDeep(form.init_id)
     formRef.value?.clearError()
   }
   const handleSubmit = () => {
