@@ -42,8 +42,12 @@ export function getPropertyText(property, item) {
     const options = Array.isArray(property.option) ? property.option : []
     const enumOption = options.find(option => option.id === propertyValue)
     propertyValue = enumOption ? enumOption.name : '--'
-  } else if (['date', 'time'].includes(propertyType)) {
-    propertyValue = formatTime(propertyValue, propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ssZZ')
+  } else if (propertyType === 'time') {
+    propertyValue = formatTime(propertyValue, 'YYYY-MM-DD HH:mm:ssZZ')
+    console.log(propertyValue, 'propertyValue')
+  } else if (propertyType === 'date') {
+    propertyValue = formatDate(propertyValue, 'YYYY-MM-DD')
+    console.log(propertyValue, 'propertyValue')
   } else if (propertyType === 'foreignkey') {
     if (Array.isArray(propertyValue)) {
       propertyValue = propertyValue.map(inst => inst.bk_inst_name).join(',')
@@ -87,9 +91,14 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
     if (['singleasst', 'multiasst', 'foreignkey'].includes(propertyType)) {
       // const validAsst = (inst[propertyId] || []).filter(asstInst => asstInst.id !== '')
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
-    } else if (['date', 'time'].includes(propertyType)) {
+    } else if (propertyType === 'time') {
       const defaultValue = autoSelect ? propertyDefault : ''
-      const formatedTime = formatTime(inst[propertyId], propertyType === 'date' ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss')
+      const formatedTime = formatTime(inst[propertyId], 'YYYY-MM-DD HH:mm:ss')
+      const value = has(inst, propertyId) ? formatedTime : defaultValue
+      values[propertyId] = value || null
+    } else if (propertyType === 'date') {
+      const defaultValue = autoSelect ? propertyDefault : ''
+      const formatedTime = formatDate(inst[propertyId], 'YYYY-MM-DD')
       const value = has(inst, propertyId) ? formatedTime : defaultValue
       values[propertyId] = value || null
     } else if (['int', 'float'].includes(propertyType)) {
@@ -242,6 +251,23 @@ export function formatTime(originalTime, format = 'YYYY-MM-DD HH:mm:ssZZ', timez
   const targetTimezone = timezone || window.Site.timezone || moment.tz.guess()
 
   return dateObj.tz(targetTimezone).format(format)
+}
+
+/**
+ * 格式化日期
+ * @param {String} originalDate - 需要被格式化的日期
+ * @param {String} format - 格式化类型
+ * @return {String} 格式化后的日期
+ */
+export function formatDate(originalDate, format = 'YYYY-MM-DD HH:mm:ss') {
+  if (!originalDate) {
+    return ''
+  }
+  const formatedDate = moment(originalDate).format(format)
+  if (formatedDate === 'Invalid date') {
+    return originalDate
+  }
+  return formatedDate
 }
 /**
  * 从模型属性中获取指定id的属性对象
@@ -592,7 +618,7 @@ export function getPropertyCopyValue(originalValue, propertyType, options = {}) 
   let value
   switch (type) {
     case 'date':
-      value = formatTime(originalValue, 'YYYY-MM-DD')
+      value = formatDate(originalValue, 'YYYY-MM-DD')
       break
     case 'time':
       value = formatTime(originalValue, 'YYYY-MM-DD HH:mm:ssZZ')
@@ -755,6 +781,7 @@ export default {
   getHeaderProperties,
   getHeaderPropertyName,
   formatTime,
+  formatDate,
   clone,
   getInstFormValues,
   getInstFormDefaults,
