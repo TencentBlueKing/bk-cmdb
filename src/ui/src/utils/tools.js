@@ -44,10 +44,8 @@ export function getPropertyText(property, item) {
     propertyValue = enumOption ? enumOption.name : '--'
   } else if (propertyType === 'time') {
     propertyValue = formatTime(propertyValue, 'YYYY-MM-DD HH:mm:ssZZ')
-    console.log(propertyValue, 'propertyValue')
   } else if (propertyType === 'date') {
     propertyValue = formatDate(propertyValue, 'YYYY-MM-DD')
-    console.log(propertyValue, 'propertyValue')
   } else if (propertyType === 'foreignkey') {
     if (Array.isArray(propertyValue)) {
       propertyValue = propertyValue.map(inst => inst.bk_inst_name).join(',')
@@ -82,7 +80,7 @@ function getDefaultOptionEnumQuoteValue(property) {
  * @param {Boolean} autoSelect - 是否查找默认值作为选中项
  * @return {Object} 实例真实值
  */
-export function getInstFormValues(properties, inst = {}, autoSelect = true) {
+export function getInstFormValues(properties, inst = {}, autoSelect = true, timezone = moment.tz.guess()) {
   const values = {}
   properties.forEach((property) => {
     const propertyId = property.bk_property_id
@@ -93,7 +91,7 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       // values[propertyId] = validAsst.map(asstInst => asstInst['bk_inst_id']).join(',')
     } else if (propertyType === 'time') {
       const defaultValue = autoSelect ? propertyDefault : ''
-      const formatedTime = formatTime(inst[propertyId], 'YYYY-MM-DD HH:mm:ss')
+      const formatedTime = formatTime(inst[propertyId], 'YYYY-MM-DD HH:mm:ss', timezone)
       const value = has(inst, propertyId) ? formatedTime : defaultValue
       values[propertyId] = value || null
     } else if (propertyType === 'date') {
