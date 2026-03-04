@@ -267,6 +267,7 @@
       getDefaultNode() {
         // 选中指定的节点
         const queryNodeId = RouterQuery.get('node', '')
+        const queryTopoPathArray = RouterQuery.get('topo_path', '').split(',')
         if (queryNodeId) {
           // 未加载的容器节点会找不到，导致无法复原节点的选中，暂无理想的解决方式
           const node = this.$refs.tree.getNodeById(queryNodeId)
@@ -274,6 +275,17 @@
             return node
           }
         }
+
+        if (queryTopoPathArray.length) {
+          let node = ''
+          for (let i = queryTopoPathArray.length;i > 0; i--) {
+            node = this.$refs.tree.getNodeById(queryTopoPathArray[i - 1])
+            if (node) {
+              return node
+            }
+          }
+        }
+
         // 从其他页面跳转过来需要筛选节点，例如：删除集群模板中的服务模板
         const keyword = RouterQuery.get('keyword', '')
         if (keyword) {
