@@ -29,6 +29,7 @@
           <div>ac</div>
         </div>
         <div class="user-value" v-else-if="property.bk_property_type === PROPERTY_TYPES.OBJUSER">
+          <span>{{getHighlightValue(property.bk_property_name, data)}}：</span>
           <cmdb-user-value :value="data.source[property.bk_property_id]" />
         </div>
         <div class="hl" v-else
