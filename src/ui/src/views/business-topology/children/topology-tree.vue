@@ -276,6 +276,8 @@
           }
         }
 
+        // 如果直接通过子节点无法找到当前树节点，则通过其父节点查找
+        // 为了解决当从pod详情列表点击拓扑跳转回业务拓扑页面时偶现找不到子节点而产生的接口报错问题
         if (queryTopoPathArray.length) {
           let node = ''
           for (let i = queryTopoPathArray.length;i > 0; i--) {
