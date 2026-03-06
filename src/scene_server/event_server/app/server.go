@@ -90,7 +90,7 @@ func NewEventServer(ctx context.Context, op *options.ServerOption) (*EventServer
 	engine, err := backbone.NewBackbone(ctx, &backbone.BackboneParameter{
 		ConfigUpdate: newEventServer.OnHostConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover, TLSConfig: op.ServConf.GetTLSClientConf()},
+		SrvRegdiscv: backbone.SrvRegdiscv{Zk: op.ServConf.Zk},
 		SrvInfo:      svrInfo,
 	})
 	if err != nil {

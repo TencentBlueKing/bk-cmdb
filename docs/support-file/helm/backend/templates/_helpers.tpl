@@ -407,6 +407,12 @@ imagePullSecrets:
 {{- end }}
 
 {{- define "cmdb.configAndServiceCenter.certCommand" -}}
+{{- if .Values.configAndServiceCenter.user }}
+- --regdiscv-user={{ .Values.configAndServiceCenter.user }}
+{{- end }}
+{{- if .Values.configAndServiceCenter.password }}
+- --regdiscv-password={{ .Values.configAndServiceCenter.password }}
+{{- end }}
 {{- if .Values.configAndServiceCenter.tls.caFile }}
 - --regdiscv-cafile={{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.caFile }}
 - --regdiscv-skipverify={{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}

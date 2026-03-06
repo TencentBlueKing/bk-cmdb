@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/ssl"
 )
 
@@ -35,7 +36,7 @@ var (
 
 func TestDataValue(t *testing.T) {
 	fmt.Println("TEST Data Value")
-	zkClient := NewZkClient([]string{"127.0.0.1:2181"}, nil)
+	zkClient := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181"})
 
 	defer zkClient.Close()
 
@@ -72,7 +73,7 @@ func TestDataValue(t *testing.T) {
 
 func TestZkLock(t *testing.T) {
 	fmt.Println("TEST zk lock")
-	zkLock1 := NewZkLock([]string{"127.0.0.1:2181"})
+	zkLock1 := NewZkLock([]string{"127.0.0.1:2181"}, "", "")
 
 	if err := zkLock1.Lock("/lock"); err != nil {
 		fmt.Printf("lock1 fail lock. err:%s \n", err.Error())
@@ -87,7 +88,7 @@ func TestZkLock(t *testing.T) {
 func Test_WatchChildren(t *testing.T) {
 	t.Log("----- start test WatchChildren -----")
 
-	zkClient := NewZkClient([]string{"127.0.0.1:2181"}, nil)
+	zkClient := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181"})
 
 	err := zkClient.Connect()
 	if err != nil {
@@ -135,12 +136,15 @@ func Test_WatchChildren(t *testing.T) {
 
 func TestDataValueWithTLS(t *testing.T) {
 	fmt.Println("TEST Data Value With TLS")
-	zkClient := NewZkClient([]string{"127.0.0.1:2281"}, &ssl.TLSClientConfig{
-		InsecureSkipVerify: insecureSkipVerify,
-		CertFile:           certFile,
-		KeyFile:            keyFile,
-		CAFile:             caFile,
-		Password:           password,
+	zkClient := NewZkClient(config.ZkConfig{
+		Addr: "127.0.0.1:2281",
+		TLS: ssl.TLSClientConfig{
+			InsecureSkipVerify: insecureSkipVerify,
+			CertFile:           certFile,
+			KeyFile:            keyFile,
+			CAFile:             caFile,
+			Password:           password,
+		},
 	})
 
 	defer zkClient.Close()

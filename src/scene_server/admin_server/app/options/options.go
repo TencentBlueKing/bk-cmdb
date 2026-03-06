@@ -21,7 +21,6 @@ import (
 	"configcenter/src/ac/iam"
 	"configcenter/src/common/auth"
 	"configcenter/src/common/core/cc/config"
-	"configcenter/src/common/ssl"
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
@@ -59,7 +58,7 @@ type Config struct {
 	Errors         ErrorConfig
 	Language       LanguageConfig
 	Configures     ConfConfig
-	Register       RegisterConfig
+	Register       config.ZkConfig
 	Redis          redis.Config
 	SnapRedis      redis.Config
 	SnapKafka      kafka.Config
@@ -96,12 +95,6 @@ type ErrorConfig struct {
 // ConfConfig TODO
 type ConfConfig struct {
 	Dir string
-}
-
-// RegisterConfig TODO
-type RegisterConfig struct {
-	Address string
-	TLS     ssl.TLSClientConfig
 }
 
 // ShardingTableConfig TODO

@@ -1447,6 +1447,10 @@ zookeeper:
 ##
 configAndServiceCenter:
   addr:
+  ## @param configAndServiceCenter.user zookeeper auth user name, defaults to built-in value if not set
+  user:
+  ## @param configAndServiceCenter.password zookeeper auth password, defaults to built-in value if not set
+  password:
   tls:
     insecureSkipVerify: true
     caFile:

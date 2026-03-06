@@ -50,7 +50,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	hostSrv := new(HostServer)
 
 	input := &backbone.BackboneParameter{
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover, TLSConfig: op.ServConf.GetTLSClientConf()},
+		SrvRegdiscv: backbone.SrvRegdiscv{Zk: op.ServConf.Zk},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: hostSrv.onHostConfigUpdate,
 		SrvInfo:      svrInfo,

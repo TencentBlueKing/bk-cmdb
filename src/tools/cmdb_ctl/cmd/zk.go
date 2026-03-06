@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"os"
 
-	"configcenter/src/common/ssl"
 	"configcenter/src/tools/cmdb_ctl/app/config"
 
 	"github.com/spf13/cobra"
@@ -104,11 +103,11 @@ type zkService struct {
 	path    string
 }
 
-func newZkService(zkaddr string, tlsConfig *ssl.TLSClientConfig, path string) (*zkService, error) {
+func newZkService(path string) (*zkService, error) {
 	if path == "" {
 		return nil, errors.New("zk-path must be set")
 	}
-	service, err := config.NewZkService(zkaddr, tlsConfig)
+	service, err := config.NewZkService(config.Conf.Zk)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +118,7 @@ func newZkService(zkaddr string, tlsConfig *ssl.TLSClientConfig, path string) (*
 }
 
 func runZkLsCmd(c *zkConf) error {
-	srv, err := newZkService(config.Conf.ZkAddr, &config.Conf.ZkTLS, c.path)
+	srv, err := newZkService(c.path)
 	if err != nil {
 		return err
 	}
@@ -134,7 +133,7 @@ func runZkLsCmd(c *zkConf) error {
 }
 
 func runZkGetCmd(c *zkConf) error {
-	srv, err := newZkService(config.Conf.ZkAddr, &config.Conf.ZkTLS, c.path)
+	srv, err := newZkService(c.path)
 	if err != nil {
 		return err
 	}
@@ -153,7 +152,7 @@ func runZkGetCmd(c *zkConf) error {
 }
 
 func runZkDelCmd(c *zkConf) error {
-	srv, err := newZkService(config.Conf.ZkAddr, &config.Conf.ZkTLS, c.path)
+	srv, err := newZkService(c.path)
 	if err != nil {
 		return err
 	}
@@ -161,7 +160,7 @@ func runZkDelCmd(c *zkConf) error {
 }
 
 func runZkSetCmd(c *zkConf, value string) error {
-	srv, err := newZkService(config.Conf.ZkAddr, &config.Conf.ZkTLS, c.path)
+	srv, err := newZkService(c.path)
 	if err != nil {
 		return err
 	}

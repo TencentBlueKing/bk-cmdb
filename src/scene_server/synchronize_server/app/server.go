@@ -46,7 +46,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 		synchronizeClientConfig: make(chan synchronizeUtil.SychronizeConfig, 10),
 	}
 	input := &backbone.BackboneParameter{
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover, TLSConfig: op.ServConf.GetTLSClientConf()},
+		SrvRegdiscv: backbone.SrvRegdiscv{Zk: op.ServConf.Zk},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: synchronSrv.onSynchronizeServerConfigUpdate,
 		SrvInfo:      svrInfo,

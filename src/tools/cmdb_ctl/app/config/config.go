@@ -20,10 +20,9 @@ package config
 import (
 	"errors"
 	"os"
-	"strings"
 	"time"
 
-	"configcenter/src/common/ssl"
+	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/zkclient"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/mongo"
@@ -38,8 +37,7 @@ var Conf *Config
 
 // Config TODO
 type Config struct {
-	ZkAddr      string
-	ZkTLS       ssl.TLSClientConfig
+	Zk          config.ZkConfig
 	MongoURI    string
 	MongoRsName string
 	RedisConf   redis.Config
@@ -47,18 +45,22 @@ type Config struct {
 
 // AddFlags add flags
 func (c *Config) AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&c.ZkAddr, "zk-addr", os.Getenv("ZK_ADDR"),
+	cmd.PersistentFlags().StringVar(&c.Zk.Addr, "zk-addr", os.Getenv("ZK_ADDR"),
 		"the ip address and port for the zookeeper hosts, separated by comma, corresponding environment variable is ZK_ADDR")
-	cmd.PersistentFlags().StringVar(&c.ZkTLS.CAFile, "zk-tls-ca-file", os.Getenv("ZK_TLS_CA_FILE"),
+	cmd.PersistentFlags().StringVar(&c.Zk.User, "zk-user", os.Getenv("ZK_USER"),
+		"the user name for zookeeper auth, corresponding environment variable is ZK_USER")
+	cmd.PersistentFlags().StringVar(&c.Zk.Password, "zk-password", os.Getenv("ZK_PASSWORD"),
+		"the password for zookeeper auth, corresponding environment variable is ZK_PASSWORD")
+	cmd.PersistentFlags().StringVar(&c.Zk.TLS.CAFile, "zk-tls-ca-file", os.Getenv("ZK_TLS_CA_FILE"),
 		"the path of TLS CA file for the zookeeper hosts, corresponding environment variable is ZK_TLS_CA_FILE")
-	cmd.PersistentFlags().BoolVar(&c.ZkTLS.InsecureSkipVerify,
+	cmd.PersistentFlags().BoolVar(&c.Zk.TLS.InsecureSkipVerify,
 		"zk-tls-skip-verify", os.Getenv("ZK_TLS_SKIP_VERIFY") == "true",
 		"the flag of TLS certificate skip verify for zookeeper, corresponding environment variable is ZK_TLS_SKIP_VERIFY")
-	cmd.PersistentFlags().StringVar(&c.ZkTLS.CertFile, "zk-tls-certfile", os.Getenv("ZK_TLS_CERT_FILE"),
+	cmd.PersistentFlags().StringVar(&c.Zk.TLS.CertFile, "zk-tls-certfile", os.Getenv("ZK_TLS_CERT_FILE"),
 		"the path of TLS cert file for zookeeper, corresponding environment variable is ZK_TLS_CERT_FILE")
-	cmd.PersistentFlags().StringVar(&c.ZkTLS.KeyFile, "zk-tls-keyfile", os.Getenv("ZK_TLS_KEY_FILE"),
+	cmd.PersistentFlags().StringVar(&c.Zk.TLS.KeyFile, "zk-tls-keyfile", os.Getenv("ZK_TLS_KEY_FILE"),
 		"the path of TLS key file for zookeeper, corresponding environment variable is ZK_TLS_KEY_FILE")
-	cmd.PersistentFlags().StringVar(&c.ZkTLS.Password, "zk-tls-password", os.Getenv("ZK_TLS_PASSWORD"),
+	cmd.PersistentFlags().StringVar(&c.Zk.TLS.Password, "zk-tls-password", os.Getenv("ZK_TLS_PASSWORD"),
 		"the password of TLS for zookeeper, corresponding environment variable is ZK_TLS_PASSWORD")
 	cmd.PersistentFlags().StringVar(&c.MongoURI, "mongo-uri", os.Getenv("MONGO_URI"),
 		"the mongodb URI, eg. mongodb://127.0.0.1:27017/cmdb, corresponding environment variable is MONGO_URI")
@@ -82,13 +84,13 @@ type Service struct {
 	DbProxy dal.RDB
 }
 
-// NewZkService TODO
-func NewZkService(zkAddr string, tlsConfig *ssl.TLSClientConfig) (*Service, error) {
-	if zkAddr == "" {
+// NewZkService creates a ZK service using the provided ZkConfig.
+func NewZkService(zkConf config.ZkConfig) (*Service, error) {
+	if zkConf.Addr == "" {
 		return nil, errors.New("zk-addr must set via flag or environment variable")
 	}
 	service := &Service{
-		ZkCli: zkclient.NewZkClient(strings.Split(zkAddr, ","), tlsConfig),
+		ZkCli: zkclient.NewZkClient(zkConf),
 	}
 	if err := service.ZkCli.Connect(); err != nil {
 		return nil, err

@@ -338,8 +338,8 @@ data:
 
     registerServer:
       addrs: {{ include "cmdb.configAndServiceCenter.addr" . | quote }}
-      usr:
-      pwd:
+      usr: {{ .Values.configAndServiceCenter.user }}
+      pwd: {{ .Values.configAndServiceCenter.password }}
       tls:
         insecureSkipVerify: {{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}
         password: {{ .Values.configAndServiceCenter.tls.password }}

@@ -20,7 +20,7 @@ def mkdir_p(path):
         else: raise
 
 def generate_config_file(
-        rd_server_v, rd_cafile_v, rd_certfile_v, rd_keyfile_v, rd_skipverify_v, rd_certpassword_v,
+        rd_server_v, rd_user_v, rd_password_v, rd_cafile_v, rd_certfile_v, rd_keyfile_v, rd_skipverify_v, rd_certpassword_v,
         db_name_v, redis_ip_v, redis_port_v,
         redis_pass_v, sentinel_pass_v, redis_certfile_v, redis_keyfile_v, redis_cafile_v, redis_skipverify_v,
         mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, mongo_certfile_v, mongo_keyfile_v, mongo_cafile_v, mongo_skipverify_v, rs_name, user_info,
@@ -63,6 +63,8 @@ def generate_config_file(
         agent_url=paas_url_v,
         configures_dir=output,
         rd_server=rd_server_v,
+        rd_user=rd_user_v,
+        rd_password=rd_password_v,
         rd_cafile=rd_cafile_v,
         rd_certfile=rd_certfile_v,
         rd_keyfile=rd_keyfile_v,
@@ -815,8 +817,8 @@ mongodb:
 # 配置中心
 configServer:
   addrs: $rd_server
-  usr:
-  pwd:
+  usr: $rd_user
+  pwd: $rd_password
   # ZooKeeper tls配置信息
   tls:
     # CA证书文件路径
@@ -832,8 +834,8 @@ configServer:
 # 注册中心
 registerServer:
   addrs: $rd_server
-  usr:
-  pwd:
+  usr: $rd_user
+  pwd: $rd_password
   # ZooKeeper tls配置信息
   tls:
     # CA证书文件路径
@@ -869,7 +871,7 @@ dataid:
     with open(output + "migrate.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip, enable_cryptor, rd_cafile, rd_certfile, rd_keyfile, rd_skipverify, rd_certpassword):
+def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip, enable_cryptor, rd_cafile, rd_certfile, rd_keyfile, rd_skipverify, rd_certpassword, rd_user='', rd_password=''):
     list_dirs = os.walk(os.getcwd()+"/")
     for root, dirs, _ in list_dirs:
         for d in dirs:
@@ -909,6 +911,10 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                     extend_flag += ' --register-ip=%s ' % register_ip
 
                 if d != "cmdb_adminserver":
+                    if rd_user != '':
+                        extend_flag += ' --regdiscv-user=%s ' % rd_user
+                    if rd_password != '':
+                        extend_flag += ' --regdiscv-password=%s ' % rd_password
                     if rd_cafile != '':
                         extend_flag += ' --regdiscv-cafile=%s ' % rd_cafile
                     if rd_certfile != '':
@@ -980,6 +986,8 @@ def main(argv):
     secrets_token = ''
     secrets_project = ''
     secrets_env = ''
+    rd_user = ''
+    rd_password = ''
     rd_cafile = ''
     rd_certfile = ''
     rd_keyfile = ''
@@ -1015,7 +1023,8 @@ def main(argv):
         "auth_address=", "auth_app_code=", "auth_app_secret=", "auth_enabled=",
         "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip=",
         "enable_cryptor=", "secret_key_url=", "secrets_addrs=", "secrets_token=", "secrets_project=", "secrets_env=",
-        "discovery_cafile=", "discovery_certfile=", "discovery_keyfile=", "discovery_skipverify=", "discovery_certpassword="
+        "discovery_cafile=", "discovery_certfile=", "discovery_keyfile=", "discovery_skipverify=", "discovery_certpassword=",
+        "discovery_user=", "discovery_password="
     ]
     usage = '''
     usage:
@@ -1065,6 +1074,8 @@ def main(argv):
       --secrets_token           <secrets_token>           secrets_token , as a header param for sending the api request to bk-secrets service
       --secrets_project         <secrets_project>         secrets_project, as a header param for sending the api request to bk-secrets service
       --secrets_env             <secrets_env>             secrets_env, as a header param for sending the api request to bk-secrets service
+      --discovery_user          <discovery_user>          user name for ZooKeeper auth, defaults to built-in value if not set
+      --discovery_password      <discovery_password>      password for ZooKeeper auth, defaults to built-in value if not set
       --discovery_cafile        <discovery_cafile>        CA file for ZooKeeper TLS connection
       --discovery_certfile      <discovery_certfile>      cert file for ZooKeeper TLS connection
       --discovery_keyfile       <discovery_keyfile>       key file for ZooKeeper TLS connection
@@ -1155,6 +1166,11 @@ def main(argv):
         elif opt in("--discovery_certpassword"):
             rd_certpassword = arg
             print('rd_certpassword:', rd_certpassword)
+        elif opt in("--discovery_user",):
+            rd_user = arg
+            print('rd_user:', rd_user)
+        elif opt in("--discovery_password",):
+            rd_password = arg
         elif opt in ("-D", "--database"):
             db_name = arg
             print('database:', db_name)
@@ -1375,6 +1391,8 @@ def main(argv):
 
     generate_config_file(
         rd_server_v=rd_server,
+        rd_user_v=rd_user,
+        rd_password_v=rd_password,
         db_name_v=db_name,
         redis_ip_v=redis_ip,
         redis_port_v=redis_port,
@@ -1422,7 +1440,8 @@ def main(argv):
         **auth
     )
     update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip, enable_cryptor,
-                       rd_cafile, rd_certfile, rd_keyfile, rd_skipverify, rd_certpassword)
+                       rd_cafile, rd_certfile, rd_keyfile, rd_skipverify, rd_certpassword,
+                       rd_user=rd_user, rd_password=rd_password)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
     print('initial monstache config success, configs could be found at monstache/etc')
 

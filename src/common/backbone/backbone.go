@@ -32,6 +32,7 @@ import (
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
 	crd "configcenter/src/common/confregdiscover"
+	ccconfig "configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
@@ -61,19 +62,18 @@ type BackboneParameter struct {
 	SrvRegdiscv
 }
 
-func newSvcManagerClient(ctx context.Context, svcManagerAddr string,
-	tlsConfig *ssl.TLSClientConfig) (*zk.ZkClient, error) {
+func newSvcManagerClient(ctx context.Context, zkConf ccconfig.ZkConfig) (*zk.ZkClient, error) {
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(svcManagerAddr, 40*time.Second, tlsConfig)
+		client := zk.NewZkClient(zkConf, 40*time.Second)
 		if err = client.Start(); err != nil {
-			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			blog.Errorf("connect regdiscv [%s] failed: %v", zkConf.Addr, err)
 			time.Sleep(time.Second * 2)
 			continue
 		}
 
 		if err = client.Ping(); err != nil {
-			blog.Errorf("connect regdiscv [%s] failed: %v", svcManagerAddr, err)
+			blog.Errorf("connect regdiscv [%s] failed: %v", zkConf.Addr, err)
 			time.Sleep(time.Second * 2)
 			continue
 		}
@@ -114,7 +114,7 @@ func newApiMachinery(disc discovery.DiscoveryInterface,
 }
 
 func validateParameter(input *BackboneParameter) error {
-	if !input.Disable && input.Regdiscv == "" {
+	if !input.Disable && input.Zk.Addr == "" {
 		return fmt.Errorf("regdiscv can not be emtpy")
 	}
 	if input.SrvInfo.IP == "" {
@@ -167,13 +167,13 @@ func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error)
 	}
 
 	if !input.Disable {
-		client, err := newSvcManagerClient(ctx, input.Regdiscv, input.TLSConfig)
+		client, err := newSvcManagerClient(ctx, input.Zk)
 		if err != nil {
-			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Zk.Addr, err)
 		}
 		serviceDiscovery, err := discovery.NewServiceDiscovery(client, input.SrvInfo.Environment)
 		if err != nil {
-			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Regdiscv, err)
+			return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", input.Zk.Addr, err)
 		}
 		disc, err := NewServiceRegister(client)
 		if err != nil {
@@ -290,12 +290,10 @@ type SrvRegdiscv struct {
 	discovery              discovery.DiscoveryInterface
 	// registerPath the path registered to the Service Discovery Center
 	registerPath string
-	// service component addr
-	Regdiscv string
 	// Disable disable service registration discovery
 	Disable bool
-	// TLS config
-	TLSConfig *ssl.TLSClientConfig
+	// Zk holds all ZooKeeper connection configuration (address, auth, TLS).
+	Zk ccconfig.ZkConfig
 }
 
 // Discovery return discovery
