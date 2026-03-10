@@ -563,6 +563,8 @@ func (m *modelAttribute) validPropertyType(kit *rest.Kit, attribute metadata.Att
 	if attribute.PropertyType != "" {
 		if _, exists := validAttrPropertyTypes[attribute.PropertyType]; !exists {
 			if _, ok := manager.Get(attribute.PropertyType); !ok {
+				blog.Errorf("cannot find attribute,propertyName:%v，propertyType:%v", attribute.PropertyName,
+					attribute.PropertyType)
 				return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 			}
 		}
@@ -677,6 +679,9 @@ func (m *modelAttribute) checkAttributeDefaultValue(kit *rest.Kit, attribute met
 		if propertyType == common.FieldTypeEnum || propertyType == common.FieldTypeEnumMulti ||
 			propertyType == common.FieldTypeEnumQuote {
 			return fmt.Errorf("enum, enummulti, enumquote type default field is nil")
+		}
+		if _, ok := manager.Get(propertyType); ok {
+			return nil
 		}
 		return kit.CCError.Errorf(common.CCErrCommParamsIsInvalid, metadata.AttributeFieldPropertyType)
 	}

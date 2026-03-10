@@ -252,6 +252,28 @@ func GetStrValsFromArrMapInterfaceByKey(arrI []interface{}, key string) []string
 	return ret
 }
 
+// ConvertAnyToSlice convert value to interface slice
+func ConvertAnyToSlice(v any) ([]any, bool) {
+	if v == nil {
+		return nil, true
+	}
+	if s, ok := v.([]any); ok {
+		return s, true
+	}
+	val := reflect.ValueOf(v)
+	kind := val.Kind()
+	if kind != reflect.Slice && kind != reflect.Array {
+		return nil, false
+	}
+	n := val.Len()
+	out := make([]any, n)
+	for i := 0; i < n; i++ {
+		out[i] = val.Index(i).Interface()
+	}
+	return out, true
+
+}
+
 // ConvertToInterfaceSlice convert value to interface slice
 func ConvertToInterfaceSlice(value interface{}) []interface{} {
 	rflVal := reflect.ValueOf(value)
