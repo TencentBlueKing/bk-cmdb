@@ -516,6 +516,7 @@ const (
 	CCErrTopoFieldTemplateUniqueConflict               = 1101126
 	CCErrTopoBizFieldConflict                          = 1101127
 	CCErrTopoArchiveBusinessHasKube                    = 1101128
+	CCErrTopoExceedsMaximum                            = 1101129
 
 	// object controller 1102XXX
 

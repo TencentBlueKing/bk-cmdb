@@ -91,6 +91,12 @@ const (
 	// BKTopoBusinessLevelDefault the mainline topo level default level
 	BKTopoBusinessLevelDefault = 7
 
+	// BKTopoBusinessLevelMaxParentCount the mainline topo max parent count
+	BKTopoBusinessLevelMaxParentCount = 200
+
+	// BKTopoBusinessLevelMaxChildCount the mainline topo max child count
+	BKTopoBusinessLevelMaxChildCount = 2000
+
 	// BKMaxSyncIdentifierLimit sync identifier max value
 	BKMaxSyncIdentifierLimit = 200
 

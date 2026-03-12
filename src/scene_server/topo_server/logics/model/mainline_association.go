@@ -63,6 +63,11 @@ func (assoc *association) CreateMainlineAssociation(kit *rest.Kit, data *metadat
 		blog.Errorf("object(%s) has not got any mainline child object, rid: %s", parentObjID, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, parentObjID)
 	}
+	if err := assoc.checkMainlineObjectAssociation(kit, childObjID, parentObjID); err != nil {
+		blog.Errorf("check the volume of topology data exceeds,currentObject[%s] parentObject[%s]，err: %v, rid: %s",
+			childObjID, parentObjID, err, kit.Rid)
+		return nil, err
+	}
 
 	objData := mapstr.MapStr{
 		common.BKObjIDField:            data.ObjectID,
@@ -337,5 +342,38 @@ func (assoc *association) createMainlineObjectAssociation(kit *rest.Kit, childOb
 		return err
 	}
 
+	return nil
+}
+
+func (assoc *association) checkMainlineObjectAssociation(kit *rest.Kit, childObjID, parentObjID string) error {
+	objCond := &metadata.QueryCondition{
+		Fields: []string{},
+		Page: metadata.BasePage{
+			EnableCount: true,
+		},
+	}
+
+	parentObj, err := assoc.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, parentObjID, objCond)
+	if err != nil {
+		blog.Errorf("find mainline object failed,parent:%v err: %v, rid: %s", parentObjID, err, kit.Rid)
+		return err
+	}
+	if parentObj.Count > common.BKTopoBusinessLevelMaxParentCount {
+		return kit.CCError.CCErrorf(common.CCErrTopoExceedsMaximum)
+	}
+	objCond = &metadata.QueryCondition{
+		Fields: []string{},
+		Page: metadata.BasePage{
+			EnableCount: true,
+		},
+	}
+	childrenObj, err := assoc.clientSet.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, childObjID, objCond)
+	if err != nil {
+		blog.Errorf("find mainline object failed,child:%v err: %v, rid: %s", childObjID, err, kit.Rid)
+		return err
+	}
+	if childrenObj.Count > common.BKTopoBusinessLevelMaxChildCount {
+		return kit.CCError.CCErrorf(common.CCErrTopoExceedsMaximum)
+	}
 	return nil
 }

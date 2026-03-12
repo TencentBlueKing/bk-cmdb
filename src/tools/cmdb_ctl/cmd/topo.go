@@ -47,7 +47,7 @@ func NewTopoCheckCommand() *cobra.Command {
 	}
 
 	conf.addFlags(cmd)
-
+	cmd.AddCommand(NewTopoLevelCheckCommand())
 	return cmd
 }
 
