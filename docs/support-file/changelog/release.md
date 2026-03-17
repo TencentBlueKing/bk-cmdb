@@ -1,3 +1,7 @@
+## [Version: 3.15.1-feature-tenant-alpha29] - 2025-03-17
+**缺陷修复**
+- 修复导入excel实例时间字段报错问题
+
 ## [Version: 3.15.1-feature-tenant-alpha28] - 2025-03-05
 **缺陷修复**
 - 全文检索查询实例的用户字段没有显示用户名，只显示的是uid
