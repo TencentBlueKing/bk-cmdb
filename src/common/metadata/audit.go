@@ -96,6 +96,11 @@ type AuditQueryCondition struct {
 	FuzzyQuery bool `json:"fuzzy_query"`
 	// Condition is used for new way to search audit log by user or resource_name
 	Condition []querybuilder.AtomRule `json:"condition"`
+
+	Code           string `json:"code" bson:"code"`
+	OpScene        string `json:"op_scene" bson:"op_scene"`
+	OpUser         string `json:"op_user" bson:"op_user"`
+	OpSceneTraceId string `json:"op_scene_trace_id" bson:"op_scene_trace_id"`
 }
 
 // Validate is a AuditQueryCondition validator to validate user resource_name condition whether exist at the same time
@@ -170,8 +175,21 @@ type InstAuditCondition struct {
 	ResourceType  ResourceType           `json:"resource_type" `
 	Action        []ActionType           `json:"action"`
 	OperationTime OperationTimeCondition `json:"operation_time"`
+
+	Code           string `json:"code"`
+	OpScene        string `json:"op_scene" bson:"op_scene"`
+	OpUser         string `json:"op_user" bson:"op_user"`
+	OpSceneTraceId string `json:"op_scene_trace_id" bson:"op_scene_trace_id"`
+
 	// ID is an audit record's id
 	ID []int64 `json:"id"`
+}
+
+type AuditSceneHeader struct {
+	Scene        string `json:"scene" bson:"scene"`
+	SceneDesc    string `json:"scene_desc" bson:"scene_desc"`
+	SceneTraceId string `json:"scene_trace_id" bson:"scene_trace_id"`
+	OpUser       string `json:"op_user" bson:"op_user"`
 }
 
 // AuditLog struct for audit log
@@ -209,42 +227,46 @@ type AuditLog struct {
 	RequestID string `json:"rid,omitempty" bson:"rid,omitempty"`
 	// todo ExtendResourceName for the temporary solution of ipv6
 	ExtendResourceName string `json:"extend_resource_name" bson:"extend_resource_name"`
+	// AuditContext for the audit scene
+	AuditContext AuditSceneHeader `json:"audit_context" bson:"audit_context"`
 }
 
 type bsonAuditLog struct {
-	ID                 int64           `json:"id" bson:"id"`
-	AuditType          AuditType       `json:"audit_type" bson:"audit_type"`
-	SupplierAccount    string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	User               string          `json:"user" bson:"user"`
-	ResourceType       ResourceType    `json:"resource_type" bson:"resource_type"`
-	Action             ActionType      `json:"action" bson:"action"`
-	OperateFrom        OperateFromType `json:"operate_from" bson:"operate_from"`
-	OperationTime      Time            `json:"operation_time" bson:"operation_time"`
-	OperationDetail    bson.Raw        `json:"operation_detail" bson:"operation_detail"`
-	BusinessID         int64           `json:"bk_biz_id" bson:"bk_biz_id"`
-	ResourceID         interface{}     `json:"resource_id" bson:"resource_id"`
-	ResourceName       string          `json:"resource_name" bson:"resource_name"`
-	AppCode            string          `json:"code" bson:"code"`
-	RequestID          string          `json:"rid" bson:"rid"`
-	ExtendResourceName string          `json:"extend_resource_name" bson:"extend_resource_name"`
+	ID                 int64            `json:"id" bson:"id"`
+	AuditType          AuditType        `json:"audit_type" bson:"audit_type"`
+	SupplierAccount    string           `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	User               string           `json:"user" bson:"user"`
+	ResourceType       ResourceType     `json:"resource_type" bson:"resource_type"`
+	Action             ActionType       `json:"action" bson:"action"`
+	OperateFrom        OperateFromType  `json:"operate_from" bson:"operate_from"`
+	OperationTime      Time             `json:"operation_time" bson:"operation_time"`
+	OperationDetail    bson.Raw         `json:"operation_detail" bson:"operation_detail"`
+	BusinessID         int64            `json:"bk_biz_id" bson:"bk_biz_id"`
+	ResourceID         interface{}      `json:"resource_id" bson:"resource_id"`
+	ResourceName       string           `json:"resource_name" bson:"resource_name"`
+	AppCode            string           `json:"code" bson:"code"`
+	RequestID          string           `json:"rid" bson:"rid"`
+	ExtendResourceName string           `json:"extend_resource_name" bson:"extend_resource_name"`
+	AuditContext       AuditSceneHeader `json:"audit_context" bson:"audit_context"`
 }
 
 type jsonAuditLog struct {
-	ID                 int64           `json:"id" bson:"id"`
-	AuditType          AuditType       `json:"audit_type" bson:"audit_type"`
-	SupplierAccount    string          `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	User               string          `json:"user" bson:"user"`
-	ResourceType       ResourceType    `json:"resource_type" bson:"resource_type"`
-	Action             ActionType      `json:"action" bson:"action"`
-	OperateFrom        OperateFromType `json:"operate_from" bson:"operate_from"`
-	OperationTime      Time            `json:"operation_time" bson:"operation_time"`
-	OperationDetail    json.RawMessage `json:"operation_detail" bson:"operation_detail"`
-	BusinessID         int64           `json:"bk_biz_id" bson:"bk_biz_id"`
-	ResourceID         interface{}     `json:"resource_id" bson:"resource_id"`
-	ResourceName       string          `json:"resource_name" bson:"resource_name"`
-	AppCode            string          `json:"code" bson:"code"`
-	RequestID          string          `json:"rid" bson:"rid"`
-	ExtendResourceName string          `json:"extend_resource_name" bson:"extend_resource_name"`
+	ID                 int64            `json:"id" bson:"id"`
+	AuditType          AuditType        `json:"audit_type" bson:"audit_type"`
+	SupplierAccount    string           `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	User               string           `json:"user" bson:"user"`
+	ResourceType       ResourceType     `json:"resource_type" bson:"resource_type"`
+	Action             ActionType       `json:"action" bson:"action"`
+	OperateFrom        OperateFromType  `json:"operate_from" bson:"operate_from"`
+	OperationTime      Time             `json:"operation_time" bson:"operation_time"`
+	OperationDetail    json.RawMessage  `json:"operation_detail" bson:"operation_detail"`
+	BusinessID         int64            `json:"bk_biz_id" bson:"bk_biz_id"`
+	ResourceID         interface{}      `json:"resource_id" bson:"resource_id"`
+	ResourceName       string           `json:"resource_name" bson:"resource_name"`
+	AppCode            string           `json:"code" bson:"code"`
+	RequestID          string           `json:"rid" bson:"rid"`
+	ExtendResourceName string           `json:"extend_resource_name" bson:"extend_resource_name"`
+	AuditContext       AuditSceneHeader `json:"audit_context" bson:"audit_context"`
 }
 
 // DetailFactory TODO
@@ -293,6 +315,7 @@ func (auditLog *AuditLog) UnmarshalJSON(data []byte) error {
 	auditLog.AppCode = audit.AppCode
 	auditLog.RequestID = audit.RequestID
 	auditLog.ExtendResourceName = audit.ExtendResourceName
+	auditLog.AuditContext = audit.AuditContext
 
 	if audit.OperationDetail == nil {
 		return nil
@@ -357,6 +380,7 @@ func (auditLog *AuditLog) UnmarshalBSON(data []byte) error {
 	auditLog.AppCode = audit.AppCode
 	auditLog.RequestID = audit.RequestID
 	auditLog.ExtendResourceName = audit.ExtendResourceName
+	auditLog.AuditContext = audit.AuditContext
 
 	if audit.OperationDetail == nil {
 		return nil
@@ -416,6 +440,7 @@ func (auditLog AuditLog) MarshalBSON() ([]byte, error) {
 	audit.AppCode = auditLog.AppCode
 	audit.RequestID = auditLog.RequestID
 	audit.ExtendResourceName = auditLog.ExtendResourceName
+	audit.AuditContext = auditLog.AuditContext
 	var err error
 	switch val := auditLog.OperationDetail.(type) {
 	default:
