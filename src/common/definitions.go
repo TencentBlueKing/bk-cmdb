@@ -1559,8 +1559,8 @@ const (
 	AttributeUnitMaxLength = 20
 	// AttributeOptionValueMaxLength TODO
 	AttributeOptionValueMaxLength = 128
-	// AttributeOptionArrayMaxLength TODO
-	AttributeOptionArrayMaxLength = 200
+	// AttributeOptionArrayMaxLength is the max number of options allowed for enum/list type attribute fields.
+	AttributeOptionArrayMaxLength = 500
 	// ServiceCategoryMaxLength TODO
 	ServiceCategoryMaxLength = 128
 )
