@@ -51,7 +51,7 @@ func addAuditLogSceneIndex(ctx context.Context, db dal.RDB, conf *upgrader.Confi
 			Background:         true,
 			ExpireAfterSeconds: 0,
 			PartialFilterExpression: map[string]interface{}{
-				common.BKAuditSceneContextSceneTraceId: bson.D{{common.BKDBExists, true}},
+				common.BKAuditSceneContextSceneTraceId: bson.D{{common.BKDBGT, ""}},
 			},
 		},
 		{
