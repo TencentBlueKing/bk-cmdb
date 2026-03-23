@@ -24,7 +24,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
-	"go.mongodb.org/mongo-driver/x/bsonx"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
 // Time TODO
@@ -83,7 +83,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 
 // MarshalBSONValue implements bson.MarshalBSON interface
 func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	return bsonx.Time(t.Time).MarshalBSONValue()
+	return bson.TypeDateTime, bsoncore.AppendTime(nil, t.Time), nil
 }
 
 // UnmarshalBSONValue implements bson.UnmarshalBSONValue interface

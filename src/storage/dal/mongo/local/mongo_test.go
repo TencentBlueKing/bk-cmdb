@@ -25,9 +25,9 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/types"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/x/mongo/driver/uuid"
 )
 
 func BenchmarkLocalCUD(b *testing.B) {
@@ -42,7 +42,7 @@ func BenchmarkLocalCUD(b *testing.B) {
 
 	header := http.Header{}
 	header.Set(common.BKHTTPCCRequestID, "xxxxx")
-	sessionID, _ := uuid.New()
+	sessionID := uuid.New().String()
 	ctx := context.WithValue(context.Background(), common.TransactionTimeoutHeader, sessionID[:])
 	ctx = context.WithValue(ctx, common.TransactionTimeoutHeader, time.Second)
 	tablename := "tmptest"

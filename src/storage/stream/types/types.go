@@ -24,7 +24,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/x/bsonx"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
 // OperType TODO
@@ -206,7 +206,7 @@ func (t TimeStamp) String() string {
 
 // MarshalBSONValue TODO
 func (t TimeStamp) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	return bsonx.Time(time.Unix(int64(t.Sec), int64(t.Nano))).MarshalBSONValue()
+	return bson.TypeDateTime, bsoncore.AppendTime(nil, time.Unix(int64(t.Sec), int64(t.Nano))), nil
 }
 
 type timeStampCopy struct {

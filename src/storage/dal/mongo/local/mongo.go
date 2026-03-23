@@ -38,7 +38,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.mongodb.org/mongo-driver/x/bsonx"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
@@ -235,7 +235,7 @@ func (c *Mongo) updateIDGenSeqID(ctx context.Context, typ idgen.IDGenType, id ui
 func checkMongodbVersion(db string, client *mongo.Client) error {
 	serverStatus, err := client.Database(db).RunCommand(
 		context.Background(),
-		bsonx.Doc{{"serverStatus", bsonx.Int32(1)}},
+		bson.D{{"serverStatus", 1}},
 	).DecodeBytes()
 	if err != nil {
 		return err
@@ -753,6 +753,23 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 	return deleteCount, err
 }
 
+// deleteField 从 bsoncore.Document 中移除指定字段，返回 bson.D
+func deleteField(raw bsoncore.Document, field string) bson.D {
+	result := make(bson.D, 0)
+	elements, err := raw.Elements()
+	if err != nil {
+		return result
+	}
+	for _, elem := range elements {
+		if elem.Key() != field {
+			result = append(result, bson.E{
+				Key:   elem.Key(),
+				Value: elem.Value(),
+			})
+		}
+	}
+	return result
+}
 func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filter) error {
 	delArchiveTable, exists := table.GetDelArchiveTable(c.collName)
 	if !exists {
@@ -771,7 +788,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		findOpts = &options.FindOptions{Projection: projection}
 	}
 
-	docs := make([]bsonx.Doc, 0)
+	docs := make([]bsoncore.Document, 0)
 	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Find(ctx, filter, findOpts)
 	if err != nil {
 		return err
@@ -789,7 +806,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	for idx, doc := range docs {
 		archives[idx] = metadata.DeleteArchive{
 			Oid:    doc.Lookup("_id").ObjectID().Hex(),
-			Detail: doc.Delete("_id"),
+			Detail: deleteField(doc, "_id"),
 			Time:   time.Now(),
 			Coll:   c.collName,
 		}
