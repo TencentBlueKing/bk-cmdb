@@ -185,6 +185,7 @@ type InstAuditCondition struct {
 	ID []int64 `json:"id"`
 }
 
+// AuditSceneHeader audit scene header context
 type AuditSceneHeader struct {
 	Scene        string `json:"scene" bson:"scene"`
 	SceneDesc    string `json:"scene_desc" bson:"scene_desc"`

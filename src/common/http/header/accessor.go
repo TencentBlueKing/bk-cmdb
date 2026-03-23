@@ -217,10 +217,12 @@ func SetIsInnerReqHeader(header http.Header) {
 	header.Set(IsInnerReqHeader, "true")
 }
 
+// GetAuditSceneHeader get audit scene from http header
 func GetAuditSceneHeader(header http.Header) string {
 	return header.Get(XBkCmdbAudit)
 }
 
+// SetAuditSceneHeader set audit scene to http header
 func SetAuditSceneHeader(header http.Header, value string) {
 	header.Set(XBkCmdbAudit, value)
 }
