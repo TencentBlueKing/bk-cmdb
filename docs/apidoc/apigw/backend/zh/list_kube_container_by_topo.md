@@ -14,10 +14,10 @@
 | page             | object | 是  | 分页信息                                                   |
 
 #### bk_kube_nodes[x]
-| 字段               | 类型    | 必选 | 描述                                                     |
-|------------------|-------|----|------------------------------|
-| kind        | string   | 是  |  该节点的资源类型，目前支持的类型：cluster、namespace、deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods                                                  |
-| id  | int   | 是  | 容器拓扑节点信息唯一标识  |
+| 字段   | 类型     | 必选 | 描述                                                                                                                                 |
+|------|--------|----|------------------------------------------------------------------------------------------------------------------------------------|
+| kind | string | 是  | 该节点的资源类型，目前支持的类型：cluster、namespace、deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods、customResource |
+| id   | int    | 是  | 容器拓扑节点信息唯一标识                                                                                                                       |
 
 
 #### pod_filter & container_filter

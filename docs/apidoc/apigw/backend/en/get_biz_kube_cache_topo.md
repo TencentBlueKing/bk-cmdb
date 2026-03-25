@@ -104,7 +104,7 @@ Note:
 
 | Name | Type   | Description                                                                                                                                                                           |
 |------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| kind | string | The resource kind of the topo node. Supports: cluster, namespace, deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods.                            |
+| kind | string | The resource kind of the topo node. Supports: cluster, namespace, deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods, customResource.            |
 | id   | int    | The ID of the topo node.                                                                                                                                                              |
 | nm   | string | The name of the topo node.                                                                                                                                                            |
 | cnt  | int    | The number of Containers under the topo node                                                                                                                                          |

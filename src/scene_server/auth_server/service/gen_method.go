@@ -289,7 +289,8 @@ func getResourcePoolDirectoryMethod(kit *rest.Kit, lgc *logics.Logics) (types.Re
 
 // kubeWorkloadKinds kube workload kinds
 // TODO define this in kube types folder, and replace the kinds with actual ones, this is only an example
-var kubeWorkloadKinds = []string{"deployment", "statefulSet", "daemonSet"}
+var kubeWorkloadKinds = []string{"deployment", "statefulSet", "daemonSet", "gameStatefulSet", "gameDeployment",
+	"cronJob", "job", "pods", "customResource"}
 
 // genKubeWorkloadEventMethod generate iam callback methods for iam.KubeWorkloadEvent resource type
 func (s *AuthService) genKubeWorkloadEventMethod(kit *rest.Kit) (types.ResourcePullMethod, error) {

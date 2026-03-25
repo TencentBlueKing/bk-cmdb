@@ -4,11 +4,11 @@ Batch Create Workloads (Version: v3.12.1+, Permission: Container workloads creat
 
 ### Parameters
 
-| Name      | Type   | Required | Description                                                                                                                                                                                                |
-|-----------|--------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | Yes      | Business ID                                                                                                                                                                                                |
-| kind      | string | Yes      | Workload type, currently supported workload types include deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (create Pods directly without passing through workloads) |
-| data      | array  | Yes      | Array, limited to creating 200 at a time                                                                                                                                                                   |
+| Name      | Type   | Required | Description                                                                                                                                                                                                                                  |
+|-----------|--------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id | int    | Yes      | Business ID                                                                                                                                                                                                                                  |
+| kind      | string | Yes      | Workload type, currently supported workload types include deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (create Pods directly without passing through workloads), customResource (custom resource) |
+| data      | array  | Yes      | Array, limited to creating 200 at a time                                                                                                                                                                                                     |
 
 #### data[x]
 
@@ -16,6 +16,8 @@ Batch Create Workloads (Version: v3.12.1+, Permission: Container workloads creat
 |-------------------------|--------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
 | bk_namespace_id         | int    | Yes      | The unique identifier of the namespace in cc                                                                                                             |
 | name                    | string | Yes      | Workload name                                                                                                                                            |
+| cr_kind                 | string | No       | Custom resource kind, required when kind is customResource                                                                                               |
+| cr_api_version          | string | No       | Custom resource apiVersion, required when kind is customResource                                                                                         |
 | labels                  | map    | No       | Labels                                                                                                                                                   |
 | selector                | object | No       | Workload selector                                                                                                                                        |
 | replicas                | int    | No       | Number of workload instances                                                                                                                             |

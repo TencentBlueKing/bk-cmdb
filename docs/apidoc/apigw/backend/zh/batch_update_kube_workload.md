@@ -4,12 +4,12 @@
 
 ### 输入参数
 
-| 参数名称      | 参数类型   | 必选 | 描述                                                                                                                                |
-|-----------|--------|----|-----------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | 是  | 业务id                                                                                                                              |
-| kind      | string | 是  | workload类型，目前支持的workload类型有deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods(放不通过workload而直接创建Pod) |
-| data      | object | 是  | 包含需要更新的字段                                                                                                                         |
-| ids       | array  | 是  | 在cc中的id唯一标识数组                                                                                                                     |
+| 参数名称      | 参数类型   | 必选 | 描述                                                                                                                                                      |
+|-----------|--------|----|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id | int    | 是  | 业务id                                                                                                                                                    |
+| kind      | string | 是  | workload类型，目前支持的workload类型有deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods(放不通过workload而直接创建Pod)、customResource(自定义资源) |
+| data      | object | 是  | 包含需要更新的字段                                                                                                                                               |
+| ids       | array  | 是  | 在cc中的id唯一标识数组                                                                                                                                           |
 
 #### data
 

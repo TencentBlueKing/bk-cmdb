@@ -4,11 +4,11 @@
 
 ### 输入参数
 
-| 参数名称      | 参数类型   | 必选 | 描述                                                                                                                                |
-|-----------|--------|----|-----------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | 是  | 业务id                                                                                                                              |
-| kind      | string | 是  | workload类型，目前支持的workload类型有deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods(放不通过workload而直接创建Pod) |
-| ids       | array  | 是  | 要删除的workload在cc中的id唯一标识数组, 一次限制大小为200                                                                                             |
+| 参数名称      | 参数类型   | 必选 | 描述                                                                                                                                                      |
+|-----------|--------|----|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id | int    | 是  | 业务id                                                                                                                                                    |
+| kind      | string | 是  | workload类型，目前支持的workload类型有deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods(放不通过workload而直接创建Pod)、customResource(自定义资源) |
+| ids       | array  | 是  | 要删除的workload在cc中的id唯一标识数组, 一次限制大小为200                                                                                                                   |
 
 ### 调用示例
 

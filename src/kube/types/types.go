@@ -57,7 +57,7 @@ func (t WorkloadType) Validate() error {
 	switch t {
 	case KubeDeployment, KubeStatefulSet, KubeDaemonSet,
 		KubeGameStatefulSet, KubeGameDeployment, KubeCronJob,
-		KubeJob, KubePodWorkload:
+		KubeJob, KubePodWorkload, KubeCustomResource:
 		return nil
 	default:
 		return fmt.Errorf("can not support this type of workload, kind: %s", t)
@@ -91,6 +91,9 @@ func (t WorkloadType) Table() (string, error) {
 	case KubePodWorkload:
 		return BKTableNameBasePodWorkload, nil
 
+	case KubeCustomResource:
+		return BKTableNameBaseCustom, nil
+
 	default:
 		return "", fmt.Errorf("can not find table name, kind: %s", t)
 	}
@@ -122,6 +125,9 @@ func (t WorkloadType) Fields() (*table.Fields, error) {
 
 	case KubePodWorkload:
 		return PodsWorkloadFields, nil
+
+	case KubeCustomResource:
+		return CustomResourceFields, nil
 
 	default:
 		return nil, fmt.Errorf("workload type %s is not supported", t)
@@ -155,6 +161,9 @@ func (t WorkloadType) NewInst() (WorkloadInterface, error) {
 	case KubePodWorkload:
 		return new(PodsWorkload), nil
 
+	case KubeCustomResource:
+		return new(CustomResource), nil
+
 	default:
 		return nil, fmt.Errorf("workload type %s is not supported", t)
 	}
@@ -184,6 +193,9 @@ const (
 
 	// KubePodWorkload k8s pod workload type
 	KubePodWorkload WorkloadType = "pods"
+
+	// KubeCustomResource k8s custom resource workload type
+	KubeCustomResource WorkloadType = "customResource"
 )
 
 // table names
@@ -224,7 +236,7 @@ const (
 	// BKTableNameBasePodWorkload the table name of the Pod Workload
 	BKTableNameBasePodWorkload = "cc_PodWorkloadBase"
 
-	// BKTableNameBaseCustom the table name of the Custom Workload
+	// BKTableNameBaseCustom the table name of the CustomResource Workload
 	BKTableNameBaseCustom = "cc_CustomBase"
 
 	// BKTableNameBasePod the table name of the Pod
@@ -399,6 +411,12 @@ const (
 
 	// RollingUpdateStrategyField workload rolling update strategy field
 	RollingUpdateStrategyField = "rolling_update_strategy"
+
+	// CRKindField custom resource kind field
+	CRKindField = "cr_kind"
+
+	// CRApiVersionField custom resource api version field
+	CRApiVersionField = "cr_api_version"
 )
 
 // pod field names

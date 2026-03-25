@@ -99,10 +99,10 @@
 
 #### data.nds[n]
 
-| 参数名称 | 参数类型   | 描述                                                                                                                   |
-|------|--------|----------------------------------------------------------------------------------------------------------------------|
-| kind | string | 该节点的资源类型，目前支持的类型：cluster、namespace、deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods。 |
-| id   | int    | 该节点的ID                                                                                                               |
-| nm   | string | 该节点的名称                                                                                                               |
-| cnt  | int    | 该节点下的Container数量                                                                                                     |
-| nds  | object | 该节点下的子节点信息，按照拓扑层级逐级循环嵌套。该节点下若无子节点，则该值为空。                                                                             |
+| 参数名称 | 参数类型   | 描述                                                                                                                                  |
+|------|--------|-------------------------------------------------------------------------------------------------------------------------------------|
+| kind | string | 该节点的资源类型，目前支持的类型：cluster、namespace、deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods、customResource。 |
+| id   | int    | 该节点的ID                                                                                                                              |
+| nm   | string | 该节点的名称                                                                                                                              |
+| cnt  | int    | 该节点下的Container数量                                                                                                                    |
+| nds  | object | 该节点下的子节点信息，按照拓扑层级逐级循环嵌套。该节点下若无子节点，则该值为空。                                                                                            |
