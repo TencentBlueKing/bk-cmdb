@@ -16,7 +16,7 @@
   import store from '@/store'
   import containerPropertyService from '@/service/container/property.js'
   import containerPropertGroupService from '@/service/container/property-group.js'
-  import { getContainerNodeType, getContainerInstanceService } from '@/service/container/common.js'
+  import { getContainerNodeType, getContainerInstanceService, getContainerPropertyObjId } from '@/service/container/common.js'
 
   export default defineComponent({
     setup() {
@@ -30,7 +30,7 @@
 
       const objId = computed(() => selectedNode.value.data.bk_obj_id)
       const instId = computed(() => selectedNode.value.data.bk_inst_id)
-      const primaryObjId = computed(() => getContainerNodeType(objId.value))
+      const propertyObjId = computed(() => getContainerPropertyObjId(objId.value))
       const isWorkload = computed(() => selectedNode.value.data.is_workload)
 
       const properties = ref([])
@@ -41,30 +41,30 @@
       const instance = ref({})
 
       watchEffect(async () => {
-        // 属性
-        if (!has(propertyMap, primaryObjId.value)) {
+        // 属性（customResource 使用独立模型 id，其它 workload 仍用 workload）
+        if (!has(propertyMap, propertyObjId.value)) {
           const objProperties = await containerPropertyService.getMany({
-            objId: primaryObjId.value
+            objId: propertyObjId.value
           }, {
             requestId: requestIds.property
           })
           properties.value = objProperties
-          propertyMap[primaryObjId.value] = objProperties
+          propertyMap[propertyObjId.value] = objProperties
         } else {
-          properties.value = propertyMap[primaryObjId.value]
+          properties.value = propertyMap[propertyObjId.value]
         }
 
         // 属性分组
-        if (!has(propertyGroupMap, primaryObjId.value)) {
-          const objPropertyGroups = await containerPropertGroupService.getMany({ objId: primaryObjId.value })
+        if (!has(propertyGroupMap, propertyObjId.value)) {
+          const objPropertyGroups = await containerPropertGroupService.getMany({ objId: propertyObjId.value })
           propertyGroups.value = objPropertyGroups
-          propertyGroupMap[primaryObjId.value] = objPropertyGroups
+          propertyGroupMap[propertyObjId.value] = objPropertyGroups
         } else {
-          propertyGroups.value = propertyGroupMap[primaryObjId.value]
+          propertyGroups.value = propertyGroupMap[propertyObjId.value]
         }
 
-        // 实例
-        const instanceService = getContainerInstanceService(primaryObjId.value)
+        // 实例服务由 getContainerNodeType 解析（含 customResource → workload）；具体 kind 见下方 params
+        const instanceService = getContainerInstanceService(getContainerNodeType(objId.value))
         const params = { id: instId.value, bizId: bizId.value }
         if (isWorkload.value) {
           params.kind = objId.value

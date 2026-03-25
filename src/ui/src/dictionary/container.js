@@ -80,8 +80,17 @@ export const WORKLOAD_TYPES = Object.freeze({
   GAME_DEPLOYMENT: 'gameDeployment',
   CRON_JOB: 'cronJob',
   JOB: 'job',
-  PODS: 'pods'
+  PODS: 'pods',
+  CUSTOM_RESOURCE: 'customResource'
 })
+
+/**
+ * 拓扑、主机/Pod 条件、实例查询等仍按 workload 处理，但节点信息拉属性使用独立模型（find/kube/{kind}/attributes）。
+ * 以后若有同类 workload 子类型，在此追加 kind 即可。
+ */
+export const WORKLOAD_KINDS_WITH_DEDICATED_PROPERTY_MODEL = Object.freeze([
+  WORKLOAD_TYPES.CUSTOM_RESOURCE
+])
 
 export const WORKLOAD_OBJECT_NAMES = Object.freeze({
   [WORKLOAD_TYPES.DEPLOYMENT]: {
@@ -115,6 +124,10 @@ export const WORKLOAD_OBJECT_NAMES = Object.freeze({
   [WORKLOAD_TYPES.PODS]: {
     FULL: 'Pod',
     SHORT: 'P'
+  },
+  [WORKLOAD_TYPES.CUSTOM_RESOURCE]: {
+    FULL: 'Custom Resource',
+    SHORT: 'Cr'
   }
 })
 

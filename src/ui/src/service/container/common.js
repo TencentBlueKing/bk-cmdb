@@ -10,7 +10,13 @@
  * limitations under the License.
  */
 
-import { CONTAINER_OBJECTS, WORKLOAD_TYPES, CONTAINER_OBJECT_NAMES, WORKLOAD_OBJECT_NAMES } from '@/dictionary/container'
+import {
+  CONTAINER_OBJECTS,
+  WORKLOAD_TYPES,
+  WORKLOAD_KINDS_WITH_DEDICATED_PROPERTY_MODEL,
+  CONTAINER_OBJECT_NAMES,
+  WORKLOAD_OBJECT_NAMES
+} from '@/dictionary/container'
 import containerClusterService from '@/service/container/cluster'
 import containerNamespaceService from '@/service/container/namespace'
 import containerWorkloadService from '@/service/container/workload'
@@ -23,6 +29,14 @@ export const isFolder = type => type === CONTAINER_OBJECTS.FOLDER
 
 // 获取容器节点大类型
 export const getContainerNodeType = type => (isWorkload(type) ? CONTAINER_OBJECTS.WORKLOAD : type)
+
+// 节点信息拉属性时使用的 objId（对应 find/kube/{objId}/attributes）
+export const getContainerPropertyObjId = (type) => {
+  if (WORKLOAD_KINDS_WITH_DEDICATED_PROPERTY_MODEL.includes(type)) {
+    return type
+  }
+  return getContainerNodeType(type)
+}
 
 // 获取容器节点的名称字符集合
 export const getContainerObjectNames = type => (
@@ -44,7 +58,14 @@ export const getPropertyType = type => typeMapping[type] || type
 
 export const getPropertyName = (id, objId, locale) => {
   const lang = locale === 'en' ? 'en' : 'zh'
-  return propertyNameI18n[objId]?.[id]?.[lang] ?? id
+  const pick = (map, field) => map?.[field]?.[lang]
+  let name = pick(propertyNameI18n[objId], id)
+  if (name === undefined || name === null || name === '') {
+    if (WORKLOAD_KINDS_WITH_DEDICATED_PROPERTY_MODEL.includes(objId)) {
+      name = pick(propertyNameI18n[CONTAINER_OBJECTS.WORKLOAD], id)
+    }
+  }
+  return name ?? id
 }
 
 export const isContainerObject = objId => Object.values(CONTAINER_OBJECTS).includes(objId)
@@ -169,6 +190,16 @@ export const propertyNameI18n = {
     rolling_update_strategy: {
       zh: '滚动更新策略',
       en: 'RollingUpdateStrategy'
+    }
+  },
+  [WORKLOAD_TYPES.CUSTOM_RESOURCE]: {
+    cr_kind: {
+      zh: 'CR类型',
+      en: 'CRKind'
+    },
+    cr_api_version: {
+      zh: 'CR的API版本',
+      en: 'CRApiVersion'
     }
   },
   [CONTAINER_OBJECTS.NODE]: {
