@@ -78,6 +78,7 @@
 
 <script>
   import CustomContentRender from './table-custom-content-render'
+  import { filterXSS } from '@/utils/util'
   export default {
     name: 'cmdb-form-table',
     components: {
@@ -131,7 +132,7 @@
         }
         const directive = {
           name: 'bkTooltips',
-          content: property.placeholder,
+          content: filterXSS(property.placeholder),
           placement: 'top',
           trigger: 'mouseenter'
         }

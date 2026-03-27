@@ -35,7 +35,7 @@
               v-bk-tooltips.top="{
                 theme: 'light',
                 trigger: 'mouseenter',
-                content: property.placeholder
+                content: htmlEncode(property.placeholder)
               }">
             </i>
           </span>
@@ -113,7 +113,7 @@
                           theme: 'light',
                           showOnInit: true,
                           trigger: 'click',
-                          content: property.placeholder
+                          content: htmlEncode(property.placeholder)
                         }"
                         @focus="handleFocus"
                         @blur="handleBlur">
@@ -251,6 +251,7 @@
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
   import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
   import { isContainerObjects } from '@/utils/tools'
+  import { filterXSS } from '@/utils/util'
 
   export default {
     name: 'cmdb-host-property',
@@ -314,6 +315,9 @@
       'isFromResource'
     ],
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       setFocus(id, focus) {
         const item = this.$el.querySelector(id)
         focus ? item.classList.add('focus') : item.classList.remove('focus')

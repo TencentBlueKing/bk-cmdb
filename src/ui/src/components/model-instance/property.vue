@@ -35,7 +35,7 @@
               v-bk-tooltips.top="{
                 theme: 'light',
                 trigger: 'mouseenter',
-                content: property.placeholder
+                content: htmlEncode(property.placeholder)
               }">
             </i>
           </div>
@@ -103,7 +103,7 @@
                         theme: 'light',
                         showOnInit: true,
                         trigger: 'click',
-                        content: property.placeholder
+                        content: htmlEncode(property.placeholder)
                       }"
                       :ref="`component-${property.bk_property_id}`">
                     </component>
@@ -210,7 +210,7 @@
   import projectService from '@/service/project/index.js'
   import authMixin from './mixin-auth'
   import { PROPERTY_TYPES, PROPERTY_TYPE_NAMES } from '@/dictionary/property-constants'
-  import { keyupCallMethod } from '@/utils/util'
+  import { keyupCallMethod, filterXSS } from '@/utils/util'
   import cmdbDefaultPicker from '@/components/ui/other/default-value-picker'
   import { isContainerObjects } from '@/utils/tools'
 
@@ -298,6 +298,9 @@
       getPlaceholder(property) {
         const placeholderTxt = ['enum', 'list', 'organization'].includes(property.bk_property_type) ? '请选择xx' : '请输入xx'
         return this.$t(placeholderTxt, { name: property.bk_property_name })
+      },
+      htmlEncode(str) {
+        return filterXSS(str)
       },
       isContainerObjects(objId) {
         return isContainerObjects(objId)

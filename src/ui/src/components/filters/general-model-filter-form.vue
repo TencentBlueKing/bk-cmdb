@@ -71,7 +71,7 @@
               disabled: !property.placeholder,
               theme: 'light',
               trigger: 'click',
-              content: property.placeholder
+              content: htmlEncode(property.placeholder)
             }"
             @active-change="handleComponentActiveChange(property, ...arguments)"
             @change="handleChange"
@@ -106,7 +106,7 @@
   import { setSearchQueryByCondition, resetConditionValue } from './general-model-filter.js'
   import Utils from './utils'
   import ConditionPicker from '@/components/condition-picker'
-  import { getConditionSelect, updatePropertySelect, isPasteSplit } from '@/utils/util'
+  import { getConditionSelect, updatePropertySelect, isPasteSplit, filterXSS } from '@/utils/util'
   import isEqual from 'lodash/isEqual'
   import useSideslider from '@/hooks/use-sideslider'
   import { QUERY_OPERATOR, QUERY_OPERATOR_OTHER_SYMBOL, QUERY_OPERATOR_OTHER_DESC } from '@/utils/query-builder-operator'
@@ -197,6 +197,9 @@
       this.setChanged = setChanged
     },
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       getPasteSplit(id) {
         return isPasteSplit(id)
       },
