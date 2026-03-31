@@ -136,7 +136,7 @@ func getHandleBoolTypeFunc() handleColPropFunc {
 			return nil, err
 		}
 		if err = t.GetExcel().AddValidation(t.GetObjID(),
-			&excel.ValidationParam{Type: excel.Bool, Sqref: sqref, Option: property.Name}); err != nil {
+			&excel.ValidationParam{Type: excel.Bool, Sqref: sqref}); err != nil {
 			return nil, err
 		}
 
