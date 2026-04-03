@@ -311,3 +311,17 @@ export function filterXSS(str) {
   })
   return result
 }
+
+/**
+ * 过滤XSS攻击，保留高亮标签em
+ * @param {string} str 字符串
+ * @returns 过滤后的字符串
+ */
+export function filterHighlightXSS(str) {
+  if (!str && str !== 0) return str
+  return xss(String(str), {
+    whiteList: { em: [] },
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ['script']
+  })
+}

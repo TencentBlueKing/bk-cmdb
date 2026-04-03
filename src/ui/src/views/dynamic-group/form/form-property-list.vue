@@ -49,7 +49,7 @@
                 disabled: !property.placeholder,
                 theme: 'light',
                 trigger: 'click',
-                content: property.placeholder
+                content: htmlEncode(property.placeholder)
               }"
               @inputchange="hanleInputChange">
             </component>
@@ -72,6 +72,7 @@
   import has from 'has'
   import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
   import { DYNAMIC_GROUP_COND_TYPES, DYNAMIC_GROUP_COND_NAMES } from '@/dictionary/dynamic-group'
+  import { filterXSS } from '@/utils/util'
   const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
 
   export default {
@@ -147,6 +148,9 @@
       }
     },
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       handleClick(e) {
         if (~e?.target?.className.indexOf('is-focus')) {
           // select专属

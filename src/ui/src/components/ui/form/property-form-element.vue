@@ -39,7 +39,7 @@
         disabled: !property.placeholder,
         theme: 'light',
         trigger: 'click',
-        content: property.placeholder
+        content: htmlEncode(property.placeholder)
       }">
     </component>
     <template v-if="errors.has(property.bk_property_id)">
@@ -58,6 +58,7 @@
 
 <script>
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { filterXSS } from '@/utils/util'
   export default {
     props: {
       property: {
@@ -116,6 +117,9 @@
       }
     },
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       getValidateRules(property) {
         const rules = this.$tools.getValidateRules(property)
         if (this.mustRequired !== null) {

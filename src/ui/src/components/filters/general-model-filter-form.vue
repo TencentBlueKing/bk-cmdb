@@ -37,7 +37,7 @@
               disabled: !property.placeholder,
               theme: 'light',
               trigger: 'click',
-              content: property.placeholder
+              content: htmlEncode(property.placeholder)
             }"
             @active-change="handleComponentActiveChange(property, ...arguments)"
             @change="handleChange"
@@ -76,6 +76,7 @@
   import { setSearchQueryByCondition, resetConditionValue } from './general-model-filter.js'
   import Utils from './utils'
   import ConditionPicker from '@/components/condition-picker'
+  import { filterXSS } from '@/utils/util'
 
   export default {
     components: {
@@ -139,6 +140,9 @@
       }
     },
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       handleClick(e) {
         const parent = this.$refs[e][0].$el
         this.target = parent.getElementsByClassName('bk-select-tag-container')[0]

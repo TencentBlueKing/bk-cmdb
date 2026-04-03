@@ -13,6 +13,7 @@
 <script lang="ts">
   import { defineComponent, ref, toRef, toRefs, PropType, watch } from 'vue'
   import { getPropertyDefaultValue } from '@/utils/tools.js'
+  import { filterXSS } from '@/utils/util'
   import GridLayout from '@/components/ui/other/grid-layout.vue'
   import GridItem from '@/components/ui/other/grid-item.vue'
   import PropertyFormElement from '@/components/ui/form/property-form-element.vue'
@@ -126,6 +127,8 @@
         return !excludeType.includes(property.bk_property_type)
       }
 
+      const htmlEncode = (str) => filterXSS(str)
+
       return {
         selectedList,
         sortedGroups,
@@ -136,6 +139,7 @@
         propertyConfig,
         propertyFormEl,
         isRequired,
+        htmlEncode,
         handleSelectField,
         handleRemoveField,
         handleChange
@@ -216,7 +220,7 @@
                   v-bk-tooltips.top="{
                     theme: 'light',
                     trigger: 'mouseenter',
-                    content: property.placeholder
+                    content: htmlEncode(property.placeholder)
                   }">
                 </i>
               </template>
