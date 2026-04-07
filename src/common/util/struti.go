@@ -29,7 +29,6 @@ const (
 	charPattern    = `^[a-zA-Z]*$`
 	numCharPattern = `^[a-zA-Z0-9]*$`
 	// mailPattern     = `^[a-z0-9A-Z]+([\-_\.][a-z0-9A-Z]+)*@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)*\.)+[a-zA-Z]{2,4}$`
-	datePattern             = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}$`
 	dateTimePattern         = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}[\s]{1}[0-9]{2}[\:]{1}[0-9]{2}[\:]{1}[0-9]{2}$`
 	timeWithLocationPattern = `^[0-9]{4}[\-]{1}[0-9]{2}[\-]{1}[0-9]{2}[T]{1}[0-9]{2}[\:]{1}[0-9]{2}[\:]{1}[0-9]{2}([\.]{1}[0-9]+)?[\+]{1}[0-9]{2}[\:]{1}[0-9]{2}$`
 	// timeZonePattern    = `^[a-zA-Z]+/[a-z\-\_+\-A-Z]+$`
@@ -43,7 +42,6 @@ var (
 	charRegexp    = regexp.MustCompile(charPattern)
 	numCharRegexp = regexp.MustCompile(numCharPattern)
 	// mailRegexp        = regexp.MustCompile(mailPattern)
-	dateRegexp             = regexp.MustCompile(datePattern)
 	dateTimeRegexp         = regexp.MustCompile(dateTimePattern)
 	timeWithLocationRegexp = regexp.MustCompile(timeWithLocationPattern)
 	timeZoneRegexp         = regexp.MustCompile(timeZonePattern)
@@ -75,7 +73,10 @@ func IsDate(sInput interface{}) bool {
 		if len(val) == 0 {
 			return false
 		}
-		return dateRegexp.MatchString(val)
+		if _, err := time.Parse(time.DateOnly, val); err == nil {
+			return true
+		}
+		return false
 	default:
 		return false
 	}
