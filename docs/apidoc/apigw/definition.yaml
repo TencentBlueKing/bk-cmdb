@@ -389,6 +389,31 @@ grant_permissions:
     grant_dimension: "resource"
     resource_names:
       - search_business
+      - list_process_instance
+      - update_process_instance
+      - resource_watch
+      - list_biz_hosts
+      - find_host_biz_relations
+      - find_topo_node_paths
+      - search_object_attribute
+      - find_module_batch
+      - search_set
+      - search_module
+      - find_host_by_set_template
+      - find_host_by_service_template
+      - list_service_instance
+      - list_service_instance_detail
+      - get_service_template
+      - get_proc_template
+      - list_proc_template
+      - list_process_detail_by_ids
+      - list_service_instance_by_set_template
+      - list_service_template
+      - find_host_topo_relation
+      - find_set_batch
+      - find_module_with_relation
+      - find_host_by_topo
+      - list_set_template
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
