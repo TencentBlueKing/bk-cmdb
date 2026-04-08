@@ -652,6 +652,9 @@ const (
 	// BKIsPre the ispre field
 	BKIsPre = "ispre"
 
+	// BKIsHidden the is_hidden field
+	BKIsHidden = "is_hidden"
+
 	// BKObjectUniqueKeys object unique keys field
 	BKObjectUniqueKeys = "keys"
 

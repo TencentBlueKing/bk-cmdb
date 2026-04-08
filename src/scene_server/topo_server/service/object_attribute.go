@@ -62,6 +62,7 @@ func (s *Service) CreateObjectAttribute(ctx *rest.Contexts) {
 		}
 	}
 
+	attr.IsHidden = false
 	// do not support add preset attribute by api
 	attr.IsPre = false
 	isBizCustomField := false
@@ -360,6 +361,40 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 	ctx.RespEntity(nil)
 }
 
+// AttributeHidden attribute hiding configuration
+type AttributeHidden struct {
+	IsHidden bool `field:"is_hidden" json:"is_hidden" bson:"is_hidden"`
+}
+
+// UpdateObjectAttributeHidden update the object attribute : is_hidden
+func (s *Service) UpdateObjectAttributeHidden(ctx *rest.Contexts) {
+	var data AttributeHidden
+	if err := ctx.DecodeInto(&data); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	// adapt input path param with bk_biz_id and attr id.
+	id, bizID, err := getAttrIDAndBizID(ctx)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	tags := mapstr.SetValueToMapStrByTags(data)
+	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
+		err := s.Logics.AttributeOperation().UpdateObjectAttribute(ctx.Kit, tags, id, bizID, false)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if txnErr != nil {
+		ctx.RespAutoError(txnErr)
+		return
+	}
+	ctx.RespEntity(nil)
+}
+
 // updateObjectTableAttribute update the table object attribute
 func (s *Service) updateObjectTableAttribute(ctx *rest.Contexts, id, bizID int64, data mapstr.MapStr) error {
 
@@ -381,6 +416,9 @@ func removeImmutableFields(data mapstr.MapStr) mapstr.MapStr {
 	// TODO: why does remove this????
 	data.Remove(metadata.BKMetadata)
 	data.Remove(common.BKAppIDField)
+
+	// UpdateObjectAttribute should not update is_hidden
+	data.Remove(common.BKIsHidden)
 
 	// UpdateObjectAttribute should not update bk_property_index、bk_property_group
 	data.Remove(common.BKPropertyIndexField)
