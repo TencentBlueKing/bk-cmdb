@@ -17,6 +17,7 @@
 package common
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -1559,11 +1560,23 @@ const (
 	AttributeUnitMaxLength = 20
 	// AttributeOptionValueMaxLength TODO
 	AttributeOptionValueMaxLength = 128
-	// AttributeOptionArrayMaxLength TODO
-	AttributeOptionArrayMaxLength = 200
 	// ServiceCategoryMaxLength TODO
 	ServiceCategoryMaxLength = 128
 )
+
+var (
+	// AttributeOptionArrayMaxLength TODO
+	AttributeOptionArrayMaxLength = 200
+)
+
+// SetEnumLimit set AttributeOptionArrayMaxLength value,range:1~1000,default:200
+func SetEnumLimit(limit int) error {
+	if limit <= 0 || limit > 1000 {
+		return fmt.Errorf("invalid enum limit:%d", limit)
+	}
+	AttributeOptionArrayMaxLength = limit
+	return nil
+}
 
 const (
 	// NameFieldMaxLength TODO
