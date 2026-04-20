@@ -827,6 +827,7 @@ func (o *object) CreateObjectByImport(kit *rest.Kit, data []metadata.YamlObject)
 			common.BKClassificationIDField: objInfo.ClsID,
 			common.CreatorField:            kit.User,
 			common.ObjSortNumberField:      objInfo.ObjSortNumber,
+			metadata.ModelFieldLabels:      objInfo.Labels,
 		}
 
 		obj, err := o.isValid(kit, false, object)
@@ -1143,7 +1144,7 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 	objCond := metadata.QueryCondition{
 		Condition: mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids}},
 		Fields: []string{common.BKObjIDField, common.BKObjNameField, common.BKClassificationIDField,
-			common.BKObjIconField, common.BKIsPre, common.ObjSortNumberField},
+			common.BKObjIconField, common.BKIsPre, common.ObjSortNumberField, metadata.ModelFieldLabels},
 		DisableCounter: true,
 	}
 	objs, err := o.searchObjectByCondition(kit, objCond)
@@ -1210,6 +1211,7 @@ func (o *object) SearchObjectsWithTotalInfo(kit *rest.Kit, ids, excludedAsst []i
 			common.BKClassificationIDField: obj.ObjCls,
 			common.BKIsPre:                 obj.IsPre,
 			common.ObjSortNumberField:      obj.ObjSortNumber,
+			metadata.ModelFieldLabels:      obj.Labels,
 		}
 		objInfo[common.BKClassificationNameField] = clsMap[obj.ObjCls]
 		objInfo["object_attr"] = attrRsp[objID]

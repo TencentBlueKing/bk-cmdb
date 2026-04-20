@@ -4,14 +4,15 @@
 
 ### 输入参数
 
-| 参数名称                 | 参数类型   | 必选 | 描述                           |
-|----------------------|--------|----|------------------------------|
-| creator              | string | 否  | 本条数据创建者                      |
-| modifier             | string | 否  | 本条数据的最后修改人员                  |
-| bk_classification_id | string | 否  | 对象模型的分类ID，只能用英文字母序列命名        |
-| bk_obj_id            | string | 否  | 对象模型的ID，只能用英文字母序列命名          |
-| bk_obj_name          | string | 否  | 对象模型的名字，用于展示，可以使用人类可以阅读的任何语言 |
-| obj_sort_number      | int    | 否  | 对象模型在所属模型分组下的排序序号            |
+| 参数名称                 | 参数类型         | 必选 | 描述                           |
+|----------------------|--------------|----|------------------------------|
+| creator              | string       | 否  | 本条数据创建者                      |
+| modifier             | string       | 否  | 本条数据的最后修改人员                  |
+| bk_classification_id | string       | 否  | 对象模型的分类ID，只能用英文字母序列命名        |
+| bk_obj_id            | string       | 否  | 对象模型的ID，只能用英文字母序列命名          |
+| bk_obj_name          | string       | 否  | 对象模型的名字，用于展示，可以使用人类可以阅读的任何语言 |
+| obj_sort_number      | int          | 否  | 对象模型在所属模型分组下的排序序号            |
+| bk_labels            | string array | 否  | 模型分类标签，如 ["network"]            |
 
 ### 调用示例
 
@@ -22,7 +23,8 @@
     "bk_classification_id": "test",
     "bk_obj_id": "biz",
     "bk_obj_name": "aaa",
-    "obj_sort_number": 1
+    "obj_sort_number": 1,
+    "bk_labels": ["network"]
 }
 ```
 
@@ -50,7 +52,8 @@
             "bk_obj_name": "XXX",
             "position": "{\"test_obj\":{\"x\":-253,\"y\":137}}",
             "bk_supplier_account": "0",
-            "obj_sort_number": 1
+            "obj_sort_number": 1,
+            "bk_labels": ["env:production", "team:backend"]
         }
     ]
 }
@@ -83,3 +86,4 @@
 | position             | json object string | 用于前端展示的坐标                                                                              |
 | description          | string             | 数据的描述信息                                                                                |
 | obj_sort_number      | int                | 对象模型在所属模型分组下的排序序号                                                                      |
+| bk_labels            | string array       | 模型分类标签                                                                                     |

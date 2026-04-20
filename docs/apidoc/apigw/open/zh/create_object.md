@@ -4,14 +4,15 @@
 
 ### 输入参数
 
-| 参数名称                 | 参数类型   | 必选 | 描述                           |
-|----------------------|--------|----|------------------------------|
-| creator              | string | 否  | 本条数据创建者                      |
-| bk_classification_id | string | 是  | 对象模型的分类ID，只能用英文字母序列命名        |
-| bk_obj_id            | string | 是  | 对象模型的ID，只能用英文字母序列命名          |
-| bk_obj_name          | string | 是  | 对象模型的名字，用于展示，可以使用人类可以阅读的任何语言 |                                             |
-| bk_obj_icon          | string | 否  | 对象模型的ICON信息，用于前端显示           |
-| obj_sort_number      | int    | 否  | 对象模型在所属模型分组下的排序序号            |
+| 参数名称                 | 参数类型         | 必选 | 描述                           |
+|----------------------|--------------|----|------------------------------|
+| creator              | string       | 否  | 本条数据创建者                      |
+| bk_classification_id | string       | 是  | 对象模型的分类ID，只能用英文字母序列命名        |
+| bk_obj_id            | string       | 是  | 对象模型的ID，只能用英文字母序列命名          |
+| bk_obj_name          | string       | 是  | 对象模型的名字，用于展示，可以使用人类可以阅读的任何语言 |
+| bk_obj_icon          | string       | 否  | 对象模型的ICON信息，用于前端显示           |
+| obj_sort_number      | int          | 否  | 对象模型在所属模型分组下的排序序号            |
+| bk_labels            | string array | 否  | 模型分类标签，如 ["network"]            |
 
 ### 调用示例
 
@@ -22,7 +23,8 @@
     "bk_obj_name": "test",
     "bk_obj_icon": "icon-cc-business",
     "bk_obj_id": "test",
-    "obj_sort_number": 1
+    "obj_sort_number": 1,
+    "bk_labels": ["network"]
 }
 ```
 
@@ -37,6 +39,7 @@
     "data": {
         "description": "",
         "bk_ishidden": false,
+        "bk_labels": ["network"],
         "bk_classification_id": "test",
         "creator": "admin",
         "bk_obj_name": "test",
@@ -83,3 +86,4 @@
 | position             | json object string | 用于前端展示的坐标            |
 | ispre                | bool               | 是否预定义, true or false |
 | obj_sort_number      | int                | 对象模型在所属模型分组下的排序序号    |
+| bk_labels            | string array       | 模型分类标签                  |

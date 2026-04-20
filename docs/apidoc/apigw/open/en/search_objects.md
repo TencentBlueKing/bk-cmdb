@@ -4,14 +4,15 @@ Query models based on optional conditions (Permission: Model View Permission)
 
 ### Parameters
 
-| Name                 | Type   | Required | Description                                                                         |
-|----------------------|--------|----------|-------------------------------------------------------------------------------------|
-| creator              | string | No       | Creator of this data                                                                |
-| modifier             | string | No       | Last modifier of this data                                                          |
-| bk_classification_id | string | No       | Classification ID of the object model, can only be named with alphabetical sequence |
-| bk_obj_id            | string | No       | ID of the object model, can only be named with alphabetical sequence                |
-| bk_obj_name          | string | No       | Name of the object model, used for display, can be any language readable by humans  |
-| obj_sort_number      | int    | No       | Sorting order of the object model under the corresponding model group               |
+| Name                 | Type         | Required | Description                                                                         |
+|----------------------|--------------|----------|-------------------------------------------------------------------------------------|
+| creator              | string       | No       | Creator of this data                                                                |
+| modifier             | string       | No       | Last modifier of this data                                                          |
+| bk_classification_id | string       | No       | Classification ID of the object model, can only be named with alphabetical sequence |
+| bk_obj_id            | string       | No       | ID of the object model, can only be named with alphabetical sequence                |
+| bk_obj_name          | string       | No       | Name of the object model, used for display, can be any language readable by humans  |
+| obj_sort_number      | int          | No       | Sorting order of the object model under the corresponding model group               |
+| bk_labels            | string array | No       | Labels for model categorization and grouping, e.g. ["network"]                      |
 
 ### Request Example
 
@@ -22,7 +23,8 @@ Query models based on optional conditions (Permission: Model View Permission)
     "bk_classification_id": "test",
     "bk_obj_id": "biz",
     "bk_obj_name": "aaa",
-    "obj_sort_number": 1
+    "obj_sort_number": 1,
+    "bk_labels": ["network"]
 }
 ```
 
@@ -50,7 +52,8 @@ Query models based on optional conditions (Permission: Model View Permission)
             "bk_obj_name": "XXX",
             "position": "{\"test_obj\":{\"x\":-253,\"y\":137}}",
             "bk_supplier_account": "0",
-            "obj_sort_number": 1
+            "obj_sort_number": 1,
+            "bk_labels": ["env:production", "team:backend"]
         }
     ]
 }
@@ -83,3 +86,4 @@ Query models based on optional conditions (Permission: Model View Permission)
 | position             | json object string | Coordinates used for front-end display                                                                                                                                      |
 | description          | string             | Description of the data                                                                                                                                                     |
 | obj_sort_number      | int                | Sorting order of the object model under the corresponding model group                                                                                                       |
+| bk_labels            | string array       | Labels for model categorization and grouping                                                                                                                               |

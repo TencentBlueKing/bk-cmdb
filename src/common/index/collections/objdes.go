@@ -18,6 +18,7 @@ package collections
 
 import (
 	"configcenter/src/common"
+	"configcenter/src/common/metadata"
 	"configcenter/src/storage/dal/types"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -52,6 +53,16 @@ var commObjDesIndexes = []types.Index{
 		Unique: true,
 		PartialFilterExpression: map[string]interface{}{
 			common.BKObjNameField: map[string]string{common.BKDBType: "string"},
+		},
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "bkLabels",
+		Keys: bson.D{{
+			metadata.ModelFieldLabels, 1},
+		},
+		Background: true,
+		PartialFilterExpression: map[string]interface{}{
+			metadata.ModelFieldLabels: map[string]string{common.BKDBType: "array"},
 		},
 	},
 }
