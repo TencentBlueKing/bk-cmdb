@@ -68,7 +68,7 @@ type RspNetcollectorSearch struct {
 type Netcollector struct {
 	CloudID       int64              `json:"bk_cloud_id" bson:"bk_cloud_id"`
 	CloudName     string             `json:"bk_cloud_name" bson:"-"`
-	BizID         int64              `json:"bk_biz_id" bson:"bk_biz_id" bson:"bk_biz_id"`
+	BizID         int64              `json:"bk_biz_id" bson:"bk_biz_id"`
 	InnerIP       string             `json:"bk_host_innerip" bson:"bk_host_innerip"`
 	Status        NetcollectorStatus `json:"status" bson:"status"`
 	TaskID        int64              `json:"task_id" bson:"task_id"`
