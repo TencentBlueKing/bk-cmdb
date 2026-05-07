@@ -195,6 +195,9 @@
       // 属性设置-保存
       const handleSavePropertyConfig = async ({ property, value }) => {
         let saveValue = value
+        if (!property.id) {
+          return
+        }
         const { bk_property_type: propertyType } = property
         if (['int', 'float'].includes(propertyType)) {
           saveValue = Number(value)
