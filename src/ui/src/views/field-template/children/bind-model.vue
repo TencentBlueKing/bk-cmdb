@@ -220,7 +220,9 @@
 
   watch(modelAuthResult, (modelAuths) => {
     const authResult = Object.values(modelAuths)
-    isNoPerm.value = authResult.every(isPass => isPass === false)
+    // 只有当存在权限数据且全部无权限时，才判定为无权限
+    // 空数组时（如删除最后一个模型）应显示"暂无对比"而非"无权限"
+    isNoPerm.value = authResult.length > 0 && authResult.every(isPass => isPass === false)
 
     // 只当全部数据都有权限才获取diff数据
     if (authResult.every(isPass => isPass)) {
@@ -230,6 +232,9 @@
   }, { deep: true })
 
   watch(selectedModel, (model) => {
+    if (!model) {
+      return
+    }
     if (!fieldDiffs[model.id]) {
       fetchFieldDiff([model])
     }
