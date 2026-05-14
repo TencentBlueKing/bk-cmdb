@@ -215,6 +215,17 @@ grant_permissions:
       - search_dynamic_group
       - execute_dynamic_group
       - resource_watch
+  - bk_app_code: {{ environ.BK_OPS_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - list_kube_container_in_biz_set
+      - list_business_set
+      - list_business_in_business_set
+      - search_business
+      - list_biz_hosts
+      - list_kube_pod
+      - list_kube_container
+      - resource_watch
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`

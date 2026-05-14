@@ -8625,3 +8625,33 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
+  /api/v3/findmany/biz_set/{bk_biz_set_id}/kube/containers:
+    post:
+      operationId: list_kube_container_in_biz_set
+      description: 查询业务集下容器信息（该接口为bk-ops专用接口，可能会随时调整，其它服务请勿使用）
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/findmany/biz_set/{bk_biz_set_id}/kube/containers
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        pluginConfigs:
+          - type: bk-rate-limit
+            yaml: |
+              rates:
+                __default:
+                - period: 1
+                  tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn: List kube container in business set
