@@ -753,23 +753,25 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 	return deleteCount, err
 }
 
-// deleteField 从 bsoncore.Document 中移除指定字段，返回 bson.D
-func deleteField(raw bsoncore.Document, field string) bson.D {
-	result := make(bson.D, 0)
+// deleteField 从 bsoncore.Document 中移除指定字段，返回 bsoncore.Document
+func deleteField(raw bsoncore.Document, field string) bsoncore.Document {
 	elements, err := raw.Elements()
 	if err != nil {
-		return result
+		return raw
 	}
+
+	idx, newDoc := bsoncore.AppendDocumentStart(nil)
 	for _, elem := range elements {
-		if elem.Key() != field {
-			result = append(result, bson.E{
-				Key:   elem.Key(),
-				Value: elem.Value(),
-			})
+		if elem.Key() == field {
+			continue
 		}
+		newDoc = bsoncore.AppendValueElement(newDoc, elem.Key(), elem.Value())
 	}
-	return result
+
+	newDoc, _ = bsoncore.AppendDocumentEnd(newDoc, idx)
+	return newDoc
 }
+
 func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filter) error {
 	delArchiveTable, exists := table.GetDelArchiveTable(c.collName)
 	if !exists {
