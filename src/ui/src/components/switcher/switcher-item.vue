@@ -13,6 +13,7 @@
 <template>
   <span class="switcher-item"
     v-bk-tooltips="{
+      allowHTML: false,
       boundary: 'window',
       placement: 'top',
       interactive: false,

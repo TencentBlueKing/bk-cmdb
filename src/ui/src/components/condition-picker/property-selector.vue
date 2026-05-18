@@ -55,6 +55,7 @@
             @change="handleChange(property, ...arguments)">
             <div style="width: calc(100% - 30px);"
               v-bk-tooltips.top-start="{
+                allowHTML: false,
                 disabled: !isDisabled(model, property),
                 content: getDisabledTip(property)
               }">

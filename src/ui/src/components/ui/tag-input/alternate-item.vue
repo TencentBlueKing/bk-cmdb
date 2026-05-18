@@ -34,6 +34,7 @@
 </template>
 <script>
   import RenderList from './render-list.js'
+  import { filterXSS, escapeRegexChar } from '@/utils/util'
   export default {
     name: 'alternate-item',
     components: {
@@ -48,10 +49,10 @@
     },
     methods: {
       getItemContent() {
-        let displayText = this.tag.text || this.tag.value
+        let displayText = filterXSS(this.tag.text || this.tag.value)
         if (this.keyword) {
           // eslint-disable-next-line no-underscore-dangle
-          displayText = displayText.replace(new RegExp(this.keyword, 'ig'), `<span ${this.$options._scopeId}>$&</span>`)
+          displayText = displayText.replace(new RegExp(escapeRegexChar(this.keyword), 'ig'), `<span ${this.$options._scopeId}>$&</span>`)
         }
         return displayText
       },

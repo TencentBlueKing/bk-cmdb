@@ -27,7 +27,7 @@ import {
 } from '@/dictionary/menu-symbol'
 import { BUILTIN_MODELS, BUILTIN_MODEL_PROPERTY_KEYS, BUILTIN_MODEL_ROUTEPARAMS_KEYS } from '@/dictionary/model-constants'
 import { getPropertyText } from '@/utils/tools'
-import { escapeRegexChar } from '@/utils/util'
+import { escapeRegexChar, filterXSS, filterHighlightXSS } from '@/utils/util'
 
 export default function useItem(list) {
   const getModelById = store.getters['objectModelClassify/getModelById']
@@ -85,6 +85,7 @@ export default function useItem(list) {
         newItem.typeName = t('模型')
         newItem.linkTo = handleGoModel
       }
+      newItem.title = filterXSS(newItem.title)
       normalizationList.push(newItem)
     })
 
@@ -245,7 +246,7 @@ export const getText = (property, data) => {
 export const getHighlightValue = (value, data) => {
   const keywords = data?.highlight?.keywords
   if (!keywords || !keywords.length) {
-    return value
+    return filterHighlightXSS(value)
   }
 
   // 用匹配到的高亮词（不一定等于搜索词）去匹配给定的值，如果命中则返回完整高亮词替代原本的值
@@ -264,5 +265,5 @@ export const getHighlightValue = (value, data) => {
     }
   }
 
-  return matched
+  return filterHighlightXSS(matched)
 }

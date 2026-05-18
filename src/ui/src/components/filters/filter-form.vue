@@ -81,10 +81,11 @@
               v-bind="getBindProps(property)"
               v-model.trim="condition[property.id].value"
               v-bk-tooltips.top="{
+                allowHTML: false,
                 disabled: !property.placeholder,
                 theme: 'light',
                 trigger: 'click',
-                content: property.placeholder
+                content: htmlEncode(property.placeholder)
               }"
               @active-change="handleComponentActiveChange(property, ...arguments)"
               @change="handleChange"
@@ -194,7 +195,7 @@
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
   import ConditionPicker from '@/components/condition-picker'
-  import { setCursorPosition } from '@/utils/util'
+  import { setCursorPosition, filterXSS } from '@/utils/util'
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
   import EditableBlock from '@/components/editable-block/index.vue'
@@ -354,6 +355,9 @@
       this.setChanged = setChanged
     },
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       handleClick(e) {
         const parent = this.$refs[e][0].$el
         this.target = parent.getElementsByClassName('bk-select-tag-container')[0]

@@ -15,7 +15,7 @@
          'is-error': errors.has(property.bk_property_id),
          'is-tooltips': errorDisplayType === 'tooltips'
        }]"
-    v-bk-tooltips="{ disabled: !disabled, content: disabledTips }">
+    v-bk-tooltips="{ allowHTML: false, disabled: !disabled, content: disabledTips }">
     <component
       :ref="`component-${property.bk_property_id}`"
       :is="`cmdb-form-${property.bk_property_type}`"
@@ -36,16 +36,17 @@
       v-on="events"
       v-model.trim="localValue"
       v-bk-tooltips.top="{
+        allowHTML: false,
         disabled: !property.placeholder,
         theme: 'light',
         trigger: 'click',
-        content: property.placeholder
+        content: htmlEncode(property.placeholder)
       }">
     </component>
     <template v-if="errors.has(property.bk_property_id)">
       <i
         class="bk-icon icon-exclamation-circle-shape tooltips-icon"
-        v-bk-tooltips.top-end="{ content: errors.first(property.bk_property_id) }"
+        v-bk-tooltips.top-end="{ allowHTML: false, content: errors.first(property.bk_property_id) }"
         :style="{ right: `${tipsIconOffset}px` }"
         v-if="errorDisplayType === 'tooltips'">
       </i>
@@ -58,6 +59,7 @@
 
 <script>
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
+  import { filterXSS } from '@/utils/util'
   export default {
     props: {
       property: {
@@ -116,6 +118,9 @@
       }
     },
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       getValidateRules(property) {
         const rules = this.$tools.getValidateRules(property)
         if (this.mustRequired !== null) {

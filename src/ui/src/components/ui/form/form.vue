@@ -35,6 +35,7 @@
                     <i class="property-name-tooltips icon-cc-tips"
                       v-if="property['placeholder']"
                       v-bk-tooltips="{
+                        allowHTML: false,
                         trigger: 'mouseenter',
                         content: htmlEncode(property['placeholder'])
                       }">
