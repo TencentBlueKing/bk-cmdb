@@ -131,6 +131,7 @@
           return property.bk_property_name
         }
         const directive = {
+          allowHTML: false,
           name: 'bkTooltips',
           content: filterXSS(property.placeholder),
           placement: 'top',

@@ -58,6 +58,7 @@
             <bk-icon
               v-show="isError"
               v-bk-tooltips="{
+                allowHTML: false,
                 content: errorText
               }"
               class="error-tips-icon"
@@ -67,7 +68,7 @@
         </div>
       </div>
       <div v-show="!isEditing" :class="['editable-field-edit-button', { disabled }]"
-        v-bk-tooltips="{ disabled: !hasPerm || !disabled, content: disabledTips }">
+        v-bk-tooltips="{ allowHTML: false, disabled: !hasPerm || !disabled, content: disabledTips }">
         <cmdb-auth
           tag="i"
           class="icon-cc-edit-shape"

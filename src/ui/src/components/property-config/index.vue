@@ -218,6 +218,7 @@
                 <i class="property-name-tooltips icon-cc-tips"
                   v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
                   v-bk-tooltips.top="{
+                    allowHTML: false,
                     theme: 'light',
                     trigger: 'mouseenter',
                     content: htmlEncode(property.placeholder)

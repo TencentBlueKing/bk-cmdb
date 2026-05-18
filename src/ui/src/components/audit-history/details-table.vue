@@ -68,7 +68,7 @@
               :property="row.property"
               :value="row.before">
             </cmdb-property-value>
-            <div class="details-custom-content" v-else v-html="row.before"></div>
+            <div class="details-custom-content" v-else>{{ row.before }}</div>
           </template>
         </bk-table-column>
         <bk-table-column :label="$t('变更后')" prop="after" show-overflow-tooltip
@@ -79,7 +79,7 @@
               :property="row.property"
               :value="row.after">
             </cmdb-property-value>
-            <div class="details-custom-content" v-else v-html="row.after"></div>
+            <div class="details-custom-content" v-else>{{ row.after }}</div>
           </template>
         </bk-table-column>
       </bk-table>
@@ -207,7 +207,7 @@
             paths.push([...path, module.bk_module_name].join('→'))
           })
         })
-        return paths.join('<br>')
+        return paths.join('\n')
       },
       setNormalList() {
         const operationDetails = this.details?.operation_detail?.details || {}
@@ -279,6 +279,7 @@
     .details-custom-content {
         line-height: 24px;
         overflow: auto;
+        white-space: pre-line;
     }
     .details-toggle {
         text-align: right;
