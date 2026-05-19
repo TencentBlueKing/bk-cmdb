@@ -667,3 +667,45 @@ type GetContainerByPodResp struct {
 	Info  []mapstr.MapStr `json:"info"`
 	Count int64           `json:"count"`
 }
+
+// ListKubeContainerInBizSetOption list kube container in biz set option
+type ListKubeContainerInBizSetOption struct {
+	ContainerIDs    []int64  `json:"bk_container_ids"`
+	ContainerFields []string `json:"container_fields"`
+	PodFields       []string `json:"pod_fields"`
+	HostFields      []string `json:"host_fields"`
+}
+
+// Validate validates the input param
+func (opt *ListKubeContainerInBizSetOption) Validate(bizSetID int64) ccErr.RawErrorInfo {
+	if bizSetID == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{common.BKBizSetIDField}}
+	}
+
+	if len(opt.ContainerIDs) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"bk_container_ids"}}
+	}
+
+	if len(opt.ContainerIDs) > 500 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommXXExceedLimit, Args: []interface{}{"bk_container_ids", 500}}
+	}
+
+	if len(opt.ContainerFields) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"container_fields"}}
+	}
+	if len(opt.PodFields) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"pod_fields"}}
+	}
+	if len(opt.HostFields) == 0 {
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsNeedSet, Args: []interface{}{"host_fields"}}
+	}
+
+	return ccErr.RawErrorInfo{}
+}
+
+// ListKubeContainerInBizSetRes is the list kube container in biz set result
+type ListKubeContainerInBizSetRes struct {
+	Container *Container    `json:"container"`
+	Pod       *Pod          `json:"pod"`
+	Host      mapstr.MapStr `json:"host"`
+}

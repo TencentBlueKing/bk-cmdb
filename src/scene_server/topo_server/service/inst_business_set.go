@@ -33,6 +33,7 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
 	"configcenter/src/common/util"
+	"configcenter/src/kube/types"
 	"configcenter/src/thirdparty/hooks"
 )
 
@@ -1095,4 +1096,192 @@ func (s *Service) ListAllBusinessSetSimplify(ctx *rest.Contexts) {
 
 	ctx.RespEntity(res)
 	return
+}
+
+// ListKubeContainerInBizSet list kube container in biz set
+func (s *Service) ListKubeContainerInBizSet(ctx *rest.Contexts) {
+	opt := new(types.ListKubeContainerInBizSetOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	bizSetID, err := strconv.ParseInt(ctx.Request.PathParameter(common.BKBizSetIDField), 10, 64)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if rawErr := opt.Validate(bizSetID); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, meta.ResourceAttribute{Basic: meta.Basic{Type: meta.BizSet,
+		Action: meta.AccessBizSet, InstanceID: bizSetID}}); !authorized {
+		ctx.RespNoAuth(resp)
+		return
+	}
+
+	// get containers
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	containerFields := append(opt.ContainerFields, common.BKFieldID, types.BKPodIDField, common.BKAppIDField)
+	containers, err := s.getContainerByIDs(ctx.Kit, opt.ContainerIDs, containerFields)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(containers) == 0 {
+		ctx.RespEntity(make([]types.ListKubeContainerInBizSetRes, 0))
+		return
+	}
+
+	// validate biz ids and get container pod ids
+	bizIDs := make([]int64, 0, len(containers))
+	podIDs := make([]int64, 0, len(containers))
+	for _, container := range containers {
+		bizIDs = append(bizIDs, container.BizID)
+		podIDs = append(podIDs, container.PodID)
+	}
+	if err = s.validateResBizInBizSet(ctx.Kit, bizSetID, bizIDs); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// get pods
+	pods, err := s.getPodByIDs(ctx.Kit, podIDs, append(opt.PodFields, common.BKFieldID, common.BKHostIDField))
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	podMap := make(map[int64]types.Pod)
+	hostIDs := make([]int64, 0)
+	for _, pod := range pods {
+		podMap[pod.ID] = pod
+		hostIDs = append(hostIDs, pod.HostID)
+	}
+
+	// get hosts
+	hostMap, err := s.getHostMapByIDs(ctx.Kit, hostIDs, opt.HostFields)
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// construct the returned result
+	result := make([]types.ListKubeContainerInBizSetRes, 0, len(containers))
+	for _, container := range containers {
+		pod := podMap[container.PodID]
+		result = append(result, types.ListKubeContainerInBizSetRes{
+			Container: &container,
+			Pod:       &pod,
+			Host:      hostMap[pod.HostID],
+		})
+	}
+	ctx.RespEntity(result)
+}
+
+// getContainerByIDs get containers by ids
+func (s *Service) getContainerByIDs(kit *rest.Kit, ids []int64, fields []string) ([]types.Container, error) {
+	ids = util.IntArrayUnique(ids)
+
+	containerReq := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: ids}},
+		Page:           metadata.BasePage{Limit: len(ids)},
+		Fields:         fields,
+		DisableCounter: true,
+	}
+	containerRes, err := s.Engine.CoreAPI.CoreService().Kube().ListContainer(kit.Ctx, kit.Header, containerReq)
+	if err != nil {
+		blog.Errorf("list container failed, err: %v, ids: %+v, rid: %s", err, ids, kit.Rid)
+		return nil, err
+	}
+
+	return containerRes.Info, nil
+}
+
+func (s *Service) validateResBizInBizSet(kit *rest.Kit, bizSetID int64, bizIDs []int64) error {
+	if len(bizIDs) == 0 {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "resources are not in any biz")
+	}
+	bizIDs = util.IntArrayUnique(bizIDs)
+
+	// get biz mongo condition by biz scope in biz set
+	bizSetBizCond, err := s.getBizSetBizCond(kit, bizSetID)
+	if err != nil {
+		blog.Errorf("get biz cond by biz set id %d failed, err: %v, rid: %s", bizSetID, err, kit.Rid)
+		return err
+	}
+
+	// check if bizs are in biz set
+	cond := []map[string]interface{}{{
+		common.BKDBAND: []map[string]interface{}{
+			bizSetBizCond, {common.BKAppIDField: mapstr.MapStr{common.BKDBIN: bizIDs}},
+		}}}
+	counts, err := s.Engine.CoreAPI.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameBaseApp, cond)
+	if err != nil {
+		blog.Errorf("count topo nodes failed, err: %v, filter: %+v, rid: %s", err, cond, kit.Rid)
+		return err
+	}
+
+	if len(counts) != 1 || (int(counts[0]) != len(bizIDs)) {
+		blog.Errorf("resource bizs are not all in biz set, biz ids: %v, rid: %s", bizIDs, kit.Rid)
+		return kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "resources are not all in biz set")
+	}
+	return nil
+}
+
+// getPodByIDs get pods by ids
+func (s *Service) getPodByIDs(kit *rest.Kit, podIDs []int64, fields []string) ([]types.Pod, error) {
+	if len(podIDs) == 0 {
+		return make([]types.Pod, 0), nil
+	}
+
+	podIDs = util.IntArrayUnique(podIDs)
+
+	podReq := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKFieldID: mapstr.MapStr{common.BKDBIN: podIDs}},
+		Page:           metadata.BasePage{Limit: len(podIDs)},
+		Fields:         fields,
+		DisableCounter: true,
+	}
+	podRes, err := s.Engine.CoreAPI.CoreService().Kube().ListPod(kit.Ctx, kit.Header, podReq)
+	if err != nil {
+		blog.Errorf("list pod failed, err: %v, pod ids: %+v, rid: %s", err, podIDs, kit.Rid)
+		return nil, err
+	}
+	return podRes.Info, nil
+}
+
+// getHostMapByIDs get host id to host info map
+func (s *Service) getHostMapByIDs(kit *rest.Kit, hostIDs []int64, fields []string) (map[int64]mapstr.MapStr, error) {
+	if len(hostIDs) == 0 {
+		return make(map[int64]mapstr.MapStr), nil
+	}
+
+	hostIDs = util.IntArrayUnique(hostIDs)
+
+	hostReq := &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKHostIDField: mapstr.MapStr{common.BKDBIN: hostIDs}},
+		Page:           metadata.BasePage{Limit: len(hostIDs)},
+		Fields:         append(fields, common.BKHostIDField),
+		DisableCounter: true,
+	}
+	hostRes, err := s.Engine.CoreAPI.CoreService().Instance().ReadInstance(kit.Ctx, kit.Header, common.BKInnerObjIDHost,
+		hostReq)
+	if err != nil {
+		blog.Errorf("get host with host ids: %+v failed, err: %v, rid: %s", hostIDs, err, kit.Rid)
+		return nil, err
+	}
+
+	hostMap := make(map[int64]mapstr.MapStr)
+	for _, host := range hostRes.Info {
+		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
+		if err != nil {
+			blog.Errorf("parse host id failed, err: %v, host: %#v, rid: %s", err, host, kit.Rid)
+			return nil, err
+		}
+		hostMap[hostID] = host
+	}
+	return hostMap, nil
 }
