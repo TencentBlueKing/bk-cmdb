@@ -33,6 +33,7 @@
             <i class="property-name-tooltips icon-cc-tips"
               v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
               v-bk-tooltips.top="{
+                allowHTML: false,
                 theme: 'light',
                 trigger: 'mouseenter',
                 content: htmlEncode(property.placeholder)
@@ -99,6 +100,7 @@
                       @focus="handleFocus"
                       @blur="handleBlur"
                       v-bk-tooltips.top="{
+                        allowHTML: false,
                         disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
                         theme: 'light',
                         showOnInit: true,

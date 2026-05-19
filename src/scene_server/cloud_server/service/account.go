@@ -211,6 +211,15 @@ func (s *Service) SearchAccount(ctx *rest.Contexts) {
 		}
 	}
 
+	if option.Condition != nil {
+		for key := range option.Condition {
+			if key != common.BKCloudAccountID && key != common.BKCloudAccountName {
+				ctx.RespAutoError(ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "condition."+key))
+				return
+			}
+		}
+	}
+
 	if auth.EnableAuthorize() {
 		list, isAny, err := s.Logics.ListAuthorizedResources(ctx.Kit, meta.CloudAccount, meta.FindMany)
 		if err != nil {

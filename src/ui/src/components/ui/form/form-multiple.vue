@@ -42,6 +42,7 @@
                       <i class="property-name-tooltips icon icon-cc-tips"
                         v-if="property.placeholder && $tools.isIconTipProperty(property.bk_property_type)"
                         v-bk-tooltips="{
+                          allowHTML: false,
                           trigger: 'mouseenter',
                           content: htmlEncode(property.placeholder)
                         }">
@@ -62,6 +63,7 @@
                       :multiple="property.ismultiple"
                       :placeholder="$tools.getPropertyPlaceholder(property)"
                       v-bk-tooltips.top="{
+                        allowHTML: false,
                         disabled: !property.placeholder,
                         theme: 'light',
                         trigger: 'click',
