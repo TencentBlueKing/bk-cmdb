@@ -115,6 +115,7 @@
               v-bind="getBindProps(property)"
               v-model.trim="condition[property.id].value"
               v-bk-tooltips.top="{
+                allowHTML: false,
                 disabled: !property.placeholder,
                 theme: 'light',
                 trigger: 'click',
