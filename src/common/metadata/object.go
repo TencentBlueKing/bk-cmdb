@@ -47,6 +47,8 @@ const (
 	ModelFieldOwnerID = "bk_supplier_account"
 	// ModelFieldDescription TODO
 	ModelFieldDescription = "description"
+	// ModelFieldLabels TODO
+	ModelFieldLabels = "bk_labels"
 	// ModelFieldCreator TODO
 	ModelFieldCreator = "creator"
 	// ModelFieldModifier TODO
@@ -68,7 +70,8 @@ type Object struct {
 	ObjectName string `field:"bk_obj_name" json:"bk_obj_name" bson:"bk_obj_name" mapstructure:"bk_obj_name"`
 
 	// IsHidden front-end don't display the object if IsHidden is true
-	IsHidden bool `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden" mapstructure:"bk_ishidden"`
+	IsHidden bool     `field:"bk_ishidden" json:"bk_ishidden" bson:"bk_ishidden" mapstructure:"bk_ishidden"`
+	Labels   []string `field:"bk_labels" json:"bk_labels" bson:"bk_labels" mapstructure:"bk_labels"`
 
 	IsPre         bool   `field:"ispre" json:"ispre" bson:"ispre" mapstructure:"ispre"`
 	IsPaused      bool   `field:"bk_ispaused" json:"bk_ispaused" bson:"bk_ispaused" mapstructure:"bk_ispaused"`
@@ -331,6 +334,7 @@ type YamlObject struct {
 	ObjectName       string                `json:"bk_obj_name" yaml:"bk_obj_name"`
 	ObjIcon          string                `json:"bk_obj_icon" yaml:"bk_obj_icon"`
 	IsPre            bool                  `json:"ispre" yaml:"ispre"`
+	Labels           []string              `json:"bk_labels" yaml:"bk_labels"`
 	ObjSortNumber    int64                 `json:"obj_sort_number" yaml:"obj_sort_number"`
 	ClsID            string                `json:"bk_classification_id" yaml:"bk_classification_id"`
 	ClsName          string                `json:"bk_classification_name" yaml:"bk_classification_name"`

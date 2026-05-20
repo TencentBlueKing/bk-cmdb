@@ -233,7 +233,9 @@ func (o *object) createObjectParamCheck(kit *rest.Kit, data mapstr.MapStr) (*met
 			"rid: %s", obj.ObjSortNumber, kit.Rid)
 		return nil, kit.CCError.CCError(common.CCErrCommParamsInvalid)
 	}
-
+	if len(obj.Labels) == 0 {
+		obj.Labels = make([]string, 0)
+	}
 	return obj, nil
 }
 
@@ -660,7 +662,9 @@ func (o *object) isValid(kit *rest.Kit, isUpdate bool, data mapstr.MapStr) (*met
 		return nil, kit.CCError.New(common.CCErrCommParamsIsInvalid,
 			fmt.Sprintf("'%s' the built-in object id, please use a new one", obj.ObjectID))
 	}
-
+	if len(obj.Labels) == 0 {
+		obj.Labels = make([]string, 0)
+	}
 	obj.OwnerID = kit.SupplierAccount
 	return obj, nil
 }
