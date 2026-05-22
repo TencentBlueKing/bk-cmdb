@@ -98,7 +98,11 @@ export function getInstFormValues(properties, inst = {}, autoSelect = true) {
       values[propertyId] = value ?? ''
     } else if (['bool'].includes(propertyType)) {
       if ([null, undefined].includes(inst[propertyId]) && autoSelect) {
-        values[propertyId] = typeof property.option === 'boolean' ? property.option : false
+        let defaultValue = propertyDefault
+        if (typeof defaultValue !== 'boolean') {
+          defaultValue = property.option
+        }
+        values[propertyId] = typeof defaultValue === 'boolean' ? defaultValue : false
       } else {
         values[propertyId] = !!inst[propertyId]
       }
@@ -147,7 +151,8 @@ export function getInstFormDefaults(properties) {
     LONGCHAR,
     INT,
     FLOAT,
-    OBJUSER
+    OBJUSER,
+    BOOL
   } = PROPERTY_TYPES
   const defaultValue = {}
   properties.forEach((property) => {
@@ -159,6 +164,12 @@ export function getInstFormDefaults(properties) {
 
     if ([SINGLECHAR, LONGCHAR, INT, FLOAT, OBJUSER].includes(propertyType)) {
       defaultValue[propertyId] = propertyDefault || ''
+    } else if (propertyType === BOOL) {
+      let val = propertyDefault
+      if (typeof val !== 'boolean') {
+        val = property.option
+      }
+      defaultValue[propertyId] = typeof val === 'boolean' ? val : false
     }
   })
   return defaultValue
