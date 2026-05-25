@@ -239,6 +239,9 @@ func combinationSearchObjectAttrCond(ctx *rest.Contexts) (*metadata.QueryConditi
 		return nil, 0, err
 	}
 	data := option.Data
+	if data == nil {
+		data = make(mapstr.MapStr)
+	}
 	util.AddModelBizIDCondition(data, option.ModelBizID)
 	data[metadata.AttributeFieldIsSystem] = false
 	data[metadata.AttributeFieldIsAPI] = false
