@@ -136,6 +136,10 @@ func (s *Service) initBizSet(web *restful.WebService) {
 		Path:    "/findmany/biz_set/simplify",
 		Handler: s.ListAllBusinessSetSimplify})
 
+	// NOTE: this is a special API only for bk-ops
+	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/biz_set/{bk_biz_set_id}/kube/containers",
+		Handler: s.ListKubeContainerInBizSet})
+
 	utility.AddToRestfulWebService(web)
 }
 

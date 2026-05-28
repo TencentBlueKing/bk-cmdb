@@ -106,7 +106,7 @@
 
       const clickOutSideMiddleware = (event) => {
         const path = event.composedPath ? event.composedPath() : event.path
-        return !path?.some?.(node => node.className === 'bk-picker-panel-body-wrapper')
+        return !path?.some?.(node => node.className === 'bk-picker-panel-body-wrapper' || node.className === 'bk-select-dropdown-content')
       }
 
       const handleClickOutSide = () => {

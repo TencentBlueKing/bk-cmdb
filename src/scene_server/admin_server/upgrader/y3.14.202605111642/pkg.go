@@ -14,4 +14,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package middleware
+package y3_14_202605111642
+
+import (
+	"context"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader"
+	"configcenter/src/storage/dal"
+)
+
+func init() {
+	upgrader.RegistUpgrader("y3.14.202605111642", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
+	blog.Infof("start execute y3.14.202605111642")
+
+	if err = addPodTableBizIDIndex(ctx, db); err != nil {
+		blog.Errorf("upgrade y3.14.202605111642 add pod table biz_id index failed, err: %v", err)
+		return err
+	}
+
+	blog.Infof("upgrade y3.14.202605111642 add pod table biz_id index success")
+	return nil
+}

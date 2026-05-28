@@ -485,6 +485,19 @@
           set: 'bk_set_name',
           module: 'bk_module_name'
         }
+        // 对于节点信息特殊操作。 -- 将字符串类型的数据在空值时候从null修正为''
+        Object.keys(value).forEach((key) => {
+          const val = value[key]
+          const originVal = this.instance[key]
+          // 当val值为空(包括''/null/undefined等)时候
+          if (!val) {
+            if (!originVal) value[key] = originVal
+            else {
+              // 原来有值，现在为空，字符串类型就是'', 其他类型是null
+              value[key] = typeof originVal === 'string' ? '' : null
+            }
+          }
+        })
         try {
           await (promiseMap[this.modelId] || this.updateCustomInstance)({ ...value, bk_biz_id: this.business })
           this.selectedNode.data.bk_inst_name = value[nameMap[this.modelId] || 'bk_inst_name']

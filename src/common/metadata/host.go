@@ -23,11 +23,12 @@ import (
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
-	"go.mongodb.org/mongo-driver/x/bsonx"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
@@ -38,7 +39,7 @@ type HostMapStr map[string]interface{}
 // UnmarshalBSON TODO
 func (h *HostMapStr) UnmarshalBSON(b []byte) error {
 	if h == nil {
-		return bsonx.ErrNilDocument
+		return mongo.ErrNilDocument
 	}
 	elements, err := bsoncore.Document(b).Elements()
 	if err != nil {
@@ -146,7 +147,7 @@ type StringArrayToString string
 // UnmarshalBSONValue TODO
 func (s *StringArrayToString) UnmarshalBSONValue(typo bsontype.Type, raw []byte) error {
 	if s == nil {
-		return bsonx.ErrNilDocument
+		return mongo.ErrNilDocument
 	}
 	value := bsoncore.Value{
 		Type: typo,

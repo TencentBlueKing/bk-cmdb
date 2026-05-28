@@ -216,6 +216,14 @@ var commPodIndexes = []types.Index{
 		Unique:     true,
 	},
 	{
+		Name: common.CCLogicIndexNamePrefix + "biz_id",
+		Keys: bson.D{
+			{kubetypes.BKBizIDField, 1},
+			{common.BkSupplierAccount, 1},
+		},
+		Background: true,
+	},
+	{
 		Name: common.CCLogicIndexNamePrefix + "reference_name_reference_kind",
 		Keys: bson.D{
 			{kubetypes.RefNameField, 1},

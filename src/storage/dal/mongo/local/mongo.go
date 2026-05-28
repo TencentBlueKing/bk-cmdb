@@ -29,6 +29,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/json"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/ssl"
 	"configcenter/src/common/util"
@@ -43,7 +44,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.mongodb.org/mongo-driver/x/bsonx"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/connstring"
 )
 
@@ -248,7 +249,7 @@ func (c *Mongo) updateIDGenSeqID(ctx context.Context, typ idgen.IDGenType, id ui
 func checkMongodbVersion(db string, client *mongo.Client) error {
 	serverStatus, err := client.Database(db).RunCommand(
 		context.Background(),
-		bsonx.Doc{{"serverStatus", bsonx.Int32(1)}},
+		bson.D{{"serverStatus", 1}},
 	).DecodeBytes()
 	if err != nil {
 		return err
@@ -466,6 +467,9 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 	if f.filter == nil {
 		f.filter = bson.M{}
 	}
+	if err = checkDangerousOps(f.filter); err != nil {
+		return err
+	}
 
 	opt := getCollectionOption(ctx)
 
@@ -477,6 +481,31 @@ func (f *Find) All(ctx context.Context, result interface{}) error {
 		}
 		return cursor.All(ctx, result)
 	})
+}
+
+// checkDangerousOps check if filter contains dangerous operator
+func checkDangerousOps(filter types.Filter) error {
+	var filterMap mapstr.MapStr
+	switch t := filter.(type) {
+	case map[string]interface{}:
+		filterMap = t
+	case mapstr.MapStr:
+		filterMap = t
+	default:
+		return nil
+	}
+
+	for key, value := range filterMap {
+		for _, op := range []string{"$where", "$expr", "$accumulator", "$function"} {
+			if key == op {
+				return fmt.Errorf("operator %q is forbidden", op)
+			}
+		}
+		if err := checkDangerousOps(value); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // List 查询多个数据， 当分页中start值为零的时候返回满足条件总行数
@@ -498,6 +527,9 @@ func (f *Find) List(ctx context.Context, result interface{}) (int64, error) {
 	// 查询条件为空时候，mongodb 不返回数据
 	if f.filter == nil {
 		f.filter = bson.M{}
+	}
+	if err = checkDangerousOps(f.filter); err != nil {
+		return 0, err
 	}
 
 	opt := getCollectionOption(ctx)
@@ -543,6 +575,9 @@ func (f *Find) One(ctx context.Context, result interface{}) error {
 	if f.filter == nil {
 		f.filter = bson.M{}
 	}
+	if err = checkDangerousOps(f.filter); err != nil {
+		return err
+	}
 
 	opt := getCollectionOption(ctx)
 	return f.tm.AutoRunWithTxn(ctx, f.dbc, func(ctx context.Context) error {
@@ -572,6 +607,9 @@ func (f *Find) Count(ctx context.Context) (uint64, error) {
 
 	if f.filter == nil {
 		f.filter = bson.M{}
+	}
+	if err := checkDangerousOps(f.filter); err != nil {
+		return 0, err
 	}
 
 	opt := getCollectionOption(ctx)
@@ -637,6 +675,9 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	if filter == nil {
 		filter = bson.M{}
 	}
+	if err := checkDangerousOps(filter); err != nil {
+		return err
+	}
 
 	data := bson.M{"$set": doc}
 	return c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
@@ -660,6 +701,9 @@ func (c *Collection) UpdateMany(ctx context.Context, filter types.Filter, doc in
 
 	if filter == nil {
 		filter = bson.M{}
+	}
+	if err := checkDangerousOps(filter); err != nil {
+		return 0, err
 	}
 
 	data := bson.M{"$set": doc}
@@ -686,6 +730,10 @@ func (c *Collection) Upsert(ctx context.Context, filter types.Filter, doc interf
 		mtc.collectOperDuration(c.collName, upsertOper, time.Since(start))
 	}()
 
+	if err := checkDangerousOps(filter); err != nil {
+		return err
+	}
+
 	// set upsert option
 	doUpsert := true
 	replaceOpt := &options.UpdateOptions{
@@ -711,6 +759,10 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 	defer func() {
 		mtc.collectOperDuration(c.collName, updateOper, time.Since(start))
 	}()
+
+	if err := checkDangerousOps(filter); err != nil {
+		return err
+	}
 
 	data := bson.M{}
 	for _, item := range updateModel {
@@ -747,6 +799,10 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 		mtc.collectOperDuration(c.collName, deleteOper, time.Since(start))
 	}()
 
+	if err := checkDangerousOps(filter); err != nil {
+		return 0, err
+	}
+
 	var deleteCount uint64
 	err := c.tm.AutoRunWithTxn(ctx, c.dbc, func(ctx context.Context) error {
 		if err := c.tryArchiveDeletedDoc(ctx, filter); err != nil {
@@ -764,6 +820,25 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 	})
 
 	return deleteCount, err
+}
+
+// deleteField 从 bsoncore.Document 中移除指定字段，返回 bsoncore.Document
+func deleteField(raw bsoncore.Document, field string) bsoncore.Document {
+	elements, err := raw.Elements()
+	if err != nil {
+		return raw
+	}
+
+	idx, newDoc := bsoncore.AppendDocumentStart(nil)
+	for _, elem := range elements {
+		if elem.Key() == field {
+			continue
+		}
+		newDoc = bsoncore.AppendValueElement(newDoc, elem.Key(), elem.Value())
+	}
+
+	newDoc, _ = bsoncore.AppendDocumentEnd(newDoc, idx)
+	return newDoc
 }
 
 func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filter) error {
@@ -784,7 +859,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 		findOpts = &options.FindOptions{Projection: projection}
 	}
 
-	docs := make([]bsonx.Doc, 0)
+	docs := make([]bsoncore.Document, 0)
 	cursor, err := c.dbc.Database(c.dbname).Collection(c.collName).Find(ctx, filter, findOpts)
 	if err != nil {
 		return err
@@ -802,7 +877,7 @@ func (c *Collection) tryArchiveDeletedDoc(ctx context.Context, filter types.Filt
 	for idx, doc := range docs {
 		archives[idx] = metadata.DeleteArchive{
 			Oid:    doc.Lookup("_id").ObjectID().Hex(),
-			Detail: doc.Delete("_id"),
+			Detail: deleteField(doc, "_id"),
 			Time:   time.Now(),
 			Coll:   c.collName,
 		}

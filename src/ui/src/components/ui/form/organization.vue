@@ -87,7 +87,7 @@
     formatter: Function
   })
 
-  const emit = defineEmits(['on-checked', 'input', 'toggle'])
+  const emit = defineEmits(['on-checked', 'input', 'toggle', 'on-selected'])
 
   defineExpose({
     focus: () => select?.value?.show?.()
@@ -134,6 +134,7 @@
       if (val) {
         val = Array.isArray(value) ? value : [value]
       }
+      emit('on-selected', val)
       emit('on-checked', val)
       emit('change', val)
       emit('input', val)

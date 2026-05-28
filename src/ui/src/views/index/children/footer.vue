@@ -22,26 +22,15 @@
 <script>
   export default {
     name: 'TheFooter',
-    props: {
-      previewContact: {
-        type: String,
-        default: ''
-      },
-      previewCopyright: {
-        type: String,
-        default: ''
-      },
-    },
+    props: {},
     computed: {
       setting() {
         return this.$store.state.globalConfig.config
       },
       contact() {
-        if (this.previewContact) return this.parseMarkdownLink(this.previewContact)
         return this.setting.footer.contact
       },
       copyright() {
-        if (this.previewCopyright) return this.parseTimeVars(this.previewCopyright)
         return this.setting.footer.copyright
       }
     }

@@ -240,14 +240,17 @@ func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.L
 			defer func() {
 				wg.Done()
 				<-pipeline
-				lock.Unlock()
 			}()
 
 			attrStatus, err := t.getAttrSyncStatus(kit, id, objectID)
 			if err != nil {
-				firstErr = err
+				if firstErr == nil {
+					firstErr = err
+				}
+				return
 			}
 			lock.Lock()
+			defer lock.Unlock()
 			// if a difference in attributes has already been identified,
 			// there is no need to continue to calculate whether there is
 			// a difference in the unique check
@@ -258,7 +261,10 @@ func (t *template) ListFieldTemplateSyncStatus(kit *rest.Kit, option *metadata.L
 
 			uniqueStatus, err := t.getUniqueSyncStatus(kit, id, objectID)
 			if err != nil {
-				firstErr = err
+				if firstErr == nil {
+					firstErr = err
+				}
+				return
 			}
 			result = append(result, *uniqueStatus)
 

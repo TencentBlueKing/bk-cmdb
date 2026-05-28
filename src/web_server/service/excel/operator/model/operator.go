@@ -386,6 +386,8 @@ func convAttr(attrItems map[int]map[string]interface{}) map[int]map[string]inter
 		case common.FieldTypeBool:
 			var iOption bool
 			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKOptionField, iOption)
+			var iDefault bool
+			attrItems[index] = unmarshalAttrStrVal(attrItems[index], common.BKDefaultFiled, iDefault)
 		}
 	}
 
