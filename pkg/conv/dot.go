@@ -20,12 +20,14 @@ import (
 	"strings"
 )
 
+const dotEscape = "\\u002e"
+
 // EncodeDot encode the dot in the string as the unicode value
 func EncodeDot(input string) string {
-	return strings.ReplaceAll(input, ".", "\\u002e")
+	return strings.ReplaceAll(input, ".", dotEscape)
 }
 
 // DecodeDot decode the unicode value of dot in a string to dot
 func DecodeDot(input string) string {
-	return strings.ReplaceAll(input, "\\u002e", ".")
+	return strings.ReplaceAll(input, dotEscape, ".")
 }

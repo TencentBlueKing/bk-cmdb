@@ -30,3 +30,25 @@ func TestDot(t *testing.T) {
 	decodedStr := DecodeDot(encodedStr)
 	require.Equal(t, decodedStr, str)
 }
+
+func TestDotEdgeCases(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+	}{
+		{"empty", ""},
+		{"no_dot", "nodot"},
+		{"k8s_label", "app.kubernetes.io/name"},
+		{"docker_image", "docker.io/library/nginx:1.21.0"},
+		{"semver", "v1.2.3-beta.1"},
+		{"only_dots", "..."},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			encoded := EncodeDot(c.input)
+			decoded := DecodeDot(encoded)
+			require.Equal(t, c.input, decoded)
+		})
+	}
+}
