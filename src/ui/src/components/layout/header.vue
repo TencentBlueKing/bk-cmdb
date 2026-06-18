@@ -67,33 +67,14 @@
           <a class="link-item" target="_blank" href="https://github.com/TencentBlueKing/bk-cmdb">{{$t('开源社区')}}</a>
         </template>
       </bk-popover>
-      <bk-popover class="info-item"
-        theme="light header-info-popover"
-        animation="fade"
-        placement="bottom-end"
-        :arrow="false"
-        :tippy-options="{
-          animateFill: false,
-          hideOnClick: false,
-          offset: '0, 10'
-        }">
-        <span class="info-user">
-          <cmdb-user-value :value="userName" />
-          <i class="user-icon bk-icon icon-angle-down"></i>
-        </span>
-        <template slot="content">
-          <a class="link-item" v-if="userManagerWebUrl" target="_blank" :href="userManagerWebFullUrl">
-            {{$t('个人中心')}}
-          </a>
-          <a class="link-item" v-if="iamWebUrl" target="_blank" :href="iamWebUrl">
-            {{$t('权限中心')}}
-          </a>
-          <a class="link-item" href="javascript:void(0)"
-            @click="handleLogout">
-            {{$t('退出登录')}}
-          </a>
-        </template>
-      </bk-popover>
+      <bk-login-userinfo
+        class="info-item info-user"
+        :userinfo="userinfo"
+        :render-slot="renderUsernameSlot"
+        :offset="[0, 24]"
+        :action-list="actionList"
+      >
+      </bk-login-userinfo>
     </section>
     <versionLog
       :current-version="currentVersion"
@@ -105,6 +86,7 @@
 
 <script>
   import has from 'has'
+  import BkLoginUserinfo from '@blueking/login-userinfo/vue2'
   import menu from '@/dictionary/menu'
   import {
     MENU_BUSINESS,
@@ -123,9 +105,12 @@
   import versionLog from '../version-log'
   import logoSvg from '@/assets/images/logo.svg'
 
+  import('@blueking/login-userinfo/vue2/vue2.css')
+
   export default {
     components: {
       versionLog,
+      BkLoginUserinfo,
     },
     data() {
       return {
@@ -178,7 +163,50 @@
       },
       iamWebUrl() {
         return window.Site.iamWebUrl || ''
-      }
+      },
+      tenantId() {
+        return window.Site.tenantId || ''
+      },
+      timezone() {
+        return window.Site.timezone || ''
+      },
+      userinfo() {
+        return {
+          name: this.userName,
+          organization: this.tenantId,
+          timezone: this.timezone,
+        }
+      },
+      actionList() {
+        const list = []
+        if (this.userManagerWebUrl) {
+          list.push({
+            text: this.$t('个人中心'),
+            icon: 'bk-cmdb-icon icon-cc-field-objuser',
+            href: this.userManagerWebFullUrl,
+            target: '_blank',
+            theme: 'primary',
+          })
+        }
+        if (this.iamWebUrl) {
+          list.push({
+            text: this.$t('权限中心'),
+            icon: 'bk-cmdb-icon icon-cc-set-permission',
+            href: this.iamWebUrl,
+            target: '_blank',
+            theme: 'primary',
+          })
+        }
+        list.push({
+          text: this.$t('退出登录'),
+          icon: 'bk-cmdb-icon icon-cc-logout',
+          theme: 'primary',
+          handle: () => {
+            this.handleLogout()
+          },
+        })
+        return list
+      },
     },
     async mounted() {
       const oldCurrentVersion = localStorage.getItem('newVersion')
@@ -198,6 +226,9 @@
       ...mapActions('versionLog', [
         'getLogList',
       ]),
+      renderUsernameSlot(h) {
+        return h('bk-user-display-name', { 'user-id': this.userName })
+      },
       isLinkActive(nav) {
         const { matched: [topRoute] } = this.$route
         if (!topRoute) {
@@ -304,9 +335,6 @@
         .bk-icon {
             color: #fff;
         }
-        .user-icon {
-            transform: rotate(-180deg);
-        }
     }
     .question-icon,
     .lang-icon {
@@ -324,33 +352,29 @@
             border-radius: 100%;
         }
     }
-    .info-user {
-        font-size: 14px;
-        font-weight: bold;
-        color: #96A2B9;
-        line-height: 32px;
-        margin-left: 6px;
-        display: inline-block;
-      .user-name {
-          max-width: 150px;
-          @include inlineBlock;
-          @include ellipsis;
-      }
-      .user-icon {
-          margin-left: -4px;
-          transition: transform .2s linear;
-          font-size: 20px;
-          color: #96A2B9;
-      }
-      &:hover {
-           color: #fff;
-           .user-icon {
-              color: #fff;
-          }
-        }
-    }
     .lang-icon {
         font-size: 20px;
+    }
+  }
+
+
+  .info-user {
+    :deep(.bk-login-userinfo) {
+      .bk-login-userinfo-name {
+        color: #96A2B9 !important;
+      }
+      .bk-login-userinfo-icon {
+        color: #96A2B9 !important;
+      }
+
+      &.is-active {
+        .bk-login-userinfo-name {
+          color: #fff !important;
+        }
+        .bk-login-userinfo-icon {
+          color: #fff !important;
+        }
+      }
     }
   }
 
