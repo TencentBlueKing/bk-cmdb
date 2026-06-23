@@ -23,6 +23,7 @@
     'bk_isapi': boolean,
     'bk_property_group': string
     'editable': boolean
+    'ismultiple': boolean
   }
 
   export default defineComponent({
@@ -72,6 +73,11 @@
       const confirmEvents = computed(() => {
         const { bk_property_type: type } = props.property
 
+        // 多选组织：勾选过程中不逐次保存，统一在点击空白处（失焦）时由 click-outside 触发一次保存
+        if (type === PROPERTY_TYPES.ORGANIZATION && props.property.ismultiple) {
+          return {}
+        }
+
         let eventName = 'change'
 
         if (['singlechar'].includes(type)) {
@@ -94,6 +100,11 @@
       })
 
       const confirmEdit = async () => {
+        // 已退出编辑态时不再触发保存，避免编辑态重置后残留事件携带空值发起保存
+        if (!isEditing.value) {
+          return
+        }
+
         const valid = await propertyFormEl.value?.$validator?.validate?.()
 
         if (!valid) {
