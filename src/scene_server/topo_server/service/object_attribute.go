@@ -121,6 +121,13 @@ func (s *Service) createTableAttribute(ctx *rest.Contexts, attr *metadata.Attrib
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
 	}
 
+	// validate that no table column uses the reserved field name "id", which conflicts with the
+	// built-in table record identification field.
+	if err := validateTableAttrOption(ctx.Kit, attr.Option); err != nil {
+		blog.Errorf("validate table attribute option failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		return nil, err
+	}
+
 	isBizCustomField := false
 	if bizID > 0 {
 		attr.BizID = bizID
@@ -362,6 +369,12 @@ func (s *Service) UpdateObjectAttribute(ctx *rest.Contexts) {
 
 // updateObjectTableAttribute update the table object attribute
 func (s *Service) updateObjectTableAttribute(ctx *rest.Contexts, id, bizID int64, data mapstr.MapStr) error {
+
+	// validate that no table column uses the reserved field name "id" when updating the option.
+	if err := validateTableAttrOption(ctx.Kit, data[common.BKOptionField]); err != nil {
+		blog.Errorf("validate table attribute option failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		return err
+	}
 
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.AttributeOperation().UpdateTableObjectAttr(ctx.Kit, data, id, bizID)
@@ -639,4 +652,25 @@ func checkJsonTagContainIsMultipleField(data interface{}) bool {
 	}
 
 	return true
+}
+
+// validateTableAttrOption checks that no table column uses a field name reserved by the system.
+// The "id" field is reserved as the built-in table record identification field.
+func validateTableAttrOption(kit *rest.Kit, option interface{}) error {
+	if option == nil {
+		return nil
+	}
+
+	tableOption, err := metadata.ParseTableAttrOption(option)
+	if err != nil {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKOptionField)
+	}
+
+	for _, header := range tableOption.Header {
+		if header.PropertyID == common.BKFieldID {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKFieldID)
+		}
+	}
+
+	return nil
 }

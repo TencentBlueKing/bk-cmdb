@@ -131,6 +131,9 @@ const buildInVaidationRules = {
   reservedWord: {
     validate: value => /^(?!bk_).*/.test(value)
   },
+  reservedFieldId: {
+    validate: value => value !== 'id'
+  },
   ipSearchMaxCloud: {
     validate: (value) => {
       const { cloudIdSet } = parseIP(splitIP(value))
@@ -189,6 +192,7 @@ const dictionary = {
       moduleNameLen: () => '请输入256个字符以内的内容',
       businessTopoInstNames: () => '格式不正确，不能包含特殊字符 | / : * , < > " ? #及空格',
       reservedWord: () => '不能以"bk_"开头',
+      reservedFieldId: () => '"id" 为系统保留字段，不支持创建',
       ipSearchMaxCloud: () => '最多支持50个不同管控区域的混合搜索',
       ipSearchMaxCount: () => '最多支持搜索10000条数据',
       validRegExp: () => '请输入合法的正则表达式',
@@ -227,6 +231,7 @@ const dictionary = {
       emptyModuleName: () => 'Do not enter blank Module name',
       moduleNameLen: () => 'Content length max than 256',
       reservedWord: () => 'Can not start with "bk_"',
+      reservedFieldId: () => '"id" is a system-reserved field and cannot be created',
       ipSearchMaxCloud: () => 'Supports mixed search for up to 50 different BK-Network Area',
       ipSearchMaxCount: () => 'Up to 10000 data searches are supported',
       validRegExp: () => 'Please enter valid regular express',
