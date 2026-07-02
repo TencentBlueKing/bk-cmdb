@@ -227,7 +227,7 @@
           <bk-input
             name="propertyId"
             :data-vv-as="$t('列ID')"
-            v-validate="`required|fieldId|reservedWord|length:128|excluded:${existingIds}`"
+            v-validate="`required|fieldId|reservedWord|reservedFieldId|length:128|excluded:${existingIds}`"
             :disabled="props.isEditField && props.isEdit"
             v-model="settings.bk_property_id">
           </bk-input>
