@@ -59,6 +59,7 @@
       status.selected[prop.id] = selected.value.some(item => item.id === prop.id)
       status.disabled[prop.id] = props.templateFieldList.some(item => item.bk_property_id === prop.bk_property_id
         || item.bk_property_name === prop.bk_property_name)
+        || prop.bk_property_id.startsWith('bk_') || prop.bk_property_id.startsWith('_bk')
     })
     return status
   })
@@ -132,7 +133,9 @@
             :deletable="false"
             v-bk-tooltips="{
               disabled: !selectedStatus.disabled[field.id],
-              content: $t('字段已在模板中存在，无法添加')
+              content: field.bk_property_id.startsWith('bk_') || field.bk_property_id.startsWith('_bk')
+                ? $t('内置字段，无法添加')
+                : $t('字段已在模板中存在，无法添加')
             }"
             @click-field="handleSelect">
             <template #action-append>
