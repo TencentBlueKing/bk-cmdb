@@ -1691,6 +1691,8 @@ apigatewaySync:
   bkLogAppCode: "bk_log_search"
   ## 此变量在运维维护的变量中，没有对应的变量
   bkBscpAppCode: "bk_bscp"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  cwAitsmAppCode: "cw_aitsm"
 
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:

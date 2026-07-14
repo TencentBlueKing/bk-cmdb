@@ -60,6 +60,8 @@ spec:
           value: {{ .Values.apigatewaySync.bkLogAppCode }}
         - name: BK_BSCP_APP_CODE
           value: {{ .Values.apigatewaySync.bkBscpAppCode }}
+        - name: CW_AITSM_APP_CODE
+          value: {{ .Values.apigatewaySync.cwAitsmAppCode }}
         resources:
           limits:
             cpu: 200m

@@ -389,6 +389,12 @@ grant_permissions:
     grant_dimension: "resource"
     resource_names:
       - search_business
+  - bk_app_code: {{ environ.CW_AITSM_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - search_cloud_area
+      - search_business
+      - search_object_attribute
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
