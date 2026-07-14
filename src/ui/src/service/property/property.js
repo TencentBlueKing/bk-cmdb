@@ -42,7 +42,7 @@ function createIdProperty(objId) {
 
 export const propertyFilter = (data) => {
   const allTypes = Object.values(PROPERTY_TYPES)
-  return data.filter(prop => allTypes.includes(prop.bk_property_type))
+  return data.filter(prop => allTypes.includes(prop.bk_property_type) && prop.is_hidden !== true)
 }
 
 export const find = async (params, config, injectId = false) => {
