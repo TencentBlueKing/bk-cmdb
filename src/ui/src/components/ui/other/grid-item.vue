@@ -85,6 +85,9 @@
 
     .item-content {
       flex: 1;
+      // min-width: 0 才能让 flex:1 收缩到网格轨道宽度，避免长内容（如组织多选标签）
+      // 撑开单元格导致内部 flex-tag 无法检测溢出、+N 折叠失效
+      min-width: 0;
       position: relative;
     }
 
