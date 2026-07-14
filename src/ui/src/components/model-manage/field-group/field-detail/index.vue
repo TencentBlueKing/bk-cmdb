@@ -637,6 +637,9 @@
       },
       getPreFieldUpdateParams() {
         const allowKey = ['option', 'unit', 'placeholder']
+        if (this.fieldInfo.bk_property_type === PROPERTY_TYPES.BOOL) {
+          allowKey.push('default')
+        }
         const params = {}
         allowKey.forEach((key) => {
           params[key] = this.fieldInfo[key]
