@@ -28,6 +28,8 @@ import (
 	"sync"
 	"time"
 
+	"configcenter/src/common/blog"
+	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/ssl"
 
 	"github.com/go-zookeeper/zk"
@@ -45,27 +47,38 @@ var (
 )
 
 const (
-	// AUTH_USER TODO
+	// AUTH_USER is the default zookeeper auth user
 	AUTH_USER = "cc"
-	// AUTH_PWD TODO
+	// AUTH_PWD is the default zookeeper auth password
 	AUTH_PWD = "3.0#bkcc"
 )
 
 // ZkLock TODO
 type ZkLock struct {
-	zkHost []string
-	zkConn *zk.Conn
-	zkAcl  []zk.ACL
-	zkLock *zk.Lock
+	zkHost     []string
+	zkConn     *zk.Conn
+	zkAcl      []zk.ACL
+	zkLock     *zk.Lock
+	zkUser     string
+	zkPassword string
 }
 
-// NewZkLock TODO
-func NewZkLock(host []string) *ZkLock {
+// NewZkLock creates a ZkLock with specified user and password.
+// If user or password is empty, the default values (AUTH_USER, AUTH_PWD) are used.
+func NewZkLock(host []string, user, password string) *ZkLock {
+	if user == "" {
+		user = AUTH_USER
+	}
+	if password == "" {
+		password = AUTH_PWD
+	}
 	zlock := ZkLock{
-		zkHost: host[:],
-		zkConn: nil,
-		zkLock: nil,
-		zkAcl:  zk.DigestACL(zk.PermAll, AUTH_USER, AUTH_PWD),
+		zkHost:     host[:],
+		zkConn:     nil,
+		zkLock:     nil,
+		zkUser:     user,
+		zkPassword: password,
+		zkAcl:      zk.DigestACL(zk.PermAll, user, password),
 	}
 	return &zlock
 }
@@ -84,7 +97,7 @@ func (zlock *ZkLock) LockEx(path string, sessionTimeOut time.Duration) error {
 		}
 
 		// auth
-		auth := AUTH_USER + ":" + AUTH_PWD
+		auth := zlock.zkUser + ":" + zlock.zkPassword
 		if err := conn.AddAuth("digest", []byte(auth)); err != nil {
 			conn.Close()
 			return err
@@ -125,20 +138,35 @@ type ZkClient struct {
 	ZkConn       *zk.Conn
 	zkAcl        []zk.ACL
 	zkTLS        *ssl.TLSClientConfig
+	zkUser       string
+	zkPassword   string
 	zkConnClosed bool
 	sync.Mutex
 	closeLock sync.Mutex
 }
 
-// NewZkClient TODO
-func NewZkClient(host []string, tlsConf *ssl.TLSClientConfig) *ZkClient {
-	c := ZkClient{
-		ZkHost: host[:],
-		ZkConn: nil,
-		zkAcl:  zk.DigestACL(zk.PermAll, AUTH_USER, AUTH_PWD),
-		zkTLS:  tlsConf,
+// NewZkClient creates a ZkClient from the given ZkConfig.
+// If User or Password is empty, the default values (AUTH_USER, AUTH_PWD) are used.
+func NewZkClient(cfg config.ZkConfig) *ZkClient {
+	user := cfg.User
+	if user == "" {
+		blog.Info("zk user is empty, use default user")
+		user = AUTH_USER
 	}
-
+	password := cfg.Password
+	if password == "" {
+		blog.Info("zk password is empty, use default password")
+		password = AUTH_PWD
+	}
+	tlsConf := cfg.TLS
+	c := ZkClient{
+		ZkHost:     strings.Split(cfg.Addr, ","),
+		ZkConn:     nil,
+		zkAcl:      zk.DigestACL(zk.PermAll, user, password),
+		zkTLS:      &tlsConf,
+		zkUser:     user,
+		zkPassword: password,
+	}
 	return &c
 }
 
@@ -177,7 +205,7 @@ func (z *ZkClient) ConnectEx(sessionTimeOut time.Duration) error {
 	}
 
 	// AddAuth
-	auth := AUTH_USER + ":" + AUTH_PWD
+	auth := z.zkUser + ":" + z.zkPassword
 	if err := c.AddAuth("digest", []byte(auth)); err != nil {
 		c.Close()
 		return err
@@ -219,7 +247,7 @@ func (z *ZkClient) Get(path string) (string, error) {
 
 // AddAuth TODO
 func (z *ZkClient) AddAuth() error {
-	auth := AUTH_USER + ":" + AUTH_PWD
+	auth := z.zkUser + ":" + z.zkPassword
 	return z.ZkConn.AddAuth("digest", []byte(auth))
 }
 

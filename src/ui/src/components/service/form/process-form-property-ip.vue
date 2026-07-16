@@ -12,7 +12,7 @@
 
 <template>
   <div class="process-form-property-ip">
-    <div v-bk-tooltips="{ content: localValue, disabled: !disabled || localValue.length < 16 }">
+    <div v-bk-tooltips="{ allowHTML: false, content: localValue, disabled: !disabled || localValue.length < 16 }">
       <cmdb-input-select
         name="ip"
         :placeholder="$t('请选择或输入IP')"

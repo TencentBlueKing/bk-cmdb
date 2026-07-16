@@ -43,11 +43,17 @@ func NewClient(c *ssl.TLSClientConfig, conf ...ExtraClientConfig) (*http.Client,
 
 	// set api request timeout to 25s, so that we can stop the long request like searching all hosts
 	responseHeaderTimeout := 25 * time.Second
+	// idle conn timeout, 0 means no limit
+	idleConnTimeout := 0 * time.Second
 	if len(conf) > 0 {
 		if timeout := conf[0].ResponseHeaderTimeout; timeout != 0 {
 			responseHeaderTimeout = timeout
 		}
+		if timeout := conf[0].IdleConnTimeout; timeout != 0 {
+			idleConnTimeout = timeout
+		}
 	}
+
 	transport := &http.Transport{
 		Proxy:               http.ProxyFromEnvironment,
 		TLSHandshakeTimeout: 5 * time.Second,
@@ -58,6 +64,7 @@ func NewClient(c *ssl.TLSClientConfig, conf ...ExtraClientConfig) (*http.Client,
 		}).Dial,
 		MaxIdleConnsPerHost:   100,
 		ResponseHeaderTimeout: responseHeaderTimeout,
+		IdleConnTimeout:       idleConnTimeout,
 	}
 
 	client := &http.Client{

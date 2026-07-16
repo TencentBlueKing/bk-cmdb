@@ -1,7 +1,8 @@
 /*
  * Tencent is pleased to support the open source community by making
  * 蓝鲸智云 - 配置平台 (BlueKing - Configuration System) available.
- * Copyright (C) 2017 Tencent. All rights reserved.
+ * Copyright (C) 2017 THL A29 Limited,
+ * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
@@ -14,4 +15,27 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package middleware
+package y3_14_202607141510
+
+import (
+	"context"
+
+	"configcenter/src/common/blog"
+	"configcenter/src/scene_server/admin_server/upgrader/history"
+	"configcenter/src/storage/dal"
+)
+
+func init() {
+	history.RegistUpgrader("y3.14.202607141510", upgrade)
+}
+
+func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
+	blog.Infof("start execute y3.14.202607141510")
+	err = addObjAttIsHiddenField(ctx, db, conf)
+	if err != nil {
+		blog.Errorf("upgrade y3.14.202607141510 add objattr is_hidden field failed, error: %v", err)
+		return err
+	}
+	blog.Infof("execute y3.14.202607141510, add objattr is_hidden field success!")
+	return nil
+}

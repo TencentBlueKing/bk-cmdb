@@ -267,6 +267,7 @@
       getDefaultNode() {
         // 选中指定的节点
         const queryNodeId = RouterQuery.get('node', '')
+        const queryTopoPathArray = RouterQuery.get('topo_path', '').split(',')
         if (queryNodeId) {
           // 未加载的容器节点会找不到，导致无法复原节点的选中，暂无理想的解决方式
           const node = this.$refs.tree.getNodeById(queryNodeId)
@@ -274,6 +275,19 @@
             return node
           }
         }
+
+        // 如果直接通过子节点无法找到当前树节点，则通过其父节点查找
+        // 为了解决当从pod详情列表点击拓扑跳转回业务拓扑页面时偶现找不到子节点而产生的接口报错问题
+        if (queryTopoPathArray.length) {
+          let node = ''
+          for (let i = queryTopoPathArray.length;i > 0; i--) {
+            node = this.$refs.tree.getNodeById(queryTopoPathArray[i - 1])
+            if (node) {
+              return node
+            }
+          }
+        }
+
         // 从其他页面跳转过来需要筛选节点，例如：删除集群模板中的服务模板
         const keyword = RouterQuery.get('keyword', '')
         if (keyword) {

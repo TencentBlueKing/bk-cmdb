@@ -136,7 +136,7 @@ func getHandleBoolTypeFunc() handleColPropFunc {
 			return nil, err
 		}
 		if err = t.GetExcel().AddValidation(t.GetObjID(),
-			&excel.ValidationParam{Type: excel.Bool, Sqref: sqref, Option: property.Name}); err != nil {
+			&excel.ValidationParam{Type: excel.Bool, Sqref: sqref}); err != nil {
 			return nil, err
 		}
 
@@ -147,11 +147,11 @@ func getHandleBoolTypeFunc() handleColPropFunc {
 
 func getHandleTableTypeFunc() handleColPropFunc {
 	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
-		nameStyle, err := t.styleCreator.getStyle(firstRow)
+		nameStyle, err := t.styleCreator.getStyle(firstRow, property.PropertyType)
 		if err != nil {
 			return nil, err
 		}
-		headerStyle, err := t.styleCreator.getStyle(generalHeader)
+		headerStyle, err := t.styleCreator.getStyle(generalHeader, property.PropertyType)
 		if err != nil {
 			return nil, err
 		}
@@ -160,7 +160,8 @@ func getHandleTableTypeFunc() handleColPropFunc {
 		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
 		result := make([][]excel.Cell, core.InstHeaderLen)
-		result[core.NameRowIdx] = append(result[core.NameRowIdx], excel.Cell{Value: property.Name, StyleID: nameStyle})
+		result[core.NameRowIdx] = append(result[core.NameRowIdx], excel.Cell{Value: core.HandleDDE(property.Name),
+			StyleID: nameStyle})
 		result[core.TypeRowIdx] = append(result[core.TypeRowIdx],
 			excel.Cell{Value: propertyType, StyleID: headerStyle})
 		result[core.IDRowIdx] = append(result[core.IDRowIdx], excel.Cell{Value: property.ID, StyleID: headerStyle})
@@ -204,7 +205,7 @@ func getHandleTableTypeFunc() handleColPropFunc {
 			result[core.TableIDRowIdx] = append(result[core.TableIDRowIdx], properyResult[core.IDRowIdx]...)
 		}
 
-		tableHeaderStyle, err := t.styleCreator.getStyle(tableHeader)
+		tableHeaderStyle, err := t.styleCreator.getStyle(tableHeader, property.PropertyType)
 		if err != nil {
 			return nil, err
 		}
@@ -228,11 +229,11 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 			headerStyleType = noEditHeader
 		}
 
-		nameStyle, err := t.styleCreator.getStyle(nameStyleType)
+		nameStyle, err := t.styleCreator.getStyle(nameStyleType, property.PropertyType)
 		if err != nil {
 			return nil, err
 		}
-		headerStyle, err := t.styleCreator.getStyle(headerStyleType)
+		headerStyle, err := t.styleCreator.getStyle(headerStyleType, property.PropertyType)
 		if err != nil {
 			return nil, err
 		}
@@ -241,7 +242,8 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 		propertyType := core.GetTypeAliasName(ccLang, property.PropertyType)
 
 		result := make([][]excel.Cell, core.InstHeaderLen)
-		result[core.NameRowIdx] = append(result[core.NameRowIdx], excel.Cell{Value: property.Name, StyleID: nameStyle})
+		result[core.NameRowIdx] = append(result[core.NameRowIdx],
+			excel.Cell{Value: core.HandleDDE(property.Name), StyleID: nameStyle})
 		result[core.TypeRowIdx] = append(result[core.TypeRowIdx], excel.Cell{Value: propertyType, StyleID: headerStyle})
 		result[core.IDRowIdx] = append(result[core.IDRowIdx], excel.Cell{Value: property.ID, StyleID: headerStyle})
 

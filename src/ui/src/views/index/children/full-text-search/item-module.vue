@@ -29,7 +29,7 @@
         </div>
         <div class="desc-item hl" v-else
           :key="childIndex"
-          v-html="`${property.bk_property_name}：${getText(property, data)}`">
+          v-html="`${getHighlightValue(property.bk_property_name, data)}：${getText(property, data)}`">
         </div>
       </div>
     </div>

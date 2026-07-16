@@ -4,11 +4,11 @@ Batch delete workloads (Version: v3.12.1+, Permission: Container workload deleti
 
 ### Parameters
 
-| Name      | Type   | Required | Description                                                                                                                                                                                    |
-|-----------|--------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | Yes      | Business ID                                                                                                                                                                                    |
-| kind      | string | Yes      | Workload type. Currently supported workload types are deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (creating pods directly without using workloads) |
-| ids       | array  | Yes      | Array of unique identifiers of workloads in CC, with a limit of 200 at a time                                                                                                                  |
+| Name      | Type   | Required | Description                                                                                                                                                                                                                      |
+|-----------|--------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id | int    | Yes      | Business ID                                                                                                                                                                                                                      |
+| kind      | string | Yes      | Workload type. Currently supported workload types are deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (creating pods directly without using workloads), customResource (custom resource) |
+| ids       | array  | Yes      | Array of unique identifiers of workloads in CC, with a limit of 200 at a time                                                                                                                                                    |
 
 ### Request Example
 

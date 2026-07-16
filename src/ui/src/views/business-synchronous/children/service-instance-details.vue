@@ -28,6 +28,7 @@
           <cmdb-property-value
             v-else
             v-bk-tooltips="{
+              allowHTML: false,
               content: getPropertyValue(row, 'before'),
               duration: 500
             }"
@@ -48,6 +49,7 @@
           <cmdb-property-value
             v-else
             v-bk-tooltips="{
+              allowHTML: false,
               content: getPropertyValue(row, 'after'),
               duration: 500
             }"

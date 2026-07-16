@@ -581,7 +581,19 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 
 	// generate audit log of object attribute group.
 	audit := auditlog.NewObjectAuditLog(o.clientSet.CoreService())
-	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, metadata.AuditUpdate).
+	auditAction := metadata.AuditUpdate
+	if data.Exists(metadata.ModelFieldIsPaused) {
+		isPaused, err := data.Bool(metadata.ModelFieldIsPaused)
+		if err != nil {
+			return err
+		}
+		if isPaused {
+			auditAction = metadata.AuditPause
+		} else {
+			auditAction = metadata.AuditResume
+		}
+	}
+	generateAuditParameter := auditlog.NewGenerateAuditCommonParameter(kit, auditAction).
 		WithUpdateFields(data)
 	auditLog, err := audit.GenerateAuditLog(generateAuditParameter, obj.ID, nil)
 	if err != nil {

@@ -20,9 +20,12 @@ def mkdir_p(path):
         else: raise
 
 def generate_config_file(
-        rd_server_v, db_name_v, redis_ip_v, redis_port_v,
-        redis_pass_v, sentinel_pass_v, mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, rs_name, user_info,
-        cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v, auth_address, auth_app_code,
+        rd_server_v, rd_user_v, rd_password_v, rd_cafile_v, rd_certfile_v, rd_keyfile_v, rd_skipverify_v, rd_certpassword_v,
+        db_name_v, redis_ip_v, redis_port_v,
+        redis_pass_v, sentinel_pass_v, redis_certfile_v, redis_keyfile_v, redis_cafile_v, redis_skipverify_v,
+        mongo_ip_v, mongo_port_v, mongo_user_v, mongo_pass_v, mongo_certfile_v, mongo_keyfile_v, mongo_cafile_v, mongo_skipverify_v, rs_name, user_info,
+        cc_url_v, paas_url_v, full_text_search, es_url_v, es_user_v, es_pass_v,es_shard_num_v,es_replica_num_v,
+        es_tls_cafile_v, es_tls_certfile_v, es_tls_keyfile_v, es_tls_skipverify_v, auth_address, auth_app_code,
         auth_app_secret, auth_enabled, auth_scheme, auth_sync_workers, auth_sync_interval_minutes, log_level, register_ip
 ):
     output = os.getcwd() + "/cmdb_adminserver/configures/"
@@ -32,10 +35,18 @@ def generate_config_file(
         mongo_host=mongo_ip_v,
         mongo_pass=mongo_pass_v,
         mongo_port=mongo_port_v,
+        mongo_certfile=mongo_certfile_v,
+        mongo_keyfile=mongo_keyfile_v,
+        mongo_cafile=mongo_cafile_v,
+        mongo_skipverify=mongo_skipverify_v,
         redis_host=redis_ip_v,
         redis_pass=redis_pass_v,
         sentinel_pass=sentinel_pass_v,
         redis_port=redis_port_v,
+        redis_certfile=redis_certfile_v,
+        redis_keyfile=redis_keyfile_v,
+        redis_cafile=redis_cafile_v,
+        redis_skipverify=redis_skipverify_v,
         cc_url=cc_url_v,
         paas_url=paas_url_v,
         es_url=es_url_v,
@@ -43,10 +54,21 @@ def generate_config_file(
         es_pass=es_pass_v,
         es_shard_num=es_shard_num_v,
         es_replica_num=es_replica_num_v,
+        es_tls_cafile = es_tls_cafile_v,
+        es_tls_certfile = es_tls_certfile_v,
+        es_tls_keyfile = es_tls_keyfile_v,
+        es_tls_skipverify = es_tls_skipverify_v,
         ui_root="../web",
         agent_url=paas_url_v,
         configures_dir=output,
         rd_server=rd_server_v,
+        rd_user=rd_user_v,
+        rd_password=rd_password_v,
+        rd_cafile=rd_cafile_v,
+        rd_certfile=rd_certfile_v,
+        rd_keyfile=rd_keyfile_v,
+        rd_skipverify=rd_skipverify_v,
+        rd_certpassword=rd_certpassword_v,
         auth_address=auth_address,
         auth_app_code=auth_app_code,
         auth_app_secret=auth_app_secret,
@@ -83,6 +105,16 @@ redis:
   database: "0"
   maxOpenConns: 3000
   maxIDleConns: 1000
+  #TLS配置信息
+  tls:
+    #证书文件路径
+    certFile: "$redis_certfile"
+    #密钥文件路径
+    keyFile: "$redis_keyfile"
+    #CA证书文件路径
+    caFile: "$redis_cafile"
+    #是否跳过证书验证
+    insecureSkipVerify: $redis_skipverify
   #以下几个redis配置为datacollection模块所需的配置,用于接收第三方提供的数据
   #接收主机信息数据的redis
   snap:
@@ -90,6 +122,11 @@ redis:
     pwd: "$redis_pass"
     sentinelPwd: "$sentinel_pass"
     database: "0"
+    tls:
+      certFile: "$redis_certfile"
+      keyFile: "$redis_keyfile"
+      caFile: "$redis_cafile"
+      insecureSkipVerify: $redis_skipverify
     '''
 
     template = FileTemplate(redis_file_template_str)
@@ -123,6 +160,16 @@ mongodb:
   rsName: $rs_name
   #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
   socketTimeoutSeconds: 10
+  #TLS配置信息
+  tls:
+    #证书文件路径
+    certFile: "$mongo_certfile"
+    #密钥文件路径
+    keyFile: "$mongo_keyfile"
+    #CA证书文件路径
+    caFile: "$mongo_cafile"
+    #是否跳过证书验证
+    insecureSkipVerify: $mongo_skipverify
   # mongodb事件监听存储事件链的mongodb配置
 watch:
   host: $mongo_host
@@ -135,6 +182,11 @@ watch:
   mechanism: SCRAM-SHA-1
   rsName: $rs_name
   socketTimeoutSeconds: 10
+  tls:
+    certFile: "$mongo_certfile"
+    keyFile: "$mongo_keyfile"
+    caFile: "$mongo_cafile"
+    insecureSkipVerify: $mongo_skipverify
     '''
     template = FileTemplate(mongodb_file_template_str)
     result = template.substitute(**context)
@@ -190,6 +242,11 @@ es:
   usr: $es_user
   #密码
   pwd: $es_pass
+  tls:
+    caFile: $es_tls_cafile
+    certFile: $es_tls_certfile
+    keyFile: $es_tls_keyfile
+    insecureSkipVerify: $es_tls_skipverify
 # adminServer专属配置
 adminServer:
   #同步IAM动态模型的周期,单位为分钟，最小为1分钟,默认为5分钟
@@ -568,6 +625,16 @@ redis:
   database: "0"
   maxOpenConns: 3000
   maxIDleConns: 1000
+  #TLS配置信息
+  tls:
+    #证书文件路径
+    certFile: "$redis_certfile"
+    #密钥文件路径
+    keyFile: "$redis_keyfile"
+    #CA证书文件路径
+    caFile: "$redis_cafile"
+    #是否跳过证书验证
+    insecureSkipVerify: $redis_skipverify
 
 mongodb:
   host: $mongo_host
@@ -581,6 +648,15 @@ mongodb:
   rsName: $rs_name
   #mongo的socket连接的超时时间，以秒为单位，默认10s，最小5s，最大30s。
   socketTimeoutSeconds: 10
+  tls:
+    #证书文件路径
+    certFile: "$mongo_certfile"
+    #密钥文件路径
+    keyFile: "$mongo_keyfile"
+    #CA证书文件路径
+    caFile: "$mongo_cafile"
+    #是否跳过证书验证
+    insecureSkipVerify: $mongo_skipverify
     '''
 
     template = FileTemplate(web_file_template_str)
@@ -632,13 +708,37 @@ mongodb:
 # 配置中心
 configServer:
   addrs: $rd_server
-  usr:
-  pwd:
+  usr: $rd_user
+  pwd: $rd_password
+  # ZooKeeper tls配置信息
+  tls:
+    # CA证书文件路径
+    caFile: "$rd_cafile"
+    # 证书文件路径
+    certFile: "$rd_certfile"
+    # 密钥文件路径
+    keyFile: "$rd_keyfile"
+    # 是否跳过证书验证
+    insecureSkipVerify: $rd_skipverify
+    # 证书密码
+    password: $rd_certpassword
 # 注册中心
 registerServer:
   addrs: $rd_server
-  usr:
-  pwd:
+  usr: $rd_user
+  pwd: $rd_password
+  # ZooKeeper tls配置信息
+  tls:
+    # CA证书文件路径
+    caFile: "$rd_cafile"
+    # 证书文件路径
+    certFile: "$rd_certfile"
+    # 密钥文件路径
+    keyFile: "$rd_keyfile"
+    # 是否跳过证书验证
+    insecureSkipVerify: $rd_skipverify
+    # 证书密码
+    password: $rd_certpassword
 # 指定configures的路径，通过这个路径找到其他的配置文件
 confs:
   dir: $configures_dir
@@ -655,7 +755,7 @@ language:
     with open(output + "migrate.yaml", 'w') as tmp_file:
         tmp_file.write(result)
 
-def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip):
+def update_start_script(rd_server, server_ports, enable_auth, log_level, register_ip, rd_cafile, rd_certfile, rd_keyfile, rd_skipverify, rd_certpassword, rd_user='', rd_password=''):
     list_dirs = os.walk(os.getcwd()+"/")
     for root, dirs, _ in list_dirs:
         for d in dirs:
@@ -691,6 +791,23 @@ def update_start_script(rd_server, server_ports, enable_auth, log_level, registe
                     extend_flag += ' --enable-auth=%s ' % enable_auth
                 if register_ip != '':
                     extend_flag += ' --register-ip=%s ' % register_ip
+
+                if d != "cmdb_adminserver":
+                    if rd_user != '':
+                        extend_flag += ' --regdiscv-user=%s ' % rd_user
+                    if rd_password != '':
+                        extend_flag += ' --regdiscv-password=%s ' % rd_password
+                    if rd_cafile != '':
+                        extend_flag += ' --regdiscv-cafile=%s ' % rd_cafile
+                    if rd_certfile != '':
+                        extend_flag += ' --regdiscv-certfile=%s ' % rd_certfile
+                    if rd_keyfile != '':
+                        extend_flag += ' --regdiscv-keyfile=%s ' % rd_keyfile
+                    if rd_skipverify != '':
+                        extend_flag += ' --regdiscv-skipverify=%s ' % rd_skipverify
+                    if rd_certpassword != '':
+                        extend_flag += " --regdiscv-certpassword=%s " % rd_certpassword
+
                 filedata = filedata.replace('extend_flag_placeholder', extend_flag)
 
                 filedata = filedata.replace('log_level_placeholder', log_level)
@@ -707,10 +824,18 @@ def main(argv):
     redis_port = 6379
     redis_pass = ''
     sentinel_pass = ''
+    redis_certfile = ''
+    redis_keyfile = ''
+    redis_cafile = ''
+    redis_skipverify = 'true'
     mongo_ip = ''
     mongo_port = 27017
     mongo_user = ''
     mongo_pass = ''
+    mongo_certfile = ''
+    mongo_keyfile = ''
+    mongo_cafile = ''
+    mongo_skipverify = 'true'
     cc_url = ''
     paas_url = 'http://127.0.0.1'
     auth = {
@@ -729,10 +854,21 @@ def main(argv):
     es_pass = ''
     es_shard_num = 1
     es_replica_num = 1
+    es_tls_cafile = ''
+    es_tls_certfile = ''
+    es_tls_keyfile = ''
+    es_tls_skipverify = 'true'
     log_level = '3'
     register_ip = ''
     rs_name = 'rs0'
     user_info = ''
+    rd_user = ''
+    rd_password = ''
+    rd_cafile = ''
+    rd_certfile = ''
+    rd_keyfile = ''
+    rd_skipverify = 'true'
+    rd_certpassword = ''
 
     server_ports = {
         "cmdb_adminserver": 60004,
@@ -753,75 +889,116 @@ def main(argv):
     }
     arr = [
         "help", "discovery=", "database=", "redis_ip=", "redis_port=",
-        "redis_pass=", "sentinel_pass=", "mongo_ip=", "mongo_port=", "rs_name=",
-        "mongo_user=", "mongo_pass=", "blueking_cmdb_url=", "user_info=",
-        "blueking_paas_url=", "listen_port=", "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=","auth_address=",
-        "auth_app_code=", "auth_app_secret=", "auth_enabled=",
-        "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip="
+        "redis_pass=", "sentinel_pass=", "redis_certfile=", "redis_keyfile=", "redis_cafile=", "redis_skipverify=",
+        "mongo_ip=", "mongo_port=", "rs_name=",
+        "mongo_user=", "mongo_pass=", "mongo_certfile=", "mongo_keyfile=", "mongo_cafile=", "mongo_skipverify=", "blueking_cmdb_url=", "user_info=",
+        "blueking_paas_url=", "listen_port=",
+        "es_url=", "es_user=", "es_pass=", "es_shard_num=","es_replica_num=",
+        "es_tls_cafile=", "es_tls_certfile=", "es_tls_keyfile=", "es_tls_skipverify=",
+        "auth_address=", "auth_app_code=", "auth_app_secret=", "auth_enabled=",
+        "auth_scheme=", "auth_sync_workers=", "auth_sync_interval_minutes=", "full_text_search=", "log_level=", "register_ip=",
+        "discovery_cafile=", "discovery_certfile=", "discovery_keyfile=", "discovery_skipverify=", "discovery_certpassword=",
+        "discovery_user=", "discovery_password="
     ]
     usage = '''
     usage:
-      --discovery          <discovery>            the ZooKeeper server address, eg:127.0.0.1:2181
-      --database           <database>             the database name, default cmdb
-      --redis_ip           <redis_ip>             the redis ip, eg:127.0.0.1
-      --redis_port         <redis_port>           the redis port, default:6379
-      --redis_pass         <redis_pass>           the redis user password
-      --sentinel_pass      <sentinel_pass>        the redis sentinel password
-      --mongo_ip           <mongo_ip>             the mongo ip ,eg:127.0.0.1
-      --mongo_port         <mongo_port>           the mongo port, eg:27017
-      --mongo_user         <mongo_user>           the mongo user name, default:cc
-      --mongo_pass         <mongo_pass>           the mongo password
-      --rs_name            <rs_name>              the mongo replica set name, default: rs0
-      --blueking_cmdb_url  <blueking_cmdb_url>    the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
-      --blueking_paas_url  <blueking_paas_url>    the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
-      --listen_port        <listen_port>          the cmdb_webserver listen port, should be the port as same as -c <blueking_cmdb_url> specified, default:8083
-      --auth_scheme        <auth_scheme>          auth scheme, ex: internal, iam
-      --auth_enabled       <auth_enabled>         iam auth enabled, true or false
-      --auth_address       <auth_address>         iam address
-      --auth_app_code      <auth_app_code>        app code for iam, default bk_cmdb
-      --auth_app_secret    <auth_app_secret>      app code for iam
-      --full_text_search   <full_text_search>     full text search on or off
-      --es_url             <es_url>               the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
-      --es_user            <es_user>              the es user name
-      --es_pass            <es_pass>              the es password
-      --es_shard_num       <es_shard_num>         the es sharding num
-      --es_replica_num     <es_replica_num>       the es es_replica_num
-      --log_level          <log_level>            log level to start cmdb process, default: 3
-      --register_ip        <register_ip>          the ip address registered on zookeeper, it can be domain
-      --user_info          <user_info>            the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
+      --discovery               <discovery>               the ZooKeeper server address, eg:127.0.0.1:2181
+      --database                <database>                the database name, default cmdb
+      --redis_ip                <redis_ip>                the redis ip, eg:127.0.0.1
+      --redis_port              <redis_port>              the redis port, default:6379
+      --redis_pass              <redis_pass>              the redis user password
+      --sentinel_pass           <sentinel_pass>           the redis sentinel password
+      --redis_certfile          <redis_certfile>          the redis cert file path
+      --redis_keyfile           <redis_keyfile>           the redis key file path
+      --redis_cafile            <redis_cafile>            the redis ca cert file path
+      --redis_skipverify        <redis_skipverify>        the redis skip verify
+      --mongo_ip                <mongo_ip>                the mongo ip ,eg:127.0.0.1
+      --mongo_port              <mongo_port>              the mongo port, eg:27017
+      --mongo_user              <mongo_user>              the mongo user name, default:cc
+      --mongo_pass              <mongo_pass>              the mongo password
+      --mongo_certfile          <mongo_certfile>          the mongo cert file path
+      --mongo_keyfile           <mongo_keyfile>           the mongo key file path
+      --mongo_cafile            <mongo_cafile>            the mongo ca cert file path
+      --mongo_skipverify        <mongo_skipverify>        the mongo skip verify
+      --rs_name                 <rs_name>                 the mongo replica set name, default: rs0
+      --blueking_cmdb_url       <blueking_cmdb_url>       the cmdb site url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
+      --blueking_paas_url       <blueking_paas_url>       the blueking paas url, eg: http://127.0.0.1:8088 or http://bk.tencent.com
+      --listen_port             <listen_port>             the cmdb_webserver listen port, should be the port as same as -c <blueking_cmdb_url> specified, default:8083
+      --auth_scheme             <auth_scheme>             auth scheme, ex: internal, iam
+      --auth_enabled            <auth_enabled>            iam auth enabled, true or false
+      --auth_address            <auth_address>            iam address
+      --auth_app_code           <auth_app_code>           app code for iam, default bk_cmdb
+      --auth_app_secret         <auth_app_secret>         app code for iam
+      --full_text_search        <full_text_search>        full text search on or off
+      --es_url                  <es_url>                  the es listen url, see in es dir config/elasticsearch.yml, (network.host, http.port), default: http://127.0.0.1:9200
+      --es_user                 <es_user>                 the es user name
+      --es_pass                 <es_pass>                 the es password
+      --es_shard_num            <es_shard_num>            the es sharding num
+      --es_replica_num          <es_replica_num>          the es es_replica_num
+      --es_tls_cafile           <es_tls_cafile>           the es tls ca file path
+      --es_tls_certfile         <es_tls_certfile>         the es tls cert file path
+      --es_tls_keyfile          <es_tls_keyfile>          the es tls key file path
+      --es_tls_skipverify       <es_tls_skipverify>       the es tls skip verify
+      --log_level               <log_level>               log level to start cmdb process, default: 3
+      --register_ip             <register_ip>             the ip address registered on zookeeper, it can be domain
+      --user_info               <user_info>               the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
+      --discovery_user          <discovery_user>          user name for ZooKeeper auth, defaults to built-in value if not set
+      --discovery_password      <discovery_password>      password for ZooKeeper auth, defaults to built-in value if not set
+      --discovery_cafile        <discovery_cafile>        CA file for ZooKeeper TLS connection
+      --discovery_certfile      <discovery_certfile>      cert file for ZooKeeper TLS connection
+      --discovery_keyfile       <discovery_keyfile>       key file for ZooKeeper TLS connection
+      --discovery_skipverify    <discovery_skipverify>    whether to skip verify ZooKeeper TLS connection, true or false, default true
+      --discovery_certpassword  <discovery_certpassword>  password for ZooKeeper TLS connection
 
     demo:
     python init.py  \\
-      --discovery          127.0.0.1:2181 \\
-      --database           cmdb \\
-      --redis_ip           127.0.0.1 \\
-      --redis_port         6379 \\
-      --redis_pass         1111 \\
-      --sentinel_pass      2222 \\
-      --mongo_ip           127.0.0.1 \\
-      --mongo_port         27017 \\
-      --mongo_user         cc \\
-      --mongo_pass         cc \\
-      --rs_name            rs0 \\
-      --blueking_cmdb_url  http://127.0.0.1:8080/ \\
-      --blueking_paas_url  http://paas.domain.com \\
-      --listen_port        8080 \\
-      --auth_scheme        internal \\
-      --auth_enabled       false \\
-      --auth_address       https://iam.domain.com/ \\
-      --auth_app_code      bk_cmdb \\
-      --auth_app_secret    xxxxxxx \\
-      --auth_sync_workers  1 \\
+      --discovery               127.0.0.1:2181 \\
+      --discovery_cafile        ./zk-ca.crt \\
+      --discovery_certfile      ./zk.cert \\
+      --discovery_keyfile       ./zk.key \\
+      --discovery_skipverify    true \\
+      --discovery_certpassword  password \\
+      --database                cmdb \\
+      --redis_ip                127.0.0.1 \\
+      --redis_port              6379 \\
+      --redis_pass              1111 \\
+      --sentinel_pass           2222 \\
+      --redis_certfile          ./redis.cert \\
+      --redis_keyfile           ./redis.key \\
+      --redis_cafile            ./redis-ca.crt \\
+      --redis_skipverify        true \\
+      --mongo_ip                127.0.0.1 \\
+      --mongo_port              27017 \\
+      --mongo_user              cc \\
+      --mongo_pass              cc \\
+      --mongo_certfile          ./mongo.cert \\
+      --mongo_keyfile           ./mongo.key \\
+      --mongo_cafile            ./mongo-ca.crt \\
+      --mongo_skipverify        true \\
+      --rs_name                 rs0 \\
+      --blueking_cmdb_url       http://127.0.0.1:8080/ \\
+      --blueking_paas_url       http://paas.domain.com \\
+      --listen_port             8080 \\
+      --auth_scheme             internal \\
+      --auth_enabled            false \\
+      --auth_address            https://iam.domain.com/ \\
+      --auth_app_code           bk_cmdb \\
+      --auth_app_secret         xxxxxxx \\
+      --auth_sync_workers       1 \\
       --auth_sync_interval_minutes  45 \\
-      --full_text_search   off \\
-      --es_url             http://127.0.0.1:9200 \\
-      --es_user            cc \\
-      --es_pass            cc \\
-      --es_shard_num       1 \\
-      --es_replica_num     1 \\
-      --log_level          3 \\
-      --register_ip        cmdb.domain.com \\
-      --user_info          user1:password1,user2:password2
+      --full_text_search        off \\
+      --es_url                  http://127.0.0.1:9200 \\
+      --es_user                 cc \\
+      --es_pass                 cc \\
+      --es_shard_num            1 \\
+      --es_replica_num          1 \\
+      --es_tls_cafile           ./es-ca.crt \\
+      --es_tls_certfile         ./es.cert \\
+      --es_tls_keyfile          ./es.key \\
+      --es_tls_skipverify       true \\
+      --log_level               3 \\
+      --register_ip             cmdb.domain.com \\
+      --user_info               user1:password1,user2:password2
     '''
     try:
         opts, _ = getopt.getopt(argv, "hd:D:r:p:x:s:m:P:X:S:u:U:a:l:es:v", arr)
@@ -842,6 +1019,26 @@ def main(argv):
         elif opt in ("-d", "--discovery"):
             rd_server = arg
             print('rd_server:', rd_server)
+        elif opt in("--discovery_cafile",):
+            rd_cafile = arg
+            print('rd_cafile:', rd_cafile)
+        elif opt in("--discovery_certfile",):
+            rd_certfile = arg
+            print('rd_certfile:', rd_certfile)
+        elif opt in("--discovery_keyfile",):
+            rd_keyfile = arg
+            print('rd_keyfile:', rd_keyfile)
+        elif opt in("--discovery_skipverify",):
+            rd_skipverify = arg
+            print('rd_skipverify:', rd_skipverify)
+        elif opt in("--discovery_certpassword"):
+            rd_certpassword = arg
+            print('rd_certpassword:', rd_certpassword)
+        elif opt in("--discovery_user",):
+            rd_user = arg
+            print('rd_user:', rd_user)
+        elif opt in("--discovery_password",):
+            rd_password = arg
         elif opt in ("-D", "--database"):
             db_name = arg
             print('database:', db_name)
@@ -857,6 +1054,18 @@ def main(argv):
         elif opt in ("-s", "--sentinel_pass"):
             sentinel_pass = arg
             print('sentinel_pass:', sentinel_pass)
+        elif opt in ("--redis_certfile",):
+            redis_certfile = arg
+            print('redis_certfile:', redis_certfile)
+        elif opt in ("--redis_keyfile",):
+            redis_keyfile = arg
+            print('redis_keyfile:', redis_keyfile)
+        elif opt in ("--redis_cafile",):
+            redis_cafile = arg
+            print('redis_cafile:', redis_cafile)
+        elif opt in ("--redis_skipverify",):
+            redis_skipverify = arg
+            print('redis_skipverify:', redis_skipverify)
         elif opt in ("-m", "--mongo_ip"):
             mongo_ip = arg
             print('mongo_ip:', mongo_ip)
@@ -869,6 +1078,18 @@ def main(argv):
         elif opt in ("-S", "--mongo_pass"):
             mongo_pass = arg
             print('mongo_pass:', mongo_pass)
+        elif opt in ("--mongo_certfile",):
+            mongo_certfile = arg
+            print('mongo_certfile:', mongo_certfile)
+        elif opt in ("--mongo_keyfile",):
+            mongo_keyfile = arg
+            print('mongo_keyfile:', mongo_keyfile)
+        elif opt in ("--mongo_cafile",):
+            mongo_cafile = arg
+            print('mongo_cafile:', mongo_cafile)
+        elif opt in ("--mongo_skipverify",):
+            mongo_skipverify = arg
+            print('mongo_skipverify:', mongo_skipverify)
         elif opt in ("--rs_name",):
             rs_name = arg
             print('rs_name:', rs_name)
@@ -895,7 +1116,6 @@ def main(argv):
             print("auth_app_code:", auth["auth_app_code"])
         elif opt in ("--auth_app_secret",):
             auth["auth_app_secret"] = arg
-            print("auth_app_secret:", auth["auth_app_secret"])
         elif opt in ("--auth_sync_workers",):
             auth["auth_sync_workers"] = arg
             print("auth_sync_workers:", auth["auth_sync_workers"])
@@ -923,6 +1143,18 @@ def main(argv):
         elif opt in("-v","--log_level",):
             log_level = arg
             print('log_level:', log_level)
+        elif opt in("--es_tls_cafile",):
+            es_tls_cafile = arg
+            print('es_tls_cafile:', es_tls_cafile)
+        elif opt in("--es_tls_certfile",):
+            es_tls_certfile = arg
+            print('es_tls_certfile:', es_tls_certfile)
+        elif opt in("--es_tls_keyfile",):
+            es_tls_keyfile = arg
+            print('es_tls_keyfile:', es_tls_keyfile)
+        elif opt in("--es_tls_skipverify",):
+            es_tls_skipverify = arg
+            print('es_tls_skipverify:', es_tls_skipverify)
         elif opt in("--register_ip",):
             register_ip = arg
             print('register_ip:', register_ip)
@@ -1003,15 +1235,25 @@ def main(argv):
 
     generate_config_file(
         rd_server_v=rd_server,
+        rd_user_v=rd_user,
+        rd_password_v=rd_password,
         db_name_v=db_name,
         redis_ip_v=redis_ip,
         redis_port_v=redis_port,
         redis_pass_v=redis_pass,
         sentinel_pass_v=sentinel_pass,
+        redis_certfile_v=redis_certfile,
+        redis_keyfile_v=redis_keyfile,
+        redis_cafile_v=redis_cafile,
+        redis_skipverify_v=redis_skipverify,
         mongo_ip_v=mongo_ip,
         mongo_port_v=mongo_port,
         mongo_user_v=mongo_user,
         mongo_pass_v=mongo_pass,
+        mongo_certfile_v=mongo_certfile,
+        mongo_keyfile_v=mongo_keyfile,
+        mongo_cafile_v=mongo_cafile,
+        mongo_skipverify_v=mongo_skipverify,
         rs_name=rs_name,
         cc_url_v=cc_url,
         paas_url_v=paas_url,
@@ -1021,12 +1263,23 @@ def main(argv):
         es_pass_v=es_pass,
         es_shard_num_v=es_shard_num,
         es_replica_num_v=es_replica_num,
+        es_tls_cafile_v=es_tls_cafile,
+        es_tls_certfile_v=es_tls_certfile,
+        es_tls_keyfile_v=es_tls_keyfile,
+        es_tls_skipverify_v=es_tls_skipverify,
         log_level=log_level,
         register_ip=register_ip,
         user_info=user_info,
+        rd_cafile_v=rd_cafile,
+        rd_certfile_v=rd_certfile,
+        rd_keyfile_v=rd_keyfile,
+        rd_skipverify_v=rd_skipverify,
+        rd_certpassword_v=rd_certpassword,
         **auth
     )
-    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip)
+    update_start_script(rd_server, server_ports, auth['auth_enabled'], log_level, register_ip,
+                       rd_cafile, rd_certfile, rd_keyfile, rd_skipverify, rd_certpassword,
+                       rd_user=rd_user, rd_password=rd_password)
     print('initial configurations success, configs could be found at cmdb_adminserver/configures')
 
 

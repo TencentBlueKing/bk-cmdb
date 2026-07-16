@@ -249,6 +249,9 @@ const (
 	// CCErrCommRefreshTenantErr refresh tenant error
 	CCErrCommRefreshTenantErr = 1199094
 
+	// CCErrCommParamsReservedFieldPrefix the field id starts with reserved prefix bk_ or _bk
+	CCErrCommParamsReservedFieldPrefix = 1199095
+
 	// too many requests
 	CCErrTooManyRequestErr = 1199997
 

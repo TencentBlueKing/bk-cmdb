@@ -1323,6 +1323,11 @@ common:
     endpoint:
     token:
 
+  # http client config
+  httpClient:
+    ## @param httpClient.idleConnTimeoutSeconds http client idle connection timeout seconds
+    idleConnTimeoutSeconds: 0
+
 ## @section zookeeper parameters
 ##
 zookeeper:
@@ -1338,6 +1343,10 @@ zookeeper:
 ##
 configAndServiceCenter:
   addr:
+  ## @param configAndServiceCenter.user zookeeper auth user name, defaults to built-in value if not set
+  user:
+  ## @param configAndServiceCenter.password zookeeper auth password, defaults to built-in value if not set
+  password:
   tls:
     insecureSkipVerify: true
     caFile:
@@ -1693,6 +1702,8 @@ apigatewaySync:
   bkBscpAppCode: "bk_bscp"
   ## 此变量在运维维护的变量中，没有对应的变量
   cwAitsmAppCode: "cw_aitsm"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  opsAppCode: "bk-ops"
 
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:

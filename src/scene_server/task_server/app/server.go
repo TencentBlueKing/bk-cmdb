@@ -49,8 +49,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	service := new(tasksvc.Service)
 	taskSrv := new(TaskServer)
 	input := &backbone.BackboneParameter{
-		SrvRegdiscv: backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover,
-			TLSConfig: op.ServConf.GetTLSClientConf()},
+		SrvRegdiscv: backbone.SrvRegdiscv{Zk: op.ServConf.Zk},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: taskSrv.onHostConfigUpdate,
 		SrvInfo:      svrInfo,

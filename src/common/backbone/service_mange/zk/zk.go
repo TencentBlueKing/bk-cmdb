@@ -20,10 +20,9 @@ package zk
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
-	"configcenter/src/common/ssl"
+	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/zkclient"
 )
 
@@ -35,11 +34,10 @@ type ZkClient struct {
 	sessionTimeOut time.Duration
 }
 
-// NewZkClient create a object of ZkClient
-func NewZkClient(zkAddress string, timeOut time.Duration, tlsConfig *ssl.TLSClientConfig) *ZkClient {
-	zkAddresses := strings.Split(zkAddress, ",")
+// NewZkClient creates a ZkClient from the given ZkConfig and session timeout.
+func NewZkClient(cfg config.ZkConfig, timeOut time.Duration) *ZkClient {
 	return &ZkClient{
-		zkCli:          zkclient.NewZkClient(zkAddresses, tlsConfig),
+		zkCli:          zkclient.NewZkClient(cfg),
 		sessionTimeOut: timeOut,
 	}
 }

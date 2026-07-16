@@ -117,10 +117,11 @@
               :timezone="timezoneCondition[`${property.id}_tz`] || $Site.timezone"
               @change-timezone="(timezone) => handleTimezoneChange(timezone, property.id)"
               v-bk-tooltips.top="{
+                allowHTML: false,
                 disabled: !property.placeholder,
                 theme: 'light',
                 trigger: 'click',
-                content: property.placeholder
+                content: htmlEncode(property.placeholder)
               }"
               @active-change="handleComponentActiveChange(property, ...arguments)"
               @change="handleChange"
@@ -228,7 +229,7 @@
   import Utils from './utils'
   import { isContainerObject } from '@/service/container/common'
   import ConditionPicker from '@/components/condition-picker'
-  import { setCursorPosition, getConditionSelect, updatePropertySelect, isPasteSplit } from '@/utils/util'
+  import { setCursorPosition, getConditionSelect, updatePropertySelect, isPasteSplit, filterXSS } from '@/utils/util'
   import useSideslider from '@/hooks/use-sideslider'
   import isEqual from 'lodash/isEqual'
   import EditableBlock from '@/components/editable-block/index.vue'
@@ -407,6 +408,9 @@
       this.setChanged = setChanged
     },
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       getPasteSplit(id) {
         return isPasteSplit(id)
       },

@@ -69,7 +69,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	server := new(TopoServer)
 	server.Service = new(service.Service)
 	input := &backbone.BackboneParameter{
-		SrvRegdiscv:  backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover, TLSConfig: op.ServConf.GetTLSClientConf()},
+		SrvRegdiscv: backbone.SrvRegdiscv{Zk: op.ServConf.Zk},
 		ConfigPath:   op.ServConf.ExConfig,
 		ConfigUpdate: server.onTopoConfigUpdate,
 		SrvInfo:      svrInfo,

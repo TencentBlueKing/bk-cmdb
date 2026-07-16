@@ -55,7 +55,7 @@
                 disabled: !property.placeholder,
                 theme: 'light',
                 trigger: 'click',
-                content: property.placeholder
+                content: htmlEncode(property.placeholder)
               }"
               @inputchange="hanleInputChange">
             </component>
@@ -85,7 +85,7 @@
   } from '@/utils/query-builder-operator'
   import { DYNAMIC_GROUP_COND_TYPES, DYNAMIC_GROUP_COND_NAMES } from '@/dictionary/dynamic-group'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
-  import { isPasteSplit } from '@/utils/util'
+  import { isPasteSplit, filterXSS } from '@/utils/util'
   const { IMMUTABLE, VARIABLE } = DYNAMIC_GROUP_COND_TYPES
 
   export default {
@@ -194,6 +194,9 @@
       }
     },
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       getPasteSplit(id, fn) {
         return isPasteSplit(id, fn)
       },

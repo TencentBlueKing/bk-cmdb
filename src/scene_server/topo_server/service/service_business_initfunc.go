@@ -82,6 +82,10 @@ func (s *Service) initBusinessObjectAttribute(web *restful.WebService) {
 		Handler: s.SearchObjectAttributeForWeb})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattr/{id}",
 		Handler: s.UpdateObjectAttribute})
+	// NOTE: this API is exclusively for updating the "hidden" field.
+	// "hidden" is only updatable through this API, not the regular one.
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattr/hidden/{id}",
+		Handler: s.UpdateObjectAttributeHidden})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/objectattr/biz/{bk_biz_id}/id/{id}",
 		Handler: s.UpdateObjectAttribute})
 	utility.AddHandler(rest.Action{Verb: http.MethodDelete, Path: "/delete/objectattr/{id}",

@@ -117,6 +117,7 @@ type Attribute struct {
 	IsRequired        bool        `field:"isrequired" json:"isrequired" bson:"isrequired" mapstructure:"isrequired"`
 	IsReadOnly        bool        `field:"isreadonly" json:"isreadonly" bson:"isreadonly" mapstructure:"isreadonly"`
 	IsOnly            bool        `field:"isonly" json:"isonly" bson:"isonly" mapstructure:"isonly"`
+	IsHidden          bool        `field:"is_hidden" json:"is_hidden" bson:"is_hidden" mapstructure:"is_hidden"`
 	IsSystem          bool        `field:"bk_issystem" json:"bk_issystem" bson:"bk_issystem" mapstructure:"bk_issystem"`
 	IsAPI             bool        `field:"bk_isapi" json:"bk_isapi" bson:"bk_isapi" mapstructure:"bk_isapi"`
 	PropertyType      string      `field:"bk_property_type" json:"bk_property_type" bson:"bk_property_type" mapstructure:"bk_property_type"`
@@ -1592,7 +1593,7 @@ func (attribute Attribute) PrettyValue(ctx context.Context, val interface{}) (st
 		return strconv.FormatInt(value, 10), nil
 	case common.FieldTypeFloat:
 		var value float64
-		value, err := util.GetFloat64ByInterface(value)
+		value, err := util.GetFloat64ByInterface(val)
 		if nil != err {
 			return "", fmt.Errorf("invalid value type for %s, value: %+v, err: %+v", fieldType, value, err)
 		}

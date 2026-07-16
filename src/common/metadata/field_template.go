@@ -161,7 +161,7 @@ func (f *FieldTemplateAttr) validatePropertyID() ccErr.RawErrorInfo {
 	}
 
 	if strings.HasPrefix(f.PropertyID, "bk_") || strings.HasPrefix(f.PropertyID, "_bk") {
-		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsIsInvalid,
+		return ccErr.RawErrorInfo{ErrCode: common.CCErrCommParamsReservedFieldPrefix,
 			Args: []interface{}{common.BKPropertyIDField}}
 	}
 

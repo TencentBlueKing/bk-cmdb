@@ -35,7 +35,7 @@
   watchEffect(async () => {
     const fieldData = await fieldTemplateService.getFieldList({
       bk_template_id: props.templateId
-    }, { requestId: DETAILS_FIELDLIST_REQUEST_ID, fromCache: true })
+    }, { requestId: DETAILS_FIELDLIST_REQUEST_ID, fromCache: false })
     fieldList.value = fieldData?.info || []
   })
 

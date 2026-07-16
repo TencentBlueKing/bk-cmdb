@@ -362,6 +362,20 @@ export function filterXSS(str) {
 }
 
 /**
+ * 过滤XSS攻击，保留高亮标签em
+ * @param {string} str 字符串
+ * @returns 过滤后的字符串
+ */
+export function filterHighlightXSS(str) {
+  if (!str && str !== 0) return str
+  return xss(String(str), {
+    whiteList: { em: [] },
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ['script']
+  })
+}
+
+/**
  * 设置当前字段是否分割字符串
  * @param {string} id 字段ID
  * @param {funtion} fn 自定义方法

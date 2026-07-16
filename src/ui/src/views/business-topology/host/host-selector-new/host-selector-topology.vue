@@ -290,6 +290,14 @@
         this.currentNode = node
         const result = await this.searchHost(node)
         this.hostList = result.info
+        this.setNodeCount(this.findNode(node.parent, [...node.children]))
+      },
+      findNode(node, data) {
+        while (node.parent) {
+          data.push(...node.children)
+          return this.findNode(node.parent, data)
+        }
+        return data
       },
       async handleHostPaginationChange() {
         const result = await this.searchHost(this.currentNode)

@@ -104,6 +104,7 @@
   import hostSearchService from '@/service/host/search'
   import debounce from 'lodash.debounce'
   import { foreignkey } from '@/filters/formatter.js'
+  import isIP from 'validator/es/lib/isIP'
   export default {
     filters: {
       foreignkey
@@ -223,13 +224,17 @@
         }
       },
       getParams() {
+        const isIPV6 = isIP(this.keyword, 6)
+        const ipParams = {
+          [isIPV6 ? 'ipv6' : 'ip']: {
+            data: this.keyword ? [this.keyword] : [],
+            exact: isIPV6 ? 1 : 0, // 0:模糊 1:精确  IPV6目前后端只支持精准匹配
+            flag: 'bk_host_innerip|bk_host_outerip'
+          }
+        }
         const params = {
           bk_biz_id: this.bizId,
-          ip: {
-            data: this.keyword ? [this.keyword] : [],
-            exact: 0, // 模糊
-            flag: 'bk_host_innerip|bk_host_outerip'
-          },
+          ...ipParams,
           condition: [
             {
               bk_obj_id: 'host',

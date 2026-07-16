@@ -113,7 +113,7 @@ func runDecodeCursor(c *watchConf) error {
 }
 
 func runStartFromWatch(c *watchConf) error {
-	zk, err := config.NewZkService(config.Conf.ZkAddr, &config.Conf.ZkTLS)
+	zk, err := config.NewZkService(config.Conf.Zk)
 	if err != nil {
 		fmt.Printf("new zk client failed, err: %v\n", err)
 		return err

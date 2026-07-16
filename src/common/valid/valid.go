@@ -96,6 +96,10 @@ func ValidateDatetimeType(value interface{}) error {
 		return nil
 	}
 
+	if util.IsDate(value) {
+		return nil
+	}
+
 	// string type with time format is supported
 	if _, ok := util.IsTime(value); ok {
 		return nil

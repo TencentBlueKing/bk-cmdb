@@ -28,7 +28,7 @@
           v-bk-tooltips.top="{
             theme: 'light',
             trigger: 'mouseenter',
-            content: row.placeholder,
+            content: htmlEncode(row.placeholder),
             disabledHtmlStrAsQuery: true
           }">
         </i>
@@ -107,12 +107,13 @@
       <template slot-scope="{ row }">
         <div class="form-element-content">
           <property-form-element
+            :key="row.id"
             :property="row"
             v-bk-tooltips.top="{
               disabled: !row.placeholder || $tools.isIconTipProperty(row.bk_property_type),
               theme: 'light',
               trigger: 'click',
-              content: row.placeholder
+              content: htmlEncode(row.placeholder)
             }"
             @value-change="handlePropertyValueChange"
             @valid-change="handlePropertyValidChange">
@@ -156,6 +157,7 @@
   import { CONFIG_MODE } from '@/service/service-template/index.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { getPropertyDefaultValue } from '@/utils/tools.js'
+  import { filterXSS } from '@/utils/util'
 
   export default {
     components: {
@@ -252,6 +254,9 @@
       }
     },
     methods: {
+      htmlEncode(str) {
+        return filterXSS(str)
+      },
       setPropertyRuleList() {
         // 当前属性列表中不存在，则添加
         this.checkedPropertyIdList.forEach((id) => {

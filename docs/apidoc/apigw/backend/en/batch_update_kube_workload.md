@@ -4,12 +4,12 @@ Batch Update Workloads (Version: v3.12.1+, Permission: Edit Container Workload P
 
 ### Parameters
 
-| Name      | Type   | Required | Description                                                                                                                                                                                             |
-|-----------|--------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | Yes      | Business ID                                                                                                                                                                                             |
-| kind      | string | Yes      | Workload type, currently supported workload types include deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (directly create Pods without going through workload) |
-| data      | object | Yes      | Fields to be updated                                                                                                                                                                                    |
-| ids       | array  | Yes      | Unique ID array in cc                                                                                                                                                                                   |
+| Name      | Type   | Required | Description                                                                                                                                                                                                                               |
+|-----------|--------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id | int    | Yes      | Business ID                                                                                                                                                                                                                               |
+| kind      | string | Yes      | Workload type, currently supported workload types include deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (directly create Pods without going through workload), customResource (custom resource) |
+| data      | object | Yes      | Fields to be updated                                                                                                                                                                                                                      |
+| ids       | array  | Yes      | Unique ID array in cc                                                                                                                                                                                                                     |
 
 #### data
 

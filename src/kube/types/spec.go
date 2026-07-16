@@ -139,6 +139,7 @@ func GetWorkLoadTables() []string {
 		BKTableNameBaseStatefulSet,
 		BKTableNameBaseDaemonSet,
 		BKTableNameBasePodWorkload,
+		BKTableNameBaseCustom,
 	}
 }
 
@@ -153,6 +154,7 @@ func GetWorkLoadObjects() []WorkloadType {
 		KubeCronJob,
 		KubeJob,
 		KubePodWorkload,
+		KubeCustomResource,
 	}
 }
 
@@ -195,6 +197,8 @@ func GetCollectionWithObject(object string) ([]string, error) {
 		return []string{BKTableNameBaseJob}, nil
 	case string(KubePodWorkload):
 		return []string{BKTableNameBasePodWorkload}, nil
+	case string(KubeCustomResource):
+		return []string{BKTableNameBaseCustom}, nil
 	case KubeWorkload:
 		return GetWorkLoadTables(), nil
 	default:
@@ -207,7 +211,7 @@ func IsKubeResourceKind(object string) bool {
 	switch object {
 	case KubeBusiness, KubeCluster, KubeNode, KubeFolder, KubeNamespace, string(KubeDeployment),
 		string(KubeStatefulSet), string(KubeDaemonSet), string(KubeGameStatefulSet), string(KubeGameDeployment),
-		string(KubeCronJob), string(KubeJob), string(KubePodWorkload):
+		string(KubeCronJob), string(KubeJob), string(KubePodWorkload), string(KubeCustomResource):
 		return true
 	default:
 		return false
@@ -233,6 +237,8 @@ func GetKindByWorkLoadTableName(table string) (WorkloadType, error) {
 		return KubeJob, nil
 	case BKTableNameBasePodWorkload:
 		return KubePodWorkload, nil
+	case BKTableNameBaseCustom:
+		return KubeCustomResource, nil
 	default:
 		return "", errors.New("this table name does not exist")
 	}

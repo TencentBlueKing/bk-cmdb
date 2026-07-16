@@ -41,6 +41,8 @@ func init() {
 	for _, table := range workLoadTables {
 		registerIndexes(table, commWorkLoadIndexes)
 	}
+
+	registerIndexes(kubetypes.BKTableNameBaseCustom, commCustomResourceIndexes)
 }
 
 var commWorkLoadIndexes = []types.Index{
@@ -70,6 +72,49 @@ var commWorkLoadIndexes = []types.Index{
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkClusterID",
+		Keys: bson.D{
+			{kubetypes.BKClusterIDFiled, 1},
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "name",
+		Keys: bson.D{
+			{common.BKFieldName, 1},
+		},
+		Background: true,
+	},
+}
+
+var commCustomResourceIndexes = []types.Index{
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + common.BKFieldID,
+		Keys: bson.D{
+			{common.BKFieldID, 1},
+		},
+		Background: true,
+		Unique:     true,
+	},
+	{
+		Name: common.CCLogicUniqueIdxNamePrefix + "bk_namespace_id_cr_kind_cr_api_version_name",
+		Keys: bson.D{
+			{kubetypes.BKNamespaceIDField, 1},
+			{kubetypes.CRKindField, 1},
+			{kubetypes.CRApiVersionField, 1},
+			{common.BKFieldName, 1},
+		},
+		Background: true,
+		Unique:     true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "cluster_uid",
+		Keys: bson.D{
+			{kubetypes.ClusterUIDField, 1},
+		},
+		Background: true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "cluster_id",
 		Keys: bson.D{
 			{kubetypes.BKClusterIDFiled, 1},
 		},
@@ -158,6 +203,13 @@ var commPodIndexes = []types.Index{
 		},
 		Background: true,
 		Unique:     true,
+	},
+	{
+		Name: common.CCLogicIndexNamePrefix + "biz_id",
+		Keys: bson.D{
+			{kubetypes.BKBizIDField, 1},
+		},
+		Background: true,
 	},
 	{
 		Name: common.CCLogicIndexNamePrefix + "bkHostID",

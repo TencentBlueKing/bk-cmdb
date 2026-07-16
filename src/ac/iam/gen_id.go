@@ -94,7 +94,7 @@ func GenIamResource(act iamtypes.ActionID, rscType iamtypes.TypeID, a *meta.Reso
 		return make([]iam.Resource, 0), nil
 	case meta.KubeCluster, meta.KubeNode, meta.KubeNamespace, meta.KubeWorkload, meta.KubeDeployment,
 		meta.KubeStatefulSet, meta.KubeDaemonSet, meta.KubeGameStatefulSet, meta.KubeGameDeployment, meta.KubeCronJob,
-		meta.KubeJob, meta.KubePodWorkload, meta.KubePod, meta.KubeContainer:
+		meta.KubeJob, meta.KubePodWorkload, meta.KubeCustomResource, meta.KubePod, meta.KubeContainer:
 		return genKubeResource(act, rscType, a)
 	}
 
