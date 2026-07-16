@@ -25,11 +25,11 @@ import (
 )
 
 func init() {
-	upgrader.RegistUpgrader("y3.14.202605121012", upgrade)
+	upgrader.RegistUpgrader("y3.14.202607141812", upgrade)
 }
 
 func upgrade(ctx context.Context, db dal.RDB, conf *upgrader.Config) (err error) {
-	blog.Infof("start execute y3.14.202605121012")
+	blog.Infof("start execute y3.14.202607141812")
 
 	err = updateHostBkCPUArchitectureAttr(ctx, db, conf)
 	if err != nil {
