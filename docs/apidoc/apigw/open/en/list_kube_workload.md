@@ -4,13 +4,13 @@ Query Workload (Version: v3.12.1+, Permission: Business access)
 
 ### Parameters
 
-| Name      | Type   | Required | Description                                                                                                                                                                                     |
-|-----------|--------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | Yes      | Business ID                                                                                                                                                                                     |
-| kind      | string | Yes      | Workload type, currently supported workload types are deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (created directly without going through workload) |
-| filter    | object | No       | Workload query conditions                                                                                                                                                                       |
-| fields    | array  | No       | Attribute list, control which fields are present in the returned result to speed up API requests and reduce network traffic                                                                     |
-| page      | object | Yes      | Pagination information                                                                                                                                                                          |
+| Name      | Type   | Required | Description                                                                                                                                                                                                                       |
+|-----------|--------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id | int    | Yes      | Business ID                                                                                                                                                                                                                       |
+| kind      | string | Yes      | Workload type, currently supported workload types are deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods (created directly without going through workload), customResource (custom resource) |
+| filter    | object | No       | Workload query conditions                                                                                                                                                                                                         |
+| fields    | array  | No       | Attribute list, control which fields are present in the returned result to speed up API requests and reduce network traffic                                                                                                       |
+| page      | object | Yes      | Pagination information                                                                                                                                                                                                            |
 
 #### filter Field Description
 
@@ -189,6 +189,8 @@ to: [Filter README](https://github.com/Tencent/bk-cmdb/blob/master/src/pkg/filte
 | Name                    | Type   | Description                                                                                                                                     |
 |-------------------------|--------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | name                    | string | Workload name                                                                                                                                   |
+| cr_kind                 | string | Custom resource kind, only present when kind is customResource                                                                                  |
+| cr_api_version          | string | Custom resource apiVersion, only present when kind is customResource                                                                            |
 | labels                  | map    | Labels                                                                                                                                          |
 | selector                | object | Workload selector                                                                                                                               |
 | replicas                | int    | Number of workload instances                                                                                                                    |

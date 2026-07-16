@@ -67,4 +67,6 @@ type MockInfo struct {
 type ExtraClientConfig struct {
 	// ResponseHeaderTimeout the amount of time to wait for a server's response headers
 	ResponseHeaderTimeout time.Duration
+	// IdleConnTimeout the maximum amount of time an idle connection will be kept before closing it, 0 means no limit
+	IdleConnTimeout time.Duration
 }

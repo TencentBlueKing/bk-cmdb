@@ -13,10 +13,15 @@
 <template>
   <cmdb-sticky-layout class="export">
     <bk-steps
-      class="export-steps"
+      class="export-steps mb20"
       :steps="steps"
       :cur-step="currentStep"
       v-show="showSteps"></bk-steps>
+    <cmdb-tips class="file-tips"
+      :icon-style="{ color: '#FF9C01' }"
+      :tips-style="{ background: '#fff4e2', border: '1px solid #ffdfac' }">
+      {{$t('模型实例导出提示')}}
+    </cmdb-tips>
     <keep-alive>
       <component :is="stepComponent"></component>
     </keep-alive>

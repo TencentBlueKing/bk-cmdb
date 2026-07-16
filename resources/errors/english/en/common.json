@@ -91,6 +91,7 @@
     "1199092": "current field type status is single choice, please set reasonable data",
     "1199093": "Failed to add tenant",
     "1199094": "Failed to refresh tenant info",
+    "1199095": "'%s' cannot start with bk_, this prefix is reserved for system fields",
 
     "1109001": "save audit log failed",
     "1109002": "take audit log snapshot failed",

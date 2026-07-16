@@ -18,7 +18,11 @@
       v-for="(icon, index) in curIconList"
       :key="index"
       @click="handleChooseIcon(icon.value)">
-      <i :class="icon.value" v-bk-tooltips="{ content: language === 'zh_CN' ? icon.nameZh : icon.nameEn }"></i>
+      <i :class="icon.value" v-bk-tooltips="{
+        allowHTML: false,
+        content: language === 'zh_CN' ? icon.nameZh : icon.nameEn
+      }">
+      </i>
       <span class="checked-status"></span>
     </li>
   </ul>

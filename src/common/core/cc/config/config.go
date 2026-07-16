@@ -29,28 +29,22 @@ import (
 
 // CCAPIConfig define configuration of ccapi server
 type CCAPIConfig struct {
-	AddrPort                string
-	RegDiscover             string
-	RegDiscoverCaFile       string
-	RegDiscoverCertFile     string
-	RegDiscoverKeyFile      string
-	RegDiscoverSkipVerify   bool
-	RegDiscoverCertPassword string
-	RegisterIP              string
-	ExConfig                string
-	Environment             string
-	Qps                     int64
-	Burst                   int64
+	AddrPort    string
+	Zk          ZkConfig
+	RegisterIP  string
+	ExConfig    string
+	Environment string
+	Qps         int64
+	Burst       int64
 }
 
 // NewCCAPIConfig create ccapi config object
 func NewCCAPIConfig() *CCAPIConfig {
 	return &CCAPIConfig{
-		AddrPort:    "127.0.0.1:8081",
-		RegDiscover: "",
-		RegisterIP:  "",
-		Qps:         1000,
-		Burst:       2000,
+		AddrPort:   "127.0.0.1:8081",
+		RegisterIP: "",
+		Qps:        1000,
+		Burst:      2000,
 	}
 }
 
@@ -79,17 +73,6 @@ func (conf *CCAPIConfig) GetPort() (uint, error) {
 		return getIPV6Port(addrPort)
 	}
 	return getIPV4Port(addrPort)
-}
-
-// GetTLSClientConf transfer the regDiscover tls config to TLSClientConfig
-func (conf *CCAPIConfig) GetTLSClientConf() *ssl.TLSClientConfig {
-	return &ssl.TLSClientConfig{
-		InsecureSkipVerify: conf.RegDiscoverSkipVerify,
-		CertFile:           conf.RegDiscoverCertFile,
-		KeyFile:            conf.RegDiscoverKeyFile,
-		CAFile:             conf.RegDiscoverCaFile,
-		Password:           conf.RegDiscoverCertPassword,
-	}
 }
 
 func checkAddrPort(addrPort string) error {
@@ -137,13 +120,32 @@ func getPortFunc(addrPort string) (uint, error) {
 // AddFlags add common flags for cc api config
 func (conf *CCAPIConfig) AddFlags(fs *pflag.FlagSet, defaultAddrPort string) {
 	fs.StringVar(&conf.AddrPort, "addrport", defaultAddrPort, "The ip address and port for the serve on")
-	fs.StringVar(&conf.RegDiscover, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
-	fs.StringVar(&conf.RegDiscoverCaFile, "regdiscv-cafile", "", "register and discover server ca file path")
-	fs.StringVar(&conf.RegDiscoverCertFile, "regdiscv-certfile", "", "register and discover server cert file")
-	fs.StringVar(&conf.RegDiscoverCertPassword, "regdiscv-certpassword", "", "register and discover server cert password")
-	fs.StringVar(&conf.RegDiscoverKeyFile, "regdiscv-keyfile", "", "register and discover server key file")
-	fs.BoolVar(&conf.RegDiscoverSkipVerify, "regdiscv-skipverify", true, "register and discover server skip ca verify")
+	conf.Zk.AddFlags(fs)
 	fs.StringVar(&conf.ExConfig, "config", "", "The config path. e.g conf/api.conf")
 	fs.StringVar(&conf.RegisterIP, "register-ip", "", "the ip address registered on zookeeper, it can be domain")
 	fs.StringVar(&conf.Environment, "env", "", "the environment of the server, used for service discovery")
+}
+
+// ZkConfig holds all ZooKeeper connection configuration including auth and TLS.
+type ZkConfig struct {
+	// Addr is the ZooKeeper server address(es), comma-separated. e.g: 127.0.0.1:2181
+	Addr string
+	// User is the ZooKeeper digest auth username. Defaults to built-in value if empty.
+	User string
+	// Password is the ZooKeeper digest auth password. Defaults to built-in value if empty.
+	Password string
+	// TLS is the TLS configuration for the ZooKeeper connection.
+	TLS ssl.TLSClientConfig
+}
+
+// AddFlags registers all ZooKeeper related command-line flags.
+func (z *ZkConfig) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&z.Addr, "regdiscv", "", "hosts of register and discover server. e.g: 127.0.0.1:2181")
+	fs.StringVar(&z.User, "regdiscv-user", "", "register and discover server user name")
+	fs.StringVar(&z.Password, "regdiscv-password", "", "register and discover server password")
+	fs.StringVar(&z.TLS.CAFile, "regdiscv-cafile", "", "register and discover server ca file path")
+	fs.StringVar(&z.TLS.CertFile, "regdiscv-certfile", "", "register and discover server cert file")
+	fs.StringVar(&z.TLS.Password, "regdiscv-certpassword", "", "register and discover server cert password")
+	fs.StringVar(&z.TLS.KeyFile, "regdiscv-keyfile", "", "register and discover server key file")
+	fs.BoolVar(&z.TLS.InsecureSkipVerify, "regdiscv-skipverify", true, "register and discover server skip ca verify")
 }

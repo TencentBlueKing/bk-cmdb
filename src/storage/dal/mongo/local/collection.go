@@ -97,6 +97,9 @@ func (c *Collection) Update(ctx context.Context, filter types.Filter, doc interf
 	if filter == nil {
 		filter = bson.M{}
 	}
+	if err := checkDangerousOps(filter); err != nil {
+		return err
+	}
 
 	filter, err := c.addTenantID(filter)
 	if err != nil {
@@ -124,6 +127,9 @@ func (c *Collection) UpdateMany(ctx context.Context, filter types.Filter, doc in
 
 	if filter == nil {
 		filter = bson.M{}
+	}
+	if err := checkDangerousOps(filter); err != nil {
+		return 0, err
 	}
 
 	filter, err := c.addTenantID(filter)
@@ -155,6 +161,9 @@ func (c *Collection) Upsert(ctx context.Context, filter types.Filter, doc interf
 		mtc.collectOperDuration(c.collName, upsertOper, time.Since(start), c.tenant)
 	}()
 
+	if err := checkDangerousOps(filter); err != nil {
+		return err
+	}
 	filter, err := c.addTenantID(filter)
 	if err != nil {
 		return err
@@ -190,6 +199,10 @@ func (c *Collection) UpdateMultiModel(ctx context.Context, filter types.Filter, 
 	defer func() {
 		mtc.collectOperDuration(c.collName, updateOper, time.Since(start), c.tenant)
 	}()
+
+	if err := checkDangerousOps(filter); err != nil {
+		return err
+	}
 
 	filter, err := c.addTenantID(filter)
 	if err != nil {
@@ -235,6 +248,9 @@ func (c *Collection) DeleteMany(ctx context.Context, filter types.Filter) (uint6
 		mtc.collectOperDuration(c.collName, deleteOper, time.Since(start), c.tenant)
 	}()
 
+	if err := checkDangerousOps(filter); err != nil {
+		return 0, err
+	}
 	filter, err := c.addTenantID(filter)
 	if err != nil {
 		return 0, err

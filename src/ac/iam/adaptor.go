@@ -103,6 +103,7 @@ var ccIamResTypeMap = map[meta.ResourceType]types.TypeID{
 	meta.KubeCronJob:              types.TypeID(""),
 	meta.KubeJob:                  types.TypeID(""),
 	meta.KubePodWorkload:          types.TypeID(""),
+	meta.KubeCustomResource:       types.TypeID(""),
 	meta.KubePod:                  types.TypeID(""),
 	meta.KubeContainer:            types.TypeID(""),
 	meta.FieldTemplate:            types.FieldGroupingTemplate,
@@ -552,6 +553,12 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]types.ActionID{
 		meta.Create: types.CreateContainerWorkload,
 	},
 	meta.KubePodWorkload: {
+		meta.Find:   types.ViewBusinessResource,
+		meta.Update: types.EditContainerWorkload,
+		meta.Delete: types.DeleteContainerWorkload,
+		meta.Create: types.CreateContainerWorkload,
+	},
+	meta.KubeCustomResource: {
 		meta.Find:   types.ViewBusinessResource,
 		meta.Update: types.EditContainerWorkload,
 		meta.Delete: types.DeleteContainerWorkload,

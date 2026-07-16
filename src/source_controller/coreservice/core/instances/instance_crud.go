@@ -206,6 +206,9 @@ func getSequences(kit *rest.Kit, table string, count int) ([]uint64, error) {
 }
 
 func (m *instanceManager) update(kit *rest.Kit, objID string, data mapstr.MapStr, cond mapstr.MapStr) errors.CCError {
+	if data == nil {
+		data = make(mapstr.MapStr)
+	}
 	if objID == common.BKInnerObjIDHost {
 		var err error
 		data, err = metadata.ConvertHostSpecialStringToArray(data)

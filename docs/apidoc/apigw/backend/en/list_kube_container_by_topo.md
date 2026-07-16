@@ -14,10 +14,10 @@ Get container information based on container topology (version: v3.13.3+, permis
 | page             | object | yes | Paging information                                                                                                                                                             |
 
 #### bk_kube_nodes[x]
-| fields | type | mandatory | description |
-|------------------|-------|----|------------------------------|
-| kind | string | yes | Resource type of this node, currently supported types: cluster, namespace, deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods                          |                        
-| id | int | yes | Unique identifier for container topology node information |
+| fields | type   | mandatory | description                                                                                                                                                                        |
+|--------|--------|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| kind   | string | yes       | Resource type of this node, currently supported types: cluster, namespace, deployment, daemonSet, statefulSet, gameStatefulSet, gameDeployment, cronJob, job, pods, customResource |                        
+| id     | int    | yes       | Unique identifier for container topology node information                                                                                                                          |
 
 
 #### pod_filter & container_filter

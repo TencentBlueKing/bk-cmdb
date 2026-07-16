@@ -46,7 +46,7 @@ func WithBlueColor(str string) string {
 
 func doCmdbHttpRequest(ccModule, path, tenantID string, body interface{}) (*http.Response, error) {
 	// get server address from zk
-	zk, err := config.NewZkService(config.Conf.ZkAddr, &config.Conf.ZkTLS)
+	zk, err := config.NewZkService(config.Conf.Zk)
 	if err != nil {
 		fmt.Printf("new zk client failed, err: %v\n", err)
 		return nil, err

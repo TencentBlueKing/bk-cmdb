@@ -18,6 +18,7 @@ package valid
 
 import (
 	"testing"
+	"time"
 
 	"configcenter/src/common"
 )
@@ -43,6 +44,31 @@ func TestIsInnerObject(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := IsInnerObject(tt.args.objID); got != tt.want {
 				t.Errorf("IsInnerObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidateDatetimeType(t *testing.T) {
+	type args struct {
+		timeStr any
+	}
+	now := time.Now()
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"illegal date", args{"2024-00-00"}, true}, //should err
+		{"DateOnly", args{now.Format(time.DateOnly)}, false},
+		{"DateTime", args{now.Format(time.DateTime)}, false},
+		{"RFC3339", args{now.Format(time.RFC3339)}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateDatetimeType(tt.args.timeStr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateDatetimeType() = %v:%v", tt.args, err)
 			}
 		})
 	}

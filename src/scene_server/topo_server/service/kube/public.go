@@ -585,7 +585,7 @@ func (s *service) GetKubeSubTopoObject(kit *rest.Kit, object string, id int64, b
 func (s *service) FindResourceAttrs(ctx *rest.Contexts) {
 
 	object := ctx.Request.PathParameter("object")
-	if !types.IsKubeTopoResource(object) {
+	if !types.IsKubeTopoResource(object) && object != string(types.KubeCustomResource) {
 		blog.Errorf("the param is invalid and does not belong to the kube object(%s)", object)
 		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsInvalid, "object"))
 		return
@@ -620,6 +620,14 @@ func (s *service) FindResourceAttrs(ctx *rest.Contexts) {
 	case types.KubeWorkload:
 		// TODO compatible for different types of workload
 		for _, descriptor := range types.WorkLoadSpecFieldsDescriptor {
+			result = append(result, types.KubeAttrsRsp{
+				Field:    descriptor.Field,
+				Type:     string(descriptor.Type),
+				Required: descriptor.IsRequired,
+			})
+		}
+	case string(types.KubeCustomResource):
+		for _, descriptor := range types.CustomResourceSpecFieldsDescriptor {
 			result = append(result, types.KubeAttrsRsp{
 				Field:    descriptor.Field,
 				Type:     string(descriptor.Type),

@@ -21,6 +21,7 @@ import (
 	"configcenter/src/common"
 	"configcenter/src/common/backbone/service_mange/zk"
 	"configcenter/src/common/blog"
+	ccconfig "configcenter/src/common/core/cc/config"
 	"configcenter/src/common/cryptor"
 	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/mapstr"
@@ -90,7 +91,7 @@ func init() {
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
-	client := zk.NewZkClient(tConfig.ZkAddr, 40*time.Second, nil)
+	client := zk.NewZkClient(ccconfig.ZkConfig{Addr: tConfig.ZkAddr}, 40*time.Second)
 	var err error
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,

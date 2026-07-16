@@ -341,7 +341,8 @@ func getNoResourceMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullM
 
 // kubeWorkloadKinds kube workload kinds
 // TODO define this in kube types folder, and replace the kinds with actual ones, this is only an example
-var kubeWorkloadKinds = []string{"deployment", "statefulSet", "daemonSet"}
+var kubeWorkloadKinds = []string{"deployment", "statefulSet", "daemonSet", "gameStatefulSet", "gameDeployment",
+	"cronJob", "job", "pods", "customResource"}
 
 // genKubeWorkloadEventMethod generate iam callback methods for iamtypes.KubeWorkloadEvent resource type
 func genKubeWorkloadEventMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {

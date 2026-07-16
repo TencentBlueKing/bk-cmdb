@@ -13,16 +13,25 @@
 import http from '@/api'
 import i18n from '@/i18n/index.js'
 import { normalizationProperty } from '@/service/container/transition.js'
-import { CONTAINER_OBJECTS, CONTAINER_OBJECT_INST_KEYS } from '@/dictionary/container.js'
+import {
+  CONTAINER_OBJECTS,
+  CONTAINER_OBJECT_INST_KEYS,
+  WORKLOAD_KINDS_WITH_DEDICATED_PROPERTY_MODEL
+} from '@/dictionary/container.js'
 import { rollReqUseTotalCount } from '@/service/utils'
 import { getPropertyName } from './common.js'
 import { defineProperty as defineModelProperty } from '@/components/filters/utils.js'
+
+const WORKLOAD_PRIMARY_ID_KEY = CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.WORKLOAD].ID
+const dedicatedModelEntries = WORKLOAD_KINDS_WITH_DEDICATED_PROPERTY_MODEL.map(kind => [kind, WORKLOAD_PRIMARY_ID_KEY])
+const DEDICATED_PROPERTY_MODEL_ID_KEYS = Object.fromEntries(dedicatedModelEntries)
 
 function createIdProperty(objId, isPrependName) {
   const keyMap = {
     [CONTAINER_OBJECTS.CLUSTER]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.CLUSTER].ID,
     [CONTAINER_OBJECTS.NAMESPACE]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.NAMESPACE].ID,
-    [CONTAINER_OBJECTS.WORKLOAD]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.WORKLOAD].ID,
+    [CONTAINER_OBJECTS.WORKLOAD]: WORKLOAD_PRIMARY_ID_KEY,
+    ...DEDICATED_PROPERTY_MODEL_ID_KEYS,
     [CONTAINER_OBJECTS.FOLDER]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.FOLDER].ID,
     [CONTAINER_OBJECTS.POD]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.POD].ID,
     [CONTAINER_OBJECTS.NODE]: CONTAINER_OBJECT_INST_KEYS[CONTAINER_OBJECTS.NODE].ID,
@@ -30,7 +39,7 @@ function createIdProperty(objId, isPrependName) {
   }
   const propertyIdKey = keyMap[objId] || 'id'
   return {
-    id: `${objId}_${keyMap[objId]}`,
+    id: `${objId}_${propertyIdKey}`,
     bk_obj_id: objId,
     bk_property_id: propertyIdKey,
     bk_property_name: isPrependName ? (getPropertyName(propertyIdKey, objId, i18n.locale) || 'ID') : 'ID',

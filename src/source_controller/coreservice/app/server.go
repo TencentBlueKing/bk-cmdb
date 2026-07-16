@@ -63,8 +63,7 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: coreSvr.onCoreServiceConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv: backbone.SrvRegdiscv{Regdiscv: op.ServConf.RegDiscover,
-			TLSConfig: op.ServConf.GetTLSClientConf()},
+		SrvRegdiscv: backbone.SrvRegdiscv{Zk: op.ServConf.Zk},
 		SrvInfo: svrInfo,
 	}
 

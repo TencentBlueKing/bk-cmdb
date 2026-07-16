@@ -12,6 +12,7 @@
 
 <script setup>
   import { UNIUQE_TYPES } from '@/dictionary/model-constants'
+  import { filterXSS } from '@/utils/util'
 
   // eslint-disable-next-line no-unused-vars
   const props = defineProps({
@@ -54,7 +55,7 @@
 
   const getUniqueRuleContent = (uniqueList) => {
     const content = []
-    uniqueList.forEach(item => content.push(item.names.join(', ')))
+    uniqueList.forEach(item => content.push(item.names.map(name => filterXSS(name)).join(', ')))
     return content.join('<br />')
   }
 

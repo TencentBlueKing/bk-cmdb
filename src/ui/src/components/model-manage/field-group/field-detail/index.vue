@@ -536,6 +536,11 @@
           this.fieldInfo.default = this.isNullOrUndefinedOrEmpty(this.fieldInfo.default) ? '' : Number(this.fieldInfo.default)
         }
 
+        // 将布尔类型的默认值改成default
+        if (PROPERTY_TYPES.BOOL === this.fieldInfo.bk_property_type) {
+          this.fieldInfo.default = this.fieldInfo.option
+        }
+
         // 配置流程直接抛出事件并退出，在流程中自行处理
         if (this.isSettingScene) {
           this.$emit('confirm', this.field.id, this.fieldInfo)
@@ -631,6 +636,9 @@
       },
       getPreFieldUpdateParams() {
         const allowKey = ['option', 'unit', 'placeholder']
+        if (this.fieldInfo.bk_property_type === PROPERTY_TYPES.BOOL) {
+          allowKey.push('default')
+        }
         const params = {}
         allowKey.forEach((key) => {
           params[key] = this.fieldInfo[key]

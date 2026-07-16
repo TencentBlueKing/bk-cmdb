@@ -4,11 +4,11 @@
 
 ### 输入参数
 
-| 参数名称      | 参数类型   | 必选 | 描述                                                                                                                                |
-|-----------|--------|----|-----------------------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id | int    | 是  | 业务id                                                                                                                              |
-| kind      | string | 是  | workload类型，目前支持的workload类型有deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods(放不通过workload而直接创建Pod) |
-| data      | array  | 是  | 数组, 一次限制创建200                                                                                                                     |
+| 参数名称      | 参数类型   | 必选 | 描述                                                                                                                                                      |
+|-----------|--------|----|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id | int    | 是  | 业务id                                                                                                                                                    |
+| kind      | string | 是  | workload类型，目前支持的workload类型有deployment、daemonSet、statefulSet、gameStatefulSet、gameDeployment、cronJob、job、pods(放不通过workload而直接创建Pod)、customResource(自定义资源) |
+| data      | array  | 是  | 数组, 一次限制创建200                                                                                                                                           |
 
 #### data[x]
 
@@ -16,6 +16,8 @@
 |-------------------------|--------|----|-----------------------------------------------------|
 | bk_namespace_id         | int    | 是  | namespace在cc中的唯一标识                                  |
 | name                    | string | 是  | workload名称                                          |
+| cr_kind                 | string | 否  | CR类型，kind为customResource时必填                         |
+| cr_api_version          | string | 否  | CR的apiVersion，kind为customResource时必填                |
 | labels                  | map    | 否  | 标签                                                  |
 | selector                | object | 否  | 工作负载选择器                                             |
 | replicas                | int    | 否  | 工作负载实例个数                                            |

@@ -142,7 +142,9 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	process.Config.Errors.Res, _ = cc.String("errors.res")
 	process.Config.Language.Res, _ = cc.String("language.res")
 	process.Config.Configures.Dir, _ = cc.String("confs.dir")
-	process.Config.Register.Address, _ = cc.String("registerServer.addrs")
+	process.Config.Register.Addr, _ = cc.String("registerServer.addrs")
+	process.Config.Register.User, _ = cc.String("registerServer.usr")
+	process.Config.Register.Password, _ = cc.String("registerServer.pwd")
 	process.Config.Register.TLS, _ = cc.NewTLSClientConfigFromConfig("registerServer.tls")
 	process.Config.MigrateDataID, _ = cc.Bool("hostsnap.migrateDataID")
 	process.Config.SyncIAMPeriodMinutes, _ = cc.Int("adminServer.syncIAMPeriodMinutes")
@@ -208,10 +210,7 @@ func parseSeverConfig(ctx context.Context, op *options.ServerOption) (*MigrateSe
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: process.onMigrateConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv: backbone.SrvRegdiscv{
-			Regdiscv:  process.Config.Register.Address,
-			TLSConfig: &process.Config.Register.TLS,
-		},
+		SrvRegdiscv: backbone.SrvRegdiscv{Zk: process.Config.Register},
 		SrvInfo: svrInfo,
 	}
 	engine, err := backbone.NewBackbone(ctx, input)

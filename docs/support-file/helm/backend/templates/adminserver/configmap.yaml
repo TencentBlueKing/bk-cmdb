@@ -271,6 +271,9 @@ data:
       endpoint: {{ .Values.common.auditCenter.endpoint }}
       token: {{ .Values.common.auditCenter.token }}
 
+    httpClient:
+      idleConnTimeoutSeconds: {{ .Values.common.httpClient.idleConnTimeoutSeconds }}
+
   extra.yaml: |-
     
 
@@ -292,8 +295,8 @@ data:
 
     registerServer:
       addrs: {{ include "cmdb.configAndServiceCenter.addr" . | quote }}
-      usr:
-      pwd:
+      usr: {{ .Values.configAndServiceCenter.user }}
+      pwd: {{ .Values.configAndServiceCenter.password }}
       tls:
         insecureSkipVerify: {{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}
         password: {{ .Values.configAndServiceCenter.tls.password }}

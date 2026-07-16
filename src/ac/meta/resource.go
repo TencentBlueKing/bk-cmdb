@@ -117,6 +117,9 @@ const (
 
 	// KubePodWorkload pod workload auth resource type in CMDB
 	KubePodWorkload ResourceType = "kube_pods"
+
+	// KubeCustomResource custom resource workload auth resource type in CMDB
+	KubeCustomResource ResourceType = "kube_customResource"
 )
 
 // cache related auth resource in CMDB
