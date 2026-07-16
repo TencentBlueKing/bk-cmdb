@@ -63,7 +63,7 @@ func InsertTemplateData(kit *rest.Kit, db local.DB, data []interface{}, insertOp
 		return err
 	}
 
-	insertData, err := cmpTenantTmp(result, tmpData, insertOps.UniqueFields, insertOps.IgnoreKeys)
+	insertData, err := cmpTenantTmp(result, tmpData, insertOps)
 	if err != nil {
 		blog.Errorf("compare data failed, err: %v", err)
 		return err
@@ -205,11 +205,11 @@ func insertTmpData[T tenanttmp.UniqueKeyTmp | tenanttmp.SvrCategoryTmp | mapstr.
 	return nil
 }
 
-func cmpTenantTmp(existData, data []tenanttmp.TenantTmpData[mapstr.MapStr],
-	uniqueFields, ignoreFields []string) ([]tenanttmp.TenantTmpData[mapstr.MapStr], error) {
+func cmpTenantTmp(existData, data []tenanttmp.TenantTmpData[mapstr.MapStr], insertOps *InsertOptions) (
+	[]tenanttmp.TenantTmpData[mapstr.MapStr], error) {
 
 	insertData := make([]tenanttmp.TenantTmpData[mapstr.MapStr], 0)
-	if len(uniqueFields) == 0 {
+	if len(insertOps.UniqueFields) == 0 {
 		if len(existData) == len(data) {
 			return insertData, nil
 		}
@@ -221,7 +221,7 @@ func cmpTenantTmp(existData, data []tenanttmp.TenantTmpData[mapstr.MapStr],
 
 	existMap := make(map[string]tenanttmp.TenantTmpData[mapstr.MapStr])
 	for _, item := range existData {
-		valueStr := getUniqueStr(item.Data, uniqueFields)
+		valueStr := getUniqueStr(item.Data, insertOps.UniqueFields)
 		if valueStr == "" {
 			continue
 		}
@@ -229,7 +229,7 @@ func cmpTenantTmp(existData, data []tenanttmp.TenantTmpData[mapstr.MapStr],
 	}
 
 	for _, item := range data {
-		valueStr := getUniqueStr(item.Data, uniqueFields)
+		valueStr := getUniqueStr(item.Data, insertOps.UniqueFields)
 		if valueStr == "" {
 			continue
 		}
@@ -237,7 +237,12 @@ func cmpTenantTmp(existData, data []tenanttmp.TenantTmpData[mapstr.MapStr],
 			insertData = append(insertData, item)
 			continue
 		}
-		if err := CmpData(item.Data, existMap[valueStr].Data, ignoreFields); err != nil {
+
+		if insertOps.IgnoreExists {
+			continue
+		}
+
+		if err := CmpData(item.Data, existMap[valueStr].Data, insertOps.IgnoreKeys); err != nil {
 			return nil, err
 		}
 	}

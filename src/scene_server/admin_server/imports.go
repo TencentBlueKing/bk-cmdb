@@ -19,4 +19,5 @@ package main
 import (
 	// v3.15.x
 	_ "configcenter/src/scene_server/admin_server/upgrader/y3.15.202411071530"
+	_ "configcenter/src/scene_server/admin_server/upgrader/y3.15.202607151050"
 )
