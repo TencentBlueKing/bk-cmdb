@@ -126,7 +126,7 @@ func newMigrateTenantService(kit *rest.Kit, oldConf, newConf, oldWatchConf, newW
 	if err != nil {
 		return nil, fmt.Errorf("get system version info failed, err: %v", err)
 	}
-	if util.GetStrByInterface(versionInfo["current_version"]) != "y3.14.202502101200" {
+	if util.GetStrByInterface(versionInfo["current_version"]) != "y3.14.202607141812" {
 		return nil, fmt.Errorf("current version %v is not the last version of 3.14", versionInfo["current_version"])
 	}
 

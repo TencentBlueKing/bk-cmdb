@@ -14,28 +14,27 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package y3_14_202607141812
+package y3_15_202607151050
 
 import (
-	"context"
-
+	"configcenter/pkg/tenant"
+	"configcenter/src/common"
 	"configcenter/src/common/blog"
-	"configcenter/src/scene_server/admin_server/upgrader/history"
+	"configcenter/src/common/http/rest"
 	"configcenter/src/storage/dal"
 )
 
-func init() {
-	history.RegistUpgrader("y3.14.202607141812", upgrade)
-}
+// addObjAttIsHiddenField add the is_hidden field to the object attribute description table (cc_ObjAttDes).
+func addObjAttIsHiddenField(kit *rest.Kit, db dal.Dal) error {
+	return tenant.ExecForAllTenants(func(tenantID string) error {
+		tenantKit := kit.NewKit().WithTenant(tenantID)
+		tenantDB := db.Shard(tenantKit.ShardOpts())
 
-func upgrade(ctx context.Context, db dal.RDB, conf *history.Config) (err error) {
-	blog.Infof("start execute y3.14.202607141812")
-
-	err = updateHostBkCPUArchitectureAttr(ctx, db, conf)
-	if err != nil {
-		blog.Errorf("update host bk_cpu_architecture attribute failed, error: %v")
-		return err
-	}
-
-	return nil
+		err := tenantDB.Table(common.BKTableNameObjAttDes).AddColumn(tenantKit.Ctx, common.BKIsHidden, false)
+		if err != nil {
+			blog.Errorf("add is_hidden field failed for tenant %s, err: %v", tenantID, err)
+			return err
+		}
+		return nil
+	})
 }

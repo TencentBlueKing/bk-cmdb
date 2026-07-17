@@ -153,6 +153,10 @@ func getInsertData(existData map[string]mapstr.MapStr, data []interface{}, compa
 			continue
 		}
 
+		if compareFiled.IgnoreExists {
+			continue
+		}
+
 		if err = CmpData(mapStrData, existData[valueStr], compareFiled.IgnoreKeys); err != nil {
 			return nil, err
 		}
@@ -230,6 +234,7 @@ type InsertOptions struct {
 	UniqueFields   []string
 	IgnoreKeys     []string
 	IDField        []string
+	IgnoreExists   bool
 	AuditDataField *AuditDataField `bson:",inline"`
 	AuditTypeField *AuditResType   `bson:",inline"`
 }

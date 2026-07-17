@@ -20,6 +20,7 @@ package y3_15_202411071530
 import (
 	"fmt"
 
+	"configcenter/pkg/tenant"
 	"configcenter/pkg/tenant/types"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
@@ -65,14 +66,16 @@ func upgrade(kit *rest.Kit, db dal.Dal) error {
 	}
 
 	// add tenant, system or default
-	err = mongodb.Dal().Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Insert(kit.Ctx, types.Tenant{
+	sysTenant := types.Tenant{
 		TenantID: kit.TenantID,
 		Status:   types.EnabledStatus,
 		Database: dbUUID,
-	})
+	}
+	err = mongodb.Dal().Shard(kit.SysShardOpts()).Table(common.BKTableNameTenant).Insert(kit.Ctx, sysTenant)
 	if err != nil {
 		blog.Errorf("add tenant failed for migrate data, tenantID: %s, err: %v", kit.TenantID, err)
 		return err
 	}
+	tenant.SetTenant([]types.Tenant{sysTenant})
 	return nil
 }
