@@ -1,18 +1,18 @@
 dependencies:
 - name: common
-  repository: https://charts.bitnami.com/bitnami
+  repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
   version: 2.2.2
 - name: redis
-  repository: https://charts.bitnami.com/bitnami
+  repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
   version: 17.3.17
 - name: mongodb
-  repository: https://charts.bitnami.com/bitnami
+  repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
   version: 13.6.1
 - name: elasticsearch
-  repository: https://charts.bitnami.com/bitnami
+  repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
   version: 19.5.5
 - name: zookeeper
-  repository: https://charts.bitnami.com/bitnami
+  repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
   version: 11.0.2
-digest: sha256:c071a99cca4c0e266f74f1d472e4ed4eda2185d5934fbd6b2ed475e8124cdc28
-generated: "2022-12-20T18:06:04.13192837+08:00"
+digest: sha256:9858d48ad8b9b4a34847654c9c49db4815000cef8ad3a3df3c6d0e97351b02d4
+generated: "2026-07-20T09:58:09.599822+08:00"
