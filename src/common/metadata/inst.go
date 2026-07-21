@@ -30,7 +30,7 @@ type SetInst struct {
 	SetTemplateID int64  `bson:"set_template_id" json:"set_template_id" mapstructure:"set_template_id"`
 	ParentID      int64  `bson:"bk_parent_id" json:"bk_parent_id" mapstructure:"bk_parent_id"`
 
-	Creator         string `field:"creator" json:"creator,omitempty" bson:"creator" mapstructure:"creator"`
+	CreatedBy       string `field:"bk_created_by" json:"bk_created_by,omitempty" bson:"bk_created_by" mapstructure:"bk_created_by"`
 	CreateTime      Time   `field:"create_time" json:"create_time,omitempty" bson:"create_time" mapstructure:"create_time"`
 	LastTime        Time   `field:"last_time" json:"last_time,omitempty" bson:"last_time" mapstructure:"last_time"`
 	SupplierAccount string `field:"bk_supplier_account" json:"bk_supplier_account,omitempty" bson:"bk_supplier_account" mapstructure:"bk_supplier_account"`
@@ -49,7 +49,7 @@ type ModuleInst struct {
 	SetTemplateID     int64  `bson:"set_template_id" json:"set_template_id" field:"set_template_id" mapstructure:"set_template_id"`
 	Default           int64  `bson:"default" json:"default" field:"default" mapstructure:"default"`
 	HostApplyEnabled  bool   `bson:"host_apply_enabled" json:"host_apply_enabled" field:"host_apply_enabled" mapstructure:"host_apply_enabled"`
-	Creator           string `bson:"creator" json:"creator" field:"creator" mapstructure:"creator"`
+	CreatedBy         string `bson:"bk_created_by" json:"bk_created_by" field:"bk_created_by" mapstructure:"bk_created_by"`
 	CreateTime        Time   `bson:"create_time" json:"create_time"`
 	LastTime          Time   `bson:"last_time" json:"last_time"`
 }
