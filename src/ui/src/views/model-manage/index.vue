@@ -558,7 +558,12 @@
               ...classification,
               bk_objects: classification.bk_objects
                 .filter(model => !model.bk_ishidden)
-                .sort((a, b) => a.bk_ispaused - b.bk_ispaused),
+                .sort((a, b) => {
+                  if (a.bk_ispaused !== b.bk_ispaused) {
+                    return a.bk_ispaused ? 1 : -1
+                  }
+                  return a.obj_sort_number - b.obj_sort_number
+                }),
             })
           })
         return allClassifications
@@ -840,9 +845,25 @@
           find(classifications => classifications?.bk_objects?.
             find(item => item?.id === id))
 
+        if (!group) return
+
         const curGroup = group?.bk_classification_id
-        const curIndex = newIndex + 1
-        this.updateModelGroup({ id, curGroup, curIndex })
+        const curModels = (group.bk_objects || []).filter(model => !model.bk_ishidden)
+        
+        if (!curModels || curModels.length === 0) return
+
+        const sortedModels = curModels.sort((a, b) => {
+          if (a.bk_ispaused !== b.bk_ispaused) {
+            return a.bk_ispaused ? 1 : -1
+          }
+          return a.obj_sort_number - b.obj_sort_number
+        })
+
+        const targetModel = sortedModels[newIndex]
+        if (!targetModel) return
+
+        const objSortNumber = targetModel.obj_sort_number
+        this.updateModelGroup({ id, curGroup, objSortNumber })
       },
       getExportModels() {
         return this.currentClassifications
@@ -1139,12 +1160,12 @@
         this.modelDialog.groupId = groupId || ''
         this.modelDialog.isShow = true
       },
-      updateModelGroup({ id, curGroup, curIndex }) {
+      updateModelGroup({ id, curGroup, objSortNumber }) {
         return this.updateObject({
           id,
           params: {
             bk_classification_id: curGroup,
-            obj_sort_number: +curIndex
+            obj_sort_number: objSortNumber
           }
         })
           .then(() => {
