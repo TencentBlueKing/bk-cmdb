@@ -200,7 +200,7 @@
         list.push({
           text: this.$t('退出登录'),
           icon: 'bk-cmdb-icon icon-cc-logout',
-          theme: 'primary',
+          theme: 'danger',
           handle: () => {
             this.handleLogout()
           },
