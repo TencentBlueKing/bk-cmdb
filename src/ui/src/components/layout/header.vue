@@ -179,27 +179,27 @@
       },
       actionList() {
         const list = []
-        if (this.userManagerWebUrl) {
+        if (this.iamWebUrl) {
           list.push({
-            text: this.$t('个人中心'),
-            icon: 'bk-cmdb-icon icon-cc-field-objuser',
-            href: this.userManagerWebFullUrl,
+            text: this.$t('权限中心'),
+            icon: 'bk-cmdb-icon icon-cc-userinfo-permission',
+            href: this.iamWebUrl,
             target: '_blank',
             theme: 'primary',
           })
         }
-        if (this.iamWebUrl) {
+        if (this.userManagerWebUrl) {
           list.push({
-            text: this.$t('权限中心'),
-            icon: 'bk-cmdb-icon icon-cc-set-permission',
-            href: this.iamWebUrl,
+            text: this.$t('个人设置'),
+            icon: 'bk-cmdb-icon icon-cc-userinfo-user',
+            href: this.userManagerWebFullUrl,
             target: '_blank',
             theme: 'primary',
           })
         }
         list.push({
           text: this.$t('退出登录'),
-          icon: 'bk-cmdb-icon icon-cc-logout',
+          icon: 'bk-cmdb-icon icon-cc-userinfo-logout',
           theme: 'danger',
           handle: () => {
             this.handleLogout()
