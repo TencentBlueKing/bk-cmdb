@@ -149,6 +149,8 @@
     },
     watch: {
       scope() {
+        // 切换全部/已分配/未分配时重置分页，避免跨 scope 共享 page 参数
+        FilterStore.resetPage(true)
         this.setModuleNamePropertyState()
         this.tableHeader = FilterStore.getHeader()
         // 重置selection防止因数据结构不同导致获取数据错误
@@ -176,12 +178,19 @@
           if (this.$route.name !== MENU_RESOURCE_HOST) {
             return false
           }
+          const nextScope = isNaN(scope) ? 'all' : parseInt(scope, 10)
+
+          // 切换 scope 时重置分页，避免跨 scope 共享 page 参数导致空数据
+          if (this.scope !== nextScope) {
+            page = 1
+          }
+
           this.table.pagination.current = parseInt(page, 10)
           this.table.pagination.limit = parseInt(limit, 10)
           this.table.sort = sort
           this.directory = parseInt(directory, 10) || null
 
-          this.scope = isNaN(scope) ? 'all' : parseInt(scope, 10)
+          this.scope = nextScope
 
           FilterStore.setResourceScope(scope)
 
