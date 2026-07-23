@@ -291,6 +291,11 @@
         overflow: visible !important;
       }
     }
+    // 确保操作列不被编辑态下 absolutely positioned 的表单元素遮挡
+    :deep(.bk-table-fixed-right) {
+      z-index: 2;
+      background-color: #fff;
+    }
     .operation-cell {
       .action-button {
         & + .action-button {
