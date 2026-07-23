@@ -35,7 +35,7 @@
       </div>
       <div class="info-group">
         <label class="info-label">{{$t('操作实例')}}</label>
-        <span class="info-content" v-bk-overflow-tips>{{details.resource_name}}</span>
+        <span class="info-content" v-bk-overflow-tips>{{resourceName}}</span>
       </div>
       <div class="info-group">
         <label class="info-label">{{$t('操作描述')}}</label>
@@ -129,9 +129,12 @@
         }
         return this.resourceType.operations.find(action => action.id === this.details.action)
       },
+      resourceName() {
+        return this.details.resource_name || this.details.extend_resource_name || '--'
+      },
       description() {
         const actionName = this.action ? this.action.name : this.details.action
-        return `${actionName}${this.details.resource_name}`
+        return `${actionName}${this.resourceName}`
       },
       modelId() {
         return this.details?.operation_detail?.bk_obj_id
