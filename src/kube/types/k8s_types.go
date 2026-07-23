@@ -47,6 +47,9 @@ type PodQOSClass string
 // ResourceList is a set of (resource name, quantity) pairs.
 type ResourceList map[ResourceName]Quantity
 
+// ResourceQuantityMap is a set of (resource name, string quantity) pairs.
+type ResourceQuantityMap map[ResourceName]string
+
 // PersistentVolumeMode describes how a volume is intended to be consumed, either Block or Filesystem.
 type PersistentVolumeMode string
 
