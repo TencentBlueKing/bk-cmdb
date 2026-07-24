@@ -115,6 +115,10 @@ func (s *Service) createTableObjInst(kit *rest.Kit, data map[string]metadata.Imp
 			}
 		}
 
+		if len(importTableAttrs) == 0 {
+			continue
+		}
+
 		// check attr exist
 		result, err := model.SearchAttrInfo(kit, s.Engine.CoreAPI, objID, importTableAttrs)
 		if err != nil {
