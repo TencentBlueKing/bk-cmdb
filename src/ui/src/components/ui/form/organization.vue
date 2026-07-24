@@ -134,10 +134,12 @@
       if (val) {
         val = Array.isArray(value) ? value : [value]
       }
-      emit('on-selected', val)
+      // 必须先 emit input/change 更新值，再 emit on-selected
+      // 否则编辑态下 on-selected 触发的 confirmEdit 会读到未更新的旧值，导致保存判断失效（编辑无效果）
       emit('on-checked', val)
       emit('change', val)
       emit('input', val)
+      emit('on-selected', val)
     }
   })
 
