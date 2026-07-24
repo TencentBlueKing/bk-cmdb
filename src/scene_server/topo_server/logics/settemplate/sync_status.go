@@ -386,7 +386,7 @@ func (st *setTemplate) rearrangeSetTempSyncStatus(kit *rest.Kit, option *metadat
 	}
 
 	setOpt := &metadata.QueryCondition{
-		Fields: []string{common.BKSetIDField, common.CreatorField, common.CreateTimeField,
+		Fields: []string{common.BKSetIDField, common.BKCreatedBy, common.CreateTimeField,
 			common.LastTimeField},
 		Page:           metadata.BasePage{Limit: common.BKNoLimit},
 		Condition:      mapstr.MapStr{common.BKSetIDField: mapstr.MapStr{common.BKDBIN: compensateSetIDs}},
@@ -406,7 +406,7 @@ func (st *setTemplate) rearrangeSetTempSyncStatus(kit *rest.Kit, option *metadat
 	for _, set := range setRes.Data.Info {
 		status := metadata.APITaskSyncStatus{
 			InstID:     set.SetID,
-			Creator:    set.Creator,
+			Creator:    set.CreatedBy,
 			CreateTime: set.CreateTime.Time,
 			LastTime:   set.LastTime.Time,
 		}
