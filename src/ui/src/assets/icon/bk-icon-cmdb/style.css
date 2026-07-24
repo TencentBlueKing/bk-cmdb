@@ -926,3 +926,12 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-cc-field-foreignkey:before {
 	content: "\e3e9";
 }
+.icon-cc-userinfo-user:before {
+	content: "\e3f2";
+}
+.icon-cc-userinfo-logout:before {
+	content: "\e3f1";
+}
+.icon-cc-userinfo-permission:before {
+	content: "\e3f3";
+}

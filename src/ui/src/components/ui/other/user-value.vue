@@ -11,7 +11,9 @@
 -->
 
 <template>
-  <bk-user-display-name ref="userDisplayName" :user-id="localValue"></bk-user-display-name>
+  <span class="user-value-wrapper" v-bk-overflow-tips>
+    <bk-user-display-name ref="userDisplayName" :user-id="localValue"></bk-user-display-name>
+  </span>
 </template>
 
 <script>
@@ -38,3 +40,14 @@
     }
   }
 </script>
+
+<style lang="scss" scoped>
+  .user-value-wrapper {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+</style>
