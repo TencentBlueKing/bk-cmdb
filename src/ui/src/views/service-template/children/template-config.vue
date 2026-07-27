@@ -350,6 +350,9 @@
 
       // 属性设置-保存
       const handleSavePropertyConfig = async ({ property, value }) => {
+        if (!property.id) {
+          return
+        }
         try {
           propertyConfigLoadingState.value.push(property)
           const data = {

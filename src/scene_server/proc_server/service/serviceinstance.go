@@ -2682,7 +2682,7 @@ func (ps *ProcServer) compensateSvcTempSyncStatus(kit *rest.Kit, moduleIDs []int
 	[]metadata.APITaskSyncStatus, error) {
 
 	moduleOpt := &metadata.QueryCondition{
-		Fields: []string{common.BKModuleIDField, common.CreatorField, common.CreateTimeField,
+		Fields: []string{common.BKModuleIDField, common.BKCreatedBy, common.CreateTimeField,
 			common.LastTimeField},
 		Page:           metadata.BasePage{Limit: common.BKNoLimit},
 		Condition:      mapstr.MapStr{common.BKModuleIDField: mapstr.MapStr{common.BKDBIN: moduleIDs}},
@@ -2703,7 +2703,7 @@ func (ps *ProcServer) compensateSvcTempSyncStatus(kit *rest.Kit, moduleIDs []int
 	for _, module := range moduleRes.Data.Info {
 		status := metadata.APITaskSyncStatus{
 			InstID:     module.ModuleID,
-			Creator:    module.Creator,
+			Creator:    module.CreatedBy,
 			CreateTime: module.CreateTime.Time,
 			LastTime:   module.LastTime.Time,
 		}
