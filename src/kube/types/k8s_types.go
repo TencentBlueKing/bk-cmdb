@@ -17,7 +17,6 @@
 package types
 
 import (
-	"math/big"
 	"time"
 )
 
@@ -46,9 +45,6 @@ type PodQOSClass string
 
 // ResourceList is a set of (resource name, quantity) pairs.
 type ResourceList map[ResourceName]Quantity
-
-// ResourceQuantityMap is a set of (resource name, string quantity) pairs.
-type ResourceQuantityMap map[ResourceName]string
 
 // PersistentVolumeMode describes how a volume is intended to be consumed, either Block or Filesystem.
 type PersistentVolumeMode string
@@ -85,14 +81,6 @@ type UID string
 
 // StorageMedium defines ways that storage can be allocated to a volume.
 type StorageMedium string
-
-// Scale is used for getting and setting the base-10 scaled value.
-// Base-2 scales are omitted for mathematical simplicity.
-// See Quantity.ScaledValue for more details.
-type Scale int32
-
-// Format lists the three possible formattings of a quantity.
-type Format string
 
 // +enum
 type AzureDataDiskCachingMode string
@@ -1370,152 +1358,6 @@ type EmptyDirVolumeSource struct {
 	// More info: http://kubernetes.io/docs/user-guide/volumes#emptydir
 	// +optional
 	SizeLimit *Quantity `json:"sizeLimit,omitempty" bson:"sizeLimit"`
-}
-
-// Quantity is a fixed-point representation of a number.
-// It provides convenient marshaling/unmarshaling in JSON and YAML,
-// in addition to String() and AsInt64() accessors.
-//
-// The serialization format is:
-//
-// <quantity>        ::= <signedNumber><suffix>
-//
-//	(Note that <suffix> may be empty, from the "" case in <decimalSI>.)
-//
-// <digit>           ::= 0 | 1 | ... | 9
-// <digits>          ::= <digit> | <digit><digits>
-// <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits>
-// <sign>            ::= "+" | "-"
-// <signedNumber>    ::= <number> | <sign><number>
-// <suffix>          ::= <binarySI> | <decimalExponent> | <decimalSI>
-// <binarySI>        ::= Ki | Mi | Gi | Ti | Pi | Ei
-//
-//	(International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
-//
-// <decimalSI>       ::= m | "" | k | M | G | T | P | E
-//
-//	(Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
-//
-// <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
-//
-// No matter which of the three exponent forms is used, no quantity may represent
-// a number greater than 2^63-1 in magnitude, nor may it have more than 3 decimal
-// places. Numbers larger or more precise will be capped or rounded up.
-// (E.g.: 0.1m will rounded up to 1m.)
-// This may be extended in the future if we require larger or smaller quantities.
-//
-// When a Quantity is parsed from a string, it will remember the type of suffix
-// it had, and will use the same type again when it is serialized.
-//
-// Before serializing, Quantity will be put in "canonical form".
-// This means that Exponent/suffix will be adjusted up or down (with a
-// corresponding increase or decrease in Mantissa) such that:
-//
-//	a. No precision is lost
-//	b. No fractional digits will be emitted
-//	c. The exponent (or suffix) is as large as possible.
-//
-// The sign will be omitted unless the number is negative.
-//
-// Examples:
-//
-//	1.5 will be serialized as "1500m"
-//	1.5Gi will be serialized as "1536Mi"
-//
-// Note that the quantity will NEVER be internally represented by a
-// floating point number. That is the whole point of this exercise.
-//
-// Non-canonical values will still parse as long as they are well formed,
-// but will be re-emitted in their canonical form. (So always use canonical
-// form, or don't diff.)
-//
-// This format is intended to make it difficult to use these numbers without
-// writing some sort of special handling code in the hopes that that will
-// cause implementors to also use a fixed point implementation.
-//
-// +protobuf=true
-// +protobuf.embed=string
-// +protobuf.options.marshal=false
-// +protobuf.options.(gogoproto.goproto_stringer)=false
-// +k8s:deepcopy-gen=true
-// +k8s:openapi-gen=true
-type Quantity struct {
-	// i is the quantity in int64 scaled form, if d.Dec == nil
-	i int64Amount
-	// d is the quantity in inf.Dec form if d.Dec != nil
-	d infDecAmount
-	// s is the generated value of this quantity to avoid recalculation
-	s string
-
-	// Change Format at will. See the comment for Canonicalize for
-	// more details.
-	Format
-}
-
-// int64Amount represents a fixed precision numerator and arbitrary scale exponent. It is faster
-// than operations on inf.Dec for values that can be represented as int64.
-// +k8s:openapi-gen=true
-type int64Amount struct {
-	value int64
-	scale Scale
-}
-
-// infDecAmount implements common operations over an inf.Dec that are specific to the quantity
-// representation.
-type infDecAmount struct {
-	*Dec
-}
-
-// A Dec represents a signed arbitrary-precision decimal.
-// It is a combination of a sign, an arbitrary-precision integer coefficient
-// value, and a signed fixed-precision exponent value.
-// The sign and the coefficient value are handled together as a signed value
-// and referred to as the unscaled value.
-// (Positive and negative zero values are not distinguished.)
-// Since the exponent is most commonly non-positive, it is handled in negated
-// form and referred to as scale.
-//
-// The mathematical value of a Dec equals:
-//
-//	unscaled * 10**(-scale)
-//
-// Note that different Dec representations may have equal mathematical values.
-//
-//	unscaled  scale  String()
-//	-------------------------
-//	       0      0    "0"
-//	       0      2    "0.00"
-//	       0     -2    "0"
-//	       1      0    "1"
-//	     100      2    "1.00"
-//	      10      0   "10"
-//	       1     -1   "10"
-//
-// The zero value for a Dec represents the value 0 with scale 0.
-//
-// Operations are typically performed through the *Dec type.
-// The semantics of the assignment operation "=" for "bare" Dec values is
-// undefined and should not be relied on.
-//
-// Methods are typically of the form:
-//
-//	func (z *Dec) Op(x, y *Dec) *Dec
-//
-// and implement operations z = x Op y with the result as receiver; if it
-// is one of the operands it may be overwritten (and its memory reused).
-// To enable chaining of operations, the result is also returned. Methods
-// returning a result other than *Dec take one of the operands as the receiver.
-//
-// A "bare" Quo method (quotient / division operation) is not provided, as the
-// result is not always a finite decimal and thus in general cannot be
-// represented as a Dec.
-// Instead, in the common case when rounding is (potentially) necessary,
-// QuoRound should be used with a Scale and a Rounder.
-// QuoExact or QuoRound with RoundExact can be used in the special cases when it
-// is known that the result is always a finite decimal.
-type Dec struct {
-	unscaled big.Int
-	scale    Scale
 }
 
 // Represents a Persistent Disk resource in Google Compute Engine.

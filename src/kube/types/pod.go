@@ -182,25 +182,25 @@ func (option *Pod) createValidate() ccErr.RawErrorInfo {
 // Container container details
 type Container struct {
 	// cc的自增主键
-	ID              int64                `json:"id,omitempty" bson:"id"`
-	PodID           int64                `json:"bk_pod_id,omitempty" bson:"bk_pod_id"`
-	BizID           int64                `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
-	ClusterID       int64                `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
-	NamespaceID     int64                `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
-	Ref             *Reference           `json:"ref,omitempty" bson:"ref"`
-	SupplierAccount string               `json:"bk_supplier_account" bson:"bk_supplier_account"`
-	Name            *string              `json:"name,omitempty" bson:"name"`
-	ContainerID     *string              `json:"container_uid,omitempty" bson:"container_uid"`
-	Image           *string              `json:"image,omitempty" bson:"image"`
-	Ports           *[]ContainerPort     `json:"ports,omitempty" bson:"ports"`
-	HostPorts       *[]ContainerPort     `json:"host_ports,omitempty" bson:"host_ports"`
-	Args            *[]string            `json:"args,omitempty" bson:"args"`
-	Started         *int64               `json:"started,omitempty" bson:"started"`
-	Limits          *ResourceQuantityMap `json:"limits,omitempty" bson:"limits"`
-	ReqSysSpecuests *ResourceQuantityMap `json:"requests,omitempty" bson:"requests"`
-	Liveness        *Probe               `json:"liveness,omitempty" bson:"liveness"`
-	Environment     *[]EnvVar            `json:"environment,omitempty" bson:"environment"`
-	Mounts          *[]VolumeMount       `json:"mounts,omitempty" bson:"mounts"`
+	ID              int64            `json:"id,omitempty" bson:"id"`
+	PodID           int64            `json:"bk_pod_id,omitempty" bson:"bk_pod_id"`
+	BizID           int64            `json:"bk_biz_id,omitempty" bson:"bk_biz_id"`
+	ClusterID       int64            `json:"bk_cluster_id,omitempty" bson:"bk_cluster_id"`
+	NamespaceID     int64            `json:"bk_namespace_id,omitempty" bson:"bk_namespace_id"`
+	Ref             *Reference       `json:"ref,omitempty" bson:"ref"`
+	SupplierAccount string           `json:"bk_supplier_account" bson:"bk_supplier_account"`
+	Name            *string          `json:"name,omitempty" bson:"name"`
+	ContainerID     *string          `json:"container_uid,omitempty" bson:"container_uid"`
+	Image           *string          `json:"image,omitempty" bson:"image"`
+	Ports           *[]ContainerPort `json:"ports,omitempty" bson:"ports"`
+	HostPorts       *[]ContainerPort `json:"host_ports,omitempty" bson:"host_ports"`
+	Args            *[]string        `json:"args,omitempty" bson:"args"`
+	Started         *int64           `json:"started,omitempty" bson:"started"`
+	Limits          *ResourceList    `json:"limits,omitempty" bson:"limits"`
+	ReqSysSpecuests *ResourceList    `json:"requests,omitempty" bson:"requests"`
+	Liveness        *Probe           `json:"liveness,omitempty" bson:"liveness"`
+	Environment     *[]EnvVar        `json:"environment,omitempty" bson:"environment"`
+	Mounts          *[]VolumeMount   `json:"mounts,omitempty" bson:"mounts"`
 	// Revision record this app's revision information
 	table.Revision `json:",inline" bson:",inline"`
 }

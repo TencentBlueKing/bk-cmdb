@@ -65,8 +65,8 @@ Create Containers, Pods, and Containers (v3.12.1+, Permission: Container pods cr
 | host_ports    | array  | No       | Host port mapping       |
 | args          | array  | No       | Startup parameters      |
 | started       | int    | No       | Startup time            |
-| limits        | object | No       | Resource limits         |
-| requests      | object | No       | Requested resource size |
+| limits        | object | No       | Resource limits whose values are Kubernetes Quantity strings |
+| requests      | object | No       | Requested resources whose values are Kubernetes Quantity strings |
 | liveness      | object | No       | Liveness probe          |
 | environment   | array  | No       | Environment variables   |
 | mounts        | array  | No       | Mounted volumes         |
@@ -142,7 +142,15 @@ Create Containers, Pods, and Containers (v3.12.1+, Permission: Container pods cr
               "name": "name",
               "container_uid": "uid",
               "image": "xxx",
-              "started": 1
+              "started": 1,
+              "limits": {
+                "cpu": "500m",
+                "memory": "128Mi"
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "64Mi"
+              }
             }
           ]
         }
