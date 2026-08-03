@@ -1,5 +1,5 @@
-# spec_version 配置文件版本号，必填，固定值 1
-spec_version: 1
+# spec_version 配置文件版本号，必填
+spec_version: 2
 
 # 定义发布内容，用于命令 `create_version_and_release_apigw`
 release:
@@ -32,24 +32,206 @@ apigateway:
     - {{ environ.BK_CMDB_MAINTAINER }}
 
 # 定义环境信息，用于命令 `sync_apigw_stage`
-stage:
-  name: {{ environ.BK_CMDB_STAGE_NAME }}
-  description: "正式环境"
-  # 环境的英文名，蓝鲸官方网关需提供，以支持国际化
-  description_en: "Production Environment"
-  # 环境变量；如未使用，可去除此配置
-  # vars:
-  #   key: "value"
-  # 代理配置
-  proxy_http:
-    timeout: 30
-    # 负载均衡类型 + Hosts
-    upstreams:
-      loadbalance: "roundrobin"
-      hosts:
-        # 网关调用后端服务的默认域名或IP，不包含Path，比如：http://api.example.com
-        - host: {{ environ.BK_CMDB_HOST }}
-          weight: 100
+stages:
+  - name: {{ environ.BK_CMDB_STAGE_NAME }}
+    description: "正式环境"
+    # 环境的英文名，蓝鲸官方网关需提供，以支持国际化
+    description_en: "Production Environment"
+    # 环境变量；如未使用，可去除此配置
+    # vars:
+    #   key: "value"
+    # 代理配置
+    proxy_http:
+      timeout: 30
+      # 负载均衡类型 + Hosts
+      upstreams:
+        loadbalance: "roundrobin"
+        hosts:
+          # 网关调用后端服务的默认域名或IP，不包含Path，比如：http://api.example.com
+          - host: {{ environ.BK_CMDB_HOST }}
+            weight: 100
+    #  同步 MCP Server 相关配置
+    mcp_servers:
+      - name: "mcp"
+        title: "bk-cmdb-prod-mcp"
+        description: "蓝鲸配置平台 MCP Server"
+        labels:
+          - "cmdb"
+        # 添加的 tool 对应的资源名称
+        resource_names:
+          - open_update_business_enable_status
+          - open_batch_delete_set
+          - open_find_set_batch
+          - open_find_module_batch
+          - open_create_inst
+          - open_search_inst
+          - open_update_inst
+          - open_batch_update_inst
+          - open_delete_inst
+          - open_batch_delete_inst
+          - open_search_inst_association_topo
+          - open_create_object
+          - open_delete_object
+          - open_update_object
+          - open_search_objects
+          - open_search_object_topo
+          - open_create_classification
+          - open_delete_classification
+          - open_update_classification
+          - open_search_classifications
+          - open_create_object_attribute
+          - open_delete_object_attribute
+          - open_update_object_attribute
+          - open_search_object_attribute
+          - open_create_biz_custom_field
+          - open_update_biz_custom_field
+          - open_list_biz_hosts
+          - open_list_biz_hosts_topo
+          - open_list_hosts_without_biz
+          - open_list_resource_pool_hosts
+          - open_transfer_sethost_to_idle_module
+          - open_clone_host_property
+          - open_batch_update_host
+          - open_get_mainline_object_topo
+          - open_get_biz_internal_module
+          - open_find_module_host_relation
+          - open_find_host_by_service_template
+          - open_find_host_by_set_template
+          - open_find_host_biz_relations
+          - open_find_object_association
+          - open_find_instance_association
+          - open_add_instance_association
+          - open_delete_instance_association
+          - open_find_host_topo_relation
+          - open_search_cloud_area
+          - open_create_cloud_area
+          - open_update_cloud_area
+          - open_delete_cloud_area
+          - open_list_service_category
+          - open_create_service_category
+          - open_update_service_category
+          - open_delete_service_category
+          - open_create_service_template
+          - open_update_service_template
+          - open_get_service_template
+          - open_list_service_template
+          - open_delete_service_template
+          - open_list_set_template_related_service_template
+          - open_batch_create_proc_template
+          - open_update_proc_template
+          - open_delete_proc_template
+          - open_get_proc_template
+          - open_list_proc_template
+          - open_create_service_instance
+          - open_list_service_instance
+          - open_list_service_instance_by_host
+          - open_list_service_instance_by_set_template
+          - open_list_service_instance_detail
+          - open_delete_service_instance
+          - open_add_label_for_service_instance
+          - open_remove_label_from_service_instance
+          - open_create_process_instance
+          - open_update_process_instance
+          - open_delete_process_instance
+          - open_list_process_instance
+          - open_list_process_detail_by_ids
+          - open_search_inst_asst_object_inst_base_info
+          - open_update_host_cloud_area_field
+          - open_create_set_template
+          - open_list_set_template
+          - open_update_set_template
+          - open_delete_set_template
+          - open_sync_set_template_to_set
+          - open_resource_watch
+          - open_add_host_lock
+          - open_delete_host_lock
+          - open_search_host_lock
+          - open_find_topo_node_paths
+          - open_find_host_by_topo
+          - open_delete_related_inst_asso
+          - open_search_related_inst_asso
+          - open_create_dynamic_group
+          - open_update_dynamic_group
+          - open_get_dynamic_group
+          - open_delete_dynamic_group
+          - open_search_dynamic_group
+          - open_execute_dynamic_group
+          - open_find_module_with_relation
+          - open_transfer_host_to_recyclemodule
+          - open_find_host_relations_with_topo
+          - open_search_object_instances
+          - open_count_object_instances
+          - open_search_instance_associations
+          - open_count_instance_associations
+          - open_find_brief_biz_topo_node_relation
+          - open_batch_create_inst
+          - open_batch_create_instance_association
+          - open_create_business_set
+          - open_batch_delete_business_set
+          - open_list_business_in_business_set
+          - open_list_business_set
+          - open_list_business_set_topo
+          - open_batch_update_business_set
+          - open_find_instassociation_with_inst
+          - open_add_host_to_resource_pool
+          - open_list_host_total_mainline_topo
+          - open_add_host_to_business_idle
+          - open_bind_host_agent
+          - open_unbind_host_agent
+          - open_batch_create_project
+          - open_batch_update_project
+          - open_batch_delete_project
+          - open_list_project
+          - open_transfer_host_across_biz
+          - open_batch_create_quoted_inst
+          - open_list_quoted_inst
+          - open_batch_update_quoted_inst
+          - open_batch_delete_quoted_inst
+          - open_list_kube_cluster
+          - open_list_kube_node
+          - open_list_kube_pod
+          - open_list_kube_container
+          - open_list_kube_namespace
+          - open_list_kube_workload
+          - open_add_host_to_resource
+          - open_create_business
+          - open_create_module
+          - open_create_set
+          - open_update_business
+          - open_update_host
+          - open_delete_host
+          - open_update_module
+          - open_delete_module
+          - open_update_set
+          - open_delete_set
+          - open_get_host_base_info
+          - open_search_biz_inst_topo
+          - open_search_business
+          - open_search_inst_by_object
+          - open_search_module
+          - open_search_set
+          - open_transfer_host_module
+          - open_transfer_host_to_faultmodule
+          - open_transfer_host_to_idlemodule
+          - open_transfer_host_to_resourcemodule
+          - open_transfer_resourcehost_to_idlemodule
+        # 是否公开，默认不公开
+        is_public: true
+        # MCP 协议类型：sse（默认）、streamable_http
+        protocol_type: "streamable_http"
+        # 1: 开启, 0: 停止（必选字段）
+        status: 1
+        # 授权的应用
+        # target_app_codes:
+        #   - "bk_app_code1"
+        # 是否开启 OAuth2 公开客户端模式
+        oauth2_public_client_enabled: false
+        # 是否返回原始响应，开启后 mcp-proxy 直接返回 API 响应结果
+        raw_response_enabled: false
+        # MCP Server 分类名称列表
+        category_names:
+          - "Official"
+          - "ConfigManagement"
 
 # 主动授权，网关主动给应用，添加访问网关所有资源的权限；
 # 用于命令 `grant_apigw_permissions`
