@@ -99,14 +99,10 @@
                       v-model.trim="editState.value"
                       @focus="handleFocus"
                       @blur="handleBlur"
-                      v-bk-tooltips.top="{
+                      v-bk-tooltips="$tools.getPlaceholderTooltipConfig(property, {
                         allowHTML: false,
-                        disabled: !property.placeholder || $tools.isIconTipProperty(property.bk_property_type),
-                        theme: 'light',
-                        showOnInit: true,
-                        trigger: 'click',
                         content: htmlEncode(property.placeholder)
-                      }"
+                      })"
                       :ref="`component-${property.bk_property_id}`">
                     </component>
                   </div>
