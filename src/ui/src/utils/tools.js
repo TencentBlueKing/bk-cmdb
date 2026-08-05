@@ -672,6 +672,31 @@ export function isIconTipProperty(type) {
 }
 
 /**
+ * 判断是否为下拉/选择类型字段（这些类型点击时会打开下拉选项，与 click trigger tooltip 冲突）
+ */
+export function isDropdownProperty(type) {
+  return ['enum', 'list', 'enummulti', 'enumquote'].includes(type)
+}
+
+/**
+ * 获取属性编辑态 placeholder tooltip 的配置参数
+ * - 下拉类型：placement=right, trigger=mouseenter（右向展开，不与下拉垂直展开冲突）
+ * - 其他类型：placement=top, trigger=click
+ */
+export function getPlaceholderTooltipConfig(property, extra = {}) {
+  const isDropdown = isDropdownProperty(property.bk_property_type)
+  return {
+    ...extra,
+    disabled: !property.placeholder || isIconTipProperty(property.bk_property_type),
+    theme: 'light',
+    showOnInit: false,
+    placement: isDropdown ? 'right' : 'top',
+    trigger: isDropdown ? 'mouseenter' : 'click',
+    content: extra.content || ''
+  }
+}
+
+/**
  * 判断是否为容器字段
  */
 export function isContainerObjects(objId) {
@@ -712,5 +737,7 @@ export default {
   versionSort,
   isPropertySortable,
   isIconTipProperty,
-  isContainerObjects
+  isContainerObjects,
+  isDropdownProperty,
+  getPlaceholderTooltipConfig
 }

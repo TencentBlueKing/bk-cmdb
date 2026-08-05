@@ -108,12 +108,9 @@
           <property-form-element
             :key="row.id"
             :property="row"
-            v-bk-tooltips.top="{
-              disabled: !row.placeholder || $tools.isIconTipProperty(row.bk_property_type),
-              theme: 'light',
-              trigger: 'click',
+            v-bk-tooltips="$tools.getPlaceholderTooltipConfig(row, {
               content: htmlEncode(row.placeholder)
-            }"
+            })"
             @value-change="handlePropertyValueChange"
             @valid-change="handlePropertyValidChange">
           </property-form-element>
