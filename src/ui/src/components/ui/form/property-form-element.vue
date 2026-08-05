@@ -35,13 +35,10 @@
       v-validate="getValidateRules(property)"
       v-on="events"
       v-model.trim="localValue"
-      v-bk-tooltips.top="{
+      v-bk-tooltips="$tools.getPlaceholderTooltipConfig(property, {
         allowHTML: false,
-        disabled: !property.placeholder,
-        theme: 'light',
-        trigger: 'click',
         content: htmlEncode(property.placeholder)
-      }">
+      })">
     </component>
     <template v-if="errors.has(property.bk_property_id)">
       <i
