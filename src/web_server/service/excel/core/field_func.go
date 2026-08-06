@@ -457,6 +457,10 @@ func (d *Client) GetInstWithUserFullName(kit *rest.Kit, lang language.DefaultCCL
 				return nil, fmt.Errorf("failed to cast %s instance from interface{} to string", objID)
 			}
 
+			// 空字符串与 nil 语义等价，均视为未填写，不参与 ESB 查询
+			if username == "" {
+				continue
+			}
 			names = append(names, strings.Split(username, ",")...)
 		}
 	}
@@ -472,6 +476,8 @@ func (d *Client) GetInstWithUserFullName(kit *rest.Kit, lang language.DefaultCCL
 	for idx, inst := range insts {
 		for _, propertyID := range propertyIDs {
 			if inst[propertyID] == nil {
+				// nil 与空字符串统一导出为空字符串
+				insts[idx][propertyID] = ""
 				continue
 			}
 
@@ -481,22 +487,36 @@ func (d *Client) GetInstWithUserFullName(kit *rest.Kit, lang language.DefaultCCL
 				return nil, fmt.Errorf("failed to cast %s instance from interface{} to string", objID)
 			}
 
-			oldNames := strings.Split(nameStr, ",")
-			newNames := make([]string, 0)
-
-			for _, name := range oldNames {
-				fullName := fullNameMap[name]
-				if fullName == "" {
-					// return the original name and remind that the user is nonexistent in '()'
-					fullName = fmt.Sprintf("%s(%s)", name, lang.Language("nonexistent_user"))
-				}
-				newNames = append(newNames, fullName)
+			// 空字符串视为未填写，保持为空字符串，避免被重写为"(不存在用户)"
+			if nameStr == "" {
+				continue
 			}
-			insts[idx][propertyID] = strings.Join(newNames, ",")
+
+			insts[idx][propertyID] = replaceUserNameWithFullName(lang, nameStr, fullNameMap)
 		}
 	}
 
 	return insts, nil
+}
+
+// replaceUserNameWithFullName 将用户名串中的用户名替换为全名，空字符串用户名段直接忽略
+func replaceUserNameWithFullName(lang language.DefaultCCLanguageIf, nameStr string, fullNameMap map[string]string) string {
+	oldNames := strings.Split(nameStr, ",")
+	newNames := make([]string, 0)
+
+	for _, name := range oldNames {
+		// 跳过空字符串用户名段（如 "alice,"、","），与整体空值语义保持一致
+		if name == "" {
+			continue
+		}
+		fullName := fullNameMap[name]
+		if fullName == "" {
+			// return the original name and remind that the user is nonexistent in '()'
+			fullName = fmt.Sprintf("%s(%s)", name, lang.Language("nonexistent_user"))
+		}
+		newNames = append(newNames, fullName)
+	}
+	return strings.Join(newNames, ",")
 }
 
 func (d *Client) getUsernameFromEsb(kit *rest.Kit, userList []string) (map[string]string, error) {
