@@ -225,7 +225,9 @@ stages:
         # target_app_codes:
         #   - "bk_app_code1"
         # 是否开启 OAuth2 公开客户端模式
-        oauth2_public_client_enabled: false
+        oauth2_public_client_enabled: true
+        # 是否开启 OAuth2 个人客户端模式(个人 token)
+        oauth2_personal_client_enabled: true
         # 是否返回原始响应，开启后 mcp-proxy 直接返回 API 响应结果
         raw_response_enabled: false
         # MCP Server 分类名称列表
