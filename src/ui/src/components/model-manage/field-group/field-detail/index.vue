@@ -555,6 +555,9 @@
           if (isEmptyPropertyValue(this.fieldInfo.default)) {
             params.default = null
           }
+          if (isEmptyPropertyValue(this.fieldInfo.ismultiple)) {
+            params.ismultiple = false
+          }
           if (this.isFromTemplateField) {
             params = this.getTemplateFieldParams()
           }
