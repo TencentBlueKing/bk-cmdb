@@ -1466,9 +1466,11 @@ func (q Quantity) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
+// It only stores the input string in the cached field s. It does not populate
+// the underlying numeric fields i and d, or validate whether the input conforms
+// to the Kubernetes Quantity format.
 func (q *Quantity) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
-		*q = Quantity{}
 		return nil
 	}
 
@@ -1487,9 +1489,11 @@ func (q Quantity) MarshalBSONValue() (bsontype.Type, []byte, error) {
 }
 
 // UnmarshalBSONValue implements the bson.ValueUnmarshaler interface.
+// It only stores the input string in the cached field s. It does not populate
+// the underlying numeric fields i and d, or validate whether the input conforms
+// to the Kubernetes Quantity format.
 func (q *Quantity) UnmarshalBSONValue(typ bsontype.Type, raw []byte) error {
 	if typ == bson.TypeNull {
-		*q = Quantity{}
 		return nil
 	}
 
