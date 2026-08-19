@@ -38,54 +38,53 @@ type ClientI interface {
 	BatchOperateInstanceAuth(ctx context.Context, header http.Header, req *metadata.IamBatchOperateInstanceAuthReq) (
 		[]metadata.IamBatchOperateInstanceAuthRes, error)
 
-	RegisterSystem(ctx context.Context, header http.Header, sys System) error
-	GetSystemInfo(ctx context.Context, header http.Header, fields []types.SystemQueryField) (*RegisteredSystemInfo,
-		error)
-	UpdateSystemConfig(ctx context.Context, header http.Header, config *SysConfig) error
+	// RegisterSystem register cmdb system in IAM, returns the registered system id
+	RegisterSystem(ctx context.Context, header http.Header, sys *System) (string, error)
+	// GetSystem get cmdb system info from IAM
+	GetSystem(ctx context.Context, header http.Header) (*System, error)
+	// UpdateSystem update cmdb system info in IAM
+	UpdateSystem(ctx context.Context, header http.Header, sys *System) error
+	// GetSystemToken get cmdb system auth token from IAM
+	GetSystemToken(ctx context.Context, header http.Header) (string, error)
 
-	// RegisterResourcesTypes register resource types in IAM
-	RegisterResourcesTypes(ctx context.Context, header http.Header, resTypes []ResourceType) error
+	// ListResourceTypes list resource types by page
+	ListResourceTypes(ctx context.Context, header http.Header, page, pageSize int64) (*ListResourceTypesData, error)
+	// RegisterResourcesTypes register resource types in IAM, returns the registered resource type ids
+	RegisterResourcesTypes(ctx context.Context, header http.Header, resTypes []ResourceType) ([]string, error)
 	// UpdateResourcesType update resource type in IAM
-	UpdateResourcesType(ctx context.Context, header http.Header, resType ResourceType) error
+	UpdateResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID,
+		req *UpdateResourceTypeReq) error
+	// DeleteResourcesType delete resource type in IAM
+	DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID) error
 
-	// RegisterActions register actions in IAM
-	RegisterActions(ctx context.Context, header http.Header, actions []ResourceAction) error
+	// ListActions list actions by page
+	ListActions(ctx context.Context, header http.Header, page, pageSize int64) (*ListActionsData, error)
+	// RegisterActions register actions in IAM, returns the registered action ids
+	RegisterActions(ctx context.Context, header http.Header, actions []ResourceAction) ([]string, error)
 	// UpdateAction update action in IAM
-	UpdateAction(ctx context.Context, header http.Header, action ResourceAction) error
-	// DeleteActions delete actions in IAM
-	DeleteActions(ctx context.Context, header http.Header, actionIDs []types.ActionID) error
+	UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID, req *UpdateActionReq) error
+	// DeleteAction delete action in IAM
+	DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID) error
 
-	// RegisterActionGroups register action groups in IAM
-	RegisterActionGroups(ctx context.Context, header http.Header, actionGroups []ActionGroup) error
-	// UpdateActionGroups update action groups in IAM
-	UpdateActionGroups(ctx context.Context, header http.Header, actionGroups []ActionGroup) error
+	// ListRoles list roles by page
+	ListRoles(ctx context.Context, header http.Header, page, pageSize int64) (*ListRolesData, error)
+	// RegisterRoles register roles in IAM, returns the registered role ids
+	RegisterRoles(ctx context.Context, header http.Header, roles []Role) ([]string, error)
+	// UpdateRole update role in IAM
+	UpdateRole(ctx context.Context, header http.Header, roleID types.RoleID, req *UpdateRoleReq) error
+	// DeleteRole delete role in IAM
+	DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID) error
+	// AddRoleActions bind actions to a role, returns the added action ids
+	AddRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actions []RoleAction) ([]string, error)
+	// DeleteRoleActions unbind actions from a role
+	DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actionIDs []types.ActionID) error
 
-	// RegisterInstanceSelections register instance selections in IAM
-	RegisterInstanceSelections(ctx context.Context, header http.Header, instanceSelections []InstanceSelection) error
-	// UpdateInstanceSelection update instance selection in IAM
-	UpdateInstanceSelection(ctx context.Context, header http.Header, instanceSelection InstanceSelection) error
-	// DeleteInstanceSelections delete instance selections in IAM
-	DeleteInstanceSelections(ctx context.Context, header http.Header,
-		instanceSelectionIDs []types.InstanceSelectionID) error
-
-	// RegisterResourceCreatorActions regitser resource creator actions in IAM
-	RegisterResourceCreatorActions(ctx context.Context, header http.Header,
-		resourceCreatorActions ResourceCreatorActions) error
-	// UpdateResourceCreatorActions update resource creator actions in IAM
-	UpdateResourceCreatorActions(ctx context.Context, header http.Header,
-		resourceCreatorActions ResourceCreatorActions) error
-	// RegisterCommonActions register common actions in IAM
-	RegisterCommonActions(ctx context.Context, header http.Header, commonActions []CommonAction) error
-	// UpdateCommonActions update common actions in IAM
-	UpdateCommonActions(ctx context.Context, header http.Header, commonActions []CommonAction) error
 	// DeleteActionPolicies delete action policies in IAM
 	DeleteActionPolicies(ctx context.Context, header http.Header, actionID types.ActionID) error
 	// ListPolicies list action policies in IAM
 	ListPolicies(ctx context.Context, header http.Header, params *ListPoliciesParams) (*ListPoliciesData, error)
-	DeleteResourcesTypes(ctx context.Context, header http.Header, resTypeIDs []types.TypeID) error
 
 	ListUserPolicies(ctx context.Context, header http.Header, opts *ListPolicyOptions) ([]*ActionPolicy, error)
-	GetSystemToken(ctx context.Context, header http.Header) (string, error)
 	GetUserPolicy(ctx context.Context, header http.Header, opt *GetPolicyOption) (*operator.Policy, error)
 }
 

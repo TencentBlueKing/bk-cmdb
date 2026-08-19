@@ -48,8 +48,8 @@ func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, reso
 	param := metadata.PullResourceParam{
 		Condition: cond,
 		Fields:    []string{idField, nameField},
-		Limit:     page.Limit,
-		Offset:    page.Offset,
+		Limit:     page.PageSize,
+		Offset:    (page.Page - 1) * page.PageSize,
 	}
 	data, err := lgc.searchAuthResource(kit, param, resourceType)
 	if err != nil {
@@ -204,8 +204,8 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iamtypes.TypeID
 		Condition: cond,
 		Fields:    []string{common.BKInstIDField, common.BKInstNameField},
 		Page: metadata.BasePage{
-			Start: int(page.Offset),
-			Limit: int(page.Limit),
+			Start: int((page.Page - 1) * page.PageSize),
+			Limit: int(page.PageSize),
 		},
 	}
 
@@ -255,7 +255,7 @@ func (lgc *Logics) getModelObjectIDWithIamParentID(kit *rest.Kit, parentID strin
 func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
-	if resourceType != iamtypes.Host {
+	if !isHostResourceType(resourceType) {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -271,7 +271,8 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iamtypes.TypeID,
 
 	}
 
-	if filter.Parent.Type != iamtypes.SysHostRscPoolDirectory && filter.Parent.Type != iamtypes.Business /* iam.Module */ {
+	if (resourceType == iamtypes.SysHost && filter.Parent.Type != iamtypes.SysResourcePoolDirectory) ||
+		(resourceType == iamtypes.Host && filter.Parent.Type != iamtypes.Business) {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -295,7 +296,7 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iamtypes.TypeID,
 		return nil, err
 	}
 
-	if len(hostIDs) == 0 || int64(len(hostIDs)) <= page.Offset {
+	if len(hostIDs) == 0 || int64(len(hostIDs)) <= (page.Page-1)*page.PageSize {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -321,8 +322,8 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 		Condition: condition,
 		Fields: common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostInnerIPv6Field + "," +
 			common.BKCloudIDField,
-		Start: int(page.Offset),
-		Limit: int(page.Limit),
+		Start: int((page.Page - 1) * page.PageSize),
+		Limit: int(page.PageSize),
 	}
 
 	hostResp, err := lgc.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, input)
@@ -380,12 +381,12 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 	if hostLen > 0 {
 		count = hostLen
 
-		hostIDLen := page.Offset + page.Limit
+		hostIDLen := page.Page * page.PageSize
 		if hostIDLen > hostLen {
 			hostIDLen = hostLen
 		}
 
-		for offset := page.Offset; offset < hostIDLen; offset += 500 {
+		for offset := (page.Page - 1) * page.PageSize; offset < hostIDLen; offset += 500 {
 			limit := offset + 500
 			if limit > hostIDLen {
 				limit = hostIDLen
@@ -414,8 +415,8 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 		listHostParam := &metadata.ListHostWithPage{
 			Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field},
 			Page: metadata.BasePage{
-				Start: int(page.Offset),
-				Limit: int(page.Limit),
+				Start: int((page.Page - 1) * page.PageSize),
+				Limit: int(page.PageSize),
 			},
 		}
 
@@ -468,7 +469,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 func (lgc *Logics) ValidateListInstanceRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.ListInstanceFilter,
 	error) {
 	if req.Page.IsIllegal() {
-		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
+		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.PageSize, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
 	}
 	if req.Filter == nil {
@@ -529,8 +530,8 @@ func (lgc *Logics) ListSetInstance(kit *rest.Kit, resourceType iamtypes.TypeID, 
 		Condition: cond,
 		Fields:    []string{common.BKSetIDField, common.BKSetNameField, common.BKParentIDField, common.BKDefaultField},
 		Page: metadata.BasePage{
-			Limit: int(page.Limit),
-			Start: int(page.Offset),
+			Limit: int(page.PageSize),
+			Start: int((page.Page - 1) * page.PageSize),
 		},
 	}
 

@@ -115,7 +115,6 @@ func (s *Service) WebService() *restful.Container {
 	api.Produces(restful.MIME_JSON)
 
 	api.Route(api.POST("/authcenter/init").To(s.InitAuthCenter))
-	api.Route(api.POST("/authcenter/register").To(s.RegisterAuthAccount))
 	api.Route(api.POST("/migrate/{distribution}/{ownerID}").To(s.migrate))
 	api.Route(api.POST("/migrate/database").To(s.migrateDatabase))
 	api.Route(api.POST("/add/tenant").To(s.addTenant))
