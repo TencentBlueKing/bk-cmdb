@@ -19,18 +19,61 @@ package iam
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"configcenter/src/ac/iam/types"
-	"configcenter/src/common/blog"
+	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/thirdparty/apigw/apigwutil"
 	"configcenter/src/thirdparty/apigw/apigwutil/user"
 )
+
+// handleIamResp handle IAM V4 response.
+func handleIamResp[T any](result *rest.Result) (T, error) {
+	var data T
+	if result.Err != nil {
+		return data, result.Err
+	}
+
+	if result.StatusCode >= http.StatusOK && result.StatusCode < http.StatusMultipleChoices {
+		if len(result.Body) == 0 {
+			return data, nil
+		}
+
+		resp := new(struct {
+			Data T `json:"data"`
+		})
+		if err := json.Unmarshal(result.Body, resp); err != nil {
+			return data, &AuthError{
+				RequestID:  result.Header.Get(IamRequestHeader),
+				StatusCode: result.StatusCode,
+				Reason:     fmt.Errorf("unmarshal iam response failed: %v, body: %s", err, result.Body),
+			}
+		}
+		return resp.Data, nil
+	}
+
+	authErr := &AuthError{
+		RequestID:  result.Header.Get(IamRequestHeader),
+		StatusCode: result.StatusCode,
+		Reason:     fmt.Errorf("body: %s", result.Body),
+	}
+
+	if len(result.Body) == 0 {
+		return data, authErr
+	}
+
+	errResp := new(IamErrorResp)
+	if err := json.Unmarshal(result.Body, errResp); err == nil && errResp.Error != nil {
+		authErr.Reason = fmt.Errorf("code: %s, msg: %s", errResp.Error.Code, errResp.Error.Message)
+	}
+	return data, authErr
+}
 
 // GetNoAuthSkipUrl returns the url which can helps to launch the bk-iam when user do not have the authority to
 // access resource(s).
@@ -166,636 +209,319 @@ func (i *iam) BatchOperateInstanceAuth(ctx context.Context, header http.Header,
 	return resp.Data, nil
 }
 
-// RegisterSystem register a system in IAM
-func (i *iam) RegisterSystem(ctx context.Context, header http.Header, sys System) error {
-	resp := new(apigwutil.ApiGWBaseResponse)
-
-	subPath := "/api/v1/model/systems"
+// RegisterSystem register a system in IAM, returns the registered system id
+func (i *iam) RegisterSystem(ctx context.Context, header http.Header, sys *System) (string, error) {
+	subPath := "/api/v1/open/rbac/model/systems/"
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	blog.Errorf("register system, url: %s, body: %+v, config: %+v", subPath, sys, *sys.ProviderConfig)
-	result := i.service.Client.Post().
+	data, err := handleIamResp[RegisterSystemData](i.service.Client.Post().
 		SubResourcef(subPath).
 		WithContext(ctx).
 		WithHeaders(h).
 		Body(sys).
-		Do()
-
-	err = result.Into(resp)
+		Do())
 	if err != nil {
-		blog.Errorf("err: %s", err)
-		return err
+		return "", err
 	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
+	return data.ID, nil
 }
 
-// GetSystemInfo get a system info from IAM, if fields is empty, find all system info
-func (i *iam) GetSystemInfo(ctx context.Context, header http.Header, fields []types.SystemQueryField) (
-	*RegisteredSystemInfo, error) {
-
-	resp := new(SystemResp)
-	fieldsStr := ""
-	if len(fields) > 0 {
-		fieldArr := make([]string, len(fields))
-		for idx, field := range fields {
-			fieldArr[idx] = string(field)
-		}
-		fieldsStr = strings.Join(fieldArr, ",")
-	}
-
-	subPath := "/api/v1/model/systems/%s/query"
+// GetSystem get system info from IAM
+func (i *iam) GetSystem(ctx context.Context, header http.Header) (*System, error) {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return nil, err
 	}
 
-	result := i.service.Client.Get().
+	subPath := "/api/v1/open/rbac/model/systems/%s/"
+	return handleIamResp[*System](i.service.Client.Get().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
 		WithHeaders(h).
-		WithParam("fields", fieldsStr).
 		Body(nil).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != 0 {
-		if resp.Code == codeNotFound {
-			return nil, ErrNotFound
-		}
-
-		return nil, &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return &resp.Data, nil
+		Do())
 }
 
-// UpdateSystemConfig update system config in IAM, can only update provider_config.host field.
-func (i *iam) UpdateSystemConfig(ctx context.Context, header http.Header, config *SysConfig) error {
-	sys := new(System)
-	config.Auth = "basic"
-	sys.ProviderConfig = config
-	resp := new(apigwutil.ApiGWBaseResponse)
-	subPath := "/api/v1/model/systems/%s"
-
+// UpdateSystem update system info in IAM, the system id can not be updated
+func (i *iam) UpdateSystem(ctx context.Context, header http.Header, sys *System) error {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
-	result := i.service.Client.Put().
+	subPath := "/api/v1/open/rbac/model/systems/%s/"
+	_, err = handleIamResp[struct{}](i.service.Client.Put().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
 		WithHeaders(h).
 		Body(sys).
-		Do()
+		Do())
 
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
+	return err
 }
 
-// RegisterResourcesTypes register resource types in IAM
-func (i *iam) RegisterResourcesTypes(ctx context.Context, header http.Header, resTypes []ResourceType) error {
-	if len(resTypes) == 0 {
-		return nil
-	}
+// ListResourceTypes list resource types by page, the max page size is MaxListPageSize
+func (i *iam) ListResourceTypes(ctx context.Context, header http.Header, page, pageSize int64) (
+	*ListResourceTypesData, error) {
 
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	subPath := "/api/v1/model/systems/%s/resource-types"
-	resp := new(apigwutil.ApiGWBaseResponse)
-	result := i.service.Client.Post().
+	subPath := "/api/v1/open/rbac/model/systems/%s/resource-types/"
+	return handleIamResp[*ListResourceTypesData](i.service.Client.Get().
+		SubResourcef(subPath, types.SystemIDCMDB).
+		WithContext(ctx).
+		WithHeaders(h).
+		WithParam(pageParam, strconv.FormatInt(page, 10)).
+		WithParam(pageSizeParam, strconv.FormatInt(pageSize, 10)).
+		Body(nil).
+		Do())
+}
+
+// RegisterResourcesTypes register resource types in IAM, returns the registered resource type ids
+func (i *iam) RegisterResourcesTypes(ctx context.Context, header http.Header, resTypes []ResourceType) (
+	[]string, error) {
+
+	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	subPath := "/api/v1/open/rbac/model/systems/%s/resource-types/"
+	return handleIamResp[[]string](i.service.Client.Post().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
 		WithHeaders(h).
 		Body(resTypes).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
+		Do())
 }
 
-// UpdateResourcesType update resource type in IAM
-func (i *iam) UpdateResourcesType(ctx context.Context, header http.Header, resType ResourceType) error {
-	resp := new(apigwutil.ApiGWBaseResponse)
+// UpdateResourcesType update resource type in IAM, only name and ancestors can be updated
+func (i *iam) UpdateResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID,
+	req *UpdateResourceTypeReq) error {
 
-	subPath := "/api/v1/model/systems/%s/resource-types/%s"
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
-	result := i.service.Client.Put().
-		SubResourcef(subPath, types.SystemIDCMDB, resType.ID).
+	subPath := "/api/v1/open/rbac/model/systems/%s/resource-types/%s/"
+	_, err = handleIamResp[struct{}](i.service.Client.Put().
+		SubResourcef(subPath, types.SystemIDCMDB, resTypeID).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(resType).
-		Do()
+		Body(req).
+		Do())
 
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
+	return err
 }
 
-// DeleteResourcesTypes delete resource types in IAM
-func (i *iam) DeleteResourcesTypes(ctx context.Context, header http.Header, resTypeIDs []types.TypeID) error {
-	if len(resTypeIDs) == 0 {
-		return nil
-	}
-
-	ids := make([]struct {
-		ID types.TypeID `json:"id"`
-	}, len(resTypeIDs))
-	for idx := range resTypeIDs {
-		ids[idx].ID = resTypeIDs[idx]
-	}
-
-	subPath := "/api/v1/model/systems/%s/resource-types"
+// DeleteResourcesType delete resource type in IAM
+func (i *iam) DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID) error {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
-	resp := new(apigwutil.ApiGWBaseResponse)
-	result := i.service.Client.Delete().
+	subPath := "/api/v1/open/rbac/model/systems/%s/resource-types/%s/"
+	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+		SubResourcef(subPath, types.SystemIDCMDB, resTypeID).
+		WithContext(ctx).
+		WithHeaders(h).
+		Do())
+
+	return err
+}
+
+// ListActions list actions by page, the max page size is MaxListPageSize
+func (i *iam) ListActions(ctx context.Context, header http.Header, page, pageSize int64) (*ListActionsData, error) {
+	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	subPath := "/api/v1/open/rbac/model/systems/%s/actions/"
+	return handleIamResp[*ListActionsData](i.service.Client.Get().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(ids).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-	return nil
+		WithParam(pageParam, strconv.FormatInt(page, 10)).
+		WithParam(pageSizeParam, strconv.FormatInt(pageSize, 10)).
+		Body(nil).
+		Do())
 }
 
-// RegisterActions register actions in IAM
-func (i *iam) RegisterActions(ctx context.Context, header http.Header, actions []ResourceAction) error {
-	if len(actions) == 0 {
-		return nil
-	}
-
-	subPath := "/api/v1/model/systems/%s/actions"
+// RegisterActions register actions in IAM, returns the registered action ids
+func (i *iam) RegisterActions(ctx context.Context, header http.Header, actions []ResourceAction) ([]string, error) {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	resp := new(apigwutil.ApiGWBaseResponse)
-	result := i.service.Client.Post().
+	subPath := "/api/v1/open/rbac/model/systems/%s/actions/"
+	return handleIamResp[[]string](i.service.Client.Post().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
 		WithHeaders(h).
 		Body(actions).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-	return nil
+		Do())
 }
 
-// UpdateAction update action in IAM
-func (i *iam) UpdateAction(ctx context.Context, header http.Header, action ResourceAction) error {
+// UpdateAction update action in IAM, only the action name can be updated, changing the related resource type
+// needs to delete the action and register it again
+func (i *iam) UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID,
+	req *UpdateActionReq) error {
+
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
-	resp := new(apigwutil.ApiGWBaseResponse)
-	subPath := "/api/v1/model/systems/%s/actions/%s"
-	result := i.service.Client.Put().
-		SubResourcef(subPath, types.SystemIDCMDB, action.ID).
+	subPath := "/api/v1/open/rbac/model/systems/%s/actions/%s/"
+	_, err = handleIamResp[struct{}](i.service.Client.Put().
+		SubResourcef(subPath, types.SystemIDCMDB, actionID).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(action).
-		Do()
+		Body(req).
+		Do())
 
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-	return nil
+	return err
 }
 
-// DeleteActions delete actions in IAM
-func (i *iam) DeleteActions(ctx context.Context, header http.Header, actionIDs []types.ActionID) error {
-
+// DeleteAction delete action in IAM
+func (i *iam) DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID) error {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
-	ids := make([]struct {
-		ID types.ActionID `json:"id"`
-	}, len(actionIDs))
-	for idx := range actionIDs {
-		ids[idx].ID = actionIDs[idx]
+	subPath := "/api/v1/open/rbac/model/systems/%s/actions/%s/"
+	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+		SubResourcef(subPath, types.SystemIDCMDB, actionID).
+		WithContext(ctx).
+		WithHeaders(h).
+		Do())
+
+	return err
+}
+
+// ListRoles list roles by page, the max page size is MaxListPageSize
+func (i *iam) ListRoles(ctx context.Context, header http.Header, page, pageSize int64) (*ListRolesData, error) {
+	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
+	if err != nil {
+		return nil, err
 	}
 
-	resp := new(apigwutil.ApiGWBaseResponse)
-	subPath := "/api/v1/model/systems/%s/actions"
-	result := i.service.Client.Delete().
+	subPath := "/api/v1/open/rbac/model/systems/%s/roles/"
+	return handleIamResp[*ListRolesData](i.service.Client.Get().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(ids).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
+		WithParam(pageParam, strconv.FormatInt(page, 10)).
+		WithParam(pageSizeParam, strconv.FormatInt(pageSize, 10)).
+		Body(nil).
+		Do())
 }
 
-// RegisterActionGroups register action groups in IAM
-func (i *iam) RegisterActionGroups(ctx context.Context, header http.Header, actionGroups []ActionGroup) error {
+// RegisterRoles register roles in IAM, returns the registered role ids
+func (i *iam) RegisterRoles(ctx context.Context, header http.Header, roles []Role) ([]string, error) {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	resp := new(apigwutil.ApiGWBaseResponse)
-	subPath := "/api/v1/model/systems/%s/configs/action_groups"
-	result := i.service.Client.Post().
+	subPath := "/api/v1/open/rbac/model/systems/%s/roles/"
+	return handleIamResp[[]string](i.service.Client.Post().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(actionGroups).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
+		Body(roles).
+		Do())
 }
 
-// UpdateActionGroups update action groups in IAM
-func (i *iam) UpdateActionGroups(ctx context.Context, header http.Header, actionGroups []ActionGroup) error {
+// UpdateRole update role in IAM, only name and description can be updated, the bound actions are updated by
+// AddRoleActions and DeleteRoleActions
+func (i *iam) UpdateRole(ctx context.Context, header http.Header, roleID types.RoleID, req *UpdateRoleReq) error {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
-	resp := new(apigwutil.ApiGWBaseResponse)
-	subPath := "/api/v1/model/systems/%s/configs/action_groups"
-	result := i.service.Client.Put().
-		SubResourcef(subPath, types.SystemIDCMDB).
+	subPath := "/api/v1/open/rbac/model/systems/%s/roles/%s/"
+	_, err = handleIamResp[struct{}](i.service.Client.Put().
+		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(actionGroups).
-		Do()
+		Body(req).
+		Do())
 
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
+	return err
 }
 
-// RegisterInstanceSelections register instance selections in IAM
-func (i *iam) RegisterInstanceSelections(ctx context.Context, header http.Header,
-	instanceSelections []InstanceSelection) error {
-
-	if len(instanceSelections) == 0 {
-		return nil
-	}
-
+// DeleteRole delete role in IAM
+func (i *iam) DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID) error {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
-	subPath := "/api/v1/model/systems/%s/instance-selections"
-
-	resp := new(apigwutil.ApiGWBaseResponse)
-	result := i.service.Client.Post().
-		SubResourcef(subPath, types.SystemIDCMDB).
+	subPath := "/api/v1/open/rbac/model/systems/%s/roles/%s/"
+	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(instanceSelections).
-		Do()
+		Do())
 
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
+	return err
 }
 
-// UpdateInstanceSelection update instance selection in IAM
-func (i *iam) UpdateInstanceSelection(ctx context.Context, header http.Header,
-	instanceSelection InstanceSelection) error {
+// AddRoleActions add actions to a role, returns the added action ids
+func (i *iam) AddRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actions []RoleAction) (
+	[]string, error) {
 
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	subPath := "/api/v1/model/systems/%s/instance-selections/%s"
 
-	resp := new(apigwutil.ApiGWBaseResponse)
-	result := i.service.Client.Put().
-		SubResourcef(subPath, types.SystemIDCMDB, instanceSelection.ID).
+	subPath := "/api/v1/open/rbac/model/systems/%s/roles/%s/actions/"
+	return handleIamResp[[]string](i.service.Client.Post().
+		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(instanceSelection).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-	return nil
+		Body(actions).
+		Do())
 }
 
-// DeleteInstanceSelections delete instance selections in IAM
-func (i *iam) DeleteInstanceSelections(ctx context.Context, header http.Header,
-	instanceSelectionIDs []types.InstanceSelectionID) error {
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return err
-	}
-	subPath := "/api/v1/model/systems/%s/instance-selections"
-
-	if len(instanceSelectionIDs) == 0 {
-		return nil
-	}
-
-	ids := make([]struct {
-		ID types.InstanceSelectionID `json:"id"`
-	}, len(instanceSelectionIDs))
-	for idx := range instanceSelectionIDs {
-		ids[idx].ID = instanceSelectionIDs[idx]
-	}
-
-	resp := new(apigwutil.ApiGWBaseResponse)
-	result := i.service.Client.Delete().
-		SubResourcef(subPath, types.SystemIDCMDB).
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(ids).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
-}
-
-// RegisterResourceCreatorActions register resource creator actions in IAM
-func (i *iam) RegisterResourceCreatorActions(ctx context.Context, header http.Header,
-	resourceCreatorActions ResourceCreatorActions) error {
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return err
-	}
-	subPath := "/api/v1/model/systems/%s/configs/resource_creator_actions"
-
-	resp := new(apigwutil.ApiGWBaseResponse)
-	result := i.service.Client.Post().
-		SubResourcef(subPath, types.SystemIDCMDB).
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(resourceCreatorActions).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-	return nil
-}
-
-// UpdateResourceCreatorActions update resource creator actions in IAM
-func (i *iam) UpdateResourceCreatorActions(ctx context.Context, header http.Header,
-	resourceCreatorActions ResourceCreatorActions) error {
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return err
-	}
-	subPath := "/api/v1/model/systems/%s/configs/resource_creator_actions"
-
-	resp := new(apigwutil.ApiGWBaseResponse)
-	result := i.service.Client.Put().
-		SubResourcef(subPath, types.SystemIDCMDB).
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(resourceCreatorActions).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
-}
-
-// RegisterCommonActions register common actions in IAM
-func (i *iam) RegisterCommonActions(ctx context.Context, header http.Header, commonActions []CommonAction) error {
-
-	resp := new(apigwutil.ApiGWBaseResponse)
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return err
-	}
-	subPath := "/api/v1/model/systems/%s/configs/common_actions"
-
-	result := i.service.Client.Post().
-		SubResourcef(subPath, types.SystemIDCMDB).
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(commonActions).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
-}
-
-// UpdateCommonActions update common actions in IAM
-func (i *iam) UpdateCommonActions(ctx context.Context, header http.Header, commonActions []CommonAction) error {
+// DeleteRoleActions delete actions from a role, the action ids are passed by the "ids" query parameter
+func (i *iam) DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID,
+	actionIDs []types.ActionID) error {
 
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
-	resp := new(apigwutil.ApiGWBaseResponse)
-	subPath := "/api/v1/model/systems/%s/configs/common_actions"
-	result := i.service.Client.Put().
-		SubResourcef(subPath, types.SystemIDCMDB).
+	ids := make([]string, len(actionIDs))
+	for idx, id := range actionIDs {
+		ids[idx] = string(id)
+	}
+
+	subPath := "/api/v1/open/rbac/model/systems/%s/roles/%s/actions/"
+	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(commonActions).
-		Do()
+		WithParam(idsParam, strings.Join(ids, ",")).
+		Body(nil).
+		Do())
 
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
+	return err
 }
 
 // DeleteActionPolicies delete action policies in IAM
@@ -948,36 +674,20 @@ func (i *iam) ListUserPolicies(ctx context.Context, header http.Header, opts *Li
 
 // GetSystemToken get system token from iam, used to validate if request is from iam
 func (i *iam) GetSystemToken(ctx context.Context, header http.Header) (string, error) {
-	resp := new(struct {
-		apigwutil.ApiGWBaseResponse
-		Data struct {
-			Token string `json:"token"`
-		} `json:"data"`
-	})
-
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return "", err
 	}
 
-	result := i.service.Client.Get().
-		SubResourcef("/api/v1/model/systems/%s/token", types.SystemIDCMDB).
+	subPath := "/api/v1/open/rbac/model/systems/%s/auth-token/"
+	data, err := handleIamResp[systemAuthToken](i.service.Client.Get().
+		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
 		WithHeaders(h).
 		Body(nil).
-		Do()
-
-	err = result.Into(resp)
+		Do())
 	if err != nil {
 		return "", err
 	}
-
-	if resp.Code != 0 {
-		return "", &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return resp.Data.Token, nil
+	return data.AuthToken, nil
 }

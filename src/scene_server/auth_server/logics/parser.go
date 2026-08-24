@@ -187,7 +187,7 @@ func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, 
 
 	// resources except for host has their parent id stored in their instance table(currently all resources only
 	// have one layer TODO support multiple layers if needed)
-	if resourceType != iamtypes.Host {
+	if !isHostResourceType(resourceType) {
 		return cond, nil
 	}
 
@@ -369,7 +369,7 @@ func getValueType(value interface{}) string {
 // GetResourceIDField get resource id's actual field
 func GetResourceIDField(resourceType iamtypes.TypeID) string {
 	switch resourceType {
-	case iamtypes.Host:
+	case iamtypes.Host, iamtypes.SysHost:
 		return common.BKHostIDField
 	case iamtypes.SysModelGroup, iamtypes.SysModel, iamtypes.SysInstanceModel, iamtypes.SysModelEvent,
 		iamtypes.InstAsstEvent, iamtypes.MainlineModelEvent, iamtypes.SysAssociationType, iamtypes.BizCustomQuery,
@@ -378,11 +378,11 @@ func GetResourceIDField(resourceType iamtypes.TypeID) string {
 		return common.BKFieldID
 	case iamtypes.SysInstance:
 		return common.BKInstIDField
-	case iamtypes.SysResourcePoolDirectory, iamtypes.SysHostRscPoolDirectory:
+	case iamtypes.SysResourcePoolDirectory:
 		return common.BKModuleIDField
 	case iamtypes.SysCloudArea:
 		return common.BKCloudIDField
-	case iamtypes.Business, iamtypes.BusinessForHostTrans:
+	case iamtypes.Business:
 		return common.BKAppIDField
 	case iamtypes.BizSet:
 		return common.BKBizSetIDField
@@ -401,7 +401,7 @@ func GetResourceIDField(resourceType iamtypes.TypeID) string {
 // GetResourceNameField get resource display name's actual field
 func GetResourceNameField(resourceType iamtypes.TypeID) string {
 	switch resourceType {
-	case iamtypes.Host:
+	case iamtypes.Host, iamtypes.SysHost:
 		return common.BKHostInnerIPField
 	case iamtypes.SysModelGroup:
 		return common.BKClassificationNameField
@@ -410,11 +410,11 @@ func GetResourceNameField(resourceType iamtypes.TypeID) string {
 		return common.BKObjNameField
 	case iamtypes.SysAssociationType:
 		return common.AssociationKindNameField
-	case iamtypes.SysResourcePoolDirectory, iamtypes.SysHostRscPoolDirectory:
+	case iamtypes.SysResourcePoolDirectory:
 		return common.BKModuleNameField
 	case iamtypes.SysCloudArea:
 		return common.BKCloudNameField
-	case iamtypes.Business, iamtypes.BusinessForHostTrans:
+	case iamtypes.Business:
 		return common.BKAppNameField
 	case iamtypes.BizSet:
 		return common.BKBizSetNameField
