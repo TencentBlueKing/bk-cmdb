@@ -523,6 +523,8 @@ const (
 	CCErrTopoFieldTemplateUniqueConflict               = 1101126
 	CCErrTopoBizFieldConflict                          = 1101127
 	CCErrTopoArchiveBusinessHasKube                    = 1101128
+	// CCErrTopoForbiddenPauseMainlineObject means the object is a mainline model and is not allowed to be paused/resumed
+	CCErrTopoForbiddenPauseMainlineObject = 1101129
 
 	// object controller 1102XXX
 
