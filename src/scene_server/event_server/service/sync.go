@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/querybuilder"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/event_server/sync/hostidentifier"
 )
 
@@ -330,10 +329,6 @@ func (s *Service) getResourcePoolBusinessID(kit *rest.Kit) (int64, error) {
 	}
 
 	for _, biz := range result.Info {
-		if kit.TenantID != util.GetStrByInterface(biz[common.TenantID]) {
-			continue
-		}
-
 		if !biz.Exists(common.BKAppIDField) {
 			// this can not be happen normally.
 			return 0, errors.New("can not find resource pool business id")
