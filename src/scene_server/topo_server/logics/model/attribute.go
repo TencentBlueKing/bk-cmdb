@@ -1149,7 +1149,11 @@ func (a *attribute) UpdateTableObjectAttr(kit *rest.Kit, data mapstr.MapStr, att
 		return kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, common.BKPropertyIDField)
 	}
 
-	if err := a.canAttrsUpdate(kit, data, attrID, false, modelBizID); err != nil {
+	dbAttr, err := a.getModelAttrByID(kit, attrID, modelBizID)
+	if err != nil {
+		return err
+	}
+	if err := a.canAttrsUpdate(kit, data, dbAttr, false); err != nil {
 		return err
 	}
 
@@ -1332,7 +1336,8 @@ func (a *attribute) getModelAttrByID(kit *rest.Kit, attrID int64, bizID int64) (
 		Condition:      mapstr.MapStr{common.BKFieldID: attrID},
 		DisableCounter: true,
 		Page:           metadata.BasePage{Limit: common.BKNoLimit},
-		Fields:         []string{common.BKTemplateID},
+		Fields: []string{common.BKTemplateID, common.BKObjIDField, common.BKPropertyIDField,
+			metadata.AttributeFieldIsPre},
 	}
 	resp, err := a.clientSet.CoreService().Model().ReadModelAttrsWithTableByCondition(kit.Ctx, kit.Header, bizID,
 		queryCond)
@@ -1384,7 +1389,7 @@ func (a *attribute) getFieldTemplateAttr(kit *rest.Kit, templateID int64, fields
 // canAttrsUpdate coreservice has a similar logical judgment. If the logic here needs to be adjusted,
 // it needs to be judged whether the logic of coreservice needs to be adjusted synchronously.
 // the function name is: checkAttrTemplateInfo
-func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID int64, isSync bool, bizID int64) error {
+func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attr *metadata.Attribute, isSync bool) error {
 	// 1. 来自字段组合模版同步操作，都可以进行修改，直接正常返回
 	if isSync {
 		return nil
@@ -1409,10 +1414,6 @@ func (a *attribute) canAttrsUpdate(kit *rest.Kit, input mapstr.MapStr, attrID in
 	}
 
 	// 3. 不是同步操作，更新模型自己的属性，正常返回
-	attr, err := a.getModelAttrByID(kit, attrID, bizID)
-	if err != nil {
-		return err
-	}
 	if attr.TemplateID == 0 {
 		return nil
 	}
@@ -1507,7 +1508,20 @@ func (a *attribute) UpdateObjectAttribute(kit *rest.Kit, data mapstr.MapStr, att
 		return err
 	}
 
-	if err := a.canAttrsUpdate(kit, data, attID, isSync, modelBizID); err != nil {
+	dbAttr, err := a.getModelAttrByID(kit, attID, modelBizID)
+	if err != nil {
+		return err
+	}
+	// 内置字段（ispre）的单位（unit）在产品上约定不允许修改，从写库的 data 中删除，
+	// 保证单位无论通过编辑还是模板同步都不会被写库修改。
+	if dbAttr.IsPre {
+		if _, ok := data[metadata.AttributeFieldUnit]; ok {
+			blog.Infof("ignore modifying unit of built-in field %s, rid: %s", dbAttr.PropertyID, kit.Rid)
+			data.Remove(metadata.AttributeFieldUnit)
+		}
+	}
+
+	if err := a.canAttrsUpdate(kit, data, dbAttr, isSync); err != nil {
 		return err
 	}
 
