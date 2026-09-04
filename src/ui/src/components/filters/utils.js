@@ -328,11 +328,15 @@ export function transformGeneralModelCondition(condition, properties) {
 }
 
 export function transformContainerCondition(condition, properties, header) {
-  const params = transformGeneralModelCondition(condition, properties)
+  // hosts/kube/search 的 host_condition 与普通查主机 host 组同一套 ParseHostParams，
+  // 操作符需保持 $eq/$in/$regex，不能走 query-builder 的 equal/in/contains。
+  const hostGroup = transformCondition(condition, properties, header)
+    .find(group => group.bk_obj_id === 'host')
+
   return {
     fields: header.map(property => property.bk_property_id),
-    condition: params?.conditions?.rules,
-    time_condition: params?.time_condition
+    condition: hostGroup?.condition,
+    time_condition: hostGroup?.time_condition
   }
 }
 
