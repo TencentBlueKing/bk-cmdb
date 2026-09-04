@@ -92,10 +92,10 @@
     methods: {
       getDefaultValue() {
         let value = this.value || ''
-        if (this.multiple && !value.length) {
-          value = ['Asia/Shanghai']
+        if (this.multiple && value.length) {
+          value = [...value]
         } else {
-          value = value || 'Asia/Shanghai'
+          value = value || ''
         }
         return value
       },
