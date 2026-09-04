@@ -20,6 +20,7 @@
 | bk_classification_id | String     | 模型所属分组           |
 | bk_obj_icon          | String     | 模型logo           |
 | bk_ishidden          | Boolean    | 是否是隐藏模型如进程、服务模型等 |
+| bk_labels            | []String   | 模型标签             |
 | ispre                | Boolean    | 是否为系统预置          |
 | bk_ispaused          | Boolean    | 是否停用             |
 | creator              | String     | 创建者              |
