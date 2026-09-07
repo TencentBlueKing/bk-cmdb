@@ -19,6 +19,7 @@ eslint.html
 
 # dev config
 /builder/config/index.dev*.js
+/builder/config/index.svr.js
 
 # mock
 /mock/*
@@ -27,3 +28,6 @@ eslint.html
 apipaths.txt
 apivars.txt
 .eslintcache
+
+# cert
+*.pem

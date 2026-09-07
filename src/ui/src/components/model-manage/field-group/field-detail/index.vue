@@ -119,7 +119,7 @@
                 name="defalut"
                 :key="fieldInfo.bk_property_type"
                 :is-read-only="isReadOnly || field.ispre"
-                :is="`cmdb-form-${fieldInfo.bk_property_type}`"
+                :is="defaultValueComponent"
                 :multiple="fieldInfo.ismultiple"
                 :options="fieldInfo.option || []"
                 :disabled="isReadOnly || isSystemCreate || field.ispre || isFromTemplateField"
@@ -219,6 +219,7 @@
   import theFieldBool from './bool'
   import theFieldEnumquote from './enumquote.vue'
   import theFieldInnertable from './inner-table/index.vue'
+  import theFieldTimezoneDefault from './timezone-default.vue'
   import theConfig from './config'
   import { mapGetters, mapActions } from 'vuex'
   import { MENU_BUSINESS } from '@/dictionary/menu-symbol'
@@ -238,7 +239,8 @@
       theFieldList,
       theFieldBool,
       theConfig,
-      theFieldInnertable
+      theFieldInnertable,
+      theFieldTimezoneDefault
     },
     props: {
       properties: {
@@ -376,6 +378,13 @@
           PROPERTY_TYPES.LIST
         ]
         return !types.includes(this.fieldInfo.bk_property_type)
+      },
+      // 时区公共控件会写入实例态兜底值 Asia/Shanghai，字段默认值编辑不能复用
+      defaultValueComponent() {
+        if (this.fieldInfo.bk_property_type === PROPERTY_TYPES.TIMEZONE) {
+          return 'the-field-timezone-default'
+        }
+        return `cmdb-form-${this.fieldInfo.bk_property_type}`
       },
       changedValues() {
         const changedValues = {}
@@ -716,7 +725,8 @@
               .checkbox {
                 flex: none;
               }
-              .form-item-objuser {
+              .form-item-objuser,
+              .form-item-timezone {
                 width: 100%;
               }
             }

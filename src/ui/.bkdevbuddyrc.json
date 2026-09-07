@@ -1,0 +1,9 @@
+{
+  "ide": ["cursor", "codebuddy"],
+  "dir": ".ai",
+  "project": "cmdb",
+  "ideRoot": "../..",
+  "lint": {
+    "script": ["eslint --fix --ext .js,.vue --cache"]
+  }
+}
