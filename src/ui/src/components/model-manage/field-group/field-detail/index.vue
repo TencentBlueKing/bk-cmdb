@@ -157,7 +157,7 @@
         <div class="cmdb-form-item">
           <bk-input type="text" class="cmdb-form-input"
             v-model.trim="fieldInfo['unit']"
-            :disabled="isReadOnly || isFromTemplateField"
+            :disabled="isReadOnly || isFromTemplateField || field.ispre"
             :placeholder="$t('请输入单位')">
           </bk-input>
         </div>
