@@ -27,6 +27,9 @@ apigw-manager.sh fetch_apigw_public_key --gateway-name=${gateway_name} --print >
 title "releasing"
 call_definition_command_or_exit create_version_and_release_apigw "${definition_file}" --gateway-name=${gateway_name}
 
+title "syncing mcp servers"
+call_definition_command_or_exit sync_apigw_stage_mcp_servers "${definition_file}" --gateway-name=${gateway_name}
+
 title "grant apigateway permissions"
 call_definition_command_or_exit grant_apigw_permissions "${definition_file}" --gateway-name=${gateway_name}
 
