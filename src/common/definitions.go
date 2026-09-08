@@ -553,6 +553,15 @@ const (
 	// BKExtendResourceNameField the audit extend resource name field
 	BKExtendResourceNameField = "extend_resource_name"
 
+	// BKAuditAppCodeField
+	BKAuditAppCodeField = "code"
+
+	// BKAuditSceneContextOpUser op_user
+	BKAuditSceneContextOpUser       = "audit_context.op_user"
+	BKAuditSceneContextScene        = "audit_context.scene"
+	BKAuditSceneContextSceneTraceId = "audit_context.scene_trace_id"
+	BKAuditSceneContextSceneDesc    = "audit_context.scene_desc"
+
 	// BKLabelField the audit resource name field
 	BKLabelField = "label"
 

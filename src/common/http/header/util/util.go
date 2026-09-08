@@ -37,6 +37,7 @@ func CCHeader(header http.Header) http.Header {
 	httpheader.SetSupplierAccount(newHeader, httpheader.GetSupplierAccount(header))
 	httpheader.SetAppCode(newHeader, httpheader.GetAppCode(header))
 	httpheader.SetReqRealIP(newHeader, httpheader.GetReqRealIP(header))
+	httpheader.SetAuditSceneHeader(newHeader, httpheader.GetAuditSceneHeader(header))
 	if httpheader.IsReqFromWeb(header) {
 		httpheader.SetReqFromWeb(newHeader)
 	}
@@ -91,6 +92,7 @@ func NewHeader(header http.Header) http.Header {
 	httpheader.SetTXId(newHeader, httpheader.GetTXId(header))
 
 	httpheader.SetTXTimeout(newHeader, httpheader.GetTXTimeout(header))
+	httpheader.SetAuditSceneHeader(newHeader, httpheader.GetAuditSceneHeader(header))
 
 	if httpheader.IsReqFromWeb(header) {
 		httpheader.SetReqFromWeb(newHeader)
