@@ -17,8 +17,14 @@
 package types
 
 import (
+	"fmt"
 	"math/big"
 	"time"
+
+	"configcenter/src/common/json"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
 // MountPropagationMode describes mount propagation.
@@ -1447,6 +1453,57 @@ type Quantity struct {
 	// Change Format at will. See the comment for Canonicalize for
 	// more details.
 	Format
+}
+
+// String returns the string representation of the quantity.
+func (q Quantity) String() string {
+	return q.s
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (q Quantity) MarshalJSON() ([]byte, error) {
+	return json.Marshal(q.s)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// It only stores the input string in the cached field s. It does not populate
+// the underlying numeric fields i and d, or validate whether the input conforms
+// to the Kubernetes Quantity format.
+func (q *Quantity) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+
+	var value string
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	q.s = value
+	return nil
+}
+
+// MarshalBSONValue implements the bson.ValueMarshaler interface.
+func (q Quantity) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bson.MarshalValue(q.String())
+}
+
+// UnmarshalBSONValue implements the bson.ValueUnmarshaler interface.
+// It only stores the input string in the cached field s. It does not populate
+// the underlying numeric fields i and d, or validate whether the input conforms
+// to the Kubernetes Quantity format.
+func (q *Quantity) UnmarshalBSONValue(typ bsontype.Type, raw []byte) error {
+	if typ == bson.TypeNull {
+		return nil
+	}
+
+	value, ok := bson.RawValue{Type: typ, Value: raw}.StringValueOK()
+	if !ok {
+		return fmt.Errorf("cannot decode BSON type %s into Quantity", typ)
+	}
+
+	q.s = value
+	return nil
 }
 
 // int64Amount represents a fixed precision numerator and arbitrary scale exponent. It is faster
