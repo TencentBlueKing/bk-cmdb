@@ -49,6 +49,8 @@ type ColProp struct {
 	RefSheet string
 	// NotEditable 是否不可编辑
 	NotEditable bool
+	// IsMultiple multi-select flag, drives wrap-text on export
+	IsMultiple bool
 }
 
 // GetRowWidth get row width

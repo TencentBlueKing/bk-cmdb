@@ -22,10 +22,11 @@ import (
 
 // Style excel style
 type Style struct {
-	Fill   *Fill
-	Border []Border
-	Font   *Font
-	NumFmt int
+	Fill      *Fill
+	Border    []Border
+	Font      *Font
+	NumFmt    int
+	Alignment *Alignment
 }
 
 func (s *Style) convert() (*excelize.Style, error) {
@@ -49,12 +50,12 @@ func (s *Style) convert() (*excelize.Style, error) {
 
 	if s.Border != nil {
 		for _, border := range s.Border {
-			excelBorder, err := border.convert()
-			if err != nil {
-				return nil, err
-			}
-			style.Border = append(style.Border, excelBorder)
+			style.Border = append(style.Border, border.convert())
 		}
+	}
+
+	if s.Alignment != nil {
+		style.Alignment = s.Alignment.convert()
 	}
 
 	return style, nil
@@ -73,6 +74,20 @@ type Alignment struct {
 	WrapText        bool
 }
 
+func (a *Alignment) convert() *excelize.Alignment {
+	return &excelize.Alignment{
+		Horizontal:      a.Horizontal,
+		Indent:          a.Indent,
+		JustifyLastLine: a.JustifyLastLine,
+		ReadingOrder:    a.ReadingOrder,
+		RelativeIndent:  a.RelativeIndent,
+		ShrinkToFit:     a.ShrinkToFit,
+		TextRotation:    a.TextRotation,
+		Vertical:        a.Vertical,
+		WrapText:        a.WrapText,
+	}
+}
+
 type borderType string
 
 const (
@@ -89,12 +104,12 @@ type Border struct {
 	Style int
 }
 
-func (b *Border) convert() (excelize.Border, error) {
+func (b *Border) convert() excelize.Border {
 	return excelize.Border{
 		Type:  string(b.Type),
 		Color: b.Color,
 		Style: b.Style,
-	}, nil
+	}
 }
 
 // Font directly maps the font settings of the fonts.

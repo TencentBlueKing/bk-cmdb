@@ -484,7 +484,9 @@ func (i *Importer) buildPropWithTable(propMap map[string]core.ColProp, idRow []s
 		tableHeaderMap := make(map[string]core.ColProp, len(option.Header))
 		for _, attr := range option.Header {
 			subProp := core.ColProp{ID: attr.PropertyID, Name: attr.PropertyName, PropertyType: attr.PropertyType,
-				Option: attr.Option, IsRequire: attr.IsRequired, Length: core.PropertyNormalLen}
+				Option: attr.Option, IsRequire: attr.IsRequired, Length: core.PropertyNormalLen,
+				IsMultiple: attr.IsMultiple != nil && *attr.IsMultiple,
+			}
 
 			tableHeaderMap[attr.PropertyID] = subProp
 		}

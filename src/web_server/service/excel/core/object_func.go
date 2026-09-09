@@ -101,7 +101,7 @@ func (d *Client) GetObjColProp(kit *rest.Kit, cond mapstr.MapStr) ([]ColProp, er
 	for idx, attr := range attrs {
 		colProp := ColProp{ID: attr.PropertyID, Name: attr.PropertyName, PropertyType: attr.PropertyType,
 			IsRequire: attr.IsRequired, Option: attr.Option, Group: attr.PropertyGroup, RefSheet: attr.PropertyName,
-			Length: PropertyNormalLen,
+			Length: PropertyNormalLen, IsMultiple: attr.IsMultiple != nil && *attr.IsMultiple,
 		}
 
 		result[idx] = colProp
