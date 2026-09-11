@@ -221,7 +221,9 @@ func getHandleTableFieldFunc() handleInstFieldFunc {
 				}
 
 				colProp := &core.ColProp{ID: attr.PropertyID, Name: attr.PropertyName, PropertyType: attr.PropertyType,
-					IsRequire: attr.IsRequired, Option: attr.Option, Group: attr.PropertyGroup}
+					IsRequire: attr.IsRequired, Option: attr.Option, Group: attr.PropertyGroup,
+					IsMultiple: attr.IsMultiple != nil && *attr.IsMultiple,
+				}
 				rows, err := handleFunc(e, colProp, data[attr.PropertyID])
 				if err != nil {
 					blog.ErrorJSON("handle instance failed, property: %s, val: %s, err: %s, rid: %s", property, val,
@@ -249,7 +251,7 @@ func getDefaultHandleFieldFunc() handleInstFieldFunc {
 		if property.NotEditable {
 			style = noEditField
 		}
-		styleID, err := e.styleCreator.getStyle(style, property.PropertyType)
+		styleID, err := e.styleCreator.getStyle(style, WithPropType(property.PropertyType), WithWrap(property.IsMultiple))
 		if err != nil {
 			return nil, err
 		}
