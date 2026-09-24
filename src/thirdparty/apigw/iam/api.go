@@ -27,7 +27,7 @@ import (
 
 	"configcenter/src/ac/iam/types"
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/thirdparty/apigw/apigwutil/user"
 )
@@ -96,72 +96,32 @@ func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, req *Per
 	return data.URL, nil
 }
 
-// RegisterResourceCreatorAction register iam resource instance with creator, returns related actions with policy id
-// that the creator gained
-func (i *iam) RegisterResourceCreatorAction(ctx context.Context, header http.Header,
-	instance metadata.IamInstanceWithCreator) ([]metadata.IamCreatorActionPolicy, error) {
-
-	resp := new(iamCreatorActionResp)
-	subPath := "/api/v1/open/authorization/resource_creator_action/"
-	params := &iamInstanceParams{
-		IamInstanceWithCreator: instance,
-	}
-
+// AddAuthorization add authorization.
+func (i *iam) AddAuthorization(ctx context.Context, header http.Header, reqs []AddAuthorizationReq) error {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = i.service.Client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
+	h.Set(iamOperatorHeader, httpheader.GetUser(header))
 
-	if err != nil {
-		return nil, err
-	}
+	subPath := "/api/v1/open/rbac/mgmt/systems/%s/authorizations/"
+	for start := 0; start < len(reqs); start += MaxAddAuthorizationSize {
+		end := start + MaxAddAuthorizationSize
+		if end > len(reqs) {
+			end = len(reqs)
+		}
 
-	if resp.Code != 0 {
-		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
-}
-
-// BatchRegisterResourceCreatorAction batch register iam resource instances with creator, returns related actions with
-// policy id that the creator gained
-func (i *iam) BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header,
-	instances metadata.IamInstancesWithCreator) ([]metadata.IamCreatorActionPolicy, error) {
-
-	resp := new(iamCreatorActionResp)
-	url := "/api/v1/open/authorization/batch_resource_creator_action/"
-	params := &iamInstancesParams{
-		IamInstancesWithCreator: instances,
+		if _, err = handleIamResp[struct{}](i.service.Client.Post().
+			SubResourcef(subPath, types.SystemIDCMDB).
+			WithContext(ctx).
+			WithHeaders(h).
+			Body(reqs[start:end]).
+			Do()); err != nil {
+			return err
+		}
 	}
 
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return nil, err
-	}
-	err = i.service.Client.Post().
-		SubResourcef(url).
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(params).
-		Do().
-		Into(&resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return nil
 }
 
 // RegisterSystem register a system in IAM, returns the registered system id

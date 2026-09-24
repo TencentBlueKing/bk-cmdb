@@ -359,8 +359,8 @@ func (v *viewer) unregisterModelRoles(ctx context.Context, header http.Header, o
 	roleIDs := make([]iamtypes.RoleID, 0)
 	for _, obj := range objects {
 		for _, roleID := range []iamtypes.RoleID{
-			GenIAMDynamicRoleID(obj.ID, "manager"),
-			GenIAMDynamicRoleID(obj.ID, "viewer"),
+			GenIAMDynamicRoleID(obj.ID, iamtypes.DynamicInstManager),
+			GenIAMDynamicRoleID(obj.ID, iamtypes.DynamicInstViewer),
 		} {
 			if _, exists := existMap[roleID]; exists {
 				roleIDs = append(roleIDs, roleID)

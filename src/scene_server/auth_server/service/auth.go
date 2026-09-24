@@ -17,6 +17,9 @@
 package service
 
 import (
+	"fmt"
+	"time"
+
 	"configcenter/src/ac/iam"
 	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
@@ -197,14 +200,19 @@ func (s *AuthService) RegisterResourceCreatorAction(ctx *rest.Contexts) {
 		return
 	}
 	input.System = iamtypes.SystemIDCMDB
-	policies, err := apigw.Client().Iam().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+
+	err = registerResourceCreatorAction(ctx.Kit, iamtypes.TypeID(input.Type), input.Creator, []metadata.IamInstance{{
+		ID:        input.ID,
+		Name:      input.Name,
+		Ancestors: input.Ancestors,
+	}})
 	if err != nil {
 		blog.ErrorJSON("register resource creator action failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(policies)
+	ctx.RespEntity(nil)
 }
 
 // BatchRegisterResourceCreatorAction batch registers iam resource instance so that creator will be authorized on related actions
@@ -217,12 +225,68 @@ func (s *AuthService) BatchRegisterResourceCreatorAction(ctx *rest.Contexts) {
 	}
 	input.System = iamtypes.SystemIDCMDB
 
-	policies, err := apigw.Client().Iam().BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	err = registerResourceCreatorAction(ctx.Kit, iamtypes.TypeID(input.Type), input.Creator, input.Instances)
 	if err != nil {
 		blog.ErrorJSON("register resource creator action failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(policies)
+	ctx.RespEntity(nil)
+}
+
+func registerResourceCreatorAction(kit *rest.Kit, typeID iamtypes.TypeID, creator string,
+	instances []metadata.IamInstance) error {
+
+	if len(instances) == 0 {
+		return nil
+	}
+
+	if creator == "" {
+		return fmt.Errorf("creator is empty")
+	}
+
+	roleID, exists := iam.GetResourceCreatorRole(typeID)
+	if !exists {
+		return fmt.Errorf("unsupported resource type %s for creator authorization", typeID)
+	}
+
+	resources := make([]apigwiam.AuthResource, 0, len(instances))
+	for _, instance := range instances {
+		if instance.ID == "" {
+			return fmt.Errorf("resource instance id is empty, type: %s", typeID)
+		}
+		resources = append(resources, apigwiam.AuthResource{
+			Type: typeID,
+			ID:   instance.ID,
+		})
+	}
+
+	expiredAt := time.Now().Add(time.Duration(apigwiam.MaxAuthorizationExpireDays)*24*time.Hour - time.Minute).Unix()
+	reqs := make([]apigwiam.AddAuthorizationReq, 0, (len(resources)+apigwiam.MaxAddAuthorizationSize-1)/
+		apigwiam.MaxAddAuthorizationSize)
+	for start := 0; start < len(resources); start += apigwiam.MaxAddAuthorizationSize {
+		end := start + apigwiam.MaxAddAuthorizationSize
+		if end > len(resources) {
+			end = len(resources)
+		}
+
+		reqs = append(reqs, apigwiam.AddAuthorizationReq{
+			Subject: apigwiam.AuthSubject{
+				Type: apigwiam.UserSubjectType,
+				ID:   creator,
+			},
+			RoleID:                roleID,
+			RelatedResourceTypeID: typeID,
+			Resources:             resources[start:end],
+			ExpiredAt:             expiredAt,
+		})
+	}
+
+	if err := apigw.Client().Iam().AddAuthorization(kit.Ctx, kit.Header, reqs); err != nil {
+		blog.Errorf("add creator authorization failed, err: %v, reqs: %+v, rid: %s", err, reqs, kit.Rid)
+		return err
+	}
+
+	return nil
 }

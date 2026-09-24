@@ -22,7 +22,6 @@ import (
 	"net/http"
 
 	"configcenter/src/ac/iam/types"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/thirdparty/apigw/apigwutil"
 	"configcenter/src/thirdparty/apigw/apigwutil/user"
@@ -31,10 +30,7 @@ import (
 // ClientI is the iam api gateway client
 type ClientI interface {
 	GetNoAuthSkipUrl(ctx context.Context, header http.Header, req *PermApplyURLReq) (string, error)
-	RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
-		[]metadata.IamCreatorActionPolicy, error)
-	BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header,
-		instance metadata.IamInstancesWithCreator) ([]metadata.IamCreatorActionPolicy, error)
+	AddAuthorization(ctx context.Context, header http.Header, reqs []AddAuthorizationReq) error
 
 	// RegisterSystem register cmdb system in IAM, returns the registered system id
 	RegisterSystem(ctx context.Context, header http.Header, sys *System) (string, error)

@@ -23,16 +23,20 @@ import (
 	"net/http"
 
 	"configcenter/src/ac/iam/types"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
-	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
 const (
 	IamRequestHeader = "X-Request-Id"
+	// iamOperatorHeader is the required operator header of IAM authorization APIs.
+	iamOperatorHeader = "X-Bkiam-Operator"
 
 	// MaxListPageSize is the max page size of IAM model resource list apis.
 	MaxListPageSize = 100
+	// MaxAddAuthorizationSize is the max item count of one add_authorization request.
+	MaxAddAuthorizationSize = 20
+	// MaxAuthorizationExpireDays is the max expire days of IAM authorization.
+	MaxAuthorizationExpireDays = 365
 	// pageParam is the query parameter name of page number.
 	pageParam = "page"
 	// pageSizeParam is the query parameter name of page size.
@@ -66,14 +70,6 @@ func IsSystemNotExistErr(err error) bool {
 	return authErr.StatusCode == http.StatusNotFound
 }
 
-type iamInstanceParams struct {
-	metadata.IamInstanceWithCreator `json:",inline"`
-}
-
-type iamInstancesParams struct {
-	metadata.IamInstancesWithCreator `json:",inline"`
-}
-
 // PermApplyURLReq is the request of IAM generate_perm_apply_url API.
 type PermApplyURLReq struct {
 	SystemID    string          `json:"system_id"`
@@ -102,20 +98,6 @@ type PermApplyAncestor struct {
 // permApplyURLData is the response data of IAM generate_perm_apply_url API.
 type permApplyURLData struct {
 	URL string `json:"url"`
-}
-
-type iamCreatorActionResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data []metadata.IamCreatorActionPolicy `json:"data"`
-}
-
-type iamBatchOperateInstanceAuthParams struct {
-	*metadata.IamBatchOperateInstanceAuthReq `json:",inline"`
-}
-
-type iamBatchOperateInstanceAuthResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data []metadata.IamBatchOperateInstanceAuthRes `json:"data"`
 }
 
 // System is IAM V4 system info, used by create system request and retrieve system response.
@@ -269,6 +251,21 @@ type PlanByActionsReq struct {
 type ActionPlanRes struct {
 	ActionID      types.ActionID `json:"action_id"`
 	operator.Plan `json:",inline"`
+}
+
+// AuthResource is a resource instance used by IAM authorization APIs.
+type AuthResource struct {
+	Type types.TypeID `json:"type"`
+	ID   string       `json:"id"`
+}
+
+// AddAuthorizationReq is one item of IAM add_authorization API.
+type AddAuthorizationReq struct {
+	Subject               AuthSubject    `json:"subject"`
+	RoleID                types.RoleID   `json:"role_id"`
+	RelatedResourceTypeID types.TypeID   `json:"related_resource_type_id,omitempty"`
+	Resources             []AuthResource `json:"resources,omitempty"`
+	ExpiredAt             int64          `json:"expired_at"`
 }
 
 // ----authserver----

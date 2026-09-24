@@ -419,12 +419,104 @@ const (
 // RoleID is IAM V4 role id
 type RoleID string
 
-// DeleteCMDBResourceParam is the parameter to delete unused CMDB resources in IAM
-type DeleteCMDBResourceParam struct {
-	ActionIDs []ActionID
-	TypeIDs   []TypeID
-	RoleIDs   []RoleID
-}
+const (
+	// BusinessMaintainer is the compatible business maintainer role
+	BusinessMaintainer RoleID = "business_maintainer"
+	// BusinessVisitor is the compatible business visitor role
+	BusinessVisitor RoleID = "business_visitor"
+	// BizSetMaintainer is the compatible business set maintainer role
+	BizSetMaintainer RoleID = "biz_set_maintainer"
+	// BizSetVisitor is the compatible business set visitor role
+	BizSetVisitor RoleID = "biz_set_visitor"
+	// HostMaintainer is the compatible host resource maintainer role
+	HostMaintainer RoleID = "host_maintainer"
+	// ModelMaintainer is the compatible model relation maintainer role
+	ModelMaintainer RoleID = "model_maintainer"
+	// Developer is the compatible developer role
+	Developer RoleID = "developer"
+	// Auditor is the compatible auditor role
+	Auditor RoleID = "auditor"
+
+	// ProjectManager is the project manager role
+	ProjectManager RoleID = "project_manager"
+	// CloudAreaManager is the cloud area manager role
+	CloudAreaManager RoleID = "cloud_area_manager"
+	// ModelGroupManager is the model group manager role
+	ModelGroupManager RoleID = "model_group_manager"
+	// SysModelManager is the system model manager role
+	SysModelManager RoleID = "sys_model_manager"
+	// AsstTypeManager is the association type manager role
+	AsstTypeManager RoleID = "asst_type_manager"
+	// HostPoolDirManager is the host pool directory manager role
+	HostPoolDirManager RoleID = "host_pool_dir_manager"
+	// FieldTplManager is the field grouping template manager role
+	FieldTplManager RoleID = "field_tpl_manager"
+	// HostManager is the business host manager role
+	HostManager RoleID = "host_manager"
+	// BizSvcTplManager is the business service template manager role
+	BizSvcTplManager RoleID = "biz_svc_tpl_manager"
+	// BizSetTplManager is the business set template manager role
+	BizSetTplManager RoleID = "biz_set_tpl_manager"
+	// BizDynQueryManager is the business dynamic query manager role
+	BizDynQueryManager RoleID = "biz_dyn_query_manager"
+
+	// BusinessCreator is the business creator role
+	BusinessCreator RoleID = "business_creator"
+	// BizSetCreator is the business set creator role
+	BizSetCreator RoleID = "biz_set_creator"
+	// ProjectCreator is the project creator role
+	ProjectCreator RoleID = "project_creator"
+	// CloudAreaCreator is the cloud area creator role
+	CloudAreaCreator RoleID = "cloud_area_creator"
+	// ModelGroupCreator is the model group creator role
+	ModelGroupCreator RoleID = "model_group_creator"
+	// SysModelCreator is the system model creator role
+	SysModelCreator RoleID = "sys_model_creator"
+	// AsstTypeCreator is the association type creator role
+	AsstTypeCreator RoleID = "asst_type_creator"
+	// HostPoolDirCreator is the host pool directory creator role
+	HostPoolDirCreator RoleID = "host_pool_dir_creator"
+	// FieldTplCreator is the field grouping template creator role
+	FieldTplCreator RoleID = "field_tpl_creator"
+
+	// FulltextSearchUser is the fulltext search user role
+	FulltextSearchUser RoleID = "fulltext_search_user"
+	// ProjectViewer is the project viewer role
+	ProjectViewer RoleID = "project_viewer"
+	// CloudAreaViewer is the cloud area viewer role
+	CloudAreaViewer RoleID = "cloud_area_viewer"
+	// SysModelViewer is the system model viewer role
+	SysModelViewer RoleID = "sys_model_viewer"
+	// FieldTplViewer is the field grouping template viewer role
+	FieldTplViewer RoleID = "field_tpl_viewer"
+
+	// BizOwner is the business owner role granted to the creator
+	BizOwner RoleID = "biz_owner"
+	// BizSetOwner is the business set owner role granted to the creator
+	BizSetOwner RoleID = "biz_set_owner"
+	// CloudAreaOwner is the cloud area owner role granted to the creator
+	CloudAreaOwner RoleID = "cloud_area_owner"
+
+	// GlobalSettingsManager is the global settings manager role
+	GlobalSettingsManager RoleID = "global_settings_manager"
+	// IDRuleManager is the id rule manager role
+	IDRuleManager RoleID = "id_rule_manager"
+	// FullSyncCondManager is the full sync condition manager role
+	FullSyncCondManager RoleID = "full_sync_cond_manager"
+	// FullSyncCondViewer is the full sync condition viewer role
+	FullSyncCondViewer RoleID = "full_sync_cond_viewer"
+	// GeneralCacheViewer is the general cache viewer role
+	GeneralCacheViewer RoleID = "general_cache_viewer"
+	// KubeManager is the kubernetes manager role
+	KubeManager RoleID = "kube_manager"
+	// TenantSetVisitor is the tenant set visitor role
+	TenantSetVisitor RoleID = "tenant_set_visitor"
+
+	// DynamicInstManager is the suffix of dynamic instance manager role
+	DynamicInstManager = "manager"
+	// DynamicInstViewer is the suffix of dynamic instance viewer role
+	DynamicInstViewer = "viewer"
+)
 
 // DynamicAction is dynamic model action
 type DynamicAction struct {

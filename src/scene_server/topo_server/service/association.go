@@ -683,7 +683,7 @@ func (s *Service) CreateAssociationType(ctx *rest.Contexts) {
 				Name:    request.AssociationKindName,
 				Creator: ctx.Kit.User,
 			}
-			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created association type to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err
