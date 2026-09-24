@@ -176,42 +176,9 @@ func (i *iam) BatchRegisterResourceCreatorAction(ctx context.Context, header htt
 	return resp.Data, nil
 }
 
-// BatchOperateInstanceAuth batch grant or revoke iam resource instances' authorization
-func (i *iam) BatchOperateInstanceAuth(ctx context.Context, header http.Header,
-	req *metadata.IamBatchOperateInstanceAuthReq) ([]metadata.IamBatchOperateInstanceAuthRes, error) {
-
-	resp := new(iamBatchOperateInstanceAuthResp)
-	url := "/api/v1/open/authorization/batch_instance/"
-	params := &iamBatchOperateInstanceAuthParams{
-		IamBatchOperateInstanceAuthReq: req,
-	}
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return nil, err
-	}
-	err = i.service.Client.Post().
-		SubResourcef(url).
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(params).
-		Do().
-		Into(&resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
-}
-
 // RegisterSystem register a system in IAM, returns the registered system id
 func (i *iam) RegisterSystem(ctx context.Context, header http.Header, sys *System) (string, error) {
-	subPath := "/api/v1/open/rbac/model/systems/"
+	subPath := "/api/v1/open/model/systems/"
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return "", err
@@ -236,7 +203,7 @@ func (i *iam) GetSystem(ctx context.Context, header http.Header) (*System, error
 		return nil, err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/"
+	subPath := "/api/v1/open/model/systems/%s/"
 	return handleIamResp[*System](i.service.Client.Get().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
@@ -252,7 +219,7 @@ func (i *iam) UpdateSystem(ctx context.Context, header http.Header, sys *System)
 		return err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/"
+	subPath := "/api/v1/open/model/systems/%s/"
 	_, err = handleIamResp[struct{}](i.service.Client.Put().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
@@ -272,7 +239,7 @@ func (i *iam) ListResourceTypes(ctx context.Context, header http.Header, page, p
 		return nil, err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/resource-types/"
+	subPath := "/api/v1/open/model/systems/%s/resource-types/"
 	return handleIamResp[*ListResourceTypesData](i.service.Client.Get().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
@@ -292,7 +259,7 @@ func (i *iam) RegisterResourcesTypes(ctx context.Context, header http.Header, re
 		return nil, err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/resource-types/"
+	subPath := "/api/v1/open/model/systems/%s/resource-types/"
 	return handleIamResp[[]string](i.service.Client.Post().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
@@ -310,7 +277,7 @@ func (i *iam) UpdateResourcesType(ctx context.Context, header http.Header, resTy
 		return err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/resource-types/%s/"
+	subPath := "/api/v1/open/model/systems/%s/resource-types/%s/"
 	_, err = handleIamResp[struct{}](i.service.Client.Put().
 		SubResourcef(subPath, types.SystemIDCMDB, resTypeID).
 		WithContext(ctx).
@@ -328,7 +295,7 @@ func (i *iam) DeleteResourcesType(ctx context.Context, header http.Header, resTy
 		return err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/resource-types/%s/"
+	subPath := "/api/v1/open/model/systems/%s/resource-types/%s/"
 	_, err = handleIamResp[struct{}](i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, resTypeID).
 		WithContext(ctx).
@@ -345,7 +312,7 @@ func (i *iam) ListActions(ctx context.Context, header http.Header, page, pageSiz
 		return nil, err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/actions/"
+	subPath := "/api/v1/open/model/systems/%s/actions/"
 	return handleIamResp[*ListActionsData](i.service.Client.Get().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
@@ -363,7 +330,7 @@ func (i *iam) RegisterActions(ctx context.Context, header http.Header, actions [
 		return nil, err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/actions/"
+	subPath := "/api/v1/open/model/systems/%s/actions/"
 	return handleIamResp[[]string](i.service.Client.Post().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
@@ -382,7 +349,7 @@ func (i *iam) UpdateAction(ctx context.Context, header http.Header, actionID typ
 		return err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/actions/%s/"
+	subPath := "/api/v1/open/model/systems/%s/actions/%s/"
 	_, err = handleIamResp[struct{}](i.service.Client.Put().
 		SubResourcef(subPath, types.SystemIDCMDB, actionID).
 		WithContext(ctx).
@@ -400,7 +367,7 @@ func (i *iam) DeleteAction(ctx context.Context, header http.Header, actionID typ
 		return err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/actions/%s/"
+	subPath := "/api/v1/open/model/systems/%s/actions/%s/"
 	_, err = handleIamResp[struct{}](i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, actionID).
 		WithContext(ctx).
@@ -417,7 +384,7 @@ func (i *iam) ListRoles(ctx context.Context, header http.Header, page, pageSize 
 		return nil, err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/roles/"
+	subPath := "/api/v1/open/model/systems/%s/roles/"
 	return handleIamResp[*ListRolesData](i.service.Client.Get().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
@@ -435,7 +402,7 @@ func (i *iam) RegisterRoles(ctx context.Context, header http.Header, roles []Rol
 		return nil, err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/roles/"
+	subPath := "/api/v1/open/model/systems/%s/roles/"
 	return handleIamResp[[]string](i.service.Client.Post().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).
@@ -452,7 +419,7 @@ func (i *iam) UpdateRole(ctx context.Context, header http.Header, roleID types.R
 		return err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/roles/%s/"
+	subPath := "/api/v1/open/model/systems/%s/roles/%s/"
 	_, err = handleIamResp[struct{}](i.service.Client.Put().
 		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
@@ -470,7 +437,7 @@ func (i *iam) DeleteRole(ctx context.Context, header http.Header, roleID types.R
 		return err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/roles/%s/"
+	subPath := "/api/v1/open/model/systems/%s/roles/%s/"
 	_, err = handleIamResp[struct{}](i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
@@ -489,7 +456,7 @@ func (i *iam) AddRoleActions(ctx context.Context, header http.Header, roleID typ
 		return nil, err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/roles/%s/actions/"
+	subPath := "/api/v1/open/model/systems/%s/roles/%s/actions/"
 	return handleIamResp[[]string](i.service.Client.Post().
 		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
@@ -512,7 +479,7 @@ func (i *iam) DeleteRoleActions(ctx context.Context, header http.Header, roleID 
 		ids[idx] = string(id)
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/roles/%s/actions/"
+	subPath := "/api/v1/open/model/systems/%s/roles/%s/actions/"
 	_, err = handleIamResp[struct{}](i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
@@ -679,7 +646,7 @@ func (i *iam) GetSystemToken(ctx context.Context, header http.Header) (string, e
 		return "", err
 	}
 
-	subPath := "/api/v1/open/rbac/model/systems/%s/auth-token/"
+	subPath := "/api/v1/open/model/systems/%s/auth-token/"
 	data, err := handleIamResp[systemAuthToken](i.service.Client.Get().
 		SubResourcef(subPath, types.SystemIDCMDB).
 		WithContext(ctx).

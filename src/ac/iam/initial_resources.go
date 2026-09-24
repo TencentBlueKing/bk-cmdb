@@ -57,8 +57,6 @@ var ResourceTypeIDMap = map[iamtypes.TypeID]string{
 	iamtypes.BizProcessServiceTemplate: "服务模板",
 	iamtypes.FieldGroupingTemplate:     "字段组合模板",
 	iamtypes.GeneralCache:              "通用缓存",
-	iamtypes.Set:                       "集群",
-	iamtypes.Module:                    "模块",
 	iamtypes.TenantSet:                 "租户集",
 }
 
@@ -152,19 +150,6 @@ func genBusinessResources() []iam.ResourceType {
 			Name:      ResourceTypeIDMap[iamtypes.BizProcessServiceTemplate],
 			NameEn:    "Service Template",
 			Ancestors: businessParent,
-		},
-		// only for biz topology usage, not related to actions
-		{
-			ID:        iamtypes.Set,
-			Name:      ResourceTypeIDMap[iamtypes.Set],
-			NameEn:    "Set",
-			Ancestors: businessParent,
-		},
-		{
-			ID:        iamtypes.Module,
-			Name:      ResourceTypeIDMap[iamtypes.Module],
-			NameEn:    "Module",
-			Ancestors: []iamtypes.TypeID{iamtypes.Set},
 		},
 	}
 }

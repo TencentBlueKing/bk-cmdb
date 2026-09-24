@@ -62,11 +62,6 @@ const (
 	// GeneralCache defines general resource cache auth type
 	GeneralCache TypeID = "general_cache"
 
-	// Set is set auth type
-	Set TypeID = "set"
-	// Module is module auth type
-	Module TypeID = "module"
-
 	// SkipType TODO
 	// for resource type, which is not need to be authorized
 	SkipType TypeID = "skip_type"
@@ -385,6 +380,18 @@ var ActionTypeIDNameMap = map[ActionType]string{
 	Delete: "删除",
 	View:   "查询",
 }
+
+// AuthMode is the authorization mode of an IAM action.
+type AuthMode string
+
+const (
+	// AuthModeRBAC authorizes by rbac only.
+	AuthModeRBAC AuthMode = "rbac"
+	// AuthModeABAC authorizes by abac only.
+	AuthModeABAC AuthMode = "abac"
+	// AuthModeBoth authorizes by both rbac and abac.
+	AuthModeBoth AuthMode = "both"
+)
 
 const (
 	// IAMSysInstTypePrefix is the prefix of iam system instance resource type

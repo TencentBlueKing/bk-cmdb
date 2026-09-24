@@ -187,6 +187,7 @@ func genBusinessHostActions() []iam.ResourceAction {
 			Name:           ActionIDNameMap[iamtypes.EditBusinessHost],
 			NameEn:         "Edit Business Hosts",
 			ResourceTypeID: iamtypes.Host,
+			AuthMode:       iamtypes.AuthModeBoth,
 		},
 		{
 			ID:             iamtypes.TransferHostOutOfBiz,
@@ -381,12 +382,14 @@ func genResourcePoolHostActions() []iam.ResourceAction {
 			Name:           ActionIDNameMap[iamtypes.EditResourcePoolHost],
 			NameEn:         "Edit Pool Hosts",
 			ResourceTypeID: iamtypes.SysHost,
+			AuthMode:       iamtypes.AuthModeBoth,
 		},
 		{
 			ID:             iamtypes.DeleteResourcePoolHost,
 			Name:           ActionIDNameMap[iamtypes.DeleteResourcePoolHost],
 			NameEn:         "Delete Pool Hosts",
 			ResourceTypeID: iamtypes.SysHost,
+			AuthMode:       iamtypes.AuthModeBoth,
 		},
 		{
 			ID:             iamtypes.TransferHostOutOfResPoolDir,

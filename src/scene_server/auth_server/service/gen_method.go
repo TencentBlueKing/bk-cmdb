@@ -67,15 +67,7 @@ var resPullMethodGeneratorMap = map[iamtypes.TypeID]resPullMethodGenerator{
 	iamtypes.BizProcessServiceCategory: getNoResourceMethod,
 	iamtypes.BizProcessServiceInstance: getNoResourceMethod,
 	iamtypes.GeneralCache:              genGeneralCacheMethod,
-	iamtypes.Set: func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
-		return types.ResourcePullMethod{ListInstance: lgc.ListSetInstance,
-			FetchInstanceInfo: lgc.FetchSetModuleNameInfo}, nil
-	},
-	iamtypes.Module: func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
-		return types.ResourcePullMethod{ListInstance: lgc.ListModuleInstance,
-			FetchInstanceInfo: lgc.FetchSetModuleNameInfo}, nil
-	},
-	iamtypes.TenantSet: genTenantSetMethod,
+	iamtypes.TenantSet:                 genTenantSetMethod,
 }
 
 // genResourcePullMethod generate iam callback methods for input resource type,

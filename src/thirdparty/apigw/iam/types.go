@@ -134,8 +134,9 @@ type ResourceAction struct {
 	ID   types.ActionID `json:"id"`
 	Name string         `json:"name"`
 	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
-	NameEn         string       `json:"name_en,omitempty"`
-	ResourceTypeID types.TypeID `json:"resource_type_id"`
+	NameEn         string         `json:"name_en,omitempty"`
+	ResourceTypeID types.TypeID   `json:"resource_type_id"`
+	AuthMode       types.AuthMode `json:"auth_mode,omitempty"`
 	// TODO: IAM currently does not support Hidden, need to confirm with IAM how to handle it.
 	Hidden bool `json:"hidden,omitempty"`
 	// TODO: IAM currently does not support TenantID, need to confirm with IAM how to handle it.
@@ -154,7 +155,8 @@ type UpdateResourceTypeReq struct {
 type UpdateActionReq struct {
 	Name string `json:"name"`
 	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
-	NameEn string `json:"name_en,omitempty"`
+	NameEn   string         `json:"name_en,omitempty"`
+	AuthMode types.AuthMode `json:"auth_mode,omitempty"`
 }
 
 // Role is IAM V4 role

@@ -439,7 +439,8 @@ func (i IAM) crossCompareResActions(ctx context.Context, header http.Header,
 			// registered resource action exist in current resource actions, should not be removed
 			delete(registeredResActionMap, resourceAction.ID)
 
-			if registeredAction.Name == resourceAction.Name && registeredAction.NameEn == resourceAction.NameEn {
+			if registeredAction.Name == resourceAction.Name && registeredAction.NameEn == resourceAction.NameEn &&
+				registeredAction.AuthMode == resourceAction.AuthMode {
 				continue
 			}
 
@@ -511,7 +512,7 @@ func (i IAM) updateResActions(ctx context.Context, header http.Header, actions [
 	rid string) error {
 
 	for _, action := range actions {
-		req := &iam.UpdateActionReq{Name: action.Name, NameEn: action.NameEn}
+		req := &iam.UpdateActionReq{Name: action.Name, NameEn: action.NameEn, AuthMode: action.AuthMode}
 		if err := i.Client.UpdateAction(ctx, header, action.ID, req); err != nil {
 			blog.Errorf("update action(%+v) failed, err: %v, rid: %s", action, err, rid)
 			return err

@@ -35,8 +35,6 @@ type ClientI interface {
 		[]metadata.IamCreatorActionPolicy, error)
 	BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header,
 		instance metadata.IamInstancesWithCreator) ([]metadata.IamCreatorActionPolicy, error)
-	BatchOperateInstanceAuth(ctx context.Context, header http.Header, req *metadata.IamBatchOperateInstanceAuthReq) (
-		[]metadata.IamBatchOperateInstanceAuthRes, error)
 
 	// RegisterSystem register cmdb system in IAM, returns the registered system id
 	RegisterSystem(ctx context.Context, header http.Header, sys *System) (string, error)

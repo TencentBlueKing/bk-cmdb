@@ -772,6 +772,7 @@ func genDynamicActions(tenantObjects map[string][]metadata.Object) []iam.Resourc
 					// view and create do not need resource
 				case types.Edit, types.Delete:
 					resAction.ResourceTypeID = resTypeID
+					resAction.AuthMode = types.AuthModeBoth
 				default:
 					continue
 				}
