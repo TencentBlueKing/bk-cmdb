@@ -119,7 +119,45 @@ func (s *AuthService) GetNoAuthSkipUrl(ctx *rest.Contexts) {
 		return
 	}
 
-	url, err := apigw.Client().Iam().GetNoAuthSkipUrl(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	req := &apigwiam.PermApplyURLReq{
+		SystemID:    input.SystemID,
+		Permissions: make([]apigwiam.PermApplyItem, 0, len(input.Actions)),
+	}
+
+	for _, action := range input.Actions {
+		item := apigwiam.PermApplyItem{
+			ActionID: action.ID,
+		}
+		for _, resType := range action.RelatedResourceTypes {
+			for _, path := range resType.Instances {
+				if len(path) == 0 {
+					continue
+				}
+
+				self := path[len(path)-1]
+				resource := apigwiam.PermApplyResource{
+					ID:   self.ID,
+					Type: self.Type,
+				}
+				if resource.Type == "" {
+					resource.Type = resType.Type
+				}
+				if len(path) > 1 {
+					resource.Ancestors = make([]apigwiam.PermApplyAncestor, 0, len(path)-1)
+					for _, ancestor := range path[:len(path)-1] {
+						resource.Ancestors = append(resource.Ancestors, apigwiam.PermApplyAncestor{
+							ID:   ancestor.ID,
+							Type: ancestor.Type,
+						})
+					}
+				}
+				item.Resources = append(item.Resources, resource)
+			}
+		}
+		req.Permissions = append(req.Permissions, item)
+	}
+
+	url, err := apigw.Client().Iam().GetNoAuthSkipUrl(ctx.Kit.Ctx, ctx.Kit.Header, req)
 	if err != nil {
 		blog.ErrorJSON("GetNoAuthSkipUrl failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)

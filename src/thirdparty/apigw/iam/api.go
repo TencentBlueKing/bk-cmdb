@@ -76,35 +76,24 @@ func handleIamResp[T any](result *rest.Result) (T, error) {
 
 // GetNoAuthSkipUrl returns the url which can helps to launch the bk-iam when user do not have the authority to
 // access resource(s).
-func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error) {
-	resp := new(iamPermissionURLResp)
-	subPath := "/api/v1/open/application/"
-
+func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, req *PermApplyURLReq) (string, error) {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return "", err
 	}
 
-	params := &apiGWIamPermissionParams{
-		IamPermission: p,
-	}
-	err = i.service.Client.Post().
+	subPath := "/api/v1/open/application/permission-apply-urls/"
+	data, err := handleIamResp[permApplyURLData](i.service.Client.Post().
 		WithContext(ctx).
-		Body(params).
+		Body(req).
 		SubResourcef(subPath).
 		WithHeaders(h).
-		Do().
-		Into(resp)
-
+		Do())
 	if err != nil {
 		return "", err
 	}
 
-	if resp.Code != 0 {
-		return "", fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
-	}
-
-	return resp.Data.Url, nil
+	return data.URL, nil
 }
 
 // RegisterResourceCreatorAction register iam resource instance with creator, returns related actions with policy id

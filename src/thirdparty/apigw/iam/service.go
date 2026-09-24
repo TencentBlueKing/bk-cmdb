@@ -30,7 +30,7 @@ import (
 
 // ClientI is the iam api gateway client
 type ClientI interface {
-	GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error)
+	GetNoAuthSkipUrl(ctx context.Context, header http.Header, req *PermApplyURLReq) (string, error)
 	RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
 		[]metadata.IamCreatorActionPolicy, error)
 	BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header,

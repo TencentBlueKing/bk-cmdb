@@ -66,10 +66,6 @@ func IsSystemNotExistErr(err error) bool {
 	return authErr.StatusCode == http.StatusNotFound
 }
 
-type apiGWIamPermissionParams struct {
-	metadata.IamPermission `json:",inline"`
-}
-
 type iamInstanceParams struct {
 	metadata.IamInstanceWithCreator `json:",inline"`
 }
@@ -78,11 +74,34 @@ type iamInstancesParams struct {
 	metadata.IamInstancesWithCreator `json:",inline"`
 }
 
-type iamPermissionURLResp struct {
-	Data struct {
-		Url string `json:"url"`
-	} `json:"data"`
-	apigwutil.ApiGWBaseResponse
+// PermApplyURLReq is the request of IAM generate_perm_apply_url API.
+type PermApplyURLReq struct {
+	SystemID    string          `json:"system_id"`
+	Permissions []PermApplyItem `json:"permissions"`
+}
+
+// PermApplyItem is one action's permission to apply.
+type PermApplyItem struct {
+	ActionID  string              `json:"action_id"`
+	Resources []PermApplyResource `json:"resources,omitempty"`
+}
+
+// PermApplyResource is a resource instance in permission apply request.
+type PermApplyResource struct {
+	ID        string              `json:"id"`
+	Type      string              `json:"type"`
+	Ancestors []PermApplyAncestor `json:"ancestors,omitempty"`
+}
+
+// PermApplyAncestor is an ancestor of a resource instance.
+type PermApplyAncestor struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// permApplyURLData is the response data of IAM generate_perm_apply_url API.
+type permApplyURLData struct {
+	URL string `json:"url"`
 }
 
 type iamCreatorActionResp struct {
