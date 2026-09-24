@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"strconv"
-	"strings"
 
 	"configcenter/src/ac/iam"
 	iamtypes "configcenter/src/ac/iam/types"
@@ -31,8 +29,6 @@ import (
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
-	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
-	"configcenter/src/scene_server/auth_server/types"
 )
 
 const (
@@ -44,7 +40,7 @@ const (
 // parseFilterToMongo TODO
 // parse filter expression to corresponding resource type's mongo query condition,
 // nil means having no query condition for the resource type, and using this filter can't get any resource of this type
-func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.Policy,
+func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, filter *operator.AuthCondition,
 	resourceType iamtypes.TypeID) (map[string]interface{}, error) {
 	if filter == nil || filter.Operator == "" {
 		return nil, nil
@@ -52,13 +48,8 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 
 	op := filter.Operator
 
-	if op == operator.Any {
-		// op any means having all permissions of this resource
-		return make(map[string]interface{}), nil
-	}
-
 	// parse filter which is composed of multiple sub filters
-	if op == operator.And || op == operator.Or {
+	if op.IsLogical() {
 		content, ok := filter.Element.(*operator.Content)
 		if !ok {
 			return nil, fmt.Errorf("invalid policy with unknown element type: %s",
@@ -66,6 +57,9 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 		}
 		if content == nil || len(content.Content) == 0 {
 			return nil, fmt.Errorf("filter op %s content can't be empty", op)
+		}
+		if op == operator.Not && len(content.Content) != 1 {
+			return nil, fmt.Errorf("filter op %s content must have exactly one element", op)
 		}
 		mongoFilters := make([]map[string]interface{}, 0)
 		for _, content := range content.Content {
@@ -91,31 +85,81 @@ func (lgc *Logics) parseFilterToMongo(ctx context.Context, header http.Header, f
 	if !ok {
 		return nil, fmt.Errorf("invalid policy with unknown element type: %s", reflect.TypeOf(filter.Element).String())
 	}
-	field := fieldValue.Field
-	// if field is another resource's attribute, then the filter isn't for this resource, ignore it
-	if field.Resource != string(resourceType) {
-		return nil, nil
+
+	attribute, err := parseConditionField(fieldValue.Field, resourceType)
+	if err != nil {
+		return nil, err
 	}
-	attribute := field.Attribute
-	value := fieldValue.Value
-	if attribute == types.IDField {
-		attribute = GetResourceIDField(resourceType)
-	}
-	if attribute == "display_name" {
-		attribute = GetResourceNameField(resourceType)
-	}
-	if attribute == sdktypes.IamPathKey {
-		return lgc.parseIamPathToMongo(ctx, header, resourceType, op, value)
+	if attribute == "" {
+		return nil, fmt.Errorf("resource %s condition field %s is invalid", resourceType, fieldValue.Field)
 	}
 
-	return lgc.parseOtherFilterCond(op, value, attribute)
+	value := fieldValue.Value
+	if fieldValue.Field.IsAncestor() && !isResourceIDStringType(iamtypes.TypeID(fieldValue.Field)) {
+		value, err = convertAncestorIDsToInt(op, value)
+		if err != nil {
+			return nil, fmt.Errorf("convert ancestor ids(%+v) to int failed, err: %v", fieldValue.Value, err)
+		}
+	}
+
+	mongoFilter, err := lgc.parseOtherFilterCond(op, value, attribute)
+	if err != nil {
+		return nil, err
+	}
+
+	// host ancestors are stored in module-host relation table, not host instance table.
+	if fieldValue.Field.IsAncestor() && isHostResourceType(resourceType) {
+		return lgc.parseHostAncestorToMongo(ctx, header, mongoFilter)
+	}
+
+	return mongoFilter, nil
+}
+
+// parseConditionField maps an authorization plan field to the corresponding mongo field.
+func parseConditionField(field operator.Field, resourceType iamtypes.TypeID) (string, error) {
+	if field.IsID() {
+		return GetResourceIDField(resourceType), nil
+	}
+
+	if field.IsAncestor() {
+		return GetResourceIDField(iamtypes.TypeID(field)), nil
+	}
+
+	if field.IsSelfAttr() {
+		return field.SelfAttr(), nil
+	}
+
+	return "", fmt.Errorf("resource %s condition field %s is invalid", resourceType, field)
+}
+
+func convertAncestorIDsToInt(op operator.OperType, value interface{}) (interface{}, error) {
+	switch op {
+	case operator.Equal:
+		return util.GetInt64ByInterface(value)
+	case operator.In:
+		valueArr, ok := value.([]interface{})
+		if !ok || len(valueArr) == 0 {
+			return nil, fmt.Errorf("filter op %s value %#v isn't array type or is empty", op, value)
+		}
+		ids := make([]interface{}, len(valueArr))
+		for i, val := range valueArr {
+			id, err := util.GetInt64ByInterface(val)
+			if err != nil {
+				return nil, err
+			}
+			ids[i] = id
+		}
+		return ids, nil
+	default:
+		return nil, fmt.Errorf("filter op %s not supported for ancestor field", op)
+	}
 }
 
 func (lgc *Logics) parseOtherFilterCond(op operator.OperType, value interface{}, attribute string) (
 	map[string]interface{}, error) {
 
 	switch op {
-	case operator.Equal, operator.NEqual:
+	case operator.Equal:
 		if getValueType(value) == "" {
 			return nil, fmt.Errorf("filter op %s value %#v isn't string, numeric or boolean type", op, value)
 		}
@@ -124,7 +168,7 @@ func (lgc *Logics) parseOtherFilterCond(op operator.OperType, value interface{},
 				operatorMap[op]: value,
 			},
 		}, nil
-	case operator.In, operator.Nin:
+	case operator.In:
 		valueArr, ok := value.([]interface{})
 		if !ok || len(valueArr) == 0 {
 			return nil, fmt.Errorf("filter op %s value %#v isn't array type or is empty", op, value)
@@ -143,16 +187,7 @@ func (lgc *Logics) parseOtherFilterCond(op operator.OperType, value interface{},
 				operatorMap[op]: valueArr,
 			},
 		}, nil
-	case operator.LessThan, operator.LessThanEqual, operator.GreaterThan, operator.GreaterThanEqual:
-		if !util.IsNumeric(value) {
-			return nil, fmt.Errorf("filter op %s value %#v isn't numeric type", op, value)
-		}
-		return map[string]interface{}{
-			attribute: map[string]interface{}{
-				operatorMap[op]: value,
-			},
-		}, nil
-	case operator.Contains, operator.StartWith, operator.EndWith:
+	case operator.StartWith:
 		valueStr, ok := value.(string)
 		if !ok {
 			return nil, fmt.Errorf("filter op %s value %#v isn't string type", op, value)
@@ -162,36 +197,17 @@ func (lgc *Logics) parseOtherFilterCond(op operator.OperType, value interface{},
 				common.BKDBLIKE: fmt.Sprintf(operatorRegexFmtMap[op], valueStr),
 			},
 		}, nil
-	case operator.NContains, operator.NStartWith, operator.NEndWith:
-		valueStr, ok := value.(string)
-		if !ok {
-			return nil, fmt.Errorf("filter op %s value %#v isn't string type", op, value)
-		}
-		return map[string]interface{}{
-			attribute: map[string]interface{}{
-				common.BKDBNot: map[string]interface{}{common.BKDBLIKE: fmt.Sprintf(operatorRegexFmtMap[op], valueStr)},
-			},
-		}, nil
 	default:
 		return nil, fmt.Errorf("filter op %s not supported", op)
 	}
 }
 
-// parseIamPathToMongo parse iam path filter expression to corresponding resource type's mongo query condition
-func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, resourceType iamtypes.TypeID,
-	op operator.OperType, value interface{}) (map[string]interface{}, error) {
-	cond, err := parseIamPathCond(op, value)
-	if err != nil {
-		return nil, err
-	}
+// parseHostAncestorToMongo converts a host ancestor condition to a host id filter.
+// Host's biz/set/module relations are stored in ModuleHostConfig, so we query host ids from that table first.
+func (lgc *Logics) parseHostAncestorToMongo(ctx context.Context, header http.Header, cond map[string]interface{}) (
+	map[string]interface{}, error) {
 
-	// resources except for host has their parent id stored in their instance table(currently all resources only
-	// have one layer TODO support multiple layers if needed)
-	if !isHostResourceType(resourceType) {
-		return cond, nil
-	}
-
-	// get host ids by path condition from host module config table
+	rid := util.ExtractRequestIDFromContext(ctx)
 	param := metadata.PullResourceParam{
 		Collection: common.BKTableNameModuleHostConfig,
 		Condition:  cond,
@@ -200,17 +216,17 @@ func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, 
 	}
 	res, err := lgc.CoreAPI.CoreService().Auth().SearchAuthResource(ctx, header, param)
 	if err != nil {
-		blog.ErrorJSON("search auth resource failed, error: %s, param: %s", err.Error(), param)
+		blog.Errorf("search host ancestor relation failed, err: %v, param: %#v, rid: %s", err, param, rid)
 		return nil, err
 	}
-	if !res.Result {
-		blog.ErrorJSON("search auth resource failed, error code: %s, error message: %s, param: %s", res.Code,
-			res.ErrMsg, param)
-		return nil, res.Error()
+	if err := res.CCError(); err != nil {
+		blog.Errorf("search host ancestor relation failed, err: %v, param: %#v, rid: %s", err, param, rid)
+		return nil, err
 	}
 	if len(res.Data.Info) == 0 {
 		return nil, nil
 	}
+
 	hostIDs := make([]int64, len(res.Data.Info))
 	for index, data := range res.Data.Info {
 		hostID, err := util.GetInt64ByInterface(data[common.BKHostIDField])
@@ -226,130 +242,17 @@ func (lgc *Logics) parseIamPathToMongo(ctx context.Context, header http.Header, 
 	}, nil
 }
 
-func parseIamPathCond(op operator.OperType, value interface{}) (map[string]interface{}, error) {
-	// generate path condition
-	cond := make(map[string]interface{}, 0)
-	var err error
-
-	switch op {
-	case operator.Equal, operator.Contains, operator.StartWith, operator.EndWith:
-		valueStr, ok := value.(string)
-		if !ok {
-			return nil, fmt.Errorf("filter op %s value %#v isn't string type", op, value)
-		}
-		cond, err = parseIamPathToMongo(valueStr, common.BKDBEQ)
-		if err != nil {
-			return nil, err
-		}
-	case operator.In:
-		pathArr, ok := value.([]interface{})
-		if !ok || len(pathArr) == 0 {
-			return nil, fmt.Errorf("filter op %s value %#v isn't array type or is empty", op, value)
-		}
-		condArr := make([]map[string]interface{}, len(pathArr))
-		for index, path := range pathArr {
-			pathStr, ok := path.(string)
-			if !ok {
-				return nil, fmt.Errorf("filter op %s value %#v isn't string type", op, value)
-			}
-			subCond, err := parseIamPathToMongo(pathStr, common.BKDBEQ)
-			if err != nil {
-				return nil, err
-			}
-			condArr[index] = subCond
-		}
-		cond[common.BKDBOR] = condArr
-	case operator.Nin:
-		pathArr, ok := value.([]interface{})
-		if !ok || len(pathArr) == 0 {
-			return nil, fmt.Errorf("filter op %s value %#v isn't array type or is empty", op, value)
-		}
-		condArr := make([]map[string]interface{}, len(pathArr))
-		for index, path := range pathArr {
-			pathStr, ok := path.(string)
-			if !ok {
-				return nil, fmt.Errorf("filter op %s value %#v isn't string type", op, value)
-			}
-			subCond, err := parseIamPathToMongo(pathStr, common.BKDBNE)
-			if err != nil {
-				return nil, err
-			}
-			condArr[index] = subCond
-		}
-		cond[common.BKDBAND] = condArr
-	case operator.NEqual, operator.NContains, operator.NStartWith, operator.NEndWith:
-		valueStr, ok := value.(string)
-		if !ok {
-			return nil, fmt.Errorf("filter op %s value %#v isn't string type", op, value)
-		}
-		cond, err = parseIamPathToMongo(valueStr, common.BKDBNE)
-		if err != nil {
-			return nil, err
-		}
-	case operator.Any:
-		// op any means having all permissions of this resource
-		return make(map[string]interface{}), nil
-	default:
-		return nil, fmt.Errorf("filter op %s not supported", op)
-	}
-
-	return cond, nil
-}
-
-// parseIamPathToMongo parse string format iam path to mongo condition
-func parseIamPathToMongo(iamPath string, op string) (map[string]interface{}, error) {
-	pathItemArr := strings.Split(strings.Trim(iamPath, "/"), "/")
-	cond := make(map[string]interface{}, 0)
-
-	for _, pathItem := range pathItemArr {
-		typeAndID := strings.Split(pathItem, ",")
-		if len(typeAndID) != 2 {
-			return nil, fmt.Errorf("pathItem %s invalid", pathItem)
-		}
-		idStr := typeAndID[1]
-		if idStr == "*" {
-			continue
-		}
-		resourceType := iamtypes.TypeID(typeAndID[0])
-		idField := GetResourceIDField(resourceType)
-		if isResourceIDStringType(resourceType) {
-			cond[idField] = map[string]interface{}{
-				op: idStr,
-			}
-			continue
-		}
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("id %s parse int failed, error: %s", idStr, err.Error())
-		}
-		cond[idField] = map[string]interface{}{
-			op: id,
-		}
-	}
-	return cond, nil
-}
-
 var (
 	operatorMap = map[operator.OperType]string{
-		operator.And:              common.BKDBAND,
-		operator.Or:               common.BKDBOR,
-		operator.Equal:            common.BKDBEQ,
-		operator.NEqual:           common.BKDBNE,
-		operator.In:               common.BKDBIN,
-		operator.Nin:              common.BKDBNIN,
-		operator.LessThan:         common.BKDBLT,
-		operator.LessThanEqual:    common.BKDBLTE,
-		operator.GreaterThan:      common.BKDBGT,
-		operator.GreaterThanEqual: common.BKDBGTE,
+		operator.And:   common.BKDBAND,
+		operator.Or:    common.BKDBOR,
+		operator.Not:   common.BKDBNOR,
+		operator.Equal: common.BKDBEQ,
+		operator.In:    common.BKDBIN,
 	}
 
 	operatorRegexFmtMap = map[operator.OperType]string{
-		operator.Contains:   "%s",
-		operator.NContains:  "%s",
-		operator.StartWith:  "^%s",
-		operator.NStartWith: "^%s",
-		operator.EndWith:    "%s$",
-		operator.NEndWith:   "%s$",
+		operator.StartWith: "^%s",
 	}
 )
 

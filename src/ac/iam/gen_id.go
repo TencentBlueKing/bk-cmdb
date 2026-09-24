@@ -23,7 +23,6 @@ import (
 
 	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
-	"configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/thirdparty/apigw/iam"
 )
 
@@ -203,9 +202,7 @@ func genDynamicGroupingResource(act iamtypes.ActionID, typ iamtypes.TypeID, att 
 	}
 
 	// authorize based on business
-	r.Attribute = map[string]interface{}{
-		types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", iamtypes.Business, att.BusinessID)},
-	}
+	r.Attribute = ancestorAttribute(iamtypes.Business, att.BusinessID)
 
 	return []iam.Resource{r}, nil
 }
@@ -595,8 +592,7 @@ func genHostInstanceResource(act iamtypes.ActionID, _ iamtypes.TypeID, a *meta.R
 			r.ID = strconv.FormatInt(a.InstanceID, 10)
 		}
 		if len(a.Layers) > 0 {
-			r.Attribute = map[string]interface{}{types.IamPathKey: []string{
-				fmt.Sprintf("/%s,%d/", iamtypes.SysResourcePoolDirectory, a.Layers[0].InstanceID)}}
+			r.Attribute = ancestorAttribute(iamtypes.SysResourcePoolDirectory, a.Layers[0].InstanceID)
 		}
 		return []iam.Resource{r}, nil
 	}
@@ -608,8 +604,7 @@ func genHostInstanceResource(act iamtypes.ActionID, _ iamtypes.TypeID, a *meta.R
 			r.ID = strconv.FormatInt(a.InstanceID, 10)
 		}
 		if len(a.Layers) > 0 {
-			r.Attribute = map[string]interface{}{types.IamPathKey: []string{fmt.Sprintf("/%s,%d/", iamtypes.Business,
-				a.Layers[0].InstanceID)}}
+			r.Attribute = ancestorAttribute(iamtypes.Business, a.Layers[0].InstanceID)
 		}
 		return []iam.Resource{r}, nil
 	}
@@ -726,4 +721,10 @@ func genTenantSetResource(act iamtypes.ActionID, typ iamtypes.TypeID,
 	}
 
 	return []iam.Resource{r}, nil
+}
+
+func ancestorAttribute(typ iamtypes.TypeID, id int64) map[string]interface{} {
+	return map[string]interface{}{
+		string(typ): strconv.FormatInt(id, 10),
+	}
 }

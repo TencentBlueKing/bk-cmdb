@@ -111,7 +111,6 @@ type Decision struct {
 // ListAuthorizedResourcesParam TODO
 type ListAuthorizedResourcesParam struct {
 	UserName     string       `json:"user_name"`
-	BizID        int64        `json:"bk_biz_id"`
 	ResourceType ResourceType `json:"resource_type"`
 	Action       Action       `json:"action"`
 }

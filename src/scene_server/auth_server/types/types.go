@@ -24,7 +24,6 @@ import (
 	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/common"
 	"configcenter/src/common/http/rest"
-	"configcenter/src/scene_server/auth_server/sdk/operator"
 )
 
 const (
@@ -47,8 +46,6 @@ const (
 	ListInstanceMethod Method = "list_instance"
 	// FetchInstanceInfoMethod TODO
 	FetchInstanceInfoMethod Method = "fetch_instance_info"
-	// ListInstanceByPolicyMethod TODO
-	ListInstanceByPolicyMethod Method = "list_instance_by_policy"
 	// SearchInstanceMethod TODO
 	SearchInstanceMethod Method = "search_instance"
 
@@ -121,13 +118,6 @@ func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 			return err
 		}
 		req.Filter = filter
-	case ListInstanceByPolicyMethod:
-		filter := ListInstanceByPolicyFilter{}
-		err := json.Unmarshal(data.Filter, &filter)
-		if err != nil {
-			return err
-		}
-		req.Filter = filter
 	default:
 		return fmt.Errorf("method %s is not supported", data.Method)
 	}
@@ -184,11 +174,6 @@ type FetchInstanceInfoFilter struct {
 	Requires []string `json:"-"`
 }
 
-// ListInstanceByPolicyFilter TODO
-type ListInstanceByPolicyFilter struct {
-	Expression *operator.Policy `json:"expression"`
-}
-
 // AttrResource TODO
 type AttrResource struct {
 	ID             string `json:"id"`
@@ -241,7 +226,4 @@ type ResourcePullMethod struct {
 
 	FetchInstanceInfo func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *FetchInstanceInfoFilter) (
 		[]map[string]interface{}, error)
-
-	ListInstanceByPolicy func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *ListInstanceByPolicyFilter,
-		page Page) (*ListInstanceResult, error)
 }

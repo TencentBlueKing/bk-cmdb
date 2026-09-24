@@ -186,55 +186,6 @@ type RoleAction struct {
 	ResourceTypeID types.TypeID   `json:"resource_type_id"`
 }
 
-// ActionWithID only contains action id
-type ActionWithID struct {
-	ID types.ActionID `json:"id"`
-}
-
-// ListPoliciesParams list iam policies parameter
-type ListPoliciesParams struct {
-	ActionID  types.ActionID
-	Page      int64
-	PageSize  int64
-	Timestamp int64
-}
-
-// ListPoliciesResp list iam policies response
-type ListPoliciesResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data *ListPoliciesData `json:"data"`
-}
-
-// ListPoliciesData list policy data, which represents iam policies
-type ListPoliciesData struct {
-	Metadata PolicyMetadata `json:"metadata"`
-	Count    int64          `json:"count"`
-	Results  []PolicyResult `json:"results"`
-}
-
-// PolicyMetadata iam policy metadata
-type PolicyMetadata struct {
-	System    string       `json:"system"`
-	Action    ActionWithID `json:"action"`
-	Timestamp int64        `json:"timestamp"`
-}
-
-// PolicyResult iam policy result
-type PolicyResult struct {
-	Version    string           `json:"version"`
-	ID         int64            `json:"id"`
-	Subject    PolicySubject    `json:"subject"`
-	Expression *operator.Policy `json:"expression"`
-	ExpiredAt  int64            `json:"expired_at"`
-}
-
-// PolicySubject policy subject, which represents user or user group for now
-type PolicySubject struct {
-	Type string `json:"type"`
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 // IamErrorResp is IAM V4 error response
 type IamErrorResp struct {
 	Error *IamErrorData `json:"error"`
@@ -269,6 +220,38 @@ type systemAuthToken struct {
 	AuthToken string `json:"auth_token"`
 }
 
+// SubjectType is the authorized subject type.
+type SubjectType string
+
+const (
+	// UserSubjectType is the authorized subject type for user.
+	UserSubjectType SubjectType = "user"
+)
+
+// AuthSubject is the subject to be authorized.
+type AuthSubject struct {
+	Type SubjectType `json:"type"`
+	ID   string      `json:"id"`
+}
+
+// PlanReq is the request of the hybrid plan api.
+type PlanReq struct {
+	Subject  AuthSubject    `json:"subject"`
+	ActionID types.ActionID `json:"action_id"`
+}
+
+// PlanByActionsReq is the request of the hybrid plan by actions api.
+type PlanByActionsReq struct {
+	Subject   AuthSubject      `json:"subject"`
+	ActionIDs []types.ActionID `json:"action_ids"`
+}
+
+// ActionPlanRes is one action's authorization plan of the hybrid plan by actions api.
+type ActionPlanRes struct {
+	ActionID      types.ActionID `json:"action_id"`
+	operator.Plan `json:",inline"`
+}
+
 // ----authserver----
 // AuthOptions describes a item to be authorized
 type AuthOptions struct {
@@ -278,17 +261,9 @@ type AuthOptions struct {
 	Resources []Resource `json:"resources"`
 }
 
-type GetPolicyOption AuthOptions
-
 // Action define's the use's action, which is must correspond to the registered action ids in iam.
 type Action struct {
 	ID string `json:"id"`
-}
-
-// ActionPolicy TODO
-type ActionPolicy struct {
-	Action Action           `json:"action"`
-	Policy *operator.Policy `json:"condition"`
 }
 
 // Resource defines all the information used to authorize a resource.
@@ -306,26 +281,6 @@ type AuthBatch struct {
 }
 
 type ResourceAttributes map[string]interface{}
-
-// GetPolicyResp TODO
-type GetPolicyResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data *operator.Policy `json:"data"`
-}
-
-// ListPolicyOptions TODO
-type ListPolicyOptions struct {
-	System    string     `json:"system"`
-	Subject   Subject    `json:"subject"`
-	Actions   []Action   `json:"actions"`
-	Resources []Resource `json:"resources"`
-}
-
-// ListPolicyResp TODO
-type ListPolicyResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data []*ActionPolicy `json:"data"`
-}
 
 // AuthBatchOptions TODO
 type AuthBatchOptions struct {

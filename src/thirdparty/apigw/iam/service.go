@@ -77,8 +77,10 @@ type ClientI interface {
 	// DeleteRoleActions unbind actions from a role
 	DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actionIDs []types.ActionID) error
 
-	ListUserPolicies(ctx context.Context, header http.Header, opts *ListPolicyOptions) ([]*ActionPolicy, error)
-	GetUserPolicy(ctx context.Context, header http.Header, opt *GetPolicyOption) (*operator.Policy, error)
+	// HybridPlan get the authorization condition of one action, which is used to filter the authorized resources
+	HybridPlan(ctx context.Context, header http.Header, req *PlanReq) (*operator.Plan, error)
+	// HybridPlanByActions get the authorization conditions of multiple actions
+	HybridPlanByActions(ctx context.Context, header http.Header, req *PlanByActionsReq) ([]ActionPlanRes, error)
 }
 
 type iam struct {

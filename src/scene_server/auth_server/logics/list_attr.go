@@ -23,6 +23,7 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
@@ -71,7 +72,7 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iamtypes.TypeID) ([]type
 	for _, attr := range res.Info {
 		displayName := attr.PropertyName
 		attrs = append(attrs, types.AttrResource{
-			ID:             attr.PropertyID,
+			ID:             operator.AttrField(attr.PropertyID).String(),
 			DisplayName:    displayName,
 			DataType:       types.AttrDataTypeString,
 			HasValueSource: true,

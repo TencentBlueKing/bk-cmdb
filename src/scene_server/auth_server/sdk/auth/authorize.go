@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"sync"
 
+	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/scene_server/auth_server/sdk/client"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/scene_server/auth_server/sdk/types"
@@ -43,21 +44,18 @@ func (a *Authorize) Authorize(ctx context.Context, header http.Header, opts *iam
 		return nil, err
 	}
 
-	// find user's policy with action
-	getOpt := iam.GetPolicyOption{
-		System:  opts.System,
-		Subject: opts.Subject,
-		Action:  opts.Action,
-		// do not use user's policy, so that we can get all the user's policy.
-		Resources: make([]iam.Resource, 0),
-	}
-
-	policy, err := a.iam.GetUserPolicy(ctx, header, &getOpt)
+	plan, err := a.iam.HybridPlan(ctx, header, &iam.PlanReq{
+		Subject: iam.AuthSubject{
+			Type: iam.SubjectType(opts.Subject.Type),
+			ID:   opts.Subject.ID,
+		},
+		ActionID: iamtypes.ActionID(opts.Action.ID),
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	authorized, err := a.calculatePolicy(ctx, opts.Resources, policy)
+	authorized, err := a.calculatePolicy(ctx, opts.Resources, plan)
 	if err != nil {
 		return nil, fmt.Errorf("calculate user's auth policy failed, err: %v", err)
 	}
@@ -90,9 +88,9 @@ func (a *Authorize) authorizeBatch(ctx context.Context, header http.Header, opts
 		return nil, errors.New("no resource instance need to authorize")
 	}
 
-	policies, err := a.listUserPolicyBatchWithCompress(ctx, header, opts)
+	plans, err := a.listUserPlanBatchWithCompress(ctx, header, opts)
 	if err != nil {
-		return nil, fmt.Errorf("list user policy failed, err: %v", err)
+		return nil, fmt.Errorf("list user plan failed, err: %v", err)
 	}
 
 	var hitError error
@@ -104,7 +102,7 @@ func (a *Authorize) authorizeBatch(ctx context.Context, header http.Header, opts
 		wg.Add(1)
 
 		pipe <- struct{}{}
-		go func(idx int, resources []iam.Resource, policy *operator.Policy) {
+		go func(idx int, resources []iam.Resource, plan *operator.Plan) {
 			defer func() {
 				wg.Done()
 				<-pipe
@@ -113,9 +111,9 @@ func (a *Authorize) authorizeBatch(ctx context.Context, header http.Header, opts
 			var authorized bool
 			var err error
 			if exact {
-				authorized, err = a.calculatePolicy(ctx, resources, policy)
+				authorized, err = a.calculatePolicy(ctx, resources, plan)
 			} else {
-				authorized, err = a.calculateAnyPolicy(ctx, resources, policy)
+				authorized, err = a.calculateAnyPolicy(ctx, resources, plan)
 			}
 			if err != nil {
 				hitError = err
@@ -124,7 +122,7 @@ func (a *Authorize) authorizeBatch(ctx context.Context, header http.Header, opts
 
 			// save the result with index
 			decisions[idx] = &types.Decision{Authorized: authorized}
-		}(idx, b.Resources, policies[idx])
+		}(idx, b.Resources, plans[idx])
 	}
 	// wait all the policy are calculated
 	wg.Wait()
@@ -136,70 +134,66 @@ func (a *Authorize) authorizeBatch(ctx context.Context, header http.Header, opts
 	return decisions, nil
 }
 
-func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context, header http.Header,
-	opts *iam.AuthBatchOptions) ([]*operator.Policy,
-	error) {
+func (a *Authorize) listUserPlanBatchWithCompress(ctx context.Context, header http.Header,
+	opts *iam.AuthBatchOptions) ([]*operator.Plan, error) {
 
 	// because these resource are the same, so we can unique the action id,
 	// so that we can cut off the request to iam, and improve the performance.
-	actionIDMap := make(map[string]iam.Action)
+	actionIDMap := make(map[string]struct{})
 	for _, b := range opts.Batch {
-		actionIDMap[b.Action.ID] = b.Action
+		actionIDMap[b.Action.ID] = struct{}{}
 	}
 
-	actions := make([]iam.Action, 0)
-	for _, action := range actionIDMap {
-		actions = append(actions, action)
+	actionIDs := make([]iamtypes.ActionID, 0, len(actionIDMap))
+	for actionID := range actionIDMap {
+		actionIDs = append(actionIDs, iamtypes.ActionID(actionID))
 	}
 
-	listOpts := &iam.ListPolicyOptions{
-		System:  opts.System,
-		Subject: opts.Subject,
-		Actions: actions,
-		// get all policies with these actions
-		Resources: nil,
-	}
-
-	policies, err := a.iam.ListUserPolicies(ctx, header, listOpts)
+	plans, err := a.iam.HybridPlanByActions(ctx, header, &iam.PlanByActionsReq{
+		Subject: iam.AuthSubject{
+			Type: iam.SubjectType(opts.Subject.Type),
+			ID:   opts.Subject.ID,
+		},
+		ActionIDs: actionIDs,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("list user's policy failed, err: %s", err)
+		return nil, fmt.Errorf("list user's plan failed, err: %s", err)
 	}
 
-	policyMap := make(map[string]*operator.Policy)
-	for _, p := range policies {
-		policyMap[p.Action.ID] = p.Policy
+	planMap := make(map[string]*operator.Plan)
+	for i := range plans {
+		plan := plans[i].Plan
+		planMap[string(plans[i].ActionID)] = &plan
 	}
 
-	allPolicies := make([]*operator.Policy, len(opts.Batch))
+	allPlans := make([]*operator.Plan, len(opts.Batch))
 	for idx, b := range opts.Batch {
-		policy, exist := policyMap[b.Action.ID]
+		plan, exist := planMap[b.Action.ID]
 		if !exist {
-			return nil, fmt.Errorf("list user's auth policy, but can not find action id %s in response", b.Action.ID)
+			return nil, fmt.Errorf("list user's auth plan, but can not find action id %s in response", b.Action.ID)
 		}
-		allPolicies[idx] = policy
+		allPlans[idx] = plan
 	}
 
-	return allPolicies, nil
+	return allPlans, nil
 }
 
 // ListAuthorizedInstances list a user's all the authorized resource instance list with an action.
 func (a *Authorize) ListAuthorizedInstances(ctx context.Context, header http.Header, opts *iam.AuthOptions,
 	resourceType iam.IamResourceType) (*iam.AuthorizeList, error) {
 
-	// find user's policy with action
-	getOpt := iam.GetPolicyOption{
-		System:  opts.System,
-		Subject: opts.Subject,
-		Action:  opts.Action,
-		// do not use user's policy, so that we can get all the user's policy.
-		Resources: opts.Resources,
-	}
-	policy, err := a.iam.GetUserPolicy(ctx, header, &getOpt)
+	plan, err := a.iam.HybridPlan(ctx, header, &iam.PlanReq{
+		Subject: iam.AuthSubject{
+			Type: iam.SubjectType(opts.Subject.Type),
+			ID:   opts.Subject.ID,
+		},
+		ActionID: iamtypes.ActionID(opts.Action.ID),
+	})
 	if err != nil {
 		return nil, err
 	}
-	if policy == nil || policy.Operator == "" {
+	if plan == nil || plan.Kind == operator.AlwaysDeniedKind || plan.Kind == "" {
 		return &iam.AuthorizeList{}, nil
 	}
-	return a.countPolicy(ctx, policy, resourceType)
+	return a.countPolicy(ctx, plan, resourceType)
 }

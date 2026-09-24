@@ -17,8 +17,6 @@
 package service
 
 import (
-	"strconv"
-
 	"configcenter/src/ac/iam"
 	iamtypes "configcenter/src/ac/iam/types"
 	"configcenter/src/ac/meta"
@@ -26,7 +24,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/apigw"
-	"configcenter/src/scene_server/auth_server/sdk/types"
 	apigwiam "configcenter/src/thirdparty/apigw/iam"
 )
 
@@ -85,23 +82,11 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		return
 	}
 
-	iamActionID, err := iam.ConvertResourceAction(input.ResourceType, input.Action, input.BizID)
+	iamActionID, err := iam.ConvertResourceAction(input.ResourceType, input.Action, 0)
 	if err != nil {
 		blog.ErrorJSON("ConvertResourceAction failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
-	}
-	resources := make([]apigwiam.Resource, 0)
-	if input.BizID > 0 {
-		businessPath := "/" + string(iamtypes.Business) + "," + strconv.FormatInt(input.BizID, 10) + "/"
-		resource := apigwiam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   apigwiam.IamResourceType(*iamResourceType),
-			Attribute: map[string]interface{}{
-				types.IamPathKey: []string{businessPath},
-			},
-		}
-		resources = append(resources, resource)
 	}
 
 	ops := &apigwiam.AuthOptions{
@@ -113,7 +98,6 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		Action: apigwiam.Action{
 			ID: string(iamActionID),
 		},
-		Resources: resources,
 	}
 	authorizeList, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ctx.Kit.Header, ops,
 		apigwiam.IamResourceType(*iamResourceType))

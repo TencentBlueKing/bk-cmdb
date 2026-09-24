@@ -489,79 +489,6 @@ func (i *iam) DeleteRoleActions(ctx context.Context, header http.Header, roleID 
 	return err
 }
 
-// GetUserPolicy get a user's policy with a action and resources
-func (i *iam) GetUserPolicy(ctx context.Context, header http.Header, opt *GetPolicyOption) (*operator.Policy, error) {
-	resp := new(GetPolicyResp)
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return nil, err
-	}
-	subPath := "/api/v1/policy/query"
-
-	// iam requires resources to be set
-	if opt.Resources == nil {
-		opt.Resources = make([]Resource, 0)
-	}
-
-	result := i.service.Client.Post().
-		SubResourcef(subPath).
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(opt).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != 0 {
-		return nil, &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return resp.Data, nil
-}
-
-// ListUserPolicies get a user's policy with multiple actions and resources
-func (i *iam) ListUserPolicies(ctx context.Context, header http.Header, opts *ListPolicyOptions) (
-	[]*ActionPolicy, error) {
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := new(ListPolicyResp)
-	// iam requires resources to be set
-	if opts.Resources == nil {
-		opts.Resources = make([]Resource, 0)
-	}
-
-	result := i.service.Client.Post().
-		SubResourcef("/api/v1/policy/query_by_actions").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(opts).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != 0 {
-		return nil, &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-	return resp.Data, nil
-}
-
 // GetSystemToken get system token from iam, used to validate if request is from iam
 func (i *iam) GetSystemToken(ctx context.Context, header http.Header) (string, error) {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
@@ -580,4 +507,38 @@ func (i *iam) GetSystemToken(ctx context.Context, header http.Header) (string, e
 		return "", err
 	}
 	return data.AuthToken, nil
+}
+
+// HybridPlan get the hybrid(RBAC+ABAC) authorization plan of one action.
+func (i *iam) HybridPlan(ctx context.Context, header http.Header, req *PlanReq) (*operator.Plan, error) {
+	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	subPath := "/api/v1/open/hybrid/authorization/systems/%s/plan/"
+	return handleIamResp[*operator.Plan](i.service.Client.Post().
+		SubResourcef(subPath, types.SystemIDCMDB).
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do())
+}
+
+// HybridPlanByActions get the hybrid(RBAC+ABAC) authorization plan of multiple actions.
+func (i *iam) HybridPlanByActions(ctx context.Context, header http.Header, req *PlanByActionsReq) ([]ActionPlanRes,
+	error) {
+
+	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	subPath := "/api/v1/open/hybrid/authorization/systems/%s/plan-by-actions/"
+	return handleIamResp[[]ActionPlanRes](i.service.Client.Post().
+		SubResourcef(subPath, types.SystemIDCMDB).
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do())
 }

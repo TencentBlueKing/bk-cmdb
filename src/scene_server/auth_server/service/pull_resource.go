@@ -64,8 +64,6 @@ func (s *AuthService) PullResource(ctx *rest.Contexts) {
 		res, err = s.listInstance(ctx.Kit, method, query)
 	case types.FetchInstanceInfoMethod:
 		res, err = s.fetchInstanceInfo(ctx.Kit, method, query)
-	case types.ListInstanceByPolicyMethod:
-		res, err = s.listInstanceByPolicy(ctx.Kit, method, query)
 	default:
 		ctx.RespBkError(types.NotFoundErrorCode, fmt.Sprintf("method %s not found", query.Method))
 		return
@@ -152,25 +150,6 @@ func (s *AuthService) fetchInstanceInfo(kit *rest.Kit, method types.ResourcePull
 	}
 
 	res, err := method.FetchInstanceInfo(kit, query.Type, filter)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
-}
-
-func (s *AuthService) listInstanceByPolicy(kit *rest.Kit, method types.ResourcePullMethod,
-	query *types.PullResourceReq) (*types.ListInstanceResult, error) {
-
-	if method.ListInstanceByPolicy == nil {
-		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
-	}
-
-	filter, err := s.lgc.ValidateListInstanceByPolicyRequest(kit, query)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := method.ListInstanceByPolicy(kit, query.Type, filter, query.Page)
 	if err != nil {
 		return nil, err
 	}
