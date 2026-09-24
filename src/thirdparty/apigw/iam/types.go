@@ -20,6 +20,7 @@ package iam
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
 	"configcenter/src/ac/iam/types"
 	"configcenter/src/common/metadata"
@@ -28,27 +29,41 @@ import (
 )
 
 const (
-	codeNotFound     = 1901404
 	IamRequestHeader = "X-Request-Id"
-)
 
-var (
-	// ErrNotFound iam system not found
-	ErrNotFound = errors.New("Not Found")
+	// MaxListPageSize is the max page size of IAM model resource list apis.
+	MaxListPageSize = 100
+	// pageParam is the query parameter name of page number.
+	pageParam = "page"
+	// pageSizeParam is the query parameter name of page size.
+	pageSizeParam = "page_size"
+	// idsParam is the query parameter name of the comma separated id list.
+	idsParam = "ids"
 )
 
 // AuthError iam auth server error
 type AuthError struct {
-	RequestID string
-	Reason    error
+	RequestID  string
+	StatusCode int
+	Reason     error
 }
 
-// Error 用于错误处理
+// Error returns the iam auth error message
 func (a *AuthError) Error() string {
+	msg := fmt.Sprintf("status: %d, err: %v", a.StatusCode, a.Reason)
 	if len(a.RequestID) == 0 {
-		return a.Reason.Error()
+		return msg
 	}
-	return fmt.Sprintf("iam request id: %s, err: %s", a.RequestID, a.Reason.Error())
+	return fmt.Sprintf("iam request id: %s, %s", a.RequestID, msg)
+}
+
+// IsSystemNotExistErr judge whether the error means that the cmdb system is not registered in IAM.
+func IsSystemNotExistErr(err error) bool {
+	var authErr *AuthError
+	if !errors.As(err, &authErr) {
+		return false
+	}
+	return authErr.StatusCode == http.StatusNotFound
 }
 
 type apiGWIamPermissionParams struct {
@@ -84,151 +99,95 @@ type iamBatchOperateInstanceAuthResp struct {
 	Data []metadata.IamBatchOperateInstanceAuthRes `json:"data"`
 }
 
-// SysConfig TODO
-type SysConfig struct {
-	Host string `json:"host,omitempty"`
-	Auth string `json:"auth,omitempty"`
+// System is IAM V4 system info, used by create system request and retrieve system response.
+type System struct {
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
+	NameEn      string `json:"name_en,omitempty"`
+	Description string `json:"description,omitempty"`
+	// TODO: IAM currently does not support DescriptionEn, need to confirm with IAM how to handle it.
+	DescriptionEn string   `json:"description_en,omitempty"`
+	Managers      []string `json:"managers,omitempty"`
+	Clients       []string `json:"clients,omitempty"`
+	CallbackURL   string   `json:"callback_url,omitempty"`
 }
 
-// here is split line
+// RegisterSystemData is the response data of registering a system
+type RegisterSystemData struct {
+	ID string `json:"id"`
+}
 
-// ResourceType TODO
-// describe resource type defined and registered to iam.
+// ResourceType is IAM V4 resource type
 type ResourceType struct {
-	// unique id
-	ID types.TypeID `json:"id"`
-	// unique name
-	Name   string `json:"name"`
-	NameEn string `json:"name_en"`
-	// unique description
-	Description    string         `json:"description"`
-	DescriptionEn  string         `json:"description_en"`
-	Parents        []Parent       `json:"parents"`
-	ProviderConfig ResourceConfig `json:"provider_config"`
-	Version        int64          `json:"version"`
-	TenantID       string         `json:"tenant_id,omitempty"`
+	ID   types.TypeID `json:"id"`
+	Name string       `json:"name"`
+	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
+	NameEn    string         `json:"name_en,omitempty"`
+	Ancestors []types.TypeID `json:"ancestors"`
+	// TODO: IAM currently does not support TenantID, need to confirm with IAM how to handle it.
+	TenantID string `json:"tenant_id,omitempty"`
 }
 
-// ResourceConfig TODO
-type ResourceConfig struct {
-	// the url to get this resource.
-	Path string `json:"path"`
-}
-
-// Parent TODO
-type Parent struct {
-	// only one value for cmdb.
-	// default value: bk_cmdb
-	SystemID   string       `json:"system_id"`
-	ResourceID types.TypeID `json:"id"`
-}
-
-// ResourceAction TODO
+// ResourceAction is IAM V4 action
 type ResourceAction struct {
-	// must be a unique id in the whole system.
-	ID types.ActionID `json:"id"`
-	// must be a unique name in the whole system.
-	Name                 string               `json:"name"`
-	NameEn               string               `json:"name_en"`
-	Type                 types.ActionType     `json:"type"`
-	RelatedResourceTypes []RelateResourceType `json:"related_resource_types"`
-	RelatedActions       []types.ActionID     `json:"related_actions"`
-	Version              int                  `json:"version"`
-	Hidden               bool                 `json:"hidden"`
-	TenantID             string               `json:"tenant_id,omitempty"`
+	ID   types.ActionID `json:"id"`
+	Name string         `json:"name"`
+	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
+	NameEn         string       `json:"name_en,omitempty"`
+	ResourceTypeID types.TypeID `json:"resource_type_id"`
+	// TODO: IAM currently does not support Hidden, need to confirm with IAM how to handle it.
+	Hidden bool `json:"hidden,omitempty"`
+	// TODO: IAM currently does not support TenantID, need to confirm with IAM how to handle it.
+	TenantID string `json:"tenant_id,omitempty"`
 }
 
-// RelateResourceType TODO
-type RelateResourceType struct {
-	SystemID           string                     `json:"system_id"`
-	ID                 types.TypeID               `json:"id"`
-	NameAlias          string                     `json:"name_alias"`
-	NameAliasEn        string                     `json:"name_alias_en"`
-	Scope              *Scope                     `json:"scope"`
-	SelectionMode      types.SelectionMode        `json:"selection_mode"`
-	InstanceSelections []RelatedInstanceSelection `json:"related_instance_selections"`
+// UpdateResourceTypeReq is the request body of updating a resource type
+type UpdateResourceTypeReq struct {
+	Name string `json:"name,omitempty"`
+	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
+	NameEn    string         `json:"name_en,omitempty"`
+	Ancestors []types.TypeID `json:"ancestors,omitempty"`
 }
 
-// Scope TODO
-type Scope struct {
-	Op      string         `json:"op"`
-	Content []ScopeContent `json:"content"`
+// UpdateActionReq is the request body of updating an action
+type UpdateActionReq struct {
+	Name string `json:"name"`
+	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
+	NameEn string `json:"name_en,omitempty"`
 }
 
-// ScopeContent TODO
-type ScopeContent struct {
-	Op    string `json:"op"`
-	Field string `json:"field"`
-	Value string `json:"value"`
+// Role is IAM V4 role
+type Role struct {
+	ID   types.RoleID `json:"id"`
+	Name string       `json:"name"`
+	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
+	NameEn      string `json:"name_en,omitempty"`
+	Description string `json:"description,omitempty"`
+	// TODO: IAM currently does not support DescriptionEn, need to confirm with IAM how to handle it.
+	DescriptionEn string       `json:"description_en,omitempty"`
+	Actions       []RoleAction `json:"actions"`
 }
 
-// RelatedInstanceSelection TODO
-type RelatedInstanceSelection struct {
-	ID       types.InstanceSelectionID `json:"id"`
-	SystemID string                    `json:"system_id"`
-	// if true, then this selected instance with not be calculated to calculate the auth.
-	// as is will be ignored, the only usage for this selection is to support a convenient
-	// way for user to find it's resource instances.
-	IgnoreAuthPath bool `json:"ignore_iam_path"`
+// UpdateRoleReq is the request body of updating a role
+type UpdateRoleReq struct {
+	Name string `json:"name,omitempty"`
+	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
+	NameEn      string `json:"name_en,omitempty"`
+	Description string `json:"description,omitempty"`
+	// TODO: IAM currently does not support DescriptionEn, need to confirm with IAM how to handle it.
+	DescriptionEn string `json:"description_en,omitempty"`
 }
 
-// ActionGroup TODO
-// groups related resource actions to make action selection more organized
-type ActionGroup struct {
-	// must be a unique name in the whole system.
-	Name      string         `json:"name"`
-	NameEn    string         `json:"name_en"`
-	SubGroups []ActionGroup  `json:"sub_groups,omitempty"`
-	Actions   []ActionWithID `json:"actions,omitempty"`
+// RoleAction is the action bound to a role
+type RoleAction struct {
+	ID             types.ActionID `json:"id"`
+	ResourceTypeID types.TypeID   `json:"resource_type_id"`
 }
 
-// ActionWithID TODO
+// ActionWithID only contains action id
 type ActionWithID struct {
 	ID types.ActionID `json:"id"`
-}
-
-// InstanceSelection TODO
-type InstanceSelection struct {
-	// unique
-	ID types.InstanceSelectionID `json:"id"`
-	// unique
-	Name string `json:"name"`
-	// unique
-	NameEn            string          `json:"name_en"`
-	ResourceTypeChain []ResourceChain `json:"resource_type_chain"`
-	TenantID          string          `json:"tenant_id,omitempty"`
-}
-
-// ResourceChain TODO
-type ResourceChain struct {
-	SystemID string       `json:"system_id"`
-	ID       types.TypeID `json:"id"`
-}
-
-// ResourceCreatorActions specifies resource creation actions' related actions that resource creator
-// will have permissions to
-type ResourceCreatorActions struct {
-	Config []ResourceCreatorAction `json:"config"`
-}
-
-// ResourceCreatorAction TODO
-type ResourceCreatorAction struct {
-	ResourceID       types.TypeID            `json:"id"`
-	Actions          []CreatorRelatedAction  `json:"actions"`
-	SubResourceTypes []ResourceCreatorAction `json:"sub_resource_types,omitempty"`
-}
-
-// CreatorRelatedAction TODO
-type CreatorRelatedAction struct {
-	ID         types.ActionID `json:"id"`
-	IsRequired bool           `json:"required"`
-}
-
-// CommonAction specifies a common operation's related iam actions
-type CommonAction struct {
-	Name        string         `json:"name"`
-	EnglishName string         `json:"name_en"`
-	Actions     []ActionWithID `json:"actions"`
 }
 
 // ListPoliciesParams list iam policies parameter
@@ -275,32 +234,38 @@ type PolicySubject struct {
 	Name string `json:"name"`
 }
 
-// SystemResp TODO
-type SystemResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data RegisteredSystemInfo `json:"data"`
+// IamErrorResp is IAM V4 error response
+type IamErrorResp struct {
+	Error *IamErrorData `json:"error"`
 }
 
-// RegisteredSystemInfo TODO
-type RegisteredSystemInfo struct {
-	BaseInfo               System                 `json:"base_info"`
-	ResourceTypes          []ResourceType         `json:"resource_types"`
-	Actions                []ResourceAction       `json:"actions"`
-	ActionGroups           []ActionGroup          `json:"action_groups"`
-	InstanceSelections     []InstanceSelection    `json:"instance_selections"`
-	ResourceCreatorActions ResourceCreatorActions `json:"resource_creator_actions"`
-	CommonActions          []CommonAction         `json:"common_actions"`
+// IamErrorData is IAM V4 error detail
+type IamErrorData struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
-// System TODO
-type System struct {
-	ID                 string     `json:"id,omitempty"`
-	Name               string     `json:"name,omitempty"`
-	EnglishName        string     `json:"name_en,omitempty"`
-	Description        string     `json:"description,omitempty"`
-	EnglishDescription string     `json:"description_en,omitempty"`
-	Clients            string     `json:"clients,omitempty"`
-	ProviderConfig     *SysConfig `json:"provider_config"`
+// ListResourceTypesData is resource type page data
+type ListResourceTypesData struct {
+	Count   int64          `json:"count"`
+	Results []ResourceType `json:"results"`
+}
+
+// ListActionsData is action page data
+type ListActionsData struct {
+	Count   int64            `json:"count"`
+	Results []ResourceAction `json:"results"`
+}
+
+// ListRolesData is role page data
+type ListRolesData struct {
+	Count   int64  `json:"count"`
+	Results []Role `json:"results"`
+}
+
+// systemAuthToken is the auth token of the cmdb system, which is used to validate if the request is from IAM
+type systemAuthToken struct {
+	AuthToken string `json:"auth_token"`
 }
 
 // ----authserver----

@@ -124,16 +124,16 @@ func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 
 // Page TODO
 type Page struct {
-	Limit  int64 `json:"limit"`
-	Offset int64 `json:"offset"`
+	PageSize int64 `json:"page_size"`
+	Page     int64 `json:"page"`
 }
 
 // IsIllegal TODO
 func (page *Page) IsIllegal() bool {
-	if page.Limit == 0 {
+	if page.PageSize == 0 {
 		return false
 	}
-	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit {
+	if page.PageSize > common.BKMaxPageSize && page.PageSize != common.BKNoLimit {
 		return true
 	}
 	return false

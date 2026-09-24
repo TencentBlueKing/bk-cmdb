@@ -19,60 +19,6 @@ package types
 
 import "configcenter/src/ac/meta"
 
-// InstanceSelectionID TODO
-type InstanceSelectionID string
-
-const (
-	// BusinessSelection 业务的两种视图，管理的资源也相同，仅名称做区分
-	BusinessSelection InstanceSelectionID = "business"
-	// BusinessHostTransferSelection TODO
-	BusinessHostTransferSelection InstanceSelectionID = "business_host_transfer"
-	// BizSetSelection TODO
-	BizSetSelection InstanceSelectionID = "business_set_list"
-	// ProjectSelection project selection
-	ProjectSelection InstanceSelectionID = "project"
-	// BizHostInstanceSelection TODO
-	BizHostInstanceSelection InstanceSelectionID = "biz_host_instance"
-	// BizCustomQuerySelection TODO
-	BizCustomQuerySelection InstanceSelectionID = "biz_custom_query"
-	// BizProcessServiceTemplateSelection TODO
-	BizProcessServiceTemplateSelection InstanceSelectionID = "biz_process_service_template"
-	// BizSetTemplateSelection TODO
-	BizSetTemplateSelection InstanceSelectionID = "biz_set_template"
-	// SysHostInstanceSelection TODO
-	SysHostInstanceSelection InstanceSelectionID = "sys_host_instance"
-	// SysModelGroupSelection TODO
-	SysModelGroupSelection InstanceSelectionID = "sys_model_group"
-	// FieldGroupingTemplateSelection field grouping template instance selection id
-	FieldGroupingTemplateSelection InstanceSelectionID = "field_grouping_template"
-	// SysModelSelection TODO
-	SysModelSelection InstanceSelectionID = "sys_model"
-	// SysModelEventSelection TODO
-	SysModelEventSelection InstanceSelectionID = "sys_model_event"
-	// MainlineModelEventSelection TODO
-	MainlineModelEventSelection InstanceSelectionID = "mainline_model_event"
-	// KubeWorkloadEventSelection k8s workload event selection id
-	KubeWorkloadEventSelection InstanceSelectionID = "kube_workload_event"
-	// SysInstanceModelSelection TODO
-	SysInstanceModelSelection InstanceSelectionID = "sys_instance_model"
-	// SysAssociationTypeSelection TODO
-	SysAssociationTypeSelection InstanceSelectionID = "sys_association_type"
-	// SysCloudAreaSelection TODO
-	SysCloudAreaSelection InstanceSelectionID = "sys_cloud_area"
-	// InstAsstEventSelection TODO
-	InstAsstEventSelection InstanceSelectionID = "inst_asst_event"
-	// SysResourcePoolDirectorySelection 主机池目录的两种视图，管理的资源也相同，仅名称做区分
-	SysResourcePoolDirectorySelection InstanceSelectionID = "sys_resource_pool_directory"
-	// SysHostRscPoolDirectorySelection TODO
-	SysHostRscPoolDirectorySelection InstanceSelectionID = "sys_host_rsc_pool_directory"
-	// GeneralCacheSelection general resource cache instance selection id
-	GeneralCacheSelection InstanceSelectionID = "general_cache"
-	// BizTopoSelection is biz topo instance selection id
-	BizTopoSelection InstanceSelectionID = "biz_topo"
-	// TenantSetSelection is tenant set instance selection id
-	TenantSetSelection InstanceSelectionID = "tenant_set"
-)
-
 // TypeID TODO
 type TypeID string
 
@@ -100,20 +46,18 @@ const (
 	SysAuditLog TypeID = "sys_audit_log"
 	// SysResourcePoolDirectory TODO
 	SysResourcePoolDirectory TypeID = "sys_resource_pool_directory"
-	// SysHostRscPoolDirectory TODO
-	SysHostRscPoolDirectory TypeID = "sys_host_rsc_pool_directory"
 	// SysCloudArea TODO
 	SysCloudArea TypeID = "sys_cloud_area"
 	// SysEventWatch TODO
 	SysEventWatch TypeID = "event_watch"
 	// Host TODO
 	Host TypeID = "host"
+	// SysHost is the host resource in host pool directory.
+	SysHost TypeID = "sys_host"
 	// UserCustom TODO
 	UserCustom TypeID = "usercustom"
 	// InstAsstEvent instance association resource for resource watch
 	InstAsstEvent TypeID = "inst_asst_event"
-	// KubeWorkloadEvent kube workload resource for resource watch
-	KubeWorkloadEvent TypeID = "kube_workload_event"
 
 	// GeneralCache defines general resource cache auth type
 	GeneralCache TypeID = "general_cache"
@@ -133,11 +77,7 @@ const (
 	BizSet TypeID = "business_set"
 	// Business TODO
 	Business TypeID = "biz"
-	// BusinessForHostTrans TODO
-	BusinessForHostTrans TypeID = "biz_for_host_trans"
 	// BizCustomQuery TODO
-	// Set                       ResourceTypeID = "set"
-	// Module                    ResourceTypeID = "module"
 	BizCustomQuery TypeID = "biz_custom_query"
 	// BizTopology TODO
 	BizTopology TypeID = "biz_topology"
@@ -157,26 +97,6 @@ const (
 	Project TypeID = "project"
 	// TenantSet is the tenant set type id
 	TenantSet TypeID = "tenant_set"
-)
-
-// SystemQueryField is system query field for searching system info
-type SystemQueryField string
-
-const (
-	// FieldBaseInfo TODO
-	FieldBaseInfo SystemQueryField = "base_info"
-	// FieldResourceTypes TODO
-	FieldResourceTypes SystemQueryField = "resource_types"
-	// FieldActions TODO
-	FieldActions SystemQueryField = "actions"
-	// FieldActionGroups TODO
-	FieldActionGroups SystemQueryField = "action_groups"
-	// FieldInstanceSelections TODO
-	FieldInstanceSelections SystemQueryField = "instance_selections"
-	// FieldResourceCreatorActions TODO
-	FieldResourceCreatorActions SystemQueryField = "resource_creator_actions"
-	// FieldCommonActions TODO
-	FieldCommonActions SystemQueryField = "common_actions"
 )
 
 // ActionID TODO
@@ -230,10 +150,14 @@ const (
 const (
 	// EditBusinessHost TODO
 	EditBusinessHost ActionID = "edit_biz_host"
-	// BusinessHostTransferToResourcePool TODO
-	BusinessHostTransferToResourcePool ActionID = "unassign_biz_host"
-	// HostTransferAcrossBusiness TODO
-	HostTransferAcrossBusiness ActionID = "host_transfer_across_business"
+	// TransferHostOutOfBiz transfer host out of biz (source side)
+	TransferHostOutOfBiz ActionID = "transfer_host_out_of_biz"
+	// TransferHostIntoBiz transfer host into biz (destination side)
+	TransferHostIntoBiz ActionID = "transfer_host_into_biz"
+	// TransferHostOutOfResPoolDir transfer host out of resource pool directory (source side)
+	TransferHostOutOfResPoolDir ActionID = "trans_host_out_of_res_pool_dir"
+	// TransferHostToResPoolDir transfer host to resource pool directory (destination side)
+	TransferHostToResPoolDir ActionID = "trans_host_to_res_pool_dir"
 
 	// CreateBusinessCustomQuery TODO
 	CreateBusinessCustomQuery ActionID = "create_biz_dynamic_query"
@@ -291,11 +215,7 @@ const (
 	EditResourcePoolHost ActionID = "edit_resource_pool_host"
 	// DeleteResourcePoolHost TODO
 	DeleteResourcePoolHost ActionID = "delete_resource_pool_host"
-	// ResourcePoolHostTransferToBusiness TODO
-	ResourcePoolHostTransferToBusiness ActionID = "assign_host_to_biz"
-	// ResourcePoolHostTransferToDirectory TODO
-	ResourcePoolHostTransferToDirectory ActionID = "host_transfer_in_resource_pool"
-	ManageHostAgentID                   ActionID = "manage_host_agent_id"
+	ManageHostAgentID      ActionID = "manage_host_agent_id"
 
 	// CreateResourcePoolDirectory TODO
 	CreateResourcePoolDirectory ActionID = "create_resource_pool_directory"
@@ -402,19 +322,6 @@ const (
 	// WatchProjectEvent watch project event action id
 	WatchProjectEvent ActionID = "watch_project_event"
 
-	// watch kube related event actions
-
-	// WatchKubeClusterEvent watch kube cluster event action id
-	WatchKubeClusterEvent ActionID = "watch_kube_cluster"
-	// WatchKubeNodeEvent watch kube node event action id
-	WatchKubeNodeEvent ActionID = "watch_kube_node"
-	// WatchKubeNamespaceEvent watch kube namespace event action id
-	WatchKubeNamespaceEvent ActionID = "watch_kube_namespace"
-	// WatchKubeWorkloadEvent watch kube workload event action id, authorized by workload type as sub-resource
-	WatchKubeWorkloadEvent ActionID = "watch_kube_workload"
-	// WatchKubePodEvent watch kube pod event action id, its event detail includes containers in it
-	WatchKubePodEvent ActionID = "watch_kube_pod"
-
 	// CreateFieldGroupingTemplate create field grouping template action id
 	CreateFieldGroupingTemplate = "create_field_grouping_template"
 	// ViewFieldGroupingTemplate view field grouping template action id
@@ -469,8 +376,6 @@ const (
 	View ActionType = "view"
 	// Edit TODO
 	Edit ActionType = "edit"
-	// List TODO
-	List ActionType = "list"
 )
 
 // ActionTypeIDNameMap TODO
@@ -482,28 +387,13 @@ var ActionTypeIDNameMap = map[ActionType]string{
 }
 
 const (
-	// IAMSysInstTypePrefix TODO
-	// IAM侧资源的通用模型实例前缀标识
+	// IAMSysInstTypePrefix is the prefix of iam system instance resource type
 	IAMSysInstTypePrefix = meta.CMDBSysInstTypePrefix
-)
-
-// SelectionMode 选择类型, 资源在权限中心产品上配置权限时的作用范围
-type SelectionMode string
-
-const (
-	// ModeInstance 仅可选择实例, 默认值
-	ModeInstance SelectionMode = "instance"
-	// ModeAttribute 仅可配置属性, 此时instance_selections配置不生效
-	ModeAttribute SelectionMode = "attribute"
-	// ModeAll 可以同时选择实例和配置属性
-	ModeAll SelectionMode = "all"
 )
 
 const (
 	// IamRequestHeader TODO
-	IamRequestHeader   = "X-Request-Id"
-	iamAppCodeHeader   = "X-Bk-App-Code"
-	iamAppSecretHeader = "X-Bk-App-Secret"
+	IamRequestHeader = "X-Request-Id"
 
 	// SystemIDCMDB TODO
 	SystemIDCMDB = "bk_cmdb"
@@ -519,11 +409,14 @@ const (
 	RegisterIamLock = "register_iam_lock"
 )
 
-// DeleteCMDBResourceParam TODO
+// RoleID is IAM V4 role id
+type RoleID string
+
+// DeleteCMDBResourceParam is the parameter to delete unused CMDB resources in IAM
 type DeleteCMDBResourceParam struct {
-	ActionIDs            []ActionID
-	InstanceSelectionIDs []InstanceSelectionID
-	TypeIDs              []TypeID
+	ActionIDs []ActionID
+	TypeIDs   []TypeID
+	RoleIDs   []RoleID
 }
 
 // DynamicAction is dynamic model action

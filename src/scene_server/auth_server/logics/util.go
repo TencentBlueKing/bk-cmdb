@@ -35,7 +35,7 @@ import (
 // get resource database table name
 func getResourceTableName(resourceType iamtypes.TypeID) string {
 	switch resourceType {
-	case iamtypes.Host:
+	case iamtypes.Host, iamtypes.SysHost:
 		return common.BKTableNameBaseHost
 	case iamtypes.SysModelGroup:
 		return common.BKTableNameObjClassification
@@ -44,11 +44,11 @@ func getResourceTableName(resourceType iamtypes.TypeID) string {
 		return common.BKTableNameObjDes
 	case iamtypes.SysAssociationType:
 		return common.BKTableNameAsstDes
-	case iamtypes.SysResourcePoolDirectory, iamtypes.SysHostRscPoolDirectory:
+	case iamtypes.SysResourcePoolDirectory:
 		return common.BKTableNameBaseModule
 	case iamtypes.SysCloudArea:
 		return common.BKTableNameBasePlat
-	case iamtypes.Business, iamtypes.BusinessForHostTrans:
+	case iamtypes.Business:
 		return common.BKTableNameBaseApp
 	case iamtypes.BizSet:
 		return common.BKTableNameBaseBizSet
@@ -87,11 +87,11 @@ func isResourceIDStringType(resourceType iamtypes.TypeID) bool {
 // get model instance resource's model id
 func getInstanceResourceObjID(resourceType iamtypes.TypeID) string {
 	switch resourceType {
-	case iamtypes.Host:
+	case iamtypes.Host, iamtypes.SysHost:
 		return common.BKInnerObjIDHost
 	case iamtypes.SysCloudArea:
 		return common.BKInnerObjIDPlat
-	case iamtypes.Business, iamtypes.BusinessForHostTrans:
+	case iamtypes.Business:
 		return common.BKInnerObjIDApp
 	case iamtypes.BizSet:
 		return common.BKInnerObjIDBizSet
@@ -104,6 +104,10 @@ func getInstanceResourceObjID(resourceType iamtypes.TypeID) string {
 	default:
 		return ""
 	}
+}
+
+func isHostResourceType(resourceType iamtypes.TypeID) bool {
+	return resourceType == iamtypes.Host || resourceType == iamtypes.SysHost
 }
 
 var tenantResPoolBizIDMap sync.Map

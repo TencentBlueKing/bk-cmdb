@@ -31,28 +31,53 @@ import (
 // NotEnoughLayer TODO
 var NotEnoughLayer = fmt.Errorf("not enough layer")
 
-// AdaptAuthOptions TODO
-func AdaptAuthOptions(a *meta.ResourceAttribute) (types.ActionID, []iam.Resource, error) {
+// IamAuthOption is one IAM action with its related resources.
+type IamAuthOption struct {
+	Action    types.ActionID
+	Resources []iam.Resource
+}
 
-	var action types.ActionID
+// destTransferActionMap maps CMDB host-transfer operations to destination-side IAM actions.
+// Source-side action is converted separately; both must pass (AND).
+var destTransferActionMap = map[meta.Action]types.ActionID{
+	meta.MoveBizHostFromModuleToResPool: types.TransferHostToResPoolDir,
+	meta.MoveHostToAnotherBizModule:     types.TransferHostIntoBiz,
+	meta.MoveResPoolHostToBizIdleModule: types.TransferHostIntoBiz,
+	meta.MoveResPoolHostToDirectory:     types.TransferHostToResPoolDir,
+}
 
+// AdaptAuthOptions convert CMDB resource attribute to IAM auth options.
+// Host transfer operations expand to source + destination actions that must both pass.
+func AdaptAuthOptions(a *meta.ResourceAttribute) ([]IamAuthOption, error) {
 	action, err := ConvertResourceAction(a.Type, a.Action, a.BusinessID)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
-	// convert different cmdb resource's to resource's registered to iam
+	if action == types.Skip {
+		return []IamAuthOption{{Action: types.Skip}}, nil
+	}
+
 	rscType, err := ConvertResourceType(a.Type, a.BusinessID)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
-	resource, err := GenIamResource(action, *rscType, a)
-	if err != nil {
-		return "", nil, err
+	actions := []types.ActionID{action}
+	if destAction, ok := destTransferActionMap[a.Action]; ok {
+		actions = append(actions, destAction)
 	}
 
-	return action, resource, nil
+	opts := make([]IamAuthOption, 0, len(actions))
+	for _, act := range actions {
+		resource, err := GenIamResource(act, *rscType, a)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, IamAuthOption{Action: act, Resources: resource})
+	}
+
+	return opts, nil
 }
 
 var ccIamResTypeMap = map[meta.ResourceType]types.TypeID{
@@ -282,13 +307,13 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]types.ActionID{
 		meta.Update: types.EditBusinessServiceInstance,
 	},
 	meta.HostInstance: {
-		meta.MoveResPoolHostToBizIdleModule: types.ResourcePoolHostTransferToBusiness,
-		meta.MoveResPoolHostToDirectory:     types.ResourcePoolHostTransferToDirectory,
-		meta.MoveBizHostFromModuleToResPool: types.BusinessHostTransferToResourcePool,
+		meta.MoveResPoolHostToBizIdleModule: types.TransferHostOutOfResPoolDir,
+		meta.MoveResPoolHostToDirectory:     types.TransferHostOutOfResPoolDir,
+		meta.MoveBizHostFromModuleToResPool: types.TransferHostOutOfBiz,
 		meta.AddHostToResourcePool:          types.CreateResourcePoolHost,
 		meta.Create:                         types.CreateResourcePoolHost,
 		meta.Delete:                         types.DeleteResourcePoolHost,
-		meta.MoveHostToAnotherBizModule:     types.HostTransferAcrossBusiness,
+		meta.MoveHostToAnotherBizModule:     types.TransferHostOutOfBiz,
 		meta.Find:                           types.ViewResourcePoolHost,
 		meta.FindMany:                       types.ViewResourcePoolHost,
 		meta.ManageHostAgentID:              types.ManageHostAgentID,
@@ -409,11 +434,6 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]types.ActionID{
 		meta.WatchInstAsst:         types.WatchInstAsstEvent,
 		meta.WatchBizSet:           types.WatchBizSetEvent,
 		meta.WatchPlat:             types.WatchPlatEvent,
-		meta.WatchKubeCluster:      types.WatchKubeClusterEvent,
-		meta.WatchKubeNode:         types.WatchKubeNodeEvent,
-		meta.WatchKubeNamespace:    types.WatchKubeNamespaceEvent,
-		meta.WatchKubeWorkload:     types.WatchKubeWorkloadEvent,
-		meta.WatchKubePod:          types.WatchKubePodEvent,
 		meta.WatchProject:          types.WatchProjectEvent,
 	},
 	meta.UserCustom: {
@@ -629,27 +649,27 @@ func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, 
 	return instances, nil
 }
 
-// GenIAMDynamicResTypeID 生成IAM侧资源的的dynamic resource typeID
+// GenIAMDynamicResTypeID generate IAM side dynamic resource type id
 func GenIAMDynamicResTypeID(modelID int64) types.TypeID {
 	return types.TypeID(fmt.Sprintf("%s%d", types.IAMSysInstTypePrefix, modelID))
 }
 
-// GenCMDBDynamicResType 生成CMDB侧资源的的dynamic resourceType
+// GenCMDBDynamicResType generate CMDB side dynamic resource type
 func GenCMDBDynamicResType(modelID int64) meta.ResourceType {
 	return meta.ResourceType(fmt.Sprintf("%s%d", meta.CMDBSysInstTypePrefix, modelID))
+}
+
+// GenIAMDynamicRoleID generate IAM side dynamic instance role id
+func GenIAMDynamicRoleID(modelID int64, role string) types.RoleID {
+	return types.RoleID(fmt.Sprintf("%s%d_%s", types.IAMSysInstTypePrefix, modelID, role))
 }
 
 // genDynamicResourceType generate dynamic resourceType
 func genDynamicResourceType(tenantID string, obj metadata.Object) iam.ResourceType {
 	return iam.ResourceType{
-		ID:      GenIAMDynamicResTypeID(obj.ID),
-		Name:    obj.ObjectName,
-		NameEn:  obj.ObjectID,
-		Parents: nil,
-		ProviderConfig: iam.ResourceConfig{
-			Path: "/auth/v3/find/resource",
-		},
-		Version:  1,
+		ID:       GenIAMDynamicResTypeID(obj.ID),
+		Name:     obj.ObjectName,
+		NameEn:   obj.ObjectID,
 		TenantID: tenantID,
 	}
 }
@@ -665,38 +685,6 @@ func genDynamicResourceTypes(tenantObjects map[string][]metadata.Object) []iam.R
 	}
 
 	return resourceTypes
-}
-
-// genIAMDynamicInstanceSelection generate IAM dynamic instanceSelection
-func genIAMDynamicInstanceSelection(modelID int64) types.InstanceSelectionID {
-	return types.InstanceSelectionID(fmt.Sprintf("%s%d", types.IAMSysInstTypePrefix, modelID))
-}
-
-// genDynamicInstanceSelection generate dynamic instanceSelection
-func genDynamicInstanceSelection(tenantID string, obj metadata.Object) iam.InstanceSelection {
-	return iam.InstanceSelection{
-		ID:     genIAMDynamicInstanceSelection(obj.ID),
-		Name:   obj.ObjectName,
-		NameEn: obj.ObjectID,
-		ResourceTypeChain: []iam.ResourceChain{{
-			SystemID: types.SystemIDCMDB,
-			ID:       GenIAMDynamicResTypeID(obj.ID),
-		}},
-		TenantID: tenantID,
-	}
-}
-
-// genDynamicInstanceSelections generate dynamic instanceSelections
-func genDynamicInstanceSelections(tenantObjects map[string][]metadata.Object) []iam.InstanceSelection {
-	instanceSelections := make([]iam.InstanceSelection, 0)
-
-	for tenantID, objects := range tenantObjects {
-		for _, obj := range objects {
-			instanceSelections = append(instanceSelections, genDynamicInstanceSelection(tenantID, obj))
-		}
-	}
-
-	return instanceSelections
 }
 
 // genDynamicAction generate dynamic action
@@ -755,20 +743,6 @@ func genDynamicDeleteAction(obj metadata.Object) types.DynamicAction {
 	}
 }
 
-// genDynamicActionSubGroup 动态的按模型生成动作分组作为‘模型实例管理’分组的subGroup
-func genDynamicActionSubGroup(obj metadata.Object) iam.ActionGroup {
-	actions := genDynamicAction(obj)
-	actionWithIDs := make([]iam.ActionWithID, len(actions))
-	for idx, action := range actions {
-		actionWithIDs[idx] = iam.ActionWithID{ID: action.ActionID}
-	}
-	return iam.ActionGroup{
-		Name:    obj.ObjectName,
-		NameEn:  obj.ObjectID,
-		Actions: actionWithIDs,
-	}
-}
-
 // genDynamicActionIDs generate dynamic model actionIDs
 func genDynamicActionIDs(object metadata.Object) []types.ActionID {
 	actions := genDynamicAction(object)
@@ -784,69 +758,24 @@ func genDynamicActions(tenantObjects map[string][]metadata.Object) []iam.Resourc
 	resActions := make([]iam.ResourceAction, 0)
 	for tenantID, objects := range tenantObjects {
 		for _, obj := range objects {
-			relatedResource := []iam.RelateResourceType{
-				{
-					SystemID: types.SystemIDCMDB,
-					ID:       GenIAMDynamicResTypeID(obj.ID),
-					// 配置权限时可选择实例和配置属性, 后者用于属性鉴权
-					SelectionMode: types.ModeAll,
-					InstanceSelections: []iam.RelatedInstanceSelection{{
-						SystemID: types.SystemIDCMDB,
-						ID:       genIAMDynamicInstanceSelection(obj.ID),
-					}},
-				},
-			}
+			resTypeID := GenIAMDynamicResTypeID(obj.ID)
 
-			actions := genDynamicAction(obj)
-			var relatedActions []types.ActionID
-			for _, action := range actions {
-				switch action.ActionType {
-				case types.View:
-					resActions = append(resActions, iam.ResourceAction{
-						ID:       action.ActionID,
-						Name:     action.ActionNameCN,
-						NameEn:   action.ActionNameEN,
-						Type:     types.View,
-						Version:  1,
-						TenantID: tenantID,
-					})
-					relatedActions = []types.ActionID{action.ActionID}
-
-				case types.Create:
-					resActions = append(resActions, iam.ResourceAction{
-						ID:       action.ActionID,
-						Name:     action.ActionNameCN,
-						NameEn:   action.ActionNameEN,
-						Type:     types.Create,
-						Version:  1,
-						TenantID: tenantID,
-					})
-				case types.Edit:
-					resActions = append(resActions, iam.ResourceAction{
-						ID:                   action.ActionID,
-						Name:                 action.ActionNameCN,
-						NameEn:               action.ActionNameEN,
-						Type:                 types.Edit,
-						RelatedActions:       relatedActions,
-						Version:              1,
-						RelatedResourceTypes: relatedResource,
-						TenantID:             tenantID,
-					})
-
-				case types.Delete:
-					resActions = append(resActions, iam.ResourceAction{
-						ID:                   action.ActionID,
-						Name:                 action.ActionNameCN,
-						NameEn:               action.ActionNameEN,
-						Type:                 types.Delete,
-						RelatedResourceTypes: relatedResource,
-						RelatedActions:       relatedActions,
-						Version:              1,
-						TenantID:             tenantID,
-					})
-				default:
-					return nil
+			for _, dynAction := range genDynamicAction(obj) {
+				resAction := iam.ResourceAction{
+					ID:       dynAction.ActionID,
+					Name:     dynAction.ActionNameCN,
+					NameEn:   dynAction.ActionNameEN,
+					TenantID: tenantID,
 				}
+				switch dynAction.ActionType {
+				case types.View, types.Create:
+					// view and create do not need resource
+				case types.Edit, types.Delete:
+					resAction.ResourceTypeID = resTypeID
+				default:
+					continue
+				}
+				resActions = append(resActions, resAction)
 			}
 		}
 	}
@@ -864,14 +793,14 @@ func IsCMDBSysInstance(resourceType meta.ResourceType) bool {
 	return strings.HasPrefix(string(resourceType), meta.CMDBSysInstTypePrefix)
 }
 
-// isIAMSysInstanceSelection judge whether the instance selection is a system instance selection in iam resource
-func isIAMSysInstanceSelection(instanceSelectionID types.InstanceSelectionID) bool {
-	return strings.Contains(string(instanceSelectionID), types.IAMSysInstTypePrefix)
-}
-
 // isIAMSysInstanceAction judge whether the action is a system instance action in iam resource
 func isIAMSysInstanceAction(actionID types.ActionID) bool {
 	return strings.Contains(string(actionID), types.IAMSysInstTypePrefix)
+}
+
+// isIAMSysInstanceRole judge whether the role is a system instance role in iam resource
+func isIAMSysInstanceRole(roleID types.RoleID) bool {
+	return strings.Contains(string(roleID), types.IAMSysInstTypePrefix)
 }
 
 // GetModelIDFromIamSysInstance get model id from iam system instance

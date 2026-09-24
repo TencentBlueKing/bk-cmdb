@@ -121,10 +121,9 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iamtypes.TypeID
 func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.FetchInstanceInfoFilter) (
 	[]map[string]interface{}, error) {
 
-	if resourceType != iamtypes.Host {
+	if !isHostResourceType(resourceType) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
-
 	if len(filter.Attrs) == 0 {
 		return make([]map[string]interface{}, 0), nil
 	}
@@ -161,6 +160,15 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iamtypes.TypeID, fi
 		hostIDs[idx] = id
 	}
 
+	// filter hosts by whether they are in host pool according to resource type, reuse relations to generate iam path
+	relations, hostIDs, err := lgc.getHostModuleRelations(kit, resourceType, hostIDs)
+	if err != nil {
+		return nil, err
+	}
+	if len(hostIDs) == 0 {
+		return make([]map[string]interface{}, 0), nil
+	}
+
 	hostIDLen := len(hostIDs)
 	hosts := make([]map[string]interface{}, 0)
 	for offset := 0; offset < hostIDLen; offset += 500 {
@@ -179,8 +187,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iamtypes.TypeID, fi
 		}
 
 		hostArr := make([]map[string]interface{}, 0)
-		err = json.Unmarshal([]byte(hostArrStr), &hostArr)
-		if err != nil {
+		if err = json.Unmarshal([]byte(hostArrStr), &hostArr); err != nil {
 			blog.Errorf("unmarshal hosts %s failed, err: %v", hostArrStr, err)
 			return nil, err
 		}
@@ -192,15 +199,14 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iamtypes.TypeID, fi
 		return hosts, nil
 	}
 
-	return lgc.enrichHostInfo(kit, hosts, hasName, needPath)
+	return lgc.enrichHostInfo(kit, hosts, hasName, needPath, resourceType, relations)
 }
 
-func (lgc *Logics) enrichHostInfo(kit *rest.Kit, hosts []map[string]interface{}, hasName bool, needPath bool) (
-	[]map[string]interface{}, error) {
+func (lgc *Logics) enrichHostInfo(kit *rest.Kit, hosts []map[string]interface{}, hasName bool, needPath bool,
+	resourceType iamtypes.TypeID, relations []metadata.ModuleHost) ([]map[string]interface{}, error) {
 
 	cnt := len(hosts)
 	cloudIDList := make([]int64, cnt)
-	hostIDList := make([]int64, cnt)
 
 	for index, host := range hosts {
 		if hasName {
@@ -211,13 +217,6 @@ func (lgc *Logics) enrichHostInfo(kit *rest.Kit, hosts []map[string]interface{},
 			}
 			cloudIDList[index] = cloudID
 		}
-
-		hostID, err := util.GetInt64ByInterface(host[common.BKHostIDField])
-		if err != nil {
-			blog.Errorf("parse host id failed, err: %v, host: %+v", err, host)
-			return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKHostIDField)
-		}
-		hostIDList[index] = hostID
 	}
 
 	// get cloud area for display name use
@@ -232,10 +231,7 @@ func (lgc *Logics) enrichHostInfo(kit *rest.Kit, hosts []map[string]interface{},
 
 	var hostPathMap map[int64][]string
 	if needPath {
-		hostPathMap, err = lgc.getHostIamPath(kit, iamtypes.Host, hostIDList)
-		if err != nil {
-			return nil, err
-		}
+		hostPathMap = getHostIamPath(resourceType, relations)
 	}
 
 	// covert id and display_name field
@@ -373,7 +369,8 @@ func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit,
 // get resource iam path
 func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iamtypes.TypeID,
 	instance map[string]interface{}) ([]string, error) {
-	if resourceType == iamtypes.Host {
+
+	if isHostResourceType(resourceType) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
@@ -386,18 +383,18 @@ func (lgc *Logics) getResourceIamPath(kit *rest.Kit, resourceType iamtypes.TypeI
 	return iamPath, nil
 }
 
-func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iamtypes.TypeID, hostList []int64) (map[int64][]string,
-	error) {
+// getHostModuleRelations get host module relations by host ids and whether they belong to host pool.
+// SysHost only returns hosts in the host pool, Host only returns hosts not in the host pool.
+func (lgc *Logics) getHostModuleRelations(kit *rest.Kit, resourceType iamtypes.TypeID, hostList []int64) (
+	[]metadata.ModuleHost, []int64, error) {
 
-	if resourceType != iamtypes.Host {
-		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
+	if !isHostResourceType(resourceType) {
+		return nil, nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
-	// get host iam path, either in resource pool directory or in business
-	// TODO: support host in business module when topology is supported
 	defaultBizID, err := lgc.GetResourcePoolBizID(kit)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	req := &metadata.HostModuleRelationRequest{
@@ -410,17 +407,38 @@ func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iamtypes.TypeID, h
 	res, err := lgc.CoreAPI.CoreService().Host().GetHostModuleRelation(kit.Ctx, kit.Header, req)
 	if err != nil {
 		blog.Errorf("GetHostModuleRelation by host id %v failed, err: %s, rid: %s", hostList, err, kit.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(res.Info) == 0 {
-		return make(map[int64][]string), nil
+		return make([]metadata.ModuleHost, 0), make([]int64, 0), nil
 	}
 
-	relationMap := make(map[int64][]string)
+	relations := make([]metadata.ModuleHost, 0)
+	matchedHostIDs := make([]int64, 0)
 	for _, relation := range res.Info {
+		if resourceType == iamtypes.Host && relation.AppID != defaultBizID {
+			relations = append(relations, relation)
+			matchedHostIDs = append(matchedHostIDs, relation.HostID)
+			continue
+		}
+
+		if resourceType == iamtypes.SysHost && relation.AppID == defaultBizID {
+			relations = append(relations, relation)
+			matchedHostIDs = append(matchedHostIDs, relation.HostID)
+			continue
+		}
+	}
+
+	return relations, util.IntArrayUnique(matchedHostIDs), nil
+}
+
+// getHostIamPath generate host iam path from host module relations.
+func getHostIamPath(resourceType iamtypes.TypeID, relations []metadata.ModuleHost) map[int64][]string {
+	relationMap := make(map[int64][]string)
+	for _, relation := range relations {
 		var path string
-		if relation.AppID == defaultBizID {
+		if resourceType == iamtypes.SysHost {
 			path = "/" + string(iamtypes.SysResourcePoolDirectory) + "," + strconv.FormatInt(relation.ModuleID,
 				10) + "/"
 		} else {
@@ -432,10 +450,9 @@ func (lgc *Logics) getHostIamPath(kit *rest.Kit, resourceType iamtypes.TypeID, h
 		}
 
 		relationMap[relation.HostID] = append(relationMap[relation.HostID], path)
-
 	}
 
-	return relationMap, nil
+	return relationMap
 }
 
 // FetchSetModuleNameInfo fetch set & module resource name info for no permission apply url use
