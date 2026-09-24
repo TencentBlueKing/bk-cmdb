@@ -208,10 +208,10 @@ func (a *AuthManager) GenHostBatchNoPermissionResp(ctx context.Context, header h
 	for _, host := range hosts {
 		if host.BKAppIDField == resPoolBizID {
 			resourceHosts = append(resourceHosts, []metadata.IamResourceInstance{{
-				Type: string(iamtypes.SysHostRscPoolDirectory),
+				Type: string(iamtypes.SysResourcePoolDirectory),
 				ID:   strconv.FormatInt(host.BKModuleIDField, 10),
 			}, {
-				Type: string(iamtypes.Host),
+				Type: string(iamtypes.SysHost),
 				ID:   strconv.FormatInt(host.BKHostIDField, 10),
 			}})
 		} else {

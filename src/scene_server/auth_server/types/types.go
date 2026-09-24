@@ -56,6 +56,13 @@ const (
 	IDField = "id"
 	// NameField TODO
 	NameField = "display_name"
+	// IamPathField is the ancestor path from root to the direct parent.
+	IamPathField = "_bk_iam_path_"
+
+	// AttrDataTypeString is the string attribute data type of list_attr.
+	AttrDataTypeString = "string"
+	// AttrDataTypeInt is the int attribute data type of list_attr.
+	AttrDataTypeInt = "int"
 )
 
 // Method TODO
@@ -63,19 +70,21 @@ type Method string
 
 // PullResourceReq TODO
 type PullResourceReq struct {
-	Type   iamtypes.TypeID `json:"type"`
-	Method Method          `json:"method"`
-	Filter interface{}     `json:"filter,omitempty"`
-	Page   Page            `json:"page,omitempty"`
+	Type     iamtypes.TypeID `json:"type"`
+	Method   Method          `json:"method"`
+	Filter   interface{}     `json:"filter,omitempty"`
+	Page     Page            `json:"page,omitempty"`
+	Requires []string        `json:"requires,omitempty"`
 }
 
 // UnmarshalJSON TODO
 func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 	data := struct {
-		Type   iamtypes.TypeID `json:"type"`
-		Method Method          `json:"method"`
-		Filter json.RawMessage `json:"filter,omitempty"`
-		Page   Page            `json:"page,omitempty"`
+		Type     iamtypes.TypeID `json:"type"`
+		Method   Method          `json:"method"`
+		Filter   json.RawMessage `json:"filter,omitempty"`
+		Page     Page            `json:"page,omitempty"`
+		Requires []string        `json:"requires,omitempty"`
 	}{}
 	err := json.Unmarshal(raw, &data)
 	if err != nil {
@@ -84,10 +93,13 @@ func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 	req.Type = data.Type
 	req.Method = data.Method
 	req.Page = data.Page
+	req.Requires = data.Requires
 	if data.Filter == nil || len(data.Filter) == 0 {
 		return nil
 	}
 	switch data.Method {
+	case ListAttrMethod:
+		return nil
 	case ListAttrValueMethod:
 		filter := ListAttrValueFilter{}
 		err := json.Unmarshal(data.Filter, &filter)
@@ -124,16 +136,16 @@ func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 
 // Page TODO
 type Page struct {
-	Limit  int64 `json:"limit"`
-	Offset int64 `json:"offset"`
+	PageSize int64 `json:"page_size"`
+	Page     int64 `json:"page"`
 }
 
 // IsIllegal TODO
 func (page *Page) IsIllegal() bool {
-	if page.Limit == 0 {
+	if page.PageSize == 0 {
 		return false
 	}
-	if page.Limit > common.BKMaxPageSize && page.Limit != common.BKNoLimit {
+	if page.PageSize > common.BKMaxPageSize && page.PageSize != common.BKNoLimit {
 		return true
 	}
 	return false
@@ -167,8 +179,9 @@ type ResourceTypeChainFilter struct {
 
 // FetchInstanceInfoFilter TODO
 type FetchInstanceInfoFilter struct {
-	IDs   []string `json:"ids"`
-	Attrs []string `json:"attrs,omitempty"`
+	IDs []string `json:"ids"`
+	// Requires is copied from the request body and specifies which fields to return.
+	Requires []string `json:"-"`
 }
 
 // ListInstanceByPolicyFilter TODO
@@ -178,8 +191,10 @@ type ListInstanceByPolicyFilter struct {
 
 // AttrResource TODO
 type AttrResource struct {
-	ID          string `json:"id"`
-	DisplayName string `json:"display_name"`
+	ID             string `json:"id"`
+	DisplayName    string `json:"display_name"`
+	DataType       string `json:"data_type"`
+	HasValueSource bool   `json:"has_value_source"`
 }
 
 // ListAttrValueResult TODO

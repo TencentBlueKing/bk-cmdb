@@ -40,7 +40,7 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iamtypes.Typ
 	filter *types.ListInstanceByPolicyFilter, page types.Page, extraCond map[string]interface{}) (
 	*types.ListInstanceResult, error) {
 
-	if resourceType == iamtypes.Host {
+	if isHostResourceType(resourceType) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
@@ -88,11 +88,12 @@ func (lgc *Logics) ListInstanceByPolicy(kit *rest.Kit, resourceType iamtypes.Typ
 }
 
 // ListHostByPolicy list host instances that user is privileged to access by policy
+// TODO distinguish host and sys host if this method is still needed, delete it if not needed after ABAC is supported
 func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iamtypes.TypeID,
 	filter *types.ListInstanceByPolicyFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
-	if resourceType != iamtypes.Host {
+	if !isHostResourceType(resourceType) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
@@ -111,8 +112,8 @@ func (lgc *Logics) ListHostByPolicy(kit *rest.Kit, resourceType iamtypes.TypeID,
 		Condition: cond,
 		Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field,
 			common.BKCloudIDField},
-		Limit:  page.Limit,
-		Offset: page.Offset,
+		Limit:  page.PageSize,
+		Offset: (page.Page - 1) * page.PageSize,
 	}
 
 	hostRes, err := lgc.searchAuthResource(kit, param, resourceType)
@@ -173,7 +174,7 @@ func (lgc *Logics) ValidateListInstanceByPolicyRequest(kit *rest.Kit, req *types
 	}
 
 	if req.Page.IsIllegal() {
-		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
+		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.PageSize, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
 	}
 	return &filter, nil

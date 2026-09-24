@@ -109,7 +109,7 @@ func (lgc *Logics) getEnumOptionValues(kit *rest.Kit, filter *types.ListAttrValu
 
 	// filter options by keyword and ids and pagination
 	values := make([]types.AttrValueResource, 0)
-	start := page.Offset
+	start := (page.Page - 1) * page.PageSize
 	if start >= int64(len(options)) {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
@@ -122,7 +122,7 @@ func (lgc *Logics) getEnumOptionValues(kit *rest.Kit, filter *types.ListAttrValu
 		}
 	}
 	for _, option := range options[start:] {
-		if count == page.Limit {
+		if count == page.PageSize {
 			break
 		}
 		if idMap != nil && !idMap[option.ID] {
@@ -153,7 +153,7 @@ func (lgc *Logics) getListOptionValues(kit *rest.Kit, filter *types.ListAttrValu
 
 	// filter options by keyword and ids and pagination
 	values := make([]types.AttrValueResource, 0)
-	start := page.Offset
+	start := (page.Page - 1) * page.PageSize
 	if start >= int64(len(options)) {
 		return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
 	}
@@ -166,7 +166,7 @@ func (lgc *Logics) getListOptionValues(kit *rest.Kit, filter *types.ListAttrValu
 		}
 	}
 	for _, option := range options[start:] {
-		if count == page.Limit {
+		if count == page.PageSize {
 			break
 		}
 		if idMap != nil && !idMap[option] {
@@ -202,7 +202,7 @@ func (lgc *Logics) ValidateListAttrValueRequest(kit *rest.Kit, req *types.PullRe
 	}
 
 	if req.Page.IsIllegal() {
-		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
+		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.PageSize, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
 	}
 	return &filter, nil

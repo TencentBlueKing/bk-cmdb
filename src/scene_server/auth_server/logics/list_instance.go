@@ -48,8 +48,8 @@ func (lgc *Logics) listInstance(kit *rest.Kit, cond map[string]interface{}, reso
 	param := metadata.PullResourceParam{
 		Condition: cond,
 		Fields:    []string{idField, nameField},
-		Limit:     page.Limit,
-		Offset:    page.Offset,
+		Limit:     page.PageSize,
+		Offset:    (page.Page - 1) * page.PageSize,
 	}
 	data, err := lgc.searchAuthResource(kit, param, resourceType)
 	if err != nil {
@@ -204,8 +204,8 @@ func (lgc *Logics) ListModelInstance(kit *rest.Kit, resourceType iamtypes.TypeID
 		Condition: cond,
 		Fields:    []string{common.BKInstIDField, common.BKInstNameField},
 		Page: metadata.BasePage{
-			Start: int(page.Offset),
-			Limit: int(page.Limit),
+			Start: int((page.Page - 1) * page.PageSize),
+			Limit: int(page.PageSize),
 		},
 	}
 
@@ -255,7 +255,7 @@ func (lgc *Logics) getModelObjectIDWithIamParentID(kit *rest.Kit, parentID strin
 func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 	page types.Page) (*types.ListInstanceResult, error) {
 
-	if resourceType != iamtypes.Host {
+	if !isHostResourceType(resourceType) {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -271,7 +271,8 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iamtypes.TypeID,
 
 	}
 
-	if filter.Parent.Type != iamtypes.SysHostRscPoolDirectory && filter.Parent.Type != iamtypes.Business /* iam.Module */ {
+	if (resourceType == iamtypes.SysHost && filter.Parent.Type != iamtypes.SysResourcePoolDirectory) ||
+		(resourceType == iamtypes.Host && filter.Parent.Type != iamtypes.Business) {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -295,7 +296,7 @@ func (lgc *Logics) ListHostInstance(kit *rest.Kit, resourceType iamtypes.TypeID,
 		return nil, err
 	}
 
-	if len(hostIDs) == 0 || int64(len(hostIDs)) <= page.Offset {
+	if len(hostIDs) == 0 || int64(len(hostIDs)) <= (page.Page-1)*page.PageSize {
 		return &types.ListInstanceResult{Count: 0, Results: []types.InstanceResource{}}, nil
 	}
 
@@ -321,8 +322,8 @@ func (lgc *Logics) listHostInstanceFromDB(kit *rest.Kit, hostIDs []int64, page t
 		Condition: condition,
 		Fields: common.BKHostIDField + "," + common.BKHostInnerIPField + "," + common.BKHostInnerIPv6Field + "," +
 			common.BKCloudIDField,
-		Start: int(page.Offset),
-		Limit: int(page.Limit),
+		Start: int((page.Page - 1) * page.PageSize),
+		Limit: int(page.PageSize),
 	}
 
 	hostResp, err := lgc.CoreAPI.CoreService().Host().GetHosts(kit.Ctx, kit.Header, input)
@@ -380,12 +381,12 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 	if hostLen > 0 {
 		count = hostLen
 
-		hostIDLen := page.Offset + page.Limit
+		hostIDLen := page.Page * page.PageSize
 		if hostIDLen > hostLen {
 			hostIDLen = hostLen
 		}
 
-		for offset := page.Offset; offset < hostIDLen; offset += 500 {
+		for offset := (page.Page - 1) * page.PageSize; offset < hostIDLen; offset += 500 {
 			limit := offset + 500
 			if limit > hostIDLen {
 				limit = hostIDLen
@@ -414,8 +415,8 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 		listHostParam := &metadata.ListHostWithPage{
 			Fields: []string{common.BKHostIDField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field},
 			Page: metadata.BasePage{
-				Start: int(page.Offset),
-				Limit: int(page.Limit),
+				Start: int((page.Page - 1) * page.PageSize),
+				Limit: int(page.PageSize),
 			},
 		}
 
@@ -468,7 +469,7 @@ func (lgc *Logics) listHostInstanceFromCache(kit *rest.Kit, hostIDs []int64, pag
 func (lgc *Logics) ValidateListInstanceRequest(kit *rest.Kit, req *types.PullResourceReq) (*types.ListInstanceFilter,
 	error) {
 	if req.Page.IsIllegal() {
-		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.Limit, kit.Rid)
+		blog.Errorf("request page limit %d exceeds max page size, rid: %s", req.Page.PageSize, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommPageLimitIsExceeded)
 	}
 	if req.Filter == nil {
@@ -480,61 +481,6 @@ func (lgc *Logics) ValidateListInstanceRequest(kit *rest.Kit, req *types.PullRes
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "filter")
 	}
 	return &filter, nil
-}
-
-// ListSetInstance list biz topo set instances
-func (lgc *Logics) ListSetInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
-	page types.Page) (*types.ListInstanceResult, error) {
-
-	if filter == nil || filter.Parent == nil || filter.Parent.Type != iamtypes.Business {
-		return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
-	}
-
-	bizID, err := strconv.ParseInt(filter.Parent.ID, 10, 64)
-	if err != nil {
-		blog.Errorf("parse filter.parent.id %s failed, err: %v, rid: %s", filter.Parent.ID, err, kit.Rid)
-		return nil, err
-	}
-
-	// read mainline object association and construct mainline topo relation map
-	queryCond := &metadata.QueryCondition{
-		Condition: map[string]interface{}{common.AssociationKindIDField: common.AssociationKindMainline},
-		Fields:    []string{common.BKObjIDField, common.BKAsstObjIDField},
-	}
-	mlAsstRsp, err := lgc.CoreAPI.CoreService().Association().ReadModelAssociation(kit.Ctx, kit.Header, queryCond)
-	if err != nil {
-		blog.Errorf("search mainline association failed, err: %v, cond: %+v, rid: %s", err, queryCond, kit.Rid)
-		return nil, err
-	}
-	topoChildMap, topoParentMap := make(map[string]string), make(map[string]string)
-	for _, asst := range mlAsstRsp.Info {
-		if asst.ObjectID == common.BKInnerObjIDHost || asst.ObjectID == common.BKInnerObjIDModule {
-			continue
-		}
-		topoChildMap[asst.AsstObjID] = asst.ObjectID
-		topoParentMap[asst.ObjectID] = asst.AsstObjID
-	}
-
-	// generate set cond by biz id and keyword
-	cond := make(mapstr.MapStr)
-	if len(filter.Keyword) != 0 {
-		cond, err = lgc.genSetKeywordCond(kit, bizID, topoChildMap, filter.Keyword)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	cond[common.BKAppIDField] = bizID
-	setCond := &metadata.QueryCondition{
-		Condition: cond,
-		Fields:    []string{common.BKSetIDField, common.BKSetNameField, common.BKParentIDField, common.BKDefaultField},
-		Page: metadata.BasePage{
-			Limit: int(page.Limit),
-			Start: int(page.Offset),
-		},
-	}
-
-	return lgc.listSetInstance(kit, setCond, topoParentMap)
 }
 
 func (lgc *Logics) genSetKeywordCond(kit *rest.Kit, bizID int64, topoChildMap map[string]string, keyword string) (
@@ -672,31 +618,4 @@ func (lgc *Logics) listSetInstance(kit *rest.Kit, setCond *metadata.QueryConditi
 	}
 
 	return &types.ListInstanceResult{Count: int64(setResp.Data.Count), Results: instances}, nil
-}
-
-// ListModuleInstance list biz topo module instances
-func (lgc *Logics) ListModuleInstance(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
-	page types.Page) (*types.ListInstanceResult, error) {
-
-	if filter == nil || filter.Parent == nil || filter.Parent.Type != iamtypes.Set {
-		return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
-	}
-
-	setID, err := strconv.ParseInt(filter.Parent.ID, 10, 64)
-	if err != nil {
-		blog.Errorf("parse filter.parent.id %s failed, err: %v, rid: %s", filter.Parent.ID, err, kit.Rid)
-		return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
-	}
-
-	cond := map[string]interface{}{
-		common.BKSetIDField: setID,
-	}
-
-	if len(filter.Keyword) != 0 {
-		cond[common.BKModuleNameField] = map[string]interface{}{
-			common.BKDBLIKE:    filter.Keyword,
-			common.BKDBOPTIONS: "i",
-		}
-	}
-	return lgc.listInstance(kit, cond, resourceType, page)
 }
