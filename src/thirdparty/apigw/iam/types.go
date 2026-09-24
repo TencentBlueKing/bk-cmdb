@@ -125,8 +125,7 @@ type ResourceType struct {
 	// TODO: IAM currently does not support NameEn, need to confirm with IAM how to handle it.
 	NameEn    string         `json:"name_en,omitempty"`
 	Ancestors []types.TypeID `json:"ancestors"`
-	// TODO: IAM currently does not support TenantID, need to confirm with IAM how to handle it.
-	TenantID string `json:"tenant_id,omitempty"`
+	TenantID  string         `json:"tenant_id,omitempty"`
 }
 
 // ResourceAction is IAM V4 action
@@ -138,8 +137,7 @@ type ResourceAction struct {
 	ResourceTypeID types.TypeID   `json:"resource_type_id"`
 	AuthMode       types.AuthMode `json:"auth_mode,omitempty"`
 	// TODO: IAM currently does not support Hidden, need to confirm with IAM how to handle it.
-	Hidden bool `json:"hidden,omitempty"`
-	// TODO: IAM currently does not support TenantID, need to confirm with IAM how to handle it.
+	Hidden   bool   `json:"hidden,omitempty"`
 	TenantID string `json:"tenant_id,omitempty"`
 }
 
@@ -169,6 +167,7 @@ type Role struct {
 	// TODO: IAM currently does not support DescriptionEn, need to confirm with IAM how to handle it.
 	DescriptionEn string       `json:"description_en,omitempty"`
 	Actions       []RoleAction `json:"actions"`
+	TenantID      string       `json:"tenant_id,omitempty"`
 }
 
 // UpdateRoleReq is the request body of updating a role

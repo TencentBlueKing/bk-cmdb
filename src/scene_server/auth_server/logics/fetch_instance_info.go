@@ -27,7 +27,6 @@ import (
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	sdktypes "configcenter/src/scene_server/auth_server/sdk/types"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
@@ -44,21 +43,21 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iamtypes.TypeID
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, "type")
 	}
 
-	if len(filter.Attrs) == 0 {
+	if len(filter.Requires) == 0 {
 		return make([]map[string]interface{}, 0), nil
 	}
 
 	// if attribute filter is set, add id attribute and convert display_name to the real name field
 	var attrs []string
 	needPath := false
-	if len(filter.Attrs) > 0 {
-		attrs = append(filter.Attrs, idField)
+	if len(filter.Requires) > 0 {
+		attrs = append(filter.Requires, idField)
 		for index, attr := range attrs {
 			if attr == types.NameField {
 				attrs[index] = nameField
 				continue
 			}
-			if attr == sdktypes.IamPathKey {
+			if attr == types.IamPathField {
 				needPath = true
 			}
 		}
@@ -105,7 +104,7 @@ func (lgc *Logics) FetchInstanceInfo(kit *rest.Kit, resourceType iamtypes.TypeID
 			instance[types.NameField] = util.GetStrByInterface(instance[nameField])
 		}
 		if needPath {
-			instance[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, instance)
+			instance[types.IamPathField], err = lgc.getResourceIamPath(kit, resourceType, instance)
 			if err != nil {
 				blog.ErrorJSON("getResourceIamPath failed, error: %s, instance: %s, rid: %s", err.Error(), instance,
 					kit.Rid)
@@ -123,7 +122,7 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iamtypes.TypeID, fi
 	if !isHostResourceType(resourceType) {
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
-	if len(filter.Attrs) == 0 {
+	if len(filter.Requires) == 0 {
 		return make([]map[string]interface{}, 0), nil
 	}
 
@@ -131,15 +130,15 @@ func (lgc *Logics) FetchHostInfo(kit *rest.Kit, resourceType iamtypes.TypeID, fi
 	var attrs []string
 	needPath := false
 	hasName := false
-	if len(filter.Attrs) > 0 {
-		attrs = append(filter.Attrs, common.BKHostIDField)
+	if len(filter.Requires) > 0 {
+		attrs = append(filter.Requires, common.BKHostIDField)
 		for index, attr := range attrs {
 			if attr == types.NameField {
 				attrs[index] = common.BKHostInnerIPField
 				hasName = true
 				continue
 			}
-			if attr == sdktypes.IamPathKey {
+			if attr == types.IamPathField {
 				needPath = true
 			}
 		}
@@ -255,7 +254,7 @@ func (lgc *Logics) enrichHostInfo(kit *rest.Kit, hosts []map[string]interface{},
 		}
 
 		if needPath {
-			host[sdktypes.IamPathKey] = hostPathMap[hostID]
+			host[types.IamPathField] = hostPathMap[hostID]
 		}
 	}
 
@@ -270,21 +269,21 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iamtypes.TypeID,
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, common.BKResourceTypeField)
 	}
 
-	if len(filter.Attrs) == 0 {
+	if len(filter.Requires) == 0 {
 		return make([]map[string]interface{}, 0), nil
 	}
 
 	// if attribute filter is set, add id attribute and convert display_name to the real name field
 	var attrs []string
 	needPath := false
-	if len(filter.Attrs) > 0 {
-		attrs = append(filter.Attrs, common.BKInstIDField)
+	if len(filter.Requires) > 0 {
+		attrs = append(filter.Requires, common.BKInstIDField)
 		for index, attr := range attrs {
 			if attr == types.NameField {
 				attrs[index] = common.BKInstNameField
 				continue
 			}
-			if attr == sdktypes.IamPathKey {
+			if attr == types.IamPathField {
 				needPath = true
 			}
 		}
@@ -335,7 +334,7 @@ func (lgc *Logics) FetchObjInstInfo(kit *rest.Kit, resourceType iamtypes.TypeID,
 		}
 		if needPath {
 			var err error
-			instance[sdktypes.IamPathKey], err = lgc.getResourceIamPath(kit, resourceType, instance)
+			instance[types.IamPathField], err = lgc.getResourceIamPath(kit, resourceType, instance)
 			if err != nil {
 				blog.ErrorJSON("get iam path failed, err: %s, instance: %s, rid: %s", err, instance, kit.Rid)
 				return nil, err
@@ -361,6 +360,7 @@ func (lgc *Logics) ValidateFetchInstanceInfoRequest(kit *rest.Kit,
 		blog.ErrorJSON("request filter %s ids not set for fetch_instance_info method, rid: %s", req.Filter, kit.Rid)
 		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "filter.ids")
 	}
+	filter.Requires = req.Requires
 	return &filter, nil
 }
 

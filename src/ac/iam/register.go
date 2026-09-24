@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"time"
 
 	iamtypes "configcenter/src/ac/iam/types"
@@ -32,6 +31,9 @@ import (
 	"configcenter/src/common/util"
 	"configcenter/src/storage/dal/redis"
 	"configcenter/src/thirdparty/apigw/iam"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 // tryLockRegister try lock register iam operation to make sure only one task runs at the same time, retry 3 times.
@@ -184,7 +186,7 @@ func (i IAM) registerSystem(ctx context.Context, header http.Header, host string
 		return nil
 	}
 
-	if !reflect.DeepEqual(systemInfo, sys) {
+	if !cmp.Equal(systemInfo, sys, cmpopts.IgnoreFields(iam.System{}, "Managers", "NameEn", "DescriptionEn")) {
 		if err = i.Client.UpdateSystem(ctx, header, sys); err != nil {
 			blog.Errorf("update system(%+v) failed, err: %v, rid: %s", sys, err, rid)
 			return err
@@ -333,11 +335,11 @@ func getNameConflictItems[T any, ID comparable](items []T, prevNameMap map[ID]ia
 		prevName := prevNameMap[id]
 		isConflict := false
 
-		if prevName.Name != "" && nameMap[prevName.Name] != id {
+		if owner, exists := nameMap[prevName.Name]; prevName.Name != "" && exists && owner != id {
 			isConflict = true
 			updateName(&item, prevName.Name+"_")
 		}
-		if prevName.NameEn != "" && nameEnMap[prevName.NameEn] != id {
+		if owner, exists := nameEnMap[prevName.NameEn]; prevName.NameEn != "" && exists && owner != id {
 			isConflict = true
 			updateEnName(&item, prevName.NameEn+"_")
 		}

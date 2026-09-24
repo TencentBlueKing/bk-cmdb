@@ -383,7 +383,7 @@ func genGeneralCacheMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePul
 
 			// only support query name field, name field is the same with the id field
 			hasNameField := false
-			for _, attr := range filter.Attrs {
+			for _, attr := range filter.Requires {
 				if attr == types.NameField {
 					hasNameField = true
 					break
@@ -397,7 +397,7 @@ func genGeneralCacheMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePul
 			for _, id := range filter.IDs {
 				_, exists := general.SupportedResTypeMap[general.ResType(id)]
 				if exists {
-					res = append(res, map[string]interface{}{types.NameField: id})
+					res = append(res, map[string]interface{}{types.IDField: id, types.NameField: id})
 				}
 			}
 

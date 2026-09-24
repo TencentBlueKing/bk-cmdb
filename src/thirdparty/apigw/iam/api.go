@@ -29,7 +29,6 @@ import (
 	"configcenter/src/apimachinery/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
-	"configcenter/src/thirdparty/apigw/apigwutil"
 	"configcenter/src/thirdparty/apigw/apigwutil/user"
 )
 
@@ -339,8 +338,8 @@ func (i *iam) RegisterActions(ctx context.Context, header http.Header, actions [
 		Do())
 }
 
-// UpdateAction update action in IAM, only the action name can be updated, changing the related resource type
-// needs to delete the action and register it again
+// UpdateAction update action in IAM, only the action name and auth mode can be updated,
+// changing the related resource type needs to delete the action and register it again
 func (i *iam) UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID,
 	req *UpdateActionReq) error {
 
@@ -485,85 +484,9 @@ func (i *iam) DeleteRoleActions(ctx context.Context, header http.Header, roleID 
 		WithContext(ctx).
 		WithHeaders(h).
 		WithParam(idsParam, strings.Join(ids, ",")).
-		Body(nil).
 		Do())
 
 	return err
-}
-
-// DeleteActionPolicies delete action policies in IAM
-func (i *iam) DeleteActionPolicies(ctx context.Context, header http.Header, actionID types.ActionID) error {
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return err
-	}
-	resp := new(apigwutil.ApiGWBaseResponse)
-	subPath := "/api/v1/model/systems/%s/actions/%s/policies"
-
-	result := i.service.Client.Delete().
-		SubResourcef(subPath, types.SystemIDCMDB, actionID).
-		WithContext(ctx).
-		WithHeaders(h).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != 0 {
-		return &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return nil
-}
-
-// ListPolicies list iam policies
-func (i *iam) ListPolicies(ctx context.Context, header http.Header, params *ListPoliciesParams) (*ListPoliciesData,
-	error) {
-
-	parsedParams := map[string]string{"action_id": string(params.ActionID)}
-	if params.Page != 0 {
-		parsedParams["page"] = strconv.FormatInt(params.Page, 10)
-	}
-	if params.PageSize != 0 {
-		parsedParams["page_size"] = strconv.FormatInt(params.PageSize, 10)
-	}
-	if params.Timestamp != 0 {
-		parsedParams["timestamp"] = strconv.FormatInt(params.Timestamp, 10)
-	}
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return nil, err
-	}
-	subPath := "/api/v1/open/systems/%s/policies"
-
-	resp := new(ListPoliciesResp)
-	result := i.service.Client.Get().
-		SubResourcef(subPath, types.SystemIDCMDB).
-		WithContext(ctx).
-		WithHeaders(h).
-		WithParams(parsedParams).
-		Body(nil).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != 0 {
-		return nil, &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-	return resp.Data, nil
 }
 
 // GetUserPolicy get a user's policy with a action and resources

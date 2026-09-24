@@ -77,11 +77,6 @@ type ClientI interface {
 	// DeleteRoleActions unbind actions from a role
 	DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actionIDs []types.ActionID) error
 
-	// DeleteActionPolicies delete action policies in IAM
-	DeleteActionPolicies(ctx context.Context, header http.Header, actionID types.ActionID) error
-	// ListPolicies list action policies in IAM
-	ListPolicies(ctx context.Context, header http.Header, params *ListPoliciesParams) (*ListPoliciesData, error)
-
 	ListUserPolicies(ctx context.Context, header http.Header, opts *ListPolicyOptions) ([]*ActionPolicy, error)
 	GetUserPolicy(ctx context.Context, header http.Header, opt *GetPolicyOption) (*operator.Policy, error)
 }

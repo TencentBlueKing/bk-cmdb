@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	iamtypes "configcenter/src/ac/iam/types"
+	"configcenter/src/common"
 	"configcenter/src/common/metadata"
 	"configcenter/src/thirdparty/apigw/iam"
 )
@@ -507,7 +508,7 @@ func genPlatformRoles() []iam.Role {
 			ID:          "tenant_set_visitor",
 			Name:        "租户集访问者",
 			Description: "租户集访问者",
-			// TODO set tenant after iam support it
+			TenantID:    common.BKDefaultTenantID,
 			Actions: []iam.RoleAction{
 				{ID: iamtypes.ViewTenantSet, ResourceTypeID: iamtypes.TenantSet},
 				{ID: iamtypes.AccessTenantSet, ResourceTypeID: iamtypes.TenantSet},
@@ -521,7 +522,7 @@ func genPlatformRoles() []iam.Role {
 // genDynamicInstRoles generate manager and viewer roles for each dynamic model
 func genDynamicInstRoles(tenantObjects map[string][]metadata.Object) []iam.Role {
 	roles := make([]iam.Role, 0)
-	for _, objects := range tenantObjects {
+	for tenantID, objects := range tenantObjects {
 		for _, obj := range objects {
 			managerActions, viewerActions := make([]iam.RoleAction, 0), make([]iam.RoleAction, 0)
 
@@ -536,17 +537,18 @@ func genDynamicInstRoles(tenantObjects map[string][]metadata.Object) []iam.Role 
 				}
 			}
 
-			// TODO set tenant after iam support it
 			roles = append(roles, iam.Role{
 				ID:          GenIAMDynamicRoleID(obj.ID, "manager"),
 				Name:        fmt.Sprintf("%s实例管理员", obj.ObjectName),
 				Description: fmt.Sprintf("%s实例管理员", obj.ObjectName),
 				Actions:     managerActions,
+				TenantID:    tenantID,
 			}, iam.Role{
 				ID:          GenIAMDynamicRoleID(obj.ID, "viewer"),
 				Name:        fmt.Sprintf("%s实例查看者", obj.ObjectName),
 				Description: fmt.Sprintf("%s实例查看者", obj.ObjectName),
 				Actions:     viewerActions,
+				TenantID:    tenantID,
 			})
 		}
 	}
