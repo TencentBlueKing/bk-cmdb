@@ -1681,7 +1681,7 @@ apigatewaySync:
   ## 此变量在运维维护的变量中，没有对应的变量
   nodeManAppCode: "bk_nodeman"
   ## 此变量在运维维护的变量中，没有对应的变量
-  nodeMgrAppCode: "bk-nodemgr"
+  nodeMgrAppCode: "bk_nodemgr"
   ## 此变量在运维维护的变量中，没有对应的变量
   bcsAppCode: "bk_bcs_app"
   ## 此变量在运维维护的变量中，没有对应的变量
@@ -1704,6 +1704,14 @@ apigatewaySync:
   cwAitsmAppCode: "cw_aitsm"
   ## 此变量在运维维护的变量中，没有对应的变量
   opsAppCode: "bk-ops"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  dbmAppCode: "bk_dbm"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  aidevAppCode: "bk_aidev"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  faraAppCode: "bk_fara"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  bkchatAppCode: "bkchat"
 
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:

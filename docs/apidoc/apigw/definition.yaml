@@ -139,51 +139,55 @@ grant_permissions:
   - bk_app_code: {{ environ.BK_NODEMGR_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
-      - search_business
-      - search_cloud_area
-      - search_biz_inst_topo
-      - get_biz_internal_module
-      - find_topo_node_paths
-      - find_module_batch
-      - list_hosts_without_biz
-      - list_biz_hosts
-      - list_service_template
-      - list_service_instance
-      - list_process_instance
-      - list_proc_template
-      - find_set_batch
-      - search_set
-      - search_module
-      - search_object_attribute
-      - find_host_topo_relation
+      - add_host_to_business_idle
+      - add_host_to_resource_pool
+      - batch_update_host
+      - bind_host_agent
+      - create_biz_custom_field
+      - create_cloud_area
+      - create_dynamic_group
+      - delete_cloud_area
+      - delete_dynamic_group
+      - execute_dynamic_group
       - find_host_biz_relations
       - find_host_by_service_template
       - find_host_by_set_template
       - find_host_by_topo
-      - find_host_relations_with_topo
-      - resource_watch
       - find_host_identifier_push_result
-      - list_service_instance_detail
-      - create_dynamic_group
+      - find_host_relations_with_topo
+      - find_host_topo_relation
+      - find_module_batch
+      - find_set_batch
+      - find_topo_node_paths
+      - get_biz_brief_cache_topo
+      - get_biz_internal_module
       - get_dynamic_group
-      - search_dynamic_group
-      - execute_dynamic_group
       - get_mainline_object_topo
+      - list_biz_hosts
       - list_biz_hosts_topo
+      - list_hosts_without_biz
+      - list_proc_template
+      - list_process_instance
+      - list_service_instance
       - list_service_instance_by_host
       - list_service_instance_by_set_template
+      - list_service_instance_detail
+      - list_service_template
       - list_set_template
-      - batch_update_host
-      - bind_host_agent
-      - unbind_host_agent
-      - add_host_to_business_idle
       - push_host_identifier
-      - update_dynamic_group
-      - delete_dynamic_group
-      - create_cloud_area
+      - resource_watch
+      - search_biz_inst_topo
+      - search_business
+      - search_cloud_area
+      - search_dynamic_group
+      - search_module
+      - search_object_attribute
+      - search_set
+      - unbind_host_agent
       - update_cloud_area
-      - delete_cloud_area
+      - update_dynamic_group
       - update_host_cloud_area_field
+      - list_resource_pool_hosts
   - bk_app_code: {{ environ.BK_BCS_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
@@ -222,7 +226,6 @@ grant_permissions:
       - list_kube_container
       - batch_create_kube_pod
       - batch_delete_kube_pod
-      - batch_delete_kube_cluster
   - bk_app_code: {{ environ.BK_BCS_SYNC_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
@@ -389,6 +392,7 @@ grant_permissions:
       - find_host_by_topo
       - list_host_total_mainline_topo
       - find_topo_node_paths
+      - find_host_biz_relations
   - bk_app_code: {{ environ.BK_DATA_WEB_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
@@ -400,12 +404,67 @@ grant_permissions:
     grant_dimension: "resource"
     resource_names:
       - search_business
+      - resource_watch
+      - list_biz_hosts
+      - find_host_biz_relations
   - bk_app_code: {{ environ.CW_AITSM_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
       - search_cloud_area
       - search_business
       - search_object_attribute
+  - bk_app_code: {{ environ.BK_DBM_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - list_hosts_without_biz
+      - search_business
+      - search_module
+      - create_set
+      - search_set
+      - create_module
+      - delete_module
+      - transfer_host_across_biz
+      - transfer_host_module
+      - update_business
+      - update_host
+      - batch_update_host
+      - create_biz_custom_field
+      - search_object_attribute
+      - create_object_attribute
+      - transfer_host_to_idlemodule
+      - transfer_host_to_recyclemodule
+      - search_biz_inst_topo
+      - list_biz_hosts
+      - get_biz_internal_module
+      - find_host_topo_relation
+      - search_cloud_area
+      - list_host_total_mainline_topo
+      - create_service_instance
+      - list_service_instance
+      - list_service_instance_detail
+      - add_label_for_service_instance
+      - delete_service_instance
+      - list_process_instance
+      - update_process_instance
+      - find_module_with_relation
+      - find_module_host_relation
+      - find_host_biz_relations
+      - resource_watch
+  - bk_app_code: {{ environ.BK_AIDEV_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - search_business
+  - bk_app_code: {{ environ.BK_FARA_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - search_business
+      - search_object_attribute
+  - bk_app_code: {{ environ.BK_BKCHAT_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - list_biz_hosts
+      - search_biz_inst_topo
+      - search_business
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
