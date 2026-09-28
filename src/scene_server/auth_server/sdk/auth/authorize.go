@@ -49,7 +49,9 @@ func (a *Authorize) Authorize(ctx context.Context, header http.Header, opts *iam
 			Type: iam.SubjectType(opts.Subject.Type),
 			ID:   opts.Subject.ID,
 		},
-		ActionID: iamtypes.ActionID(opts.Action.ID),
+		Action: iam.AuthAction{
+			ID: iamtypes.ActionID(opts.Action.ID),
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -144,9 +146,11 @@ func (a *Authorize) listUserPlanBatchWithCompress(ctx context.Context, header ht
 		actionIDMap[b.Action.ID] = struct{}{}
 	}
 
-	actionIDs := make([]iamtypes.ActionID, 0, len(actionIDMap))
+	actions := make([]iam.AuthAction, 0, len(actionIDMap))
 	for actionID := range actionIDMap {
-		actionIDs = append(actionIDs, iamtypes.ActionID(actionID))
+		actions = append(actions, iam.AuthAction{
+			ID: iamtypes.ActionID(actionID),
+		})
 	}
 
 	plans, err := a.iam.HybridPlanByActions(ctx, header, &iam.PlanByActionsReq{
@@ -154,7 +158,7 @@ func (a *Authorize) listUserPlanBatchWithCompress(ctx context.Context, header ht
 			Type: iam.SubjectType(opts.Subject.Type),
 			ID:   opts.Subject.ID,
 		},
-		ActionIDs: actionIDs,
+		Actions: actions,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("list user's plan failed, err: %s", err)
@@ -187,7 +191,9 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, header http.Hea
 			Type: iam.SubjectType(opts.Subject.Type),
 			ID:   opts.Subject.ID,
 		},
-		ActionID: iamtypes.ActionID(opts.Action.ID),
+		Action: iam.AuthAction{
+			ID: iamtypes.ActionID(opts.Action.ID),
+		},
 	})
 	if err != nil {
 		return nil, err

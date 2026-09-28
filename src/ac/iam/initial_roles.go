@@ -247,6 +247,35 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
+			ID:          iamtypes.ResourcePoolHostManager,
+			Name:        "主机池主机管理员",
+			Description: "主机池主机管理员",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.EditResourcePoolHost, ResourceTypeID: iamtypes.SysHost},
+				{ID: iamtypes.DeleteResourcePoolHost, ResourceTypeID: iamtypes.SysHost},
+				{ID: iamtypes.TransferHostOutOfResPoolDir, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+				{ID: iamtypes.TransferHostToResPoolDir, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+			},
+		},
+		{
+			ID:          iamtypes.HostTransferor,
+			Name:        "业务主机转移者",
+			Description: "业务主机转移者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.TransferHostOutOfBiz, ResourceTypeID: iamtypes.Business},
+				{ID: iamtypes.TransferHostIntoBiz, ResourceTypeID: iamtypes.Business},
+			},
+		},
+		{
+			ID:          iamtypes.ResourcePoolHostTransferor,
+			Name:        "主机池主机转移者",
+			Description: "主机池主机转移者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.TransferHostOutOfResPoolDir, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+				{ID: iamtypes.TransferHostToResPoolDir, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+			},
+		},
+		{
 			ID:          iamtypes.BizSvcTplManager,
 			Name:        "服务模板管理员",
 			Description: "服务模板管理员",
@@ -344,6 +373,14 @@ func genCreatorRoles() []iam.Role {
 			},
 		},
 		{
+			ID:          iamtypes.ResourcePoolHostCreator,
+			Name:        "主机池主机创建者",
+			Description: "主机池主机创建者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.CreateResourcePoolHost, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+			},
+		},
+		{
 			ID:          iamtypes.FieldTplCreator,
 			Name:        "字段组合模板创建者",
 			Description: "字段组合模板创建者",
@@ -363,6 +400,14 @@ func genViewerRoles() []iam.Role {
 			Description: "检索服务使用者",
 			Actions: []iam.RoleAction{
 				{ID: iamtypes.UseFulltextSearch},
+			},
+		},
+		{
+			ID:          iamtypes.ResourcePoolHostViewer,
+			Name:        "主机池主机查看者",
+			Description: "主机池主机查看者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.ViewResourcePoolHost},
 			},
 		},
 		{
@@ -387,7 +432,6 @@ func genViewerRoles() []iam.Role {
 			Description: "模型查看者",
 			Actions: []iam.RoleAction{
 				{ID: iamtypes.ViewSysModel, ResourceTypeID: iamtypes.SysModel},
-				{ID: iamtypes.ViewModelTopo},
 			},
 		},
 		{
@@ -508,11 +552,11 @@ func genPlatformRoles() []iam.Role {
 			ID:          iamtypes.TenantSetVisitor,
 			Name:        "租户集访问者",
 			Description: "租户集访问者",
-			TenantID:    common.BKDefaultTenantID,
 			Actions: []iam.RoleAction{
 				{ID: iamtypes.ViewTenantSet, ResourceTypeID: iamtypes.TenantSet},
 				{ID: iamtypes.AccessTenantSet, ResourceTypeID: iamtypes.TenantSet},
 			},
+			TenantID: common.BKDefaultTenantID,
 		},
 	}
 

@@ -453,6 +453,12 @@ const (
 	FieldTplManager RoleID = "field_tpl_manager"
 	// HostManager is the business host manager role
 	HostManager RoleID = "host_manager"
+	// ResourcePoolHostManager is the resource pool host manager role
+	ResourcePoolHostManager RoleID = "resource_pool_host_manager"
+	// HostTransferor is the business host transferor role
+	HostTransferor RoleID = "host_transferor"
+	// ResourcePoolHostTransferor is the resource pool host transferor role
+	ResourcePoolHostTransferor RoleID = "res_pool_host_transferor"
 	// BizSvcTplManager is the business service template manager role
 	BizSvcTplManager RoleID = "biz_svc_tpl_manager"
 	// BizSetTplManager is the business set template manager role
@@ -476,11 +482,15 @@ const (
 	AsstTypeCreator RoleID = "asst_type_creator"
 	// HostPoolDirCreator is the host pool directory creator role
 	HostPoolDirCreator RoleID = "host_pool_dir_creator"
+	// ResourcePoolHostCreator is the resource pool host creator role
+	ResourcePoolHostCreator RoleID = "resource_pool_host_creator"
 	// FieldTplCreator is the field grouping template creator role
 	FieldTplCreator RoleID = "field_tpl_creator"
 
 	// FulltextSearchUser is the fulltext search user role
 	FulltextSearchUser RoleID = "fulltext_search_user"
+	// ResourcePoolHostViewer is the resource pool host viewer role
+	ResourcePoolHostViewer RoleID = "resource_pool_host_viewer"
 	// ProjectViewer is the project viewer role
 	ProjectViewer RoleID = "project_viewer"
 	// CloudAreaViewer is the cloud area viewer role

@@ -235,16 +235,20 @@ type AuthSubject struct {
 	ID   string      `json:"id"`
 }
 
+type AuthAction struct {
+	ID types.ActionID `json:"id"`
+}
+
 // PlanReq is the request of the hybrid plan api.
 type PlanReq struct {
-	Subject  AuthSubject    `json:"subject"`
-	ActionID types.ActionID `json:"action_id"`
+	Subject AuthSubject `json:"subject"`
+	Action  AuthAction  `json:"action"`
 }
 
 // PlanByActionsReq is the request of the hybrid plan by actions api.
 type PlanByActionsReq struct {
-	Subject   AuthSubject      `json:"subject"`
-	ActionIDs []types.ActionID `json:"action_ids"`
+	Subject AuthSubject  `json:"subject"`
+	Actions []AuthAction `json:"actions"`
 }
 
 // ActionPlanRes is one action's authorization plan of the hybrid plan by actions api.
