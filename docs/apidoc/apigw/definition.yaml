@@ -450,6 +450,7 @@ grant_permissions:
       - get_biz_brief_cache_topo
       - get_resource_pool_biz
       - list_hosts_without_biz
+      - list_resource_pool_hosts
       - find_host_biz_relations
       - resource_watch
   - bk_app_code: {{ environ.BK_MONITOR_APP_CODE }}
@@ -478,6 +479,7 @@ grant_permissions:
       - find_topo_node_paths
       - search_dynamic_group
       - execute_dynamic_group
+      - get_dynamic_group
       - resource_watch
   - bk_app_code: {{ environ.BK_OPS_APP_CODE }}
     grant_dimension: "resource"
@@ -599,6 +601,8 @@ grant_permissions:
       - search_cloud_area
       - search_business
       - search_object_attribute
+      - search_classifications
+      - find_instance_association
   - bk_app_code: {{ environ.BK_DBM_APP_CODE }}
     grant_dimension: "resource"
     resource_names:
@@ -651,6 +655,10 @@ grant_permissions:
       - list_biz_hosts
       - search_biz_inst_topo
       - search_business
+  - bk_app_code: {{ environ.BK_MS_APP_CODE }}
+    grant_dimension: "resource"
+    resource_names:
+      - open_search_business
 
 # 应用申请指定网关所有资源的权限，待网关管理员审批后，应用才可访问网关资源；
 # 用于命令 `apply_apigw_permissions`
