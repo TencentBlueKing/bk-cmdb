@@ -479,7 +479,7 @@ reference: [QueryBuilder Rules](https://github.com/Tencent/bk-cmdb/blob/master/s
 | message    | string | Error message returned in case of failure                        |
 | permission | object | Permission information                                           |
 | request_id | string | Request chain ID                                                 |
-| data       | array  | Request result                                                   |
+| data       | object | Request result                                                   |
 
 #### data
 

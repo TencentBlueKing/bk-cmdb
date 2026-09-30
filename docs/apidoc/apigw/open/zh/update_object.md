@@ -11,7 +11,7 @@
 | bk_classification_id | string             | 是  | 对象模型的分类ID，只能用英文字母序列命名                                                                      |
 | bk_obj_name          | string             | 否  | 对象模型的名字                                                                                    |
 | bk_obj_icon          | string             | 否  | 对象模型的ICON信息，用于前端显示，取值可参考[(modleIcon.json)](/static/esb/api_docs/res/cc/modleIcon.json)     |
-| position             | json object string | 否  | 用于前端展示的坐标                                                                                  |
+| position             | string             | 否  | 用于前端展示的坐标，值为 JSON 对象的字符串                                                                 |
 | obj_sort_number      | int                | 否  | 对象模型在所属模型分组下的排序序号；更新该值时当设置的值超过分组模型中该值的最大值，则更新的值为最大值加一，如当设置的值为999，而当前分组模型中该值的最大值为6，则更新值设置为7 |
 
 ### 调用示例

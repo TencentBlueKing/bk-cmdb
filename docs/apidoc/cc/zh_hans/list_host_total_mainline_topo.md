@@ -457,7 +457,7 @@
 | message    | string | 请求失败返回的错误信息                 |
 | permission | object | 权限信息                        |
 | request_id | string | 请求链id                       |
-| data       | array  | 请求结果                        |
+| data       | object | 请求结果                        |
 
 #### data
 

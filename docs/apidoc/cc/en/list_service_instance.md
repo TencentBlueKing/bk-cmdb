@@ -13,7 +13,7 @@ Query service instance list based on business ID, with the option to include mod
 | bk_biz_id    | int       | Yes      | Business ID                                                  |
 | bk_module_id | int       | No       | Module ID                                                    |
 | bk_host_ids  | int array | No       | List of host IDs, supports up to 1000 host IDs               |
-| selectors    | int       | No       | Label filtering function, operator options: `=`, `!=`, `exists`, `!`, `in`, `notin` |
+| selectors    | array     | No       | Label filtering function, operator options: `=`, `!=`, `exists`, `!`, `in`, `notin` |
 | page         | object    | No       | Pagination parameters                                        |
 | search_key   | string    | No       | Name filtering parameter, can be filled with characters included in the process name for fuzzy search |
 

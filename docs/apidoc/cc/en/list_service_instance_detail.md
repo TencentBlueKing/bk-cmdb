@@ -156,7 +156,7 @@ Note: Only one of the parameters `bk_host_list` and `bk_host_id` can be effectiv
 | Field                      | Type   | Description                                                  |
 | -------------------------- | ------ | ------------------------------------------------------------ |
 | id                         | int    | Service instance ID                                          |
-| name                       | array  | Service instance name                                        |
+| name                       | string | Service instance name                                        |
 | service_template_id        | int    | Service template ID                                          |
 | bk_host_id                 | int    | Host ID                                                      |
 | bk_host_innerip            | string | Host IP                                                      |

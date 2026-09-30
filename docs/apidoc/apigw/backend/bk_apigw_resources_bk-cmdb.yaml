@@ -1,11 +1,10 @@
-swagger: '2.0'
-basePath: /
+openapi: 3.0.1
 info:
-  version: '0.1'
   title: API Gateway Resources
-  description: ''
-schemes:
-  - http
+  description: ""
+  version: "0.1"
+servers:
+  - url: /
 paths:
   /api/v3/set/{biz_id}/batch:
     post:

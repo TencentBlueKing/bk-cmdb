@@ -6,11 +6,16 @@
 
 | 参数名称       | 参数类型   | 必选 | 描述           |
 |------------|--------|----|--------------|
-| bk_inst_id | int    | 是  | 实例id         |
-| bk_obj_id  | string | 是  | 模型id         |
+| condition  | object | 是  | 查询条件         |
 | fields     | array  | 是  | 需要返回的字段      |
-| start      | int    | 否  | 记录开始位置       |
-| limit      | int    | 否  | 分页大小，最大值500。 |
+| page       | object | 否  | 分页参数         |
+
+#### condition
+
+| 参数名称       | 参数类型   | 必选 | 描述   |
+|------------|--------|----|------|
+| bk_inst_id | int    | 是  | 实例id |
+| bk_obj_id  | string | 是  | 模型id |
 
 #### page
 

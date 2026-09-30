@@ -10,7 +10,7 @@ Delete the association between instances based on the ID of the instance relatio
 
 | Field     | Type   | Required | Description                                                  |
 | :-------- | :----- | :------- | :----------------------------------------------------------- |
-| id        | int    | Yes      | ID of the instance relationship (Note: not the identity ID of the model instance), up to 500 |
+| id        | array  | Yes      | ID of the instance relationship (Note: not the identity ID of the model instance), up to 500 |
 | bk_obj_id | string | Yes      | The unique name of the source model of the relationship      |
 
 ### Request Parameter Example

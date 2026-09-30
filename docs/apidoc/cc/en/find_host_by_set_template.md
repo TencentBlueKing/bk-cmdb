@@ -11,7 +11,7 @@ Get hosts under a set template (Version: v3.8.6, Permission: Business Access Per
 | Field                   | Type         | Required | Description                                                  |
 | ----------------------- | ------------ | -------- | ------------------------------------------------------------ |
 | bk_biz_id               | int          | Yes      | Business ID                                                  |
-| bk_service_template_ids | int array    | Yes      | List of cluster template IDs, up to 500                      |
+| bk_set_template_ids | int array    | Yes      | List of cluster template IDs, up to 500                      |
 | bk_set_ids              | int array    | No       | List of cluster IDs, up to 500                               |
 | fields                  | string array | Yes      | List of host attributes, controls which fields are included in the module information |
 | page                    | object       | Yes      | Pagination information                                       |

@@ -445,7 +445,7 @@
 | code       | int    | 错误编吗。0表示success，>0表示失败错误    |
 | message    | string | 请求失败返回的错误信息                 |
 | permission | object | 权限信息                        |
-| data       | array  | 请求结果                        |
+| data       | object | 请求结果                        |
 
 #### data
 
