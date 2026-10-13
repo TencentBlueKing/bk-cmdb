@@ -222,9 +222,9 @@ func (v *viewer) registerModelActions(ctx context.Context, h http.Header, object
 		return err
 	}
 
-	existMap := make(map[iamtypes.ActionID]struct{})
+	existMap := make(map[iamtypes.ActionID]iamtypes.AuthMode)
 	for _, action := range existActions {
-		existMap[action.ID] = struct{}{}
+		existMap[action.ID] = action.AuthMode
 	}
 
 	tenantID := httpheader.GetTenantID(h)
@@ -233,13 +233,14 @@ func (v *viewer) registerModelActions(ctx context.Context, h http.Header, object
 	}
 	actions := genDynamicActions(tenantObjects)
 	newActions := make([]iam.ResourceAction, 0)
-	updateActions := make([]iam.ResourceAction, 0)
+	updateActions := make([]updateActionInfo, 0)
 	for _, action := range actions {
-		if _, exists := existMap[action.ID]; !exists {
+		prevAuthMode, exists := existMap[action.ID]
+		if !exists {
 			newActions = append(newActions, action)
 			continue
 		}
-		updateActions = append(updateActions, action)
+		updateActions = append(updateActions, updateActionInfo{action: action, prevAuthMode: prevAuthMode})
 	}
 
 	if err := v.iam.updateResActions(ctx, h, updateActions, rid); err != nil {
@@ -285,7 +286,12 @@ func (v *viewer) updateModelActions(ctx context.Context, header http.Header, obj
 	tenantObjects := map[string][]metadata.Object{
 		tenantID: objects,
 	}
-	return v.iam.updateResActions(ctx, header, genDynamicActions(tenantObjects), rid)
+
+	actions := make([]updateActionInfo, 0)
+	for _, action := range genDynamicActions(tenantObjects) {
+		actions = append(actions, updateActionInfo{action: action, prevAuthMode: action.AuthMode})
+	}
+	return v.iam.updateResActions(ctx, header, actions, rid)
 }
 
 // registerModelRoles register model manager and viewer roles
@@ -309,7 +315,7 @@ func (v *viewer) registerModelRoles(ctx context.Context, h http.Header, objects 
 	newRoles := make([]iam.Role, 0)
 	updateRoles := make([]iam.Role, 0)
 	addActions := make(map[iamtypes.RoleID][]iam.RoleAction)
-	deleteActions := make(map[iamtypes.RoleID][]iamtypes.ActionID)
+	deleteActions := make(map[iamtypes.RoleID]*unbindRoleActionInfo)
 	for _, role := range roles {
 		registered, exists := existMap[role.ID]
 		if !exists {
@@ -323,7 +329,7 @@ func (v *viewer) registerModelRoles(ctx context.Context, h http.Header, objects 
 			addActions[role.ID] = toAdd
 		}
 		if len(toDelete) > 0 {
-			deleteActions[role.ID] = toDelete
+			deleteActions[role.ID] = splitUnbindRoleActionInfo(registered.Actions, toDelete)
 		}
 	}
 
@@ -390,7 +396,7 @@ func (v *viewer) updateModelRoles(ctx context.Context, header http.Header, objec
 
 	updateRoles := make([]iam.Role, 0)
 	addActions := make(map[iamtypes.RoleID][]iam.RoleAction)
-	deleteActions := make(map[iamtypes.RoleID][]iamtypes.ActionID)
+	deleteActions := make(map[iamtypes.RoleID]*unbindRoleActionInfo)
 	for _, role := range genDynamicInstRoles(tenantObjects) {
 		registered, exists := existMap[role.ID]
 		if !exists {
@@ -403,7 +409,7 @@ func (v *viewer) updateModelRoles(ctx context.Context, header http.Header, objec
 			addActions[role.ID] = toAdd
 		}
 		if len(toDelete) > 0 {
-			deleteActions[role.ID] = toDelete
+			deleteActions[role.ID] = splitUnbindRoleActionInfo(registered.Actions, toDelete)
 		}
 	}
 

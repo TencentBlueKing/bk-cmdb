@@ -43,6 +43,20 @@ const (
 	pageSizeParam = "page_size"
 	// idsParam is the query parameter name of the comma separated id list.
 	idsParam = "ids"
+	// cascadeParam is the query parameter name of dependencies deleted together with the target resource.
+	cascadeParam = "cascade"
+)
+
+// CascadeDep is a dependency IAM deletes together with the target auth resource.
+type CascadeDep string
+
+const (
+	// CascadeRole removes role_action entries that reference the action. The role itself is kept.
+	CascadeRole CascadeDep = "role"
+	// CascadeRBACAuthorization removes RBAC authorization policies.
+	CascadeRBACAuthorization CascadeDep = "rbac_authorization"
+	// CascadeABACAuthorization removes ABAC authorization policies of the action.
+	CascadeABACAuthorization CascadeDep = "abac_authorization"
 )
 
 // AuthError iam auth server error

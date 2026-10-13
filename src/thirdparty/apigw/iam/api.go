@@ -237,18 +237,20 @@ func (i *iam) UpdateResourcesType(ctx context.Context, header http.Header, resTy
 }
 
 // DeleteResourcesType delete resource type in IAM
-func (i *iam) DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID) error {
+func (i *iam) DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID,
+	cascade ...CascadeDep) error {
+
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/resource-types/%s/"
-	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+	req := i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, resTypeID).
 		WithContext(ctx).
-		WithHeaders(h).
-		Do())
+		WithHeaders(h)
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
 }
@@ -289,8 +291,8 @@ func (i *iam) RegisterActions(ctx context.Context, header http.Header, actions [
 
 // UpdateAction update action in IAM, only the action name and auth mode can be updated,
 // changing the related resource type needs to delete the action and register it again
-func (i *iam) UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID,
-	req *UpdateActionReq) error {
+func (i *iam) UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID, actionReq *UpdateActionReq,
+	cascade ...CascadeDep) error {
 
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
@@ -298,29 +300,31 @@ func (i *iam) UpdateAction(ctx context.Context, header http.Header, actionID typ
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/actions/%s/"
-	_, err = handleIamResp[struct{}](i.service.Client.Put().
+	req := i.service.Client.Put().
 		SubResourcef(subPath, types.SystemIDCMDB, actionID).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(req).
-		Do())
+		Body(actionReq)
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
 }
 
 // DeleteAction delete action in IAM
-func (i *iam) DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID) error {
+func (i *iam) DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID,
+	cascade ...CascadeDep) error {
+
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/actions/%s/"
-	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+	req := i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, actionID).
 		WithContext(ctx).
-		WithHeaders(h).
-		Do())
+		WithHeaders(h)
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
 }
@@ -379,18 +383,18 @@ func (i *iam) UpdateRole(ctx context.Context, header http.Header, roleID types.R
 }
 
 // DeleteRole delete role in IAM
-func (i *iam) DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID) error {
+func (i *iam) DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID, cascade ...CascadeDep) error {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/roles/%s/"
-	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+	req := i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
-		WithHeaders(h).
-		Do())
+		WithHeaders(h)
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
 }
@@ -415,7 +419,7 @@ func (i *iam) AddRoleActions(ctx context.Context, header http.Header, roleID typ
 
 // DeleteRoleActions delete actions from a role, the action ids are passed by the "ids" query parameter
 func (i *iam) DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID,
-	actionIDs []types.ActionID) error {
+	actionIDs []types.ActionID, cascade ...CascadeDep) error {
 
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
@@ -428,14 +432,27 @@ func (i *iam) DeleteRoleActions(ctx context.Context, header http.Header, roleID 
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/roles/%s/actions/"
-	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+	req := i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
 		WithHeaders(h).
-		WithParam(idsParam, strings.Join(ids, ",")).
-		Do())
+		WithParam(idsParam, strings.Join(ids, ","))
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
+}
+
+// withCascade appends the cascade query parameter. An empty list leaves the request unchanged.
+func withCascade(req *rest.Request, cascade []CascadeDep) *rest.Request {
+	if len(cascade) == 0 {
+		return req
+	}
+
+	deps := make([]string, len(cascade))
+	for idx, dep := range cascade {
+		deps[idx] = string(dep)
+	}
+	return req.WithParam(cascadeParam, strings.Join(deps, ","))
 }
 
 // GetSystemToken get system token from iam, used to validate if request is from iam

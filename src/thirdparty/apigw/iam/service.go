@@ -48,17 +48,18 @@ type ClientI interface {
 	// UpdateResourcesType update resource type in IAM
 	UpdateResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID,
 		req *UpdateResourceTypeReq) error
-	// DeleteResourcesType delete resource type in IAM
-	DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID) error
+	// DeleteResourcesType delete resource type in IAM.
+	DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID, cascade ...CascadeDep) error
 
 	// ListActions list actions by page
 	ListActions(ctx context.Context, header http.Header, page, pageSize int64) (*ListActionsData, error)
 	// RegisterActions register actions in IAM, returns the registered action ids
 	RegisterActions(ctx context.Context, header http.Header, actions []ResourceAction) ([]string, error)
-	// UpdateAction update action in IAM
-	UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID, req *UpdateActionReq) error
-	// DeleteAction delete action in IAM
-	DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID) error
+	// UpdateAction update action in IAM.
+	UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID, req *UpdateActionReq,
+		cascade ...CascadeDep) error
+	// DeleteAction delete action in IAM.
+	DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID, cascade ...CascadeDep) error
 
 	// ListRoles list roles by page
 	ListRoles(ctx context.Context, header http.Header, page, pageSize int64) (*ListRolesData, error)
@@ -66,12 +67,13 @@ type ClientI interface {
 	RegisterRoles(ctx context.Context, header http.Header, roles []Role) ([]string, error)
 	// UpdateRole update role in IAM
 	UpdateRole(ctx context.Context, header http.Header, roleID types.RoleID, req *UpdateRoleReq) error
-	// DeleteRole delete role in IAM
-	DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID) error
+	// DeleteRole delete role in IAM.
+	DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID, cascade ...CascadeDep) error
 	// AddRoleActions bind actions to a role, returns the added action ids
 	AddRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actions []RoleAction) ([]string, error)
-	// DeleteRoleActions unbind actions from a role
-	DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actionIDs []types.ActionID) error
+	// DeleteRoleActions unbind actions from a role.
+	DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actionIDs []types.ActionID,
+		cascade ...CascadeDep) error
 
 	// HybridPlan get the authorization condition of one action, which is used to filter the authorized resources
 	HybridPlan(ctx context.Context, header http.Header, req *PlanReq) (*operator.Plan, error)
