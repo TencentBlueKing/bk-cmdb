@@ -8846,3 +8846,35 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List kube container in business set
+  /api/v3/auth/find/resource:
+    post:
+      operationId: iam_pull_resource_callback
+      description: IAM 拉取资源的回调接口
+      tags:
+        - iam
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v3/auth/find/resource
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        pluginConfigs:
+          - type: bk-rate-limit
+            yaml: |
+              rates:
+                __default:
+                - period: 1
+                  tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn: IAM pull resource callback

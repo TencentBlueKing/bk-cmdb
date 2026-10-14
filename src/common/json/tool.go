@@ -61,6 +61,10 @@ func CutJsonDataWithFields(jsonData *string, fields []string) *string {
 func ReplaceJsonKey(jsonData []byte, keyMap map[string]string) ([]byte, error) {
 	var err error
 	for oldKey, newKey := range keyMap {
+		if !gjson.GetBytes(jsonData, oldKey).Exists() {
+			continue
+		}
+
 		jsonData, err = sjson.SetRawBytes(jsonData, newKey, []byte(gjson.GetBytes(jsonData, oldKey).Raw))
 		if err != nil {
 			return nil, fmt.Errorf("set %s key using %s value failed, err: %v", newKey, oldKey, err)

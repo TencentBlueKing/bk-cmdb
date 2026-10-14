@@ -171,6 +171,11 @@ func (s *service) CacheFilterChan(req *restful.Request, resp *restful.Response, 
 	s.urlFilterChan(req, resp, chain, s.discovery.CacheService(), rootPath+"/cache", "/cache/v3")
 }
 
+// AuthFilterChan auth server api filter chan
+func (s *service) AuthFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+	s.urlFilterChan(req, resp, chain, s.discovery.AuthServer(), rootPath+"/auth", "/auth/v3")
+}
+
 // TxnFilterChan transaction api filter chan
 func (s *service) TxnFilterChan(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	// right now, only allow calling from web-server
@@ -504,7 +509,13 @@ func (s *service) checkIfExceedLimit(rule *metadata.LimiterRule, rid string) (bo
 // JwtFilter the filter that handles the source of the jwt request
 func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
-		header, err := jwt.GetHandler().Parse(req.Request.Header)
+		var opts []jwt.ParseOption
+		// iam pull resource callback do not need to verify user and do authorization
+		if req.Request.URL.Path == rootPath+"/auth/find/resource" {
+			opts = append(opts, jwt.ParseOption{SkipUserValidate: true})
+		}
+
+		header, err := jwt.GetHandler().Parse(req.Request.Header, opts...)
 		if err != nil {
 			s.RespError(req, resp, http.StatusOK, &metadata.RespError{
 				Msg:     err,
@@ -512,6 +523,12 @@ func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response,
 			})
 			return
 		}
+
+		// iam pull resource callback need to keep Authorization header for authorization
+		if req.Request.URL.Path == rootPath+"/auth/find/resource" {
+			header.Set("Authorization", req.Request.Header.Get("Authorization"))
+		}
+
 		req.Request.Header = header
 		fchain.ProcessFilter(req, resp)
 		return
