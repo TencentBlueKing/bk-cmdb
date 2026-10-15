@@ -91,7 +91,7 @@ webServer:
   # web-server使用的jwt配置
   jwt:
     # 是否开启jwt认证功能
-    enabled: false
+    enabled: true
     # jwt公钥
     publicKey:
     # jwt私钥
@@ -138,15 +138,6 @@ openTelemetry:
   # 日志平台openTelemetry跟踪链功能的上报data_id
   bkDataID:
   bkDataToken:
-
-# apiServer相关配置
-apiServer:
-  # api-server使用的jwt配置
-  jwt:
-    # 是否开启jwt认证功能
-    enabled: false
-    # jwt公钥
-    publicKey:
 
 # 调用apigw接口相关配置
 apiGW:
