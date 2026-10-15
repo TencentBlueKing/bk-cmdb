@@ -36,6 +36,16 @@ func GetBkJWT(header http.Header) string {
 	return header.Get(BkJWTHeader)
 }
 
+// GetBkapiFrom get request source from http header
+func GetBkapiFrom(header http.Header) string {
+	return header.Get(BkapiFromHeader)
+}
+
+// IsFromApiGW check if request is from blueking api-gateway
+func IsFromApiGW(header http.Header) bool {
+	return header.Get(BkapiFromHeader) == BkapiFromApigw
+}
+
 // GetAppCode get blueking app code from http header
 func GetAppCode(header http.Header) string {
 	return header.Get(AppCodeHeader)
@@ -123,6 +133,11 @@ func SetBkAuth(header http.Header, value string) http.Header {
 // SetBkJWT set blueking api gateway jwt info to http header
 func SetBkJWT(header http.Header, value string) {
 	header.Set(BkJWTHeader, value)
+}
+
+// SetBkapiFrom set request source to http header
+func SetBkapiFrom(header http.Header, value string) {
+	header.Set(BkapiFromHeader, value)
 }
 
 // SetAppCode set blueking app code to http header

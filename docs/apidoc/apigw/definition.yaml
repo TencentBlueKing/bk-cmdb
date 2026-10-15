@@ -55,6 +55,7 @@ stage:
       # 设置Headers
       set:
         X-Bkcmdb-Supplier-Account: "0"
+        X-Bkapi-From: "apigw"
 
 # 主动授权，网关主动给应用，添加访问网关所有资源的权限；
 # 用于命令 `grant_apigw_permissions`

@@ -96,6 +96,10 @@ func NewHeader(header http.Header) http.Header {
 		httpheader.SetReqFromWeb(newHeader)
 	}
 
+	if from := httpheader.GetBkapiFrom(header); from != "" {
+		httpheader.SetBkapiFrom(newHeader, from)
+	}
+
 	return newHeader
 }
 

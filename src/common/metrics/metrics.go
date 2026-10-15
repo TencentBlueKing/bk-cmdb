@@ -28,7 +28,6 @@ import (
 
 	"configcenter/src/common/blog"
 	httpheader "configcenter/src/common/http/header"
-	headerutil "configcenter/src/common/http/header/util"
 	"configcenter/src/common/types"
 
 	"github.com/emicklei/go-restful/v3"
@@ -190,11 +189,6 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if s.conf.ProcessName == types.CC_MODULE_APISERVER && httpheader.GetBkJWT(r.Header) == "" {
-			// compatible for legacy header
-			r.Header = headerutil.ConvertLegacyHeader(r.Header)
-		}
-
 		appCode := httpheader.GetAppCode(r.Header)
 		s.requestDuration.With(s.label(LabelHandler, uri, LabelAppCode, appCode)).
 			Observe(float64(time.Since(before) / time.Millisecond))
@@ -239,7 +233,7 @@ func getOrigin(header http.Header) string {
 		return "webserver"
 	}
 
-	if httpheader.GetBkJWT(header) != "" {
+	if httpheader.IsFromApiGW(header) {
 		return "api-gateway"
 	}
 
