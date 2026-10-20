@@ -255,9 +255,11 @@ func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 		}
 
 	}
-	//  加入所有不规范索引的索引名字
+	// 只删除库里实际存在的不规范索引。不存在的名字不加入待删列表，避免无意义的 drop。
 	for _, indexName := range deprecatedTableIndexNames {
-		waitDelIdxNameMap[indexName] = struct{}{}
+		if _, exists := dbIdxNameMap[indexName]; exists {
+			waitDelIdxNameMap[indexName] = struct{}{}
+		}
 	}
 
 	for _, logicIndex := range logicIndexes {
@@ -283,6 +285,17 @@ func (dt *dbTable) syncIndexesToDB(ctx context.Context, tableName string,
 				continue
 			}
 		} else {
+			sameIndex := false
+			for _, dbIndex := range dbIndexList {
+				if index.IndexEqual(dbIndex, logicIndex) {
+					sameIndex = true
+					break
+				}
+			}
+			if sameIndex {
+				continue
+			}
+
 			dt.createIndexes(ctx, tableName, []types.Index{logicIndex})
 		}
 	}
