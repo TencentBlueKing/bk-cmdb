@@ -108,9 +108,17 @@
         resourcePoolBizId: undefined
       }
     },
+    computed: {
+      needsResourcePoolBiz() {
+        return !isNaN(this.bizId) && !(this.bizId > 0)
+      }
+    },
     async created() {
-      const resourcePoolData = await resourcePoolService.getBiz()
-      this.resourcePoolBizId = resourcePoolData?.bk_biz_id
+      // 只有未分配业务的主机才需要主机池业务 ID；已有业务 ID 时不要打这个接口，否则会按主机池权限误弹申请窗
+      if (this.needsResourcePoolBiz) {
+        const resourcePoolData = await resourcePoolService.getBiz()
+        this.resourcePoolBizId = resourcePoolData?.bk_biz_id
+      }
 
       this.getAuditDictionary()
       this.getHistory()
@@ -162,7 +170,7 @@
           bk_obj_id: this.objId
         }
 
-        // 通用模型实例不传，未分配业务主机传1
+        // 通用模型实例不传；已分配业务用自身业务 ID；未分配业务主机用主机池业务 ID
         if (!isNaN(this.bizId)) {
           usefuleCondition.bk_biz_id = this.bizId > 0 ? this.bizId : this.resourcePoolBizId
         }
