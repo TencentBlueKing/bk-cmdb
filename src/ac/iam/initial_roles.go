@@ -442,6 +442,14 @@ func genViewerRoles() []iam.Role {
 				{ID: iamtypes.ViewFieldGroupingTemplate, ResourceTypeID: iamtypes.FieldGroupingTemplate},
 			},
 		},
+		{
+			ID:          iamtypes.ModelTopoViewer,
+			Name:        "模型拓扑查看者",
+			Description: "模型拓扑查看者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.ViewModelTopo},
+			},
+		},
 	}
 }
 

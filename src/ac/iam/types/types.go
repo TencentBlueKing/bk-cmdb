@@ -499,6 +499,8 @@ const (
 	SysModelViewer RoleID = "sys_model_viewer"
 	// FieldTplViewer is the field grouping template viewer role
 	FieldTplViewer RoleID = "field_tpl_viewer"
+	// ModelTopoViewer is the model topology viewer role
+	ModelTopoViewer RoleID = "model_topo_viewer"
 
 	// BizOwner is the business owner role granted to the creator
 	BizOwner RoleID = "biz_owner"
