@@ -93,7 +93,7 @@ func (k *kubeOperation) listContainerByPodCond(kit *rest.Kit, input *types.GetCo
 		{common.BKDBMatch: input.PodCond},
 		{
 			common.BKDBLookup: map[string]string{
-				common.BKDBFrom:         types.BKTableNameBaseContainer,
+				common.BKDBFrom:         common.GenTenantTableName(kit.TenantID, types.BKTableNameBaseContainer),
 				common.BKDBLocalField:   common.BKFieldID,
 				common.BKDBForeignField: types.BKPodIDField,
 				common.BKDBAs:           fieldPrefix,
@@ -114,7 +114,7 @@ func (k *kubeOperation) listContainerByBothCond(kit *rest.Kit, input *types.GetC
 		{common.BKDBMatch: input.ContainerCond},
 		{
 			common.BKDBLookup: map[string]string{
-				common.BKDBFrom:         types.BKTableNameBasePod,
+				common.BKDBFrom:         common.GenTenantTableName(kit.TenantID, types.BKTableNameBasePod),
 				common.BKDBLocalField:   types.BKPodIDField,
 				common.BKDBForeignField: common.BKFieldID,
 				common.BKDBAs:           "pod",
