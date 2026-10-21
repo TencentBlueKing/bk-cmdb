@@ -884,6 +884,56 @@ func (s *Service) SearchAssociationInst(ctx *rest.Contexts) {
 	ctx.RespEntity(ret.Info)
 }
 
+// FindInstAssociationWeb finds associations of one instance as source or as target.
+func (s *Service) FindInstAssociationWeb(ctx *rest.Contexts) {
+	opt := new(metadata.FindInstAssociationWebOption)
+	if err := ctx.DecodeInto(opt); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if rawErr := opt.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	objID, instID := opt.ObjID, opt.InstID
+	cond := mapstr.MapStr{
+		common.BKObjIDField:  objID,
+		common.BKInstIDField: instID,
+	}
+	if opt.AsstObjID != "" {
+		objID, instID = opt.AsstObjID, opt.AsstInstID
+		cond = mapstr.MapStr{
+			common.BKAsstObjIDField:  objID,
+			common.BKAsstInstIDField: instID,
+		}
+	}
+
+	authResp, authorized, err := s.AuthManager.HasFindModelInstWithIDAuth(ctx.Kit, map[string][]int64{objID: {instID}})
+	if err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if !authorized {
+		ctx.RespNoAuth(authResp)
+		return
+	}
+
+	query := &metadata.InstAsstQueryCondition{
+		Cond:  metadata.QueryCondition{Condition: cond, DisableCounter: true},
+		ObjID: objID,
+	}
+	ctx.SetReadPreference(common.SecondaryPreferredMode)
+	ret, err := s.Engine.CoreAPI.CoreService().Association().ReadInstAssociation(ctx.Kit.Ctx, ctx.Kit.Header, query)
+	if err != nil {
+		blog.Errorf("find instance association failed, cond: %#v, err: %v, rid: %s", query, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	ctx.RespEntity(ret.Info)
+}
+
 // SearchAssociationRelatedInst search all associations of certain model instance, including it as source & target
 func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	request := &metadata.SearchAssociationRelatedInstRequest{}
@@ -914,7 +964,8 @@ func (s *Service) SearchAssociationRelatedInst(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{request.Condition.ObjectID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstWithIDAuth(ctx.Kit,
+		map[string][]int64{request.Condition.ObjectID: {request.Condition.InstID}})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -1009,23 +1060,19 @@ func (s *Service) SearchInstAssociationAndInstDetail(ctx *rest.Contexts) {
 
 	srcObjInst := make(map[string][]int64)
 	dstObjInst := make(map[string][]int64)
-	objIDs := make([]string, 0)
-	unique := make(map[string]struct{}, 0)
 	for _, item := range assocRsp.Info {
 		srcObjInst[item.ObjectID] = append(srcObjInst[item.ObjectID], item.InstID)
 		dstObjInst[item.AsstObjectID] = append(dstObjInst[item.AsstObjectID], item.AsstInstID)
-		if _, ok := unique[item.ObjectID]; !ok {
-			unique[item.ObjectID] = struct{}{}
-			objIDs = append(objIDs, item.ObjectID)
-		}
-
-		if _, ok := unique[item.AsstObjectID]; !ok {
-			unique[item.AsstObjectID] = struct{}{}
-			objIDs = append(objIDs, item.AsstObjectID)
-		}
+	}
+	objInstIDs := make(map[string][]int64)
+	for asstObjID, instIDs := range srcObjInst {
+		objInstIDs[asstObjID] = append(objInstIDs[asstObjID], instIDs...)
+	}
+	for asstObjID, instIDs := range dstObjInst {
+		objInstIDs[asstObjID] = append(objInstIDs[asstObjID], instIDs...)
 	}
 
-	authResp, authorized, err = s.AuthManager.HasFindModelInstAuth(ctx.Kit, objIDs)
+	authResp, authorized, err = s.AuthManager.HasFindModelInstWithIDAuth(ctx.Kit, objInstIDs)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

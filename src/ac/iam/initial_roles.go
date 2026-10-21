@@ -312,65 +312,49 @@ func genCreatorRoles() []iam.Role {
 			ID:          iamtypes.BusinessCreator,
 			Name:        "业务创建者",
 			Description: "业务创建者",
-			Actions: []iam.RoleAction{
-				{ID: iamtypes.CreateBusiness},
-			},
+			Actions:     []iam.RoleAction{{ID: iamtypes.CreateBusiness}},
 		},
 		{
 			ID:          iamtypes.BizSetCreator,
 			Name:        "业务集创建者",
 			Description: "业务集创建者",
-			Actions: []iam.RoleAction{
-				{ID: iamtypes.CreateBizSet},
-			},
+			Actions:     []iam.RoleAction{{ID: iamtypes.CreateBizSet}},
 		},
 		{
 			ID:          iamtypes.ProjectCreator,
 			Name:        "项目创建者",
 			Description: "项目创建者",
-			Actions: []iam.RoleAction{
-				{ID: iamtypes.CreateProject},
-			},
+			Actions:     []iam.RoleAction{{ID: iamtypes.CreateProject}},
 		},
 		{
 			ID:          iamtypes.CloudAreaCreator,
 			Name:        "管控区域创建者",
 			Description: "管控区域创建者",
-			Actions: []iam.RoleAction{
-				{ID: iamtypes.CreateCloudArea},
-			},
+			Actions:     []iam.RoleAction{{ID: iamtypes.CreateCloudArea}},
 		},
 		{
 			ID:          iamtypes.ModelGroupCreator,
 			Name:        "模型分组创建者",
 			Description: "模型分组创建者",
-			Actions: []iam.RoleAction{
-				{ID: iamtypes.CreateModelGroup},
-			},
+			Actions:     []iam.RoleAction{{ID: iamtypes.CreateModelGroup}},
 		},
 		{
 			ID:          iamtypes.SysModelCreator,
 			Name:        "模型创建者",
 			Description: "模型创建者",
-			Actions: []iam.RoleAction{
-				{ID: iamtypes.CreateSysModel, ResourceTypeID: iamtypes.SysModelGroup},
-			},
+			Actions:     []iam.RoleAction{{ID: iamtypes.CreateSysModel, ResourceTypeID: iamtypes.SysModelGroup}},
 		},
 		{
 			ID:          iamtypes.AsstTypeCreator,
 			Name:        "关联类型创建者",
 			Description: "关联类型创建者",
-			Actions: []iam.RoleAction{
-				{ID: iamtypes.CreateAssociationType},
-			},
+			Actions:     []iam.RoleAction{{ID: iamtypes.CreateAssociationType}},
 		},
 		{
 			ID:          iamtypes.HostPoolDirCreator,
 			Name:        "主机池目录创建者",
 			Description: "主机池目录创建者",
-			Actions: []iam.RoleAction{
-				{ID: iamtypes.CreateResourcePoolDirectory},
-			},
+			Actions:     []iam.RoleAction{{ID: iamtypes.CreateResourcePoolDirectory}},
 		},
 		{
 			ID:          iamtypes.ResourcePoolHostCreator,
@@ -384,9 +368,7 @@ func genCreatorRoles() []iam.Role {
 			ID:          iamtypes.FieldTplCreator,
 			Name:        "字段组合模板创建者",
 			Description: "字段组合模板创建者",
-			Actions: []iam.RoleAction{
-				{ID: iamtypes.CreateFieldGroupingTemplate},
-			},
+			Actions:     []iam.RoleAction{{ID: iamtypes.CreateFieldGroupingTemplate}},
 		},
 	}
 }
@@ -440,6 +422,14 @@ func genViewerRoles() []iam.Role {
 			Description: "字段组合模板查看者",
 			Actions: []iam.RoleAction{
 				{ID: iamtypes.ViewFieldGroupingTemplate, ResourceTypeID: iamtypes.FieldGroupingTemplate},
+			},
+		},
+		{
+			ID:          iamtypes.ModelTopoViewer,
+			Name:        "模型拓扑查看者",
+			Description: "模型拓扑查看者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.ViewModelTopo},
 			},
 		},
 	}

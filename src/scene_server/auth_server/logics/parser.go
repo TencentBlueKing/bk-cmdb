@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	"configcenter/src/ac/iam"
 	iamtypes "configcenter/src/ac/iam/types"
@@ -135,7 +136,10 @@ func parseConditionField(field operator.Field, resourceType iamtypes.TypeID) (st
 func convertAncestorIDsToInt(op operator.OperType, value interface{}) (interface{}, error) {
 	switch op {
 	case operator.Equal:
-		return util.GetInt64ByInterface(value)
+		if strVal, ok := value.(string); ok {
+			return strconv.ParseInt(strVal, 10, 64)
+		}
+		return nil, fmt.Errorf("ancestor id value %v is not string type", value)
 	case operator.In:
 		valueArr, ok := value.([]interface{})
 		if !ok || len(valueArr) == 0 {
@@ -143,7 +147,11 @@ func convertAncestorIDsToInt(op operator.OperType, value interface{}) (interface
 		}
 		ids := make([]interface{}, len(valueArr))
 		for i, val := range valueArr {
-			id, err := util.GetInt64ByInterface(val)
+			strVal, ok := val.(string)
+			if !ok {
+				return nil, fmt.Errorf("ancestor id value %v is not string type", val)
+			}
+			id, err := strconv.ParseInt(strVal, 10, 64)
 			if err != nil {
 				return nil, err
 			}
@@ -224,7 +232,7 @@ func (lgc *Logics) parseHostAncestorToMongo(ctx context.Context, header http.Hea
 		return nil, err
 	}
 	if len(res.Data.Info) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("host has no relation, cond: %+v", cond)
 	}
 
 	hostIDs := make([]int64, len(res.Data.Info))

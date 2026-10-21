@@ -182,7 +182,7 @@ func parseRequestBizID(ctx *rest.Contexts) (int64, error) {
 // SearchObjectAttributeForWeb search form field attributes provided to the front end.
 func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 
-	queryCond, modelBizID, err := combinationSearchObjectAttrCond(ctx)
+	queryCond, modelBizID, err := combinationSearchObjectAttrCond(ctx, true)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -237,7 +237,9 @@ func (s *Service) SearchObjectAttributeForWeb(ctx *rest.Contexts) {
 	ctx.RespEntity(attrs)
 }
 
-func combinationSearchObjectAttrCond(ctx *rest.Contexts) (*metadata.QueryCondition, int64, error) {
+const withReservedFieldsParam = "with_reserved_fields"
+
+func combinationSearchObjectAttrCond(ctx *rest.Contexts, forWeb bool) (*metadata.QueryCondition, int64, error) {
 	option := new(MapStrWithModelBizID)
 	if err := ctx.DecodeInto(&option); err != nil {
 		return nil, 0, err
@@ -247,8 +249,21 @@ func combinationSearchObjectAttrCond(ctx *rest.Contexts) (*metadata.QueryConditi
 		data = make(mapstr.MapStr)
 	}
 	util.AddModelBizIDCondition(data, option.ModelBizID)
-	data[metadata.AttributeFieldIsSystem] = false
-	data[metadata.AttributeFieldIsAPI] = false
+
+	withReserved := false
+	if forWeb && data.Exists(withReservedFieldsParam) {
+		val, err := data.Bool(withReservedFieldsParam)
+		if err != nil {
+			blog.Errorf("with_reserved_fields is invalid, err: %v, rid: %s", err, ctx.Kit.Rid)
+			return nil, 0, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, withReservedFieldsParam)
+		}
+		withReserved = val
+		data.Remove(withReservedFieldsParam)
+	}
+	if !withReserved {
+		data[metadata.AttributeFieldIsSystem] = false
+		data[metadata.AttributeFieldIsAPI] = false
+	}
 
 	basePage := metadata.BasePage{}
 	if data.Exists(metadata.PageName) {
@@ -275,7 +290,7 @@ func combinationSearchObjectAttrCond(ctx *rest.Contexts) (*metadata.QueryConditi
 // SearchObjectAttribute search the object attributes
 func (s *Service) SearchObjectAttribute(ctx *rest.Contexts) {
 
-	queryCond, modelBizID, err := combinationSearchObjectAttrCond(ctx)
+	queryCond, modelBizID, err := combinationSearchObjectAttrCond(ctx, false)
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

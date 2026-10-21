@@ -34,7 +34,9 @@ var NotEnoughLayer = fmt.Errorf("not enough layer")
 
 // IamAuthOption is one IAM action with its related resources.
 type IamAuthOption struct {
-	Action    types.ActionID
+	Action types.ActionID
+	// Type is the IAM resource type converted from the CMDB resource.
+	Type      types.TypeID
 	Resources []iam.Resource
 }
 
@@ -75,7 +77,7 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) ([]IamAuthOption, error) {
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, IamAuthOption{Action: act, Resources: resource})
+		opts = append(opts, IamAuthOption{Action: act, Type: *rscType, Resources: resource})
 	}
 
 	return opts, nil

@@ -137,6 +137,30 @@ type SearchAssociationInstRequest struct {
 	ObjID     string        `json:"bk_obj_id"`
 }
 
+// FindInstAssociationWebOption finds associations of one instance for web.
+type FindInstAssociationWebOption struct {
+	ObjID      string `json:"bk_obj_id"`
+	InstID     int64  `json:"bk_inst_id"`
+	AsstObjID  string `json:"bk_asst_obj_id"`
+	AsstInstID int64  `json:"bk_asst_inst_id"`
+}
+
+// Validate checks that exactly one of the source pair or the target pair is set.
+func (f *FindInstAssociationWebOption) Validate() errors.RawErrorInfo {
+	if f.ObjID != "" {
+		if f.InstID <= 0 || f.AsstObjID != "" || f.AsstInstID > 0 {
+			return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{common.BKObjIDField}}
+		}
+		return errors.RawErrorInfo{}
+	}
+
+	if f.AsstObjID == "" || f.AsstInstID <= 0 || f.InstID > 0 {
+		return errors.RawErrorInfo{ErrCode: common.CCErrCommParamsInvalid, Args: []interface{}{common.BKAsstObjIDField}}
+	}
+
+	return errors.RawErrorInfo{}
+}
+
 // SearchAssociationRelatedInstRequest TODO
 type SearchAssociationRelatedInstRequest struct {
 	Fields    []string                                `json:"fields"`

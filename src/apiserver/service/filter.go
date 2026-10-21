@@ -506,12 +506,14 @@ func (s *service) checkIfExceedLimit(rule *metadata.LimiterRule, rid string) (bo
 	return false, nil
 }
 
+const findResourceAuthPath = rootPath + "/auth/find/resource"
+
 // JwtFilter the filter that handles the source of the jwt request
 func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 	return func(req *restful.Request, resp *restful.Response, fchain *restful.FilterChain) {
 		var opts []jwt.ParseOption
 		// iam pull resource callback do not need to verify user and do authorization
-		if req.Request.URL.Path == rootPath+"/auth/find/resource" {
+		if req.Request.URL.Path == findResourceAuthPath {
 			opts = append(opts, jwt.ParseOption{SkipUserValidate: true})
 		}
 
@@ -525,7 +527,7 @@ func (s *service) JwtFilter() func(req *restful.Request, resp *restful.Response,
 		}
 
 		// iam pull resource callback need to keep Authorization header for authorization
-		if req.Request.URL.Path == rootPath+"/auth/find/resource" {
+		if req.Request.URL.Path == findResourceAuthPath {
 			header.Set("Authorization", req.Request.Header.Get("Authorization"))
 		}
 

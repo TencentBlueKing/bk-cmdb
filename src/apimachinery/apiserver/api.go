@@ -121,14 +121,14 @@ func (a *apiServer) GetInstDetail(ctx context.Context, h http.Header, objID stri
 	return
 }
 
-// GetInstUniqueFields TODO
+// GetInstUniqueFields get unique fields of the specified instances.
 func (a *apiServer) GetInstUniqueFields(ctx context.Context, h http.Header, objID string, uniqueID int64,
-	params mapstr.MapStr) (resp metadata.QueryUniqueFieldsResult, err error) {
+	option *metadata.QueryUniqueFieldsOption) (resp metadata.QueryUniqueFieldsResult, err error) {
 
 	subPath := "/find/instance/object/%s/unique_fields/by/unique/%d"
 	err = a.client.Post().
 		WithContext(ctx).
-		Body(params).
+		Body(option).
 		SubResourcef(subPath, objID, uniqueID).
 		WithHeaders(h).
 		Do().
