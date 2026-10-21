@@ -14,7 +14,12 @@
   import { computed, ref, watch } from 'vue'
   import { t } from '@/i18n'
   import { useStore } from '@/store'
-  import useSearchUser from '@/hooks/use-search-user'
+  import useSearchUser, {
+    USER_SEARCH_MIN_LEN,
+    hideUserSearchPanel,
+    normalizeUserKeyword,
+    showUserSearchEmpty
+  } from '@/hooks/use-search-user'
 
   const props = defineProps({
     defaultFilter: {
@@ -32,6 +37,7 @@
   const searchSelectComp = ref(null)
   const isTyeing = ref(false)
   const isFocus = ref(false)
+  const userSearchId = ref(0)
   const filterMenus = [
     {
       id: 'id',
@@ -61,7 +67,8 @@
       id: 'modify_user',
       name: t('修改人'),
       multiable: true,
-      remote: true
+      remote: true,
+      placeholder: t('请输入')
     }
   ]
   const filter = ref([])
@@ -113,10 +120,22 @@
     return info
   }
   const fetchMember = async (val, menu) => {
-    if (!isTyeing.value || val?.length < 2 || val === `${menu.name}：`) {
+    const keyword = normalizeUserKeyword(val, menu.name)
+    if (!isTyeing.value || keyword.length < USER_SEARCH_MIN_LEN) {
+      userSearchId.value += 1
+      hideUserSearchPanel(searchSelectComp.value)
       return []
     }
-    const result = await userSearch(val)
+    userSearchId.value += 1
+    const currentId = userSearchId.value
+    const result = await userSearch(keyword)
+    if (currentId !== userSearchId.value) return result
+    if (!result?.length) {
+      setTimeout(() => {
+        if (currentId !== userSearchId.value) return
+        showUserSearchEmpty(searchSelectComp.value, t('无匹配人员'))
+      }, 0)
+    }
     return result
   }
   const handleSearchSelectChange = (list) => {
