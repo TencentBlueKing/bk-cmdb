@@ -197,6 +197,11 @@ type ObjectMapping struct {
 	TenantID string `bson:"tenant_id"`
 }
 
+// QueryUniqueFieldsOption query unique fields of the specified instances.
+type QueryUniqueFieldsOption struct {
+	IDs []int64 `json:"ids"`
+}
+
 // QueryUniqueFieldsResult 为excel 导出实例获取关联数据实例提供的接口使用的返回数据，
 // 根据唯一索引返回实例数据和唯一索引使用到的字段id 和名字的对应关系
 type QueryUniqueFieldsResult struct {

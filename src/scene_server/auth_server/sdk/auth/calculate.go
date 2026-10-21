@@ -114,6 +114,10 @@ func (a *Authorize) authContent(ctx context.Context, cond *operator.AuthConditio
 		return !authorized, nil
 	}
 
+	if content == nil || len(content.Content) == 0 {
+		return false, fmt.Errorf("operator %s content can't be empty", cond.Operator)
+	}
+
 	// prepare for attribute match calculate
 	allAttrPolicies := make([]*operator.AuthCondition, 0)
 
@@ -208,7 +212,14 @@ func (a *Authorize) authAtomPolicy(ctx context.Context, rsc *iam.Resource, polic
 		return authorized, false, nil
 
 	case fv.Field.IsAncestor():
-		authorized, err := matchAncestor(policy.Operator, rsc.Attribute, fv.Field, fv.Value)
+		val, exist := rsc.Attribute[fv.Field.String()]
+
+		// compatible for cases when resources to be authorized hasn't put its ancestors in attributes
+		if !exist || val == "" {
+			return false, true, nil
+		}
+
+		authorized, err := matchAncestor(policy.Operator, val, fv.Value)
 		if err != nil {
 			return false, false, err
 		}
@@ -228,13 +239,8 @@ func (a *Authorize) authAtomPolicy(ctx context.Context, rsc *iam.Resource, polic
 
 // matchAncestor matches the ancestor instance id in resource attributes.
 // The attribute value is a string, or a string list when the resource has multiple ancestors of the same type.
-func matchAncestor(op operator.OperType, attrs iam.ResourceAttributes, field operator.Field, with interface{}) (
+func matchAncestor(op operator.OperType, val, with interface{}) (
 	bool, error) {
-
-	val, exist := attrs[field.String()]
-	if !exist {
-		return false, fmt.Errorf("can not find ancestor %s in resource attributes", field)
-	}
 
 	rv := reflect.ValueOf(val)
 	if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array {

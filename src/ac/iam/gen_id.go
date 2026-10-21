@@ -294,6 +294,10 @@ func genServiceTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID,
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
 	}
 
+	if att.BusinessID > 0 {
+		r.Attribute = ancestorAttribute(iamtypes.Business, att.BusinessID)
+	}
+
 	return []iam.Resource{r}, nil
 }
 
@@ -318,6 +322,10 @@ func genSetTemplateResource(act iamtypes.ActionID, typ iamtypes.TypeID, att *met
 	r.Type = iam.IamResourceType(typ)
 	if att.InstanceID > 0 {
 		r.ID = strconv.FormatInt(att.InstanceID, 10)
+	}
+
+	if att.BusinessID > 0 {
+		r.Attribute = ancestorAttribute(iamtypes.Business, att.BusinessID)
 	}
 
 	return []iam.Resource{r}, nil

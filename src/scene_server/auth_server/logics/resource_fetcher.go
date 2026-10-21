@@ -7,7 +7,7 @@
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on
-    10| * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  * We undertake not to change the open source license (MIT license) applicable
@@ -38,8 +38,7 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 
 	resourceType := iamtypes.TypeID(opts.Type)
 	rid := util.ExtractRequestIDFromContext(ctx)
-	tenantID := util.ExtractTenantIDFromContext(ctx)
-	if tenantID == "" {
+	if tenantID := util.ExtractTenantIDFromContext(ctx); tenantID == "" {
 		blog.Errorf("request tenant id is empty, rid: %s", rid)
 		return nil, fmt.Errorf("request tenant id is empty")
 	}
@@ -68,7 +67,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 			err, opts.Operator, opts.AttrPolicies, rid)
 		return nil, err
 	}
-
 	cond, err := lgc.parseFilterToMongo(ctx, header, policy, resourceType)
 	if err != nil {
 		blog.ErrorJSON("parse request filter expression %s failed, error: %s, rid: %s", policy, err.Error(), rid)
@@ -111,7 +109,6 @@ func (lgc *Logics) ListInstancesWithAttributes(ctx context.Context, opts *sdktyp
 		blog.Errorf("search auth resource failed, err: %v, param: %#v, rid: %s", err, param, rid)
 		return nil, err
 	}
-
 	idList := make([]string, 0)
 	for _, instance := range res.Data.Info {
 		id := util.GetStrByInterface(instance[idField])

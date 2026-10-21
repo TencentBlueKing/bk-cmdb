@@ -2518,11 +2518,24 @@ func (ps *parseStream) mainlineLatest() *parseStream {
 
 	// get toponode host and service instance count
 	if ps.hitRegexp(findTopoNodeHostAndServiceInstCountLatestRegexp, http.MethodPost) {
+		if len(ps.RequestCtx.Elements) != 6 {
+			ps.err = errors.New("find business instance topology, but got invalid url")
+			return ps
+		}
+
+		bizID, err := strconv.ParseInt(ps.RequestCtx.Elements[5], 10, 64)
+		if err != nil {
+			ps.err = fmt.Errorf("parse biz id from url failed, but got invalid business id %s",
+				ps.RequestCtx.Elements[5])
+			return ps
+		}
+
 		ps.Attribute.Resources = []meta.ResourceAttribute{
 			{
 				Basic: meta.Basic{
-					Type:   meta.ModelInstanceTopology,
-					Action: meta.SkipAction,
+					Type:       meta.Business,
+					Action:     meta.ViewBusinessResource,
+					InstanceID: bizID,
 				},
 			},
 		}

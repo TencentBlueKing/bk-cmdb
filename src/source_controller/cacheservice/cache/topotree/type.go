@@ -64,6 +64,7 @@ type set struct {
 	Name     string `json:"bk_set_name"`
 	Biz      int64  `json:"bk_biz_id"`
 	ParentID int64  `json:"bk_parent_id"`
+	Default  int    `json:"default"`
 }
 
 type biz struct {

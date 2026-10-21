@@ -358,6 +358,22 @@ func (r *FullTextSearchFilter) generateESQueryConditions() []*FullTextSearchCond
 	return searchFilterConditions
 }
 
+// appendIndexConditions groups condition values by data kind.
+func appendIndexConditions(cond *FullTextSearchCondition, indexConditions map[string]map[string][]interface{}) {
+	dataKind := metadata.DataKindInstance
+	if cond.IndexName == metadata.IndexNameModel {
+		dataKind = metadata.DataKindModel
+	}
+	conditions, exist := indexConditions[dataKind]
+	if !exist {
+		conditions = make(map[string][]interface{})
+		indexConditions[dataKind] = conditions
+	}
+	for property, value := range cond.Conditions {
+		conditions[property] = append(conditions[property], value)
+	}
+}
+
 // GenerateESQuery returns the elastic query for main search and sub-count searches.
 func (r *FullTextSearchReq) GenerateESQuery(kit *rest.Kit) (elastic.Query, []string, []*FullTextSearchESQuery) {
 	// elastic query conditions for each model or instance.
@@ -384,7 +400,8 @@ func (r *FullTextSearchReq) GenerateESQuery(kit *rest.Kit) (elastic.Query, []str
 
 	// main query.
 	query := elastic.NewBoolQuery()
-	queryConditions := make(map[string][]interface{})
+	// data kind -> property -> values.
+	indexConditions := make(map[string]map[string][]interface{})
 	query.Must(elastic.NewMatchQuery(metadata.IndexPropertyTenantID, kit.TenantID))
 	if len(r.BizID) != 0 {
 		query.Must(elastic.NewMatchQuery(metadata.IndexPropertyBKBizID, r.BizID))
@@ -404,9 +421,7 @@ func (r *FullTextSearchReq) GenerateESQuery(kit *rest.Kit) (elastic.Query, []str
 	if len(subResource) > 0 {
 		for _, cond := range subResource {
 			// build elastic main query condition.
-			for property, value := range cond.Conditions {
-				queryConditions[property] = append(queryConditions[property], value)
-			}
+			appendIndexConditions(cond, indexConditions)
 			// build elastic main query indexes.
 			if _, exist := indexMap[cond.IndexName]; !exist {
 				indexes = append(indexes, cond.IndexName)
@@ -425,11 +440,11 @@ func (r *FullTextSearchReq) GenerateESQuery(kit *rest.Kit) (elastic.Query, []str
 		}
 
 		// handle filter conditions.
+		if !bObjIdFlag {
+			// when sub resource is empty, main query uses filterCond.
+			appendIndexConditions(condFilter, indexConditions)
+		}
 		for property, value := range condFilter.Conditions {
-			if !bObjIdFlag {
-				//  when objId is nil  main query use filterCond
-				queryConditions[property] = append(queryConditions[property], value)
-			}
 			boolQuery.Must(elastic.NewMatchQuery(property, value))
 		}
 
@@ -446,9 +461,19 @@ func (r *FullTextSearchReq) GenerateESQuery(kit *rest.Kit) (elastic.Query, []str
 		subCountQueries = append(subCountQueries, &FullTextSearchESQuery{Query: boolQuery, Condition: condFilter})
 	}
 
-	// add all sub aggregation conditions to main query.
-	for property, value := range queryConditions {
-		query.Must(elastic.NewTermsQuery(property, value...))
+	// Each index keeps its own filter. Branches are combined in one search.
+	scopeQuery := elastic.NewBoolQuery()
+	for dataKind, conditions := range indexConditions {
+		indexQuery := elastic.NewBoolQuery()
+		indexQuery.Must(elastic.NewMatchQuery(metadata.IndexPropertyDataKind, dataKind))
+		for property, value := range conditions {
+			indexQuery.Must(elastic.NewTermsQuery(property, value...))
+		}
+		scopeQuery.Should(indexQuery)
+	}
+	if len(indexConditions) > 0 {
+		scopeQuery.MinimumNumberShouldMatch(1)
+		query.Must(scopeQuery)
 	}
 
 	return query, indexes, subCountQueries
@@ -569,11 +594,17 @@ func (s *Service) fullTextMetadata(ctx *rest.Contexts, hits []*elastic.SearchHit
 	ctx.SetReadPreference(common.SecondaryPreferredMode)
 
 	// query metadata object.
-	searchObjectResults := s.fullTextSearchForObject(ctx.Kit, objectIDs, objHits, request)
+	searchObjectResults, err := s.fullTextSearchForObject(ctx.Kit, objectIDs, objHits, request)
+	if err != nil {
+		return nil, err
+	}
 	searchResults = append(searchResults, searchObjectResults...)
 
 	// query metadata instance.
-	searchInstanceResults := s.fullTextSearchForInstance(ctx.Kit, instMetadataConditions, insHits, request)
+	searchInstanceResults, err := s.fullTextSearchForInstance(ctx.Kit, instMetadataConditions, insHits, request)
+	if err != nil {
+		return nil, err
+	}
 	searchResults = append(searchResults, searchInstanceResults...)
 	return searchResults, nil
 }
@@ -594,36 +625,20 @@ func initCommonSearchFilter(field string, ids []int64) *metadata.SearchInstanceF
 
 // fullTextSearchForInstanceCond composition query instance condition.
 func fullTextSearchForInstanceCond(objectID string, ids []int64) *metadata.SearchInstanceFilter {
-	input := &metadata.SearchInstanceFilter{}
-	switch objectID {
-	case common.BKInnerObjIDBizSet:
-		input = initCommonSearchFilter(common.BKBizSetIDField, ids)
-	case common.BKInnerObjIDApp:
-		input = initCommonSearchFilter(common.BKAppIDField, ids)
-	case common.BKInnerObjIDSet:
-		input = initCommonSearchFilter(common.BKSetIDField, ids)
-	case common.BKInnerObjIDModule:
-		input = initCommonSearchFilter(common.BKModuleIDField, ids)
-	case common.BKInnerObjIDHost:
-		input = initCommonSearchFilter(common.BKHostIDField, ids)
-	default:
-		input = initCommonSearchFilter(common.BKInstIDField, ids)
-	}
-	return input
+	return initCommonSearchFilter(metadata.GetInstIDFieldByObjID(objectID), ids)
 }
 
 // fullTextSearchForInstance search instance result.
 func (s *Service) fullTextSearchForInstance(kit *rest.Kit, instMetadataConditions map[string][]int64,
-	insHits map[string]map[int64]*elastic.SearchHit, request FullTextSearchReq) []SearchResult {
+	insHits map[string]map[int64]*elastic.SearchHit, request FullTextSearchReq) ([]SearchResult, error) {
 
 	searchResults := make([]SearchResult, 0)
 	if len(instMetadataConditions) == 0 {
 		blog.Errorf("inst metadata cond is invalid, cond: %+v, rid: %s", instMetadataConditions, kit.Rid)
-		return nil
+		return nil, kit.CCError.CCErrorf(common.CCErrCommParamsInvalid, "inst metadata cond is invalid")
 	}
 
 	// query metadata instance.
-	input := &metadata.SearchInstanceFilter{}
 	var (
 		wg       sync.WaitGroup
 		rwLock   sync.RWMutex
@@ -639,36 +654,23 @@ func (s *Service) fullTextSearchForInstance(kit *rest.Kit, instMetadataCondition
 				<-pipeline
 			}()
 
-			input = fullTextSearchForInstanceCond(objectID, ids)
-			// search object instances.
+			input := fullTextSearchForInstanceCond(objectID, ids)
 			result, err := s.Logics.InstOperation().SearchObjectInstances(kit, objectID, input)
 			if err != nil {
-				blog.Errorf("search obj instances fail, objID: %s, ids: %v, rid: %s", objectID, ids, kit.Rid)
+				blog.Errorf("search obj instances failed, objID: %s, ids: %v, err: %v, rid: %s", objectID, ids, err,
+					kit.Rid)
 				firstErr = err
 				return
 			}
 
+			idField := metadata.GetInstIDFieldByObjID(objectID)
 			for _, instance := range result.Info {
 				if _, ok := instance.(*mapstr.MapStr); !ok {
 					blog.Errorf("get inst struct fail, objectID: %v, rid: %s", objectID, kit.Rid)
 					continue
 				}
-				var idStr string
 				inst := instance.(*mapstr.MapStr)
-				switch objectID {
-				case common.BKInnerObjIDBizSet:
-					idStr, err = inst.String(common.BKBizSetIDField)
-				case common.BKInnerObjIDApp:
-					idStr, err = inst.String(common.BKAppIDField)
-				case common.BKInnerObjIDSet:
-					idStr, err = inst.String(common.BKSetIDField)
-				case common.BKInnerObjIDModule:
-					idStr, _ = inst.String(common.BKModuleIDField)
-				case common.BKInnerObjIDHost:
-					idStr, err = inst.String(common.BKHostIDField)
-				default:
-					idStr, err = inst.String(common.BKInstIDField)
-				}
+				idStr, err := inst.String(idField)
 				if err != nil {
 					blog.Errorf("get instId fail, objectID: %v, rid: %s", objectID, kit.Rid)
 					continue
@@ -697,14 +699,18 @@ func (s *Service) fullTextSearchForInstance(kit *rest.Kit, instMetadataCondition
 	wg.Wait()
 
 	if firstErr != nil {
-		return nil
+		return nil, firstErr
 	}
-	return searchResults
+	return searchResults, nil
 }
 
 // fullTextSearchForObject search object result.
-func (s *Service) fullTextSearchForObject(kit *rest.Kit, objectIDs []string,
-	objHits map[string]*elastic.SearchHit, request FullTextSearchReq) []SearchResult {
+func (s *Service) fullTextSearchForObject(kit *rest.Kit, objectIDs []string, objHits map[string]*elastic.SearchHit,
+	request FullTextSearchReq) ([]SearchResult, error) {
+
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
 
 	modelCondition := &metadata.QueryCondition{
 		Fields:         request.Fields,
@@ -716,12 +722,12 @@ func (s *Service) fullTextSearchForObject(kit *rest.Kit, objectIDs []string,
 	objects, err := s.Engine.CoreAPI.CoreService().Model().ReadModel(kit.Ctx, kit.Header, modelCondition)
 	if err != nil {
 		blog.Errorf("get objects(%+v) failed, err: %v, rid: %s", objectIDs, err, kit.Rid)
-		return nil
+		return nil, err
 	}
 
 	if objects.Count == 0 {
 		blog.Errorf("meet the modelCond object is empty, modelCond: %+v, rid: %s", modelCondition, kit.Rid)
-		return nil
+		return nil, nil
 	}
 
 	searchResults := make([]SearchResult, 0)
@@ -736,7 +742,7 @@ func (s *Service) fullTextSearchForObject(kit *rest.Kit, objectIDs []string,
 		searchResults = append(searchResults, searchRes)
 	}
 
-	return searchResults
+	return searchResults, nil
 }
 
 // FullTextSearch fulltext search service.
@@ -806,7 +812,7 @@ func (s *Service) FullTextSearch(ctx *rest.Contexts) {
 	// when objId is not nil,mainSearchResult.Hits.TotalHits.Value is inaccurate ,
 	// so we must use sum of each subCountQueries result
 	response := FullTextSearchResp{}
-	if mainSearchResult.Hits.TotalHits.Value == 0 {
+	if total == 0 {
 		ctx.RespEntity(response)
 		return
 	}
