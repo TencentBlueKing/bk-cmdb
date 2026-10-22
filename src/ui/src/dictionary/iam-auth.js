@@ -24,13 +24,11 @@ export const IAM_VIEWS = {
   // 业务列表
   BIZ: 'biz',
   BIZ_SET: 'business_set',
-  // 跨业务转主机选择的主机所属业务的列表
-  BIZ_FOR_HOST_TRANS: 'biz_for_host_trans',
   // 主机列表
   HOST: 'host',
-  // 主机池目录列表(作为源目录时使用的视图)
-  RESOURCE_SOURCE_POOL_DIRECTORY: 'sys_host_rsc_pool_directory',
-  // 主机池目录列表(作为目标目录时使用的视图)
+  // 主机池主机列表
+  RESOURCE_HOST: 'sys_host',
+  // 主机池目录列表(作为源目录、目标目录时均使用此视图)
   RESOURCE_TARGET_POOL_DIRECTORY: 'sys_resource_pool_directory',
   // 关联类型列表
   ASSOCIATION_TYPE: 'sys_association_type',
@@ -58,9 +56,8 @@ export const IAM_VIEWS_NAME = {
   [IAM_VIEWS.CUSTOM_QUERY]: ['动态分组', 'Custom Query'],
   [IAM_VIEWS.BIZ]: ['业务', 'Business'],
   [IAM_VIEWS.BIZ_SET]: ['业务集', 'Business-Set'],
-  [IAM_VIEWS.BIZ_FOR_HOST_TRANS]: ['业务', 'Business'],
   [IAM_VIEWS.HOST]: ['主机', 'Host'],
-  [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
+  [IAM_VIEWS.RESOURCE_HOST]: ['主机池主机', 'Resource Pool Host'],
   [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]: ['主机池目录', 'Resource Pool Directory'],
   [IAM_VIEWS.ASSOCIATION_TYPE]: ['关联类型', 'Association Type'],
   [IAM_VIEWS.SERVICE_TEMPLATE]: ['服务模板', 'Service Template'],
@@ -94,7 +91,28 @@ function basicTransform(cmdbAction, meta = {}) {
   return inejctedMeta
 }
 
+// 主机转移拆分后的原子操作，仅用于生成权限申请数据，不直接作为鉴权类型使用
+export const IAM_HOST_TRANSFER_ACTIONS = {
+  TRANSFER_HOST_OUT_OF_BIZ: {
+    id: 'transfer_host_out_of_biz',
+    name: ['主机转出业务', 'Transfer Host Out Of Business']
+  },
+  TRANSFER_HOST_INTO_BIZ: {
+    id: 'transfer_host_into_biz',
+    name: ['主机转入业务', 'Transfer Host Into Business']
+  },
+  TRANSFER_HOST_OUT_OF_DIRECTORY: {
+    id: 'trans_host_out_of_res_pool_dir',
+    name: ['主机转出主机池目录', 'Transfer Host Out Of Resource Pool Directory']
+  },
+  TRANSFER_HOST_INTO_DIRECTORY: {
+    id: 'trans_host_to_res_pool_dir',
+    name: ['主机转入主机池目录', 'Transfer Host Into Resource Pool Directory']
+  }
+}
+
 // relation数组表示的是视图拓扑的定义
+// actions表示该操作由多个权限中心操作组合而成，actions[i]对应relation[i]所定义的视图
 export const IAM_ACTIONS = {
   // 全文检索
   R_FULLTEXT_SEARCH: {
@@ -449,7 +467,10 @@ export const IAM_ACTIONS = {
     }
   },
   HOST_TO_RESOURCE: {
-    id: 'unassign_biz_host',
+    actions: [
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_OUT_OF_BIZ,
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_INTO_DIRECTORY
+    ],
     name: ['主机归还主机池', 'Transfer Host To Resource Pool'],
     cmdb_action: 'hostInstance.moveHostFromModuleToResPool',
     relation: [{
@@ -479,12 +500,15 @@ export const IAM_ACTIONS = {
    * 注：只支持单个业务转移到单个业务
    */
   HOST_TRANSFER_ACROSS_BIZ: {
-    id: 'host_transfer_across_business',
+    actions: [
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_OUT_OF_BIZ,
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_INTO_BIZ
+    ],
     name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
     cmdb_action: 'hostInstance.moveHostToAnotherBizModule',
     relation: [{
-      view: IAM_VIEWS.BIZ_FOR_HOST_TRANS,
-      instances: [IAM_VIEWS.BIZ_FOR_HOST_TRANS]
+      view: IAM_VIEWS.BIZ,
+      instances: [IAM_VIEWS.BIZ]
     }, {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
@@ -507,12 +531,15 @@ export const IAM_ACTIONS = {
    * 注：复用的是跨业务转移的权限，但实际需要的鉴权数据是不一样的，此权限支持多业务转移到单业务。
    */
   IDLE_HOST_TRANSFER_ACROSS_BIZ: {
-    id: 'host_transfer_across_business',
+    actions: [
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_OUT_OF_BIZ,
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_INTO_BIZ
+    ],
     name: ['主机转移到其他业务', 'Transfer Host To Other Business'],
     cmdb_action: 'hostInstance.moveHostToAnotherBizModule',
     relation: [{
-      view: IAM_VIEWS.BIZ_FOR_HOST_TRANS,
-      instances: [IAM_VIEWS.BIZ_FOR_HOST_TRANS]
+      view: IAM_VIEWS.BIZ,
+      instances: [IAM_VIEWS.BIZ]
     }, {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
@@ -570,8 +597,8 @@ export const IAM_ACTIONS = {
     name: ['主机池主机编辑', 'Update Resource Pool Host'],
     cmdb_action: 'hostInstance.update',
     relation: [{
-      view: IAM_VIEWS.HOST,
-      instances: [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY, IAM_VIEWS.HOST]
+      view: IAM_VIEWS.RESOURCE_HOST,
+      instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY, IAM_VIEWS.RESOURCE_HOST]
     }],
     transform: (cmdbAction, relationIds) => {
       const verifyMeta = basicTransform(cmdbAction, {})
@@ -593,8 +620,8 @@ export const IAM_ACTIONS = {
     name: ['主机池主机删除', 'Delete Resource Pool Host'],
     cmdb_action: 'hostInstance.delete',
     relation: [{
-      view: IAM_VIEWS.HOST,
-      instances: [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY, IAM_VIEWS.HOST]
+      view: IAM_VIEWS.RESOURCE_HOST,
+      instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY, IAM_VIEWS.RESOURCE_HOST]
     }],
     transform: (cmdbAction, relationIds) => {
       const verifyMeta = basicTransform(cmdbAction, {})
@@ -612,12 +639,15 @@ export const IAM_ACTIONS = {
     }
   },
   TRANSFER_HOST_TO_BIZ: {
-    id: 'assign_host_to_biz',
+    actions: [
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_OUT_OF_DIRECTORY,
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_INTO_BIZ
+    ],
     name: ['主机池主机分配到业务', 'Transfer Resource Pool Host To Business'],
     cmdb_action: 'hostInstance.moveResPoolHostToBizIdleModule',
     relation: [{
-      view: IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY,
-      instances: [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]
+      view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
+      instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
     }, {
       view: IAM_VIEWS.BIZ,
       instances: [IAM_VIEWS.BIZ]
@@ -639,12 +669,15 @@ export const IAM_ACTIONS = {
     }
   },
   TRANSFER_HOST_TO_DIRECTORY: {
-    id: 'host_transfer_in_resource_pool',
+    actions: [
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_OUT_OF_DIRECTORY,
+      IAM_HOST_TRANSFER_ACTIONS.TRANSFER_HOST_INTO_DIRECTORY
+    ],
     name: ['主机池主机分配到目录', 'Change Resource Pool Host\'s Directory'],
     cmdb_action: 'hostInstance.moveResPoolHostToDirectory',
     relation: [{
-      view: IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY,
-      instances: [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY]
+      view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
+      instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]
     }, {
       view: IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY,
       instances: [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY]

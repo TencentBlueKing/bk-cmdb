@@ -90,12 +90,48 @@ export function mergeSameActions(actions) {
   return permission
 }
 
+// 计算出第m个视图完整的关联路径用于申请权限展示，如：模型-实例
+function getRelatedResource(viewDefinition, viewDefinitionIndex, relation) {
+  const { view, instances } = viewDefinition
+  const relatedResource = {
+    type: typeof view === 'function' ? view(relation) : view
+  }
+
+  if (instances?.length) {
+    relatedResource.instances = []
+    relation.forEach((resourceViewPaths) => { // 第x个资源对应的视图数组
+      const viewPathData = resourceViewPaths[viewDefinitionIndex] || [] // 取出第x个资源对应的第m个视图对应的拓扑路径ID数组
+      if (typeof instances === 'function') {
+        relatedResource.instances.push(instances(relation))
+      } else {
+        const viewFullPath = viewPathData.map((path, pathIndex) => ({ // 资源x的第m个视图对应的全路径拓扑对象
+          type: instances[pathIndex],
+          id: String(path)
+        }))
+        if (!relatedResource.instances.some(path => isEqual(path, viewFullPath))) {
+          relatedResource.instances.push(viewFullPath)
+        }
+      }
+    })
+  }
+  return relatedResource
+}
+
 // 用于转换为无权限申请弹窗中展示需要的数据，结构与接口无权限返回的数据一致，申请权限的接口也是用这个数据
 export const translateAuth = (auth) => {
   const authList = Array.isArray(auth) ? auth : [auth]
-  const actions = authList.map(({ type, relation = [] }) => {
+  const actionList = authList.map(({ type, relation = [] }) => {
     relation = convertRelation(relation, type)
     const definition = IAM_ACTIONS[type]
+
+    // 组合操作：每个视图对应一个独立的权限中心操作
+    if (definition.actions) {
+      return definition.relation.map((viewDefinition, viewDefinitionIndex) => ({
+        id: definition.actions[viewDefinitionIndex].id,
+        related_resource_types: [getRelatedResource(viewDefinition, viewDefinitionIndex, relation)]
+      }))
+    }
+
     const action = {
       id: typeof definition.id === 'function' ? definition.id(relation) : definition.id,
       related_resource_types: []
@@ -104,36 +140,13 @@ export const translateAuth = (auth) => {
       return action
     }
 
-    // 计算出完整的关联路径用于申请权限展示，如：模型-实例
     definition.relation.forEach((viewDefinition, viewDefinitionIndex) => { // 第m个视图的定义n
-      const { view, instances } = viewDefinition
-      const relatedResource = {
-        type: typeof view === 'function' ? view(relation) : view
-      }
-
-      if (instances?.length) {
-        relatedResource.instances = []
-        relation.forEach((resourceViewPaths) => { // 第x个资源对应的视图数组
-          const viewPathData = resourceViewPaths[viewDefinitionIndex] || [] // 取出第x个资源对应的第m个视图对应的拓扑路径ID数组
-          if (typeof instances === 'function') {
-            relatedResource.instances.push(instances(relation))
-          } else {
-            const viewFullPath = viewPathData.map((path, pathIndex) => ({ // 资源x的第m个视图对应的全路径拓扑对象
-              type: instances[pathIndex],
-              id: String(path)
-            }))
-            if (!relatedResource.instances.some(path => isEqual(path, viewFullPath))) {
-              relatedResource.instances.push(viewFullPath)
-            }
-          }
-        })
-      }
-      action.related_resource_types.push(relatedResource)
+      action.related_resource_types.push(getRelatedResource(viewDefinition, viewDefinitionIndex, relation))
     })
 
     return action
   })
-  return mergeSameActions(actions)
+  return mergeSameActions([].concat(...actionList))
 }
 
 export function filterPassedAuth(auth, authResults) {

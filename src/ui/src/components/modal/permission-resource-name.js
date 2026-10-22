@@ -100,10 +100,8 @@ export const IAM_VIEWS_INST_NAME = {
     const businessSet = list.find(item => item[MODEL_ID_KEY] === Number(id))
     return businessSet[MODEL_NAME_KEY]
   },
-  async [IAM_VIEWS.BIZ_FOR_HOST_TRANS](vm, id) {
-    const list = await getBusinessList(vm)
-    const business = list.find(business => business.bk_biz_id === Number(id))
-    return business.bk_biz_name
+  [IAM_VIEWS.RESOURCE_HOST](vm, id) {
+    return IAM_VIEWS_INST_NAME[IAM_VIEWS.HOST](vm, id)
   },
   async [IAM_VIEWS.HOST](vm, id) {
     const action = 'hostSearch/searchHost'
@@ -136,11 +134,6 @@ export const IAM_VIEWS_INST_NAME = {
 
     const { host } = result.find(({ host }) => host.bk_host_id === Number(id)) || {}
     return `${foreignkey(host.bk_cloud_id)}: ${host.bk_host_innerip}`
-  },
-  async [IAM_VIEWS.RESOURCE_SOURCE_POOL_DIRECTORY](vm, id) {
-    const directoryList = await getResourceDirectoryList(vm)
-    const directory = directoryList.find(directory => directory.bk_module_id === Number(id)) || {}
-    return directory.bk_module_name
   },
   async [IAM_VIEWS.RESOURCE_TARGET_POOL_DIRECTORY](vm, id) {
     const directoryList = await getResourceDirectoryList(vm)

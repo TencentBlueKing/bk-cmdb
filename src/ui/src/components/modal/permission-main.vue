@@ -80,7 +80,7 @@
 </template>
 <script>
   import cloneDeep from 'lodash/cloneDeep'
-  import { IAM_ACTIONS, IAM_VIEWS_NAME, IAM_VIEWS } from '@/dictionary/iam-auth'
+  import { IAM_ACTIONS, IAM_HOST_TRANSFER_ACTIONS, IAM_VIEWS_NAME, IAM_VIEWS } from '@/dictionary/iam-auth'
   import { mergeSameActions } from '@/setup/permission'
   import PermissionResourceName from './permission-resource-name.vue'
   export default {
@@ -128,7 +128,8 @@
         const languageIndex = this.$i18n.locale === 'en' ? 1 : 0
         return permission?.actions?.map((action) => {
           const { id: actionId, related_resource_types: relatedResourceTypes = [] } = action
-          const definition = Object.values(IAM_ACTIONS).find((definition) => {
+          const definitions = [...Object.values(IAM_ACTIONS), ...Object.values(IAM_HOST_TRANSFER_ACTIONS)]
+          const definition = definitions.find((definition) => {
             if (typeof definition.id === 'function') {
               return actionId.indexOf(definition.fixedId) > -1
             }
@@ -165,7 +166,7 @@
           }
           return {
             id: actionId,
-            name: definition.name[languageIndex],
+            name: definition?.name[languageIndex] ?? actionId,
             relations: allRelationPath
           }
         })
