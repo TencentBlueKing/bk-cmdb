@@ -137,6 +137,14 @@ const actions = {
     return $http.post('find/instassociation', params, config)
   },
   /**
+     * 查询实例关联（页面）。请求体为扁平参数，不再包 condition。
+     * 作为源：{ bk_obj_id, bk_inst_id }
+     * 作为目标：{ bk_asst_obj_id, bk_asst_inst_id }
+     */
+  searchInstAssociationWeb({ commit, state, dispatch }, { params, config }) {
+    return $http.post('find/instassociation/web', params, config)
+  },
+  /**
      * 添加实例关联
      * @param {Function} commit store commit mutation hander
      * @param {Object} state store state
