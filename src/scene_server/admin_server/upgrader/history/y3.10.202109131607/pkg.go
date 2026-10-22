@@ -18,9 +18,10 @@ package y3_10_202109131607
 
 import (
 	"context"
+	"errors"
 
 	"configcenter/src/ac/iam"
-	"configcenter/src/common/blog"
+	"configcenter/src/common/auth"
 	"configcenter/src/scene_server/admin_server/upgrader/history"
 	"configcenter/src/storage/dal"
 	"configcenter/src/storage/dal/redis"
@@ -31,11 +32,8 @@ func init() {
 }
 
 func upgrade(ctx context.Context, db dal.RDB, cache redis.Client, iam *iam.IAM, conf *history.Config) (err error) {
-	blog.Info("y3.10.202109131607, migrate iam system instances")
-
-	if err := migrateIAMSysInstances(ctx, db, cache, iam, conf); err != nil {
-		blog.Errorf("[upgrade y3.10.202109131607] migrate iam system instances failed, error:%s", err.Error())
-		return err
+	if auth.EnableAuthorize() {
+		return errors.New("migrate iam v3 system instances is not supported in this version")
 	}
 
 	return nil

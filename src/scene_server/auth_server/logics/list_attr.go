@@ -71,8 +71,10 @@ func (lgc *Logics) ListAttr(kit *rest.Kit, resourceType iamtypes.TypeID) ([]type
 	for _, attr := range res.Info {
 		displayName := attr.PropertyName
 		attrs = append(attrs, types.AttrResource{
-			ID:          attr.PropertyID,
-			DisplayName: displayName,
+			ID:             attr.PropertyID,
+			DisplayName:    displayName,
+			DataType:       types.AttrDataTypeString,
+			HasValueSource: true,
 		})
 	}
 	return attrs, nil

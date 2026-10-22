@@ -30,7 +30,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
-	"configcenter/src/common/util"
 	"configcenter/src/scene_server/auth_server/logics"
 	"configcenter/src/scene_server/auth_server/types"
 )
@@ -38,17 +37,9 @@ import (
 type resPullMethodGenerator func(*rest.Kit, *logics.Logics) (types.ResourcePullMethod, error)
 
 var resPullMethodGeneratorMap = map[iamtypes.TypeID]resPullMethodGenerator{
-	iamtypes.Host: func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
-		return types.ResourcePullMethod{
-			ListAttr:             lgc.ListAttr,
-			ListAttrValue:        lgc.ListAttrValue,
-			ListInstance:         lgc.ListHostInstance,
-			FetchInstanceInfo:    lgc.FetchHostInfo,
-			ListInstanceByPolicy: lgc.ListHostByPolicy,
-		}, nil
-	},
+	iamtypes.Host:                      getHostMethod,
+	iamtypes.SysHost:                   getHostMethod,
 	iamtypes.Business:                  getBusinessMethod,
-	iamtypes.BusinessForHostTrans:      getBusinessMethod,
 	iamtypes.SysCloudArea:              getSysCloudAreaMethod,
 	iamtypes.BizCustomQuery:            getBizInstanceMethod,
 	iamtypes.BizProcessServiceTemplate: getBizInstanceMethod,
@@ -68,7 +59,6 @@ var resPullMethodGeneratorMap = map[iamtypes.TypeID]resPullMethodGenerator{
 	iamtypes.MainlineModelEvent:        getModelMethod(iamtypes.MainlineModelEvent),
 	iamtypes.SysAssociationType:        getSysAssociationTypeMethod,
 	iamtypes.SysResourcePoolDirectory:  getResourcePoolDirectoryMethod,
-	iamtypes.SysHostRscPoolDirectory:   getResourcePoolDirectoryMethod,
 	iamtypes.SysAuditLog:               getNoResourceMethod,
 	iamtypes.BizCustomField:            getNoResourceMethod,
 	iamtypes.BizHostApply:              getNoResourceMethod,
@@ -76,17 +66,8 @@ var resPullMethodGeneratorMap = map[iamtypes.TypeID]resPullMethodGenerator{
 	iamtypes.SysEventWatch:             getNoResourceMethod,
 	iamtypes.BizProcessServiceCategory: getNoResourceMethod,
 	iamtypes.BizProcessServiceInstance: getNoResourceMethod,
-	iamtypes.KubeWorkloadEvent:         genKubeWorkloadEventMethod,
 	iamtypes.GeneralCache:              genGeneralCacheMethod,
-	iamtypes.Set: func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
-		return types.ResourcePullMethod{ListInstance: lgc.ListSetInstance,
-			FetchInstanceInfo: lgc.FetchSetModuleNameInfo}, nil
-	},
-	iamtypes.Module: func(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
-		return types.ResourcePullMethod{ListInstance: lgc.ListModuleInstance,
-			FetchInstanceInfo: lgc.FetchSetModuleNameInfo}, nil
-	},
-	iamtypes.TenantSet: genTenantSetMethod,
+	iamtypes.TenantSet:                 genTenantSetMethod,
 }
 
 // genResourcePullMethod generate iam callback methods for input resource type,
@@ -113,6 +94,16 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iamtypes
 		}, nil
 	}
 	return types.ResourcePullMethod{}, fmt.Errorf("gen method failed: unsupported resource type: %s", resourceType)
+}
+
+func getHostMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
+	return types.ResourcePullMethod{
+		ListAttr:             lgc.ListAttr,
+		ListAttrValue:        lgc.ListAttrValue,
+		ListInstance:         lgc.ListHostInstance,
+		FetchInstanceInfo:    lgc.FetchHostInfo,
+		ListInstanceByPolicy: lgc.ListHostByPolicy,
+	}, nil
 }
 
 func getBusinessMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
@@ -339,85 +330,6 @@ func getNoResourceMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullM
 	return types.ResourcePullMethod{}, nil
 }
 
-// kubeWorkloadKinds kube workload kinds
-// TODO define this in kube types folder, and replace the kinds with actual ones, this is only an example
-var kubeWorkloadKinds = []string{"deployment", "statefulSet", "daemonSet", "gameStatefulSet", "gameDeployment",
-	"cronJob", "job", "pods", "customResource"}
-
-// genKubeWorkloadEventMethod generate iam callback methods for iamtypes.KubeWorkloadEvent resource type
-func genKubeWorkloadEventMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
-	return types.ResourcePullMethod{
-		ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
-			page types.Page) (*types.ListInstanceResult, error) {
-			limit := page.Limit
-			if limit > common.BKMaxPageSize && limit != common.BKNoLimit {
-				return nil, kit.CCError.CCError(common.CCErrCommPageLimitIsExceeded)
-			}
-			if limit == 0 {
-				return nil, kit.CCError.CCErrorf(common.CCErrCommParamsNeedSet, "page.limit")
-			}
-			// get kube workload kinds that matches the filter
-			kinds := kubeWorkloadKinds
-			if filter != nil {
-				if filter.Parent != nil {
-					return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
-				}
-
-				if len(filter.Keyword) != 0 {
-					kinds = make([]string, 0)
-					for _, kind := range kubeWorkloadKinds {
-						if strings.Contains(strings.ToLower(kind), strings.ToLower(filter.Keyword)) {
-							kinds = append(kinds, kind)
-						}
-					}
-				}
-			}
-			// generate iam instance resource by kube workload kinds, do pagination
-			kindsLen := int64(len(kinds))
-			if page.Offset >= kindsLen {
-				return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
-			}
-			end := page.Offset + limit
-			if end > kindsLen {
-				end = kindsLen
-			}
-			res := make([]types.InstanceResource, 0)
-			for _, kind := range kinds[page.Offset:end] {
-				res = append(res, types.InstanceResource{
-					ID:          kind,
-					DisplayName: kind,
-				})
-			}
-
-			return &types.ListInstanceResult{Count: kindsLen, Results: res}, nil
-		},
-		FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.FetchInstanceInfoFilter) (
-			[]map[string]interface{}, error) {
-			// only support query name field, name field is the same with the id field
-			hasNameField := false
-			for _, attr := range filter.Attrs {
-				if attr == types.NameField {
-					hasNameField = true
-				}
-			}
-			if !hasNameField {
-				return make([]map[string]interface{}, 0), nil
-			}
-			res := make([]map[string]interface{}, 0)
-			for _, id := range filter.IDs {
-				if util.InStrArr(kubeWorkloadKinds, id) {
-					res = append(res, map[string]interface{}{types.NameField: id})
-				}
-			}
-			return res, nil
-		},
-		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-			filter *types.ListInstanceByPolicyFilter, page types.Page) (*types.ListInstanceResult, error) {
-			return nil, fmt.Errorf("%s do not support %s", iamtypes.KubeWorkloadEvent, types.ListInstanceByPolicyMethod)
-		},
-	}, nil
-}
-
 func genGeneralCacheMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	return types.ResourcePullMethod{
 		ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
@@ -447,17 +359,17 @@ func genGeneralCacheMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePul
 
 			// generate iam instance resource by supported general cache resource types, do pagination
 			resLen := int64(len(resTypes))
-			if page.Offset >= resLen {
+			if (page.Page-1)*page.PageSize >= resLen {
 				return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
 			}
 
-			end := page.Offset + page.Limit
+			end := page.Page * page.PageSize
 			if end > resLen {
 				end = resLen
 			}
 
 			res := make([]types.InstanceResource, 0)
-			for _, resType := range resTypes[page.Offset:end] {
+			for _, resType := range resTypes[(page.Page-1)*page.PageSize : end] {
 				res = append(res, types.InstanceResource{
 					ID:          resType,
 					DisplayName: resType,
@@ -471,7 +383,7 @@ func genGeneralCacheMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePul
 
 			// only support query name field, name field is the same with the id field
 			hasNameField := false
-			for _, attr := range filter.Attrs {
+			for _, attr := range filter.Requires {
 				if attr == types.NameField {
 					hasNameField = true
 					break
@@ -485,7 +397,7 @@ func genGeneralCacheMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePul
 			for _, id := range filter.IDs {
 				_, exists := general.SupportedResTypeMap[general.ResType(id)]
 				if exists {
-					res = append(res, map[string]interface{}{types.NameField: id})
+					res = append(res, map[string]interface{}{types.IDField: id, types.NameField: id})
 				}
 			}
 
@@ -504,7 +416,7 @@ func genTenantSetMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMe
 		ListInstance: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.ListInstanceFilter,
 			page types.Page) (*types.ListInstanceResult, error) {
 
-			if page.Offset > 0 {
+			if page.Page > 1 {
 				return &types.ListInstanceResult{Count: 0, Results: make([]types.InstanceResource, 0)}, nil
 			}
 
