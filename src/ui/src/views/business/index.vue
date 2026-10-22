@@ -199,7 +199,7 @@
             ref="batchUpdateForm"
             :properties="properties"
             :property-groups="propertyGroups"
-            :save-auth="saveAuth"
+            :save-auth="batchSaveAuth"
             :show-default-value="true"
             @on-submit="handleMultipleSave"
             :loading="batchUpdateSlider.loading"
@@ -325,6 +325,15 @@
           return { type: this.$OPERATION.U_BUSINESS }
         }
         return null
+      },
+      batchSaveAuth() {
+        if (!this.selectedRows.length) {
+          return null
+        }
+        return this.selectedRows.map(row => ({
+          type: this.$OPERATION.U_BUSINESS,
+          relation: [row.bk_biz_id]
+        }))
       },
       model() {
         return this.getModelById('biz') || {}
