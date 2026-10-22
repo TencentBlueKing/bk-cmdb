@@ -66,15 +66,16 @@ type RegisterIamOptions struct {
 /**
 IAM V4 register order:
   1. register/update System
-  2. clear the authorizations of the unused Roles and delete them
-  3. unbind the Actions that are no longer used by the remaining Roles, an Action can only be deleted after it is
-     unbound from all Roles
-  4. delete unused Actions
+  2. delete unused Roles
+  3. unbind Actions that are no longer used by the remaining Roles, cascade delete policies when an unbound action is
+     the last one of a resource type dimension
+  4. delete unused Actions and cascade delete policies
   5. update ResourceType (use a temporary name when name conflicts)
   6. add ResourceType
-  7. update Action (name only; ResourceTypeID change is delete + create)
+  7. update Action (name and auth_mode). Narrowing auth_mode cascade delete policies of the removed mode.
+     ResourceTypeID change is delete + create
   8. add Action
-  9. delete unused ResourceType
+  9. delete unused ResourceType and cascade delete policies
   10. update/register Role and bind the new Actions to them
 */
 
@@ -303,7 +304,8 @@ func (i IAM) listAllResTypes(ctx context.Context, header http.Header, rid string
 
 // isResTypeEqual check if registered resource type is equal to expected one
 func (i IAM) isResTypeEqual(registeredResType, resType iam.ResourceType) bool {
-	if registeredResType.Name != resType.Name || registeredResType.NameEn != resType.NameEn {
+	// TODO: IAM currently does not support En, need to confirm with IAM how to handle it.
+	if registeredResType.Name != resType.Name {
 		return false
 	}
 	if len(registeredResType.Ancestors) != len(resType.Ancestors) {
@@ -386,7 +388,7 @@ func (i IAM) updateResTypes(ctx context.Context, header http.Header, resTypes []
 // removeResTypes delete the resource types that are no longer used, IAM only supports deleting one by one
 func (i IAM) removeResTypes(ctx context.Context, header http.Header, resTypeIDs []iamtypes.TypeID, rid string) error {
 	for _, resTypeID := range resTypeIDs {
-		if err := i.Client.DeleteResourcesType(ctx, header, resTypeID); err != nil {
+		if err := i.Client.DeleteResourcesType(ctx, header, resTypeID, iam.CascadeRBACAuthorization); err != nil {
 			blog.Errorf("delete resource type(%s) failed, err: %v, rid: %s", resTypeID, err, rid)
 			return err
 		}
@@ -395,10 +397,16 @@ func (i IAM) removeResTypes(ctx context.Context, header http.Header, resTypeIDs 
 	return nil
 }
 
+// updateActionInfo is the action update info.
+type updateActionInfo struct {
+	action       iam.ResourceAction
+	prevAuthMode iamtypes.AuthMode
+}
+
 // resActionCompareResult is the cross-compare result of IAM actions
 type resActionCompareResult struct {
 	newActions    []iam.ResourceAction
-	updateActions []iam.ResourceAction
+	updateActions []updateActionInfo
 	removedIDs    []iamtypes.ActionID
 }
 
@@ -423,7 +431,7 @@ func (i IAM) crossCompareResActions(ctx context.Context, header http.Header,
 	updateActionPrevNameMap := make(map[iamtypes.ActionID]iamName)
 
 	newResActions := make([]iam.ResourceAction, 0)
-	updateResActions := make([]iam.ResourceAction, 0)
+	updateResActions := make([]updateActionInfo, 0)
 
 	for _, resourceAction := range GenerateActions(tenantObjects) {
 		actionNameMap[resourceAction.Name] = resourceAction.ID
@@ -441,8 +449,11 @@ func (i IAM) crossCompareResActions(ctx context.Context, header http.Header,
 			// registered resource action exist in current resource actions, should not be removed
 			delete(registeredResActionMap, resourceAction.ID)
 
-			if registeredAction.Name == resourceAction.Name && registeredAction.NameEn == resourceAction.NameEn &&
-				registeredAction.AuthMode == resourceAction.AuthMode {
+			// TODO: IAM currently does not support En, need to confirm with IAM how to handle it.
+			if resourceAction.AuthMode == "" {
+				resourceAction.AuthMode = iamtypes.AuthModeRBAC
+			}
+			if registeredAction.Name == resourceAction.Name && registeredAction.AuthMode == resourceAction.AuthMode {
 				continue
 			}
 
@@ -450,7 +461,10 @@ func (i IAM) crossCompareResActions(ctx context.Context, header http.Header,
 				Name:   registeredAction.Name,
 				NameEn: registeredAction.NameEn,
 			}
-			updateResActions = append(updateResActions, resourceAction)
+			updateResActions = append(updateResActions, updateActionInfo{
+				action:       resourceAction,
+				prevAuthMode: registeredAction.AuthMode,
+			})
 			continue
 		}
 		newResActions = append(newResActions, resourceAction)
@@ -458,9 +472,9 @@ func (i IAM) crossCompareResActions(ctx context.Context, header http.Header,
 
 	// if to update action previous name conflict with a valid one, change its name to an intermediate one first
 	conflictActions := getNameConflictItems(updateResActions, updateActionPrevNameMap, actionNameMap, actionNameEnMap,
-		func(data iam.ResourceAction) iamtypes.ActionID { return data.ID },
-		func(data *iam.ResourceAction, name string) { data.Name = name },
-		func(data *iam.ResourceAction, name string) { data.NameEn = name },
+		func(data updateActionInfo) iamtypes.ActionID { return data.action.ID },
+		func(data *updateActionInfo, name string) { data.action.Name = name },
+		func(data *updateActionInfo, name string) { data.action.NameEn = name },
 	)
 
 	removedResActionIDs := make([]iamtypes.ActionID, 0, len(registeredResActionMap))
@@ -509,14 +523,17 @@ func (i IAM) registerResActions(ctx context.Context, header http.Header, actions
 	return nil
 }
 
-// updateResActions update the actions in IAM, only the action name can be updated
-func (i IAM) updateResActions(ctx context.Context, header http.Header, actions []iam.ResourceAction,
-	rid string) error {
-
+// updateResActions update action name and auth_mode in IAM.
+func (i IAM) updateResActions(ctx context.Context, header http.Header, actions []updateActionInfo, rid string) error {
 	for _, action := range actions {
-		req := &iam.UpdateActionReq{Name: action.Name, NameEn: action.NameEn, AuthMode: action.AuthMode}
-		if err := i.Client.UpdateAction(ctx, header, action.ID, req); err != nil {
-			blog.Errorf("update action(%+v) failed, err: %v, rid: %s", action, err, rid)
+		req := &iam.UpdateActionReq{
+			Name:     action.action.Name,
+			NameEn:   action.action.NameEn,
+			AuthMode: action.action.AuthMode,
+		}
+		cascadeDep := getAuthModeNarrowCascadeDep(action.prevAuthMode, action.action.AuthMode)
+		if err := i.Client.UpdateAction(ctx, header, action.action.ID, req, cascadeDep...); err != nil {
+			blog.Errorf("update action(%+v) failed, err: %v, rid: %s", action.action, err, rid)
 			return err
 		}
 	}
@@ -524,13 +541,27 @@ func (i IAM) updateResActions(ctx context.Context, header http.Header, actions [
 	return nil
 }
 
-// removeResActions delete the actions that are no longer used, an action can only be deleted after it is unbound
-// from all the roles. IAM only supports deleting one by one
+// getAuthModeNarrowCascadeDep returns dependencies to cascade delete when an action's auth_mode is narrowed.
+func getAuthModeNarrowCascadeDep(prev, next iamtypes.AuthMode) []iam.CascadeDep {
+	cascadeDep := make([]iam.CascadeDep, 0)
+
+	if (prev == iamtypes.AuthModeRBAC || prev == iamtypes.AuthModeBoth || prev == "") && next == iamtypes.AuthModeABAC {
+		cascadeDep = append(cascadeDep, iam.CascadeRole, iam.CascadeRBACAuthorization)
+	}
+	if (prev == iamtypes.AuthModeABAC || prev == iamtypes.AuthModeBoth) && next == iamtypes.AuthModeRBAC {
+		cascadeDep = append(cascadeDep, iam.CascadeABACAuthorization)
+	}
+
+	return cascadeDep
+}
+
+// removeResActions delete the actions that are no longer used. IAM only supports deleting one by one.
 func (i IAM) removeResActions(ctx context.Context, header http.Header, actionIDs []iamtypes.ActionID,
 	rid string) error {
 
 	for _, actionID := range actionIDs {
-		if err := i.Client.DeleteAction(ctx, header, actionID); err != nil {
+		if err := i.Client.DeleteAction(ctx, header, actionID, iam.CascadeRole, iam.CascadeRBACAuthorization,
+			iam.CascadeABACAuthorization); err != nil {
 			blog.Errorf("delete action(%s) failed, err: %v, rid: %s", actionID, err, rid)
 			return err
 		}
@@ -539,12 +570,20 @@ func (i IAM) removeResActions(ctx context.Context, header http.Header, actionIDs
 	return nil
 }
 
+// unbindRoleActionInfo is the actions info unbound from one role.
+type unbindRoleActionInfo struct {
+	// actionIDs are the actions whose role has other actions of the same resource type dimension.
+	actionIDs []iamtypes.ActionID
+	// lastDimActionIDs are the last actions of their resource type dimension and need to cascade delete policies.
+	lastDimActionIDs []iamtypes.ActionID
+}
+
 // roleCompareResult is the cross-compare result of IAM roles
 type roleCompareResult struct {
 	newRoles      []iam.Role
 	updateRoles   []iam.Role
 	addActions    map[iamtypes.RoleID][]iam.RoleAction
-	deleteActions map[iamtypes.RoleID][]iamtypes.ActionID
+	deleteActions map[iamtypes.RoleID]*unbindRoleActionInfo
 	removedIDs    []iamtypes.RoleID
 }
 
@@ -569,7 +608,7 @@ func (i IAM) crossCompareRoles(ctx context.Context, header http.Header, tenantOb
 	updateRolePrevNameMap := make(map[iamtypes.RoleID]iamName)
 
 	addRoleActions := make(map[iamtypes.RoleID][]iam.RoleAction)
-	deleteRoleActions := make(map[iamtypes.RoleID][]iamtypes.ActionID)
+	deleteRoleActions := make(map[iamtypes.RoleID]*unbindRoleActionInfo)
 	newRoles := make([]iam.Role, 0)
 	updateRoles := make([]iam.Role, 0)
 
@@ -587,8 +626,8 @@ func (i IAM) crossCompareRoles(ctx context.Context, header http.Header, tenantOb
 		// registered role exists in current roles, should not be removed
 		delete(registeredRoleMap, role.ID)
 
-		if registered.Name != role.Name || registered.NameEn != role.NameEn ||
-			registered.Description != role.Description || registered.DescriptionEn != role.DescriptionEn {
+		// TODO: IAM currently does not support En, need to confirm with IAM how to handle it.
+		if registered.Name != role.Name || registered.Description != role.Description {
 			updateRolePrevNameMap[role.ID] = iamName{
 				Name:   registered.Name,
 				NameEn: registered.NameEn,
@@ -601,7 +640,7 @@ func (i IAM) crossCompareRoles(ctx context.Context, header http.Header, tenantOb
 			addRoleActions[role.ID] = toAdd
 		}
 		if len(toDelete) > 0 {
-			deleteRoleActions[role.ID] = toDelete
+			deleteRoleActions[role.ID] = splitUnbindRoleActionInfo(registered.Actions, toDelete)
 		}
 	}
 
@@ -703,26 +742,15 @@ func (i IAM) updateRoles(ctx context.Context, header http.Header, roles []iam.Ro
 	return nil
 }
 
-// removeRoles clear the authorizations related to the roles and delete them
+// removeRoles delete roles that are no longer used and cascade delete their RBAC authorizations and unbind actions.
 func (i IAM) removeRoles(ctx context.Context, header http.Header, roleIDs []iamtypes.RoleID, rid string) error {
 	for _, roleID := range roleIDs {
-		if err := i.clearRolePolicies(ctx, header, roleID, rid); err != nil {
-			return err
-		}
-
-		if err := i.Client.DeleteRole(ctx, header, roleID); err != nil {
+		if err := i.Client.DeleteRole(ctx, header, roleID, iam.CascadeRBACAuthorization); err != nil {
 			blog.Errorf("delete role(%s) failed, err: %v, rid: %s", roleID, err, rid)
 			return err
 		}
 	}
 
-	return nil
-}
-
-// clearRolePolicies clear the authorizations related to the role.
-// TODO: IAM does not provide the api to clear the role authorizations, need to confirm with IAM how to handle it.
-func (i IAM) clearRolePolicies(ctx context.Context, header http.Header, roleID iamtypes.RoleID, rid string) error {
-	blog.Infof("clear role(%s) policies is not supported by iam yet, skip it, rid: %s", roleID, rid)
 	return nil
 }
 
@@ -740,18 +768,58 @@ func (i IAM) bindRoleActions(ctx context.Context, header http.Header, roleAction
 	return nil
 }
 
-// unbindRoleActions unbind the actions that are no longer used from the roles
+// unbindRoleActions unbind the actions that are no longer used from the roles.
 func (i IAM) unbindRoleActions(ctx context.Context, header http.Header,
-	roleActionIDs map[iamtypes.RoleID][]iamtypes.ActionID, rid string) error {
+	roleActionIDs map[iamtypes.RoleID]*unbindRoleActionInfo, rid string) error {
 
-	for roleID, actionIDs := range roleActionIDs {
-		if err := i.Client.DeleteRoleActions(ctx, header, roleID, actionIDs); err != nil {
-			blog.Errorf("unbind role(%s) actions(%+v) failed, err: %v, rid: %s", roleID, actionIDs, err, rid)
-			return err
+	for roleID, unbind := range roleActionIDs {
+		if len(unbind.actionIDs) > 0 {
+			if err := i.Client.DeleteRoleActions(ctx, header, roleID, unbind.actionIDs); err != nil {
+				blog.Errorf("unbind role(%s) actions(%+v) failed, err: %v, rid: %s", roleID, unbind.actionIDs, err, rid)
+				return err
+			}
+		}
+
+		// The last action of a resource type dimension cascade delete rbac authorization policies
+		if len(unbind.lastDimActionIDs) > 0 {
+			if err := i.Client.DeleteRoleActions(ctx, header, roleID, unbind.lastDimActionIDs,
+				iam.CascadeRBACAuthorization); err != nil {
+				blog.Errorf("unbind role(%s) last dimension actions(%+v) failed, err: %v, rid: %s", roleID,
+					unbind.lastDimActionIDs, err, rid)
+				return err
+			}
 		}
 	}
 
 	return nil
+}
+
+// splitUnbindRoleActionInfo separates actions that are the last one of a resource type dimension from the rest.
+func splitUnbindRoleActionInfo(registered []iam.RoleAction, toDelete []iamtypes.ActionID) *unbindRoleActionInfo {
+	deleteSet := make(map[iamtypes.ActionID]struct{}, len(toDelete))
+	for _, id := range toDelete {
+		deleteSet[id] = struct{}{}
+	}
+
+	remain := make(map[iamtypes.TypeID]struct{})
+	actionResType := make(map[iamtypes.ActionID]iamtypes.TypeID, len(registered))
+	for _, action := range registered {
+		actionResType[action.ID] = action.ResourceTypeID
+		if _, ok := deleteSet[action.ID]; ok {
+			continue
+		}
+		remain[action.ResourceTypeID] = struct{}{}
+	}
+
+	unbind := new(unbindRoleActionInfo)
+	for _, id := range toDelete {
+		if _, ok := remain[actionResType[id]]; !ok {
+			unbind.lastDimActionIDs = append(unbind.lastDimActionIDs, id)
+			continue
+		}
+		unbind.actionIDs = append(unbind.actionIDs, id)
+	}
+	return unbind
 }
 
 // SyncIAMSysInstances sync dynamic model resources (ResourceType/Action/Role) between CMDB and IAM

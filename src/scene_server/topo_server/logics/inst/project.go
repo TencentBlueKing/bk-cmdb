@@ -121,7 +121,7 @@ func (p *project) CreateProject(kit *rest.Kit, data []mapstr.MapStr) ([]int64, e
 			},
 			Creator: kit.User,
 		}
-		_, err = p.authManager.Authorizer.BatchRegisterResourceCreatorAction(kit.Ctx, kit.Header,
+		err = p.authManager.Authorizer.BatchRegisterResourceCreatorAction(kit.Ctx, kit.Header,
 			iamInstancesWithCreator)
 		if err != nil {
 			blog.Errorf("register created project to iam failed, err: %s, rid: %s", err, kit.Rid)

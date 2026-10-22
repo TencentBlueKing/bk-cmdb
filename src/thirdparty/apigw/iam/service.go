@@ -22,7 +22,6 @@ import (
 	"net/http"
 
 	"configcenter/src/ac/iam/types"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/thirdparty/apigw/apigwutil"
 	"configcenter/src/thirdparty/apigw/apigwutil/user"
@@ -30,11 +29,8 @@ import (
 
 // ClientI is the iam api gateway client
 type ClientI interface {
-	GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error)
-	RegisterResourceCreatorAction(ctx context.Context, header http.Header, instance metadata.IamInstanceWithCreator) (
-		[]metadata.IamCreatorActionPolicy, error)
-	BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header,
-		instance metadata.IamInstancesWithCreator) ([]metadata.IamCreatorActionPolicy, error)
+	GetNoAuthSkipUrl(ctx context.Context, header http.Header, req *PermApplyURLReq) (string, error)
+	AddAuthorization(ctx context.Context, header http.Header, reqs []AddAuthorizationReq) error
 
 	// RegisterSystem register cmdb system in IAM, returns the registered system id
 	RegisterSystem(ctx context.Context, header http.Header, sys *System) (string, error)
@@ -52,17 +48,18 @@ type ClientI interface {
 	// UpdateResourcesType update resource type in IAM
 	UpdateResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID,
 		req *UpdateResourceTypeReq) error
-	// DeleteResourcesType delete resource type in IAM
-	DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID) error
+	// DeleteResourcesType delete resource type in IAM.
+	DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID, cascade ...CascadeDep) error
 
 	// ListActions list actions by page
 	ListActions(ctx context.Context, header http.Header, page, pageSize int64) (*ListActionsData, error)
 	// RegisterActions register actions in IAM, returns the registered action ids
 	RegisterActions(ctx context.Context, header http.Header, actions []ResourceAction) ([]string, error)
-	// UpdateAction update action in IAM
-	UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID, req *UpdateActionReq) error
-	// DeleteAction delete action in IAM
-	DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID) error
+	// UpdateAction update action in IAM.
+	UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID, req *UpdateActionReq,
+		cascade ...CascadeDep) error
+	// DeleteAction delete action in IAM.
+	DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID, cascade ...CascadeDep) error
 
 	// ListRoles list roles by page
 	ListRoles(ctx context.Context, header http.Header, page, pageSize int64) (*ListRolesData, error)
@@ -70,15 +67,18 @@ type ClientI interface {
 	RegisterRoles(ctx context.Context, header http.Header, roles []Role) ([]string, error)
 	// UpdateRole update role in IAM
 	UpdateRole(ctx context.Context, header http.Header, roleID types.RoleID, req *UpdateRoleReq) error
-	// DeleteRole delete role in IAM
-	DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID) error
+	// DeleteRole delete role in IAM.
+	DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID, cascade ...CascadeDep) error
 	// AddRoleActions bind actions to a role, returns the added action ids
 	AddRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actions []RoleAction) ([]string, error)
-	// DeleteRoleActions unbind actions from a role
-	DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actionIDs []types.ActionID) error
+	// DeleteRoleActions unbind actions from a role.
+	DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID, actionIDs []types.ActionID,
+		cascade ...CascadeDep) error
 
-	ListUserPolicies(ctx context.Context, header http.Header, opts *ListPolicyOptions) ([]*ActionPolicy, error)
-	GetUserPolicy(ctx context.Context, header http.Header, opt *GetPolicyOption) (*operator.Policy, error)
+	// HybridPlan get the authorization condition of one action, which is used to filter the authorized resources
+	HybridPlan(ctx context.Context, header http.Header, req *PlanReq) (*operator.Plan, error)
+	// HybridPlanByActions get the authorization conditions of multiple actions
+	HybridPlanByActions(ctx context.Context, header http.Header, req *PlanByActionsReq) ([]ActionPlanRes, error)
 }
 
 type iam struct {

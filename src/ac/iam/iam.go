@@ -208,16 +208,14 @@ func (a *authorizer) GetPermissionToApply(ctx context.Context, h http.Header,
 
 // RegisterResourceCreatorAction register resourceCreator Action
 func (a *authorizer) RegisterResourceCreatorAction(ctx context.Context, h http.Header,
-	input metadata.IamInstanceWithCreator) (
-	[]metadata.IamCreatorActionPolicy, error) {
+	input metadata.IamInstanceWithCreator) error {
 
 	return a.authClientSet.RegisterResourceCreatorAction(ctx, h, input)
 }
 
 // BatchRegisterResourceCreatorAction batch register resourceCreator action
 func (a *authorizer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header,
-	input metadata.IamInstancesWithCreator) (
-	[]metadata.IamCreatorActionPolicy, error) {
+	input metadata.IamInstancesWithCreator) error {
 
 	return a.authClientSet.BatchRegisterResourceCreatorAction(ctx, h, input)
 }

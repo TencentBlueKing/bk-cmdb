@@ -14,7 +14,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package operator TODO
+// Package operator defines the authorization plan expression operators and evaluation helpers.
 package operator
 
 import (
@@ -23,119 +23,55 @@ import (
 	"strings"
 )
 
-var factory map[string]Operator
+var factory map[OperType]Operator
 
 func init() {
-	factory = make(map[string]Operator)
+	factory = make(map[OperType]Operator)
 
-	equal := EqualOper("")
-	factory[equal.Name()] = &equal
+	equal := EqualOper(Equal)
+	factory[Equal] = &equal
 
-	notEqual := NotEqualOper("")
-	factory[notEqual.Name()] = &notEqual
+	in := InOper(In)
+	factory[In] = &in
 
-	in := InOper("")
-	factory[in.Name()] = &in
-
-	notIn := NotInOper("")
-	factory[notIn.Name()] = &notIn
-
-	contains := ContainsOper("")
-	factory[contains.Name()] = &contains
-
-	notContains := NotContainsOper("")
-	factory[notContains.Name()] = &notContains
-
-	startWith := StartsWithOper("")
-	factory[startWith.Name()] = &startWith
-
-	notStartWith := NotStartsWithOper("")
-	factory[notStartWith.Name()] = &notStartWith
-
-	endWith := EndsWithOper("")
-	factory[endWith.Name()] = &endWith
-
-	notEndWith := NotEndsWithOper("")
-	factory[notEndWith.Name()] = &notEndWith
-
-	lessThan := LessThanOper("")
-	factory[lessThan.Name()] = &lessThan
-
-	lessThanEqual := LessThanEqualOper("")
-	factory[lessThanEqual.Name()] = &lessThanEqual
-
-	greaterThan := GreaterThanOper("")
-	factory[greaterThan.Name()] = &greaterThan
-
-	greaterThanEqual := GreaterThanEqualOper("")
-	factory[greaterThanEqual.Name()] = &greaterThanEqual
-
-	any := AnyOper("")
-	factory[any.Name()] = &any
-
+	startWith := StartsWithOper(StartWith)
+	factory[StartWith] = &startWith
 }
 
-// Operator TODO
+// Operator is used to evaluate a compare node against a resource attribute.
 type Operator interface {
 	// Name of the operator
-	Name() string
+	Name() OperType
 
-	// Match is used to check if "match" is "logical equal" to the "with"
-	// with different OperType, different OperType has different definition
-	// of "logical equal", if "logical equal" then return bool "true" value.
-
-	// Match TODO
+	// Match is used to check if "match" is "logical equal" to the "with".
+	// Different OperType has different definition of "logical equal".
 	// match: the value to test
 	// with: the value to compare to, which is also the template
 	Match(match interface{}, with interface{}) (bool, error)
 }
 
 const (
-	// Unknown TODO
-	Unknown = "unknown"
-	// Equal TODO
-	Equal = "eq"
-	// NEqual TODO
-	NEqual = "not_eq"
-	// Any TODO
-	Any = "any"
-	// In TODO
-	In = "in"
-	// Nin TODO
-	Nin = "not_in"
-	// Contains TODO
-	Contains = "contains"
-	// NContains TODO
-	NContains = "not_contains"
-	// StartWith TODO
-	StartWith = "starts_with"
-	// NStartWith TODO
-	NStartWith = "not_starts_with"
-	// EndWith TODO
-	EndWith = "ends_with"
-	// NEndWith TODO
-	NEndWith = "not_ends_with"
-	// LessThan TODO
-	LessThan = "lt"
-	// LessThanEqual TODO
-	LessThanEqual = "lte"
-	// GreaterThan TODO
-	GreaterThan = "gt"
-	// GreaterThanEqual TODO
-	GreaterThanEqual = "gte"
+	// And is the n-ary logical and operator, whose operands are in the content field.
+	And OperType = "and"
+	// Or is the n-ary logical or operator, whose operands are in the content field.
+	Or OperType = "or"
+	// Not is the unary logical not operator, whose content has exactly one element.
+	Not OperType = "not"
+
+	// Equal compares if the attribute equals to the value.
+	Equal OperType = "eq"
+	// In compares if the attribute is one of the value list.
+	In OperType = "in"
+	// StartWith compares if the attribute has the value prefix.
+	StartWith OperType = "starts_with"
 )
 
-// OperType TODO
+// OperType is the operator of the authorization plan expression.
 type OperType string
 
-// Operator TODO
-func (o *OperType) Operator() Operator {
-	if o == nil {
-		unknown := UnknownOper("")
-		return &unknown
-	}
-
-	oper, support := factory[string(*o)]
+// Operator returns the evaluator of this compare operator.
+func (o OperType) Operator() Operator {
+	oper, support := factory[o]
 	if !support {
 		unknown := UnknownOper("")
 		return &unknown
@@ -144,12 +80,22 @@ func (o *OperType) Operator() Operator {
 	return oper
 }
 
-// UnknownOper TODO
+// IsLogical returns if the operator is a logical one.
+func (o OperType) IsLogical() bool {
+	switch o {
+	case And, Or, Not:
+		return true
+	default:
+		return false
+	}
+}
+
+// UnknownOper is returned when the operator is not a registered compare operator.
 type UnknownOper OperType
 
 // Name TODO
-func (u *UnknownOper) Name() string {
-	return Unknown
+func (u *UnknownOper) Name() OperType {
+	return "unknown"
 }
 
 // Match TODO
@@ -161,7 +107,7 @@ func (u *UnknownOper) Match(_ interface{}, _ interface{}) (bool, error) {
 type EqualOper OperType
 
 // Name TODO
-func (e *EqualOper) Name() string {
+func (e *EqualOper) Name() OperType {
 	return Equal
 }
 
@@ -176,30 +122,11 @@ func (e *EqualOper) Match(match interface{}, with interface{}) (bool, error) {
 	return reflect.DeepEqual(match, with), nil
 }
 
-// NotEqualOper TODO
-type NotEqualOper OperType
-
-// Name TODO
-func (e *NotEqualOper) Name() string {
-	return NEqual
-}
-
-// Match TODO
-func (e *NotEqualOper) Match(match interface{}, with interface{}) (bool, error) {
-	mType := reflect.TypeOf(match)
-	wType := reflect.TypeOf(with)
-	if mType.Kind() != wType.Kind() {
-		return false, errors.New("mismatch type")
-	}
-
-	return !reflect.DeepEqual(match, with), nil
-}
-
 // InOper TODO
 type InOper OperType
 
 // Name TODO
-func (e *InOper) Name() string {
+func (e *InOper) Name() OperType {
 	return In
 }
 
@@ -276,76 +203,11 @@ func (e *InOper) Match(match interface{}, with interface{}) (bool, error) {
 
 }
 
-// NotInOper TODO
-type NotInOper OperType
-
-// Name TODO
-func (n *NotInOper) Name() string {
-	return Nin
-}
-
-// Match TODO
-func (n *NotInOper) Match(match interface{}, with interface{}) (bool, error) {
-	inOper := InOper("in")
-	hit, err := inOper.Match(match, with)
-	if err != nil {
-		return false, err
-	}
-
-	return !hit, nil
-}
-
-// ContainsOper TODO
-type ContainsOper OperType
-
-// Name TODO
-func (c *ContainsOper) Name() string {
-	return Contains
-}
-
-// Match TODO
-func (c *ContainsOper) Match(match interface{}, with interface{}) (bool, error) {
-	m, ok := match.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	w, ok := with.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	return strings.Contains(m, w), nil
-}
-
-// NotContainsOper TODO
-type NotContainsOper OperType
-
-// Name TODO
-func (c *NotContainsOper) Name() string {
-	return NContains
-}
-
-// Match TODO
-func (c *NotContainsOper) Match(match interface{}, with interface{}) (bool, error) {
-	m, ok := match.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	w, ok := with.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	return !strings.Contains(m, w), nil
-}
-
 // StartsWithOper TODO
 type StartsWithOper OperType
 
 // Name TODO
-func (s *StartsWithOper) Name() string {
+func (s *StartsWithOper) Name() OperType {
 	return StartWith
 }
 
@@ -362,154 +224,4 @@ func (s *StartsWithOper) Match(match interface{}, with interface{}) (bool, error
 	}
 
 	return strings.HasPrefix(m, w), nil
-}
-
-// NotStartsWithOper TODO
-type NotStartsWithOper OperType
-
-// Name TODO
-func (n *NotStartsWithOper) Name() string {
-	return NStartWith
-}
-
-// Match TODO
-func (n *NotStartsWithOper) Match(match interface{}, with interface{}) (bool, error) {
-	m, ok := match.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	w, ok := with.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	return !strings.HasPrefix(m, w), nil
-}
-
-// EndsWithOper TODO
-type EndsWithOper OperType
-
-// Name TODO
-func (e *EndsWithOper) Name() string {
-	return EndWith
-}
-
-// Match TODO
-func (e *EndsWithOper) Match(match interface{}, with interface{}) (bool, error) {
-	m, ok := match.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	w, ok := with.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	return strings.HasSuffix(m, w), nil
-}
-
-// NotEndsWithOper TODO
-type NotEndsWithOper OperType
-
-// Name TODO
-func (e *NotEndsWithOper) Name() string {
-	return NEndWith
-}
-
-// Match TODO
-func (e *NotEndsWithOper) Match(match interface{}, with interface{}) (bool, error) {
-	m, ok := match.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	w, ok := with.(string)
-	if !ok {
-		return false, errors.New("invalid parameter")
-	}
-
-	return !strings.HasSuffix(m, w), nil
-}
-
-// LessThanOper TODO
-type LessThanOper OperType
-
-// Name TODO
-func (l *LessThanOper) Name() string {
-	return LessThan
-}
-
-// Match TODO
-func (l *LessThanOper) Match(match interface{}, with interface{}) (bool, error) {
-	if !isNumeric(match) || !isNumeric(with) {
-		return false, errors.New("invalid parameter")
-	}
-
-	return toFloat64(match) < toFloat64(with), nil
-}
-
-// LessThanEqualOper TODO
-type LessThanEqualOper OperType
-
-// Name TODO
-func (l *LessThanEqualOper) Name() string {
-	return LessThanEqual
-}
-
-// Match TODO
-func (l *LessThanEqualOper) Match(match interface{}, with interface{}) (bool, error) {
-	if !isNumeric(match) || !isNumeric(with) {
-		return false, errors.New("invalid parameter")
-	}
-
-	return toFloat64(match) <= toFloat64(with), nil
-}
-
-// GreaterThanOper TODO
-type GreaterThanOper OperType
-
-// Name TODO
-func (gt *GreaterThanOper) Name() string {
-	return GreaterThan
-}
-
-// Match TODO
-func (gt *GreaterThanOper) Match(match interface{}, with interface{}) (bool, error) {
-	if !isNumeric(match) || !isNumeric(with) {
-		return false, errors.New("invalid parameter")
-	}
-
-	return toFloat64(match) > toFloat64(with), nil
-}
-
-// GreaterThanEqualOper TODO
-type GreaterThanEqualOper OperType
-
-// Name TODO
-func (gte *GreaterThanEqualOper) Name() string {
-	return GreaterThanEqual
-}
-
-// Match TODO
-func (gte *GreaterThanEqualOper) Match(match interface{}, with interface{}) (bool, error) {
-	if !isNumeric(match) || !isNumeric(with) {
-		return false, errors.New("invalid parameter")
-	}
-
-	return toFloat64(match) > toFloat64(with), nil
-}
-
-// AnyOper TODO
-type AnyOper OperType
-
-// Name TODO
-func (a *AnyOper) Name() string {
-	return Any
-}
-
-// Match TODO
-func (a *AnyOper) Match(match interface{}, _ interface{}) (bool, error) {
-	return true, nil
 }

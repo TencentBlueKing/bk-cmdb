@@ -29,7 +29,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
-	"configcenter/src/scene_server/auth_server/sdk/types"
 	apigwiam "configcenter/src/thirdparty/apigw/iam"
 )
 
@@ -126,7 +125,7 @@ func (lgc *Logics) getPermissionData(kit *rest.Kit, rs []meta.ResourceAttribute)
 				return nil, err
 			}
 		}
-		// generate iam resource instances by its paths and itself
+		// generate iam resource instances by its ancestors and itself
 		for _, res := range resource {
 			if len(res.ID) == 0 && res.Attribute == nil {
 				permissionMap[actionID][string(res.Type)] = nil
@@ -134,11 +133,7 @@ func (lgc *Logics) getPermissionData(kit *rest.Kit, rs []meta.ResourceAttribute)
 			}
 			instance := make([]metadata.IamResourceInstance, 0)
 			if res.Attribute != nil {
-				iamPath, ok := res.Attribute[types.IamPathKey].([]string)
-				if !ok {
-					return nil, fmt.Errorf("iam path(%v) is not string array type", res.Attribute[types.IamPathKey])
-				}
-				ancestors, err := iam.ParseIamPathToAncestors(iamPath)
+				ancestors, err := iam.ParseAncestorAttributes(res.Attribute)
 				if err != nil {
 					return nil, err
 				}

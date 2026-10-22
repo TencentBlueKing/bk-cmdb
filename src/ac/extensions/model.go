@@ -193,7 +193,7 @@ func (a *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header,
 	}
 	// register object resource creator action to iam
 	for _, iamInstance := range iamInstances {
-		if _, err := a.Authorizer.RegisterResourceCreatorAction(ctx, header, iamInstance); err != nil {
+		if err := a.Authorizer.RegisterResourceCreatorAction(ctx, header, iamInstance); err != nil {
 			blog.ErrorJSON("register created object to iam failed, iam instance:%s, err: %s, rid: %s",
 				iamInstance, err, rid)
 			return err

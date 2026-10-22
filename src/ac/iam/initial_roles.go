@@ -43,7 +43,7 @@ func GenerateRoles(tenantObjects map[string][]metadata.Object) []iam.Role {
 func genCompatibleRoles() []iam.Role {
 	return []iam.Role{
 		{
-			ID:          "business_maintainer",
+			ID:          iamtypes.BusinessMaintainer,
 			Name:        "业务运维",
 			Description: "业务运维角色",
 			Actions: []iam.RoleAction{
@@ -75,7 +75,7 @@ func genCompatibleRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "business_visitor",
+			ID:          iamtypes.BusinessVisitor,
 			Name:        "业务只读",
 			Description: "业务只读角色",
 			Actions: []iam.RoleAction{
@@ -84,7 +84,7 @@ func genCompatibleRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "biz_set_maintainer",
+			ID:          iamtypes.BizSetMaintainer,
 			Name:        "业务集运维",
 			Description: "业务集运维角色",
 			Actions: []iam.RoleAction{
@@ -94,7 +94,7 @@ func genCompatibleRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "biz_set_visitor",
+			ID:          iamtypes.BizSetVisitor,
 			Name:        "业务集只读",
 			Description: "业务集只读角色",
 			Actions: []iam.RoleAction{
@@ -103,7 +103,7 @@ func genCompatibleRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "host_maintainer",
+			ID:          iamtypes.HostMaintainer,
 			Name:        "主机资源管理员",
 			Description: "主机资源管理员角色",
 			Actions: []iam.RoleAction{
@@ -120,7 +120,7 @@ func genCompatibleRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "model_maintainer",
+			ID:          iamtypes.ModelMaintainer,
 			Name:        "模型关系维护人",
 			Description: "模型关系维护人角色",
 			Actions: []iam.RoleAction{
@@ -138,7 +138,7 @@ func genCompatibleRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "developer",
+			ID:          iamtypes.Developer,
 			Name:        "开发者",
 			Description: "开发者角色",
 			Actions: []iam.RoleAction{
@@ -157,7 +157,7 @@ func genCompatibleRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "auditor",
+			ID:          iamtypes.Auditor,
 			Name:        "审计员",
 			Description: "审计员角色",
 			Actions: []iam.RoleAction{
@@ -172,7 +172,7 @@ func genCompatibleRoles() []iam.Role {
 func genManagerRoles() []iam.Role {
 	return []iam.Role{
 		{
-			ID:          "project_manager",
+			ID:          iamtypes.ProjectManager,
 			Name:        "项目管理员",
 			Description: "项目管理员",
 			Actions: []iam.RoleAction{
@@ -182,7 +182,7 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "cloud_area_manager",
+			ID:          iamtypes.CloudAreaManager,
 			Name:        "管控区域管理员",
 			Description: "管控区域管理员",
 			Actions: []iam.RoleAction{
@@ -192,7 +192,7 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "model_group_manager",
+			ID:          iamtypes.ModelGroupManager,
 			Name:        "模型分组管理员",
 			Description: "模型分组管理员",
 			Actions: []iam.RoleAction{
@@ -201,7 +201,7 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "sys_model_manager",
+			ID:          iamtypes.SysModelManager,
 			Name:        "模型管理员",
 			Description: "模型管理员",
 			Actions: []iam.RoleAction{
@@ -211,7 +211,7 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "asst_type_manager",
+			ID:          iamtypes.AsstTypeManager,
 			Name:        "关联类型管理员",
 			Description: "关联类型管理员",
 			Actions: []iam.RoleAction{
@@ -220,7 +220,7 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "host_pool_dir_manager",
+			ID:          iamtypes.HostPoolDirManager,
 			Name:        "主机池目录管理员",
 			Description: "主机池目录管理员",
 			Actions: []iam.RoleAction{
@@ -229,7 +229,7 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "field_tpl_manager",
+			ID:          iamtypes.FieldTplManager,
 			Name:        "字段组合模板管理员",
 			Description: "字段组合模板管理员",
 			Actions: []iam.RoleAction{
@@ -239,7 +239,7 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "host_manager",
+			ID:          iamtypes.HostManager,
 			Name:        "业务主机管理员",
 			Description: "业务主机管理员",
 			Actions: []iam.RoleAction{
@@ -247,7 +247,36 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "biz_svc_tpl_manager",
+			ID:          iamtypes.ResourcePoolHostManager,
+			Name:        "主机池主机管理员",
+			Description: "主机池主机管理员",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.EditResourcePoolHost, ResourceTypeID: iamtypes.SysHost},
+				{ID: iamtypes.DeleteResourcePoolHost, ResourceTypeID: iamtypes.SysHost},
+				{ID: iamtypes.TransferHostOutOfResPoolDir, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+				{ID: iamtypes.TransferHostToResPoolDir, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+			},
+		},
+		{
+			ID:          iamtypes.HostTransferor,
+			Name:        "业务主机转移者",
+			Description: "业务主机转移者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.TransferHostOutOfBiz, ResourceTypeID: iamtypes.Business},
+				{ID: iamtypes.TransferHostIntoBiz, ResourceTypeID: iamtypes.Business},
+			},
+		},
+		{
+			ID:          iamtypes.ResourcePoolHostTransferor,
+			Name:        "主机池主机转移者",
+			Description: "主机池主机转移者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.TransferHostOutOfResPoolDir, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+				{ID: iamtypes.TransferHostToResPoolDir, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+			},
+		},
+		{
+			ID:          iamtypes.BizSvcTplManager,
 			Name:        "服务模板管理员",
 			Description: "服务模板管理员",
 			Actions: []iam.RoleAction{
@@ -256,7 +285,7 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "biz_set_tpl_manager",
+			ID:          iamtypes.BizSetTplManager,
 			Name:        "集群模板管理员",
 			Description: "集群模板管理员",
 			Actions: []iam.RoleAction{
@@ -265,7 +294,7 @@ func genManagerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "biz_dyn_query_manager",
+			ID:          iamtypes.BizDynQueryManager,
 			Name:        "动态分组管理员",
 			Description: "动态分组管理员",
 			Actions: []iam.RoleAction{
@@ -280,7 +309,7 @@ func genManagerRoles() []iam.Role {
 func genCreatorRoles() []iam.Role {
 	return []iam.Role{
 		{
-			ID:          "business_creator",
+			ID:          iamtypes.BusinessCreator,
 			Name:        "业务创建者",
 			Description: "业务创建者",
 			Actions: []iam.RoleAction{
@@ -288,7 +317,7 @@ func genCreatorRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "biz_set_creator",
+			ID:          iamtypes.BizSetCreator,
 			Name:        "业务集创建者",
 			Description: "业务集创建者",
 			Actions: []iam.RoleAction{
@@ -296,7 +325,7 @@ func genCreatorRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "project_creator",
+			ID:          iamtypes.ProjectCreator,
 			Name:        "项目创建者",
 			Description: "项目创建者",
 			Actions: []iam.RoleAction{
@@ -304,7 +333,7 @@ func genCreatorRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "cloud_area_creator",
+			ID:          iamtypes.CloudAreaCreator,
 			Name:        "管控区域创建者",
 			Description: "管控区域创建者",
 			Actions: []iam.RoleAction{
@@ -312,7 +341,7 @@ func genCreatorRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "model_group_creator",
+			ID:          iamtypes.ModelGroupCreator,
 			Name:        "模型分组创建者",
 			Description: "模型分组创建者",
 			Actions: []iam.RoleAction{
@@ -320,7 +349,7 @@ func genCreatorRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "sys_model_creator",
+			ID:          iamtypes.SysModelCreator,
 			Name:        "模型创建者",
 			Description: "模型创建者",
 			Actions: []iam.RoleAction{
@@ -328,7 +357,7 @@ func genCreatorRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "asst_type_creator",
+			ID:          iamtypes.AsstTypeCreator,
 			Name:        "关联类型创建者",
 			Description: "关联类型创建者",
 			Actions: []iam.RoleAction{
@@ -336,7 +365,7 @@ func genCreatorRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "host_pool_dir_creator",
+			ID:          iamtypes.HostPoolDirCreator,
 			Name:        "主机池目录创建者",
 			Description: "主机池目录创建者",
 			Actions: []iam.RoleAction{
@@ -344,7 +373,15 @@ func genCreatorRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "field_tpl_creator",
+			ID:          iamtypes.ResourcePoolHostCreator,
+			Name:        "主机池主机创建者",
+			Description: "主机池主机创建者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.CreateResourcePoolHost, ResourceTypeID: iamtypes.SysResourcePoolDirectory},
+			},
+		},
+		{
+			ID:          iamtypes.FieldTplCreator,
 			Name:        "字段组合模板创建者",
 			Description: "字段组合模板创建者",
 			Actions: []iam.RoleAction{
@@ -358,7 +395,7 @@ func genCreatorRoles() []iam.Role {
 func genViewerRoles() []iam.Role {
 	return []iam.Role{
 		{
-			ID:          "fulltext_search_user",
+			ID:          iamtypes.FulltextSearchUser,
 			Name:        "检索服务使用者",
 			Description: "检索服务使用者",
 			Actions: []iam.RoleAction{
@@ -366,7 +403,15 @@ func genViewerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "project_viewer",
+			ID:          iamtypes.ResourcePoolHostViewer,
+			Name:        "主机池主机查看者",
+			Description: "主机池主机查看者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.ViewResourcePoolHost},
+			},
+		},
+		{
+			ID:          iamtypes.ProjectViewer,
 			Name:        "项目查看者",
 			Description: "项目查看者",
 			Actions: []iam.RoleAction{
@@ -374,7 +419,7 @@ func genViewerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "cloud_area_viewer",
+			ID:          iamtypes.CloudAreaViewer,
 			Name:        "管控区域查看者",
 			Description: "管控区域查看者",
 			Actions: []iam.RoleAction{
@@ -382,20 +427,27 @@ func genViewerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "sys_model_viewer",
+			ID:          iamtypes.SysModelViewer,
 			Name:        "模型查看者",
 			Description: "模型查看者",
 			Actions: []iam.RoleAction{
 				{ID: iamtypes.ViewSysModel, ResourceTypeID: iamtypes.SysModel},
-				{ID: iamtypes.ViewModelTopo},
 			},
 		},
 		{
-			ID:          "field_tpl_viewer",
+			ID:          iamtypes.FieldTplViewer,
 			Name:        "字段组合模板查看者",
 			Description: "字段组合模板查看者",
 			Actions: []iam.RoleAction{
 				{ID: iamtypes.ViewFieldGroupingTemplate, ResourceTypeID: iamtypes.FieldGroupingTemplate},
+			},
+		},
+		{
+			ID:          iamtypes.ModelTopoViewer,
+			Name:        "模型拓扑查看者",
+			Description: "模型拓扑查看者",
+			Actions: []iam.RoleAction{
+				{ID: iamtypes.ViewModelTopo},
 			},
 		},
 	}
@@ -405,7 +457,7 @@ func genViewerRoles() []iam.Role {
 func genOwnerRoles() []iam.Role {
 	return []iam.Role{
 		{
-			ID:          "biz_owner",
+			ID:          iamtypes.BizOwner,
 			Name:        "业务属主",
 			Description: "业务创建者关联授权角色",
 			Actions: []iam.RoleAction{
@@ -415,7 +467,7 @@ func genOwnerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "biz_set_owner",
+			ID:          iamtypes.BizSetOwner,
 			Name:        "业务集属主",
 			Description: "业务集创建者关联授权角色",
 			Actions: []iam.RoleAction{
@@ -425,7 +477,7 @@ func genOwnerRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "cloud_area_owner",
+			ID:          iamtypes.CloudAreaOwner,
 			Name:        "管控区域属主",
 			Description: "管控区域创建者关联授权角色",
 			Actions: []iam.RoleAction{
@@ -441,7 +493,7 @@ func genOwnerRoles() []iam.Role {
 func genPlatformRoles() []iam.Role {
 	roles := []iam.Role{
 		{
-			ID:          "global_settings_manager",
+			ID:          iamtypes.GlobalSettingsManager,
 			Name:        "全局设置管理员",
 			Description: "全局设置管理员",
 			Actions: []iam.RoleAction{
@@ -449,7 +501,7 @@ func genPlatformRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "id_rule_manager",
+			ID:          iamtypes.IDRuleManager,
 			Name:        "ID规则管理员",
 			Description: "ID规则管理员",
 			Actions: []iam.RoleAction{
@@ -457,7 +509,7 @@ func genPlatformRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "full_sync_cond_manager",
+			ID:          iamtypes.FullSyncCondManager,
 			Name:        "全量同步缓存条件管理员",
 			Description: "全量同步缓存条件管理员",
 			Actions: []iam.RoleAction{
@@ -468,7 +520,7 @@ func genPlatformRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "full_sync_cond_viewer",
+			ID:          iamtypes.FullSyncCondViewer,
 			Name:        "全量同步缓存条件查看者",
 			Description: "全量同步缓存条件查看者",
 			Actions: []iam.RoleAction{
@@ -476,7 +528,7 @@ func genPlatformRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "general_cache_viewer",
+			ID:          iamtypes.GeneralCacheViewer,
 			Name:        "通用缓存查看者",
 			Description: "通用缓存查看者",
 			Actions: []iam.RoleAction{
@@ -484,7 +536,7 @@ func genPlatformRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "kube_manager",
+			ID:          iamtypes.KubeManager,
 			Name:        "容器管理员",
 			Description: "容器管理员",
 			Actions: []iam.RoleAction{
@@ -505,14 +557,14 @@ func genPlatformRoles() []iam.Role {
 			},
 		},
 		{
-			ID:          "tenant_set_visitor",
+			ID:          iamtypes.TenantSetVisitor,
 			Name:        "租户集访问者",
 			Description: "租户集访问者",
-			TenantID:    common.BKDefaultTenantID,
 			Actions: []iam.RoleAction{
 				{ID: iamtypes.ViewTenantSet, ResourceTypeID: iamtypes.TenantSet},
 				{ID: iamtypes.AccessTenantSet, ResourceTypeID: iamtypes.TenantSet},
 			},
+			TenantID: common.BKDefaultTenantID,
 		},
 	}
 
@@ -538,13 +590,13 @@ func genDynamicInstRoles(tenantObjects map[string][]metadata.Object) []iam.Role 
 			}
 
 			roles = append(roles, iam.Role{
-				ID:          GenIAMDynamicRoleID(obj.ID, "manager"),
+				ID:          GenIAMDynamicRoleID(obj.ID, iamtypes.DynamicInstManager),
 				Name:        fmt.Sprintf("%s实例管理员", obj.ObjectName),
 				Description: fmt.Sprintf("%s实例管理员", obj.ObjectName),
 				Actions:     managerActions,
 				TenantID:    tenantID,
 			}, iam.Role{
-				ID:          GenIAMDynamicRoleID(obj.ID, "viewer"),
+				ID:          GenIAMDynamicRoleID(obj.ID, iamtypes.DynamicInstViewer),
 				Name:        fmt.Sprintf("%s实例查看者", obj.ObjectName),
 				Description: fmt.Sprintf("%s实例查看者", obj.ObjectName),
 				Actions:     viewerActions,
