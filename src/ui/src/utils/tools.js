@@ -763,6 +763,15 @@ export const timestampFormatter = (value, timezone) => {
   return moment.tz(value, targetTimezone).valueOf()
 }
 
+// 默认当天 00:00:00 ~ 23:59:59。只传日期时，时间组件会把起止都显示成 00:00:00。
+export function todayOperationTime(timezone = window.Site.timezone) {
+  const today = formatTime(new Date(), 'YYYY-MM-DD', timezone)
+  return [
+    timestampFormatter(`${today} 00:00:00`, timezone),
+    timestampFormatter(`${today} 23:59:59`, timezone)
+  ]
+}
+
 export const isTimestamp = (value) => {
   try {
     const timestamp = Date.parse(new Date(+value).toISOString())
@@ -819,6 +828,7 @@ export default {
   getSelectAll,
   parseOrgVal,
   timestampFormatter,
+  todayOperationTime,
   isTimestamp,
   timeToZero
 }

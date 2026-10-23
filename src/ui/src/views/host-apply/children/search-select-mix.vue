@@ -41,7 +41,12 @@
   import has from 'has'
   import { CONFIG_MODE } from '@/service/service-template/index.js'
   import { PROPERTY_TYPES } from '@/dictionary/property-constants'
-  import useSearchUser from '@/hooks/use-search-user'
+  import useSearchUser, {
+    USER_SEARCH_MIN_LEN,
+    hideUserSearchPanel,
+    normalizeUserKeyword,
+    showUserSearchEmpty
+  } from '@/hooks/use-search-user'
 
   export default {
     props: {
@@ -50,6 +55,7 @@
     data() {
       return {
         isTyeing: false,
+        userSearchId: 0,
         showClear: false,
         searchOptions: [],
         fullOptions: [],
@@ -108,10 +114,23 @@
         return fetchs[menu.type](val, menu)
       },
       async fetchMember(val, menu) {
-        if (!this.isTyeing || val?.length < 2 || val === `${menu.name}：`) {
+        const keyword = normalizeUserKeyword(val, menu.name)
+        const searchSelect = this.$refs.bkSearchSelect
+        if (!this.isTyeing || keyword.length < USER_SEARCH_MIN_LEN) {
+          this.userSearchId += 1
+          hideUserSearchPanel(searchSelect)
           return []
         }
-        const result = await this.userSearch(val)
+        this.userSearchId += 1
+        const currentId = this.userSearchId
+        const result = await this.userSearch(keyword)
+        if (currentId !== this.userSearchId) return result
+        if (!result?.length) {
+          setTimeout(() => {
+            if (currentId !== this.userSearchId) return
+            showUserSearchEmpty(searchSelect, this.$t('无匹配人员'))
+          }, 0)
+        }
         return result
       },
       async initOptions() {
@@ -136,6 +155,7 @@
             data.children = [{ id: true, name: 'true' }, { id: false, name: 'false' }]
           } else if (type === PROPERTY_TYPES.OBJUSER) {
             data.remote = true
+            data.placeholder = this.$t('请输入')
           } else {
             data.children = []
           }

@@ -11,6 +11,32 @@
  */
 import { useHttp } from '@/api'
 
+export const USER_SEARCH_MIN_LEN = 2
+
+export function normalizeUserKeyword(val, menuName) {
+  const text = val === null || val === undefined ? '' : String(val)
+  const prefix = `${menuName}：`
+  if (!text || text === prefix) return ''
+  return text.startsWith(prefix) ? text.slice(prefix.length) : text
+}
+
+// 关键字不足时收起面板，避免还没查询就出现「无匹配」。
+// 查询结果为空时，search-select 会直接 hidePopper，需要在它收起后再打开空结果面板。
+export function hideUserSearchPanel(searchSelect) {
+  searchSelect?.hidePopper?.()
+}
+
+export function showUserSearchEmpty(searchSelect, emptyText) {
+  const child = searchSelect?.menuChildInstance
+  if (!child || !searchSelect.showPopper) return
+  child.loading = false
+  child.list = []
+  if (emptyText) {
+    child.remoteEmptyText = emptyText
+  }
+  searchSelect.showPopper(child.$el)
+}
+
 export default function useSearchUser() {
   const http = useHttp()
 
