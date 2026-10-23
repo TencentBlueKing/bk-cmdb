@@ -16,7 +16,6 @@
   import { t } from '@/i18n'
   import RouterQuery from '@/router/query'
   import routerActions from '@/router/actions'
-  import { OPERATION } from '@/dictionary/iam-auth'
   import {
     MENU_MODEL_FIELD_TEMPLATE_CREATE,
     MENU_MODEL_FIELD_TEMPLATE_EDIT,
@@ -25,7 +24,6 @@
     MENU_MODEL_DETAILS
   } from '@/dictionary/menu-symbol'
   import { $success, $error, $bkPopover } from '@/magicbox/index.js'
-  import applyPermission from '@/utils/apply-permission.js'
   import { getDefaultPaginationConfig, getSort } from '@/utils/tools.js'
   import queryBuilderOperator, { QUERY_OPERATOR } from '@/utils/query-builder-operator'
   import fieldTemplateService from '@/service/field-template'
@@ -383,16 +381,6 @@
     RouterQuery.clear()
   }
 
-  const handleApplyPermission = async () => {
-    try {
-      await applyPermission({
-        type: OPERATION.R_FIELD_TEMPLATE,
-        relation: []
-      })
-    } catch (e) {
-      console.error(e)
-    }
-  }
   const handleLinkToModel = (model) => {
     routerActions.open({
       name: MENU_MODEL_DETAILS,
@@ -589,13 +577,11 @@
         slot="empty"
         :stuff="table.stuff"
         @clear="handleClearFilter">
-        <bk-exception type="403" scene="part">
-          <i18n path="字段组合模板列表提示语" class="table-empty-tips">
-            <template #auth>
-              <bk-link theme="primary"
-                @click="handleApplyPermission">{{$t('申请查看权限')}}</bk-link>
-            </template>
-            <template #create>
+        <bk-exception type="empty" scene="part">
+          <i18n path="您还未XXX" class="table-empty-tips">
+            <template #action><span>{{$t('创建')}}</span></template>
+            <template #resource><span>{{$t('字段组合模板')}}</span></template>
+            <template #link>
               <cmdb-auth :auth="{ type: $OPERATION.C_FIELD_TEMPLATE }">
                 <bk-button slot-scope="{ disabled }" text
                   theme="primary"
