@@ -59,7 +59,7 @@
       </cmdb-table-empty>
     </bk-table>
     <bk-pagination
-      v-if="pagination"
+      v-if="pagination && innerPagination.count"
       small
       :current.sync="innerPagination.current"
       :count="innerPagination.count"
@@ -117,7 +117,7 @@
     },
     computed: {
       tableMaxHeight() {
-        return this.pagination ? 460 : 500
+        return this.pagination && this.innerPagination.count ? 460 : 500
       },
     },
     watch: {
@@ -127,9 +127,7 @@
       'pagination.count': {
         immediate: true,
         handler(val) {
-          if (val) {
-            this.innerPagination.count = val
-          }
+          this.innerPagination.count = val || 0
         }
       },
     },

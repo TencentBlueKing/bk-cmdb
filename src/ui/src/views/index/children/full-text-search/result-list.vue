@@ -59,6 +59,7 @@
   import useResult from './use-result'
   import useItem from './use-item'
   import { categories } from './use-tab.js'
+  import { handleReset } from './use-advanced-setting.js'
   import router from '@/router/index.js'
 
   export default defineComponent({
@@ -152,6 +153,7 @@
         })
       }
       const handleClearFilter = () => {
+        handleReset()
         router.push({
           query: {
             tab: 'fullText'
