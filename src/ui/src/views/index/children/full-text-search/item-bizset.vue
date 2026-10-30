@@ -39,6 +39,7 @@
 
 <script>
   import { defineComponent, toRefs, computed } from 'vue'
+  import { PROPERTY_TYPES } from '@/dictionary/property-constants'
   import { getText, getHighlightValue } from './use-item.js'
   import { BUILTIN_MODELS } from '@/dictionary/model-constants'
 
@@ -61,6 +62,7 @@
       const properties = computed(() => propertyMap.value[BUILTIN_MODELS.BUSINESS_SET])
 
       return {
+        PROPERTY_TYPES,
         properties,
         getText,
         getHighlightValue

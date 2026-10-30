@@ -160,15 +160,15 @@
       ]),
       async getInstAssociation() {
         try {
-          const sourceCondition = { bk_obj_id: this.objId, bk_inst_id: this.instId }
-          const targetCondition = { bk_asst_obj_id: this.objId, bk_asst_inst_id: this.instId }
+          const sourceParams = { bk_obj_id: this.objId, bk_inst_id: this.instId }
+          const targetParams = { bk_asst_obj_id: this.objId, bk_asst_inst_id: this.instId }
           let [source, target] = await Promise.all([
-            this.$store.dispatch('objectAssociation/searchInstAssociation', {
-              params: { condition: sourceCondition, bk_obj_id: this.objId },
+            this.$store.dispatch('objectAssociation/searchInstAssociationWeb', {
+              params: sourceParams,
               config: { requestId: 'getSourceAssociation' }
             }),
-            this.$store.dispatch('objectAssociation/searchInstAssociation', {
-              params: { condition: targetCondition, bk_obj_id: this.objId },
+            this.$store.dispatch('objectAssociation/searchInstAssociationWeb', {
+              params: targetParams,
               config: { requestId: 'getTargetAssociation' }
             })
           ])

@@ -111,14 +111,20 @@
         return Array.from(modelSet)
       })
       const propertyOptions = computed(() => {
+        // 唯一校验会用到系统字段和接口字段，这次查询把它们一并取回
+        const withReservedFields = { with_reserved_fields: true }
         if (!relationModels.value.length) {
           return {
-            bk_obj_id: currentModelId.value
+            bk_obj_id: currentModelId.value,
+            ...withReservedFields
           }
         }
         const modelSet = new Set(relationModels.value)
         modelSet.add(currentModelId.value)
-        return { bk_obj_id: { $in: Array.from(modelSet) } }
+        return {
+          bk_obj_id: { $in: Array.from(modelSet) },
+          ...withReservedFields
+        }
       })
       const [{ properties, pending: propertyPending }] = useProperty(propertyOptions, { globalPermission: false })
 

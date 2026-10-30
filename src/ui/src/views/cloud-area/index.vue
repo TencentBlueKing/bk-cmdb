@@ -347,7 +347,7 @@
       linkAgent() {
         const topWindow = window.top
         const isPaasConsole = topWindow !== window
-        const urlSuffix = '#/cloud-manager'
+        const urlSuffix = '#/topo-manager/workarea'
         if (isPaasConsole) {
           topWindow.postMessage(JSON.stringify({
             action: 'open_other_app',

@@ -66,12 +66,12 @@
       <template v-if="isModelInstance">
         <td align="right"><label class="option-label">{{$t('时间')}}</label></td>
         <td>
-          <cmdb-form-date-range class="option-value"
-            font-size="medium"
-            :placeholder="$t('请选择xx', { name: $t('时间') })"
-            :clearable="false"
-            v-model="condition.operation_time">
-          </cmdb-form-date-range>
+          <cmdb-search-time
+            class="option-value"
+            :timezone="timezone"
+            v-model="condition.operation_time"
+            @change-timezone="handleTimezoneChange">
+          </cmdb-search-time>
         </td>
       </template>
       <td align="right"><label class="option-label">{{$t('账号')}}</label></td>
@@ -109,14 +109,13 @@
   import AuditModelSelector from './audit-model-selector'
   import AuditUserSelector from './audit-user-selector'
   import RouterQuery from '@/router/query'
-  import tools from '@/utils/tools'
+  import { todayOperationTime } from '@/utils/tools'
 
-  const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
   const defaultCondition = () => ({
     bk_biz_id: '',
     resource_type: '',
     action: [],
-    operation_time: [today, today],
+    operation_time: todayOperationTime(),
     resource_id: '',
     resource_name: '',
     category: 'resource',

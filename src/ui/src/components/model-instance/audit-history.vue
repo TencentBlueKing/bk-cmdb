@@ -55,12 +55,20 @@
 
 <script>
   import AuditDetails from '@/components/audit-history/details.js'
-  import tools, { timeToZero } from '@/utils/tools'
+  import { formatTime, timeToZero, timestampFormatter } from '@/utils/tools'
   import resourcePoolService from '@/service/resource-pool/index'
 
-  const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
-  const formatValue = () => ({
-    operation_time: [today, today],
+  // 默认当天 00:00:00 ~ 23:59:59。只传日期时，时间组件会把起止都显示成 00:00:00
+  function todayOperationTime(timezone) {
+    const today = formatTime(new Date(), 'YYYY-MM-DD', timezone)
+    return [
+      timestampFormatter(`${today} 00:00:00`, timezone),
+      timestampFormatter(`${today} 23:59:59`, timezone)
+    ]
+  }
+
+  const formatValue = timezone => ({
+    operation_time: todayOperationTime(timezone),
     user: ''
   })
 
@@ -108,9 +116,17 @@
         resourcePoolBizId: undefined
       }
     },
+    computed: {
+      needsResourcePoolBiz() {
+        return !isNaN(this.bizId) && !(this.bizId > 0)
+      }
+    },
     async created() {
-      const resourcePoolData = await resourcePoolService.getBiz()
-      this.resourcePoolBizId = resourcePoolData?.bk_biz_id
+      // 只有未分配业务的主机才需要主机池业务 ID；已有业务 ID 时不要打这个接口，否则会按主机池权限误弹申请窗
+      if (this.needsResourcePoolBiz) {
+        const resourcePoolData = await resourcePoolService.getBiz()
+        this.resourcePoolBizId = resourcePoolData?.bk_biz_id
+      }
 
       this.getAuditDictionary()
       this.getHistory()
@@ -162,7 +178,7 @@
           bk_obj_id: this.objId
         }
 
-        // 通用模型实例不传，未分配业务主机传1
+        // 通用模型实例不传；已分配业务用自身业务 ID；未分配业务主机用主机池业务 ID
         if (!isNaN(this.bizId)) {
           usefuleCondition.bk_biz_id = this.bizId > 0 ? this.bizId : this.resourcePoolBizId
         }
@@ -211,7 +227,7 @@
       },
       handleClearFilter() {
         this.condition = {
-          ...formatValue(),
+          ...formatValue(this.timezone),
           resource_id: this.resourceId,
           resource_type: this.resourceType
         }
