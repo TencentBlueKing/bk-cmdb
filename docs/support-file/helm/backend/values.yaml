@@ -1563,10 +1563,10 @@ mongodb:
     # host:
     ## @param mongodb.watch.maxOpenConns mongodb max open connections
     ##
-    maxOpenConns: 10
+    maxOpenConns: 50
     ## @param mongodb.watch.maxIdleConns mongodb max idle connections
     ##
-    maxIdleConns: 5
+    maxIdleConns: 50
     ## @param mongodb.watch.mechanism mongodb mechanism
     ##
     mechanism: SCRAM-SHA-1
