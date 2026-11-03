@@ -33,6 +33,9 @@
             :ref="`component-${property.id}`"
             v-bind="getBindProps(property)"
             v-model.trim="condition[property.id].value"
+            v-validate="getSearchPropertyValueValidateRules(property)"
+            :data-vv-name="getSearchPropertyValueFieldName(property)"
+            data-vv-validate-on="input"
             v-bk-tooltips.top="{
               allowHTML: false,
               disabled: !property.placeholder,
@@ -51,6 +54,9 @@
             }">
           </component>
         </div>
+        <p class="filter-value-error" v-if="errors.has(getSearchPropertyValueFieldName(property))">
+          {{errors.first(getSearchPropertyValueFieldName(property))}}
+        </p>
         <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
       </bk-form-item>
       <bk-form-item>
@@ -62,7 +68,7 @@
       slot="footer"
       slot-scope="{ sticky }"
       :class="{ 'is-sticky': sticky }">
-      <bk-button class="option-search mr10" theme="primary" :disabled="false" @click="handleSearch">
+      <bk-button class="option-search mr10" theme="primary" :disabled="errors.any()" @click="handleSearch">
         {{$t('查询')}}
       </bk-button>
       <bk-button class="option-reset" theme="default" @click="handleReset">{{$t('清空')}}</bk-button>
@@ -168,6 +174,7 @@
       },
       calcPosition(type = 'change') {
         if (type === 'click') this.$refs.propertyList.$el.classList.remove('over-height')
+        if (!this.target) return
 
         this.$nextTick(() => {
           const limit = document.querySelector('.sticky-footer').getClientRects()[0].top
@@ -218,6 +225,11 @@
         const { value } = this.condition[property.id]
         const effectValue = Utils.getOperatorSideEffect(property, operator, value)
         this.condition[property.id].value = effectValue
+        this.$nextTick(() => {
+          if (!this.getSearchPropertyValueValidateRules(property)) {
+            this.errors.remove(this.getSearchPropertyValueFieldName(property))
+          }
+        })
       },
       // 人员选择器参考定位空间不足，备选面板左移了，此处将其通过offset配置移到最右边
       handleComponentActiveChange(property, active) {
@@ -244,6 +256,13 @@
       async handleRemove(property) {
         const index = this.selected.indexOf(property)
         index > -1 && this.selected.splice(index, 1)
+      },
+      getSearchPropertyValueFieldName(property) {
+        return Utils.getSearchPropertyValueFieldName(property)
+      },
+      getSearchPropertyValueValidateRules(property) {
+        const operator = this.condition[property.id]?.operator
+        return Utils.getSearchPropertyValueValidateRules(property, operator)
       },
       updateSelected(selected) {
         // 将触发updateCondition新的条件项会被生成
@@ -277,6 +296,11 @@
 
   .filter-form {
     padding: 0 14px;
+  }
+  .filter-value-error {
+    line-height: initial;
+    font-size: 12px;
+    color: $dangerColor;
   }
   .filter-item {
     padding: 2px 10px 10px;

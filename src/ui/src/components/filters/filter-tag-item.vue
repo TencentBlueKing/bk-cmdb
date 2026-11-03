@@ -41,6 +41,7 @@
   import store from '@/store'
   import Tippy from 'bk-magic-vue/lib/utils/tippy'
   import Utils from './utils'
+  import { QUERY_OPERATOR } from '@/utils/query-builder-operator'
   export default {
     props: {
       property: {
@@ -75,13 +76,13 @@
         return value.map(value => formatter(value, this.property))
       },
       showColon() {
-        return this.operator === '$range'
+        return this.operator === QUERY_OPERATOR.RANGE
       },
       operatorSymbol() {
         return Utils.getOperatorSymbol(this.operator)
       },
       displayText() {
-        if (this.operator === '$range') {
+        if (this.operator === QUERY_OPERATOR.RANGE) {
           const [start, end] = this.transformedValue
           return `${start} ~ ${end}`
         }
@@ -108,7 +109,8 @@
               return h(FilterTagForm, {
                 ref: 'filterTagForm',
                 props: {
-                  property: self.property
+                  property: self.property,
+                  searchPropertyValueValidationEnabled: true
                 },
                 on: {
                   confirm: self.handleHideTagForm,

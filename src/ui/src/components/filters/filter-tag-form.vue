@@ -30,11 +30,22 @@
           :placeholder="getPlaceholder()"
           v-bind="getBindProps()"
           v-model.trim="value"
+          v-validate="searchPropertyValueValidateRules"
+          :data-vv-name="searchPropertyValueFieldName"
+          data-vv-validate-on="input"
           @active-change="handleActiveChange">
         </component>
       </div>
+      <p class="filter-value-error" v-if="errors.has(searchPropertyValueFieldName)">
+        {{errors.first(searchPropertyValueFieldName)}}
+      </p>
       <div class="form-options">
-        <bk-button class="mr10" text @click="handleConfirm">{{$t('确定')}}</bk-button>
+        <bk-button class="mr10"
+          text
+          :disabled="errors.has(searchPropertyValueFieldName)"
+          @click="handleConfirm">
+          {{$t('确定')}}
+        </bk-button>
         <bk-button class="mr10" text @click="handleCancel">{{$t('取消')}}</bk-button>
       </div>
     </bk-form-item>
@@ -56,6 +67,10 @@
       property: {
         type: Object,
         required: true
+      },
+      searchPropertyValueValidationEnabled: {
+        type: Boolean,
+        default: false
       }
     },
     data() {
@@ -90,6 +105,15 @@
         set(value) {
           this.localValue = value
         }
+      },
+      searchPropertyValueFieldName() {
+        return Utils.getSearchPropertyValueFieldName(this.property)
+      },
+      searchPropertyValueValidateRules() {
+        if (!this.searchPropertyValueValidationEnabled) {
+          return ''
+        }
+        return Utils.getSearchPropertyValueValidateRules(this.property, this.operator)
       }
     },
     methods: {
@@ -147,9 +171,15 @@
       resetCondition() {
         this.operator = null
         this.value = null
+        this.errors.remove(this.searchPropertyValueFieldName)
       },
       handleOperatorChange(operator) {
         this.value = Utils.getOperatorSideEffect(this.property, operator, this.value)
+        this.$nextTick(() => {
+          if (!this.searchPropertyValueValidateRules) {
+            this.errors.remove(this.searchPropertyValueFieldName)
+          }
+        })
       },
       // 当失去焦点时，激活状态的改变做一个延时，避免点击表单外部时直接隐藏了表单对应的tooltips
       handleActiveChange(active) {
@@ -200,6 +230,11 @@
         .form-value {
             flex: 1;
         }
+    }
+    .filter-value-error {
+        line-height: initial;
+        font-size: 12px;
+        color: $dangerColor;
     }
     .form-options {
         display: flex;

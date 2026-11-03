@@ -42,7 +42,8 @@
                 ref: 'filterTagForm',
                 props: {
                   property: self.property,
-                  condition: self.dynamicCondition
+                  condition: self.dynamicCondition,
+                  searchPropertyValueValidationEnabled: true
                 },
                 on: {
                   confirm: self.handleHideTagForm,

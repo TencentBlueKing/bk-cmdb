@@ -80,6 +80,9 @@
               :ref="`component-${property.id}`"
               v-bind="getBindProps(property)"
               v-model.trim="condition[property.id].value"
+              v-validate="getSearchPropertyValueValidateRules(property)"
+              :data-vv-name="getSearchPropertyValueFieldName(property)"
+              data-vv-validate-on="input"
               v-bk-tooltips.top="{
                 allowHTML: false,
                 disabled: !property.placeholder,
@@ -98,6 +101,9 @@
               }">
             </component>
           </div>
+          <p class="filter-value-error" v-if="errors.has(getSearchPropertyValueFieldName(property))">
+            {{errors.first(getSearchPropertyValueFieldName(property))}}
+          </p>
           <i class="item-remove bk-icon icon-close" @click="handleRemove(property)"></i>
         </bk-form-item>
         <condition-picker :text="$t(conditionText)" :icon="icon" :selected="selected" :property-map="propertyMap"
@@ -126,7 +132,7 @@
               content: $t('请先填写筛选条件')
             }">
             <bk-button class="option-collect" theme="default"
-              :disabled="!allowCollect"
+              :disabled="!allowCollect || hasSearchPropertyValueError"
               @click="handleUpdateCollection">
               {{$t('更新条件')}}
             </bk-button>
@@ -149,7 +155,9 @@
               disabled: allowCollect,
               content: $t('请先填写筛选条件')
             }">
-            <bk-button theme="default" :disabled="!allowCollect || isMixCondition" @click="handleCreateCollection">
+            <bk-button theme="default"
+              :disabled="!allowCollect || isMixCondition || hasSearchPropertyValueError"
+              @click="handleCreateCollection">
               {{$t('收藏此条件')}}
             </bk-button>
             <section class="collection-form" slot="content">
@@ -171,7 +179,7 @@
                 <bk-button class="mr10"
                   theme="primary"
                   size="small"
-                  :disabled="!collectionForm.name.length"
+                  :disabled="!collectionForm.name.length || hasSearchPropertyValueError"
                   :loading="$loading('createCollection')"
                   @click="handleSaveCollection">
                   {{$t('确定')}}
@@ -324,6 +332,9 @@
       },
       searchDisabled() {
         return this.isMixCondition
+      },
+      hasSearchPropertyValueError() {
+        return this.selected.some(property => this.errors.has(this.getSearchPropertyValueFieldName(property)))
       }
     },
     watch: {
@@ -383,6 +394,7 @@
       },
       calcPosition(type = 'change') {
         if (type === 'click') this.$refs.propertyList.$el.classList.remove('over-height')
+        if (!this.target) return
 
         this.$nextTick(() => {
           const limit = document.querySelector('.sticky-footer').getClientRects()[0].top
@@ -468,6 +480,11 @@
         const { value } = this.condition[property.id]
         const effectValue = Utils.getOperatorSideEffect(property, operator, value)
         this.condition[property.id].value = effectValue
+        this.$nextTick(() => {
+          if (!this.getSearchPropertyValueValidateRules(property)) {
+            this.errors.remove(this.getSearchPropertyValueFieldName(property))
+          }
+        })
       },
       // 人员选择器参考定位空间不足，备选面板左移了，此处将其通过offset配置移到最右边
       handleComponentActiveChange(property, active) {
@@ -498,6 +515,13 @@
         await this.$nextTick()
         FilterStore.updateSelected([...this.selected])
         FilterStore.updateUserBehavior(this.selected)
+      },
+      getSearchPropertyValueFieldName(property) {
+        return Utils.getSearchPropertyValueFieldName(property)
+      },
+      getSearchPropertyValueValidateRules(property) {
+        const operator = this.condition[property.id]?.operator
+        return Utils.getSearchPropertyValueValidateRules(property, operator)
       },
       handleSearch() {
         const condition = {
@@ -660,14 +684,15 @@
     }
     .filter-ip {
         padding: 0 10px 10px;
-        .filter-ip-error {
-            line-height: initial;
-            font-size: 12px;
-            color: $dangerColor;
-        }
         :deep(.bk-form-textarea) {
           resize: vertical;
         }
+    }
+    .filter-ip-error,
+    .filter-value-error {
+        line-height: initial;
+        font-size: 12px;
+        color: $dangerColor;
     }
     .filter-item {
         padding: 2px 10px 10px;
