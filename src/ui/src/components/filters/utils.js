@@ -105,6 +105,19 @@ export function getOperatorSideEffect(property, operator, value) {
   return effectValue
 }
 
+export function getSearchPropertyValueFieldName(property) {
+  return `search-property-value-${property.id}`
+}
+
+export function getSearchPropertyValueValidateRules(property, operator) {
+  const rules = []
+  const numericTypes = [PROPERTY_TYPES.INT, PROPERTY_TYPES.FLOAT]
+  if (numericTypes.includes(property.bk_property_type) && operator === QUERY_OPERATOR.RANGE) {
+    rules.push('searchRangeOrder')
+  }
+  return rules.join('|')
+}
+
 export function convertValue(value, operator, property) {
   const { bk_property_type: type } = property
   let convertedValue = Array.isArray(value) ? value : [value]
@@ -533,6 +546,8 @@ export default {
   getBindProps,
   getDefaultData,
   getOperatorSideEffect,
+  getSearchPropertyValueFieldName,
+  getSearchPropertyValueValidateRules,
   convertValue,
   findProperty,
   findPropertyByPropertyId,
