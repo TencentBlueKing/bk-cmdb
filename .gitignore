@@ -17,3 +17,12 @@ src/web*/cmdb_*
 
 
 pre-*-bkcodeai
+
+.codebuddy
+.cursor
+
+src/ui/.ai
+docs/reqs
+
+# cert
+*.pem
