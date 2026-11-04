@@ -49,6 +49,8 @@ var redisClient redis.Client
 // TestConfig TODO
 type TestConfig struct {
 	ZkAddr         string
+	ZkUser         string
+	ZkPassword     string
 	Concurrent     int
 	SustainSeconds float64
 	TotalRequest   int64
@@ -69,6 +71,8 @@ type RedisConfig struct {
 func init() {
 	testing.Init()
 	flag.StringVar(&tConfig.ZkAddr, "zk-addr", "127.0.0.1:2181", "zk discovery addresses, comma separated.")
+	flag.StringVar(&tConfig.ZkUser, "zk-user", "", "zk auth user")
+	flag.StringVar(&tConfig.ZkPassword, "zk-password", "", "zk auth password")
 	flag.IntVar(&tConfig.Concurrent, "concurrent", 100, "concurrent request during the load ")
 	flag.Float64Var(&tConfig.SustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
 	flag.Int64Var(&tConfig.TotalRequest, "total-request", 0,
@@ -91,8 +95,12 @@ func init() {
 	fmt.Println("before suit")
 	js, _ := json.MarshalIndent(tConfig, "", "    ")
 	fmt.Printf("test config: %s\n", run.SetRed(string(js)))
-	client := zk.NewZkClient(ccconfig.ZkConfig{Addr: tConfig.ZkAddr}, 40*time.Second)
-	var err error
+	client, err := zk.NewZkClient(ccconfig.ZkConfig{
+		Addr:     tConfig.ZkAddr,
+		User:     tConfig.ZkUser,
+		Password: tConfig.ZkPassword,
+	}, 40*time.Second)
+	Expect(err).Should(BeNil())
 	mongoConfig := local.MongoConf{
 		MaxOpenConns: mongo.DefaultMaxOpenConns,
 		MaxIdleConns: mongo.MinimumMaxIdleOpenConns,

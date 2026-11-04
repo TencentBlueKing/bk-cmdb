@@ -98,11 +98,12 @@ type Service struct {
 
 // NewZkService creates a ZK service using the provided ZkConfig.
 func NewZkService(zkConf config.ZkConfig) (*Service, error) {
-	if zkConf.Addr == "" {
-		return nil, errors.New("zk-addr must set via flag or environment variable")
+	zkCli, err := zkclient.NewZkClient(zkConf)
+	if err != nil {
+		return nil, err
 	}
 	service := &Service{
-		ZkCli: zkclient.NewZkClient(zkConf),
+		ZkCli: zkCli,
 	}
 	if err := service.ZkCli.Connect(); err != nil {
 		return nil, err

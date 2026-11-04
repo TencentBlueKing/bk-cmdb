@@ -105,8 +105,11 @@ func newAuthService(c *authConf) (*authService, error) {
 		return nil, errors.New("resource must be set via resource flag or resource file specified by rsc-file flag")
 	}
 
-	client := zk.NewZkClient(config.Conf.Zk, 40*time.Second)
-	if err := client.Start(); err != nil {
+	client, err := zk.NewZkClient(config.Conf.Zk, 40*time.Second)
+	if err != nil {
+		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.Zk.Addr, err)
+	}
+	if err = client.Start(); err != nil {
 		return nil, fmt.Errorf("connect regdiscv [%s] failed: %v", config.Conf.Zk.Addr, err)
 	}
 	if err := client.Ping(); err != nil {

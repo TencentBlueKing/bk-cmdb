@@ -13,21 +13,38 @@ spec:
   template:
     spec:
       {{- include "cmdb.imagePullSecrets" . | nindent 6 }}
+      {{- include "cmdb.kms.serviceAccount" . | nindent 6 }}
       containers:
-      - command:
+      - image: {{ .Values.image.registry }}/{{ .Values.apigatewaySync.image.repository }}:v{{ default .Chart.AppVersion .Values.apigatewaySync.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: cmdb-sync-apigateway
+        command:
         - bash
         args:
         - bin/sync-apigateway.sh
-        image: {{ .Values.image.registry }}/{{ .Values.apigatewaySync.image.repository }}:v{{ default .Chart.AppVersion .Values.apigatewaySync.image.tag }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        name: cmdb-sync-apigateway
         env:
         - name: BK_APIGW_NAME
           value: {{ .Values.bkApigatewayName }}
+        - name: BK_APP_TENANT_ID
+          value: "system"
+        {{- if .Values.kms.enabled }}
+        - name: ENABLE_KMS
+          value: "true"
+        - name: BK_APIGW_MANAGER_KMS_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.kms.secretName }}
+              key: {{ .Values.kms.privateKeyKey }}
+        - name: BK_APIGW_MANAGER_KMS_ENVELOPE_PATH
+          value: {{ .Values.apigatewaySync.kmsEnvelopePath | quote }}
+        - name: BK_APIGW_MANAGER_KMS_APP_NAME
+          value: {{ .Values.apigatewaySync.kmsAppName | quote }}
+        {{- else }}
         - name: BK_APP_CODE
           value: {{ .Values.common.apiGW.appCode }}
         - name: BK_APP_SECRET
           value: {{ .Values.common.apiGW.appSecret }}
+        {{- end }}
         - name: BK_API_URL_TMPL
           value: {{ .Values.common.apiGW.address }}
         - name: BK_CMDB_HOST
@@ -72,6 +89,13 @@ spec:
           value: {{ .Values.apigatewaySync.faraAppCode }}
         - name: BK_BKCHAT_APP_CODE
           value: {{ .Values.apigatewaySync.bkchatAppCode }}
+        {{- if .Values.kms.enabled }}
+        volumeMounts:
+          - name: kms-envelope
+            mountPath: {{ .Values.apigatewaySync.kmsEnvelopePath }}
+            subPath: {{ .Values.kms.envelopeKey }}
+            readOnly: true
+        {{- end }}
         resources:
           limits:
             cpu: 200m
@@ -79,6 +103,16 @@ spec:
           requests:
             memory: 512Mi
             cpu: 200m
+      {{- if .Values.kms.enabled }}
+      volumes:
+        - name: kms-envelope
+          secret:
+            secretName: {{ .Values.kms.secretName }}
+            items:
+              - key: {{ .Values.kms.envelopeKey }}
+                path: {{ .Values.kms.envelopeKey }}
+            defaultMode: 0400
+      {{- end }}
       restartPolicy: OnFailure
   backoffLimit: 20
 {{- end }}

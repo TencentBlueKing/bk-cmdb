@@ -279,6 +279,8 @@ drwxr-xr-x 7 root root  4096 Jun 18 10:33 web
 
 	usage:
 	--discovery           <discovery>           the ZooKeeper server address, eg:127.0.0.1:2181
+	--discovery_user      <discovery_user>      user name for ZooKeeper auth, required
+	--discovery_password  <discovery_password>  password for ZooKeeper auth, required
 	--database           <database>             the database name, default cmdb
 	--redis_ip           <redis_ip>             the redis ip, eg:127.0.0.1
 	--redis_port         <redis_port>           the redis port, default:6379
@@ -300,6 +302,8 @@ drwxr-xr-x 7 root root  4096 Jun 18 10:33 web
 | ZooKeeper地址       | 用途说明                                                     | 必填                    | 默认值                  |
 | ------------------- | ------------------------------------------------------------ | ----------------------- | ----------------------- |
 | --discovery         | 服务发现组件，ZooKeeper 服务地址                             | 是                      | 无                      |
+| --discovery_user    | ZooKeeper 认证用户名                                         | 是                      | 无                      |
+| --discovery_password | ZooKeeper 认证密码                                          | 是                      | 无                      |
 | --database          | 数据库名字                                                   | mongodb 中数据库名      | 否                      |
 | --redis_ip          | Redis服务的IP                                                | 是                      | 无                      |
 | --redis_port        | Redis服务的端口                                              | 否                      | 6379                    |
@@ -331,6 +335,8 @@ drwxr-xr-x 7 root root  4096 Jun 18 10:33 web
 ``` shell
 python init.py  \
   --discovery          127.0.0.1:2181 \
+  --discovery_user     xxx \
+  --discovery_password xxx \
   --database           cmdb \
   --redis_ip           127.0.0.1 \
   --redis_port         6379 \
@@ -478,16 +484,16 @@ starting: cmdb_taskserver
 starting: cmdb_toposerver
 starting: cmdb_webserver
 root       209     1  5 08:27 pts/0    00:00:00 ./cmdb_adminserver --addrport=127.0.0.1:60004 --logtostderr=false --log-dir=./logs --v=3 --config=configures/migrate.conf
-root       230     1  1 08:27 pts/0    00:00:00 ./cmdb_apiserver --addrport=127.0.0.1:8080 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       263     1  0 08:27 pts/0    00:00:00 ./cmdb_coreservice --addrport=127.0.0.1:50009 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
-root       284     1  1 08:27 pts/0    00:00:00 ./cmdb_datacollection --addrport=127.0.0.1:60005 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       305     1  4 08:27 pts/0    00:00:00 ./cmdb_eventserver --addrport=127.0.0.1:60009 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       326     1  3 08:27 pts/0    00:00:00 ./cmdb_hostserver --addrport=127.0.0.1:60001 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       445     1  4 08:27 pts/0    00:00:00 ./cmdb_operationserver --addrport=127.0.0.1:60011 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       642     1  7 08:27 pts/0    00:00:00 ./cmdb_procserver --addrport=127.0.0.1:60003 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       661     1 11 08:27 pts/0    00:00:00 ./cmdb_taskserver --addrport=127.0.0.1:60012 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
-root       724     1  6 08:27 pts/0    00:00:00 ./cmdb_toposerver --addrport=127.0.0.1:60002 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --enable-auth=false
-root       937     1  0 08:27 pts/0    00:00:00 ./cmdb_webserver --addrport=127.0.0.1:80 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181
+root       230     1  1 08:27 pts/0    00:00:00 ./cmdb_apiserver --addrport=127.0.0.1:8080 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx --enable-auth=false
+root       263     1  0 08:27 pts/0    00:00:00 ./cmdb_coreservice --addrport=127.0.0.1:50009 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx
+root       284     1  1 08:27 pts/0    00:00:00 ./cmdb_datacollection --addrport=127.0.0.1:60005 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx --enable-auth=false
+root       305     1  4 08:27 pts/0    00:00:00 ./cmdb_eventserver --addrport=127.0.0.1:60009 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx --enable-auth=false
+root       326     1  3 08:27 pts/0    00:00:00 ./cmdb_hostserver --addrport=127.0.0.1:60001 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx --enable-auth=false
+root       445     1  4 08:27 pts/0    00:00:00 ./cmdb_operationserver --addrport=127.0.0.1:60011 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx --enable-auth=false
+root       642     1  7 08:27 pts/0    00:00:00 ./cmdb_procserver --addrport=127.0.0.1:60003 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx --enable-auth=false
+root       661     1 11 08:27 pts/0    00:00:00 ./cmdb_taskserver --addrport=127.0.0.1:60012 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx
+root       724     1  6 08:27 pts/0    00:00:00 ./cmdb_toposerver --addrport=127.0.0.1:60002 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx --enable-auth=false
+root       937     1  0 08:27 pts/0    00:00:00 ./cmdb_webserver --addrport=127.0.0.1:80 --logtostderr=false --log-dir=./logs --v=3 --regdiscv=127.0.0.1:2181 --regdiscv-user=xxx --regdiscv-password=xxx
 process count should be: 11 , now: 11
 ```
 
