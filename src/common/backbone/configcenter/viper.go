@@ -32,12 +32,14 @@ import (
 	"configcenter/src/common/blog"
 	"configcenter/src/common/cryptor"
 	ccerr "configcenter/src/common/errors"
+	"configcenter/src/common/kms"
 	"configcenter/src/common/language"
 	"configcenter/src/common/ssl"
 	"configcenter/src/storage/dal/kafka"
 	"configcenter/src/storage/dal/mongo"
 	"configcenter/src/storage/dal/redis"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -112,8 +114,7 @@ func SetRedisFromByte(data []byte) error {
 	confLock.Lock()
 	defer confLock.Unlock()
 	if redisParser != nil {
-		err := redisParser.parser.ReadConfig(bytes.NewBuffer(data))
-		if err != nil {
+		if err := redisParser.readConfig(data); err != nil {
 			blog.Errorf("fail to read configure from redis")
 			return err
 		}
@@ -146,8 +147,7 @@ func SetMongodbFromByte(data []byte) error {
 	confLock.Lock()
 	defer confLock.Unlock()
 	if mongodbParser != nil {
-		err = mongodbParser.parser.ReadConfig(bytes.NewBuffer(data))
-		if err != nil {
+		if err := mongodbParser.readConfig(data); err != nil {
 			blog.Errorf("fail to read configure from mongodb")
 			return err
 		}
@@ -181,8 +181,7 @@ func SetCommonFromByte(data []byte) error {
 	defer confLock.Unlock()
 	// if it is not nil, do not create a new parser, but add the new configuration information to viper
 	if commonParser != nil {
-		err = commonParser.parser.ReadConfig(bytes.NewBuffer(data))
-		if err != nil {
+		if err := commonParser.readConfig(data); err != nil {
 			blog.Errorf("fail to read configure from common")
 			return err
 		}
@@ -612,26 +611,59 @@ type viperParser struct {
 }
 
 func newViperParser(data []byte) (*viperParser, error) {
-
 	v := viper.New()
 	v.SetConfigType("yaml")
-	err := v.ReadConfig(bytes.NewBuffer(data))
-	if err != nil {
+	p := &viperParser{parser: v}
+	if err := p.readConfig(data); err != nil {
 		return nil, err
 	}
-	return &viperParser{parser: v}, nil
+	return p, nil
+}
+
+// readConfig read config and merges the KMS credential again.
+func (vp *viperParser) readConfig(data []byte) error {
+	if err := vp.parser.ReadConfig(bytes.NewBuffer(data)); err != nil {
+		return err
+	}
+	return applyKMS(vp.parser)
 }
 
 func newViperParserFromFile(target string) (*viperParser, error) {
 	v := viper.New()
 	v.SetConfigName(path.Base(target))
 	v.AddConfigPath(path.Dir(target))
-	err := v.ReadInConfig()
-	if err != nil {
+	if err := v.ReadInConfig(); err != nil {
 		return nil, err
 	}
+	if err := applyKMS(v); err != nil {
+		return nil, err
+	}
+	// WatchConfig reloads replace the config layer, so the KMS credential must be merged again.
+	v.OnConfigChange(func(fsnotify.Event) {
+		confLock.Lock()
+		defer confLock.Unlock()
+		if err := applyKMS(v); err != nil {
+			blog.Errorf("apply kms credential after config file %s changed failed, err: %v", target, err)
+		}
+	})
 	v.WatchConfig()
 	return &viperParser{parser: v}, nil
+}
+
+func applyKMS(v *viper.Viper) error {
+	cred, err := kms.Load()
+	if err != nil {
+		return err
+	}
+
+	if cred == nil {
+		return nil
+	}
+
+	if err = cred.Apply(v); err != nil {
+		return fmt.Errorf("apply kms credential failed, err: %w", err)
+	}
+	return nil
 }
 
 func (vp *viperParser) getString(path string) string {

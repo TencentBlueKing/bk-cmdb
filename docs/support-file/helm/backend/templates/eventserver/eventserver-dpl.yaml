@@ -27,6 +27,7 @@ spec:
       {{- end }}
     spec:
       {{- include "cmdb.imagePullSecrets" . | nindent 6 }}
+      {{- include "cmdb.kms.serviceAccount" . | nindent 6 }}
       containers:
       - name: eventserver
         image: {{ .Values.image.registry }}/{{ .Values.eventserver.image.repository }}:v{{ default .Chart.AppVersion .Values.eventserver.image.tag }}
@@ -77,6 +78,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+          {{- include "cmdb.kms.env" . | nindent 10 }}
         {{- if .Values.eventserver.env }}
           {{ toYaml .Values.eventserver.env | indent 10 }}
         {{- end }}
@@ -94,6 +96,8 @@ spec:
           {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
           {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
           {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.kms.volumeMount" . | nindent 10 }}
+          {{- include "cmdb.kms.gseMaterial.volumeMount" . | nindent 10 }}
 
       volumes:
         - name: cert
@@ -107,6 +111,8 @@ spec:
         {{- include "cmdb.redis.certVolume" . | nindent 8 }}
         {{- include "cmdb.mongodb.certVolume" . | nindent 8 }}
         {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 8 }}
+        {{- include "cmdb.kms.volume" . | nindent 8 }}
+        {{- include "cmdb.kms.gseMaterial.volume" . | nindent 8 }}
 
       {{- with .Values.eventserver.nodeSelector }}
       nodeSelector:

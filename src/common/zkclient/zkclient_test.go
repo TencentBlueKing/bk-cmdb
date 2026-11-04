@@ -32,15 +32,21 @@ var (
 	caFile             = ""
 	password           = ""
 	insecureSkipVerify = true
+	zkUser             = ""
+	zkPassword         = ""
 )
 
 func TestDataValue(t *testing.T) {
 	fmt.Println("TEST Data Value")
-	zkClient := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181"})
+	zkClient, err := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181", User: zkUser, Password: zkPassword})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	defer zkClient.Close()
 
-	err := zkClient.Connect()
+	err = zkClient.Connect()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -73,7 +79,11 @@ func TestDataValue(t *testing.T) {
 
 func TestZkLock(t *testing.T) {
 	fmt.Println("TEST zk lock")
-	zkLock1 := NewZkLock([]string{"127.0.0.1:2181"}, "", "")
+	zkLock1, err := NewZkLock([]string{"127.0.0.1:2181"}, zkUser, zkPassword)
+	if err != nil {
+		fmt.Printf("lock1 fail lock. err:%s \n", err.Error())
+		return
+	}
 
 	if err := zkLock1.Lock("/lock"); err != nil {
 		fmt.Printf("lock1 fail lock. err:%s \n", err.Error())
@@ -88,9 +98,13 @@ func TestZkLock(t *testing.T) {
 func Test_WatchChildren(t *testing.T) {
 	t.Log("----- start test WatchChildren -----")
 
-	zkClient := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181"})
+	zkClient, err := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181", User: zkUser, Password: zkPassword})
+	if err != nil {
+		t.Logf("fail to connect zk, err:%s", err.Error())
+		return
+	}
 
-	err := zkClient.Connect()
+	err = zkClient.Connect()
 	if err != nil {
 		t.Logf("fail to connect zk, err:%s", err.Error())
 		return
@@ -136,8 +150,10 @@ func Test_WatchChildren(t *testing.T) {
 
 func TestDataValueWithTLS(t *testing.T) {
 	fmt.Println("TEST Data Value With TLS")
-	zkClient := NewZkClient(config.ZkConfig{
-		Addr: "127.0.0.1:2281",
+	zkClient, err := NewZkClient(config.ZkConfig{
+		Addr:     "127.0.0.1:2281",
+		User:     zkUser,
+		Password: zkPassword,
 		TLS: ssl.TLSClientConfig{
 			InsecureSkipVerify: insecureSkipVerify,
 			CertFile:           certFile,
@@ -146,10 +162,14 @@ func TestDataValueWithTLS(t *testing.T) {
 			Password:           password,
 		},
 	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	defer zkClient.Close()
 
-	err := zkClient.Connect()
+	err = zkClient.Connect()
 	if err != nil {
 		fmt.Println(err)
 		return

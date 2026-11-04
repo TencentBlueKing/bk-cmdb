@@ -35,11 +35,15 @@ type ZkClient struct {
 }
 
 // NewZkClient creates a ZkClient from the given ZkConfig and session timeout.
-func NewZkClient(cfg config.ZkConfig, timeOut time.Duration) *ZkClient {
-	return &ZkClient{
-		zkCli:          zkclient.NewZkClient(cfg),
-		sessionTimeOut: timeOut,
+func NewZkClient(cfg config.ZkConfig, timeOut time.Duration) (*ZkClient, error) {
+	zkCli, err := zkclient.NewZkClient(cfg)
+	if err != nil {
+		return nil, err
 	}
+	return &ZkClient{
+		zkCli:          zkCli,
+		sessionTimeOut: timeOut,
+	}, nil
 }
 
 // Ping to ping server
