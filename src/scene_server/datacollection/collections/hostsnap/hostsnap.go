@@ -68,7 +68,9 @@ var (
 	// in static ip scenarios, and require special processing
 	compareFields = []string{"bk_cpu", "bk_cpu_module", "bk_disk", "bk_mem", "bk_os_type", "bk_os_name",
 		"bk_os_version", "bk_host_name", "bk_outer_mac", "bk_mac", "bk_os_bit", "bk_cpu_architecture",
-		common.BKOsKernelVersionField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field}
+		common.BKOsKernelVersionField, common.BKHostInnerIPField, common.BKHostInnerIPv6Field,
+		common.BKCloudHardwareProductNameField, common.BKCloudHardwareProductSerialField,
+		common.BKCloudHardwareProductUUIDField, common.BKCloudHardwareUUIDStatusField}
 	reqireFields = append(compareFields, common.BKHostIDField, common.BKAddressingField, common.BKHostOuterIPField,
 		common.BKHostOuterIPv6Field)
 
@@ -566,22 +568,26 @@ func needToUpdate(src, toCompare, addressing string) bool {
 }
 
 type hostDiscoverMsg struct {
-	ostype          string
-	osname          string
-	platform        string
-	version         string
-	cpumodule       string
-	hostname        string
-	osbit           string
-	arch            string
-	osKernelVersion string
-	cpunum          int64
-	disk            uint64
-	mem             uint64
-	outerMACArr     []string
-	innerMACArr     []string
-	hasOuterMAC     bool
-	hasInnerMAC     bool
+	ostype                string
+	osname                string
+	platform              string
+	version               string
+	cpumodule             string
+	hostname              string
+	osbit                 string
+	arch                  string
+	osKernelVersion       string
+	hardwareProductName   string
+	hardwareProductSerial string
+	hardwareProductUUID   string
+	hardwareUUIDStatus    string
+	cpunum                int64
+	disk                  uint64
+	mem                   uint64
+	outerMACArr           []string
+	innerMACArr           []string
+	hasOuterMAC           bool
+	hasInnerMAC           bool
 }
 
 type hostInfo struct {
@@ -610,6 +616,10 @@ func getHostInfoFromMsgV10(val *gjson.Result, host *hostInfo) *hostDiscoverMsg {
 	hostMsg.version = val.Get("data.system.platVer").String()
 	hostMsg.arch = strings.TrimSpace(val.Get("data.system.arch").String())
 	hostMsg.osKernelVersion = strings.TrimSpace(val.Get("data.system.kernelVersion").String())
+	hostMsg.hardwareProductName = strings.TrimSpace(val.Get("data.hardware.product_name").String())
+	hostMsg.hardwareProductSerial = strings.TrimSpace(val.Get("data.hardware.product_serial").String())
+	hostMsg.hardwareProductUUID = strings.TrimSpace(val.Get("data.hardware.product_uuid").String())
+	hostMsg.hardwareUUIDStatus = strings.TrimSpace(val.Get("data.hardware.uuid_status").String())
 
 	switch strings.ToLower(hostMsg.ostype) {
 	case common.HostOSTypeName[common.HostOSTypeEnumLinux]:
@@ -1112,8 +1122,26 @@ func parseV10Setter(val *gjson.Result, host *hostInfo) (
 		raw.Write([]byte("\"" + hostMsg.osKernelVersion + "\""))
 	}
 
+	appendHostSnapStringField(setter, &raw, common.BKCloudHardwareProductNameField, hostMsg.hardwareProductName)
+	appendHostSnapStringField(setter, &raw, common.BKCloudHardwareProductSerialField, hostMsg.hardwareProductSerial)
+	appendHostSnapStringField(setter, &raw, common.BKCloudHardwareProductUUIDField, hostMsg.hardwareProductUUID)
+	appendHostSnapStringField(setter, &raw, common.BKCloudHardwareUUIDStatusField, hostMsg.hardwareUUIDStatus)
+
 	raw.WriteByte('}')
 	return setter, raw.String()
+}
+
+func appendHostSnapStringField(setter map[string]interface{}, raw *strings.Builder, field, value string) {
+	if value == "" {
+		return
+	}
+	setter[field] = value
+	if raw.Len() > 1 {
+		raw.WriteByte(',')
+	}
+	raw.WriteString(strconv.Quote(field))
+	raw.WriteByte(':')
+	raw.WriteString(strconv.Quote(value))
 }
 
 func (h *HostSnap) getHostByAgentID(header http.Header, rid, agentID string) (string, error) {

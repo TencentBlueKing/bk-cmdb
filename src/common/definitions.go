@@ -418,6 +418,18 @@ const (
 	// BKCpuArch the host cpu architecture field
 	BKCpuArch = "bk_cpu_architecture"
 
+	// BKCloudHardwareProductNameField the cloud hardware product name field
+	BKCloudHardwareProductNameField = "bk_cloud_hardware_product_name"
+
+	// BKCloudHardwareProductSerialField the cloud hardware product serial field
+	BKCloudHardwareProductSerialField = "bk_cloud_hardware_product_serial"
+
+	// BKCloudHardwareProductUUIDField the cloud hardware product uuid field
+	BKCloudHardwareProductUUIDField = "bk_cloud_hardware_product_uuid"
+
+	// BKCloudHardwareUUIDStatusField the cloud hardware uuid status field
+	BKCloudHardwareUUIDStatusField = "bk_cloud_hardware_uuid_status"
+
 	// BKHttpGet the http get
 	BKHttpGet = "GET"
 
