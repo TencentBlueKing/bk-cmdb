@@ -91,7 +91,7 @@ data:
       # CA证书的路径，用于验证对方证书,,如:/data/cmdb/cert/ca.crt
       caFile: {{ .Values.web.tls.caFile }}
       # 用于解密根据RFC1423加密的证书密钥的PEM块
-      password: {{ .Values.web.tls.password }}
+      password: {{ include "cmdb.kms.value" (dict "enabled" .Values.kms.enabled "value" .Values.web.tls.password) }}
 
     # 调用apigw接口相关配置
     apiGW:
@@ -99,8 +99,8 @@ data:
       bkNoticeApiGatewayUrl: {{ .Values.bkNoticeApiGatewayUrl }}
       bkCmdbApiGatewayUrl: {{ .Values.bkCmdbApiGatewayUrl }}
       bkLoginApiGatewayUrl: {{ .Values.bkLoginApiGatewayUrl }}
-      appCode: {{ .Values.web.apiGW.appCode }}
-      appSecret: {{ .Values.web.apiGW.appSecret }}
+      appCode: {{ include "cmdb.kms.value" (dict "enabled" .Values.kms.enabled "value" .Values.web.apiGW.appCode) }}
+      appSecret: {{ include "cmdb.kms.value" (dict "enabled" .Values.kms.enabled "value" .Values.web.apiGW.appSecret) }}
       username: {{ .Values.web.apiGW.username }}
       tls:
         # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
@@ -112,7 +112,7 @@ data:
         # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
         caFile: {{ .Values.web.apiGW.tls.caFile }}
         # 用于解密根据RFC1423加密的证书密钥的PEM块
-        password: {{ .Values.web.apiGW.tls.password }}
+        password: {{ include "cmdb.kms.value" (dict "enabled" .Values.kms.enabled "value" .Values.web.apiGW.tls.password) }}
 
     # 监控配置， monitor配置项必须存在
     monitor:
@@ -144,7 +144,7 @@ data:
       # openTelemetry跟踪链功能的上报data_id, 用于旧版的数据上报, 和bkDataToken同时配置时，会取bkDataToken
       bkDataID: {{ .Values.web.openTelemetry.bkDataID }}
       # openTelemetry跟踪链功能的bk.data.token, 用于新版的数据上报，和bkDataID同时配置时，会取bkDataToken
-      bkDataToken: {{ .Values.web.openTelemetry.bkDataToken }}
+      bkDataToken: {{ include "cmdb.kms.value" (dict "enabled" .Values.kms.enabled "value" .Values.web.openTelemetry.bkDataToken) }}
       # 连接日志平台tls配置
       tls:
         # 客户端是否验证服务端证书，包含证书链和主机名，bool值, true为不校验, false为校验
@@ -156,7 +156,7 @@ data:
         # CA证书的路径，用于验证对方证书,如:/data/cmdb/cert/ca.crt
         caFile: {{ .Values.web.openTelemetry.tls.caFile }}
         # 用于解密根据RFC1423加密的证书密钥的PEM块
-        password: {{ .Values.web.openTelemetry.tls.password }}
+        password: {{ include "cmdb.kms.value" (dict "enabled" .Values.kms.enabled "value" .Values.web.openTelemetry.tls.password) }}
 
     errors:
       res: {{ .Values.webserver.errors }}
@@ -193,7 +193,7 @@ data:
       database: {{ .Values.redis.redis.database }}
       maxOpenConns: {{ .Values.redis.redis.maxOpenConns }}
       maxIdleConns: {{ .Values.redis.redis.maxIdleConns }}
-      sentinelPwd: {{ .Values.redis.redis.sentinelPwd }}
+      sentinelPwd: {{ include "cmdb.kms.value" (dict "enabled" .Values.kms.enabled "value" .Values.redis.redis.sentinelPwd) }}
       masterName: {{ .Values.redis.redis.masterName }}
       tls:
         insecureSkipVerify: {{ .Values.redis.redis.insecureSkipVerify }}

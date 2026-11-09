@@ -28,6 +28,7 @@ spec:
     spec:
       imagePullSecrets:
         - name: {{ .Values.image.pullSecretName }}
+      {{- include "cmdb.kms.serviceAccount" . | nindent 6 }}
       {{- if .Values.webserver.hostNetwork }}
       hostNetwork: true
       {{- end }}
@@ -47,6 +48,8 @@ spec:
         - --log-dir={{ .Values.webserver.command.logDir }}
         {{- end }}
         - --regdiscv={{ .Values.configAndServiceCenter.addr }}
+        - --regdiscv-user={{ .Values.configAndServiceCenter.user }}
+        - --regdiscv-password={{ .Values.configAndServiceCenter.password }}
         - --v={{ .Values.webserver.command.logLevel }}
         - --logtostderr={{ .Values.webserver.command.logToStdErr }}
         {{ include "cmdb.configAndServiceCenter.certCommand" . | nindent 8 }}
@@ -78,6 +81,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+          {{- include "cmdb.kms.env" . | nindent 10 }}
         {{- if .Values.webserver.env }}
           {{ toYaml .Values.webserver.env | indent 10 }}
         {{- end }}
@@ -96,6 +100,7 @@ spec:
           {{- end }}
           {{- include "cmdb.mongodb.certVolumeMount" . | nindent 10 }}
           {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.kms.volumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.webserver.configDir }}
         - name: configures
@@ -109,6 +114,7 @@ spec:
         {{- end }}
         {{- include "cmdb.mongodb.certVolume" . | nindent 8 }}
         {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 8 }}
+        {{- include "cmdb.kms.volume" . | nindent 8 }}
 
       {{- with .Values.webserver.nodeSelector }}
       nodeSelector:

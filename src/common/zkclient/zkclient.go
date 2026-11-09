@@ -28,7 +28,6 @@ import (
 	"sync"
 	"time"
 
-	"configcenter/src/common/blog"
 	"configcenter/src/common/core/cc/config"
 	"configcenter/src/common/ssl"
 
@@ -46,13 +45,6 @@ var (
 	ErrConnectionClosed = zk.ErrConnectionClosed
 )
 
-const (
-	// AUTH_USER is the default zookeeper auth user
-	AUTH_USER = "cc"
-	// AUTH_PWD is the default zookeeper auth password
-	AUTH_PWD = "3.0#bkcc"
-)
-
 // ZkLock TODO
 type ZkLock struct {
 	zkHost     []string
@@ -63,14 +55,13 @@ type ZkLock struct {
 	zkPassword string
 }
 
-// NewZkLock creates a ZkLock with specified user and password.
-// If user or password is empty, the default values (AUTH_USER, AUTH_PWD) are used.
-func NewZkLock(host []string, user, password string) *ZkLock {
+// NewZkLock creates a ZkLock with the given user and password.
+func NewZkLock(host []string, user, password string) (*ZkLock, error) {
 	if user == "" {
-		user = AUTH_USER
+		return nil, errors.New("zookeeper user is required")
 	}
 	if password == "" {
-		password = AUTH_PWD
+		return nil, errors.New("zookeeper password is required")
 	}
 	zlock := ZkLock{
 		zkHost:     host[:],
@@ -80,7 +71,7 @@ func NewZkLock(host []string, user, password string) *ZkLock {
 		zkPassword: password,
 		zkAcl:      zk.DigestACL(zk.PermAll, user, password),
 	}
-	return &zlock
+	return &zlock, nil
 }
 
 // Lock TODO
@@ -146,28 +137,20 @@ type ZkClient struct {
 }
 
 // NewZkClient creates a ZkClient from the given ZkConfig.
-// If User or Password is empty, the default values (AUTH_USER, AUTH_PWD) are used.
-func NewZkClient(cfg config.ZkConfig) *ZkClient {
-	user := cfg.User
-	if user == "" {
-		blog.Info("zk user is empty, use default user")
-		user = AUTH_USER
-	}
-	password := cfg.Password
-	if password == "" {
-		blog.Info("zk password is empty, use default password")
-		password = AUTH_PWD
+func NewZkClient(cfg config.ZkConfig) (*ZkClient, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, err
 	}
 	tlsConf := cfg.TLS
 	c := ZkClient{
 		ZkHost:     strings.Split(cfg.Addr, ","),
 		ZkConn:     nil,
-		zkAcl:      zk.DigestACL(zk.PermAll, user, password),
+		zkAcl:      zk.DigestACL(zk.PermAll, cfg.User, cfg.Password),
 		zkTLS:      &tlsConf,
-		zkUser:     user,
-		zkPassword: password,
+		zkUser:     cfg.User,
+		zkPassword: cfg.Password,
 	}
-	return &c
+	return &c, nil
 }
 
 // Connect TODO

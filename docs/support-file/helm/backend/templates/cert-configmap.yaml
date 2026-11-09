@@ -5,4 +5,6 @@ metadata:
 data:
   gseca.crt: {{ .Values.gseCert.ca | b64dec | quote }}
   cmdb.cert: {{ .Values.gseCert.cmdbCert | b64dec | quote }}
+  {{- if not .Values.kms.enabled }}
   cmdb.key: {{ .Values.gseCert.cmdbKey | b64dec | quote }}
+  {{- end }}

@@ -58,6 +58,7 @@ require (
 )
 
 require (
+	github.com/TencentBlueKing/bk-kms-sdk/go v1.0.0
 	github.com/mozillazg/go-pinyin v0.20.0
 	go.opentelemetry.io/proto/otlp v1.10.0
 	google.golang.org/protobuf v1.36.11
@@ -74,6 +75,7 @@ require (
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
+	github.com/emmansun/gmsm v0.41.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

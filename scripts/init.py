@@ -670,10 +670,6 @@ mongodb:
 
     # migrate.yaml
     migrate_file_template_str = '''
-#configServer:
-#  addrs: 127.0.0.1:2181
-#  usr: cc
-#  pwd: cc
 #registerServer:
 #  addrs: 127.0.0.1:2181
 #  usr: cc
@@ -705,23 +701,6 @@ mongodb:
 #  appCode: bk_cmdb
 #  appSecret: 123456
 
-# 配置中心
-configServer:
-  addrs: $rd_server
-  usr: $rd_user
-  pwd: $rd_password
-  # ZooKeeper tls配置信息
-  tls:
-    # CA证书文件路径
-    caFile: "$rd_cafile"
-    # 证书文件路径
-    certFile: "$rd_certfile"
-    # 密钥文件路径
-    keyFile: "$rd_keyfile"
-    # 是否跳过证书验证
-    insecureSkipVerify: $rd_skipverify
-    # 证书密码
-    password: $rd_certpassword
 # 注册中心
 registerServer:
   addrs: $rd_server
@@ -942,8 +921,8 @@ def main(argv):
       --log_level               <log_level>               log level to start cmdb process, default: 3
       --register_ip             <register_ip>             the ip address registered on zookeeper, it can be domain
       --user_info               <user_info>               the system user info, user and password are combined by semicolon, multiple users are separated by comma. eg: user1:password1,user2:password2
-      --discovery_user          <discovery_user>          user name for ZooKeeper auth, defaults to built-in value if not set
-      --discovery_password      <discovery_password>      password for ZooKeeper auth, defaults to built-in value if not set
+      --discovery_user          <discovery_user>          user name for ZooKeeper auth, required
+      --discovery_password      <discovery_password>      password for ZooKeeper auth, required
       --discovery_cafile        <discovery_cafile>        CA file for ZooKeeper TLS connection
       --discovery_certfile      <discovery_certfile>      cert file for ZooKeeper TLS connection
       --discovery_keyfile       <discovery_keyfile>       key file for ZooKeeper TLS connection
@@ -953,6 +932,8 @@ def main(argv):
     demo:
     python init.py  \\
       --discovery               127.0.0.1:2181 \\
+      --discovery_user          xxx \\
+      --discovery_password      xxx \\
       --discovery_cafile        ./zk-ca.crt \\
       --discovery_certfile      ./zk.cert \\
       --discovery_keyfile       ./zk.key \\
@@ -1164,6 +1145,12 @@ def main(argv):
 
     if 0 == len(rd_server):
         print('please input the ZooKeeper address, eg:127.0.0.1:2181')
+        sys.exit()
+    if 0 == len(rd_user):
+        print('please input the ZooKeeper user name via --discovery_user')
+        sys.exit()
+    if 0 == len(rd_password):
+        print('please input the ZooKeeper password via --discovery_password')
         sys.exit()
     if 0 == len(db_name):
         print('please input the database name, eg:cmdb')

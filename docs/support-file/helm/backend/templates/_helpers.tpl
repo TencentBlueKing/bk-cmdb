@@ -104,7 +104,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.redis.pwd" -}}
-{{- if .Values.redis.enabled -}}
+{{- if .Values.kms.enabled -}}
+{{- else if .Values.redis.enabled -}}
       {{- required "redis.auth.password is required" .Values.redis.auth.password  -}}
 {{- else }}
      {{- .Values.redis.redis.pwd -}}
@@ -120,7 +121,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.redis.snap.pwd" -}}
-{{- if .Values.redis.enabled -}}
+{{- if .Values.kms.enabled -}}
+{{- else if .Values.redis.enabled -}}
      {{- .Values.redis.auth.password -}}
 {{- else }}
      {{- .Values.redis.snapshotRedis.pwd -}}
@@ -149,7 +151,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.mongodb.usr" -}}
-  {{- if eq .Values.mongodb.enabled true -}}
+  {{- if .Values.kms.enabled -}}
+  {{- else if eq .Values.mongodb.enabled true -}}
     {{- .Values.mongodb.auth.username -}}
   {{- else -}}
     {{- .Values.mongodb.externalMongodb.usr -}}
@@ -157,7 +160,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.mongodb.pwd" -}}
-  {{- if eq .Values.mongodb.enabled true -}}
+  {{- if .Values.kms.enabled -}}
+  {{- else if eq .Values.mongodb.enabled true -}}
     {{- required "mongodb.auth.password is required" .Values.mongodb.auth.password -}}
   {{- else -}}
     {{- .Values.mongodb.externalMongodb.pwd -}}
@@ -173,7 +177,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.mongodb.watch.usr" -}}
-  {{- if eq .Values.mongodb.enabled true -}}
+  {{- if .Values.kms.enabled -}}
+  {{- else if eq .Values.mongodb.enabled true -}}
     {{- .Values.mongodb.auth.username -}}
   {{- else -}}
     {{- .Values.mongodb.watch.usr -}}
@@ -181,7 +186,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{- define "cmdb.mongodb.watch.pwd" -}}
-  {{- if eq .Values.mongodb.enabled true -}}
+  {{- if .Values.kms.enabled -}}
+  {{- else if eq .Values.mongodb.enabled true -}}
     {{- .Values.mongodb.auth.password -}}
   {{- else -}}
     {{- .Values.mongodb.watch.pwd -}}
@@ -333,12 +339,11 @@ imagePullSecrets:
 {{- end }}
 
 {{- define "cmdb.configAndServiceCenter.certCommand" -}}
-{{- if .Values.configAndServiceCenter.user }}
+{{- if and .Values.configAndServiceCenter.user (not .Values.kms.enabled) }}
 - --regdiscv-user={{ .Values.configAndServiceCenter.user }}
 {{- end }}
-{{- if .Values.configAndServiceCenter.password }}
+{{- if and .Values.configAndServiceCenter.password (not .Values.kms.enabled) }}
 - --regdiscv-password={{ .Values.configAndServiceCenter.password }}
-{{- end }}
 {{- if .Values.configAndServiceCenter.tls.caFile }}
 - --regdiscv-cafile={{ .Values.certPath }}/zookeeper/{{ .Values.configAndServiceCenter.tls.caFile }}
 - --regdiscv-skipverify={{ .Values.configAndServiceCenter.tls.insecureSkipVerify }}
@@ -349,6 +354,7 @@ imagePullSecrets:
 {{- end }}
 {{- if .Values.configAndServiceCenter.tls.password }}
 - --regdiscv-certpassword={{ .Values.certPath }}/{{ .Values.configAndServiceCenter.tls.password }}
+{{- end }}
 {{- end }}
 {{- end -}}
 
@@ -377,4 +383,92 @@ imagePullSecrets:
     {{- else -}}
       default
     {{- end -}}
+{{- end -}}
+
+{{- define "cmdb.kms.value" -}}
+{{- if .enabled -}}
+""
+{{- else -}}
+{{ .value | quote }}
+{{- end -}}
+{{- end -}}
+
+{{- define "cmdb.gse.apiServerKeyFile" -}}
+{{- if .Values.kms.enabled -}}
+{{- printf "%s/cmdb.key" .Values.kms.materialDir -}}
+{{- else -}}
+{{- printf "%s/%s" .Values.certPath .Values.common.gse.apiServer.keyFile -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "cmdb.gse.taskServerKeyFile" -}}
+{{- if .Values.kms.enabled -}}
+{{- printf "%s/cmdb.key" .Values.kms.materialDir -}}
+{{- else -}}
+{{- printf "%s/%s" .Values.certPath .Values.common.gse.taskServer.keyFile -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "cmdb.serviceAccountName" -}}
+{{- if .Values.serviceAccount.name -}}
+{{- .Values.serviceAccount.name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- include "bk-cmdb.fullname" . -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "cmdb.kms.serviceAccount" -}}
+{{- if and .Values.kms.enabled (not .Values.serviceAccount.create) (not .Values.serviceAccount.name) -}}
+{{- fail "serviceAccount.create must be true or serviceAccount.name must be set when kms.enabled is true" -}}
+{{- end -}}
+{{- if or .Values.kms.enabled .Values.serviceAccount.create .Values.serviceAccount.name }}
+serviceAccountName: {{ include "cmdb.serviceAccountName" . }}
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.kms.env" -}}
+{{- if .Values.kms.enabled }}
+- name: BK_KMS_ENABLED
+  value: "true"
+- name: BK_KMS_ENVELOPE_FILE
+  value: {{ printf "%s/%s" .Values.kms.envelopeMountPath .Values.kms.envelopeKey | quote }}
+- name: BK_KMS_PRIVATE_KEY_FILE
+  value: {{ printf "%s/%s" .Values.kms.envelopeMountPath .Values.kms.privateKeyKey | quote }}
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.kms.volumeMount" -}}
+{{- if .Values.kms.enabled }}
+- name: kms-envelope
+  mountPath: {{ .Values.kms.envelopeMountPath }}
+  readOnly: true
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.kms.volume" -}}
+{{- if .Values.kms.enabled }}
+- name: kms-envelope
+  secret:
+    secretName: {{ .Values.kms.secretName }}
+    items:
+      - key: {{ .Values.kms.envelopeKey }}
+        path: {{ .Values.kms.envelopeKey }}
+      - key: {{ .Values.kms.privateKeyKey }}
+        path: {{ .Values.kms.privateKeyKey }}
+    defaultMode: 0400
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.kms.gseMaterial.volumeMount" -}}
+{{- if .Values.kms.enabled }}
+- name: kms-material
+  mountPath: {{ .Values.kms.materialDir }}
+{{- end }}
+{{- end -}}
+
+{{- define "cmdb.kms.gseMaterial.volume" -}}
+{{- if .Values.kms.enabled }}
+- name: kms-material
+  emptyDir: {}
+{{- end }}
 {{- end -}}

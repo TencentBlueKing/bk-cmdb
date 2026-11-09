@@ -88,6 +88,8 @@ total 44
 cd bin/build/v3.2.8
 
 ./init.py --discovery 127.0.0.1:2181 \
+--discovery_user xxx \
+--discovery_password xxx \
 --database cmdb \
 --redis_ip 127.0.0.1 \
 --redis_port 6379 \
