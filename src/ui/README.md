@@ -4,7 +4,7 @@
 
 ## Preparations
 
-- Node.js >= 10.13.0 (LTS), npm >= 6.4.1. see package.json `engines` field.
+- Node.js v24.22.1, npm 11.19.1. see package.json `engines` field.
 
 ## Build Setup
 

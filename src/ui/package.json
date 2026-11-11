@@ -141,8 +141,8 @@
     "*.{js,vue}": "eslint"
   },
   "engines": {
-    "node": ">= v18.18.0",
-    "npm": ">= 9.8.1"
+    "node": "v24.22.1",
+    "npm": "11.19.1"
   },
   "browserslist": {
     "production": [

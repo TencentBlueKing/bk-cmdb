@@ -20,6 +20,7 @@
           disabled: isNormalModuleNode,
           content: $t('仅能在业务模块下新增')
         }"
+        :ignore="!isNormalModuleNode"
         :auth="{ type: $OPERATION.C_SERVICE_INSTANCE, relation: [bizId] }">
         <bk-button theme="primary" slot-scope="{ disabled }" v-test-id="'addHost'"
           :disabled="disabled || !isNormalModuleNode"
