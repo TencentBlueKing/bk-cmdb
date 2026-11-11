@@ -22,7 +22,7 @@
           {{$t('新建')}}
         </bk-button>
       </cmdb-auth>
-      <cmdb-auth :auth="{ type: $OPERATION.U_BUSINESS }">
+      <cmdb-auth :auth="batchSaveAuth">
         <template #default="{ disabled }">
           <bk-button
             class="ml10"
