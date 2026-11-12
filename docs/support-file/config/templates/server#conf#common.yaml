@@ -237,6 +237,9 @@ tls:
   # 用于解密根据RFC1423加密的证书密钥的PEM块
   password:
 
+# 多租户下查询虚拟用户使用的管理员用户名
+bkAdminUsername:
+
 # 调用apigw接口相关配置
 apiGW:
   bkGseApiGatewayUrl: __BK_API_GATEWAY_GSE_URL__
