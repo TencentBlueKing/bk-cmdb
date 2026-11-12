@@ -177,7 +177,7 @@
           return false
         }
         if (HostStore.isAllResourceHost) {
-          this.$error('所选主机已在主机池中')
+          this.$error(this.$t('所选主机已在主机池中'))
           return false
         }
         const { isAllIdleSet } = HostStore
