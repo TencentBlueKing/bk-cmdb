@@ -122,6 +122,13 @@ func (s *Service) createTableAttribute(ctx *rest.Contexts, attr *metadata.Attrib
 		return nil, ctx.Kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKTemplateID)
 	}
 
+	// validate that no table column uses the reserved field name "id", which conflicts with the
+	// built-in table record identification field.
+	if err := validateTableAttrOption(ctx.Kit, attr.Option); err != nil {
+		blog.Errorf("validate table attribute option failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		return nil, err
+	}
+
 	isBizCustomField := false
 	if bizID > 0 {
 		attr.BizID = bizID
@@ -411,6 +418,12 @@ func (s *Service) UpdateObjectAttributeHidden(ctx *rest.Contexts) {
 // updateObjectTableAttribute update the table object attribute
 func (s *Service) updateObjectTableAttribute(ctx *rest.Contexts, id, bizID int64, data mapstr.MapStr) error {
 
+	// validate that no table column uses the reserved field name "id" when updating the option.
+	if err := validateTableAttrOption(ctx.Kit, data[common.BKOptionField]); err != nil {
+		blog.Errorf("validate table attribute option failed, err: %v, rid: %s", err, ctx.Kit.Rid)
+		return err
+	}
+
 	txnErr := s.Engine.CoreAPI.CoreService().Txn().AutoRunTxn(ctx.Kit.Ctx, ctx.Kit.Header, func() error {
 		err := s.Logics.AttributeOperation().UpdateTableObjectAttr(ctx.Kit, data, id, bizID)
 		if err != nil {
@@ -690,4 +703,31 @@ func checkJsonTagContainIsMultipleField(data interface{}) bool {
 	}
 
 	return true
+}
+
+// validateTableAttrOption checks that no table column uses a field name reserved by the system.
+// The "id", "create_time" and "last_time" fields are reserved as built-in table fields.
+func validateTableAttrOption(kit *rest.Kit, option interface{}) error {
+	if option == nil {
+		return nil
+	}
+
+	tableOption, err := metadata.ParseTableAttrOption(option)
+	if err != nil {
+		return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, common.BKOptionField)
+	}
+
+	reservedFields := map[string]bool{
+		common.BKFieldID:       true,
+		common.CreateTimeField: true,
+		common.LastTimeField:   true,
+	}
+
+	for _, header := range tableOption.Header {
+		if reservedFields[header.PropertyID] {
+			return kit.CCError.CCErrorf(common.CCErrCommParamsIsInvalid, header.PropertyID)
+		}
+	}
+
+	return nil
 }
