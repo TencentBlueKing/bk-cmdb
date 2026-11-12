@@ -17,6 +17,8 @@
 package auditlog
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -46,6 +48,13 @@ func New() core.AuditOperation {
 func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) error {
 	logRows := make([]metadata.AuditLog, 0)
 
+	var sceneHeader metadata.AuditSceneHeader
+	if header := httpheader.GetAuditSceneHeader(kit.Header); len(header) > 0 {
+		err := json.NewDecoder(strings.NewReader(header)).Decode(&sceneHeader)
+		if err != nil {
+			return fmt.Errorf("decode scene header failed,header:%s, err: %s", header, err.Error())
+		}
+	}
 	ids, err := mongodb.Client().NextSequences(kit.Ctx, common.BKTableNameAuditLog, len(logs))
 	if err != nil {
 		blog.Errorf("get next audit log id failed, err: %s", err.Error())
@@ -53,6 +62,7 @@ func (m *auditManager) CreateAuditLog(kit *rest.Kit, logs ...metadata.AuditLog) 
 	}
 
 	for index, log := range logs {
+		log.AuditContext = sceneHeader
 		if log.OperationDetail == nil {
 			continue
 		}

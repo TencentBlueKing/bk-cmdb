@@ -76,3 +76,7 @@ const (
 	// IsInnerReqHeader is the http header key that represents if request is an inner request
 	IsInnerReqHeader = "X-Bkcmdb-Is-Inner-Request"
 )
+
+const (
+	XBkCmdbAudit = "X-Bkcmdb-Audit"
+)

@@ -60,15 +60,20 @@ func (s *Service) SearchAuditList(ctx *rest.Contexts) {
 	// the front-end table display fields
 	fields := []string{common.BKFieldID, common.BKUser, common.BKResourceTypeField, common.BKActionField,
 		common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField,
-		common.BKExtendResourceNameField}
+		common.BKExtendResourceNameField,
+		common.BKAuditAppCodeField,
+		common.BKAuditSceneContextScene, common.BKAuditSceneContextOpUser, common.BKAuditSceneContextSceneTraceId,
+		common.BKAuditSceneContextSceneDesc,
+	}
 
-	cond := mapstr.MapStr{}
 	condition := query.Condition
 	if err := condition.Validate(); err != nil {
 		blog.Errorf("condition, user and resource_name cannot exist at the same time")
 		ctx.RespAutoError(err)
 		return
 	}
+
+	cond := mapstr.MapStr{}
 
 	// parse front-end condition to db search cond
 	for _, item := range condition.Condition {
@@ -173,6 +178,19 @@ func (s *Service) parseAuditCond(kit *rest.Kit, condition metadata.AuditQueryCon
 
 	if condition.ResourceID != nil {
 		cond[common.BKResourceIDField] = condition.ResourceID
+	}
+
+	if len(condition.Code) > 0 {
+		cond[common.BKAuditAppCodeField] = condition.Code
+	}
+	if len(condition.OpScene) > 0 {
+		cond[common.BKAuditSceneContextScene] = condition.OpScene
+	}
+	if len(condition.OpUser) > 0 {
+		cond[common.BKAuditSceneContextOpUser] = condition.OpUser
+	}
+	if len(condition.OpSceneTraceId) > 0 {
+		cond[common.BKAuditSceneContextSceneTraceId] = condition.OpSceneTraceId
 	}
 
 	if condition.ObjID != "" {
@@ -311,7 +329,11 @@ func (s *Service) SearchInstAudit(ctx *rest.Contexts) {
 	fields := make([]string, 0)
 	if !query.WithDetail {
 		fields = []string{common.BKFieldID, common.BKUser, common.BKResourceTypeField, common.BKActionField,
-			common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField}
+			common.BKOperationTimeField, common.BKAppIDField, common.BKResourceIDField, common.BKResourceNameField,
+			common.BKAuditAppCodeField,
+			common.BKAuditSceneContextScene, common.BKAuditSceneContextOpUser, common.BKAuditSceneContextSceneTraceId,
+			common.BKAuditSceneContextSceneDesc,
+		}
 	}
 
 	auditQuery := metadata.QueryCondition{Condition: cond, Fields: fields, Page: query.Page}
@@ -344,6 +366,18 @@ func buildInstAuditCondition(ctx *rest.Contexts, query metadata.InstAuditConditi
 
 	if query.ResourceType != "" {
 		cond[common.BKResourceTypeField] = query.ResourceType
+	}
+	if len(query.Code) > 0 {
+		cond[common.BKAuditAppCodeField] = query.Code
+	}
+	if len(query.OpScene) > 0 {
+		cond[common.BKAuditSceneContextScene] = query.OpScene
+	}
+	if len(query.OpUser) > 0 {
+		cond[common.BKAuditSceneContextOpUser] = query.OpUser
+	}
+	if len(query.OpSceneTraceId) > 0 {
+		cond[common.BKAuditSceneContextSceneTraceId] = query.OpSceneTraceId
 	}
 
 	if len(query.Action) > 0 {
