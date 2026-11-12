@@ -70,7 +70,7 @@
                     text: $t('停用模型'),
                     auth: { type: $OPERATION.U_MODEL, relation: [modelId] },
                     handler: () => dialogConfirm('stop'),
-                    isShow: !activeModel['bk_ispaused'],
+                    isShow: canPauseModel,
                     tips: '保留模型和相应实例，隐藏关联关系'
                   },
                   {
@@ -189,9 +189,9 @@
               </div>
             </div>
           </div>
-          <div class="divider" v-if="!isMainLineModel && activeModel.bk_ispaused"></div>
+          <div class="divider" v-if="canResumeModel"></div>
           <cmdb-auth class="restart-btn"
-            v-if="!isMainLineModel && activeModel.bk_ispaused"
+            v-if="canResumeModel"
             :auth="{ type: $OPERATION.U_MODEL, relation: [modelId] }">
             <bk-button slot-scope="{ disabled }"
               theme="primary"
@@ -394,6 +394,15 @@
       },
       isShowOperationButton() {
         return this.activeModel && !this.activeModel.ispre
+      },
+      canPauseModel() {
+        return this.activeModel
+          && !this.activeModel.ispre
+          && !this.isMainLineModel
+          && !this.activeModel.bk_ispaused
+      },
+      canResumeModel() {
+        return this.activeModel && !this.activeModel.ispre && this.activeModel.bk_ispaused
       },
       isReadOnly() {
         if (this.activeModel) {
@@ -672,6 +681,9 @@
         }
       },
       async updateModelObject(ispaused) {
+        if ((ispaused && !this.canPauseModel) || (!ispaused && !this.canResumeModel)) {
+          return false
+        }
         await this.updateObject({
           id: this.activeModel.id,
           params: {

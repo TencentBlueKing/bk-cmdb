@@ -126,6 +126,43 @@ func (o *object) FindSingleObject(kit *rest.Kit, field []string, objectID string
 	return &objs.Info[0], nil
 }
 
+// isMainlineModel checks whether the object identified by id is a mainline
+// model. It returns CCErrTopoForbiddenPauseMainlineObject if the object is a
+// mainline model, nil otherwise. This is used to reject pausing mainline
+// models.
+func isMainlineModel(kit *rest.Kit, clientSet apimachinery.ClientSetInterface, id int64) error {
+	objs, err := clientSet.CoreService().Model().ReadModel(kit.Ctx, kit.Header, &metadata.QueryCondition{
+		Condition:      mapstr.MapStr{common.BKFieldID: id},
+		Fields:         []string{common.BKObjIDField},
+		DisableCounter: true,
+	})
+	if err != nil {
+		return err
+	}
+	if len(objs.Info) == 0 {
+		return nil
+	}
+	objID := objs.Info[0].ObjectID
+	if objID == "" {
+		return nil
+	}
+	if common.IsInnerMainlineModel(objID) {
+		return kit.CCError.CCError(common.CCErrTopoForbiddenPauseMainlineObject)
+	}
+	asstCnt, err := clientSet.CoreService().Count().GetCountByFilter(kit.Ctx, kit.Header,
+		common.BKTableNameObjAsst, []map[string]interface{}{{
+			common.AssociationKindIDField: common.AssociationKindMainline,
+			common.BKAsstObjIDField:       objID,
+		}})
+	if err != nil {
+		return err
+	}
+	if len(asstCnt) > 0 && asstCnt[0] > 0 {
+		return kit.CCError.CCError(common.CCErrTopoForbiddenPauseMainlineObject)
+	}
+	return nil
+}
+
 // CreateObject create common object
 func (o *object) CreateObject(kit *rest.Kit, isMainline bool, data mapstr.MapStr) (*metadata.Object, error) {
 
@@ -592,6 +629,18 @@ func (o *object) UpdateObject(kit *rest.Kit, data mapstr.MapStr, id int64) error
 		if err != nil {
 			return err
 		}
+
+		// mainline models are not allowed to be paused, refuse the request
+		// and return a clear error to the caller. Resume is allowed for
+		// backward compatibility with data paused in older versions.
+		if isPaused {
+			if err := isMainlineModel(kit, o.clientSet, obj.ID); err != nil {
+				blog.Errorf("update object(id=%d) bk_ispaused=%v is forbidden, err: %v, rid: %s",
+					obj.ID, isPaused, err, kit.Rid)
+				return err
+			}
+		}
+
 		if isPaused {
 			auditAction = metadata.AuditPause
 		} else {
