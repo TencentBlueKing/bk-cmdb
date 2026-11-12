@@ -106,14 +106,14 @@ func NewClientSet(config *apigwutil.ApiGWConfig, metric prometheus.Registerer, n
 	}
 
 	if _, exists := neededCliMap[Notice]; exists {
-		cs.notice, err = notice.NewClient(options, cs.user)
+		cs.notice, err = notice.NewClient(options)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if _, exists := neededCliMap[Login]; exists {
-		cs.login, err = login.NewClient(options, cs.user)
+		cs.login, err = login.NewClient(options)
 		if err != nil {
 			return nil, err
 		}
