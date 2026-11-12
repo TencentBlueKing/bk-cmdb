@@ -69,9 +69,11 @@ func init() {
 	createStyleFuncMap[normalField] = getNormalStyleFunc()
 }
 
-type createStyleFunc func(s *styleCreator, numFmt int) (int, error)
+// createStyleFunc builds one excel style. Add new dimensions by extending
+// styleOption + WithXxx; the signature stays unchanged.
+type createStyleFunc func(s *styleCreator, opt styleOption) (int, error)
 
-// handlePropertyTypeNumFmt propType->excel code
+// handlePropertyTypeNumFmt maps property type to excel built-in number-format code.
 func handlePropertyTypeNumFmt(propType string) int {
 	switch propType {
 	case common.FieldTypeInt:
@@ -90,10 +92,18 @@ func handlePropertyTypeNumFmt(propType string) int {
 	}
 }
 
+// wrapAlign returns nil for non-wrap styles (don't emit empty alignment).
+func wrapAlign(opt styleOption) *excel.Alignment {
+	if opt.wrap {
+		return &excel.Alignment{Vertical: "bottom", WrapText: true}
+	}
+	return nil
+}
+
 func getNoEditHeaderStyleFunc() createStyleFunc {
-	return func(s *styleCreator, numFmt int) (int, error) {
+	return func(s *styleCreator, opt styleOption) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: "pattern", Color: []string{noEditHeaderColor}, Pattern: 1},
-			Border: generalBorder, NumFmt: numFmt}
+			Border: generalBorder, NumFmt: handlePropertyTypeNumFmt(opt.propType), Alignment: wrapAlign(opt)}
 
 		result, err := s.excel.NewStyle(style)
 		if err != nil {
@@ -105,9 +115,9 @@ func getNoEditHeaderStyleFunc() createStyleFunc {
 }
 
 func getNormalStyleFunc() createStyleFunc {
-	return func(s *styleCreator, numFmt int) (int, error) {
+	return func(s *styleCreator, opt styleOption) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: "pattern", Color: []string{}, Pattern: 1},
-			Border: generalBorder, NumFmt: numFmt}
+			Border: generalBorder, NumFmt: handlePropertyTypeNumFmt(opt.propType), Alignment: wrapAlign(opt)}
 
 		result, err := s.excel.NewStyle(style)
 		if err != nil {
@@ -119,9 +129,9 @@ func getNormalStyleFunc() createStyleFunc {
 }
 
 func getNoEditFieldStyleFunc() createStyleFunc {
-	return func(s *styleCreator, numFmt int) (int, error) {
+	return func(s *styleCreator, opt styleOption) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{noEditFieldColor}, Pattern: 1},
-			Border: generalBorder, NumFmt: numFmt}
+			Border: generalBorder, NumFmt: handlePropertyTypeNumFmt(opt.propType), Alignment: wrapAlign(opt)}
 
 		result, err := s.excel.NewStyle(style)
 		if err != nil {
@@ -133,9 +143,9 @@ func getNoEditFieldStyleFunc() createStyleFunc {
 }
 
 func getFirstRowStyleFunc() createStyleFunc {
-	return func(s *styleCreator, numFmt int) (int, error) {
+	return func(s *styleCreator, opt styleOption) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{firstRowColor}, Pattern: 1},
-			Border: generalBorder, NumFmt: numFmt}
+			Border: generalBorder, NumFmt: handlePropertyTypeNumFmt(opt.propType), Alignment: wrapAlign(opt)}
 
 		result, err := s.excel.NewStyle(style)
 		if err != nil {
@@ -147,9 +157,9 @@ func getFirstRowStyleFunc() createStyleFunc {
 }
 
 func getGeneralHeaderStyleFunc() createStyleFunc {
-	return func(s *styleCreator, numFmt int) (int, error) {
+	return func(s *styleCreator, opt styleOption) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{generalHeaderColor}, Pattern: 1},
-			Border: generalBorder, NumFmt: numFmt}
+			Border: generalBorder, NumFmt: handlePropertyTypeNumFmt(opt.propType), Alignment: wrapAlign(opt)}
 
 		result, err := s.excel.NewStyle(style)
 		if err != nil {
@@ -161,9 +171,9 @@ func getGeneralHeaderStyleFunc() createStyleFunc {
 }
 
 func getTableHeaderStyleFunc() createStyleFunc {
-	return func(s *styleCreator, numFmt int) (int, error) {
+	return func(s *styleCreator, opt styleOption) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{tableHeaderColor}, Pattern: 1},
-			Border: generalBorder, NumFmt: numFmt}
+			Border: generalBorder, NumFmt: handlePropertyTypeNumFmt(opt.propType), Alignment: wrapAlign(opt)}
 
 		result, err := s.excel.NewStyle(style)
 		if err != nil {
@@ -175,9 +185,9 @@ func getTableHeaderStyleFunc() createStyleFunc {
 }
 
 func getExampleStyleFunc() createStyleFunc {
-	return func(s *styleCreator, numFmt int) (int, error) {
+	return func(s *styleCreator, opt styleOption) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{exampleColor}, Pattern: 1},
-			Border: generalBorder, NumFmt: numFmt}
+			Border: generalBorder, NumFmt: handlePropertyTypeNumFmt(opt.propType), Alignment: wrapAlign(opt)}
 
 		result, err := s.excel.NewStyle(style)
 		if err != nil {
@@ -189,9 +199,10 @@ func getExampleStyleFunc() createStyleFunc {
 }
 
 func getRequiredFieldStyleFunc() createStyleFunc {
-	return func(s *styleCreator, numFmt int) (int, error) {
+	return func(s *styleCreator, opt styleOption) (int, error) {
 		style := &excel.Style{Fill: &excel.Fill{Type: excel.Pattern, Color: []string{firstRowColor}, Pattern: 1},
-			Border: generalBorder, Font: &excel.Font{Color: requiredFieldColor}, NumFmt: numFmt}
+			Border: generalBorder, Font: &excel.Font{Color: requiredFieldColor},
+			NumFmt: handlePropertyTypeNumFmt(opt.propType), Alignment: wrapAlign(opt)}
 
 		result, err := s.excel.NewStyle(style)
 		if err != nil {
@@ -204,14 +215,21 @@ func getRequiredFieldStyleFunc() createStyleFunc {
 
 type styleCreator struct {
 	excel    *excel.Excel
-	styleMap map[styleType]int
+	styleMap map[styleCacheKey]int
+}
+
+// styleCacheKey is the cache key for a registered excel style.
+type styleCacheKey struct {
+	style    styleType
+	propType string
+	wrap     bool
 }
 
 type styleOperatorFunc func(style *styleCreator) error
 
 func newStyleCreator(opts ...styleOperatorFunc) (*styleCreator, error) {
 	style := &styleCreator{
-		styleMap: make(map[styleType]int),
+		styleMap: make(map[styleCacheKey]int),
 	}
 	for _, opt := range opts {
 		if err := opt(style); err != nil {
@@ -229,21 +247,45 @@ func setExcel(excel *excel.Excel) styleOperatorFunc {
 	}
 }
 
-func (s *styleCreator) getStyle(style styleType, propTypes ...string) (int, error) {
-	result, ok := s.styleMap[style]
-	if !ok {
-		styleFunc := createStyleFuncMap[style]
-		var err error
-		var propType string
-		if len(propTypes) > 0 {
-			propType = propTypes[0]
-		}
-		numFmt := handlePropertyTypeNumFmt(propType)
-		result, err = styleFunc(s, numFmt)
-		if err != nil {
-			return 0, err
-		}
+// styleOption holds every dimension used to compose an excel style.
+type styleOption struct {
+	propType string
+	wrap     bool
+}
+
+// StyleOption mutates a styleOption. Add WithXxx to introduce new dimensions.
+type StyleOption func(*styleOption)
+
+// WithPropType picks the Excel number-format code for the property type.
+func WithPropType(propType string) StyleOption {
+	return func(o *styleOption) {
+		o.propType = propType
+	}
+}
+
+// WithWrap enables wrap-text for multi-select fields, bottom-aligned.
+func WithWrap(wrap bool) StyleOption {
+	return func(o *styleOption) {
+		o.wrap = wrap
+	}
+}
+
+// getStyle returns the style ID, cached per (style, propType, wrap).
+func (s *styleCreator) getStyle(style styleType, opts ...StyleOption) (int, error) {
+	opt := styleOption{}
+	for _, o := range opts {
+		o(&opt)
+	}
+	key := styleCacheKey{style: style, propType: opt.propType, wrap: opt.wrap}
+	if result, ok := s.styleMap[key]; ok {
+		return result, nil
 	}
 
+	styleFunc := createStyleFuncMap[style]
+	result, err := styleFunc(s, opt)
+	if err != nil {
+		return 0, err
+	}
+	s.styleMap[key] = result
 	return result, nil
 }

@@ -147,11 +147,11 @@ func getHandleBoolTypeFunc() handleColPropFunc {
 
 func getHandleTableTypeFunc() handleColPropFunc {
 	return func(t *TmplOp, property *core.ColProp) ([][]excel.Cell, error) {
-		nameStyle, err := t.styleCreator.getStyle(firstRow, property.PropertyType)
+		nameStyle, err := t.styleCreator.getStyle(firstRow, WithPropType(property.PropertyType))
 		if err != nil {
 			return nil, err
 		}
-		headerStyle, err := t.styleCreator.getStyle(generalHeader, property.PropertyType)
+		headerStyle, err := t.styleCreator.getStyle(generalHeader, WithPropType(property.PropertyType))
 		if err != nil {
 			return nil, err
 		}
@@ -180,7 +180,9 @@ func getHandleTableTypeFunc() handleColPropFunc {
 
 		for _, attr := range option.Header {
 			colProp := &core.ColProp{ID: attr.PropertyID, Name: attr.PropertyName, PropertyType: attr.PropertyType,
-				IsRequire: attr.IsRequired, Option: attr.Option, Group: attr.PropertyGroup, RefSheet: attr.PropertyName}
+				IsRequire: attr.IsRequired, Option: attr.Option, Group: attr.PropertyGroup, RefSheet: attr.PropertyName,
+				IsMultiple: attr.IsMultiple != nil && *attr.IsMultiple,
+			}
 
 			if colProp.PropertyType == common.FieldTypeEnumMulti {
 				colProp.RefSheet = property.Name + "##" + colProp.Name
@@ -205,7 +207,7 @@ func getHandleTableTypeFunc() handleColPropFunc {
 			result[core.TableIDRowIdx] = append(result[core.TableIDRowIdx], properyResult[core.IDRowIdx]...)
 		}
 
-		tableHeaderStyle, err := t.styleCreator.getStyle(tableHeader, property.PropertyType)
+		tableHeaderStyle, err := t.styleCreator.getStyle(tableHeader, WithPropType(property.PropertyType))
 		if err != nil {
 			return nil, err
 		}
@@ -229,11 +231,11 @@ func getDefaultHandleTypeFunc() handleColPropFunc {
 			headerStyleType = noEditHeader
 		}
 
-		nameStyle, err := t.styleCreator.getStyle(nameStyleType, property.PropertyType)
+		nameStyle, err := t.styleCreator.getStyle(nameStyleType, WithPropType(property.PropertyType))
 		if err != nil {
 			return nil, err
 		}
-		headerStyle, err := t.styleCreator.getStyle(headerStyleType, property.PropertyType)
+		headerStyle, err := t.styleCreator.getStyle(headerStyleType, WithPropType(property.PropertyType))
 		if err != nil {
 			return nil, err
 		}
