@@ -30,6 +30,8 @@ spec:
           value: {{ .Values.common.apiGW.appSecret }}
         - name: BK_API_URL_TMPL
           value: {{ .Values.common.apiGW.address }}
+        - name: BK_APP_TENANT_ID
+          value: {{ include "bk-cmdb.tenantID" . | trim }}
         - name: BK_CMDB_HOST
           value: {{ .Values.apigatewaySync.host }}
         - name: BK_CMDB_MAINTAINER
@@ -72,6 +74,8 @@ spec:
           value: {{ .Values.apigatewaySync.faraAppCode }}
         - name: BK_BKCHAT_APP_CODE
           value: {{ .Values.apigatewaySync.bkchatAppCode }}
+        - name: BK_MS_APP_CODE
+          value: {{ .Values.apigatewaySync.msAppCode }}
         resources:
           limits:
             cpu: 200m

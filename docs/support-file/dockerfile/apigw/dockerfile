@@ -1,4 +1,4 @@
-FROM hub.bktencent.com/blueking/apigw-manager:4.0.1
+FROM hub.bktencent.com/blueking/apigw-manager:4.2.4
 
 COPY apidocs /data/
 
