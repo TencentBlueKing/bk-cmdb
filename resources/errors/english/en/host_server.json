@@ -60,6 +60,11 @@
 	"1110066": "can't delete default bk-network area",
 	"1110067": "Failed to query bk-network area, sync_task_ids field failed to be added",
 
+	"1110068": "The feature of modifying host inner IP is not enabled, please contact the administrator",
+	"1110070": "The addressing type of host[%d] is not static, its inner IP is not allowed to be modified",
+	"1110071": "Host[%d] current %s is [%s], which does not match the source IP[%s] in the request, please confirm and retry",
+	"1110072": "Host[%d] stored %s value [%s] is invalid, please repair the data before modifying",
+
 	"1110080": "Fail to add host to resource pool",
 	"": ""
 }

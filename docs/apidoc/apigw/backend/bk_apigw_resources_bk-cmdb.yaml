@@ -7174,6 +7174,39 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn:
+  /api/v3/hosts/inner_ip:
+    put:
+      operationId: modify_host_inner_ip
+      description: 修改静态寻址主机的内网IP
+      tags:
+        - host
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: put
+          path: /api/v3/hosts/inner_ip
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        pluginConfigs:
+          - type: bk-rate-limit
+            yaml: |
+              rates:
+                __default:
+                - period: 1
+                  tokens: 100
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn: Modify the inner IP of a static host
+
   /api/v3/hosts/update:
     put:
       operationId: update_import_host

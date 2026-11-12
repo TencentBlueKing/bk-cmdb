@@ -660,3 +660,26 @@ func (h *host) GetDistinctHostIDByTopology(ctx context.Context, header http.Head
 	}
 	return resp.Data.IDArr, nil
 }
+
+// UpdateHostInnerIP updates the inner ip fields of a static host directly.
+func (h *host) UpdateHostInnerIP(ctx context.Context, header http.Header,
+	option *metadata.ModifyHostInnerIPOpt) (*metadata.UpdateHostInnerIPData, errors.CCErrorCoder) {
+
+	result := metadata.UpdateHostInnerIPResult{}
+	err := h.client.Put().
+		WithContext(ctx).
+		Body(option).
+		SubResourcef("/update/host/inner_ip").
+		WithHeaders(header).
+		Do().
+		Into(&result)
+	if err != nil {
+		return nil, errors.CCHttpError
+	}
+
+	if ccErr := result.CCError(); ccErr != nil {
+		return nil, ccErr
+	}
+
+	return &result.Data, nil
+}

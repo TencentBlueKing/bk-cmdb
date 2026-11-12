@@ -753,6 +753,15 @@ const (
 	CCErrDeleteDefaultCloudAreaFail                           = 1110066
 	CCErrHostFindManyCloudAreaAddSyncTaskIDsFieldFail         = 1110067
 
+	// CCErrHostModifyInnerIPDisabled the feature of modifying host inner ip is not enabled
+	CCErrHostModifyInnerIPDisabled = 1110068
+	// CCErrHostModifyInnerIPNotStatic the host is not using static addressing, its inner ip is not allowed to be modified
+	CCErrHostModifyInnerIPNotStatic = 1110070
+	// CCErrHostModifyInnerIPSourceMismatch the current inner ip of the host does not match the source ip in the request
+	CCErrHostModifyInnerIPSourceMismatch = 1110071
+	// CCErrHostModifyInnerIPStoredValueInvalid the stored inner ip of the host is invalid
+	CCErrHostModifyInnerIPStoredValueInvalid = 1110072
+
 	// web 1111XXX
 	CCErrWebFileNoFound                 = 1111001
 	CCErrWebFileSaveFail                = 1111002

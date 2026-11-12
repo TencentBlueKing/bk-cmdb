@@ -19,10 +19,12 @@ package metadata
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"strings"
 
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
+	"configcenter/src/common/util"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
@@ -170,6 +172,85 @@ var HostSpecialFields = []string{common.BKHostInnerIPField, common.BKHostOuterIP
 var hostIpv6Fields = map[string]struct{}{
 	common.BKHostInnerIPv6Field: {},
 	common.BKHostOuterIPv6Field: {},
+}
+
+// NormalizeHostIPv4List trims and validates the given ipv4 list, the duplicated
+// addresses are removed while the order of the remaining ones is kept.
+// NOTICE: an empty list means the host has no ipv4 address, it is a valid value.
+func NormalizeHostIPv4List(ips []string) ([]string, error) {
+	result := make([]string, 0, len(ips))
+	for _, ip := range ips {
+		ip = strings.TrimSpace(ip)
+		if ip == "" {
+			return nil, fmt.Errorf("ipv4 address can not be empty")
+		}
+
+		parsed := net.ParseIP(ip)
+		if parsed == nil || parsed.To4() == nil || strings.Contains(ip, ":") {
+			return nil, fmt.Errorf("invalid ipv4 address: %s", ip)
+		}
+		result = append(result, ip)
+	}
+
+	return util.RemoveDuplicatesAndEmptyByMap(result), nil
+}
+
+// NormalizeHostIPv6List trims and validates the given ipv6 list, every address is
+// converted to the standard format(8 groups, lower case hex) and the duplicated
+// addresses are removed while the order of the remaining ones is kept.
+// NOTICE: an empty list means the host has no ipv6 address, it is a valid value.
+func NormalizeHostIPv6List(ips []string) ([]string, error) {
+	result := make([]string, 0, len(ips))
+	for _, ip := range ips {
+		ip = strings.TrimSpace(ip)
+		if ip == "" {
+			return nil, fmt.Errorf("ipv6 address can not be empty")
+		}
+		result = append(result, ip)
+	}
+
+	normalized, err := common.ConvertHostIpv6Val(result)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ipv6 address: %s", err.Error())
+	}
+	return util.RemoveDuplicatesAndEmptyByMap(normalized), nil
+}
+
+// HostIPListEqual compares two ip lists without considering the order, but the
+// contents must be the same. The ip list is stored as an array in the database and
+// the query matches any element of it, so the order is not a part of the equality.
+func HostIPListEqual(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for _, ip := range right {
+		if !util.Contains(left, ip) {
+			return false
+		}
+	}
+	return true
+}
+
+// HostIPListEqualInOrder compares two ip lists in order. The order is meaningful
+// because the first inner ip is used as the primary ip, so it is used to decide
+// whether the destination ip list is different from the current one.
+func HostIPListEqualInOrder(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for idx := range left {
+		if left[idx] != right[idx] {
+			return false
+		}
+	}
+	return true
+}
+
+// ConvertHostIPListToString converts an ip list to the comma joined string which is
+// the format accepted by the host special fields, an empty list is converted to an
+// empty string which will be stored as null by ConvertHostSpecialStringToArray.
+func ConvertHostIPListToString(ips []string) string {
+	return strings.Join(ips, ",")
 }
 
 // ConvertHostSpecialStringToArray convert host special string to array

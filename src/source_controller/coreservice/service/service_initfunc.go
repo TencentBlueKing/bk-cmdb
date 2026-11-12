@@ -330,6 +330,8 @@ func (s *coreService) host(web *restful.WebService) {
 		Handler: s.ListHosts})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/hosts/cloudarea_field",
 		Handler: s.UpdateHostCloudAreaField})
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/update/host/inner_ip",
+		Handler: s.UpdateHostInnerIP})
 	utility.AddHandler(rest.Action{Verb: http.MethodPost, Path: "/findmany/cloudarea/hostcount",
 		Handler: s.FindCloudAreaHostCount})
 

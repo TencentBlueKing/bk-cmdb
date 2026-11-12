@@ -1339,3 +1339,117 @@ func (u *UpdateHostOpt) Validate() errors.RawErrorInfo {
 
 	return errors.RawErrorInfo{}
 }
+
+// ModifyHostInnerIPOpt the parameter of modifying the inner ip of a host which is
+// using the static addressing mode.
+//
+// The source ip is the confirmed current value of the host, the modification is
+// rejected if the current value does not match it. The destination ip replaces the
+// whole inner ip list of the host.
+//
+// The ipv4 and the ipv6 are split because they are stored in two different fields
+// of the host, bk_host_innerip and bk_host_innerip_v6.
+type ModifyHostInnerIPOpt struct {
+	// HostID the id of the host to be modified
+	HostID int64 `json:"bk_host_id"`
+	// SrcIPv4 the confirmed current ipv4 list of the host, nil means ipv4 is not modified
+	// and an empty list means the host currently has no ipv4 address
+	SrcIPv4 []string `json:"src_ipv4"`
+	// SrcIPv6 the confirmed current ipv6 list of the host, nil means ipv6 is not modified
+	// and an empty list means the host currently has no ipv6 address
+	SrcIPv6 []string `json:"src_ipv6"`
+	// DestIPv4 the new ipv4 list of the host, it replaces the whole ipv4 list, nil means
+	// ipv4 is not modified and an empty list means the ipv4 address is cleared
+	DestIPv4 []string `json:"dest_ipv4"`
+	// DestIPv6 the new ipv6 list of the host, it replaces the whole ipv6 list, nil means
+	// ipv6 is not modified and an empty list means the ipv6 address is cleared
+	DestIPv6 []string `json:"dest_ipv6"`
+}
+
+// UpdateHostInnerIPData is the changed result of updating the inner ip of a host.
+type UpdateHostInnerIPData struct {
+	// Changed whether any inner ip field is changed
+	Changed bool `json:"changed"`
+	// ChangedFields the inner ip fields that are changed, bk_host_innerip or bk_host_innerip_v6
+	ChangedFields []string `json:"changed_fields"`
+	// PreHost the host data before the update, it is used by coreservice to generate the
+	// audit log in the same transaction, it is not exposed to the api caller.
+	PreHost mapstr.MapStr `json:"-"`
+}
+
+// UpdateHostInnerIPResult is the response of updating the inner ip of a host.
+type UpdateHostInnerIPResult struct {
+	BaseResp `json:",inline"`
+	Data     UpdateHostInnerIPData `json:"data"`
+}
+
+// Validate validates and normalizes ModifyHostInnerIPOpt, the source and destination
+// ip lists are trimmed, validated and normalized in place, so the caller can use them
+// directly after the validation.
+//
+// NOTICE: src and dest of an ip family must be provided together. If both are nil the
+// family is not modified. An empty dest list means clearing the ip, and src must match
+// the current ip list in that case.
+// encoding/json decodes an omitted field to nil and an explicit empty array to a
+// non-nil empty slice, so nil and empty slice are distinguished here.
+func (m *ModifyHostInnerIPOpt) Validate() errors.RawErrorInfo {
+	if m.HostID <= 0 {
+		return newHostInnerIPRawErr(common.CCErrCommParamsIsInvalid, common.BKHostIDField)
+	}
+
+	if m.SrcIPv4 != nil || m.DestIPv4 != nil {
+		src, dest, rawErr := normalizeHostInnerIPFamily("src_ipv4", "dest_ipv4", m.SrcIPv4, m.DestIPv4,
+			NormalizeHostIPv4List)
+		if rawErr.ErrCode != 0 {
+			return rawErr
+		}
+		m.SrcIPv4, m.DestIPv4 = src, dest
+	}
+
+	if m.SrcIPv6 != nil || m.DestIPv6 != nil {
+		src, dest, rawErr := normalizeHostInnerIPFamily("src_ipv6", "dest_ipv6", m.SrcIPv6, m.DestIPv6,
+			NormalizeHostIPv6List)
+		if rawErr.ErrCode != 0 {
+			return rawErr
+		}
+		m.SrcIPv6, m.DestIPv6 = src, dest
+	}
+
+	if m.SrcIPv4 == nil && m.DestIPv4 == nil && m.SrcIPv6 == nil && m.DestIPv6 == nil {
+		return newHostInnerIPRawErr(common.CCErrCommParamsNeedSet,
+			"src_ipv4, dest_ipv4, src_ipv6, dest_ipv6")
+	}
+
+	return errors.RawErrorInfo{}
+}
+
+// newHostInnerIPRawErr builds a raw error for the host inner ip validation.
+func newHostInnerIPRawErr(code int, args ...interface{}) errors.RawErrorInfo {
+	return errors.RawErrorInfo{ErrCode: code, Args: args}
+}
+
+// normalizeHostInnerIPFamily validates and normalizes one inner ip family. It returns the
+// normalized src and dest, and the caller assigns them to the option fields.
+func normalizeHostInnerIPFamily(srcField, destField string, src, dest []string,
+	normalize func([]string) ([]string, error)) ([]string, []string, errors.RawErrorInfo) {
+
+	// src and dest must be provided together, otherwise the caller may clear the
+	// ip by accident when only the src is provided
+	if src == nil {
+		return nil, nil, newHostInnerIPRawErr(common.CCErrCommParamsNeedSet, srcField)
+	}
+	if dest == nil {
+		return nil, nil, newHostInnerIPRawErr(common.CCErrCommParamsNeedSet, destField)
+	}
+
+	normalizedSrc, err := normalize(src)
+	if err != nil {
+		return nil, nil, newHostInnerIPRawErr(common.CCErrCommParamsValueInvalidError, srcField, err.Error())
+	}
+	normalizedDest, err := normalize(dest)
+	if err != nil {
+		return nil, nil, newHostInnerIPRawErr(common.CCErrCommParamsValueInvalidError, destField, err.Error())
+	}
+
+	return normalizedSrc, normalizedDest, errors.RawErrorInfo{}
+}

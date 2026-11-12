@@ -1117,6 +1117,11 @@ common:
   authServer:
     #开发商ID
     supplierID: "0"
+  # 主机服务配置
+  hostServer:
+    # 是否开启修改主机内网IP的接口(PUT /api/v3/hosts/inner_ip)，默认为false不开启
+    # 该接口是危险接口，只能修改静态寻址主机的内网IP，开启前请评估风险
+    enableModifyHostInnerIP: false
   #cloudServer专属配置
   cloudServer:
     # 加密服务使用

@@ -160,6 +160,9 @@ func (s *Service) initHost(web *restful.WebService) {
 		Handler: s.SearchHostWithKube})
 	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/updatemany/hosts/all/property",
 		Handler: s.UpdateHostAllProperty})
+	// 修改静态寻址主机的内网IP，危险接口，默认关闭，需要在common.yaml或extra.yaml中手动开启
+	utility.AddHandler(rest.Action{Verb: http.MethodPut, Path: "/hosts/inner_ip",
+		Handler: s.ModifyHostInnerIP})
 	utility.AddToRestfulWebService(web)
 
 }

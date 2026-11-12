@@ -344,6 +344,7 @@ const (
 	cleanHostInSetOrModulePattern         = "/api/v3/hosts/modules/idle/set"
 	findHostTopoRelationPattern           = "/api/v3/host/topo/relation/read"
 	updateHostCloudAreaFieldPattern       = "/api/v3/updatemany/hosts/cloudarea_field"
+	updateHostInnerIPPattern              = "/api/v3/hosts/inner_ip"
 	updateImportHostsPattern              = "/api/v3/hosts/update"
 	getHostModuleRelationPattern          = "/api/v3/hosts/modules/read"
 	lockHostPattern                       = "/api/v3/host/lock"
@@ -568,6 +569,21 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: input.BizID,
 			}
 			ps.Attribute.Resources = append(ps.Attribute.Resources, iamResource)
+		}
+		return ps
+	}
+
+	// update the inner ip of a static host, this is a dangerous operation and requires
+	// the system level config admin permission. the host edit permission is checked by
+	// host_server.
+	if ps.hitPattern(updateHostInnerIPPattern, http.MethodPut) {
+		ps.Attribute.Resources = []meta.ResourceAttribute{
+			{
+				Basic: meta.Basic{
+					Type:   meta.ConfigAdmin,
+					Action: meta.Update,
+				},
+			},
 		}
 		return ps
 	}

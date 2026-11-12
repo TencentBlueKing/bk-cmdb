@@ -98,6 +98,10 @@ type HostClientInterface interface {
 	UpdateHostCloudAreaField(ctx context.Context, header http.Header,
 		option metadata.UpdateHostCloudAreaFieldOption) errors.CCErrorCoder
 
+	// UpdateHostInnerIP update the inner ip fields of a static host directly
+	UpdateHostInnerIP(ctx context.Context, header http.Header,
+		option *metadata.ModifyHostInnerIPOpt) (*metadata.UpdateHostInnerIPData, errors.CCErrorCoder)
+
 	// FindCloudAreaHostCount find host count in every cloudarea
 	FindCloudAreaHostCount(ctx context.Context, header http.Header, option metadata.CloudAreaHostCount) (
 		resp *metadata.CloudAreaHostCountResult, err error)

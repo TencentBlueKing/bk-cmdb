@@ -20,8 +20,11 @@ import (
 	"strconv"
 
 	"configcenter/src/common"
+	"configcenter/src/common/auditlog"
+	cc "configcenter/src/common/backbone/configcenter"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/http/rest"
+	"configcenter/src/common/mapstr"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/util"
 	"configcenter/src/source_controller/coreservice/core/instances"
@@ -261,4 +264,85 @@ func (s *coreService) TransferHostResourceDirectory(ctx *rest.Contexts) {
 	}
 
 	ctx.RespEntity(nil)
+}
+
+// modifyHostInnerIPConfigKey the config key of the switch of the host inner ip modification api.
+//
+// NOTICE: it must be the same as the key used by host_server, the switch is checked here as
+// well so that the api can not be used by calling coreservice directly when it is disabled.
+const modifyHostInnerIPConfigKey = "hostServer.enableModifyHostInnerIP"
+
+// UpdateHostInnerIP updates the inner ip fields of a static host.
+func (s *coreService) UpdateHostInnerIP(ctx *rest.Contexts) {
+	// the feature is disabled by default, the config is read on each request so that the api
+	// can be closed as soon as the config is updated, no service restart is needed.
+	enabled, err := cc.Bool(modifyHostInnerIPConfigKey)
+	if err != nil {
+		blog.Errorf("get config %s failed, err: %v, rid: %s", modifyHostInnerIPConfigKey, err, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostModifyInnerIPDisabled))
+		return
+	}
+	if !enabled {
+		blog.Errorf("config %s is not enabled, host inner ip modification is forbidden, rid: %s",
+			modifyHostInnerIPConfigKey, ctx.Kit.Rid)
+		ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrHostModifyInnerIPDisabled))
+		return
+	}
+
+	input := new(metadata.ModifyHostInnerIPOpt)
+	if err := ctx.DecodeInto(input); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// validate and normalize the input here, so that the audit log records the same value as
+	// the one written to the db, the core operation validates it again authoritatively.
+	if rawErr := input.Validate(); rawErr.ErrCode != 0 {
+		ctx.RespAutoError(rawErr.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	result, err := s.core.HostOperation().UpdateHostInnerIP(ctx.Kit, *input)
+	if err != nil {
+		blog.Errorf("update host %d inner ip failed, err: %v, rid: %s", input.HostID, err, ctx.Kit.Rid)
+		ctx.RespAutoError(err)
+		return
+	}
+
+	// the host is changed, generate and save its audit log in the same transaction as the update
+	if result.Changed && len(result.ChangedFields) > 0 {
+		updateFields := make(mapstr.MapStr, len(result.ChangedFields))
+		for _, field := range result.ChangedFields {
+			if field == common.BKHostInnerIPv6Field {
+				updateFields[field] = metadata.ConvertHostIPListToString(input.DestIPv6)
+				continue
+			}
+			updateFields[field] = metadata.ConvertHostIPListToString(input.DestIPv4)
+		}
+
+		audit := auditlog.NewHostAudit(s.engine.CoreAPI.CoreService())
+		genAuditParam := auditlog.NewGenerateAuditCommonParameter(ctx.Kit, metadata.AuditUpdate).
+			WithUpdateFields(updateFields)
+
+		// bizID is passed as 0, the audit log generator looks up the biz id of the host itself
+		// (auditlog.getBizIDByHostID), which is the same as the other host audit logs: a host
+		// in the resource pool is attributed to the resource pool business, and only a host
+		// without any module relation(abnormal data) is recorded with biz id 0.
+		auditLogs, err := audit.GenerateAuditLog(genAuditParam, 0, []mapstr.MapStr{result.PreHost})
+		if err != nil {
+			blog.Errorf("generate the audit log of host %d inner ip failed, err: %v, rid: %s", input.HostID, err,
+				ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrAuditSaveLogFailed))
+			return
+		}
+
+		if err := s.core.AuditOperation().CreateAuditLog(ctx.Kit, auditLogs...); err != nil {
+			blog.Errorf("save the audit log of host %d inner ip failed, err: %v, rid: %s", input.HostID, err,
+				ctx.Kit.Rid)
+			ctx.RespAutoError(ctx.Kit.CCError.CCError(common.CCErrAuditSaveLogFailed))
+			return
+		}
+	}
+
+	ctx.RespEntity(result)
 }
