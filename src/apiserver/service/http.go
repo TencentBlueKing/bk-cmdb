@@ -144,9 +144,8 @@ func (s *service) Do(req *restful.Request, resp *restful.Response) {
 
 func parseResponse(req *restful.Request, resp *restful.Response, body io.ReadCloser, rid string) {
 	// compatible for esb and old ui response
-	// TODO remove this logics and change cc response format when esb is not supported
 	header := req.Request.Header
-	if httpheader.GetBkJWT(header) == "" || httpheader.IsReqFromWeb(header) {
+	if !httpheader.IsFromApiGW(header) {
 		if _, err := io.Copy(resp, body); err != nil {
 			body.Close()
 			blog.Errorf("response request[url: %s] failed, err: %v, rid: %s", req.Request.RequestURI, err, rid)

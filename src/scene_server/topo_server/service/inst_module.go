@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 
+	"configcenter/src/ac/meta"
 	"configcenter/src/common"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/errors"
@@ -138,6 +139,14 @@ func (s *Service) BatchCreateModule(ctx *rest.Contexts) {
 	}
 	if err := data.Validate(); err.ErrCode != 0 {
 		ctx.RespAutoError(err.ToCCError(ctx.Kit.CCError))
+		return
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: meta.Basic{Type: meta.ModelModule, Action: meta.Create},
+		BusinessID: data.BizID}
+	if resp, authorized := s.AuthManager.Authorize(ctx.Kit, authRes); !authorized {
+		ctx.RespNoAuth(resp)
 		return
 	}
 

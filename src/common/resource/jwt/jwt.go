@@ -58,7 +58,9 @@ func Init(prefix string) error {
 		return nil
 	}
 
-	conf := new(config)
+	conf := &config{
+		Enabled: true,
+	}
 	if err := cc.UnmarshalKey(configKey, conf); err != nil {
 		return fmt.Errorf("parse jwt config by prefix %s failed, err: %v", prefix, err)
 	}
@@ -70,17 +72,19 @@ func Init(prefix string) error {
 	handler.Enabled = true
 
 	if conf.PublicKey != "" {
-		publicKey, err := base64.StdEncoding.DecodeString(conf.PublicKey)
+		publicKey, err := parseRSAPublicKey(conf.PublicKey)
 		if err != nil {
-			return fmt.Errorf("decode base64 jwt public key %s failed, err: %v", conf.PublicKey, err)
+			return fmt.Errorf("parse jwt public key failed, err: %v", err)
 		}
+		handler.PublicKey = publicKey
+	}
 
-		jwtPublicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKey)
+	if conf.EsbPublicKey != "" {
+		esbPublicKey, err := parseRSAPublicKey(conf.EsbPublicKey)
 		if err != nil {
-			return fmt.Errorf("parse jwt public key %s failed, err: %v", conf.PublicKey, err)
+			return fmt.Errorf("parse esb jwt public key failed, err: %v", err)
 		}
-
-		handler.PublicKey = jwtPublicKey
+		handler.EsbPublicKey = esbPublicKey
 	}
 
 	if conf.PrivateKey != "" {
@@ -100,43 +104,60 @@ func Init(prefix string) error {
 	return nil
 }
 
+func parseRSAPublicKey(raw string) (*rsa.PublicKey, error) {
+	publicKey, err := base64.StdEncoding.DecodeString(raw)
+	if err != nil {
+		return nil, fmt.Errorf("decode base64 jwt public key %s failed, err: %v", raw, err)
+	}
+
+	jwtPublicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKey)
+	if err != nil {
+		return nil, fmt.Errorf("parse jwt public key %s failed, err: %v", raw, err)
+	}
+
+	return jwtPublicKey, nil
+}
+
 type config struct {
 	// Enabled is the flag to enable jwt authorization
 	Enabled bool `mapstructure:"enabled"`
-	// PublicKey is the base64 encoded jwt public key
+	// PublicKey is the base64 encoded jwt public key of api-gateway
 	PublicKey string `mapstructure:"publicKey"`
+	// EsbPublicKey is the base64 encoded jwt public key of esb
+	EsbPublicKey string `mapstructure:"esbPublicKey"`
 	// PrivateKey is the base64 encoded jwt private key
 	PrivateKey string `mapstructure:"privateKey"`
 }
 
-// jwtHandler used to parse requests from blueking api-gateway.
+// jwtHandler used to parse requests from blueking api-gateway or esb.
 type jwtHandler struct {
 	// Enabled is the flag to enable jwt authorization
 	Enabled bool
 	// PublicKey is the public key to parse jwt token from blueking api-gateway http request
 	PublicKey *rsa.PublicKey
+	// EsbPublicKey is the public key to parse jwt token from esb http request
+	EsbPublicKey *rsa.PublicKey
 	// PrivateKey is the private key to parse jwt token from blueking api-gateway http request
 	PrivateKey *rsa.PrivateKey
 }
 
-// Parse jwt info from api-gateway header to cc header
+// Parse jwt info from api-gateway or esb header to cc header
 func (j *jwtHandler) Parse(header http.Header) (http.Header, error) {
 	if !j.Enabled {
-		// compatible for esb request
-		// TODO remove this when esb is not supported
-		header = util.ConvertLegacyHeader(header)
 		return header, nil
 	}
 
 	jwtToken := httpheader.GetBkJWT(header)
 	if len(jwtToken) == 0 {
-		// compatible for esb request
-		header = util.ConvertLegacyHeader(header)
-		// TODO returns error when esb is not supported
-		return header, nil
+		return nil, errors.New("jwt token is not set")
 	}
 
-	token, err := j.parseToken(jwtToken)
+	publicKey, err := j.getPublicKey(header)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := j.parseToken(jwtToken, publicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -145,12 +166,38 @@ func (j *jwtHandler) Parse(header http.Header) (http.Header, error) {
 		return nil, err
 	}
 
+	userName := token.User.UserName
+	if userName == "" {
+		userName = token.User.BkUserName
+	}
+
+	appCode := token.App.AppCode
+	if appCode == "" {
+		appCode = token.App.BkAppCode
+	}
+
 	header = util.NewHeader(header)
 	httpheader.SetBkJWT(header, jwtToken)
-	httpheader.SetUser(header, token.User.UserName)
-	httpheader.SetAppCode(header, token.App.AppCode)
+	httpheader.SetUser(header, userName)
+	httpheader.SetAppCode(header, appCode)
 
 	return header, nil
+}
+
+// getPublicKey get jwt public key by request source.
+// X-Bkapi-From=apigw or request from web-server uses public key, otherwise uses esb public key.
+func (j *jwtHandler) getPublicKey(header http.Header) (*rsa.PublicKey, error) {
+	if httpheader.IsFromApiGW(header) || httpheader.IsReqFromWeb(header) {
+		if j.PublicKey == nil {
+			return nil, errors.New("jwt public key is not set")
+		}
+		return j.PublicKey, nil
+	}
+
+	if j.EsbPublicKey == nil {
+		return nil, errors.New("esb jwt public key is not set")
+	}
+	return j.EsbPublicKey, nil
 }
 
 // Sign jwt info by cc header
@@ -198,9 +245,10 @@ type claims struct {
 
 // app blueking application info
 type app struct {
-	Version  int64  `json:"version"`
-	AppCode  string `json:"app_code"`
-	Verified bool   `json:"verified"`
+	Version   int64  `json:"version"`
+	AppCode   string `json:"app_code"`
+	BkAppCode string `json:"bk_app_code"`
+	Verified  bool   `json:"verified"`
 }
 
 // validate app
@@ -213,15 +261,16 @@ func (a *app) validate() error {
 
 // user blueking user info
 type user struct {
-	Version  int64  `json:"version"`
-	UserName string `json:"username"`
+	Version    int64  `json:"version"`
+	UserName   string `json:"username"`
+	BkUserName string `json:"bk_username"`
 	// Verified 用户是否通过认证，免用户认证的时候是false，其他情况下是true，因此我们目前不需要关注这个字段
 	Verified bool `json:"verified"`
 }
 
 // validate user
 func (u *user) validate() error {
-	if u.UserName == "" {
+	if u.UserName == "" && u.BkUserName == "" {
 		return errors.New("user is not set")
 	}
 	return nil
@@ -249,8 +298,8 @@ func (c *claims) validate() error {
 }
 
 // parseToken parse jwt token
-func (j *jwtHandler) parseToken(token string) (*claims, error) {
-	if j.PublicKey == nil {
+func (j *jwtHandler) parseToken(token string, publicKey *rsa.PublicKey) (*claims, error) {
+	if publicKey == nil {
 		return nil, errors.New("jwt public key is not set")
 	}
 
@@ -258,7 +307,7 @@ func (j *jwtHandler) parseToken(token string) (*claims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return j.PublicKey, nil
+		return publicKey, nil
 	})
 	if err != nil {
 		return nil, err

@@ -228,6 +228,8 @@ data:
         enabled: {{ .Values.common.apiServer.jwt.enabled }}
         # jwt公钥
         publicKey: {{ .Values.common.apiServer.jwt.publicKey }}
+        # esb的jwt公钥
+        esbPublicKey: {{ .Values.common.apiServer.jwt.esbPublicKey }}
 
     # 直接调用gse服务相关配置
     gse:

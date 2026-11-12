@@ -49,6 +49,9 @@ const (
 	// BkJWTHeader is the blueking api gateway jwt http header key
 	BkJWTHeader = "X-Bkapi-JWT"
 
+	// BkapiFromHeader is the http header key that represents the request source
+	BkapiFromHeader = "X-Bkapi-From"
+
 	// AppCodeHeader is the blueking app code http header key, its value is from jwt info
 	AppCodeHeader = "X-Bkcmdb-App-Code"
 
@@ -75,4 +78,10 @@ const (
 
 	// IsInnerReqHeader is the http header key that represents if request is an inner request
 	IsInnerReqHeader = "X-Bkcmdb-Is-Inner-Request"
+)
+
+// request source values of BkapiFromHeader
+const (
+	// BkapiFromApigw means the request is from blueking api-gateway
+	BkapiFromApigw = "apigw"
 )

@@ -33,7 +33,7 @@ func SetProxyHeader(c *gin.Context) {
 
 	// 删除 Accept-Encoding 避免返回值被压缩
 	c.Request.Header.Del("Accept-Encoding")
-	httpheader.AddUser(c.Request.Header, userName)
+	httpheader.SetUser(c.Request.Header, userName)
 	httpheader.AddLanguage(c.Request.Header, GetLanguageByHTTPRequest(c))
 	httpheader.AddSupplierAccount(c.Request.Header, ownerID)
 }

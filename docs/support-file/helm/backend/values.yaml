@@ -1323,9 +1323,11 @@ common:
     # api-server使用的jwt配置
     jwt:
       # 是否开启jwt认证功能
-      enabled: false
+      enabled: true
       # jwt公钥
       publicKey:
+      # esb的jwt公钥
+      esbPublicKey:
 
   ## gse server config
   ##
