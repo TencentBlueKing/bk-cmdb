@@ -63,8 +63,8 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 	input := &backbone.BackboneParameter{
 		ConfigUpdate: coreSvr.onCoreServiceConfigUpdate,
 		ConfigPath:   op.ServConf.ExConfig,
-		SrvRegdiscv: backbone.SrvRegdiscv{Zk: op.ServConf.Zk},
-		SrvInfo: svrInfo,
+		SrvRegdiscv:  backbone.SrvRegdiscv{Zk: op.ServConf.Zk},
+		SrvInfo:      svrInfo,
 	}
 
 	engine, err := backbone.NewBackbone(ctx, input)
@@ -111,7 +111,17 @@ func Run(ctx context.Context, cancel context.CancelFunc, op *options.ServerOptio
 }
 
 func initResource(coreSvr *CoreServer, op *options.ServerOption) error {
-	var err error
+	enumLimit, err := cc.Int("objAttDes.enum.limit")
+	if err != nil {
+		blog.Errorf("can't find the value of objAttDes.enum.limit settings, "+
+			"set the default value: %d", common.AttributeOptionArrayMaxLength)
+		enumLimit = common.AttributeOptionArrayMaxLength
+	}
+	err = common.SetEnumLimit(enumLimit)
+	if err != nil {
+		return err
+	}
+
 	coreSvr.Config.Mongo, err = coreSvr.Core.WithMongo()
 	if err != nil {
 		return err
