@@ -270,6 +270,13 @@ func (a *AuthManager) AuthorizeByInstIDs(kit *rest.Kit, action meta.Action, objI
 		return nil, true, nil
 	}
 
+	return a.authorizeByInstIDs(kit, action, objID, ids...)
+}
+
+// AuthorizeByInstIDs authorize by instance ids, returns auth response if not authorized
+func (a *AuthManager) authorizeByInstIDs(kit *rest.Kit, action meta.Action, objID string, ids ...int64) (
+	*metadata.BaseResp, bool, error) {
+
 	var resources []meta.ResourceAttribute
 	var resErr error
 	switch objID {

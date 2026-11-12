@@ -26,65 +26,106 @@ import (
 	"configcenter/src/thirdparty/apigw/iam"
 )
 
-func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourceType iam.IamResourceType) (
+func (a *Authorize) countPolicy(ctx context.Context, p *operator.Plan, resourceType iam.IamResourceType) (
 	*iam.AuthorizeList, error) {
 
-	if hasIamPath(p) {
-		return nil, errors.New("policy content has _bk_iam_path_, not support for now")
+	if p == nil {
+		return &iam.AuthorizeList{}, nil
 	}
+
+	switch p.Kind {
+	case operator.AlwaysAllowedKind:
+		return &iam.AuthorizeList{IsAny: true}, nil
+	case operator.AlwaysDeniedKind, "":
+		return &iam.AuthorizeList{IsAny: false}, nil
+	case operator.ConditionalKind:
+		if p.Condition == nil {
+			return nil, errors.New("conditional plan has empty condition")
+		}
+		return a.countCondition(ctx, p.Condition, resourceType)
+	default:
+		return nil, fmt.Errorf("unsupported plan kind: %s", p.Kind)
+	}
+}
+
+func (a *Authorize) countCondition(ctx context.Context, cond *operator.AuthCondition,
+	resourceType iam.IamResourceType) (*iam.AuthorizeList, error) {
+
+	if hasAncestor(cond) {
+		return nil, errors.New("plan condition has ancestor, not support for now")
+	}
+
 	//  please refer to the issue #5579 for specific permission scenario classification.
-	switch p.Operator {
+	switch cond.Operator {
 	case operator.And, operator.Or:
-		content, can := p.Element.(*operator.Content)
+		content, can := cond.Element.(*operator.Content)
 		if !can {
 			return nil, errors.New("policy with invalid content field")
 		}
 
-		list, err := a.countContent(ctx, p.Operator, content, resourceType)
+		list, err := a.countContent(ctx, cond.Operator, content, resourceType)
 		if err != nil {
 			return nil, err
 		}
 
 		return list, nil
 
-	case operator.Any:
-		//  if the operator is any,set isAny flag is true.
-		return &iam.AuthorizeList{IsAny: true}, nil
+	case operator.Not:
+		return a.countNot(ctx, cond, resourceType)
 
 	default:
-		fv, can := p.Element.(*operator.FieldValue)
+		fv, can := cond.Element.(*operator.FieldValue)
 		if !can {
 			return nil, errors.New("policy with invalid FieldValue field")
 		}
 
-		if fv.Field.Attribute == operator.IamIDKey {
-
-			ids, err := a.countIamIDKey(p.Operator, fv)
+		if fv.Field.IsID() {
+			ids, err := a.countIamIDKey(cond.Operator, fv)
 			if err != nil {
 				return nil, err
 			}
 
 			return &iam.AuthorizeList{Ids: ids}, nil
-
-		} else {
-			// TODO: cause we do not support _bk_iam_path_ field for now
-			// So we only need to get resource's other attribute policy.
-			opts := &types.ListWithAttributes{
-				Operator:     p.Operator,
-				AttrPolicies: []*operator.Policy{p},
-				Type:         resourceType,
-			}
-
-			ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
-			if err != nil {
-				return nil, fmt.Errorf("list instance with %s attribute failed, err: %v", p.Operator, err)
-			}
-
-			return &iam.AuthorizeList{Ids: ids}, nil
 		}
 
+		// TODO: cause we do not support ancestor field for now
+		// So we only need to get resource's other attribute policy.
+		opts := &types.ListWithAttributes{
+			Operator:     cond.Operator,
+			AttrPolicies: []*operator.AuthCondition{cond},
+			Type:         resourceType,
+		}
+
+		ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
+		if err != nil {
+			return nil, fmt.Errorf("list instance with %s attribute failed, err: %v", cond.Operator, err)
+		}
+
+		return &iam.AuthorizeList{Ids: ids}, nil
+	}
+}
+
+func (a *Authorize) countNot(ctx context.Context, cond *operator.AuthCondition, resourceType iam.IamResourceType) (
+	*iam.AuthorizeList, error) {
+
+	content, can := cond.Element.(*operator.Content)
+	if !can || content == nil || len(content.Content) != 1 {
+		return nil, fmt.Errorf("operator %s content must have exactly one element", operator.Not)
 	}
 
+	// not cannot be inverted from a finite id set in memory, query the inverted filter instead.
+	opts := &types.ListWithAttributes{
+		Operator:     operator.Not,
+		AttrPolicies: content.Content,
+		Type:         resourceType,
+	}
+
+	ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
+	if err != nil {
+		return nil, fmt.Errorf("list instance with %s attribute failed, err: %v", cond.Operator, err)
+	}
+
+	return &iam.AuthorizeList{Ids: ids}, nil
 }
 
 func (a *Authorize) countIamIDKey(op operator.OperType, fv *operator.FieldValue) ([]string, error) {
@@ -117,81 +158,41 @@ func (a *Authorize) countIamIDKey(op operator.OperType, fv *operator.FieldValue)
 	return ids, nil
 }
 
-// preAnalyzeContent TODO
-// get isAny flag and the content if illegal or not.
-func preAnalyzeContent(op operator.OperType, content *operator.Content) error {
-
-	fieldMap := make(map[string]struct{})
-
-	for _, conPolicy := range content.Content {
-		fv, can := conPolicy.Element.(*operator.FieldValue)
-		// 不支持多层嵌套场景，此处直接返回
-		if !can {
-			return errors.New("policy with invalid FieldValue field")
-		}
-		// generate the field key
-		fieldTmp := fmt.Sprintf("%s.%s", fv.Field.Resource, fv.Field.Attribute)
-		if fieldTmp != "." {
-			fieldMap[fieldTmp] = struct{}{}
-		}
-	}
-	// the same level do not support multiple fields.
-	if len(fieldMap) > 1 {
-		return errors.New(fmt.Sprintf("do not support different field in the same policy level"))
-	}
-	return nil
-}
-
-// countContent TODO
-// count all the resource ids according to the operator and content, eg policies.
+// countContent count all the resource ids according to the operator and content, eg policies.
 func (a *Authorize) countContent(ctx context.Context, op operator.OperType, content *operator.Content,
 	resourceType iam.IamResourceType) (idList *iam.AuthorizeList, err error) {
 
-	err = preAnalyzeContent(op, content)
-	if err != nil {
-		return nil, err
-	}
-	allAttrPolicies := make([]*operator.Policy, 0)
+	allAttrPolicies := make([]*operator.AuthCondition, 0)
 	allList := make([]iam.AuthorizeList, 0)
 	idList = new(iam.AuthorizeList)
 
 	for _, policy := range content.Content {
-		switch policy.Operator {
-		case operator.And, operator.Or:
-			content, can := policy.Element.(*operator.Content)
-			if !can {
-				return nil, errors.New("policy with invalid content field")
-			}
-
-			list, err := a.countContent(ctx, policy.Operator, content, resourceType)
+		if policy.Operator.IsLogical() {
+			list, err := a.countCondition(ctx, policy, resourceType)
 			if err != nil {
 				return nil, err
 			}
 			allList = append(allList, *list)
-
-		case operator.Any:
-			// if policy operator is Any,we don't need to find. calculateSet handle "and","or","any" etc...
-			idList.IsAny = true
-			allList = append(allList, *idList)
-		default:
-			fv, can := policy.Element.(*operator.FieldValue)
-			if !can {
-				return nil, errors.New("policy with invalid FieldValue field")
-			}
-
-			if fv.Field.Attribute == operator.IamIDKey {
-				list, err := a.countIamIDKey(policy.Operator, fv)
-				if err != nil {
-					return nil, err
-				}
-				allList = append(allList, iam.AuthorizeList{Ids: list})
-
-			} else {
-				// TODO: cause we do not support _bk_iam_path_ field for now
-				// So we only need to get resource's other attribute policy.
-				allAttrPolicies = append(allAttrPolicies, policy)
-			}
+			continue
 		}
+
+		fv, can := policy.Element.(*operator.FieldValue)
+		if !can {
+			return nil, errors.New("policy with invalid FieldValue field")
+		}
+
+		if fv.Field.IsID() {
+			list, err := a.countIamIDKey(policy.Operator, fv)
+			if err != nil {
+				return nil, err
+			}
+			allList = append(allList, iam.AuthorizeList{Ids: list})
+			continue
+		}
+
+		// TODO: cause we do not support ancestor field for now
+		// So we only need to get resource's other attribute policy.
+		allAttrPolicies = append(allAttrPolicies, policy)
 	}
 
 	if len(allAttrPolicies) != 0 {
@@ -320,34 +321,31 @@ func calculateSet(op operator.OperType, sets []iam.AuthorizeList) (*iam.Authoriz
 	}
 }
 
-// hasIamPath TODO
-// check user's policy has _bk_iam_path_ or not.
-func hasIamPath(p *operator.Policy) bool {
-	switch p.Operator {
-	case operator.And, operator.Or:
-		content, can := p.Element.(*operator.Content)
-		if !can {
-			// a policy with invalid content
+// hasAncestor returns whether the condition contains an ancestor resource field.
+func hasAncestor(cond *operator.AuthCondition) bool {
+	if cond == nil {
+		return false
+	}
+
+	if cond.Operator.IsLogical() {
+		content, can := cond.Element.(*operator.Content)
+		if !can || content == nil {
+			// a plan with invalid content
 			return false
 		}
 
-		for _, c := range content.Content {
-			if hasIamPath(c) {
+		for _, child := range content.Content {
+			if hasAncestor(child) {
 				return true
 			}
 		}
 		return false
-	default:
-		fv, can := p.Element.(*operator.FieldValue)
-		if !can {
-			// a policy with invalid FieldValue type
-			return false
-		}
+	}
 
-		if fv.Field.Attribute == types.IamPathKey {
-			return true
-		}
-
+	fv, can := cond.Element.(*operator.FieldValue)
+	if !can {
 		return false
 	}
+
+	return fv.Field.IsAncestor()
 }

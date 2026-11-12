@@ -168,7 +168,10 @@ func (d *Client) GetInstUniqueKeys(kit *rest.Kit, objID string, instIDs []int64,
 	map[int64]string, error) {
 
 	instIDKey := metadata.GetInstIDFieldByObjID(objID)
-	option := mapstr.MapStr{"condition": mapstr.MapStr{instIDKey: mapstr.MapStr{common.BKDBIN: instIDs}}}
+	if len(instIDs) == 0 {
+		return map[int64]string{}, nil
+	}
+	option := &metadata.QueryUniqueFieldsOption{IDs: instIDs}
 
 	resp, err := d.ApiClient.GetInstUniqueFields(kit.Ctx, kit.Header, objID, uniqueID, option)
 	if err != nil {

@@ -25,6 +25,7 @@ import (
 	"configcenter/src/ac/meta"
 	"configcenter/src/common/blog"
 	"configcenter/src/common/metadata"
+	"configcenter/src/common/util"
 	"configcenter/src/thirdparty/apigw/iam"
 )
 
@@ -33,7 +34,9 @@ var NotEnoughLayer = fmt.Errorf("not enough layer")
 
 // IamAuthOption is one IAM action with its related resources.
 type IamAuthOption struct {
-	Action    types.ActionID
+	Action types.ActionID
+	// Type is the IAM resource type converted from the CMDB resource.
+	Type      types.TypeID
 	Resources []iam.Resource
 }
 
@@ -74,7 +77,7 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) ([]IamAuthOption, error) {
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, IamAuthOption{Action: act, Resources: resource})
+		opts = append(opts, IamAuthOption{Action: act, Type: *rscType, Resources: resource})
 	}
 
 	return opts, nil
@@ -625,26 +628,19 @@ var resourceActionMap = map[meta.ResourceType]map[meta.Action]types.ActionID{
 	},
 }
 
-// ParseIamPathToAncestors TODO
-func ParseIamPathToAncestors(iamPath []string) ([]metadata.IamResourceInstance, error) {
+// ParseAncestorAttributes converts ancestor attributes to permission apply instances.
+func ParseAncestorAttributes(attrs iam.ResourceAttributes) ([]metadata.IamResourceInstance, error) {
+	if len(attrs) == 0 {
+		return nil, nil
+	}
+
 	instances := make([]metadata.IamResourceInstance, 0)
-	for _, path := range iamPath {
-		pathItemArr := strings.Split(strings.Trim(path, "/"), "/")
-		for _, pathItem := range pathItemArr {
-			typeAndID := strings.Split(pathItem, ",")
-			if len(typeAndID) != 2 {
-				return nil, fmt.Errorf("pathItem %s invalid", pathItem)
-			}
-			id := typeAndID[1]
-			if id == "*" {
-				continue
-			}
-			instances = append(instances, metadata.IamResourceInstance{
-				Type:     typeAndID[0],
-				TypeName: ResourceTypeIDMap[types.TypeID(typeAndID[0])],
-				ID:       id,
-			})
-		}
+	for typ, val := range attrs {
+		instances = append(instances, metadata.IamResourceInstance{
+			Type:     typ,
+			TypeName: ResourceTypeIDMap[types.TypeID(typ)],
+			ID:       util.GetStrByInterface(val),
+		})
 	}
 	return instances, nil
 }

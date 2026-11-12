@@ -239,7 +239,22 @@ func (t *TopologyTree) genSetParentPaths(kit *rest.Kit, biz int64, revTopo []str
 		return nil, nil, err
 	}
 
+	bizDetail, err := t.bizDetail(kit, biz)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	for id, set := range setMap {
+		if set.Default == common.DefaultResSetFlag {
+			paths[id] = append(paths[id], Node{
+				Object:       "biz",
+				InstanceID:   bizDetail.ID,
+				InstanceName: bizDetail.Name,
+				ParentID:     0,
+			})
+			nameMap[id] = set.Name
+			continue
+		}
 
 		custom, exist := customPaths[set.ParentID]
 		if !exist {
@@ -274,9 +289,15 @@ func (t *TopologyTree) genCustomParentPaths(kit *rest.Kit, biz int64, prevNode s
 		// loop until we go to biz node.
 		if nextNode == "biz" {
 			// add biz path
-			for _, id := range previousList {
-				paths[id] = append(paths[id], Node{Object: "biz", InstanceID: bizDetail.ID,
-					InstanceName: bizDetail.Name})
+			bizNode := Node{Object: "biz", InstanceID: bizDetail.ID, InstanceName: bizDetail.Name}
+			if len(paths) == 0 {
+				for _, id := range previousList {
+					paths[id] = append(paths[id], bizNode)
+				}
+				return nameMap, paths, nil
+			}
+			for id := range paths {
+				paths[id] = append(paths[id], bizNode)
 			}
 			return nameMap, paths, nil
 		}
@@ -391,7 +412,9 @@ func (t *TopologyTree) searchSets(kit *rest.Kit, biz int64, setIDs []int64) (
 		}
 
 		setMap[set.ID] = set
-		parentMap[set.ParentID] = struct{}{}
+		if set.Default != common.DefaultResSetFlag {
+			parentMap[set.ParentID] = struct{}{}
+		}
 	}
 
 	for id := range parentMap {

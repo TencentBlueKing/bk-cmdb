@@ -65,7 +65,7 @@ func (ps *ProcServer) CreateServiceTemplate(ctx *rest.Contexts) {
 				Name:    tpl.Name,
 				Creator: ctx.Kit.User,
 			}
-			_, err = ps.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			err = ps.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created service template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -146,7 +146,7 @@ func (ps *ProcServer) CreateServiceTemplateAllInfo(ctx *rest.Contexts) {
 				Creator: ctx.Kit.User,
 			}
 
-			_, err := ps.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			err := ps.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created service template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err

@@ -70,7 +70,7 @@ func (s *Service) CreateSetTemplate(ctx *rest.Contexts) {
 				Name:    setTemplate.Name,
 				Creator: ctx.Kit.User,
 			}
-			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created set template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -142,7 +142,7 @@ func (s *Service) CreateSetTemplateAllInfo(ctx *rest.Contexts) {
 				Name:    setTemplate.Name,
 				Creator: ctx.Kit.User,
 			}
-			_, err := s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			err := s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register set template(%+v) to iam failed, err: %v, rid: %s", iamInstance, err, ctx.Kit.Rid)
 				return err

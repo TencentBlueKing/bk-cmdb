@@ -193,7 +193,7 @@ func (a *AuthManager) CreateObjectOnIAM(ctx context.Context, header http.Header,
 	}
 	// register object resource creator action to iam
 	for _, iamInstance := range iamInstances {
-		if _, err := a.Authorizer.RegisterResourceCreatorAction(ctx, header, iamInstance); err != nil {
+		if err := a.Authorizer.RegisterResourceCreatorAction(ctx, header, iamInstance); err != nil {
 			blog.ErrorJSON("register created object to iam failed, iam instance:%s, err: %s, rid: %s",
 				iamInstance, err, rid)
 			return err
@@ -452,4 +452,39 @@ func (a *AuthManager) HasFindModelInstAuth(kit *rest.Kit, objIDs []string) (*met
 // HasUpdateModelInstAuth has update model instance auth
 func (a *AuthManager) HasUpdateModelInstAuth(kit *rest.Kit, objIDs []string) (*metadata.BaseResp, bool, error) {
 	return a.HasInstOpAuth(kit, objIDs, meta.Update)
+}
+
+// HasFindModelInstWithIDAuth authorizes finding instances when instance ids are known.
+func (a *AuthManager) HasFindModelInstWithIDAuth(kit *rest.Kit, objInstIDs map[string][]int64) (*metadata.BaseResp,
+	bool, error) {
+
+	if !a.Enabled() || len(objInstIDs) == 0 {
+		return nil, true, nil
+	}
+
+	objIDs := make([]string, 0)
+	for objID, instIDs := range objInstIDs {
+		if isInstLevelAuthModel(objID) {
+			authResp, authorized, err := a.authorizeByInstIDs(kit, meta.Find, objID, util.IntArrayUnique(instIDs)...)
+			if err != nil || !authorized {
+				return authResp, authorized, err
+			}
+			continue
+		}
+		objIDs = append(objIDs, objID)
+	}
+
+	return a.HasFindModelInstAuth(kit, objIDs)
+}
+
+// instLevelAuthModels are models whose view action is registered with a related resource type.
+var instLevelAuthModels = map[string]struct{}{
+	common.BKInnerObjIDApp:    {},
+	common.BKInnerObjIDBizSet: {},
+	common.BKInnerObjIDHost:   {},
+}
+
+func isInstLevelAuthModel(objID string) bool {
+	_, ok := instLevelAuthModels[objID]
+	return ok
 }

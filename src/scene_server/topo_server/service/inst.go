@@ -562,8 +562,7 @@ func (s *Service) SearchInstAndAssociationDetail(ctx *rest.Contexts) {
 	ctx.RespEntity(result)
 }
 
-// SearchInstUniqueFields search the instances' unique fields and including instances' id field
-// no need to auth because it only get the unique fields
+// SearchInstUniqueFields search unique fields of the specified instances, including the instance id field.
 func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	objID := ctx.Request.PathParameter("bk_obj_id")
 	id, err := strconv.ParseInt(ctx.Request.PathParameter("id"), 10, 64)
@@ -574,8 +573,18 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 		return
 	}
 
-	// authorize
-	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
+	option := new(metadata.QueryUniqueFieldsOption)
+	if err := ctx.DecodeInto(option); err != nil {
+		ctx.RespAutoError(err)
+		return
+	}
+	if len(option.IDs) == 0 {
+		ctx.RespAutoError(ctx.Kit.CCError.Errorf(common.CCErrCommParamsNeedSet, "ids"))
+		return
+	}
+
+	authResp, authorized, err := s.AuthManager.HasFindModelInstWithIDAuth(ctx.Kit,
+		map[string][]int64{objID: option.IDs})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -644,10 +653,10 @@ func (s *Service) SearchInstUniqueFields(ctx *rest.Contexts) {
 	}
 
 	// construct the query inst condition
-	queryCond := new(metadata.QueryCondition)
-	if err := ctx.DecodeInto(queryCond); err != nil {
-		ctx.RespAutoError(err)
-		return
+	queryCond := &metadata.QueryCondition{
+		Fields:         keys,
+		Condition:      mapstr.MapStr{instIDKey: mapstr.MapStr{common.BKDBIN: option.IDs}},
+		DisableCounter: true,
 	}
 
 	result, err := s.Logics.InstOperation().FindInst(ctx.Kit, objID, queryCond)
@@ -743,7 +752,7 @@ func (s *Service) SearchInstByInstID(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstWithIDAuth(ctx.Kit, map[string][]int64{objID: {instID}})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return
@@ -1037,7 +1046,7 @@ func (s *Service) SearchInstAssociationUI(ctx *rest.Contexts) {
 	}
 
 	// authorize
-	authResp, authorized, err := s.AuthManager.HasFindModelInstAuth(ctx.Kit, []string{objID})
+	authResp, authorized, err := s.AuthManager.HasFindModelInstWithIDAuth(ctx.Kit, map[string][]int64{objID: {instID}})
 	if err != nil {
 		ctx.RespAutoError(err)
 		return

@@ -185,7 +185,7 @@ func (s *Service) CreatePlatBatch(ctx *rest.Contexts) {
 				},
 				Creator: user,
 			}
-			_, err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header,
+			err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header,
 				iamInstancesWithCreator)
 			if err != nil {
 				blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
@@ -262,7 +262,7 @@ func (s *Service) CreatePlat(ctx *rest.Contexts) {
 				},
 				Creator: user,
 			}
-			_, err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header,
+			err = s.AuthManager.Authorizer.BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header,
 				iamInstance)
 			if err != nil {
 				blog.Errorf("register created cloud area to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)

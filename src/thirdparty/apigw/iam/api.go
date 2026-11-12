@@ -27,7 +27,7 @@ import (
 
 	"configcenter/src/ac/iam/types"
 	"configcenter/src/apimachinery/rest"
-	"configcenter/src/common/metadata"
+	httpheader "configcenter/src/common/http/header"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/thirdparty/apigw/apigwutil/user"
 )
@@ -76,103 +76,52 @@ func handleIamResp[T any](result *rest.Result) (T, error) {
 
 // GetNoAuthSkipUrl returns the url which can helps to launch the bk-iam when user do not have the authority to
 // access resource(s).
-func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, p metadata.IamPermission) (string, error) {
-	resp := new(iamPermissionURLResp)
-	subPath := "/api/v1/open/application/"
-
+func (i *iam) GetNoAuthSkipUrl(ctx context.Context, header http.Header, req *PermApplyURLReq) (string, error) {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return "", err
 	}
 
-	params := &apiGWIamPermissionParams{
-		IamPermission: p,
-	}
-	err = i.service.Client.Post().
+	subPath := "/api/v1/open/application/permission-apply-urls/"
+	data, err := handleIamResp[permApplyURLData](i.service.Client.Post().
 		WithContext(ctx).
-		Body(params).
+		Body(req).
 		SubResourcef(subPath).
 		WithHeaders(h).
-		Do().
-		Into(resp)
-
+		Do())
 	if err != nil {
 		return "", err
 	}
 
-	if resp.Code != 0 {
-		return "", fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
-	}
-
-	return resp.Data.Url, nil
+	return data.URL, nil
 }
 
-// RegisterResourceCreatorAction register iam resource instance with creator, returns related actions with policy id
-// that the creator gained
-func (i *iam) RegisterResourceCreatorAction(ctx context.Context, header http.Header,
-	instance metadata.IamInstanceWithCreator) ([]metadata.IamCreatorActionPolicy, error) {
-
-	resp := new(iamCreatorActionResp)
-	subPath := "/api/v1/open/authorization/resource_creator_action/"
-	params := &iamInstanceParams{
-		IamInstanceWithCreator: instance,
-	}
-
+// AddAuthorization add authorization.
+func (i *iam) AddAuthorization(ctx context.Context, header http.Header, reqs []AddAuthorizationReq) error {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = i.service.Client.Post().
-		WithContext(ctx).
-		Body(params).
-		SubResourcef(subPath).
-		WithHeaders(h).
-		Do().
-		Into(resp)
+	h.Set(iamOperatorHeader, httpheader.GetUser(header))
 
-	if err != nil {
-		return nil, err
-	}
+	subPath := "/api/v1/open/rbac/mgmt/systems/%s/authorizations/"
+	for start := 0; start < len(reqs); start += MaxAddAuthorizationSize {
+		end := start + MaxAddAuthorizationSize
+		if end > len(reqs) {
+			end = len(reqs)
+		}
 
-	if resp.Code != 0 {
-		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
-}
-
-// BatchRegisterResourceCreatorAction batch register iam resource instances with creator, returns related actions with
-// policy id that the creator gained
-func (i *iam) BatchRegisterResourceCreatorAction(ctx context.Context, header http.Header,
-	instances metadata.IamInstancesWithCreator) ([]metadata.IamCreatorActionPolicy, error) {
-
-	resp := new(iamCreatorActionResp)
-	url := "/api/v1/open/authorization/batch_resource_creator_action/"
-	params := &iamInstancesParams{
-		IamInstancesWithCreator: instances,
+		if _, err = handleIamResp[struct{}](i.service.Client.Post().
+			SubResourcef(subPath, types.SystemIDCMDB).
+			WithContext(ctx).
+			WithHeaders(h).
+			Body(reqs[start:end]).
+			Do()); err != nil {
+			return err
+		}
 	}
 
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return nil, err
-	}
-	err = i.service.Client.Post().
-		SubResourcef(url).
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(params).
-		Do().
-		Into(&resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("code: %d, message: %s", resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return nil
 }
 
 // RegisterSystem register a system in IAM, returns the registered system id
@@ -288,18 +237,20 @@ func (i *iam) UpdateResourcesType(ctx context.Context, header http.Header, resTy
 }
 
 // DeleteResourcesType delete resource type in IAM
-func (i *iam) DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID) error {
+func (i *iam) DeleteResourcesType(ctx context.Context, header http.Header, resTypeID types.TypeID,
+	cascade ...CascadeDep) error {
+
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/resource-types/%s/"
-	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+	req := i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, resTypeID).
 		WithContext(ctx).
-		WithHeaders(h).
-		Do())
+		WithHeaders(h)
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
 }
@@ -340,8 +291,8 @@ func (i *iam) RegisterActions(ctx context.Context, header http.Header, actions [
 
 // UpdateAction update action in IAM, only the action name and auth mode can be updated,
 // changing the related resource type needs to delete the action and register it again
-func (i *iam) UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID,
-	req *UpdateActionReq) error {
+func (i *iam) UpdateAction(ctx context.Context, header http.Header, actionID types.ActionID, actionReq *UpdateActionReq,
+	cascade ...CascadeDep) error {
 
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
@@ -349,29 +300,31 @@ func (i *iam) UpdateAction(ctx context.Context, header http.Header, actionID typ
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/actions/%s/"
-	_, err = handleIamResp[struct{}](i.service.Client.Put().
+	req := i.service.Client.Put().
 		SubResourcef(subPath, types.SystemIDCMDB, actionID).
 		WithContext(ctx).
 		WithHeaders(h).
-		Body(req).
-		Do())
+		Body(actionReq)
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
 }
 
 // DeleteAction delete action in IAM
-func (i *iam) DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID) error {
+func (i *iam) DeleteAction(ctx context.Context, header http.Header, actionID types.ActionID,
+	cascade ...CascadeDep) error {
+
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/actions/%s/"
-	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+	req := i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, actionID).
 		WithContext(ctx).
-		WithHeaders(h).
-		Do())
+		WithHeaders(h)
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
 }
@@ -430,18 +383,18 @@ func (i *iam) UpdateRole(ctx context.Context, header http.Header, roleID types.R
 }
 
 // DeleteRole delete role in IAM
-func (i *iam) DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID) error {
+func (i *iam) DeleteRole(ctx context.Context, header http.Header, roleID types.RoleID, cascade ...CascadeDep) error {
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
 		return err
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/roles/%s/"
-	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+	req := i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
-		WithHeaders(h).
-		Do())
+		WithHeaders(h)
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
 }
@@ -466,7 +419,7 @@ func (i *iam) AddRoleActions(ctx context.Context, header http.Header, roleID typ
 
 // DeleteRoleActions delete actions from a role, the action ids are passed by the "ids" query parameter
 func (i *iam) DeleteRoleActions(ctx context.Context, header http.Header, roleID types.RoleID,
-	actionIDs []types.ActionID) error {
+	actionIDs []types.ActionID, cascade ...CascadeDep) error {
 
 	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
 	if err != nil {
@@ -479,87 +432,27 @@ func (i *iam) DeleteRoleActions(ctx context.Context, header http.Header, roleID 
 	}
 
 	subPath := "/api/v1/open/model/systems/%s/roles/%s/actions/"
-	_, err = handleIamResp[struct{}](i.service.Client.Delete().
+	req := i.service.Client.Delete().
 		SubResourcef(subPath, types.SystemIDCMDB, roleID).
 		WithContext(ctx).
 		WithHeaders(h).
-		WithParam(idsParam, strings.Join(ids, ",")).
-		Do())
+		WithParam(idsParam, strings.Join(ids, ","))
+	_, err = handleIamResp[struct{}](withCascade(req, cascade).Do())
 
 	return err
 }
 
-// GetUserPolicy get a user's policy with a action and resources
-func (i *iam) GetUserPolicy(ctx context.Context, header http.Header, opt *GetPolicyOption) (*operator.Policy, error) {
-	resp := new(GetPolicyResp)
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return nil, err
-	}
-	subPath := "/api/v1/policy/query"
-
-	// iam requires resources to be set
-	if opt.Resources == nil {
-		opt.Resources = make([]Resource, 0)
+// withCascade appends the cascade query parameter. An empty list leaves the request unchanged.
+func withCascade(req *rest.Request, cascade []CascadeDep) *rest.Request {
+	if len(cascade) == 0 {
+		return req
 	}
 
-	result := i.service.Client.Post().
-		SubResourcef(subPath).
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(opt).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return nil, err
+	deps := make([]string, len(cascade))
+	for idx, dep := range cascade {
+		deps[idx] = string(dep)
 	}
-
-	if resp.Code != 0 {
-		return nil, &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-
-	return resp.Data, nil
-}
-
-// ListUserPolicies get a user's policy with multiple actions and resources
-func (i *iam) ListUserPolicies(ctx context.Context, header http.Header, opts *ListPolicyOptions) (
-	[]*ActionPolicy, error) {
-
-	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := new(ListPolicyResp)
-	// iam requires resources to be set
-	if opts.Resources == nil {
-		opts.Resources = make([]Resource, 0)
-	}
-
-	result := i.service.Client.Post().
-		SubResourcef("/api/v1/policy/query_by_actions").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(opts).
-		Do()
-
-	err = result.Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != 0 {
-		return nil, &AuthError{
-			RequestID: result.Header.Get(IamRequestHeader),
-			Reason:    fmt.Errorf("code: %d, msg:%s", resp.Code, resp.Message),
-		}
-	}
-	return resp.Data, nil
+	return req.WithParam(cascadeParam, strings.Join(deps, ","))
 }
 
 // GetSystemToken get system token from iam, used to validate if request is from iam
@@ -580,4 +473,38 @@ func (i *iam) GetSystemToken(ctx context.Context, header http.Header) (string, e
 		return "", err
 	}
 	return data.AuthToken, nil
+}
+
+// HybridPlan get the hybrid(RBAC+ABAC) authorization plan of one action.
+func (i *iam) HybridPlan(ctx context.Context, header http.Header, req *PlanReq) (*operator.Plan, error) {
+	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	subPath := "/api/v1/open/hybrid/authorization/systems/%s/plan/"
+	return handleIamResp[*operator.Plan](i.service.Client.Post().
+		SubResourcef(subPath, types.SystemIDCMDB).
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do())
+}
+
+// HybridPlanByActions get the hybrid(RBAC+ABAC) authorization plan of multiple actions.
+func (i *iam) HybridPlanByActions(ctx context.Context, header http.Header, req *PlanByActionsReq) ([]ActionPlanRes,
+	error) {
+
+	h, err := user.SetBKAuthHeader(ctx, i.service.Config, header, i.userCli)
+	if err != nil {
+		return nil, err
+	}
+
+	subPath := "/api/v1/open/hybrid/authorization/systems/%s/plan-by-actions/"
+	return handleIamResp[[]ActionPlanRes](i.service.Client.Post().
+		SubResourcef(subPath, types.SystemIDCMDB).
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do())
 }

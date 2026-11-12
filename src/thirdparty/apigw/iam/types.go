@@ -23,22 +23,40 @@ import (
 	"net/http"
 
 	"configcenter/src/ac/iam/types"
-	"configcenter/src/common/metadata"
 	"configcenter/src/scene_server/auth_server/sdk/operator"
-	"configcenter/src/thirdparty/apigw/apigwutil"
 )
 
 const (
 	IamRequestHeader = "X-Request-Id"
+	// iamOperatorHeader is the required operator header of IAM authorization APIs.
+	iamOperatorHeader = "X-Bkiam-Operator"
 
 	// MaxListPageSize is the max page size of IAM model resource list apis.
 	MaxListPageSize = 100
+	// MaxAddAuthorizationSize is the max item count of one add_authorization request.
+	MaxAddAuthorizationSize = 20
+	// MaxAuthorizationExpireDays is the max expire days of IAM authorization.
+	MaxAuthorizationExpireDays = 365
 	// pageParam is the query parameter name of page number.
 	pageParam = "page"
 	// pageSizeParam is the query parameter name of page size.
 	pageSizeParam = "page_size"
 	// idsParam is the query parameter name of the comma separated id list.
 	idsParam = "ids"
+	// cascadeParam is the query parameter name of dependencies deleted together with the target resource.
+	cascadeParam = "cascade"
+)
+
+// CascadeDep is a dependency IAM deletes together with the target auth resource.
+type CascadeDep string
+
+const (
+	// CascadeRole removes role_action entries that reference the action. The role itself is kept.
+	CascadeRole CascadeDep = "role"
+	// CascadeRBACAuthorization removes RBAC authorization policies.
+	CascadeRBACAuthorization CascadeDep = "rbac_authorization"
+	// CascadeABACAuthorization removes ABAC authorization policies of the action.
+	CascadeABACAuthorization CascadeDep = "abac_authorization"
 )
 
 // AuthError iam auth server error
@@ -66,37 +84,34 @@ func IsSystemNotExistErr(err error) bool {
 	return authErr.StatusCode == http.StatusNotFound
 }
 
-type apiGWIamPermissionParams struct {
-	metadata.IamPermission `json:",inline"`
+// PermApplyURLReq is the request of IAM generate_perm_apply_url API.
+type PermApplyURLReq struct {
+	SystemID    string          `json:"system_id"`
+	Permissions []PermApplyItem `json:"permissions"`
 }
 
-type iamInstanceParams struct {
-	metadata.IamInstanceWithCreator `json:",inline"`
+// PermApplyItem is one action's permission to apply.
+type PermApplyItem struct {
+	ActionID  string              `json:"action_id"`
+	Resources []PermApplyResource `json:"resources,omitempty"`
 }
 
-type iamInstancesParams struct {
-	metadata.IamInstancesWithCreator `json:",inline"`
+// PermApplyResource is a resource instance in permission apply request.
+type PermApplyResource struct {
+	ID        string              `json:"id"`
+	Type      string              `json:"type"`
+	Ancestors []PermApplyAncestor `json:"ancestors,omitempty"`
 }
 
-type iamPermissionURLResp struct {
-	Data struct {
-		Url string `json:"url"`
-	} `json:"data"`
-	apigwutil.ApiGWBaseResponse
+// PermApplyAncestor is an ancestor of a resource instance.
+type PermApplyAncestor struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
 }
 
-type iamCreatorActionResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data []metadata.IamCreatorActionPolicy `json:"data"`
-}
-
-type iamBatchOperateInstanceAuthParams struct {
-	*metadata.IamBatchOperateInstanceAuthReq `json:",inline"`
-}
-
-type iamBatchOperateInstanceAuthResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data []metadata.IamBatchOperateInstanceAuthRes `json:"data"`
+// permApplyURLData is the response data of IAM generate_perm_apply_url API.
+type permApplyURLData struct {
+	URL string `json:"url"`
 }
 
 // System is IAM V4 system info, used by create system request and retrieve system response.
@@ -186,55 +201,6 @@ type RoleAction struct {
 	ResourceTypeID types.TypeID   `json:"resource_type_id"`
 }
 
-// ActionWithID only contains action id
-type ActionWithID struct {
-	ID types.ActionID `json:"id"`
-}
-
-// ListPoliciesParams list iam policies parameter
-type ListPoliciesParams struct {
-	ActionID  types.ActionID
-	Page      int64
-	PageSize  int64
-	Timestamp int64
-}
-
-// ListPoliciesResp list iam policies response
-type ListPoliciesResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data *ListPoliciesData `json:"data"`
-}
-
-// ListPoliciesData list policy data, which represents iam policies
-type ListPoliciesData struct {
-	Metadata PolicyMetadata `json:"metadata"`
-	Count    int64          `json:"count"`
-	Results  []PolicyResult `json:"results"`
-}
-
-// PolicyMetadata iam policy metadata
-type PolicyMetadata struct {
-	System    string       `json:"system"`
-	Action    ActionWithID `json:"action"`
-	Timestamp int64        `json:"timestamp"`
-}
-
-// PolicyResult iam policy result
-type PolicyResult struct {
-	Version    string           `json:"version"`
-	ID         int64            `json:"id"`
-	Subject    PolicySubject    `json:"subject"`
-	Expression *operator.Policy `json:"expression"`
-	ExpiredAt  int64            `json:"expired_at"`
-}
-
-// PolicySubject policy subject, which represents user or user group for now
-type PolicySubject struct {
-	Type string `json:"type"`
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 // IamErrorResp is IAM V4 error response
 type IamErrorResp struct {
 	Error *IamErrorData `json:"error"`
@@ -269,6 +235,57 @@ type systemAuthToken struct {
 	AuthToken string `json:"auth_token"`
 }
 
+// SubjectType is the authorized subject type.
+type SubjectType string
+
+const (
+	// UserSubjectType is the authorized subject type for user.
+	UserSubjectType SubjectType = "user"
+)
+
+// AuthSubject is the subject to be authorized.
+type AuthSubject struct {
+	Type SubjectType `json:"type"`
+	ID   string      `json:"id"`
+}
+
+type AuthAction struct {
+	ID types.ActionID `json:"id"`
+}
+
+// PlanReq is the request of the hybrid plan api.
+type PlanReq struct {
+	Subject AuthSubject `json:"subject"`
+	Action  AuthAction  `json:"action"`
+}
+
+// PlanByActionsReq is the request of the hybrid plan by actions api.
+type PlanByActionsReq struct {
+	Subject AuthSubject  `json:"subject"`
+	Actions []AuthAction `json:"actions"`
+}
+
+// ActionPlanRes is one action's authorization plan of the hybrid plan by actions api.
+type ActionPlanRes struct {
+	ActionID      types.ActionID `json:"action_id"`
+	operator.Plan `json:",inline"`
+}
+
+// AuthResource is a resource instance used by IAM authorization APIs.
+type AuthResource struct {
+	Type types.TypeID `json:"type"`
+	ID   string       `json:"id"`
+}
+
+// AddAuthorizationReq is one item of IAM add_authorization API.
+type AddAuthorizationReq struct {
+	Subject               AuthSubject    `json:"subject"`
+	RoleID                types.RoleID   `json:"role_id"`
+	RelatedResourceTypeID types.TypeID   `json:"related_resource_type_id,omitempty"`
+	Resources             []AuthResource `json:"resources,omitempty"`
+	ExpiredAt             int64          `json:"expired_at"`
+}
+
 // ----authserver----
 // AuthOptions describes a item to be authorized
 type AuthOptions struct {
@@ -278,17 +295,9 @@ type AuthOptions struct {
 	Resources []Resource `json:"resources"`
 }
 
-type GetPolicyOption AuthOptions
-
 // Action define's the use's action, which is must correspond to the registered action ids in iam.
 type Action struct {
 	ID string `json:"id"`
-}
-
-// ActionPolicy TODO
-type ActionPolicy struct {
-	Action Action           `json:"action"`
-	Policy *operator.Policy `json:"condition"`
 }
 
 // Resource defines all the information used to authorize a resource.
@@ -306,26 +315,6 @@ type AuthBatch struct {
 }
 
 type ResourceAttributes map[string]interface{}
-
-// GetPolicyResp TODO
-type GetPolicyResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data *operator.Policy `json:"data"`
-}
-
-// ListPolicyOptions TODO
-type ListPolicyOptions struct {
-	System    string     `json:"system"`
-	Subject   Subject    `json:"subject"`
-	Actions   []Action   `json:"actions"`
-	Resources []Resource `json:"resources"`
-}
-
-// ListPolicyResp TODO
-type ListPolicyResp struct {
-	apigwutil.ApiGWBaseResponse
-	Data []*ActionPolicy `json:"data"`
-}
 
 // AuthBatchOptions TODO
 type AuthBatchOptions struct {

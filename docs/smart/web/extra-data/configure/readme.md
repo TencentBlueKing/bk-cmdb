@@ -12,7 +12,7 @@
 | BKPAAS_BK_DOMAIN                       | 用于配置前端需要的cookie domain地址         |             |
 | BK_HTTP_SCHEMA                         | 访问协议                             |             |
 | BKPAAS_SHARED_RES_URL                  | 蓝鲸共享资源URL                        |             |
-| BKPAAS_NODEMAN_URL                     | 节点管理地址                           |             |
+| BKPAAS_NODEMGR_URL                     | 节点管理地址                           |             |
 | BK_CMDB_ENABLE_BK_NOTICE               | 是否启用消息通知, true或false             |             |
 | BK_CMDB_APIGW_JWT_ENABLED              | 是否通过jwt调用apigw, true或false       | true        |
 | BK_CMDB_APIGW_JWT_PUBLICKEY            | cmdb API GATEWAY网关公钥             |             |

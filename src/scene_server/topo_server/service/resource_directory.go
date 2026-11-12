@@ -116,7 +116,7 @@ func (s *Service) CreateResourceDirectory(ctx *rest.Contexts) {
 			Name:    util.GetStrByInterface(readInstanceResult.Info[0][common.BKModuleNameField]),
 			Creator: ctx.Kit.User,
 		}
-		_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+		err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 		if err != nil {
 			blog.Errorf("register created resource directory to iam failed, err: %s, rid: %s", err, ctx.Kit.Rid)
 			ctx.RespAutoError(err)

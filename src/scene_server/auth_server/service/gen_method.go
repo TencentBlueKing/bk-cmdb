@@ -86,11 +86,6 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iamtypes
 			ListAttrValue:     s.lgc.ListAttrValue,
 			ListInstance:      s.lgc.ListModelInstance,
 			FetchInstanceInfo: s.lgc.FetchObjInstInfo,
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-				filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult,
-				e error) {
-				return s.lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
-			},
 		}, nil
 	}
 	return types.ResourcePullMethod{}, fmt.Errorf("gen method failed: unsupported resource type: %s", resourceType)
@@ -98,11 +93,10 @@ func (s *AuthService) genResourcePullMethod(kit *rest.Kit, resourceType iamtypes
 
 func getHostMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMethod, error) {
 	return types.ResourcePullMethod{
-		ListAttr:             lgc.ListAttr,
-		ListAttrValue:        lgc.ListAttrValue,
-		ListInstance:         lgc.ListHostInstance,
-		FetchInstanceInfo:    lgc.FetchHostInfo,
-		ListInstanceByPolicy: lgc.ListHostByPolicy,
+		ListAttr:          lgc.ListAttr,
+		ListAttrValue:     lgc.ListAttrValue,
+		ListInstance:      lgc.ListHostInstance,
+		FetchInstanceInfo: lgc.FetchHostInfo,
 	}, nil
 }
 
@@ -124,11 +118,6 @@ func getBusinessMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMet
 		FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.FetchInstanceInfoFilter) (
 			[]map[string]interface{}, error) {
 			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
-		},
-		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-			filter *types.ListInstanceByPolicyFilter,
-			page types.Page) (result *types.ListInstanceResult, e error) {
-			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
 		},
 	}, nil
 }
@@ -152,11 +141,6 @@ func getSysCloudAreaMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePul
 			[]map[string]interface{}, error) {
 			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
 		},
-		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-			filter *types.ListInstanceByPolicyFilter,
-			page types.Page) (result *types.ListInstanceResult, e error) {
-			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
-		},
 	}, nil
 }
 
@@ -167,11 +151,6 @@ func getBizInstanceMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePull
 			filter *types.FetchInstanceInfoFilter) (
 			[]map[string]interface{}, error) {
 			return lgc.FetchInstanceInfo(kit, resourceType, filter, nil)
-		},
-		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-			filter *types.ListInstanceByPolicyFilter,
-			page types.Page) (result *types.ListInstanceResult, e error) {
-			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, nil)
 		},
 	}, nil
 }
@@ -186,10 +165,6 @@ func getSystemInstanceMethod(extraCond map[string]interface{}) resPullMethodGene
 			FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID,
 				filter *types.FetchInstanceInfoFilter) ([]map[string]interface{}, error) {
 				return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
-			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-				filter *types.ListInstanceByPolicyFilter, page types.Page) (result *types.ListInstanceResult, e error) {
-				return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
 			},
 		}, nil
 	}
@@ -264,11 +239,6 @@ func getModelMethod(resourceType iamtypes.TypeID) resPullMethodGenerator {
 				[]map[string]interface{}, error) {
 				return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
 			},
-			ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-				filter *types.ListInstanceByPolicyFilter,
-				page types.Page) (result *types.ListInstanceResult, e error) {
-				return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
-			},
 		}, nil
 	}
 }
@@ -289,11 +259,6 @@ func getSysAssociationTypeMethod(kit *rest.Kit, lgc *logics.Logics) (types.Resou
 		FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.FetchInstanceInfoFilter) (
 			[]map[string]interface{}, error) {
 			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
-		},
-		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-			filter *types.ListInstanceByPolicyFilter,
-			page types.Page) (result *types.ListInstanceResult, e error) {
-			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
 		},
 	}, nil
 }
@@ -317,11 +282,6 @@ func getResourcePoolDirectoryMethod(kit *rest.Kit, lgc *logics.Logics) (types.Re
 		FetchInstanceInfo: func(kit *rest.Kit, resourceType iamtypes.TypeID, filter *types.FetchInstanceInfoFilter) (
 			[]map[string]interface{}, error) {
 			return lgc.FetchInstanceInfo(kit, resourceType, filter, extraCond)
-		},
-		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-			filter *types.ListInstanceByPolicyFilter,
-			page types.Page) (result *types.ListInstanceResult, e error) {
-			return lgc.ListInstanceByPolicy(kit, resourceType, filter, page, extraCond)
 		},
 	}, nil
 }
@@ -403,11 +363,6 @@ func genGeneralCacheMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePul
 
 			return res, nil
 		},
-		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-			filter *types.ListInstanceByPolicyFilter,
-			page types.Page) (*types.ListInstanceResult, error) {
-			return nil, fmt.Errorf("%s do not support %s", iamtypes.GeneralCache, types.ListInstanceByPolicyMethod)
-		},
 	}, nil
 }
 
@@ -452,11 +407,6 @@ func genTenantSetMethod(kit *rest.Kit, lgc *logics.Logics) (types.ResourcePullMe
 				}
 			}
 			return res, nil
-		},
-		ListInstanceByPolicy: func(kit *rest.Kit, resourceType iamtypes.TypeID,
-			filter *types.ListInstanceByPolicyFilter,
-			page types.Page) (*types.ListInstanceResult, error) {
-			return nil, fmt.Errorf("%s do not support %s", iamtypes.TenantSet, types.ListInstanceByPolicyMethod)
 		},
 	}, nil
 }
