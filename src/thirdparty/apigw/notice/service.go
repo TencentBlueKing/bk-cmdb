@@ -21,7 +21,6 @@ import (
 	"net/http"
 
 	"configcenter/src/thirdparty/apigw/apigwutil"
-	"configcenter/src/thirdparty/apigw/apigwutil/user"
 )
 
 // ClientI is the bk-notice api gateway client
@@ -32,11 +31,10 @@ type ClientI interface {
 
 type notice struct {
 	service *apigwutil.ApiGWSrv
-	userCli user.VirtualUserClientI
 }
 
 // NewClient create bk-notice api gateway client
-func NewClient(options *apigwutil.ApiGWOptions, userCli user.VirtualUserClientI) (ClientI, error) {
+func NewClient(options *apigwutil.ApiGWOptions) (ClientI, error) {
 	service, err := apigwutil.NewApiGW(options, "apiGW.bkNoticeApiGatewayUrl")
 	if err != nil {
 		return nil, err
@@ -44,6 +42,5 @@ func NewClient(options *apigwutil.ApiGWOptions, userCli user.VirtualUserClientI)
 
 	return &notice{
 		service: service,
-		userCli: userCli,
 	}, nil
 }

@@ -74,7 +74,12 @@ func SetBKAuthHeader(ctx context.Context, conf *apigwutil.ApiGWConfig, header ht
 		return header, nil
 	}
 
-	resp, err := userCli.BatchSearchVirtualUser(ctx, header, []string{"bk_admin"})
+	if conf.BKAdminUsername == "" {
+		blog.Errorf("bk admin username is empty")
+		return nil, fmt.Errorf("bk admin username is empty")
+	}
+
+	resp, err := userCli.BatchSearchVirtualUser(ctx, header, []string{conf.BKAdminUsername})
 	if err != nil {
 		blog.Errorf("search virtual user failed, err: %v", err)
 		return nil, err
