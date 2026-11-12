@@ -60,8 +60,8 @@
 | host_ports    | array  | 否  | 主机端口映射 |
 | args          | array  | 否  | 启动参数   |
 | started       | int    | 否  | 启动时间   |
-| limits        | object | 否  | 资源限制   |
-| requests      | object | 否  | 申请资源大小 |
+| limits        | object | 否  | 资源限制，value为Kubernetes Quantity字符串 |
+| requests      | object | 否  | 申请资源大小，value为Kubernetes Quantity字符串 |
 | liveness      | object | 否  | 存活探针   |
 | environment   | array  | 否  | 环境变量   |
 | mounts        | array  | 否  | 挂载卷    |
@@ -133,7 +133,15 @@
               "name": "name",
               "container_uid": "uid",
               "image": "xxx",
-              "started": 1
+              "started": 1,
+              "limits": {
+                "cpu": "500m",
+                "memory": "128Mi"
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "64Mi"
+              }
             }
           ]
         }
