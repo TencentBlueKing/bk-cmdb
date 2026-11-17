@@ -84,14 +84,13 @@
   import AuditActionSelector from './audit-action-selector'
   import AuditUserSelector from './audit-user-selector'
   import RouterQuery from '@/router/query'
-  import tools from '@/utils/tools'
+  import { todayOperationTime } from '@/utils/tools'
 
-  const today = tools.formatTime(new Date(), 'YYYY-MM-DD')
   const defaultCondition = () => ({
     bk_biz_id: '',
     resource_type: '',
     action: [],
-    operation_time: [today, today],
+    operation_time: todayOperationTime(),
     resource_id: '',
     resource_name: '',
     category: 'other',
