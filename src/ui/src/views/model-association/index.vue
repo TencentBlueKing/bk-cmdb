@@ -158,8 +158,8 @@
             current: 1,
             ...this.$tools.getDefaultPaginationConfig()
           },
-          defaultSort: '-ispre',
-          sort: '-ispre',
+          defaultSort: '-ispre,id',
+          sort: '-ispre,id',
           stuff: {
             type: 'default',
             payload: {
@@ -279,8 +279,20 @@
         this.handlePageChange(1)
       },
       handleSortChange(sort) {
-        this.table.sort = this.$tools.getSort(sort)
+        const nextSort = this.$tools.getSort(sort) || this.table.defaultSort
+        this.table.sort = this.withStableIdSort(nextSort)
         this.searchRelation()
+      },
+      withStableIdSort(sort) {
+        const fields = String(sort || '')
+          .split(',')
+          .map(item => item.trim())
+          .filter(Boolean)
+        const hasId = fields.some(field => field.replace(/^[+-]/, '') === 'id')
+        if (!hasId) {
+          fields.push('id')
+        }
+        return fields.join(',')
       },
       handleSliderBeforeClose() {
         const hasChanged = Object.keys(this.$refs.relationForm.changedValues).length
