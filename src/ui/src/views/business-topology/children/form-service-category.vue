@@ -97,6 +97,16 @@
         this.child = child
       },
       handleParentChange() {
+        const savedId = this.instance.service_category_id
+        const hasLocalChild = this.child !== '' && this.child !== null && this.child !== undefined
+        const belongsToParent = id => this.childList.some(category => category.id === id)
+        if (hasLocalChild && belongsToParent(this.child)) {
+          return
+        }
+        if (!hasLocalChild && belongsToParent(savedId)) {
+          this.child = savedId
+          return
+        }
         const [firstChild] = this.childList
         this.child = firstChild ? firstChild.id : ''
       }
