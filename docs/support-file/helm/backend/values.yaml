@@ -1322,11 +1322,13 @@ common:
     appSecret:
     endpoint:
     token:
-
   # http client config
   httpClient:
     ## @param httpClient.idleConnTimeoutSeconds http client idle connection timeout seconds
     idleConnTimeoutSeconds: 0
+
+# 多租户下查询虚拟用户使用的管理员用户名
+bkAdminUsername: bk_admin
 
 ## @section zookeeper parameters
 ##

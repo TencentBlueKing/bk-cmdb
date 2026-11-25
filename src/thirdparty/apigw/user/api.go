@@ -77,12 +77,9 @@ func (u *user) ListUsers(ctx context.Context, h http.Header, page *types.PageOpt
 		}
 	}
 
-	h, err := utiluser.SetBKAuthHeader(ctx, u.service.Config, h, u)
-	if err != nil {
-		return nil, err
-	}
+	h = httpheader.SetBkAuth(h, u.service.Auth)
 
-	err = u.service.Client.Get().
+	err := u.service.Client.Get().
 		WithContext(ctx).
 		WithParams(params).
 		SubResourcef("/api/v3/open/tenant/users/").
@@ -111,12 +108,9 @@ func (u *user) BatchQueryUserDisplayInfo(ctx context.Context, h http.Header, opt
 
 	resp := new(types.BkUserResponse[[]types.UserDisplayInfo])
 
-	h, err := utiluser.SetBKAuthHeader(ctx, u.service.Config, h, u)
-	if err != nil {
-		return nil, err
-	}
+	h = httpheader.SetBkAuth(h, u.service.Auth)
 
-	err = u.service.Client.Get().
+	err := u.service.Client.Get().
 		WithContext(ctx).
 		WithParam("bk_usernames", strings.Join(opts.BkUsernames, ",")).
 		SubResourcef("/api/v3/open/tenant/users/-/display_info/").
@@ -156,14 +150,11 @@ func (u *user) BatchLookupDept(ctx context.Context, h http.Header,
 		params["with_organization_path"] = "true"
 	}
 
-	h, err := utiluser.SetBKAuthHeader(ctx, u.service.Config, h, u)
-	if err != nil {
-		return nil, err
-	}
+	h = httpheader.SetBkAuth(h, u.service.Auth)
 
 	resp := new(types.BkUserResponse[[]types.DepartmentItem])
 
-	err = u.service.Client.Get().
+	err := u.service.Client.Get().
 		WithContext(ctx).
 		WithParams(params).
 		SubResourcef("/api/v3/open/tenant/departments/-/lookup/").
