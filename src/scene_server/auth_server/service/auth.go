@@ -17,7 +17,8 @@
 package service
 
 import (
-	"strconv"
+	"fmt"
+	"time"
 
 	"configcenter/src/ac/iam"
 	iamtypes "configcenter/src/ac/iam/types"
@@ -26,7 +27,6 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/metadata"
 	"configcenter/src/common/resource/apigw"
-	"configcenter/src/scene_server/auth_server/sdk/types"
 	apigwiam "configcenter/src/thirdparty/apigw/iam"
 )
 
@@ -85,23 +85,11 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		return
 	}
 
-	iamActionID, err := iam.ConvertResourceAction(input.ResourceType, input.Action, input.BizID)
+	iamActionID, err := iam.ConvertResourceAction(input.ResourceType, input.Action, 0)
 	if err != nil {
 		blog.ErrorJSON("ConvertResourceAction failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
-	}
-	resources := make([]apigwiam.Resource, 0)
-	if input.BizID > 0 {
-		businessPath := "/" + string(iamtypes.Business) + "," + strconv.FormatInt(input.BizID, 10) + "/"
-		resource := apigwiam.Resource{
-			System: iamtypes.SystemIDCMDB,
-			Type:   apigwiam.IamResourceType(*iamResourceType),
-			Attribute: map[string]interface{}{
-				types.IamPathKey: []string{businessPath},
-			},
-		}
-		resources = append(resources, resource)
 	}
 
 	ops := &apigwiam.AuthOptions{
@@ -113,7 +101,6 @@ func (s *AuthService) ListAuthorizedResources(ctx *rest.Contexts) {
 		Action: apigwiam.Action{
 			ID: string(iamActionID),
 		},
-		Resources: resources,
 	}
 	authorizeList, err := s.authorizer.ListAuthorizedInstances(ctx.Kit.Ctx, ctx.Kit.Header, ops,
 		apigwiam.IamResourceType(*iamResourceType))
@@ -135,7 +122,45 @@ func (s *AuthService) GetNoAuthSkipUrl(ctx *rest.Contexts) {
 		return
 	}
 
-	url, err := apigw.Client().Iam().GetNoAuthSkipUrl(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	req := &apigwiam.PermApplyURLReq{
+		SystemID:    input.SystemID,
+		Permissions: make([]apigwiam.PermApplyItem, 0, len(input.Actions)),
+	}
+
+	for _, action := range input.Actions {
+		item := apigwiam.PermApplyItem{
+			ActionID: action.ID,
+		}
+		for _, resType := range action.RelatedResourceTypes {
+			for _, path := range resType.Instances {
+				if len(path) == 0 {
+					continue
+				}
+
+				self := path[len(path)-1]
+				resource := apigwiam.PermApplyResource{
+					ID:   self.ID,
+					Type: self.Type,
+				}
+				if resource.Type == "" {
+					resource.Type = resType.Type
+				}
+				if len(path) > 1 {
+					resource.Ancestors = make([]apigwiam.PermApplyAncestor, 0, len(path)-1)
+					for _, ancestor := range path[:len(path)-1] {
+						resource.Ancestors = append(resource.Ancestors, apigwiam.PermApplyAncestor{
+							ID:   ancestor.ID,
+							Type: ancestor.Type,
+						})
+					}
+				}
+				item.Resources = append(item.Resources, resource)
+			}
+		}
+		req.Permissions = append(req.Permissions, item)
+	}
+
+	url, err := apigw.Client().Iam().GetNoAuthSkipUrl(ctx.Kit.Ctx, ctx.Kit.Header, req)
 	if err != nil {
 		blog.ErrorJSON("GetNoAuthSkipUrl failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
@@ -175,14 +200,19 @@ func (s *AuthService) RegisterResourceCreatorAction(ctx *rest.Contexts) {
 		return
 	}
 	input.System = iamtypes.SystemIDCMDB
-	policies, err := apigw.Client().Iam().RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+
+	err = registerResourceCreatorAction(ctx.Kit, iamtypes.TypeID(input.Type), input.Creator, []metadata.IamInstance{{
+		ID:        input.ID,
+		Name:      input.Name,
+		Ancestors: input.Ancestors,
+	}})
 	if err != nil {
 		blog.ErrorJSON("register resource creator action failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(policies)
+	ctx.RespEntity(nil)
 }
 
 // BatchRegisterResourceCreatorAction batch registers iam resource instance so that creator will be authorized on related actions
@@ -195,12 +225,68 @@ func (s *AuthService) BatchRegisterResourceCreatorAction(ctx *rest.Contexts) {
 	}
 	input.System = iamtypes.SystemIDCMDB
 
-	policies, err := apigw.Client().Iam().BatchRegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, *input)
+	err = registerResourceCreatorAction(ctx.Kit, iamtypes.TypeID(input.Type), input.Creator, input.Instances)
 	if err != nil {
 		blog.ErrorJSON("register resource creator action failed, err: %s, input: %s, rid: %s", err, input, ctx.Kit.Rid)
 		ctx.RespAutoError(err)
 		return
 	}
 
-	ctx.RespEntity(policies)
+	ctx.RespEntity(nil)
+}
+
+func registerResourceCreatorAction(kit *rest.Kit, typeID iamtypes.TypeID, creator string,
+	instances []metadata.IamInstance) error {
+
+	if len(instances) == 0 {
+		return nil
+	}
+
+	if creator == "" {
+		return fmt.Errorf("creator is empty")
+	}
+
+	roleID, exists := iam.GetResourceCreatorRole(typeID)
+	if !exists {
+		return fmt.Errorf("unsupported resource type %s for creator authorization", typeID)
+	}
+
+	resources := make([]apigwiam.AuthResource, 0, len(instances))
+	for _, instance := range instances {
+		if instance.ID == "" {
+			return fmt.Errorf("resource instance id is empty, type: %s", typeID)
+		}
+		resources = append(resources, apigwiam.AuthResource{
+			Type: typeID,
+			ID:   instance.ID,
+		})
+	}
+
+	expiredAt := time.Now().Add(time.Duration(apigwiam.MaxAuthorizationExpireDays)*24*time.Hour - time.Minute).Unix()
+	reqs := make([]apigwiam.AddAuthorizationReq, 0, (len(resources)+apigwiam.MaxAddAuthorizationSize-1)/
+		apigwiam.MaxAddAuthorizationSize)
+	for start := 0; start < len(resources); start += apigwiam.MaxAddAuthorizationSize {
+		end := start + apigwiam.MaxAddAuthorizationSize
+		if end > len(resources) {
+			end = len(resources)
+		}
+
+		reqs = append(reqs, apigwiam.AddAuthorizationReq{
+			Subject: apigwiam.AuthSubject{
+				Type: apigwiam.UserSubjectType,
+				ID:   creator,
+			},
+			RoleID:                roleID,
+			RelatedResourceTypeID: typeID,
+			Resources:             resources[start:end],
+			ExpiredAt:             expiredAt,
+		})
+	}
+
+	if err := apigw.Client().Iam().AddAuthorization(kit.Ctx, kit.Header, reqs); err != nil {
+		blog.Errorf("add creator authorization failed, err: %v, reqs: %+v, rid: %s", err, reqs, kit.Rid)
+		return err
+	}
+
+	return nil
 }

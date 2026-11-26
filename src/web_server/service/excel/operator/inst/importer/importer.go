@@ -821,24 +821,24 @@ func (i *Importer) checkUpdatedHost(hosts map[int]map[string]interface{}) (map[i
 		}
 
 		// check if the host innerIP and hostID is consistent
-		excelIP := util.GetStrByInterface(host[common.BKHostInnerIPField])
-		if ip != excelIP {
-			errMsg = append(errMsg, lang.Languagef("import_host_ip_not_consistent", index, excelIP,
-				hostIDVal, ip))
+		rawIP, exists := host[common.BKHostInnerIPField]
+		excelIP := util.GetStrByInterface(rawIP)
+		if exists && ip != excelIP {
+			errMsg = append(errMsg, lang.Languagef("import_host_ip_not_consistent", index, excelIP, hostIDVal, ip))
 			continue
 		}
 
-		// check if the host innerIPv6 and hostID is consistent
-		excelIPv6 := util.GetStrByInterface(host[common.BKHostInnerIPv6Field])
-		if ipv6 != excelIPv6 {
+		rawIPv6, exists := host[common.BKHostInnerIPv6Field]
+		excelIPv6 := util.GetStrByInterface(rawIPv6)
+		if exists && ipv6 != excelIPv6 {
 			errMsg = append(errMsg, lang.Languagef("import_host_ipv6_not_consistent", index, excelIPv6,
 				hostIDVal, ipv6))
 			continue
 		}
 
-		// check if the host agentID and hostID is consistent
-		excelAgentID := util.GetStrByInterface(host[common.BKAgentIDField])
-		if agentID != excelAgentID {
+		rawAgentID, exists := host[common.BKAgentIDField]
+		excelAgentID := util.GetStrByInterface(rawAgentID)
+		if exists && agentID != excelAgentID {
 			errMsg = append(errMsg, lang.Languagef("import_host_agentID_not_consistent", index, excelAgentID,
 				hostIDVal, agentID))
 			continue

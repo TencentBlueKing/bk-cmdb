@@ -135,6 +135,7 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/auth/verify").To(s.AuthVerify))
 	ws.Route(ws.GET("/auth/business_list").To(s.GetAnyAuthorizedAppList))
 	ws.Route(ws.POST("/auth/skip_url").To(s.GetUserNoAuthSkipURL))
+	ws.Route(ws.POST("/auth/find/resource").Filter(s.AuthFilterChan).To(s.Post))
 
 	ws.Route(ws.POST("/biz/{.*}").Filter(s.BizFilterChan).To(s.Post))
 	ws.Route(ws.POST("/biz/search/{.*}").Filter(s.BizFilterChan).To(s.Post))
@@ -170,6 +171,7 @@ func (s *service) routeSkipAuthAPI(ws *restful.WebService) {
 	ws.Route(ws.POST("/createmany/module").Filter(s.TopoFilterChan).To(s.Post))
 
 	ws.Route(ws.POST("/find/object/model/web").Filter(s.TopoFilterChan).To(s.Post))
+	ws.Route(ws.POST("/find/instassociation/web").Filter(s.TopoFilterChan).To(s.Post))
 
 	ws.Route(ws.POST("/findmany/tenant_set").Filter(s.TopoFilterChan).To(s.Post))
 	ws.Route(ws.POST("/findmany/tenant_set/{.*}/tenant").Filter(s.TopoFilterChan).To(s.Post))

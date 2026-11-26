@@ -163,14 +163,11 @@ func (a *authServer) GetPermissionToApply(ctx context.Context, h http.Header,
 	return response.Data, nil
 }
 
-// RegisterResourceCreatorAction TODO
+// RegisterResourceCreatorAction register resource creator action
 func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.Header,
-	input metadata.IamInstanceWithCreator) (
-	[]metadata.IamCreatorActionPolicy, error) {
-	response := new(struct {
-		metadata.BaseResp `json:",inline"`
-		Data              []metadata.IamCreatorActionPolicy `json:"data"`
-	})
+	input metadata.IamInstanceWithCreator) error {
+
+	response := new(metadata.BaseResp)
 	subPath := "/register/resource_creator_action"
 
 	err := a.client.Post().
@@ -182,23 +179,20 @@ func (a *authServer) RegisterResourceCreatorAction(ctx context.Context, h http.H
 		Into(response)
 
 	if err != nil {
-		return nil, errors.CCHttpError
+		return errors.CCHttpError
 	}
 	if response.Code != 0 {
-		return nil, response.CCError()
+		return response.CCError()
 	}
 
-	return response.Data, nil
+	return nil
 }
 
-// BatchRegisterResourceCreatorAction TODO
+// BatchRegisterResourceCreatorAction batch register resource creator action
 func (a *authServer) BatchRegisterResourceCreatorAction(ctx context.Context, h http.Header,
-	input metadata.IamInstancesWithCreator) (
-	[]metadata.IamCreatorActionPolicy, error) {
-	response := new(struct {
-		metadata.BaseResp `json:",inline"`
-		Data              []metadata.IamCreatorActionPolicy `json:"data"`
-	})
+	input metadata.IamInstancesWithCreator) error {
+
+	response := new(metadata.BaseResp)
 	subPath := "/register/batch_resource_creator_action"
 
 	err := a.client.Post().
@@ -210,11 +204,11 @@ func (a *authServer) BatchRegisterResourceCreatorAction(ctx context.Context, h h
 		Into(response)
 
 	if err != nil {
-		return nil, errors.CCHttpError
+		return errors.CCHttpError
 	}
 	if response.Code != 0 {
-		return nil, response.CCError()
+		return response.CCError()
 	}
 
-	return response.Data, nil
+	return nil
 }

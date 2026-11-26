@@ -345,7 +345,7 @@ func (s *service) CreateFieldTemplate(ctx *rest.Contexts) {
 				Name:    opt.Name,
 				Creator: ctx.Kit.User,
 			}
-			_, err = s.auth.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			err = s.auth.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created field template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err
@@ -459,7 +459,7 @@ func (s *service) CloneFieldTemplate(ctx *rest.Contexts) {
 				Name:    opt.Name,
 				Creator: ctx.Kit.User,
 			}
-			_, err = s.auth.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			err = s.auth.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created field template to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err

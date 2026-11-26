@@ -62,6 +62,7 @@ func (s *coreService) UpdateUserCustomByID(ctx *rest.Contexts) {
 		ctx.RespAutoError(err)
 		return
 	}
+	delete(data, "bk_user")
 	conditons := make(map[string]interface{})
 	conditons["id"] = ctx.Request.PathParameter("id")
 	conditons["bk_user"] = ctx.Request.PathParameter("bk_user")

@@ -45,8 +45,8 @@ type ApiServerClientInterface interface {
 		resp *metadata.ObjectAttrBatchResult, err error)
 	GetInstDetail(ctx context.Context, h http.Header, objID string, params mapstr.MapStr) (
 		resp *metadata.QueryInstResult, err error)
-	GetInstUniqueFields(ctx context.Context, h http.Header, objID string, uniqueID int64, params mapstr.MapStr) (
-		resp metadata.QueryUniqueFieldsResult, err error)
+	GetInstUniqueFields(ctx context.Context, h http.Header, objID string, uniqueID int64,
+		option *metadata.QueryUniqueFieldsOption) (resp metadata.QueryUniqueFieldsResult, err error)
 	CreateObjectAtt(ctx context.Context, h http.Header, obj *metadata.ObjAttDes) (resp *metadata.Response, err error)
 	UpdateObjectAtt(ctx context.Context, objID string, h http.Header,
 		data map[string]interface{}) (resp *metadata.Response, err error)

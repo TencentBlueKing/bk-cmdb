@@ -72,6 +72,8 @@ spec:
           value: {{ .Values.apigatewaySync.faraAppCode }}
         - name: BK_BKCHAT_APP_CODE
           value: {{ .Values.apigatewaySync.bkchatAppCode }}
+        - name: BK_IAM_V4_APP_CODE
+          value: {{ .Values.apigatewaySync.bkIamV4AppCode }}
         resources:
           limits:
             cpu: 200m

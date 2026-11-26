@@ -27,7 +27,10 @@ import (
 
 // Interface TODO
 type Interface interface {
-	ListUserPolicies(ctx context.Context, header http.Header, opts *iam.ListPolicyOptions) ([]*iam.ActionPolicy, error)
 	GetSystemToken(ctx context.Context, header http.Header) (string, error)
-	GetUserPolicy(ctx context.Context, header http.Header, opt *iam.GetPolicyOption) (*operator.Policy, error)
+	// HybridPlan get the authorization condition of one action
+	HybridPlan(ctx context.Context, header http.Header, req *iam.PlanReq) (*operator.Plan, error)
+	// HybridPlanByActions get the authorization conditions of multiple actions
+	HybridPlanByActions(ctx context.Context, header http.Header, req *iam.PlanByActionsReq) ([]iam.ActionPlanRes,
+		error)
 }

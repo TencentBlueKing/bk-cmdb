@@ -19,109 +19,121 @@ package operator
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
+
+	ccjson "configcenter/src/common/json"
 )
+
+// PlanKind is the authorization result kind of the hybrid plan apis.
+type PlanKind string
 
 const (
-	// IamIDKey TODO
-	IamIDKey = "id"
-	// IamPathKey TODO
-	IamPathKey = "_bk_iam_path_"
+	// AlwaysAllowedKind means that the subject can access all the resources.
+	AlwaysAllowedKind PlanKind = "ALWAYS_ALLOWED"
+	// AlwaysDeniedKind means that the subject can access none of the resources.
+	AlwaysDeniedKind PlanKind = "ALWAYS_DENIED"
+	// ConditionalKind means that the resources should be filtered by the returned condition.
+	ConditionalKind PlanKind = "CONDITIONAL"
 )
 
-// Policy TODO
-type Policy struct {
+// Plan is one action's authorization plan returned by the hybrid plan apis.
+type Plan struct {
+	Kind PlanKind `json:"kind"`
+	// Condition is the filter expression when Kind is ConditionalKind, otherwise it is nil.
+	Condition *AuthCondition `json:"condition"`
+}
+
+// AuthCondition is a node of the authorization plan expression.
+type AuthCondition struct {
 	Operator OperType `json:"op"`
 	// Element is a pointer interface point to the implements struct,
 	// which should be one of Content or FieldValue.
 	Element
 }
 
-// UnmarshalJSON TODO
-func (p *Policy) UnmarshalJSON(i []byte) error {
+// UnmarshalJSON unmarshal the authorization plan condition from the standard expression protocol.
+func (c *AuthCondition) UnmarshalJSON(i []byte) error {
 	if string(i) == "{}" {
 		return nil
 	}
 
-	broker := new(policyBroker)
-	err := json.Unmarshal(i, broker)
+	broker := new(conditionBroker)
+	err := ccjson.Unmarshal(i, broker)
 	if err != nil {
 		return err
 	}
 
-	p.Operator = broker.Operator
+	c.Operator = broker.Operator
 
-	if broker.Operator == And || broker.Operator == Or {
+	if broker.Operator.IsLogical() {
 		content := new(Content)
-		if err := json.Unmarshal(broker.Content, &content.Content); err != nil {
+		if err := ccjson.Unmarshal(broker.Content, &content.Content); err != nil {
 			return err
 		}
-		p.Element = content
+		c.Element = content
 		return nil
 	}
 
-	if broker.Operator == In || broker.Operator == Nin {
+	if broker.Operator == In {
 		to := make([]interface{}, 0)
-		if err := json.Unmarshal(broker.Value, &to); err != nil {
+		if err := ccjson.Unmarshal(broker.Value, &to); err != nil {
 			return err
 		}
 
-		p.Element = &FieldValue{
+		c.Element = &FieldValue{
 			Field: broker.Field,
 			Value: to,
 		}
+		return nil
+	}
 
-	} else {
-		to := new(interface{})
-		if err := json.Unmarshal(broker.Value, &to); err != nil {
-			return err
-		}
+	to := new(interface{})
+	if err := ccjson.Unmarshal(broker.Value, &to); err != nil {
+		return err
+	}
 
-		p.Element = &FieldValue{
-			Field: broker.Field,
-			Value: *to,
-		}
+	c.Element = &FieldValue{
+		Field: broker.Field,
+		Value: *to,
 	}
 
 	return nil
 }
 
-type policyBroker struct {
+type conditionBroker struct {
 	Operator OperType        `json:"op"`
 	Content  json.RawMessage `json:"content"`
 	Field    Field           `json:"field"`
 	Value    json.RawMessage `json:"value"`
 }
 
-// MarshalJSON is used to marshal the policy to the standard
+// MarshalJSON is used to marshal the condition to the standard
 // iam policy protocol, which is not correspond to the struct
 // we defined here.
-// Note: when you marshal the policy, the policy must be a pointer,
+// Note: when you marshal the condition, the condition must be a pointer,
 // otherwise, the marshaled json struct is wrong.
-func (p *Policy) MarshalJSON() ([]byte, error) {
-	js, err := json.Marshal(p.Element)
+func (c *AuthCondition) MarshalJSON() ([]byte, error) {
+	js, err := ccjson.Marshal(c.Element)
 	if err != nil {
 		return nil, err
 	}
 	buf := bytes.Buffer{}
 	buf.WriteString(`{"op":"`)
-	buf.WriteString(string(p.Operator))
+	buf.WriteString(string(c.Operator))
 	buf.WriteString(`",`)
 	buf.Write(js[1 : len(js)-1])
 	buf.WriteByte('}')
 	return buf.Bytes(), nil
 }
 
-// Element TODO
+// Element is the payload of an AuthCondition node.
 type Element interface {
 	EleName() string
 }
 
 // Content TODO
 type Content struct {
-	// Content is only exist when OperType is "And" or "OR"
-	Content []*Policy `json:"content"`
+	// Content is only exist when OperType is a logical operator.
+	Content []*AuthCondition `json:"content"`
 }
 
 // EleName TODO
@@ -129,10 +141,9 @@ func (e *Content) EleName() string {
 	return "content"
 }
 
-// FieldValue TODO
+// FieldValue is a compare node of the authorization plan expression.
 type FieldValue struct {
-	// Field and Value is only exist when OperType is not
-	// one of "And" or "OR"
+	// Field and Value is only exist when OperType is not a logical operator.
 	Field Field       `json:"field"`
 	Value interface{} `json:"value"`
 }
@@ -140,37 +151,4 @@ type FieldValue struct {
 // EleName TODO
 func (f *FieldValue) EleName() string {
 	return "field_value"
-}
-
-// Field TODO
-type Field struct {
-	Resource  string
-	Attribute string
-}
-
-// UnmarshalJSON TODO
-func (f *Field) UnmarshalJSON(i []byte) error {
-	if string(i) == "\"\"" {
-		f.Attribute = ""
-		f.Resource = ""
-		return nil
-	}
-	index := bytes.IndexByte(i, '.')
-	if index < 0 {
-		return errors.New("invalid \"field\"")
-	}
-
-	f.Resource = string(bytes.TrimLeft(i[:index], "\""))
-	f.Attribute = string(bytes.TrimRight(i[index+1:], "\""))
-
-	if f.Resource == "" || f.Attribute == "" {
-		return errors.New("invalid \"field\"")
-	}
-
-	return nil
-}
-
-// MarshalJSON TODO
-func (f *Field) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("\"%s.%s\"", f.Resource, f.Attribute)), nil
 }

@@ -1712,6 +1712,8 @@ apigatewaySync:
   faraAppCode: "bk_fara"
   ## 此变量在运维维护的变量中，没有对应的变量
   bkchatAppCode: "bkchat"
+  ## 此变量在运维维护的变量中，没有对应的变量
+  bkIamV4AppCode: "bk_iam_v4"
 
 ## @param serviceDiscoveryEnv is the environment for service discovery
 serviceDiscoveryEnv:

@@ -26,6 +26,7 @@ import (
 	"configcenter/src/common/http/rest"
 	"configcenter/src/common/json"
 	"configcenter/src/common/metadata"
+	"configcenter/src/scene_server/auth_server/sdk/operator"
 	"configcenter/src/scene_server/auth_server/types"
 )
 
@@ -40,9 +41,17 @@ func (lgc *Logics) ListAttrValue(kit *rest.Kit, resourceType iamtypes.TypeID, fi
 	}
 	var attrType string
 
+	propertyID := filter.Attr
+	if attrField := operator.Field(filter.Attr); attrField.IsSelfAttr() {
+		propertyID = attrField.SelfAttr()
+		if propertyID == "" {
+			return &types.ListAttrValueResult{Count: 0, Results: []types.AttrValueResource{}}, nil
+		}
+	}
+
 	param := metadata.QueryCondition{
 		Condition: map[string]interface{}{
-			common.BKPropertyIDField: filter.Attr,
+			common.BKPropertyIDField: propertyID,
 			common.BKPropertyTypeField: map[string]interface{}{
 				common.BKDBIN: []interface{}{
 					common.FieldTypeEnum,

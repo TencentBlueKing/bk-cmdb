@@ -665,7 +665,7 @@ func (ps *parseStream) host() *parseStream {
 				BusinessID: bizID,
 				Basic: meta.Basic{
 					Type:   meta.HostInstance,
-					Action: meta.SkipAction,
+					Action: meta.Find,
 				},
 			},
 		}

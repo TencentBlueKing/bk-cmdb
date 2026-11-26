@@ -210,7 +210,7 @@ func (s *Service) CreateBusinessSet(ctx *rest.Contexts) {
 				Name:    name,
 				Creator: ctx.Kit.User,
 			}
-			_, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
+			err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(ctx.Kit.Ctx, ctx.Kit.Header, iamInstance)
 			if err != nil {
 				blog.Errorf("register created biz set to iam failed, err: %v, rid: %s", err, ctx.Kit.Rid)
 				return err

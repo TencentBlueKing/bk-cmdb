@@ -217,7 +217,7 @@ func (assoc *association) CreateOrUpdateAssociationType(kit *rest.Kit, asst []me
 				Name:    item.AssociationKindName,
 				Creator: kit.User,
 			}
-			if _, err = assoc.authManager.Authorizer.RegisterResourceCreatorAction(kit.Ctx, kit.Header,
+			if err = assoc.authManager.Authorizer.RegisterResourceCreatorAction(kit.Ctx, kit.Header,
 				iamInstance); err != nil {
 				blog.Errorf("register created association type to iam failed, err: %v, rid: %s", err, kit.Rid)
 				return err

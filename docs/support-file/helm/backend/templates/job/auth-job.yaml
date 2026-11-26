@@ -1,5 +1,4 @@
 {{- if .Values.iam.job.enabled }}
-{{- $ingressHost := .Values.authserver.ingress.host -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -32,7 +31,7 @@ spec:
           -H 'Content-Type:application/json' \
           -H 'X-Bkcmdb-User:migrate' \
           -H 'X-Bk-Tenant-Id:{{ template "bk-cmdb.tenantID" . }}' \
-          --data '{"host": "http://{{  $ingressHost }}"}' \
+          --data '{"host": "{{ .Values.bkCmdbApiGatewayUrl }}/api/v3/auth/find/resource"}' \
           "http://{{ template "bk-cmdb.adminserver" . }}/migrate/v3/authcenter/init"
           )
           echo "$res"

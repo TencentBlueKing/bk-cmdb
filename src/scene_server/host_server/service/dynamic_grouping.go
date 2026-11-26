@@ -119,7 +119,7 @@ func (s *Service) registerActionToIAM(kit *rest.Kit, dynamicGroup meta.DynamicGr
 		Name:    resp.Data.Name,
 		Creator: kit.User,
 	}
-	if _, err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstance); err != nil {
+	if err = s.AuthManager.Authorizer.RegisterResourceCreatorAction(kit.Ctx, kit.Header, iamInstance); err != nil {
 		blog.Errorf("register created new dynamic group to iam failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
