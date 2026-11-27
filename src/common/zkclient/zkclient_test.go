@@ -18,7 +18,6 @@ package zkclient
 
 import (
 	//	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -32,53 +31,63 @@ var (
 	caFile             = ""
 	password           = ""
 	insecureSkipVerify = true
+	zkUser             = ""
+	zkPassword         = ""
 )
 
 func TestDataValue(t *testing.T) {
-	fmt.Println("TEST Data Value")
-	zkClient := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181"})
+	t.Logf("TEST Data Value")
+	zkClient, err := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181", User: zkUser, Password: zkPassword})
+	if err != nil {
+		t.Logf("%v", err)
+		return
+	}
 
 	defer zkClient.Close()
 
-	err := zkClient.Connect()
+	err = zkClient.Connect()
 	if err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 		return
 	}
 
 	if err = zkClient.Create("/data1", []byte("DATA")); err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 	}
 
 	result, err := zkClient.Get("/data1")
 	if err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 		return
 	}
 
-	fmt.Println(result)
+	t.Logf("%v", result)
 
 	if err = zkClient.Create("/data1/ip/act", []byte("act")); err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 	}
 
 	result, err = zkClient.Get("/data1/ip/act")
 	if err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 		return
 	}
 
-	fmt.Println(result)
+	t.Logf("%v", result)
 }
 
 func TestZkLock(t *testing.T) {
-	fmt.Println("TEST zk lock")
-	zkLock1 := NewZkLock([]string{"127.0.0.1:2181"}, "", "")
+	t.Logf("TEST zk lock")
+	zkLock1, err := NewZkLock([]string{"127.0.0.1:2181"}, zkUser, zkPassword)
+	if err != nil {
+		t.Logf("lock1 fail lock. err:%s", err.Error())
+		return
+	}
 
 	if err := zkLock1.Lock("/lock"); err != nil {
-		fmt.Printf("lock1 fail lock. err:%s \n", err.Error())
+		t.Logf("lock1 fail lock. err:%s", err.Error())
 	} else {
-		fmt.Println("lock1 lock")
+		t.Logf("lock1 lock")
 	}
 
 	zkLock1.UnLock()
@@ -86,11 +95,15 @@ func TestZkLock(t *testing.T) {
 }
 
 func Test_WatchChildren(t *testing.T) {
-	t.Log("----- start test WatchChildren -----")
+	t.Logf("----- start test WatchChildren -----")
 
-	zkClient := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181"})
+	zkClient, err := NewZkClient(config.ZkConfig{Addr: "127.0.0.1:2181", User: zkUser, Password: zkPassword})
+	if err != nil {
+		t.Logf("fail to connect zk, err:%s", err.Error())
+		return
+	}
 
-	err := zkClient.Connect()
+	err = zkClient.Connect()
 	if err != nil {
 		t.Logf("fail to connect zk, err:%s", err.Error())
 		return
@@ -119,7 +132,7 @@ func Test_WatchChildren(t *testing.T) {
 	}()
 
 	time.Sleep(2 * time.Second)
-	fmt.Printf("begin to create eph node\n")
+	t.Logf("begin to create eph node")
 	newPath, err := zkClient.CreateEphAndSeqEx(path+"/node", []byte("test"))
 	if err != nil {
 		t.Logf("create eph node failed. err:%s", err.Error())
@@ -135,9 +148,11 @@ func Test_WatchChildren(t *testing.T) {
 }
 
 func TestDataValueWithTLS(t *testing.T) {
-	fmt.Println("TEST Data Value With TLS")
-	zkClient := NewZkClient(config.ZkConfig{
-		Addr: "127.0.0.1:2281",
+	t.Logf("TEST Data Value With TLS")
+	zkClient, err := NewZkClient(config.ZkConfig{
+		Addr:     "127.0.0.1:2281",
+		User:     zkUser,
+		Password: zkPassword,
 		TLS: ssl.TLSClientConfig{
 			InsecureSkipVerify: insecureSkipVerify,
 			CertFile:           certFile,
@@ -146,36 +161,40 @@ func TestDataValueWithTLS(t *testing.T) {
 			Password:           password,
 		},
 	})
+	if err != nil {
+		t.Logf("%v", err)
+		return
+	}
 
 	defer zkClient.Close()
 
-	err := zkClient.Connect()
+	err = zkClient.Connect()
 	if err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 		return
 	}
 
 	if err = zkClient.Create("/data1", []byte("DATA")); err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 	}
 
 	result, err := zkClient.Get("/data1")
 	if err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 		return
 	}
 
-	fmt.Println(result)
+	t.Logf("%v", result)
 
 	if err = zkClient.Create("/data1/ip/act", []byte("act")); err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 	}
 
 	result, err = zkClient.Get("/data1/ip/act")
 	if err != nil {
-		fmt.Println(err)
+		t.Logf("%v", err)
 		return
 	}
 
-	fmt.Println(result)
+	t.Logf("%v", result)
 }

@@ -334,6 +334,8 @@ $ helm uninstall cmdb-backend
 |             参数              |                             描述                              | 默认值 |
 |:---------------------------:|:-----------------------------------------------------------:|:---:|
 | configAndServiceCenter.addr | 外部配置发现中心、服务发现中心地址，当zookeeper.enabled配置为`false`时，使用此参数连接外部组件 |     |
+| configAndServiceCenter.user | ZooKeeper 认证用户名，必填 |     |
+| configAndServiceCenter.password | ZooKeeper 认证密码，必填 |     |
 
 ### elasticsearch配置
 
@@ -442,6 +444,8 @@ zookeeper:
   enabled: false
 configAndServiceCenter:
   addr: 127.0.0.1:2181
+  user: xxx
+  password: xxx
 
 ```
 
@@ -599,6 +603,8 @@ authserver:
 ```
 configAndServiceCenter:
   addr: 127.0.0.1:2181,127.0.0.2:2181
+  user: xxx
+  password: xxx
 
 ```
 

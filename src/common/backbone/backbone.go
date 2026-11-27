@@ -35,6 +35,7 @@ import (
 	crd "configcenter/src/common/confregdiscover"
 	ccconfig "configcenter/src/common/core/cc/config"
 	"configcenter/src/common/errors"
+	"configcenter/src/common/kms"
 	"configcenter/src/common/language"
 	"configcenter/src/common/metrics"
 	"configcenter/src/common/ssl"
@@ -66,7 +67,10 @@ type BackboneParameter struct {
 func newSvcManagerClient(ctx context.Context, zkConf ccconfig.ZkConfig) (*zk.ZkClient, error) {
 	var err error
 	for retry := 0; retry < maxRetry; retry++ {
-		client := zk.NewZkClient(zkConf, 40*time.Second)
+		client, newErr := zk.NewZkClient(zkConf, 40*time.Second)
+		if newErr != nil {
+			return nil, newErr
+		}
 		if err = client.Start(); err != nil {
 			blog.Errorf("connect regdiscv [%s] failed: %v", zkConf.Addr, err)
 			time.Sleep(time.Second * 2)
@@ -115,8 +119,10 @@ func newApiMachinery(disc discovery.DiscoveryInterface,
 }
 
 func validateParameter(input *BackboneParameter) error {
-	if !input.Disable && input.Zk.Addr == "" {
-		return fmt.Errorf("regdiscv can not be emtpy")
+	if !input.Disable {
+		if err := input.Zk.Validate(); err != nil {
+			return err
+		}
 	}
 	if input.SrvInfo.IP == "" {
 		return fmt.Errorf("addrport ip can not be emtpy")
@@ -139,6 +145,9 @@ func validateParameter(input *BackboneParameter) error {
 
 // NewBackbone new backbone.
 func NewBackbone(ctx context.Context, input *BackboneParameter) (*Engine, error) {
+	if err := kms.FillZk(&input.Zk); err != nil {
+		return nil, fmt.Errorf("load kms credential failed, err: %v", err)
+	}
 	if err := validateParameter(input); err != nil {
 		return nil, err
 	}

@@ -130,9 +130,9 @@ func (conf *CCAPIConfig) AddFlags(fs *pflag.FlagSet, defaultAddrPort string) {
 type ZkConfig struct {
 	// Addr is the ZooKeeper server address(es), comma-separated. e.g: 127.0.0.1:2181
 	Addr string
-	// User is the ZooKeeper digest auth username. Defaults to built-in value if empty.
+	// User is the ZooKeeper digest auth username.
 	User string
-	// Password is the ZooKeeper digest auth password. Defaults to built-in value if empty.
+	// Password is the ZooKeeper digest auth password.
 	Password string
 	// TLS is the TLS configuration for the ZooKeeper connection.
 	TLS ssl.TLSClientConfig
@@ -148,4 +148,18 @@ func (z *ZkConfig) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&z.TLS.Password, "regdiscv-certpassword", "", "register and discover server cert password")
 	fs.StringVar(&z.TLS.KeyFile, "regdiscv-keyfile", "", "register and discover server key file")
 	fs.BoolVar(&z.TLS.InsecureSkipVerify, "regdiscv-skipverify", true, "register and discover server skip ca verify")
+}
+
+// Validate checks that ZooKeeper address, user and password are set.
+func (z *ZkConfig) Validate() error {
+	if z.Addr == "" {
+		return fmt.Errorf("zookeeper address is required")
+	}
+	if z.User == "" {
+		return fmt.Errorf("zookeeper user is required")
+	}
+	if z.Password == "" {
+		return fmt.Errorf("zookeeper password is required")
+	}
+	return nil
 }

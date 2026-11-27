@@ -27,6 +27,7 @@ spec:
       {{- end }}
     spec:
       {{- include "cmdb.imagePullSecrets" . | nindent 6 }}
+      {{- include "cmdb.kms.serviceAccount" . | nindent 6 }}
       containers:
       - name: hostserver
         image: {{ .Values.image.registry }}/{{ .Values.hostserver.image.repository }}:v{{ default .Chart.AppVersion .Values.hostserver.image.tag }}
@@ -76,6 +77,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+          {{- include "cmdb.kms.env" . | nindent 10 }}
         {{- if .Values.hostserver.env -}}
           {{ toYaml .Values.hostserver.env | indent 10 }}
         {{- end }}
@@ -90,14 +92,16 @@ spec:
           {{- end }}
           {{- include "cmdb.redis.certVolumeMount" . | nindent 10 }}
           {{- include "cmdb.configAndServiceCenter.certVolumeMount" . | nindent 10 }}
+          {{- include "cmdb.kms.volumeMount" . | nindent 10 }}
       volumes:
         {{- if .Values.hostserver.configDir }}
         - name: configures
           configMap:
             name: {{ .Release.Name }}-hostserver-configures
         {{- end }}
-        {{- include "cmdb.redis.certVolume" . | nindent 6 }}
-        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 6 }}
+        {{- include "cmdb.redis.certVolume" . | nindent 8 }}
+        {{- include "cmdb.configAndServiceCenter.certVolume" . | nindent 8 }}
+        {{- include "cmdb.kms.volume" . | nindent 8 }}
 
       {{- with .Values.hostserver.nodeSelector }}
       nodeSelector:
