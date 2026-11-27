@@ -7,11 +7,16 @@ relationship, Permission: Model Instance Query Permission)
 
 | Name       | Type   | Required | Description                      |
 |------------|--------|----------|----------------------------------|
-| bk_inst_id | int    | Yes      | Instance ID                      |
-| bk_obj_id  | string | Yes      | Model ID                         |
+| condition  | object | Yes      | Query condition                  |
 | fields     | array  | Yes      | Fields to be returned            |
-| start      | int    | No       | Record start position            |
-| limit      | int    | No       | Page size, maximum value is 500. |
+| page       | object | No       | Pagination parameters            |
+
+#### condition
+
+| Name       | Type   | Required | Description |
+|------------|--------|----------|-------------|
+| bk_inst_id | int    | Yes      | Instance ID |
+| bk_obj_id  | string | Yes      | Model ID    |
 
 #### page
 

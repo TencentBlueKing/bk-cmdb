@@ -13,7 +13,7 @@
 | bk_biz_id    | int       | 是  | 业务id                                                      |
 | bk_module_id | int       | 否  | 模块ID                                                      |
 | bk_host_ids  | int array | 否  | 主机id列表，最多支持1000个主机id                                      |
-| selectors    | int       | 否  | label过滤功能，operator可选值: `=`,`!=`,`exists`,`!`,`in`,`notin` |
+| selectors    | array     | 否  | label过滤功能，operator可选值: `=`,`!=`,`exists`,`!`,`in`,`notin` |
 | page         | object    | 否  | 分页参数                                                      |
 | search_key   | string    | 否  | 名字过滤参数，可填写进程名称包含的字符用于模糊搜索                                 |
 

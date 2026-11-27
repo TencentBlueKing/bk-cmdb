@@ -10,7 +10,7 @@ Delete process instances based on a list of process instance IDs (Permission: Se
 
 | Field                | Type | Required | Description                                               |
 | -------------------- | ---- | -------- | --------------------------------------------------------- |
-| process_instance_ids | int  | Yes      | List of process instance IDs, with a maximum value of 500 |
+| process_instance_ids | array | Yes      | List of process instance IDs, with a maximum value of 500 |
 | bk_biz_id            | int  | Yes      | Business ID                                               |
 
 ### Request Parameter Example

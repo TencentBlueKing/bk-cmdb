@@ -11,7 +11,7 @@
 | 字段                      | 类型           | 必选 | 描述                       |
 |-------------------------|--------------|----|--------------------------|
 | bk_biz_id               | int          | 是  | 业务ID                     |
-| bk_service_template_ids | int array    | 是  | 集群模板ID列表，最多可填500个        |
+| bk_set_template_ids | int array    | 是  | 集群模板ID列表，最多可填500个        |
 | bk_set_ids              | int array    | 否  | 集群ID列表, 最多可填500个         |
 | fields                  | string array | 是  | 主机属性列表，控制返回结果的模块信息里有哪些字段 |
 | page                    | object       | 是  | 分页信息                     |

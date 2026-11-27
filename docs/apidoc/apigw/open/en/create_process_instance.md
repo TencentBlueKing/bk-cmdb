@@ -7,8 +7,16 @@ Edit Permission)
 
 | Name                | Type  | Required | Description                                                                             |
 |---------------------|-------|----------|-----------------------------------------------------------------------------------------|
+| bk_biz_id           | int   | Yes      | Business ID                                                                             |
 | service_instance_id | int   | Yes      | Service instance ID                                                                     |
-| processes           | array | Yes      | Attribute values in process instance different from the template, with a maximum of 100 |
+| processes           | array | Yes      | Process instance list. Each item is an object, with a maximum of 100                   |
+
+#### processes[n]
+
+| Name                | Type   | Required | Description          |
+|---------------------|--------|----------|----------------------|
+| process_template_id | int    | No       | Process template ID  |
+| process_info        | object | Yes      | Process attributes   |
 
 #### Explanation of process_info Fields
 
